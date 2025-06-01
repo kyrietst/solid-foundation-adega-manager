@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Users, UserCheck, UserX } from 'lucide-react';
+import { Plus, Users, UserCheck, UserX, Crown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -23,6 +23,7 @@ export const UserManagement = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showFirstAdminSetup, setShowFirstAdminSetup] = useState(false);
   const [newUser, setNewUser] = useState({
     name: '',
     email: '',
@@ -30,13 +31,35 @@ export const UserManagement = () => {
     role: 'funcionario' as 'admin' | 'funcionario' | 'entregador'
   });
   const { toast } = useToast();
-  const { hasPermission } = useAuth();
+  const { hasPermission, userRole } = useAuth();
 
   useEffect(() => {
-    if (hasPermission('admin')) {
-      fetchUsers();
-    }
+    checkForExistingUsers();
   }, []);
+
+  const checkForExistingUsers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id')
+        .limit(1);
+
+      if (error) {
+        console.error('Error checking users:', error);
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        setShowFirstAdminSetup(true);
+      } else {
+        if (hasPermission('admin')) {
+          fetchUsers();
+        }
+      }
+    } catch (error) {
+      console.error('Error in checkForExistingUsers:', error);
+    }
+  };
 
   const fetchUsers = async () => {
     try {
@@ -69,6 +92,61 @@ export const UserManagement = () => {
     }
   };
 
+  const createFirstAdmin = async () => {
+    setIsLoading(true);
+    
+    try {
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+        email: 'adm@adm.com',
+        password: 'adm',
+        user_metadata: {
+          name: 'Administrador Supremo'
+        }
+      });
+
+      if (authError) {
+        toast({
+          title: "Erro ao criar administrador",
+          description: authError.message,
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      if (authData.user) {
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .insert({
+            user_id: authData.user.id,
+            role: 'admin'
+          });
+
+        if (roleError) {
+          console.error('Error adding admin role:', roleError);
+        }
+      }
+
+      toast({
+        title: "Administrador criado!",
+        description: "Conta de administrador supremo criada com sucesso. Email: adm@adm.com, Senha: adm",
+      });
+
+      setShowFirstAdminSetup(false);
+      fetchUsers();
+
+    } catch (error: any) {
+      console.error('Error creating first admin:', error);
+      toast({
+        title: "Erro",
+        description: "Erro inesperado ao criar administrador",
+        variant: "destructive",
+      });
+    }
+
+    setIsLoading(false);
+  };
+
   const createUser = async () => {
     if (!newUser.name || !newUser.email || !newUser.password) {
       toast({
@@ -82,7 +160,6 @@ export const UserManagement = () => {
     setIsLoading(true);
 
     try {
-      // Create user in Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.admin.createUser({
         email: newUser.email,
         password: newUser.password,
@@ -101,7 +178,6 @@ export const UserManagement = () => {
         return;
       }
 
-      // Add role to the user
       if (authData.user) {
         const { error: roleError } = await supabase
           .from('user_roles')
@@ -159,6 +235,39 @@ export const UserManagement = () => {
     }
   };
 
+  if (showFirstAdminSetup) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <Crown className="h-16 w-16 text-yellow-500 mx-auto mb-4" />
+            <CardTitle className="text-2xl">Configuração Inicial</CardTitle>
+          </CardHeader>
+          <CardContent className="text-center space-y-4">
+            <p className="text-gray-600">
+              Nenhum usuário encontrado no sistema. Crie o primeiro administrador para começar.
+            </p>
+            <div className="bg-blue-50 p-4 rounded-lg text-sm">
+              <p><strong>Email:</strong> adm@adm.com</p>
+              <p><strong>Senha:</strong> adm</p>
+              <p className="text-xs text-gray-600 mt-2">
+                (Recomendamos alterar a senha após o primeiro login)
+              </p>
+            </div>
+            <Button 
+              onClick={createFirstAdmin} 
+              className="w-full" 
+              disabled={isLoading}
+              size="lg"
+            >
+              {isLoading ? 'Criando...' : 'Criar Administrador Supremo'}
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   if (!hasPermission('admin')) {
     return (
       <div className="text-center p-8">
@@ -172,7 +281,7 @@ export const UserManagement = () => {
   return (
     <div className="space-y-6">
       {/* Resumo de Usuários */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total de Usuários</CardTitle>
@@ -185,8 +294,20 @@ export const UserManagement = () => {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Administradores</CardTitle>
+            <Crown className="h-4 w-4 text-red-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {users.filter(u => u.role === 'admin').length}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Funcionários</CardTitle>
-            <UserCheck className="h-4 w-4 text-green-600" />
+            <UserCheck className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -198,7 +319,7 @@ export const UserManagement = () => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Entregadores</CardTitle>
-            <UserCheck className="h-4 w-4 text-purple-600" />
+            <UserCheck className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -264,10 +385,18 @@ export const UserManagement = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="funcionario">Funcionário da Adega</SelectItem>
-                      <SelectItem value="entregador">Entregador</SelectItem>
+                      <SelectItem value="entregador">Entregador/Motoboy</SelectItem>
                       <SelectItem value="admin">Administrador</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+                <div className="bg-amber-50 p-3 rounded-lg text-sm">
+                  <p className="font-medium text-amber-800">Níveis de Acesso:</p>
+                  <ul className="text-amber-700 text-xs mt-1 space-y-1">
+                    <li><strong>Administrador:</strong> Acesso total ao sistema</li>
+                    <li><strong>Funcionário:</strong> Vendas, estoque, clientes, relatórios (sem dados de faturamento sensíveis)</li>
+                    <li><strong>Entregador:</strong> Apenas delivery e suas entregas</li>
+                  </ul>
                 </div>
                 <Button onClick={createUser} className="w-full" disabled={isLoading}>
                   {isLoading ? 'Criando...' : 'Criar Usuário'}
@@ -290,7 +419,12 @@ export const UserManagement = () => {
               <tbody>
                 {users.map((user) => (
                   <tr key={user.id} className="border-b hover:bg-gray-50">
-                    <td className="p-2 font-medium">{user.name}</td>
+                    <td className="p-2 font-medium">
+                      {user.name}
+                      {user.email === 'adm@adm.com' && (
+                        <Crown className="h-4 w-4 text-yellow-500 inline ml-2" />
+                      )}
+                    </td>
                     <td className="p-2">{user.email}</td>
                     <td className="p-2">
                       <span className={`px-2 py-1 rounded-full text-xs ${getRoleColor(user.role)}`}>
