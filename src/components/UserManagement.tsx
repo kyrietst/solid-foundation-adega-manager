@@ -59,7 +59,7 @@ export const UserManagement = () => {
         id: user.id,
         name: user.name,
         email: user.email,
-        role: user.user_roles?.[0]?.role || 'Sem role',
+        role: (user.user_roles as any)?.[0]?.role || 'Sem role',
         created_at: user.created_at
       })) || [];
 
