@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,12 +14,17 @@ const Auth = () => {
   const { signIn, user, loading } = useAuth();
 
   useEffect(() => {
-    if (user) {
-      // User is already logged in, redirect to main page
+    console.log('Auth component mounted/updated', { user, loading });
+    
+    // Check if we're coming from a logout
+    const isLogout = window.location.search.includes('logout=true');
+    if (isLogout) {
+      window.history.replaceState({}, document.title, window.location.pathname);
     }
-  }, [user]);
+  }, []);
 
   if (loading) {
+    console.log('Auth is loading...');
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-600"></div>
@@ -28,18 +32,23 @@ const Auth = () => {
     );
   }
 
+  // If user exists and we're not in a logout process, redirect to home
   if (user) {
+    console.log('User exists, redirecting to /', { user });
     return <Navigate to="/" replace />;
   }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('Login form submitted');
     setIsLoading(true);
 
     const { error } = await signIn(email, password);
 
     if (!error) {
-      // Redirect will happen automatically via the auth state change
+      console.log('Login successful');
+    } else {
+      console.error('Login error:', error);
     }
 
     setIsLoading(false);
