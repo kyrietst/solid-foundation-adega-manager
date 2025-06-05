@@ -1,12 +1,13 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Download, Calendar, TrendingUp, Users, Package } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 export const Reports = () => {
+  const { userRole } = useAuth();
   const [period, setPeriod] = useState('month');
 
   // Dados de exemplo para relatórios
@@ -45,8 +46,75 @@ export const Reports = () => {
     alert('Download do relatório será implementado');
   };
 
+  const reports = [
+    {
+      id: 'sales',
+      title: 'Relatório de Vendas',
+      description: 'Visualizar histórico de vendas',
+      allowedRoles: ['admin', 'employee']
+    },
+    {
+      id: 'inventory',
+      title: 'Relatório de Estoque',
+      description: 'Acompanhar movimentação de produtos',
+      allowedRoles: ['admin', 'employee']
+    },
+    {
+      id: 'customers',
+      title: 'Relatório de Clientes',
+      description: 'Análise de clientes e comportamento',
+      allowedRoles: ['admin', 'employee']
+    },
+    {
+      id: 'financial',
+      title: 'Relatório Financeiro',
+      description: 'Análise financeira detalhada',
+      allowedRoles: ['admin']
+    },
+    {
+      id: 'profit',
+      title: 'Relatório de Lucros',
+      description: 'Análise de margem e lucratividade',
+      allowedRoles: ['admin']
+    },
+    {
+      id: 'expenses',
+      title: 'Relatório de Despesas',
+      description: 'Controle de gastos e custos',
+      allowedRoles: ['admin']
+    }
+  ];
+
+  const allowedReports = reports.filter(report => 
+    report.allowedRoles.includes(userRole || '')
+  );
+
   return (
     <div className="space-y-6">
+      <h2 className="text-2xl font-bold">Relatórios</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {allowedReports.map(report => (
+          <Card key={report.id}>
+            <CardHeader>
+              <CardTitle>{report.title}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                {report.description}
+              </p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+      
+      {userRole === 'employee' && (
+        <div className="mt-4 p-4 bg-yellow-50 rounded-lg">
+          <p className="text-sm text-yellow-800">
+            Nota: Alguns relatórios financeiros e estratégicos estão disponíveis apenas para administradores.
+          </p>
+        </div>
+      )}
+
       {/* Controles do Relatório */}
       <Card>
         <CardHeader>

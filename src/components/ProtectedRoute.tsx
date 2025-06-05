@@ -1,11 +1,10 @@
-
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  requiredRole?: 'admin' | 'funcionario' | 'entregador' | Array<'admin' | 'funcionario' | 'entregador'>;
+  requiredRole?: 'admin' | 'employee' | 'delivery' | Array<'admin' | 'employee' | 'delivery'>;
 }
 
 export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
@@ -26,8 +25,8 @@ export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) 
   if (requiredRole && userRole) {
     const roleHierarchy = {
       admin: 3,
-      funcionario: 2,
-      entregador: 1
+      employee: 2,
+      delivery: 1
     };
 
     if (Array.isArray(requiredRole)) {

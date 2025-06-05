@@ -1,10 +1,60 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { DollarSign, ShoppingCart, Users, Package } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 export const Dashboard = () => {
+  const { userRole } = useAuth();
+
+  // Dados que todos podem ver
+  const publicMetrics = [
+    {
+      title: 'Total de Clientes',
+      value: '3',
+      icon: 'users'
+    },
+    {
+      title: 'Clientes VIP',
+      value: '1',
+      icon: 'star'
+    },
+    {
+      title: 'Produtos em Estoque',
+      value: '150',
+      icon: 'package'
+    },
+    {
+      title: 'Entregas Pendentes',
+      value: '5',
+      icon: 'truck'
+    }
+  ];
+
+  // Dados sensíveis que apenas admin pode ver
+  const sensitiveMetrics = [
+    {
+      title: 'Faturamento Total',
+      value: 'R$ 25.890,50',
+      icon: 'dollar'
+    },
+    {
+      title: 'Lucro Líquido',
+      value: 'R$ 8.450,30',
+      icon: 'trending-up'
+    },
+    {
+      title: 'Margem de Lucro',
+      value: '32,6%',
+      icon: 'percent'
+    },
+    {
+      title: 'Custos Operacionais',
+      value: 'R$ 12.340,20',
+      icon: 'trending-down'
+    }
+  ];
+
   // Dados de exemplo - em produção viriam do Supabase
   const salesData = [
     { month: 'Jan', vendas: 65000 },
@@ -15,63 +65,54 @@ export const Dashboard = () => {
     { month: 'Jun', vendas: 95000 },
   ];
 
-  const metrics = [
-    {
-      title: 'Receita Mensal',
-      value: 'R$ 95.420',
-      change: '+12%',
-      icon: DollarSign,
-      color: 'text-green-600',
-    },
-    {
-      title: 'Vendas do Mês',
-      value: '1.234',
-      change: '+8%',
-      icon: ShoppingCart,
-      color: 'text-blue-600',
-    },
-    {
-      title: 'Clientes Ativos',
-      value: '456',
-      change: '+23%',
-      icon: Users,
-      color: 'text-purple-600',
-    },
-    {
-      title: 'Produtos em Estoque',
-      value: '789',
-      change: '-5%',
-      icon: Package,
-      color: 'text-orange-600',
-    },
-  ];
-
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {metrics.map((metric, index) => {
-          const Icon = metric.icon;
-          return (
-            <Card key={index}>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600">
-                  {metric.title}
-                </CardTitle>
-                <Icon className={`h-4 w-4 ${metric.color}`} />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{metric.value}</div>
-                <p className="text-xs text-gray-600">
-                  <span className={metric.change.startsWith('+') ? 'text-green-600' : 'text-red-600'}>
-                    {metric.change}
-                  </span>
-                  {' '}em relação ao mês anterior
-                </p>
-              </CardContent>
-            </Card>
-          );
-        })}
+    <div className="space-y-4">
+      <h2 className="text-2xl font-bold">Dashboard</h2>
+      
+      {/* Métricas públicas */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {publicMetrics.map((metric, index) => (
+          <Card key={index}>
+            <CardHeader>
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                {metric.title}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{metric.value}</div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
+
+      {/* Métricas sensíveis - apenas para admin */}
+      {userRole === 'admin' && (
+        <>
+          <h3 className="text-xl font-semibold mt-8">Métricas Financeiras</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {sensitiveMetrics.map((metric, index) => (
+              <Card key={index}>
+                <CardHeader>
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    {metric.title}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{metric.value}</div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </>
+      )}
+
+      {userRole === 'employee' && (
+        <div className="mt-8 p-4 bg-yellow-50 rounded-lg">
+          <p className="text-sm text-yellow-800">
+            Nota: Algumas métricas financeiras e estratégicas estão disponíveis apenas para administradores.
+          </p>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>

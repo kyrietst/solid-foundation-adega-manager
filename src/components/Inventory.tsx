@@ -8,8 +8,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Edit, Trash2, Package, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 export const Inventory = () => {
+  const { userRole } = useAuth();
   const [products, setProducts] = useState([
     { id: 1, name: 'Vinho Tinto Cabernet', price: 45.90, stock: 25, category: 'Vinhos', minStock: 10 },
     { id: 2, name: 'Vinho Branco Chardonnay', price: 38.50, stock: 8, category: 'Vinhos', minStock: 10 },
@@ -71,6 +73,30 @@ export const Inventory = () => {
       return;
     }
 
+    // Verifica se o funcionário está tentando alterar o preço
+    if (userRole === 'employee') {
+      const originalProduct = products.find(p => p.id === editingProduct.id);
+      if (originalProduct && originalProduct.price !== parseFloat(editingProduct.price)) {
+        toast({
+          title: "Acesso negado",
+          description: "Funcionários não podem alterar preços",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Verifica o limite de ajuste de quantidade
+      const quantityDiff = Math.abs(parseInt(editingProduct.stock) - originalProduct.stock);
+      if (quantityDiff > 50) {
+        toast({
+          title: "Limite excedido",
+          description: "Funcionários podem ajustar no máximo 50 unidades por vez",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     setProducts(products.map(p => 
       p.id === editingProduct.id 
         ? { ...editingProduct, price: parseFloat(editingProduct.price), stock: parseInt(editingProduct.stock) }
@@ -85,6 +111,15 @@ export const Inventory = () => {
   };
 
   const deleteProduct = (id) => {
+    if (userRole === 'employee') {
+      toast({
+        title: "Acesso negado",
+        description: "Apenas administradores podem excluir produtos",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setProducts(products.filter(p => p.id !== id));
     toast({
       title: "Produto removido",
@@ -317,7 +352,13 @@ export const Inventory = () => {
                     step="0.01"
                     value={editingProduct.price}
                     onChange={(e) => setEditingProduct({...editingProduct, price: e.target.value})}
+                    disabled={userRole === 'employee'}
                   />
+                  {userRole === 'employee' && (
+                    <p className="text-xs text-orange-600 mt-1">
+                      Apenas administradores podem alterar preços
+                    </p>
+                  )}
                 </div>
                 <div>
                   <Label htmlFor="edit-stock">Quantidade</Label>

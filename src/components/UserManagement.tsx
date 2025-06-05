@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,8 +14,9 @@ interface User {
   id: string;
   name: string;
   email: string;
-  role: string;
+  role: 'admin' | 'employee' | 'delivery';
   created_at: string;
+  updated_at: string;
 }
 
 export const UserManagement = () => {
@@ -28,10 +28,10 @@ export const UserManagement = () => {
     name: '',
     email: '',
     password: '',
-    role: 'funcionario' as 'admin' | 'funcionario' | 'entregador'
+    role: 'employee' as 'admin' | 'employee' | 'delivery'
   });
   const { toast } = useToast();
-  const { hasPermission, userRole } = useAuth();
+  const { hasPermission } = useAuth();
 
   useEffect(() => {
     checkForExistingUsers();
@@ -65,28 +65,17 @@ export const UserManagement = () => {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select(`
-          id,
-          name,
-          email,
-          created_at,
-          user_roles (role)
-        `);
+        .select('*')
+        .order('created_at', { ascending: true });
 
       if (error) {
         console.error('Error fetching users:', error);
         return;
       }
 
-      const formattedUsers = data?.map(user => ({
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: (user.user_roles as any)?.[0]?.role || 'Sem role',
-        created_at: user.created_at
-      })) || [];
-
-      setUsers(formattedUsers);
+      if (data) {
+        setUsers(data as User[]);
+      }
     } catch (error) {
       console.error('Error in fetchUsers:', error);
     }
@@ -96,12 +85,9 @@ export const UserManagement = () => {
     setIsLoading(true);
     
     try {
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email: 'adm@adm.com',
-        password: 'adm',
-        user_metadata: {
-          name: 'Administrador Supremo'
-        }
+        password: 'adm123',
       });
 
       if (authError) {
@@ -115,21 +101,29 @@ export const UserManagement = () => {
       }
 
       if (authData.user) {
-        const { error: roleError } = await supabase
-          .from('user_roles')
+        const { error: profileError } = await supabase
+          .from('profiles')
           .insert({
-            user_id: authData.user.id,
+            id: authData.user.id,
+            email: authData.user.email,
+            name: 'Administrador Supremo',
             role: 'admin'
           });
 
-        if (roleError) {
-          console.error('Error adding admin role:', roleError);
+        if (profileError) {
+          console.error('Error creating admin profile:', profileError);
+          toast({
+            title: "Erro ao criar perfil do administrador",
+            description: profileError.message,
+            variant: "destructive",
+          });
+          return;
         }
       }
 
       toast({
         title: "Administrador criado!",
-        description: "Conta de administrador supremo criada com sucesso. Email: adm@adm.com, Senha: adm",
+        description: "Conta de administrador supremo criada com sucesso. Email: adm@adm.com, Senha: adm123",
       });
 
       setShowFirstAdminSetup(false);
@@ -160,12 +154,13 @@ export const UserManagement = () => {
     setIsLoading(true);
 
     try {
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      // Store current session before creating new user
+      const currentSession = await supabase.auth.getSession();
+      
+      // 1. Create auth user
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email: newUser.email,
         password: newUser.password,
-        user_metadata: {
-          name: newUser.name
-        }
       });
 
       if (authError) {
@@ -179,32 +174,61 @@ export const UserManagement = () => {
       }
 
       if (authData.user) {
-        const { error: roleError } = await supabase
-          .from('user_roles')
+        let hasError = false;
+
+        // 2. Insert into users table
+        const { error: userError } = await supabase
+          .from('users')
           .insert({
-            user_id: authData.user.id,
+            id: authData.user.id,
+            email: authData.user.email,
+            full_name: newUser.name,
             role: newUser.role
           });
 
-        if (roleError) {
-          console.error('Error adding role:', roleError);
-          toast({
-            title: "Usuário criado mas erro ao atribuir role",
-            description: "Entre em contato com o administrador",
-            variant: "destructive",
+        if (userError) {
+          console.error('Error creating user record:', userError);
+          hasError = true;
+        }
+
+        // 3. Insert into profiles table
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert({
+            id: authData.user.id,
+            email: authData.user.email,
+            name: newUser.name,
+            role: newUser.role
           });
+
+        if (profileError) {
+          console.error('Error creating user profile:', profileError);
+          hasError = true;
+        }
+
+        // 4. Restore admin session
+        if (currentSession.data.session) {
+          const { error: signInError } = await supabase.auth.setSession(currentSession.data.session);
+          if (signInError) {
+            console.error('Error restoring admin session:', signInError);
+            // Force reload to ensure admin is logged in
+            window.location.reload();
+            return;
+          }
+        }
+
+        // Only show success message if both operations succeeded
+        if (!hasError) {
+          toast({
+            title: "Usuário criado!",
+            description: `${newUser.name} foi criado com sucesso`,
+          });
+
+          setNewUser({ name: '', email: '', password: '', role: 'employee' });
+          setIsDialogOpen(false);
+          fetchUsers();
         }
       }
-
-      toast({
-        title: "Usuário criado!",
-        description: `${newUser.name} foi criado com sucesso`,
-      });
-
-      setNewUser({ name: '', email: '', password: '', role: 'funcionario' });
-      setIsDialogOpen(false);
-      fetchUsers();
-
     } catch (error: any) {
       console.error('Error creating user:', error);
       toast({
@@ -220,8 +244,8 @@ export const UserManagement = () => {
   const getRoleDisplay = (role: string) => {
     const roleMap = {
       admin: 'Administrador',
-      funcionario: 'Funcionário',
-      entregador: 'Entregador'
+      employee: 'Funcionário',
+      delivery: 'Entregador'
     };
     return roleMap[role as keyof typeof roleMap] || role;
   };
@@ -229,8 +253,8 @@ export const UserManagement = () => {
   const getRoleColor = (role: string) => {
     switch (role) {
       case 'admin': return 'bg-red-100 text-red-700';
-      case 'funcionario': return 'bg-blue-100 text-blue-700';
-      case 'entregador': return 'bg-green-100 text-green-700';
+      case 'employee': return 'bg-blue-100 text-blue-700';
+      case 'delivery': return 'bg-green-100 text-green-700';
       default: return 'bg-gray-100 text-gray-700';
     }
   };
@@ -249,7 +273,7 @@ export const UserManagement = () => {
             </p>
             <div className="bg-blue-50 p-4 rounded-lg text-sm">
               <p><strong>Email:</strong> adm@adm.com</p>
-              <p><strong>Senha:</strong> adm</p>
+              <p><strong>Senha:</strong> adm123</p>
               <p className="text-xs text-gray-600 mt-2">
                 (Recomendamos alterar a senha após o primeiro login)
               </p>
@@ -268,76 +292,16 @@ export const UserManagement = () => {
     );
   }
 
-  if (!hasPermission('admin')) {
-    return (
-      <div className="text-center p-8">
-        <UserX className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-        <h3 className="text-lg font-medium text-gray-900">Acesso Negado</h3>
-        <p className="text-gray-600">Apenas administradores podem gerenciar usuários.</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-6">
-      {/* Resumo de Usuários */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Usuários</CardTitle>
-            <Users className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{users.length}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Administradores</CardTitle>
-            <Crown className="h-4 w-4 text-red-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {users.filter(u => u.role === 'admin').length}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Funcionários</CardTitle>
-            <UserCheck className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {users.filter(u => u.role === 'funcionario').length}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Entregadores</CardTitle>
-            <UserCheck className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {users.filter(u => u.role === 'entregador').length}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Lista de Usuários */}
+    <div className="space-y-4">
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Gerenciar Usuários</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-2xl font-bold">Gerenciar Usuários</CardTitle>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button>
                 <Plus className="h-4 w-4 mr-2" />
-                Criar Usuário
+                Novo Usuário
               </Button>
             </DialogTrigger>
             <DialogContent>
@@ -346,12 +310,12 @@ export const UserManagement = () => {
               </DialogHeader>
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="user-name">Nome Completo</Label>
+                  <Label htmlFor="user-name">Nome</Label>
                   <Input
                     id="user-name"
                     value={newUser.name}
                     onChange={(e) => setNewUser({...newUser, name: e.target.value})}
-                    placeholder="Nome completo do usuário"
+                    placeholder="Nome completo"
                   />
                 </div>
                 <div>
@@ -365,27 +329,27 @@ export const UserManagement = () => {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="user-password">Senha Inicial</Label>
+                  <Label htmlFor="user-password">Senha</Label>
                   <Input
                     id="user-password"
                     type="password"
                     value={newUser.password}
                     onChange={(e) => setNewUser({...newUser, password: e.target.value})}
-                    placeholder="Senha inicial (mínimo 6 caracteres)"
+                    placeholder="Senha segura"
                   />
                 </div>
                 <div>
                   <Label htmlFor="user-role">Função</Label>
                   <Select 
                     value={newUser.role} 
-                    onValueChange={(value: 'admin' | 'funcionario' | 'entregador') => setNewUser({...newUser, role: value})}
+                    onValueChange={(value: 'admin' | 'employee' | 'delivery') => setNewUser({...newUser, role: value})}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione a função" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="funcionario">Funcionário da Adega</SelectItem>
-                      <SelectItem value="entregador">Entregador/Motoboy</SelectItem>
+                      <SelectItem value="employee">Funcionário da Adega</SelectItem>
+                      <SelectItem value="delivery">Entregador/Motoboy</SelectItem>
                       <SelectItem value="admin">Administrador</SelectItem>
                     </SelectContent>
                   </Select>

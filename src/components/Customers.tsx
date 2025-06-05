@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,8 +6,10 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Plus, Edit, Users, Star } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 export const Customers = () => {
+  const { userRole } = useAuth();
   const [customers, setCustomers] = useState([
     { id: 1, name: 'João Silva', phone: '(11) 98765-4321', email: 'joao@email.com', totalSpent: 1250.00, lastPurchase: '2024-05-28', segment: 'VIP' },
     { id: 2, name: 'Maria Santos', phone: '(11) 91234-5678', email: 'maria@email.com', totalSpent: 890.50, lastPurchase: '2024-05-27', segment: 'Regular' },
@@ -58,6 +59,28 @@ export const Customers = () => {
       case 'Regular': return 'bg-blue-100 text-blue-700';
       case 'Novo': return 'bg-green-100 text-green-700';
       default: return 'bg-gray-100 text-gray-700';
+    }
+  };
+
+  const handleDeleteCustomer = () => {
+    if (userRole === 'employee') {
+      toast({
+        title: "Acesso negado",
+        description: "Apenas administradores podem excluir clientes",
+        variant: "destructive",
+      });
+      return;
+    }
+  };
+
+  const handleEditFinancialInfo = () => {
+    if (userRole === 'employee') {
+      toast({
+        title: "Acesso negado",
+        description: "Apenas administradores podem editar informações financeiras",
+        variant: "destructive",
+      });
+      return;
     }
   };
 

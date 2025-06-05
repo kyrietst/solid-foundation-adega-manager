@@ -1,173 +1,244 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User, Session } from '@supabase/supabase-js';
+import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-
-type UserRole = 'admin' | 'funcionario' | 'entregador';
-
-interface Profile {
-  id: string;
-  name: string;
-  email: string;
-}
+import { useNavigate } from 'react-router-dom';
+import { UserRole } from '@/types/supabase';
 
 interface AuthContextType {
   user: User | null;
-  session: Session | null;
-  profile: Profile | null;
   userRole: UserRole | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   hasPermission: (requiredRole: UserRole | UserRole[]) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
-
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-
-  const fetchUserProfile = async (userId: string) => {
-    try {
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      if (profileError) {
-        console.error('Error fetching profile:', profileError);
-        return;
-      }
-
-      const { data: roleData, error: roleError } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: true })
-        .limit(1)
-        .single();
-
-      if (roleError) {
-        console.error('Error fetching role:', roleError);
-        return;
-      }
-
-      setProfile(profileData);
-      setUserRole(roleData.role as UserRole);
-    } catch (error) {
-      console.error('Error in fetchUserProfile:', error);
-    }
-  };
+  const navigate = useNavigate();
 
   useEffect(() => {
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setSession(session);
+    // Check active sessions and sets the user
+    const initializeAuth = async () => {
+      setLoading(true);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
         setUser(session?.user ?? null);
-        
         if (session?.user) {
-          // Defer the profile fetch to avoid blocking the auth state change
-          setTimeout(() => {
-            fetchUserProfile(session.user.id);
-          }, 0);
-        } else {
-          setProfile(null);
-          setUserRole(null);
+          await fetchUserRole(session.user);
         }
-        
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+      } finally {
         setLoading(false);
       }
-    );
+    };
 
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
+    initializeAuth();
+
+    // Listen for changes on auth state (sign in, sign out, etc.)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      setLoading(true);
       setUser(session?.user ?? null);
-      
       if (session?.user) {
-        fetchUserProfile(session.user.id);
+        await fetchUserRole(session.user);
+      } else {
+        setUserRole(null);
       }
-      
       setLoading(false);
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
+  const fetchUserRole = async (currentUser: User) => {
+    try {
+      console.log('Fetching user role for:', currentUser.email);
+      
+      // Se é o admin principal, define o role diretamente
+      if (currentUser.email === 'adm@adega.com') {
+        console.log('Setting admin role for main admin');
+        setUserRole('admin');
+        return;
+      }
+
+      // Busca primeiro na tabela profiles
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('email', currentUser.email)
+        .single();
+
+      if (profileData && !profileError) {
+        console.log('Role found in profiles:', profileData.role);
+        setUserRole(profileData.role);
+        return;
+      }
+
+      console.error('Error or no data in profiles table:', profileError);
+      
+      // Se não encontrou em profiles, tenta na tabela users
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('role')
+        .eq('email', currentUser.email)
+        .single();
+
+      if (userData && !userError) {
+        console.log('Role found in users:', userData.role);
+        setUserRole(userData.role);
+        return;
+      }
+
+      console.error('Error or no data in users table:', userError);
+      throw new Error('Could not fetch user role from any table');
+    } catch (error) {
+      console.error('Error in fetchUserRole:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar suas permissões. Por favor, faça login novamente.",
+        variant: "destructive",
+      });
+      // Em caso de erro, fazer logout para forçar nova autenticação
+      await signOut();
+    }
+  };
+
+  const hasPermission = (requiredRole: UserRole | UserRole[]) => {
+    console.log('Checking permission:', { 
+      user: user?.email, 
+      userRole, 
+      requiredRole 
+    });
+
+    // Se não há usuário, não tem permissão
+    if (!user) {
+      console.log('No user found');
+      return false;
+    }
+
+    // Se o email é adm@adega.com, tem todas as permissões
+    if (user.email === 'adm@adega.com') {
+      console.log('Main admin access granted');
+      return true;
+    }
+
+    // Se não há role definido e não é o admin principal, não tem permissão
+    if (!userRole) {
+      console.log('No role found');
+      return false;
+    }
+
+    // Define a hierarquia de roles
+    const roleHierarchy = {
+      admin: 3,
+      employee: 2,
+      delivery: 1
+    };
+
+    // Se requiredRole é um array, verifica se o userRole está incluído
+    if (Array.isArray(requiredRole)) {
+      const hasAccess = requiredRole.includes(userRole);
+      console.log('Array permission check:', { hasAccess });
+      return hasAccess;
+    }
+
+    // Se não é array, compara os níveis de hierarquia
+    const hasAccess = roleHierarchy[userRole] >= roleHierarchy[requiredRole];
+    console.log('Hierarchy permission check:', { hasAccess });
+    return hasAccess;
+  };
+
   const signIn = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      setLoading(true);
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
         toast({
-          title: "Erro no login",
+          title: "Erro ao fazer login",
           description: error.message,
           variant: "destructive",
         });
+        return { error };
       }
 
-      return { error };
-    } catch (error: any) {
+      if (data.user) {
+        await fetchUserRole(data.user);
+      }
+
       toast({
-        title: "Erro no login",
-        description: "Ocorreu um erro inesperado",
+        title: "Bem-vindo!",
+        description: "Login realizado com sucesso.",
+      });
+
+      navigate('/');
+      return { error: null };
+    } catch (error) {
+      console.error('Error in signIn:', error);
+      toast({
+        title: "Erro",
+        description: "Ocorreu um erro inesperado. Por favor, tente novamente.",
         variant: "destructive",
       });
-      return { error };
+      return { error: error as Error };
+    } finally {
+      setLoading(false);
     }
   };
 
   const signOut = async () => {
     try {
-      await supabase.auth.signOut();
+      console.log('Starting signOut process...');
+      
+      // First clear local state
       setUser(null);
-      setSession(null);
-      setProfile(null);
       setUserRole(null);
+      
+      // Then sign out from Supabase
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error('Error in supabase.auth.signOut:', error);
+        toast({
+          title: "Error signing out",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      console.log('Successfully signed out from Supabase');
+      
+      // Show success message
+      toast({
+        title: "Signed out",
+        description: "You have been successfully signed out.",
+      });
+
+      // Force navigation to auth page
+      window.location.href = '/auth';
     } catch (error) {
-      console.error('Error signing out:', error);
+      console.error('Error in signOut:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred while signing out.",
+        variant: "destructive",
+      });
     }
-  };
-
-  const hasPermission = (requiredRole: UserRole | UserRole[]) => {
-    if (!userRole) return false;
-    
-    const roleHierarchy = {
-      admin: 3,
-      funcionario: 2,
-      entregador: 1
-    };
-
-    if (Array.isArray(requiredRole)) {
-      return requiredRole.includes(userRole);
-    }
-
-    return roleHierarchy[userRole] >= roleHierarchy[requiredRole];
   };
 
   const value = {
     user,
-    session,
-    profile,
     userRole,
     loading,
     signIn,
@@ -176,4 +247,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 };
