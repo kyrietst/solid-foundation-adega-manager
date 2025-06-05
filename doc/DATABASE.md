@@ -4,360 +4,254 @@
 
 O Adega Manager utiliza o PostgreSQL através do Supabase como banco de dados principal. A estrutura foi projetada para garantir integridade referencial, performance e segurança.
 
-## Tabelas Principais
+## Estrutura Atual
 
-### users
-Armazena informações dos usuários do sistema.
+### Tabelas Principais
+
+#### users
+- Armazena informações dos usuários do sistema
+- Integrada com auth.users do Supabase
+- Campos críticos: role, email (unique)
+- Políticas RLS implementadas para segurança
+- Roles disponíveis: 'admin', 'employee', 'delivery'
+- Tabela principal para controle de acesso
+
+#### profiles
+- Extensão da tabela users com informações adicionais
+- Mantém sincronização com users via triggers
+- Usado para informações não críticas do usuário
+- Deve manter role sincronizada com a tabela users
+- Importante: Ao criar novo usuário, garantir que role seja igual em ambas as tabelas
+
+#### products
+- Catálogo completo de produtos
+- Índices otimizados para busca por nome e categoria
+- Controle de estoque integrado
+- Imagens armazenadas no Storage do Supabase
+
+#### customers
+- Cadastro de clientes
+- Endereços armazenados em JSONB para flexibilidade
+- Índices para busca por nome e email
+
+#### sales
+- Registro de vendas com status tracking
+- Relacionamento com customers e users
+- Sistema de delivery integrado
+- Notas e informações adicionais em campos específicos
+
+#### sale_items
+- Itens individuais de cada venda
+- Mantém histórico de preços
+- Relacionamento com products
+
+## Boas Práticas e Recomendações
+
+### 1. Gerenciamento de Dados
+
+#### Inserções e Atualizações
 ```sql
-create table public.users (
-  id uuid references auth.users primary key,
-  email text unique not null,
-  full_name text,
-  role text not null check (role in ('admin', 'employee')),
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+-- SEMPRE use transações para operações múltiplas
+BEGIN;
+  -- Suas operações aqui
+  INSERT INTO sales (...) VALUES (...);
+  UPDATE products SET stock_quantity = stock_quantity - 1 WHERE id = :id;
+COMMIT;
+
+-- Use RETURNING para obter dados atualizados
+INSERT INTO products (...) 
+VALUES (...) 
+RETURNING id, name, stock_quantity;
+
+-- Sempre valide dados antes de inserir
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM products WHERE id = :product_id) THEN
+    RAISE EXCEPTION 'Produto não encontrado';
+  END IF;
+END $$;
+```
+
+#### Consultas
+```sql
+-- Use índices apropriadamente
+CREATE INDEX idx_products_search ON products 
+USING gin(to_tsvector('portuguese', name || ' ' || description));
+
+-- Evite SELECT *
+SELECT id, name, price, stock_quantity 
+FROM products 
+WHERE category = 'vinho_tinto';
+
+-- Use JOINs com critério
+SELECT s.id, s.total_amount, c.name as customer_name
+FROM sales s
+LEFT JOIN customers c ON c.id = s.customer_id
+WHERE s.created_at >= NOW() - INTERVAL '30 days';
+```
+
+### 2. Segurança
+
+#### Políticas RLS
+```sql
+-- Sempre habilite RLS
+ALTER TABLE products ENABLE ROW LEVEL SECURITY;
+
+-- Seja específico nas políticas
+CREATE POLICY "Employees can update stock" ON products
+FOR UPDATE USING (
+  auth.role() = 'employee' 
+  AND (OLD.stock_quantity IS DISTINCT FROM NEW.stock_quantity)
 );
 
--- Políticas RLS
-alter table public.users enable row level security;
-
--- Usuários podem ver seus próprios dados
-create policy "Users can view own user data." on users
-  for select using (auth.uid() = id);
-
--- Admins podem gerenciar todos os usuários
-create policy "Admins can manage all users." on users
-  using (auth.jwt() ->> 'role' = 'admin');
+-- Políticas para deleção devem ser restritas
+CREATE POLICY "Only admins can delete" ON products
+FOR DELETE USING (auth.role() = 'admin');
 ```
 
-### products
-Cadastro de produtos/vinhos.
+#### Validações
 ```sql
-create table public.products (
-  id uuid default uuid_generate_v4() primary key,
-  name text not null,
-  description text,
-  price decimal(10,2) not null,
-  stock_quantity integer not null default 0,
-  category text not null,
-  vintage integer,
-  producer text,
-  country text,
-  region text,
-  alcohol_content decimal(4,2),
-  volume integer, -- em ml
-  image_url text,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+-- Adicione constraints apropriadas
+ALTER TABLE products 
+ADD CONSTRAINT positive_price 
+CHECK (price >= 0);
+
+-- Use enums para valores fixos
+CREATE TYPE sale_status AS ENUM (
+  'pending', 
+  'processing', 
+  'completed', 
+  'cancelled'
 );
 
--- Índices
-create index products_name_idx on products using gin (to_tsvector('portuguese', name));
-create index products_category_idx on products(category);
-
--- Políticas RLS
-alter table public.products enable row level security;
-
-create policy "Public read access" on products
-  for select using (true);
-
-create policy "Staff can manage products" on products
-  using (auth.jwt() ->> 'role' in ('admin', 'employee'));
+-- Valide dados em triggers
+CREATE TRIGGER validate_stock
+BEFORE INSERT OR UPDATE ON products
+FOR EACH ROW EXECUTE FUNCTION validate_stock_quantity();
 ```
 
-### customers
-Cadastro de clientes.
+### 3. Performance
+
+#### Índices
 ```sql
-create table public.customers (
-  id uuid default uuid_generate_v4() primary key,
-  name text not null,
-  email text unique,
-  phone text,
-  address jsonb,
-  notes text,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
-);
+-- Índices para campos frequentemente buscados
+CREATE INDEX idx_sales_date ON sales (created_at DESC);
 
--- Índices
-create index customers_name_idx on customers using gin (to_tsvector('portuguese', name));
-create index customers_email_idx on customers(email);
+-- Índices parciais para queries específicas
+CREATE INDEX idx_low_stock ON products (stock_quantity) 
+WHERE stock_quantity < 10;
 
--- Políticas RLS
-alter table public.customers enable row level security;
-
-create policy "Staff can manage customers" on customers
-  using (auth.jwt() ->> 'role' in ('admin', 'employee'));
+-- Índices compostos para queries comuns
+CREATE INDEX idx_sales_customer_date 
+ON sales (customer_id, created_at DESC);
 ```
 
-### sales
-Registro de vendas.
+#### Otimizações
 ```sql
-create table public.sales (
-  id uuid default uuid_generate_v4() primary key,
-  customer_id uuid references public.customers(id),
-  user_id uuid references public.users(id) not null,
-  total_amount decimal(10,2) not null,
-  payment_method text not null,
-  status text not null default 'pending'
-    check (status in ('pending', 'completed', 'cancelled')),
-  delivery boolean default false,
-  delivery_address jsonb,
-  notes text,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
-);
+-- Use materialized views para relatórios
+CREATE MATERIALIZED VIEW monthly_sales AS
+SELECT 
+  date_trunc('month', created_at) as month,
+  sum(total_amount) as total,
+  count(*) as count
+FROM sales
+GROUP BY 1;
 
--- Índices
-create index sales_customer_id_idx on sales(customer_id);
-create index sales_user_id_idx on sales(user_id);
-create index sales_created_at_idx on sales(created_at);
-
--- Políticas RLS
-alter table public.sales enable row level security;
-
-create policy "Staff can manage sales" on sales
-  using (auth.jwt() ->> 'role' in ('admin', 'employee'));
+-- Atualize views materializadas periodicamente
+REFRESH MATERIALIZED VIEW monthly_sales;
 ```
 
-### sale_items
-Itens de cada venda.
+### 4. Manutenção
+
+#### Backups
+- Configure backups diários automáticos
+- Mantenha backups por pelo menos 30 dias
+- Teste restauração periodicamente
+
+#### Monitoramento
+- Configure alertas para:
+  - Baixo estoque
+  - Falhas em transações
+  - Erros de validação
+  - Performance degradada
+
+#### Limpeza
 ```sql
-create table public.sale_items (
-  id uuid default uuid_generate_v4() primary key,
-  sale_id uuid references public.sales(id) not null,
-  product_id uuid references public.products(id) not null,
-  quantity integer not null check (quantity > 0),
-  unit_price decimal(10,2) not null,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null
-);
+-- Delete dados antigos periodicamente
+DELETE FROM audit_logs 
+WHERE created_at < NOW() - INTERVAL '1 year';
 
--- Índices
-create index sale_items_sale_id_idx on sale_items(sale_id);
-create index sale_items_product_id_idx on sale_items(product_id);
-
--- Políticas RLS
-alter table public.sale_items enable row level security;
-
-create policy "Staff can manage sale items" on sale_items
-  using (auth.jwt() ->> 'role' in ('admin', 'employee'));
+-- Archive dados importantes
+INSERT INTO sales_archive 
+SELECT * FROM sales 
+WHERE created_at < NOW() - INTERVAL '1 year';
 ```
-
-## Funções e Triggers
-
-### update_updated_at
-Atualiza o campo updated_at automaticamente.
-```sql
-create or replace function public.update_updated_at()
-returns trigger as $$
-begin
-  new.updated_at = timezone('utc'::text, now());
-  return new;
-end;
-$$ language plpgsql;
-
--- Aplicar aos triggers
-create trigger update_users_updated_at
-  before update on public.users
-  for each row execute function public.update_updated_at();
-
-create trigger update_products_updated_at
-  before update on public.products
-  for each row execute function public.update_updated_at();
-
-create trigger update_customers_updated_at
-  before update on public.customers
-  for each row execute function public.update_updated_at();
-
-create trigger update_sales_updated_at
-  before update on public.sales
-  for each row execute function public.update_updated_at();
-```
-
-### process_sale
-Processa uma venda, atualizando estoque e validando quantidades.
-```sql
-create or replace function public.process_sale(
-  p_customer_id uuid,
-  p_user_id uuid,
-  p_items jsonb,
-  p_payment_method text,
-  p_delivery boolean default false,
-  p_delivery_address jsonb default null,
-  p_notes text default null
-)
-returns uuid
-language plpgsql
-security definer
-as $$
-declare
-  v_sale_id uuid;
-  v_total decimal(10,2) := 0;
-  v_item jsonb;
-  v_product_id uuid;
-  v_quantity int;
-  v_unit_price decimal(10,2);
-  v_current_stock int;
-begin
-  -- Validar usuário
-  if not exists (select 1 from public.users where id = p_user_id) then
-    raise exception 'Invalid user';
-  end if;
-
-  -- Validar cliente se fornecido
-  if p_customer_id is not null and not exists (select 1 from public.customers where id = p_customer_id) then
-    raise exception 'Invalid customer';
-  end if;
-
-  -- Criar venda
-  insert into public.sales (
-    customer_id,
-    user_id,
-    payment_method,
-    delivery,
-    delivery_address,
-    notes,
-    total_amount,
-    status
-  ) values (
-    p_customer_id,
-    p_user_id,
-    p_payment_method,
-    p_delivery,
-    p_delivery_address,
-    p_notes,
-    0,
-    'pending'
-  ) returning id into v_sale_id;
-
-  -- Processar itens
-  for v_item in select * from jsonb_array_elements(p_items)
-  loop
-    v_product_id := (v_item->>'product_id')::uuid;
-    v_quantity := (v_item->>'quantity')::int;
-    
-    -- Validar produto e estoque
-    select price, stock_quantity 
-    into v_unit_price, v_current_stock
-    from public.products 
-    where id = v_product_id;
-    
-    if not found then
-      raise exception 'Product not found: %', v_product_id;
-    end if;
-    
-    if v_current_stock < v_quantity then
-      raise exception 'Insufficient stock for product: %', v_product_id;
-    end if;
-    
-    -- Inserir item
-    insert into public.sale_items (
-      sale_id,
-      product_id,
-      quantity,
-      unit_price
-    ) values (
-      v_sale_id,
-      v_product_id,
-      v_quantity,
-      v_unit_price
-    );
-    
-    -- Atualizar total
-    v_total := v_total + (v_unit_price * v_quantity);
-    
-    -- Atualizar estoque
-    update public.products
-    set stock_quantity = stock_quantity - v_quantity
-    where id = v_product_id;
-  end loop;
-  
-  -- Atualizar total da venda
-  update public.sales
-  set total_amount = v_total,
-      status = 'completed'
-  where id = v_sale_id;
-  
-  return v_sale_id;
-end;
-$$;
-```
-
-## Boas Práticas
-
-1. **Validação de Dados**
-   - Use constraints para garantir integridade
-   - Implemente checks para valores válidos
-   - Mantenha relacionamentos com foreign keys
-
-2. **Performance**
-   - Crie índices apropriados
-   - Otimize queries complexas
-   - Use explain analyze para verificar performance
-
-3. **Segurança**
-   - Mantenha RLS ativo
-   - Implemente políticas granulares
-   - Use funções security definer com cautela
-
-4. **Manutenção**
-   - Documente alterações no schema
-   - Mantenha migrations versionadas
-   - Faça backup regularmente
-
-## Migrations
-
-Todas as alterações no banco devem ser feitas através de migrations versionadas:
-
-1. Crie um novo arquivo na pasta `supabase/migrations`
-2. Nome do arquivo: `YYYYMMDDHHMMSS_descricao.sql`
-3. Execute localmente para testar
-4. Commit e push para aplicar em produção
-
-## Monitoramento
-
-1. **Queries Lentas**
-   - Configure log_min_duration_statement
-   - Monitore pg_stat_statements
-   - Otimize queries problemáticas
-
-2. **Espaço em Disco**
-   - Monitore crescimento das tabelas
-   - Configure vacuum automático
-   - Arquive dados antigos se necessário
-
-3. **Conexões**
-   - Monitore número de conexões ativas
-   - Configure pool de conexões adequadamente
-   - Identifique conexões problemáticas
-
-## Backup e Recuperação
-
-1. **Backup Automático**
-   - Configurado pelo Supabase
-   - Retenção de 7 dias
-   - Point-in-time recovery disponível
-
-2. **Restore**
-   - Disponível via dashboard Supabase
-   - Teste procedimento periodicamente
-   - Mantenha documentação atualizada
 
 ## Troubleshooting
 
 ### Problemas Comuns
 
-1. **Deadlocks**
-   - Identifique queries conflitantes
-   - Otimize ordem de operações
-   - Use índices apropriados
+1. **Erro de Permissão**
+   - Verifique políticas RLS
+   - Confirme role do usuário
+   - Valide tokens JWT
 
-2. **Performance**
-   - Analise explain analyze
+2. **Performance Lenta**
+   - Analise EXPLAIN ANALYZE
    - Verifique índices
    - Otimize queries
 
-3. **Conexões**
-   - Verifique limites do pool
-   - Identifique conexões zombies
-   - Monitore timeouts 
+3. **Inconsistência de Dados**
+   - Use transações
+   - Implemente constraints
+   - Adicione triggers de validação
+
+## Migrations
+
+### Boas Práticas
+```sql
+-- Sempre inclua rollback
+BEGIN;
+  -- Up migration
+  ALTER TABLE products ADD COLUMN category text;
+  
+  -- Rollback
+  --ALTER TABLE products DROP COLUMN category;
+COMMIT;
+
+-- Use transações
+BEGIN;
+  -- Suas alterações aqui
+COMMIT;
+
+-- Documente mudanças
+COMMENT ON COLUMN products.category IS 'Categoria do produto';
+```
+
+## Monitoramento e Logs
+
+### Queries de Diagnóstico
+```sql
+-- Verificar conexões ativas
+SELECT * FROM pg_stat_activity;
+
+-- Verificar uso de índices
+SELECT * FROM pg_stat_user_indexes;
+
+-- Identificar queries lentas
+SELECT * FROM pg_stat_statements 
+ORDER BY total_time DESC;
+```
+
+## Recomendações Finais
+
+1. **Sempre use transações** para operações múltiplas
+2. **Implemente validações** em nível de aplicação e banco
+3. **Mantenha índices** atualizados e otimizados
+4. **Monitore performance** regularmente
+5. **Faça backup** dos dados críticos
+6. **Documente mudanças** no schema
+7. **Teste** todas as políticas RLS
+8. **Valide** dados antes de inserir/atualizar
+9. **Use prepared statements** para prevenir SQL injection
+10. **Mantenha logs** de operações críticas 
