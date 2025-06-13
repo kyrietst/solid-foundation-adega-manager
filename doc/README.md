@@ -2,7 +2,7 @@
 
 ## Visão Geral
 
-O Adega Manager é uma aplicação web moderna desenvolvida para gerenciamento completo de adegas, oferecendo funcionalidades como controle de estoque, vendas, clientes, delivery e relatórios. A aplicação foi construída utilizando tecnologias modernas e seguindo as melhores práticas de desenvolvimento.
+O Adega Manager é uma aplicação web moderna desenvolvida para gerenciamento completo de adegas, oferecendo funcionalidades como controle de estoque, vendas, clientes (CRM), delivery e relatórios. A aplicação foi construída utilizando tecnologias modernas e seguindo as melhores práticas de desenvolvimento.
 
 ## Stack Tecnológica
 
@@ -25,18 +25,50 @@ O Adega Manager é uma aplicação web moderna desenvolvida para gerenciamento c
   - Armazenamento de arquivos
   - Funções serverless
   - Realtime subscriptions
+  - RLS (Row Level Security)
 
 ## Estrutura do Projeto
 
 ```
 src/
 ├── components/     # Componentes reutilizáveis
+│   ├── ui/         # Componentes de UI específicos da aplicação
+│   ├── layout/     # Componentes de layout da aplicação
 ├── contexts/       # Contextos React
-├── hooks/         # Hooks customizados
-├── integrations/  # Integrações com serviços externos
-├── lib/           # Utilitários e configurações
-└── pages/         # Páginas da aplicação
+├── hooks/          # Hooks customizados
+├── integrations/   # Integrações com serviços externos
+├── lib/            # Utilitários e configurações
+└── pages/          # Páginas da aplicação
 ```
+
+## Módulos Principais
+
+### 1. Dashboard
+Visão geral do negócio com estatísticas importantes, gráficos e indicadores de performance.
+
+### 2. Produtos e Estoque
+Gerenciamento completo de produtos, categorias, estoque e movimentação.
+
+### 3. Vendas
+Registro e acompanhamento de vendas, checkout, pagamentos e histórico de transações.
+
+### 4. CRM (Customer Relationship Management)
+Sistema completo de gestão de clientes com:
+- Perfis detalhados e indicador de completude
+- Segmentação automática de clientes
+- Registro e visualização de interações
+- Insights automáticos baseados em padrões de compra
+- Dashboard analítico com tendências e oportunidades
+- Automações de enriquecimento de dados
+
+### 5. Delivery
+Controle de entregas, rotas, status e integração com clientes.
+
+### 6. Relatórios
+Sistema de relatórios customizáveis para análise de dados.
+
+### 7. Usuários e Permissões
+Gerenciamento de usuários com diferentes níveis de acesso.
 
 ## Guia de Desenvolvimento
 
@@ -162,6 +194,11 @@ src/
    - Confirme políticas RLS
    - Valide permissões
 
+4. **Dados CRM desatualizados**
+   - Verifique triggers de automação
+   - Confirme execução de funções do banco
+   - Valide integridade de dados
+
 ## Roadmap e Melhorias Futuras
 
 1. **Performance**
@@ -173,11 +210,18 @@ src/
    - Sistema de notificações
    - Integração com sistemas de pagamento
    - App mobile
+   - Sistema de fidelidade e pontos
+   - Campanhas de marketing automatizadas
 
 3. **Infraestrutura**
    - CI/CD
    - Monitoramento
    - Analytics
+
+4. **CRM**
+   - Integração com email marketing
+   - Análise preditiva de comportamento
+   - Detecção automática de churn
 
 ## Contato e Suporte
 

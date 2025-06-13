@@ -33,6 +33,17 @@ O Adega Manager utiliza o PostgreSQL através do Supabase como banco de dados pr
 - Cadastro de clientes
 - Endereços armazenados em JSONB para flexibilidade
 - Índices para busca por nome e email
+- Campos estendidos para CRM:
+  - birthday: data de aniversário do cliente
+  - contact_preference: preferência de contato (whatsapp, sms, email, call)
+  - contact_permission: permissão para contato (boolean)
+  - first_purchase_date: data da primeira compra
+  - last_purchase_date: data da última compra
+  - purchase_frequency: frequência de compra (weekly, biweekly, monthly, occasional)
+  - lifetime_value: valor total gasto pelo cliente
+  - favorite_category: categoria favorita (baseada em compras)
+  - favorite_product: produto favorito (referência à products.id)
+  - segment: segmento do cliente (VIP, Regular, Novo, Inativo, Em risco)
 
 #### sales
 - Registro de vendas com status tracking
@@ -44,6 +55,37 @@ O Adega Manager utiliza o PostgreSQL através do Supabase como banco de dados pr
 - Itens individuais de cada venda
 - Mantém histórico de preços
 - Relacionamento com products
+
+#### customer_insights
+- Armazena insights gerados sobre os clientes
+- Campos principais:
+  - customer_id: referência ao cliente
+  - insight_type: tipo do insight (preference, pattern, opportunity, risk)
+  - insight_value: descrição textual do insight
+  - confidence: nível de confiança (0.0 a 1.0)
+  - is_active: se o insight ainda é válido
+  - created_at: data de criação
+
+#### customer_interactions
+- Registra todas as interações com clientes
+- Campos principais:
+  - customer_id: referência ao cliente
+  - interaction_type: tipo de interação (note, call, email, complaint)
+  - description: descrição textual da interação
+  - associated_sale_id: venda associada (opcional)
+  - created_by: usuário que registrou a interação
+  - created_at: data da interação
+
+#### automation_logs
+- Registra eventos das automações do CRM
+- Campos principais:
+  - customer_id: referência ao cliente
+  - workflow_id: identificador do fluxo de automação
+  - workflow_name: nome do fluxo
+  - trigger_event: evento que acionou a automação
+  - result: resultado da automação
+  - details: detalhes adicionais em JSONB
+  - created_at: timestamp do evento
 
 ## Boas Práticas e Recomendações
 
@@ -144,6 +186,13 @@ WHERE stock_quantity < 10;
 -- Índices compostos para queries comuns
 CREATE INDEX idx_sales_customer_date 
 ON sales (customer_id, created_at DESC);
+
+-- Índices para tabelas CRM
+CREATE INDEX idx_customer_interactions_customer 
+ON customer_interactions (customer_id, created_at DESC);
+
+CREATE INDEX idx_customer_insights_type
+ON customer_insights (customer_id, insight_type, is_active);
 ```
 
 #### Otimizações
@@ -185,6 +234,54 @@ WHERE created_at < NOW() - INTERVAL '1 year';
 INSERT INTO sales_archive 
 SELECT * FROM sales 
 WHERE created_at < NOW() - INTERVAL '1 year';
+```
+
+## Triggers e Automações
+
+### Trigger de Atualização de Cliente
+```sql
+-- Função para atualizar automaticamente os dados do cliente após uma venda
+CREATE OR REPLACE FUNCTION public.update_customer_after_sale()
+RETURNS TRIGGER AS $$
+DECLARE
+  total_purchases NUMERIC;
+  most_purchased_category TEXT;
+  most_purchased_product UUID;
+  purchase_interval INTERVAL;
+  purchase_frequency TEXT;
+  customer_segment TEXT;
+BEGIN
+  -- Atualizar data da primeira compra se for null
+  IF (SELECT first_purchase_date FROM customers WHERE id = NEW.customer_id) IS NULL THEN
+    UPDATE customers SET first_purchase_date = NEW.created_at WHERE id = NEW.customer_id;
+  END IF;
+  
+  -- Atualizar data da última compra
+  UPDATE customers SET last_purchase_date = NEW.created_at WHERE id = NEW.customer_id;
+  
+  -- Calcular o valor total de compras do cliente
+  SELECT COALESCE(SUM(total_amount), 0) INTO total_purchases 
+  FROM sales 
+  WHERE customer_id = NEW.customer_id AND status != 'cancelled';
+  
+  -- Atualizar lifetime_value
+  UPDATE customers SET lifetime_value = total_purchases WHERE id = NEW.customer_id;
+  
+  -- Lógica para determinar categoria favorita, produto favorito, 
+  -- frequência de compra e gerar insights automáticos
+  -- [código resumido para brevidade]
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Criar trigger para vendas
+CREATE TRIGGER update_customer_after_sale_trigger
+AFTER INSERT OR UPDATE OF status
+ON sales
+FOR EACH ROW
+WHEN (NEW.status = 'completed' AND NEW.customer_id IS NOT NULL)
+EXECUTE FUNCTION public.update_customer_after_sale();
 ```
 
 ## Troubleshooting
@@ -241,6 +338,13 @@ SELECT * FROM pg_stat_user_indexes;
 -- Identificar queries lentas
 SELECT * FROM pg_stat_statements 
 ORDER BY total_time DESC;
+
+-- Verificar consistência de dados CRM
+SELECT c.id, c.name, c.segment, c.lifetime_value,
+  (SELECT COUNT(*) FROM sales WHERE customer_id = c.id) AS sales_count,
+  (SELECT COUNT(*) FROM customer_insights WHERE customer_id = c.id AND is_active = true) AS active_insights
+FROM customers c
+ORDER BY c.lifetime_value DESC;
 ```
 
 ## Recomendações Finais
@@ -248,10 +352,11 @@ ORDER BY total_time DESC;
 1. **Sempre use transações** para operações múltiplas
 2. **Implemente validações** em nível de aplicação e banco
 3. **Mantenha índices** atualizados e otimizados
-4. **Monitore performance** regularmente
-5. **Faça backup** dos dados críticos
-6. **Documente mudanças** no schema
-7. **Teste** todas as políticas RLS
-8. **Valide** dados antes de inserir/atualizar
-9. **Use prepared statements** para prevenir SQL injection
-10. **Mantenha logs** de operações críticas 
+4. **Documente triggers e automações** sempre que houver atualizações
+5. **Revise logs de automação** periodicamente para identificar problemas
+6. **Faça backup** dos dados críticos
+7. **Documente mudanças** no schema
+8. **Teste** todas as políticas RLS
+9. **Valide** dados antes de inserir/atualizar
+10. **Use prepared statements** para prevenir SQL injection
+11. **Mantenha logs** de operações críticas 
