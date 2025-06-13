@@ -13,15 +13,19 @@ import {
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
+import { Link, useLocation } from 'react-router-dom';
 
-interface SidebarProps {
-  activeTab: string;
-  setActiveTab: (tab: string) => void;
-}
-
-export const Sidebar = ({ activeTab, setActiveTab }: SidebarProps) => {
+export const Sidebar = () => {
   const { user, userRole, signOut } = useAuth();
-
+  const location = useLocation();
+  
+  const hasPermission = (roles: string | string[]) => {
+    if (!userRole) return false;
+    if (typeof roles === 'string') {
+      return roles === userRole;
+    }
+    return roles.includes(userRole);
+  };
   const menuItems = [
     { 
       id: 'dashboard', 
@@ -123,20 +127,21 @@ export const Sidebar = ({ activeTab, setActiveTab }: SidebarProps) => {
         {allowedMenuItems.map((item) => {
           const Icon = item.icon;
           return (
-            <button
+            <Link
               key={item.id}
-              onClick={() => setActiveTab(item.id)}
+              to={`/${item.id}`}
               className={cn(
-                "flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm transition-colors",
-                activeTab === item.id
-                  ? "bg-purple-100 text-purple-700"
-                  : "text-gray-600 hover:bg-gray-50"
+                'flex items-center w-full gap-2 rounded-md px-2 py-2 text-sm transition-colors',
+                location.pathname === `/${item.id}` 
+                  ? 'bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
+                  : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800',
+                !hasPermission(item.roles) && 'opacity-50 cursor-not-allowed',
               )}
-              title={item.description}
+              aria-disabled={!hasPermission(item.roles)}
             >
-              <Icon className="h-4 w-4 shrink-0" />
+              <Icon className="h-4 w-4" />
               <span>{item.label}</span>
-            </button>
+            </Link>
           );
         })}
       </nav>

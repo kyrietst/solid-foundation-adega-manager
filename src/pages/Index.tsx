@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
+import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { Sidebar } from '@/components/Sidebar';
 import { Dashboard } from '@/components/Dashboard';
 import { Sales } from '@/components/Sales';
@@ -10,16 +11,20 @@ import { UserManagement } from '@/components/UserManagement';
 import { useAuth } from '@/contexts/AuthContext';
 
 const Index = () => {
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const navigate = useNavigate();
+  const location = useLocation();
   const { user, userRole, loading, hasPermission } = useAuth();
 
+  // Extrai o nome da aba da URL (ex: /sales -> 'sales')
+  const activeTab = location.pathname.split('/')[1] || 'dashboard';
+
   // Redireciona entregadores para a aba delivery
-  React.useEffect(() => {
-    if (userRole === 'delivery') {
+  useEffect(() => {
+    if (userRole === 'delivery' && activeTab !== 'delivery') {
       console.log('Delivery user detected, redirecting to delivery tab');
-      setActiveTab('delivery');
+      navigate('/delivery', { replace: true });
     }
-  }, [userRole]);
+  }, [userRole, activeTab, navigate]);
 
   // Mostra loading enquanto carrega as permissões
   if (loading) {
@@ -70,10 +75,11 @@ const Index = () => {
 
   return (
     <div className="flex h-screen bg-gray-100">
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+      <Sidebar />
       <main className="flex-1 pl-64 overflow-x-hidden overflow-y-auto">
         <div className="container mx-auto px-6 py-8">
           {renderContent()}
+          <Outlet />
         </div>
       </main>
     </div>

@@ -8,6 +8,9 @@ export type Json =
 
 export type UserRole = 'admin' | 'employee' | 'delivery';
 
+export type PaymentStatus = 'pending' | 'paid' | 'cancelled';
+export type SaleStatus = 'completed' | 'cancelled' | 'returned';
+
 export interface Database {
   public: {
     Tables: {
