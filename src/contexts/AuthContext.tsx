@@ -25,26 +25,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     // Check active sessions and sets the user
-    const initializeAuth = async () => {
-      setLoading(true);
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          await fetchUserRole(session.user);
-        }
-      } catch (error) {
-        console.error('Error initializing auth:', error);
-      } finally {
-        setLoading(false);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        fetchUserRole(session.user);
       }
-    };
-
-    initializeAuth();
+      setLoading(false);
+    });
 
     // Listen for changes on auth state (sign in, sign out, etc.)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setLoading(true);
       setUser(session?.user ?? null);
       if (session?.user) {
         await fetchUserRole(session.user);
@@ -68,41 +58,39 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return;
       }
 
-      // Busca primeiro na tabela profiles
+      // First try to get from profiles table
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('role')
-        .eq('email', currentUser.email)
+        .eq('id', currentUser.id)
         .single();
 
-      if (profileData && !profileError) {
-        console.log('Role found in profiles:', profileData.role);
-        setUserRole(profileData.role);
-        return;
-      }
+      if (profileError) {
+        console.error('Error fetching user role from profiles table:', profileError);
+        
+        // If not found in profiles table, try users table
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('role')
+          .eq('id', currentUser.id)
+          .single();
 
-      console.error('Error or no data in profiles table:', profileError);
-      
-      // Se não encontrou em profiles, tenta na tabela users
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('role')
-        .eq('email', currentUser.email)
-        .single();
+        if (userError) {
+          console.error('Error fetching user role from users table:', userError);
+          throw new Error('Could not fetch user role from any table');
+        }
 
-      if (userData && !userError) {
         console.log('Role found in users:', userData.role);
         setUserRole(userData.role);
-        return;
+      } else {
+        console.log('Role found in profiles:', profileData.role);
+        setUserRole(profileData.role);
       }
-
-      console.error('Error or no data in users table:', userError);
-      throw new Error('Could not fetch user role from any table');
     } catch (error) {
       console.error('Error in fetchUserRole:', error);
       toast({
-        title: "Erro",
-        description: "Não foi possível carregar suas permissões. Por favor, faça login novamente.",
+        title: "Error",
+        description: "Could not fetch user role. Please try logging in again.",
         variant: "destructive",
       });
       // Em caso de erro, fazer logout para forçar nova autenticação
@@ -157,28 +145,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signIn = async (email: string, password: string) => {
     try {
-      setLoading(true);
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
         toast({
-          title: "Erro ao fazer login",
+          title: "Error signing in",
           description: error.message,
           variant: "destructive",
         });
         return { error };
       }
 
-      if (data.user) {
-        await fetchUserRole(data.user);
-      }
-
       toast({
-        title: "Bem-vindo!",
-        description: "Login realizado com sucesso.",
+        title: "Welcome back!",
+        description: "You have successfully signed in.",
       });
 
       navigate('/');
@@ -186,13 +169,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     } catch (error) {
       console.error('Error in signIn:', error);
       toast({
-        title: "Erro",
-        description: "Ocorreu um erro inesperado. Por favor, tente novamente.",
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
       return { error: error as Error };
-    } finally {
-      setLoading(false);
     }
   };
 
