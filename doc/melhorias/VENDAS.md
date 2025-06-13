@@ -6,14 +6,38 @@ O módulo de Vendas é um componente crítico do Adega Manager, responsável pel
 
 ## Estado Atual
 
-Atualmente, o módulo de Vendas apresenta:
-- Lista simples de produtos disponíveis
-- Carrinho básico com adição/remoção de itens
-- Cálculo manual de valores
-- Processo de checkout simplificado
-- Registro de vendas recentes em formato de tabela
-- Sem integração com sistemas de pagamento
-- Sem sistema de descontos ou promoções
+### Melhorias Implementadas
+
+#### 1. Busca Avançada de Clientes
+- Sistema de busca em tempo real com debounce para melhor performance
+- Filtragem por nome, e-mail ou telefone
+- Visualização rápida dos detalhes do cliente durante a seleção
+- Criação de novos clientes diretamente do fluxo de venda
+
+#### 2. Gerenciamento do Carrinho
+- Adição e remoção de itens com contador de quantidades
+- Cálculo automático de subtotal e total
+- Aplicação de descontos no nível da venda
+- Visualização clara dos itens adicionados
+
+#### 3. Processo de Finalização
+- Seleção de método de pagamento
+- Cálculo automático de troco
+- Integração com o sistema de clientes
+- Feedback visual durante o processamento
+- Notificações de sucesso/erro
+
+#### 4. Integração com Backend
+- Persistência segura das vendas no banco de dados
+- Atualização em tempo real do estoque
+- Registro de histórico de compras do cliente
+- Tratamento de erros e rollback em caso de falhas
+
+### Próximos Passos
+- Implementar sistema de promoções e cupons
+- Adicionar suporte a pagamentos parcelados
+- Desenvolver relatórios de vendas avançados
+- Criar sistema de fidelidade integrado
 
 ## Melhorias Propostas
 
@@ -107,8 +131,24 @@ Atualmente, o módulo de Vendas apresenta:
 
 ### Componentes Front-end
 
+#### 1. CustomerSearch
+Componente responsável pela busca e seleção de clientes:
+- Busca em tempo real com debounce
+- Exibição de sugestões em dropdown
+- Opção para adicionar novo cliente
+- Integração com o hook `useCustomers`
+
+#### 2. Cart
+Componente principal do carrinho de compras:
+- Exibição dos itens adicionados
+- Controle de quantidades
+- Cálculo de totais
+- Aplicação de descontos
+- Seleção de método de pagamento
+
+#### 3. CheckoutWizard
+Fluxo de finalização de venda:
 ```tsx
-// Exemplo de componente de Checkout
 const CheckoutWizard: React.FC = () => {
   const [step, setStep] = useState(1);
   const [saleData, setSaleData] = useState<SaleData>({
@@ -179,97 +219,76 @@ const CheckoutWizard: React.FC = () => {
     </div>
   );
 };
-
-// Componente de recomendação de produtos
-const ProductRecommendations: React.FC<{ 
-  currentItems: CartItem[],
-  customerId?: string
-}> = ({ currentItems, customerId }) => {
-  const { data: recommendations, isLoading } = useProductRecommendations(
-    currentItems.map(item => item.id),
-    customerId
-  );
-  
-  if (isLoading || !recommendations?.length) return null;
-  
-  return (
-    <div className="mt-4">
-      <h3 className="text-sm font-medium text-gray-700">Recomendados para você</h3>
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
-        {recommendations.map(product => (
-          <RecommendationCard 
-            key={product.id}
-            product={product}
-            onAdd={() => {/* adicionar ao carrinho */}}
-          />
-        ))}
-      </div>
-    </div>
-  );
-};
 ```
 
 ### Hooks e Serviços
 
+#### 1. useCustomers
+Hook para busca e gerenciamento de clientes:
+- Busca de clientes por nome, e-mail ou telefone
+- Suporte a paginação e filtros
+- Cache inteligente para melhor performance
+
+#### 2. useUpsertCustomer
+Hook para criação/atualização de clientes:
+- Validação de dados
+- Feedback visual via toast
+- Atualização do cache após mutações
+
+#### 3. useUpsertSale
+Hook para processamento de vendas:
 ```tsx
-// Hook para recomendações de produtos
-const useProductRecommendations = (
-  productIds: string[],
-  customerId?: string
-) => {
-  return useQuery({
-    queryKey: ['recommendations', productIds, customerId],
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc(
-        'get_product_recommendations',
-        { 
-          p_product_ids: productIds,
-          p_customer_id: customerId || null
-        }
-      );
+const useUpsertSale = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (saleData: UpsertSaleInput) => {
+      const { data: { user } } = await supabase.auth.getUser();
       
-      if (error) throw error;
+      if (!user) {
+        throw new Error("Usuário não autenticado");
+      }
+
+      const { data, error } = await supabase.rpc("create_sale_with_items", {
+        p_customer_id: saleData.customer_id,
+        p_seller_id: user.id,
+        p_payment_method_id: saleData.payment_method_id,
+        p_total_amount: saleData.total_amount,
+        p_items: saleData.items,
+        p_notes: saleData.notes
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
       return data;
     },
-    enabled: productIds.length > 0
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["sales"] });
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      toast({
+        title: "Venda registrada com sucesso!",
+        description: "A venda foi registrada no sistema.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro ao registrar venda",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
   });
 };
-
-// Serviço para processamento de vendas
-const processSale = async (saleData: SaleData): Promise<string> => {
-  // Validações
-  if (!saleData.items.length) {
-    throw new Error('Carrinho vazio');
-  }
-  
-  // Processar pagamento se for eletrônico
-  let paymentResult = null;
-  if (saleData.paymentMethod.type === 'electronic') {
-    paymentResult = await processPayment({
-      amount: calculateTotal(saleData.items, saleData.discount),
-      method: saleData.paymentMethod.provider,
-      details: saleData.paymentMethod.details
-    });
-  }
-  
-  // Registrar venda no Supabase
-  const { data, error } = await supabase.rpc(
-    'process_sale',
-    {
-      p_customer_id: saleData.customer?.id || null,
-      p_user_id: getCurrentUserId(),
-      p_items: saleData.items,
-      p_payment_method: saleData.paymentMethod.type,
-      p_payment_details: paymentResult,
-      p_discount: saleData.discount,
-      p_notes: saleData.notes
-    }
-  );
-  
-  if (error) throw error;
-  return data; // ID da venda
-};
 ```
+
+#### 4. usePaymentMethods
+Hook para carregar os métodos de pagamento disponíveis
+- Filtro por métodos ativos
+- Ordenação por nome
+- Cache para melhor performance
 
 ## Integrações com Backend
 
@@ -468,13 +487,16 @@ Novos endpoints a serem implementados:
 
 ## Cronograma de Implementação
 
-| Funcionalidade | Prioridade | Estimativa | Dependências |
-|---------------|------------|------------|--------------|
-| Checkout Otimizado | Alta | 3 semanas | - |
-| Integração de Pagamentos | Alta | 4 semanas | Checkout Otimizado |
-| Descontos e Promoções | Média | 3 semanas | - |
-| Recomendação de Produtos | Baixa | 2 semanas | - |
-| Histórico por Cliente | Média | 2 semanas | - |
+| Funcionalidade | Status | Prioridade | Estimativa | Dependências |
+|---------------|--------|------------|------------|--------------|
+| Checkout Otimizado | ✅ Concluído | Alta | Concluído | - |
+| Busca de Clientes | ✅ Concluído | Alta | Concluído | - |
+| Gerenciamento de Carrinho | ✅ Concluído | Alta | Concluído | - |
+| Finalização de Venda | ✅ Concluído | Alta | Concluído | Checkout, Clientes |
+| Integração de Pagamentos | 🟡 Em Andamento | Alta | 2 semanas | Checkout |
+| Descontos e Promoções | ⏳ Pendente | Média | 3 semanas | - |
+| Histórico por Cliente | ✅ Parcial | Média | 1 semana | - |
+| Recomendação de Produtos | ⏳ Pendente | Baixa | 2 semanas | - |
 
 ## Métricas de Sucesso
 
@@ -498,8 +520,41 @@ Para avaliar o sucesso das melhorias, serão monitorados:
 
 ## Próximos Passos
 
-1. Prototipar nova interface de checkout
-2. Pesquisar e selecionar gateways de pagamento
-3. Definir regras para o sistema de promoções
-4. Implementar MVP do checkout otimizado
-5. Testar com usuários reais e coletar feedback 
+### Em Curto Prazo (1-2 semanas)
+1. Finalizar a integração com gateways de pagamento
+2. Implementar testes de integração para o fluxo de vendas
+3. Otimizar a performance da busca de clientes
+4. Adicionar validações adicionais no formulário de venda
+
+### Em Médio Prazo (3-4 semanas)
+1. Desenvolver sistema de promoções e cupons
+2. Implementar relatórios de vendas básicos
+3. Adicionar suporte a pagamentos parcelados
+4. Criar fluxo para devoluções e trocas
+
+### Em Longo Prazo (5+ semanas)
+1. Desenvolver sistema de fidelidade integrado
+2. Implementar análise preditiva de vendas
+3. Criar relatórios analíticos avançados
+4. Desenvolver integração com sistemas de estoque externos
+
+## Lições Aprendidas
+
+1. **Validação de Dados**
+   - Implementar validações tanto no frontend quanto no backend
+   - Fornecer feedback claro para o usuário em caso de erros
+
+2. **Gerenciamento de Estado**
+   - Utilizar Zustand para estado local do carrinho
+   - Usar React Query para sincronização com o servidor
+   - Manter o estado mínimo necessário nos componentes
+
+3. **Performance**
+   - Implementar debounce em buscas para reduzir chamadas à API
+   - Utilizar paginação para listas longas
+   - Otimizar queries para buscar apenas os dados necessários
+
+4. **Experiência do Usuário**
+   - Fornecer feedback visual durante ações assíncronas
+   - Manher o usuário informado sobre o estado atual do sistema
+   - Oferecer mensagens de erro claras e acionáveis

@@ -88,15 +88,18 @@ export function CustomerList({ customers, onSelectCustomer }: CustomerListProps)
     setIsNewCustomerDialogOpen(false);
   };
 
-  const getSegmentColor = (segment: string | null) => {
-    switch (segment) {
-      case 'VIP': return 'bg-purple-100 text-purple-700';
-      case 'Regular': return 'bg-blue-100 text-blue-700';
-      case 'Novo': return 'bg-green-100 text-green-700';
-      case 'Inativo': return 'bg-gray-100 text-gray-700';
-      case 'Em risco': return 'bg-red-100 text-red-700';
-      default: return 'bg-gray-100 text-gray-700';
-    }
+  const segmentColors = {
+    'Primeira Compra': { bg: '#FCE7F3', text: '#831843' },
+    'Recente': { bg: '#DCFCE7', text: '#14532D' },
+    'Fiel - Prata': { bg: '#DBEAFE', text: '#1E40AF' },
+    'Fiel - Ouro': { bg: '#FEF9C3', text: '#713F12' },
+    'Fiel - VIP': { bg: '#F3E8FF', text: '#5B21B6' },
+    'Em Risco': { bg: '#FFEDD5', text: '#9A3412' },
+    'Inativo': { bg: '#FEE2E2', text: '#991B1B' },
+    'Regular': { bg: '#E0F2FE', text: '#0C4A6E' },
+    'Novo': { bg: '#DCFCE7', text: '#14532D' },
+    'VIP': { bg: '#F3E8FF', text: '#5B21B6' },
+    'default': { bg: '#F3F4F6', text: '#374151' }
   };
 
   return (
@@ -242,10 +245,13 @@ export function CustomerList({ customers, onSelectCustomer }: CustomerListProps)
                     }
                   </TableCell>
                   <TableCell>
-                    <span className={cn(
-                      "px-2 py-1 rounded-full text-xs font-medium",
-                      getSegmentColor(customer.segment)
-                    )}>
+                    <span 
+                      className="px-2 py-1 rounded-full text-xs font-medium inline-flex items-center"
+                      style={{
+                        backgroundColor: segmentColors[customer.segment as keyof typeof segmentColors]?.bg || segmentColors.default.bg,
+                        color: segmentColors[customer.segment as keyof typeof segmentColors]?.text || segmentColors.default.text
+                      }}
+                    >
                       {customer.segment || 'Não definido'}
                     </span>
                   </TableCell>

@@ -68,19 +68,36 @@ export interface SaleData {
   created_at: string;
 }
 
-// Hook para obter todos os clientes
-export const useCustomers = () => {
+// Hook para obter clientes com suporte a busca e paginação
+export const useCustomers = (params?: { 
+  search?: string; 
+  limit?: number;
+  enabled?: boolean;
+}) => {
+  const { search, limit, enabled = true } = params || {};
+  
   return useQuery({
-    queryKey: ['customers'],
+    queryKey: ['customers', { search, limit }],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('customers')
         .select('*')
         .order('name');
+      
+      if (search) {
+        query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%,phone.ilike.%${search}%`);
+      }
+      
+      if (limit) {
+        query = query.limit(limit);
+      }
         
+      const { data, error } = await query;
+      
       if (error) throw error;
       return data as CustomerProfile[];
-    }
+    },
+    enabled
   });
 };
 
@@ -160,6 +177,48 @@ export const useCustomerInteractions = (customerId: string) => {
   });
 };
 
+// Hook para criar ou atualizar um cliente
+export const useUpsertCustomer = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (customerData: Partial<CustomerProfile>) => {
+      const { data, error } = await supabase
+        .from('customers')
+        .upsert(customerData)
+        .select()
+        .single();
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return data as CustomerProfile;
+    },
+    onSuccess: (data, variables) => {
+      // Invalida as queries de clientes para atualizar a lista
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
+      // Invalida a query do cliente específico, se ele já existia
+      if (variables.id) {
+        queryClient.invalidateQueries({ queryKey: ['customer', variables.id] });
+      }
+
+      toast({
+        title: `Cliente ${variables.id ? 'atualizado' : 'criado'} com sucesso!`,
+        description: `O cliente ${data.name} foi salvo no sistema.`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Erro ao salvar cliente',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+};
+
 // Hook para obter histórico de compras de um cliente
 export const useCustomerPurchases = (customerId: string) => {
   return useQuery({
@@ -233,74 +292,11 @@ export const useSalesData = () => {
   });
 };
 
-// Hook para criar ou atualizar um cliente
-export const useUpsertCustomer = () => {
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
-  
-  return useMutation({
-    mutationFn: async (customer: Partial<CustomerProfile>) => {
-      let operation;
-      
-      if (customer.id) {
-        // Atualizar cliente existente
-        const { data, error } = await supabase
-          .from('customers')
-          .update({
-            ...customer,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', customer.id)
-          .select()
-          .single();
-          
-        if (error) throw error;
-        operation = 'updated';
-        return data;
-      } else {
-        // Criar novo cliente
-        const { data, error } = await supabase
-          .from('customers')
-          .insert({
-            ...customer,
-            contact_permission: customer.contact_permission || false,
-            lifetime_value: customer.lifetime_value || 0,
-            segment: customer.segment || 'Novo'
-          })
-          .select()
-          .single();
-          
-        if (error) throw error;
-        operation = 'created';
-        return data;
-      }
-    },
-    onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['customers'] });
-      if (variables.id) {
-        queryClient.invalidateQueries({ queryKey: ['customer', variables.id] });
-      }
-      
-      toast({
-        title: variables.id ? 'Cliente atualizado' : 'Cliente criado',
-        description: `${data.name} foi ${variables.id ? 'atualizado' : 'cadastrado'} com sucesso.`
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: 'Erro',
-        description: `Ocorreu um erro: ${error.message}`,
-        variant: 'destructive'
-      });
-    }
-  });
-};
-
 // Hook para adicionar uma interação com cliente
 export const useAddCustomerInteraction = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  
+
   return useMutation({
     mutationFn: async (interaction: Omit<CustomerInteraction, 'id' | 'created_at'>) => {
       const { data, error } = await supabase

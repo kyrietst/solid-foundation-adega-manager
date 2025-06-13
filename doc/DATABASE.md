@@ -48,8 +48,32 @@ O Adega Manager utiliza o PostgreSQL através do Supabase como banco de dados pr
 #### sales
 - Registro de vendas com status tracking
 - Relacionamento com customers e users
-- Sistema de delivery integrado
-- Notas e informações adicionais em campos específicos
+- Sistema de pagamento integrado
+- Controle de descontos e valores
+- Campos principais:
+  - `id`: Identificador único da venda
+  - `customer_id`: Referência ao cliente
+  - `seller_id`: Vendedor responsável
+  - `total_amount`: Valor total dos itens
+  - `discount_amount`: Valor total de descontos
+  - `final_amount`: Valor final (total - descontos)
+  - `payment_method_id`: Forma de pagamento
+  - `payment_status`: Status do pagamento (pending, paid, cancelled)
+  - `status`: Status da venda (completed, cancelled, returned)
+  - `notes`: Observações adicionais
+  - `created_at`: Data de criação
+  - `updated_at`: Data de atualização
+
+#### payment_methods
+- Métodos de pagamento disponíveis
+- Status ativo/inativo
+- Taxas e configurações específicas
+- Campos principais:
+  - `id`: Identificador único
+  - `name`: Nome do método (ex: Dinheiro, Cartão, PIX)
+  - `description`: Descrição detalhada
+  - `is_active`: Se o método está ativo
+  - `created_at`: Data de criação
 
 #### sale_items
 - Itens individuais de cada venda
@@ -236,7 +260,90 @@ SELECT * FROM sales
 WHERE created_at < NOW() - INTERVAL '1 year';
 ```
 
+## Funções de Vendas
+
+### `create_sale_with_items`
+
+**Propósito**: Criar uma venda com itens em uma única transação atômica.
+
+**Parâmetros**:
+- `p_customer_id`: ID do cliente (opcional)
+- `p_seller_id`: ID do vendedor
+- `p_payment_method_id`: ID do método de pagamento
+- `p_total_amount`: Valor total da venda
+- `p_items`: Array de itens no formato JSON
+  ```json
+  [
+    {
+      "product_id": "uuid",
+      "quantity": 1,
+      "unit_price": 10.50
+    }
+  ]
+  ```
+- `p_notes`: Observações adicionais (opcional)
+
+**Retorno**:
+- `sale_id`: ID da venda criada
+- `status`: Status da operação
+
+**Exemplo de Uso**:
+```sql
+SELECT * FROM create_sale_with_items(
+  '123e4567-e89b-12d3-a456-426614174000', -- customer_id
+  '987e6543-e89b-12d3-a456-426614175000', -- seller_id
+  '111e2222-e89b-12d3-a456-426614176000', -- payment_method_id
+  150.75, -- total_amount
+  '[
+    {"product_id": "333e4444-e89b-12d3-a456-426614177000", "quantity": 2, "unit_price": 50.00},
+    {"product_id": "555e6666-e89b-12d3-a456-426614178000", "quantity": 1, "unit_price": 50.75}
+  ]'::jsonb, -- items
+  'Venda realizada na loja física' -- notes
+);
+```
+
+### `get_sales_report`
+
+**Propósito**: Gerar relatório de vendas com filtros avançados.
+
+**Parâmetros**:
+- `p_start_date`: Data inicial
+- `p_end_date`: Data final
+- `p_payment_method_id`: Filtrar por método de pagamento (opcional)
+- `p_seller_id`: Filtrar por vendedor (opcional)
+- `p_customer_id`: Filtrar por cliente (opcional)
+
+**Retorno**:
+- Relatório agregado com totais e contagens
+
 ## Triggers e Automações
+
+### Trigger de Atualização de Estoque
+
+```sql
+-- Função para atualizar o estoque após uma venda
+CREATE OR REPLACE FUNCTION public.update_inventory_after_sale()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Atualizar o estoque para cada item da venda
+  UPDATE products p
+  SET stock_quantity = stock_quantity - i.quantity
+  FROM jsonb_to_recordset(NEW.items) AS i(
+    product_id uuid,
+    quantity integer
+  )
+  WHERE p.id = i.product_id;
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Criar trigger para atualização de estoque
+CREATE TRIGGER update_inventory_after_sale_trigger
+AFTER INSERT ON sales
+FOR EACH ROW
+EXECUTE FUNCTION public.update_inventory_after_sale();
+```
 
 ### Trigger de Atualização de Cliente
 ```sql
@@ -347,6 +454,56 @@ FROM customers c
 ORDER BY c.lifetime_value DESC;
 ```
 
+## Exemplos de Consultas Úteis para Vendas
+
+### Vendas por Período com Método de Pagamento
+```sql
+SELECT 
+  DATE_TRUNC('day', s.created_at) AS sale_date,
+  pm.name AS payment_method,
+  COUNT(*) AS total_sales,
+  SUM(s.final_amount) AS total_revenue
+FROM sales s
+JOIN payment_methods pm ON s.payment_method_id = pm.id
+WHERE s.created_at BETWEEN '2025-01-01' AND '2025-12-31'
+  AND s.status = 'completed'
+GROUP BY 1, 2
+ORDER BY 1 DESC, 3 DESC;
+```
+
+### Produtos Mais Vendidos
+```sql
+SELECT 
+  p.name AS product_name,
+  p.category,
+  COUNT(si.id) AS times_sold,
+  SUM(si.quantity) AS total_quantity,
+  SUM(si.subtotal) AS total_revenue
+FROM sale_items si
+JOIN products p ON si.product_id = p.id
+JOIN sales s ON si.sale_id = s.id
+WHERE s.status = 'completed'
+  AND s.created_at >= NOW() - INTERVAL '30 days'
+GROUP BY p.id, p.name, p.category
+ORDER BY total_quantity DESC
+LIMIT 10;
+```
+
+### Métodos de Pagamento Mais Utilizados
+```sql
+SELECT 
+  pm.name AS payment_method,
+  COUNT(s.id) AS total_sales,
+  SUM(s.final_amount) AS total_amount,
+  ROUND(COUNT(s.id) * 100.0 / SUM(COUNT(s.id)) OVER (), 2) AS percentage
+FROM sales s
+JOIN payment_methods pm ON s.payment_method_id = pm.id
+WHERE s.status = 'completed'
+  AND s.created_at >= NOW() - INTERVAL '90 days'
+GROUP BY pm.name
+ORDER BY total_sales DESC;
+```
+
 ## Recomendações Finais
 
 1. **Sempre use transações** para operações múltiplas
@@ -359,4 +516,8 @@ ORDER BY c.lifetime_value DESC;
 8. **Teste** todas as políticas RLS
 9. **Valide** dados antes de inserir/atualizar
 10. **Use prepared statements** para prevenir SQL injection
-11. **Mantenha logs** de operações críticas 
+11. **Mantenha logs** de operações críticas
+12. **Monitore** o desempenho das consultas de vendas
+13. **Revise periodicamente** as políticas de desconto
+14. **Faça backup** dos relatórios de vendas
+15. **Valide** os dados de entrada antes de processar vendas

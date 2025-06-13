@@ -30,6 +30,32 @@ Funcionalidades implementadas:
 - Dashboard com tendências de vendas por segmento
 - Triggers de banco de dados para enriquecimento automático de dados
 
+## Módulos em Andamento
+
+### 1. Vendas
+
+**Progresso:** 60% concluído
+
+**Próximas Etapas:**
+1. Finalizar integração com gateways de pagamento
+2. Implementar sistema de promoções
+3. Desenvolver relatórios analíticos
+4. Adicionar suporte a devoluções
+
+**Blocos de Código Relevantes:**
+```typescript
+// Exemplo de hook para processar venda
+const { mutate: processSale, isLoading } = useUpsertSale({
+  onSuccess: () => {
+    toast.success('Venda finalizada com sucesso!');
+    resetCart();
+  },
+  onError: (error) => {
+    toast.error(`Erro ao processar venda: ${error.message}`);
+  }
+});
+```
+
 ## Módulos para Melhoria
 
 ### 1. Dashboard
@@ -43,18 +69,7 @@ Melhorias previstas:
 - Dashboard personalizável por usuário
 - Integração com previsões de vendas
 
-### 2. Vendas
-
-**Arquivo:** `doc/melhorias/VENDAS.md`
-
-Melhorias previstas:
-- Processo de checkout otimizado
-- Integração com sistemas de pagamento
-- Descontos e promoções automatizadas
-- Recomendação de produtos complementares
-- Histórico detalhado de vendas por cliente
-
-### 3. Estoque
+### 2. Estoque
 
 **Arquivo:** `doc/melhorias/ESTOQUE.md`
 
@@ -65,7 +80,7 @@ Melhorias previstas:
 - Controle de lotes e validade
 - Rastreamento de movimentações
 
-### 4. Clientes
+### 3. Clientes
 
 **Arquivo:** `doc/melhorias/CLIENTES.md`
 
@@ -76,7 +91,7 @@ Melhorias adicionais previstas:
 - Sistema de lembretes e follow-up
 - Gestão de reclamações e solução de problemas
 
-### 5. Delivery
+### 4. Delivery
 
 **Arquivo:** `doc/melhorias/DELIVERY.md`
 
@@ -87,7 +102,7 @@ Melhorias previstas:
 - Sistema de avaliação de entregas
 - Notificações automáticas para clientes
 
-### 6. Relatórios
+### 5. Relatórios
 
 **Arquivo:** `doc/melhorias/RELATORIOS.md`
 
@@ -98,7 +113,7 @@ Melhorias previstas:
 - Análises preditivas
 - Dashboards específicos por área
 
-### 7. Usuários
+### 6. Usuários
 
 **Arquivo:** `doc/melhorias/USUARIOS.md`
 
@@ -145,6 +160,33 @@ Para cada módulo, seguiremos as seguintes etapas:
 3. Iniciar o detalhamento do próximo módulo selecionado
 4. Estabelecer cronograma de implementação
 
+## Acompanhamento de Progresso
+
+### Métricas de Sucesso
+
+| Módulo | Status | Concluído | Próximos Passos |
+|--------|--------|-----------|-----------------|
+| Vendas | 🟢 Em Andamento | 60% | Integração com pagamentos |
+| CRM | ✅ Concluído | 100% | Manutenção |
+| Dashboard | 🟡 Planejado | 0% | Início em Julho |
+| Estoque | 🟡 Planejado | 0% | Planejamento |
+
+### Lições Aprendidas
+
+1. **Validação de Dados**
+   - Implementar validações em camadas (frontend e backend)
+   - Mensagens de erro claras e acionáveis
+
+2. **Performance**
+   - Uso de debounce em buscas para melhorar desempenho
+   - Paginação para listas longas
+   - Cache inteligente com React Query
+
+3. **Experiência do Usuário**
+   - Feedback visual durante ações assíncronas
+   - Fluxos intuitivos e diretos
+   - Tratamento adequado de erros
+
 ## Considerações Finais
 
-Este documento será atualizado conforme o progresso das melhorias, servindo como guia central para o desenvolvimento e referência para toda a equipe. 
+Este documento será atualizado conforme o progresso das melhorias, servindo como guia central para o desenvolvimento e referência para toda a equipe. As atualizações mais recentes refletem o progresso significativo no módulo de Vendas, com foco na experiência do usuário e na robustez do sistema.
