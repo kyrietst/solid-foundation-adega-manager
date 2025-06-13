@@ -123,6 +123,16 @@ export interface Database {
           email: string | null
           phone: string | null
           address: Json | null
+          birthday: string | null
+          contact_preference: string | null
+          contact_permission: boolean
+          first_purchase_date: string | null
+          last_purchase_date: string | null
+          purchase_frequency: string | null
+          lifetime_value: number
+          favorite_category: string | null
+          favorite_product: string | null
+          segment: string | null
           notes: string | null
           created_at: string
           updated_at: string
@@ -133,6 +143,16 @@ export interface Database {
           email?: string | null
           phone?: string | null
           address?: Json | null
+          birthday?: string | null
+          contact_preference?: string | null
+          contact_permission?: boolean
+          first_purchase_date?: string | null
+          last_purchase_date?: string | null
+          purchase_frequency?: string | null
+          lifetime_value?: number
+          favorite_category?: string | null
+          favorite_product?: string | null
+          segment?: string | null
           notes?: string | null
           created_at?: string
           updated_at?: string
@@ -143,9 +163,77 @@ export interface Database {
           email?: string | null
           phone?: string | null
           address?: Json | null
+          birthday?: string | null
+          contact_preference?: string | null
+          contact_permission?: boolean
+          first_purchase_date?: string | null
+          last_purchase_date?: string | null
+          purchase_frequency?: string | null
+          lifetime_value?: number
+          favorite_category?: string | null
+          favorite_product?: string | null
+          segment?: string | null
           notes?: string | null
           created_at?: string
           updated_at?: string
+        }
+      }
+      customer_insights: {
+        Row: {
+          id: string
+          customer_id: string
+          insight_type: string
+          insight_value: string
+          confidence: number
+          is_active: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          customer_id: string
+          insight_type: string
+          insight_value: string
+          confidence: number
+          is_active?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          customer_id?: string
+          insight_type?: string
+          insight_value?: string
+          confidence?: number
+          is_active?: boolean
+          created_at?: string
+        }
+      }
+      customer_interactions: {
+        Row: {
+          id: string
+          customer_id: string
+          interaction_type: string
+          description: string
+          associated_sale_id: string | null
+          created_by: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          customer_id: string
+          interaction_type: string
+          description: string
+          associated_sale_id?: string | null
+          created_by: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          customer_id?: string
+          interaction_type?: string
+          description?: string
+          associated_sale_id?: string | null
+          created_by?: string
+          created_at?: string
         }
       }
       sales: {
@@ -215,6 +303,38 @@ export interface Database {
           product_id?: string
           quantity?: number
           unit_price?: number
+          created_at?: string
+        }
+      }
+      automation_logs: {
+        Row: {
+          id: string
+          customer_id: string
+          workflow_id: string
+          workflow_name: string
+          trigger_event: string
+          result: string
+          details: Json | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          customer_id: string
+          workflow_id: string
+          workflow_name: string
+          trigger_event: string
+          result: string
+          details?: Json | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          customer_id?: string
+          workflow_id?: string
+          workflow_name?: string
+          trigger_event?: string
+          result?: string
+          details?: Json | null
           created_at?: string
         }
       }
