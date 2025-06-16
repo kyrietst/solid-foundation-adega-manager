@@ -1,5 +1,7 @@
 
 import React, { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,13 +14,21 @@ import { useAuth } from '@/contexts/AuthContext';
 
 export const Inventory = () => {
   const { userRole } = useAuth();
-  const [products, setProducts] = useState([
-    { id: 1, name: 'Vinho Tinto Cabernet', price: 45.90, stock: 25, category: 'Vinhos', minStock: 10 },
-    { id: 2, name: 'Vinho Branco Chardonnay', price: 38.50, stock: 8, category: 'Vinhos', minStock: 10 },
-    { id: 3, name: 'Espumante Moscatel', price: 52.00, stock: 12, category: 'Espumantes', minStock: 5 },
-    { id: 4, name: 'Cerveja Artesanal IPA', price: 12.90, stock: 48, category: 'Cervejas', minStock: 20 },
-    { id: 5, name: 'Whisky Single Malt', price: 180.00, stock: 3, category: 'Destilados', minStock: 5 },
-  ]);
+  // Lista de produtos vinda do Supabase
+  const queryClient = useQueryClient();
+  const { data: products = [], isLoading } = useQuery({
+    queryKey: ['products', 'inventory'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .order('name', { ascending: true });
+      if (error) throw error;
+      return data as any[];
+    },
+  });
+
+  // Estado local para o formulário
 
   const [newProduct, setNewProduct] = useState({
     name: '',
@@ -34,7 +44,7 @@ export const Inventory = () => {
 
   const categories = ['Vinhos', 'Espumantes', 'Cervejas', 'Destilados', 'Licores'];
 
-  const addProduct = () => {
+  const addProduct = async () => {
     if (!newProduct.name || !newProduct.price || !newProduct.stock || !newProduct.category) {
       toast({
         title: "Erro",
@@ -53,7 +63,17 @@ export const Inventory = () => {
       minStock: parseInt(newProduct.minStock) || 5
     };
 
-    setProducts([...products, product]);
+    await supabase.from('products').insert({
+      name: newProduct.name,
+      price: parseFloat(newProduct.price),
+      stock_quantity: parseInt(newProduct.stock),
+      category: newProduct.category,
+      // definindo estoque minimo
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      description: null,
+    });
+    queryClient.invalidateQueries({ queryKey: ['products'] });
     setNewProduct({ name: '', price: '', stock: '', category: '', minStock: '' });
     setIsDialogOpen(false);
 
@@ -63,7 +83,7 @@ export const Inventory = () => {
     });
   };
 
-  const updateProduct = () => {
+  const updateProduct = async () => {
     if (!editingProduct.name || !editingProduct.price || !editingProduct.stock || !editingProduct.category) {
       toast({
         title: "Erro",
@@ -86,7 +106,7 @@ export const Inventory = () => {
       }
 
       // Verifica o limite de ajuste de quantidade
-      const quantityDiff = Math.abs(parseInt(editingProduct.stock) - originalProduct.stock);
+      const quantityDiff = Math.abs(parseInt(editingProduct.stock) - (originalProduct?.stock_quantity ?? 0));
       if (quantityDiff > 50) {
         toast({
           title: "Limite excedido",
@@ -97,11 +117,14 @@ export const Inventory = () => {
       }
     }
 
-    setProducts(products.map(p => 
-      p.id === editingProduct.id 
-        ? { ...editingProduct, price: parseFloat(editingProduct.price), stock: parseInt(editingProduct.stock) }
-        : p
-    ));
+    await supabase.from('products').update({
+      name: editingProduct.name,
+      price: parseFloat(editingProduct.price),
+      stock_quantity: parseInt(editingProduct.stock),
+      category: editingProduct.category,
+      updated_at: new Date().toISOString(),
+    }).eq('id', editingProduct.id);
+    queryClient.invalidateQueries({ queryKey: ['products'] });
     setEditingProduct(null);
 
     toast({
@@ -110,7 +133,7 @@ export const Inventory = () => {
     });
   };
 
-  const deleteProduct = (id) => {
+  const deleteProduct = async (id: string) => {
     if (userRole === 'employee') {
       toast({
         title: "Acesso negado",
@@ -120,7 +143,13 @@ export const Inventory = () => {
       return;
     }
 
-    setProducts(products.filter(p => p.id !== id));
+    // tentativa de exclusão
+    const { error } = await supabase.from('products').delete().eq('id', id);
+    if (error) {
+      toast({ title: 'Erro ao excluir', description: error.message, variant: 'destructive' });
+      return;
+    }
+    queryClient.invalidateQueries({ queryKey: ['products'] });
     toast({
       title: "Produto removido",
       description: "O produto foi removido do estoque",
@@ -128,11 +157,11 @@ export const Inventory = () => {
   };
 
   const getLowStockProducts = () => {
-    return products.filter(product => product.stock <= product.minStock);
+    return products.filter((product: any) => product.stock_quantity <= (product.minStock || 5));
   };
 
   const getTotalValue = () => {
-    return products.reduce((total, product) => total + (product.price * product.stock), 0);
+    return products.reduce((total: number, product: any) => total + (product.price * product.stock_quantity), 0);
   };
 
   return (
@@ -151,7 +180,7 @@ export const Inventory = () => {
               {getLowStockProducts().map(product => (
                 <div key={product.id} className="flex justify-between items-center p-2 bg-white rounded border">
                   <span className="font-medium">{product.name}</span>
-                  <span className="text-orange-600">Apenas {product.stock} unidades</span>
+                  <span className="text-orange-600">Apenas {product.stock_quantity} unidades</span>
                 </div>
               ))}
             </div>
@@ -286,19 +315,19 @@ export const Inventory = () => {
                 </tr>
               </thead>
               <tbody>
-                {products.map((product) => (
+                {products.map((product: any) => (
                   <tr key={product.id} className="border-b hover:bg-gray-50">
                     <td className="p-2 font-medium">{product.name}</td>
                     <td className="p-2">{product.category}</td>
                     <td className="p-2">R$ {product.price.toFixed(2)}</td>
-                    <td className="p-2">{product.stock} unidades</td>
+                    <td className="p-2">{product.stock_quantity} unidades</td>
                     <td className="p-2">
                       <span className={`px-2 py-1 rounded-full text-xs ${
-                        product.stock <= product.minStock 
+                        product.stock_quantity <= (product.minStock || 5) 
                           ? 'bg-red-100 text-red-700' 
                           : 'bg-green-100 text-green-700'
                       }`}>
-                        {product.stock <= product.minStock ? 'Estoque Baixo' : 'Normal'}
+                        {product.stock_quantity <= (product.minStock || 5) ? 'Estoque Baixo' : 'Normal'}
                       </span>
                     </td>
                     <td className="p-2">
