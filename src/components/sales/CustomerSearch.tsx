@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Check, ChevronsUpDown, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -28,11 +28,18 @@ export function CustomerSearch({ selectedCustomer, onSelect, onAddNew }: Custome
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
-  const { data: customers, isLoading } = useCustomers({
+  const { data: customers = [], isLoading, refetch } = useCustomers({
     search: debouncedSearchTerm,
     limit: 10,
-    enabled: open && debouncedSearchTerm.length > 1,
+    enabled: open,
   });
+
+  // When the popover opens, fetch all customers initially
+  useEffect(() => {
+    if (open) {
+      refetch();
+    }
+  }, [open, refetch]);
 
   const handleSelect = (customer: CustomerProfile) => {
     onSelect(customer);

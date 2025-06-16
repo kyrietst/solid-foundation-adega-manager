@@ -18,7 +18,7 @@ export interface Database {
         Row: {
           id: string
           email: string
-          full_name: string | null
+          name: string | null
           role: UserRole
           created_at: string
           updated_at: string
@@ -26,7 +26,7 @@ export interface Database {
         Insert: {
           id: string
           email: string
-          full_name?: string | null
+          name?: string | null
           role: UserRole
           created_at?: string
           updated_at?: string
@@ -34,7 +34,7 @@ export interface Database {
         Update: {
           id?: string
           email?: string
-          full_name?: string | null
+          name?: string | null
           role?: UserRole
           created_at?: string
           updated_at?: string
@@ -244,9 +244,13 @@ export interface Database {
           id: string
           customer_id: string | null
           user_id: string
+          seller_id: string | null
           total_amount: number
+          discount_amount: number
+          final_amount: number
           payment_method: string
-          status: 'pending' | 'completed' | 'cancelled' | 'delivering' | 'delivered'
+          payment_status: 'pending' | 'paid' | 'cancelled'
+          status: 'pending' | 'completed' | 'cancelled' | 'delivering' | 'delivered' | 'returned'
           delivery: boolean | null
           delivery_address: Json | null
           delivery_user_id: string | null
@@ -258,9 +262,13 @@ export interface Database {
           id?: string
           customer_id?: string | null
           user_id: string
+          seller_id?: string | null
           total_amount: number
+          discount_amount?: number
+          final_amount?: number
           payment_method: string
-          status?: 'pending' | 'completed' | 'cancelled' | 'delivering' | 'delivered'
+          payment_status?: 'pending' | 'paid' | 'cancelled'
+          status?: 'pending' | 'completed' | 'cancelled' | 'delivering' | 'delivered' | 'returned'
           delivery?: boolean | null
           delivery_address?: Json | null
           delivery_user_id?: string | null
@@ -272,9 +280,13 @@ export interface Database {
           id?: string
           customer_id?: string | null
           user_id?: string
+          seller_id?: string | null
           total_amount?: number
+          discount_amount?: number
+          final_amount?: number
           payment_method?: string
-          status?: 'pending' | 'completed' | 'cancelled' | 'delivering' | 'delivered'
+          payment_status?: 'pending' | 'paid' | 'cancelled'
+          status?: 'pending' | 'completed' | 'cancelled' | 'delivering' | 'delivered' | 'returned'
           delivery?: boolean | null
           delivery_address?: Json | null
           delivery_user_id?: string | null
