@@ -38,6 +38,10 @@ export function Cart() {
       toast({ title: 'Carrinho vazio', description: 'Adicione produtos para iniciar uma venda.', variant: 'destructive' });
       return;
     }
+    if (!customerId) {
+      toast({ title: 'Cliente não selecionado', description: 'Selecione um cliente antes de finalizar a venda.', variant: 'destructive' });
+      return;
+    }
     if (!paymentMethodId) {
       toast({ title: 'Forma de pagamento não selecionada', description: 'Selecione uma forma de pagamento.', variant: 'destructive' });
       return;
