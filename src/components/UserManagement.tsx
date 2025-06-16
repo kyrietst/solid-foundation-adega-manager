@@ -182,7 +182,7 @@ export const UserManagement = () => {
           .insert({
             id: authData.user.id,
             email: authData.user.email,
-            full_name: newUser.name,
+            name: newUser.name,
             role: newUser.role
           });
 
