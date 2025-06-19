@@ -7,6 +7,7 @@ import { Inventory } from '@/components/Inventory';
 import { Customers } from '@/components/Customers';
 import { Delivery } from '@/components/Delivery';
 import { Reports } from '@/components/Reports';
+import { Movements } from '@/components/Movements';
 import { UserManagement } from '@/components/UserManagement';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -64,6 +65,8 @@ const Index = () => {
         return hasPermission(['admin', 'employee']) ? <Customers /> : <div className="p-4 text-red-600">Acesso negado</div>;
       case 'delivery':
         return hasPermission(['admin', 'employee', 'delivery']) ? <Delivery /> : <div className="p-4 text-red-600">Acesso negado</div>;
+      case 'movements':
+        return hasPermission(['admin']) ? <Movements /> : <div className="p-4 text-red-600">Acesso negado</div>;
       case 'reports':
         return hasPermission(['admin', 'employee']) ? <Reports /> : <div className="p-4 text-red-600">Acesso negado</div>;
       case 'users':

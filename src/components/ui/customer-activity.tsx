@@ -4,7 +4,7 @@ import { CustomerInteraction, CustomerProfile } from '@/hooks/use-crm';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { MessageSquare, Phone, Mail, AlertTriangle } from 'lucide-react';
+import { MessageSquare, Phone, Mail, AlertTriangle, Banknote, RotateCcw, PackagePlus, PackageMinus } from 'lucide-react';
 
 interface CustomerActivityProps {
   interactions: CustomerInteraction[];
@@ -36,6 +36,14 @@ export function CustomerActivity({ interactions, customers, limit = 5 }: Custome
         return <Phone className="h-4 w-4 text-purple-500" />;
       case 'email':
         return <Mail className="h-4 w-4 text-green-500" />;
+      case 'fiado':
+        return <Banknote className="h-4 w-4 text-yellow-500" />;
+      case 'devolucao':
+        return <RotateCcw className="h-4 w-4 text-indigo-500" />;
+      case 'in':
+        return <PackagePlus className="h-4 w-4 text-green-500" />;
+      case 'out':
+        return <PackageMinus className="h-4 w-4 text-red-500" />;
       case 'complaint':
         return <AlertTriangle className="h-4 w-4 text-red-500" />;
       default:
@@ -53,6 +61,14 @@ export function CustomerActivity({ interactions, customers, limit = 5 }: Custome
       case 'email':
         return 'bg-green-100 text-green-700';
       case 'complaint':
+        return 'bg-red-100 text-red-700';
+      case 'fiado':
+        return 'bg-yellow-100 text-yellow-700';
+      case 'devolucao':
+        return 'bg-indigo-100 text-indigo-700';
+      case 'in':
+        return 'bg-green-100 text-green-700';
+      case 'out':
         return 'bg-red-100 text-red-700';
       default:
         return 'bg-gray-100 text-gray-700';

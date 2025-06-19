@@ -1,8 +1,10 @@
 import React from 'react';
+import { NotificationBell } from '@/components/NotificationBell';
 import { 
   BarChart3, 
   ShoppingCart, 
   Package, 
+  RefreshCcw,
   Users, 
   Truck, 
   FileText,
@@ -47,6 +49,13 @@ export const Sidebar = () => {
       icon: Package, 
       roles: ['admin', 'employee'],
       description: 'Controle de produtos e estoque'
+    },
+    { 
+      id: 'movements', 
+      label: 'Movimentações', 
+      icon: RefreshCcw, 
+      roles: ['admin'],
+      description: 'Histórico de movimentações de estoque'
     },
     { 
       id: 'customers', 
@@ -113,12 +122,15 @@ export const Sidebar = () => {
     <aside className="fixed inset-y-0 left-0 z-20 flex h-full w-64 flex-col bg-white shadow-lg">
       {/* Header */}
       <div className="flex h-[60px] items-center px-4">
-        <div className="flex items-center gap-2">
-          <Wine className="h-6 w-6 text-purple-600" />
-          <div>
-            <h2 className="text-base font-semibold text-gray-900">Adega</h2>
-            <p className="text-xs text-gray-500">Fundação Sólida</p>
+        <div className="p-4 font-bold text-xl flex items-center gap-2 justify-between">
+          <div className="flex items-center gap-2">
+            <Wine className="h-6 w-6 text-purple-600" />
+            <div>
+              <h2 className="text-base font-semibold text-gray-900">Adega</h2>
+              <p className="text-xs text-gray-500">Fundação Sólida</p>
+            </div>
           </div>
+          <NotificationBell />
         </div>
       </div>
 

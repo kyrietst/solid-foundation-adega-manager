@@ -120,7 +120,7 @@ export const Customers = () => {
                   <CustomerActivity 
                     interactions={allInteractions} 
                     customers={customers}
-                    limit={10}
+                    limit={4}
                   />
                 )}
               </div>

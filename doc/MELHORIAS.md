@@ -30,17 +30,20 @@ Funcionalidades implementadas:
 - Dashboard com tendências de vendas por segmento
 - Triggers de banco de dados para enriquecimento automático de dados
 
+> **Atualização 18/06/2025**: Após a refatoração dos hooks `use-sales.ts`, o módulo de Vendas teve ganho significativo de estabilidade e performance.
+
 ## Módulos em Andamento
 
 ### 1. Vendas
 
-**Progresso:** 60% concluído
+**Progresso:** 80% concluído
 
 **Próximas Etapas:**
-1. Finalizar integração com gateways de pagamento
+1. Finalizar integração com gateways de pagamento (em andamento)
 2. Implementar sistema de promoções
-3. Desenvolver relatórios analíticos
+3. Desenvolver relatórios analíticos (prioridade)
 4. Adicionar suporte a devoluções
+5. Automatizar cálculo de impostos e descontos complexos
 
 **Blocos de Código Relevantes:**
 ```typescript
@@ -166,7 +169,7 @@ Para cada módulo, seguiremos as seguintes etapas:
 
 | Módulo | Status | Concluído | Próximos Passos |
 |--------|--------|-----------|-----------------|
-| Vendas | 🟢 Em Andamento | 60% | Integração com pagamentos |
+| Vendas | 🟢 Em Andamento | 80% | Finalizar relatórios analíticos |
 | CRM | ✅ Concluído | 100% | Manutenção |
 | Dashboard | 🟡 Planejado | 0% | Início em Julho |
 | Estoque | 🟡 Planejado | 0% | Planejamento |

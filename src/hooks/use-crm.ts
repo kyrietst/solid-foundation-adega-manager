@@ -50,6 +50,37 @@ export interface CustomerInteraction {
   created_at: string;
 }
 
+// ---------------------
+// Eventos & Histórico
+// ---------------------
+export type CustomerEvent = {
+  customer_id: string;
+  type: 'sale' | 'movement';
+  origin_id: string;
+  value: number;
+  description?: string;
+  created_at?: string; // opcional para inserções manuais
+};
+
+// Utilitário para registrar evento e recalcular insights
+export const recordCustomerEvent = async (event: CustomerEvent) => {
+  if (!event.customer_id) return;
+  // Garante timestamp server-side
+  const payload = { ...event, created_at: event.created_at ?? new Date().toISOString() };
+  const { error } = await supabase.from('customer_history').insert(payload);
+
+  if (error) {
+    console.error('Erro ao gravar histórico do cliente', error);
+    return;
+  }
+
+  try {
+    await supabase.rpc('recalc_customer_insights', { p_customer_id: event.customer_id });
+  } catch (err) {
+    console.error('Erro ao recalcular insights do cliente', err);
+  }
+};
+
 export interface CustomerPurchase {
   id: string;
   date: string;
@@ -158,22 +189,56 @@ export const useCustomerInteractions = (customerId: string) => {
   return useQuery({
     queryKey: ['customer-interactions', customerId],
     queryFn: async () => {
-      let query = supabase
+      // 1. Interações manuais
+      let interactionsQuery = supabase
         .from('customer_interactions')
         .select('*')
         .order('created_at', { ascending: false });
-        
-      // Se um ID de cliente for fornecido, filtrar por esse cliente
+
       if (customerId) {
-        query = query.eq('customer_id', customerId);
+        interactionsQuery = interactionsQuery.eq('customer_id', customerId);
       }
-      
-      const { data, error } = await query;
-        
-      if (error) throw error;
-      return data as CustomerInteraction[];
+
+      const { data: interactions, error: interactionsError } = await interactionsQuery;
+      if (interactionsError) throw interactionsError;
+
+      // 2. Movimentações de estoque com cliente associado
+      let movementsQuery = supabase
+        .from('inventory_movements')
+        .select(`id, customer_id, type, quantity, sale_id, date, product_id`)
+        .not('customer_id', 'is', null)
+        .order('date', { ascending: false });
+
+      if (customerId) {
+        movementsQuery = movementsQuery.eq('customer_id', customerId);
+      }
+
+      let movements: any[] = [];
+      try {
+        const { data, error } = await movementsQuery;
+        if (error) throw error;
+        movements = data ?? [];
+      } catch (err) {
+        console.error('Erro ao buscar movimentos de estoque', err);
+      }
+
+      const movementInteractions: CustomerInteraction[] = movements.map((m) => ({
+        id: `mov-${m.id}`,
+        customer_id: m.customer_id,
+        interaction_type: m.type,
+        description: `${m.quantity}x produto #${m.product_id ?? ''} (${m.type})`,
+        associated_sale_id: m.sale_id ?? null,
+        created_by: 'sistema',
+        created_at: m.date,
+      }));
+
+      const consolidated = [...(interactions as CustomerInteraction[]), ...movementInteractions].sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+
+      return consolidated;
     },
-    enabled: true // Sempre habilitado, mesmo sem customerId
+    enabled: true, // Sempre habilitado, mesmo sem customerId
   });
 };
 

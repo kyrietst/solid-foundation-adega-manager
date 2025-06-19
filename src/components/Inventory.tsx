@@ -67,6 +67,7 @@ export const Inventory = () => {
       name: newProduct.name,
       price: parseFloat(newProduct.price),
       stock_quantity: parseInt(newProduct.stock),
+      minimum_stock: parseInt(newProduct.minStock) || 5,
       category: newProduct.category,
       // definindo estoque minimo
       created_at: new Date().toISOString(),
@@ -157,7 +158,7 @@ export const Inventory = () => {
   };
 
   const getLowStockProducts = () => {
-    return products.filter((product: any) => product.stock_quantity <= (product.minStock || 5));
+    return products.filter((product: any) => product.stock_quantity <= (product.minimum_stock ?? 5));
   };
 
   const getTotalValue = () => {
@@ -177,12 +178,21 @@ export const Inventory = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {getLowStockProducts().map(product => (
-                <div key={product.id} className="flex justify-between items-center p-2 bg-white rounded border">
-                  <span className="font-medium">{product.name}</span>
-                  <span className="text-orange-600">Apenas {product.stock_quantity} unidades</span>
-                </div>
-              ))}
+              {getLowStockProducts().map(product => {
+                const min = product.minimum_stock ?? 5;
+                const ratio = Math.min(product.stock_quantity / min, 1);
+                return (
+                  <div key={product.id} className="space-y-1 p-3 bg-white rounded border">
+                    <div className="flex justify-between text-sm font-medium">
+                      <span>{product.name}</span>
+                      <span className="text-orange-700">{product.stock_quantity} / {(product.minimum_stock ?? 5)}</span>
+                    </div>
+                    <div className="h-1 w-full rounded bg-orange-100">
+                      <div className={`h-1 rounded ${product.stock_quantity === 0 ? 'bg-red-600' : 'bg-orange-400'}`} style={{ width: `${ratio * 100}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </CardContent>
         </Card>
@@ -308,6 +318,14 @@ export const Inventory = () => {
                 <tr className="border-b">
                   <th className="text-left p-2">Produto</th>
                   <th className="text-left p-2">Categoria</th>
+                  {userRole === 'admin' && (
+                    <>
+                      <th className="text-left p-2">Fornecedor</th>
+                      <th className="text-left p-2">Estoque Mínimo</th>
+                      <th className="text-left p-2">Preço Custo</th>
+                      <th className="text-left p-2">Margem %</th>
+                    </>
+                  )}
                   <th className="text-left p-2">Preço</th>
                   <th className="text-left p-2">Estoque</th>
                   <th className="text-left p-2">Status</th>
@@ -316,18 +334,37 @@ export const Inventory = () => {
               </thead>
               <tbody>
                 {products.map((product: any) => (
-                  <tr key={product.id} className="border-b hover:bg-gray-50">
+                  <tr key={product.id} className={`border-b hover:bg-gray-50 ${product.stock_quantity <= (product.minimum_stock ?? 5) ? 'bg-orange-50' : ''}`}>
                     <td className="p-2 font-medium">{product.name}</td>
                     <td className="p-2">{product.category}</td>
+                    {userRole === 'admin' && (
+                      <>
+                        <td className="p-2">{product.supplier ?? '-'}</td>
+                        <td className="p-2">{product.minimum_stock ?? '-'}</td>
+                        <td className="p-2">{product.cost_price ? `R$ ${product.cost_price.toFixed(2)}` : '-'}</td>
+                        <td className="p-2">{product.margin_percent ?? '-'}%</td>
+                      </>
+                    )}
                     <td className="p-2">R$ {product.price.toFixed(2)}</td>
-                    <td className="p-2">{product.stock_quantity} unidades</td>
+                    <td className="p-2 w-40">
+                          <div className="flex justify-between text-xs mb-1">
+                            <span>{product.stock_quantity}</span>
+                            <span>{product.minimum_stock ?? 5}</span>
+                          </div>
+                          <div className="h-1 w-full rounded bg-gray-200 dark:bg-gray-700">
+                            <div
+                              className={`h-1 rounded ${product.stock_quantity === 0 ? 'bg-red-600' : 'bg-orange-400'}`}
+                              style={{ width: `${Math.min(product.stock_quantity / (product.minimum_stock ?? 5), 1) * 100}%` }}
+                            />
+                          </div>
+                        </td>
                     <td className="p-2">
                       <span className={`px-2 py-1 rounded-full text-xs ${
-                        product.stock_quantity <= (product.minStock || 5) 
+                        product.stock_quantity <= (product.minimum_stock ?? 5) 
                           ? 'bg-red-100 text-red-700' 
                           : 'bg-green-100 text-green-700'
                       }`}>
-                        {product.stock_quantity <= (product.minStock || 5) ? 'Estoque Baixo' : 'Normal'}
+                        {product.stock_quantity <= (product.minimum_stock ?? 5) ? 'Estoque Baixo' : 'Normal'}
                       </span>
                     </td>
                     <td className="p-2">
