@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { recordCustomerEvent } from "./use-crm";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -360,29 +361,10 @@ export const useUpsertSale = () => {
         throw new Error(`Falha ao salvar os itens da venda: ${itemsError.message}`);
       }
 
-      // 8. Atualiza o estoque dos produtos
-      const stockUpdatePromises = saleData.items.map(item => 
-        supabase.rpc('decrement_product_stock', {
-          p_product_id: item.product_id,
-          p_quantity: item.quantity
-        })
-      );
-
-      const stockUpdateResults = await Promise.allSettled(stockUpdatePromises);
-      
-      // Verifica se houve erros na atualização de estoque
-      const stockUpdateErrors = stockUpdateResults
-        .filter((result): result is PromiseRejectedResult => result.status === 'rejected')
-        .map((result, index) => ({
-          productId: saleData.items[index]?.product_id,
-          error: result.reason?.message || 'Erro desconhecido'
-        }));
-
-      if (stockUpdateErrors.length > 0) {
-        console.error('Erros ao atualizar estoque:', stockUpdateErrors);
-        // Não lançamos o erro aqui para não reverter a venda
-        // Em um ambiente de produção, você pode querer notificar um administrador
-      }
+      // 8. Ajuste de estoque
+      // O estoque será ajustado automaticamente por meio dos triggers do banco de dados
+      // (sale_items -> inventory_movements -> adjust_product_stock). Não é necessário
+      // fazer nenhuma chamada RPC manual aqui para evitar dedução dupla de estoque.
 
       // 9. Registra a auditoria da venda
       try {
@@ -406,6 +388,17 @@ export const useUpsertSale = () => {
       } catch (auditError) {
         console.error('Erro ao registrar auditoria:', auditError);
         // Não falha a venda por causa de um erro de auditoria
+      }
+
+      // 10. Atualiza histórico do cliente e insights
+      if (saleData.customer_id) {
+        await recordCustomerEvent({
+          customer_id: saleData.customer_id,
+          type: 'sale',
+          origin_id: sale.id,
+          value: saleData.total_amount,
+          description: 'Venda registrada'
+        });
       }
 
       return sale;
