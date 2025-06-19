@@ -12,6 +12,8 @@
 
 Este documento descreve os hooks disponíveis para gerenciamento de clientes e suas respectivas funcionalidades. Todos os hooks utilizam o React Query para gerenciamento de estado e cache.
 
+> **Nota de 18/06/2025**: Foi realizada uma **refatoração completa** dos hooks `use-crm.ts` e `use-sales.ts`, eliminando código duplicado, padronizando o tratamento de erros e simplificando a API de _upsert_. Esta documentação já reflete a nova estrutura.
+
 ## Hooks Disponíveis
 
 ### `useCustomers()`
@@ -189,6 +191,9 @@ const { data: sale } = useSale('123e4567-e89b-12d3-a456-426614174000');
 
 ### `useUpsertSale()`
 
+> **Alteração 18/06/2025 22:38** – A lógica de ajuste de estoque agora é totalmente gerenciada por *triggers* no banco de dados. A chamada `supabase.rpc('decrement_product_stock')` foi **removida** para evitar dedução dupla. Sempre que um item é inserido em `sale_items`, um trigger (`log_sale_item_movement`) cria um registro em `inventory_movements` que, por sua vez, aciona `adjust_product_stock`, reduzindo o `products.stock_quantity`. Nenhuma ação adicional é necessária no front-end.
+
+
 **Propósito**: Criar ou atualizar uma venda.
 
 **Retorno**:
@@ -306,5 +311,9 @@ import type {
 
 ## Atualizações
 
+- **2025-06-18 22:38**: Removido ajuste manual de estoque no `useUpsertSale`; agora o ajuste é realizado exclusivamente por triggers.
+
+
+- **2025-06-18**: Refatoração completa dos hooks `use-crm.ts` e `use-sales.ts`, correção de lógica de _upsert_ e melhorias de performance
 - **2025-06-20**: Adicionada documentação dos hooks do módulo de Vendas
 - **2025-06-13**: Documentação inicial dos hooks do CRM
