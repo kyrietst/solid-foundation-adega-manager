@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { NotificationProvider } from "@/contexts/NotificationContext";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
@@ -31,6 +32,7 @@ const App = () => (
     <TooltipProvider>
       <BrowserRouter>
         <AuthProvider>
+            <NotificationProvider>
           <Toaster />
                     <Sonner />
           <TailwindColorClasses />
@@ -43,12 +45,14 @@ const App = () => (
               <Route path="inventory" element={<div />} />
               <Route path="customers" element={<div />} />
               <Route path="delivery" element={<div />} />
+              <Route path="movements" element={<div />} />
               <Route path="reports" element={<div />} />
               <Route path="users" element={<div />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </AuthProvider>
+        </NotificationProvider>
+          </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

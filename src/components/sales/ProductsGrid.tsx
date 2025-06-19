@@ -22,7 +22,6 @@ export function ProductsGrid() {
       const { data, error } = await supabase
         .from("products")
         .select("id, name, price, stock_quantity, image_url")
-        .gt("stock_quantity", 0)
         .order("name", { ascending: true });
         
       if (error) {

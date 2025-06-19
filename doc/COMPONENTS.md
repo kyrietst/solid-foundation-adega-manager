@@ -818,6 +818,28 @@ const CustomerOpportunities: React.FC = () => {
    - Verifique hooks de fetch
    - Confirme estado de loading
 
+### Cart (Carrinho de Vendas)
+```tsx
+// Componente responsável por gerenciar o carrinho de vendas.
+// Principais funcionalidades:
+// 1. Busca e seleção de clientes com autocomplete (integração com useCustomer & useUpsertCustomer)
+// 2. Criação inline de novos clientes via modal
+// 3. Adição, remoção e edição de itens de venda com atualização automática de totais
+// 4. Suporte a múltiplos métodos de pagamento e validação de estoque
+// 5. Finalização de venda usando o hook useUpsertSale, exibindo feedback visual via toast
+//
+// A versão atual (18/06/2025) foi totalmente refatorada para remover duplicações de lógica
+// e melhorar a performance, utilizando React Hook Form e Zod para validação.
+```
+
+### NotificationBell
+```tsx
+// Ícone de sino exibido na navbar que mostra em tempo real a quantidade de
+// notificações não lidas. A fonte de dados é o canal "notifications" do Supabase
+// (realtime). Ao clicar, abre um popover com a lista dos últimos eventos como
+// baixas de estoque, falhas de pagamento e novas mensagens de clientes.
+```
+
 ## Contato
 
 Para questões sobre componentes, entre em contato com a equipe de desenvolvimento. 

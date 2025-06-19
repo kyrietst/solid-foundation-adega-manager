@@ -73,6 +73,10 @@ export interface Database {
           description: string | null
           price: number
           stock_quantity: number
+          minimum_stock: number
+          supplier: string | null
+          cost_price: number | null
+          margin_percent: number | null
           category: string
           vintage: number | null
           producer: string | null
@@ -90,6 +94,10 @@ export interface Database {
           description?: string | null
           price: number
           stock_quantity?: number
+          minimum_stock?: number
+          supplier?: string | null
+          cost_price?: number | null
+          margin_percent?: number | null
           category: string
           vintage?: number | null
           producer?: string | null
@@ -107,6 +115,10 @@ export interface Database {
           description?: string | null
           price?: number
           stock_quantity?: number
+          minimum_stock?: number
+          supplier?: string | null
+          cost_price?: number | null
+          margin_percent?: number | null
           category?: string
           vintage?: number | null
           producer?: string | null
@@ -293,6 +305,38 @@ export interface Database {
           notes?: string | null
           created_at?: string
           updated_at?: string
+        }
+      }
+      inventory_movements: {
+        Row: {
+          id: string
+          date: string
+          type: 'in' | 'out'
+          product_id: string
+          quantity: number
+          reason: string | null
+          user_id: string | null
+          related_sale_id: string | null
+        }
+        Insert: {
+          id?: string
+          date?: string
+          type: 'in' | 'out'
+          product_id: string
+          quantity: number
+          reason?: string | null
+          user_id?: string | null
+          related_sale_id?: string | null
+        }
+        Update: {
+          id?: string
+          date?: string
+          type?: 'in' | 'out'
+          product_id?: string
+          quantity?: number
+          reason?: string | null
+          user_id?: string | null
+          related_sale_id?: string | null
         }
       }
       sale_items: {

@@ -1,5 +1,7 @@
 # Módulo CRM - Documentação Técnica
 
+> **Atualização 18/06/2025**: Hooks `use-crm.ts` refatorados, adicionadas métricas de completude mais precisas e integração com sistema de notificações para alertar interações em tempo real.
+
 ## Visão Geral
 
 O módulo CRM (Customer Relationship Management) do Adega Manager foi desenvolvido para transformar a gestão de clientes em um sistema completo e integrado, permitindo não apenas o cadastro de dados básicos, mas também o rastreamento de interações, análise de comportamentos de compra, segmentação automática e identificação de oportunidades de negócio.

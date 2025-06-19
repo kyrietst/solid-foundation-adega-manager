@@ -4,6 +4,8 @@
 
 O Adega Manager é uma aplicação web moderna desenvolvida para gerenciamento completo de adegas, oferecendo funcionalidades como controle de estoque, vendas, clientes (CRM), delivery e relatórios. A aplicação foi construída utilizando tecnologias modernas e seguindo as melhores práticas de desenvolvimento.
 
+> **Atualização 18/06/2025**: Hooks centrais e componente de notificações refatorados, eliminando duplicações e melhorando performance.
+
 ## Stack Tecnológica
 
 ### Frontend
@@ -68,6 +70,10 @@ Controle de entregas, rotas, status e integração com clientes.
 Sistema de relatórios customizáveis para análise de dados.
 
 ### 7. Usuários e Permissões
+Gerenciamento de usuários com diferentes níveis de acesso.
+
+### 8. Notificações
+Sistema de notificações em tempo real integrado ao Supabase Realtime, incluindo componente `NotificationBell` e popover detalhado.
 Gerenciamento de usuários com diferentes níveis de acesso.
 
 ## Guia de Desenvolvimento
@@ -207,8 +213,7 @@ Gerenciamento de usuários com diferentes níveis de acesso.
    - Melhorar cache strategy
 
 2. **Funcionalidades**
-   - Sistema de notificações
-   - Integração com sistemas de pagamento
+   - Integração avançada com sistemas de pagamento
    - App mobile
    - Sistema de fidelidade e pontos
    - Campanhas de marketing automatizadas

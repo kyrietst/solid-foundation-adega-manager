@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -12,28 +12,36 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { CalendarIcon, Check, CreditCard, MessageSquare, Phone, X } from 'lucide-react';
+import { CalendarIcon, Check, CreditCard, MessageSquare, Phone, X, Trash } from 'lucide-react';
 import { CustomerProfile, CustomerInsight, CustomerInteraction, CustomerPurchase, useProfileCompleteness, useUpsertCustomer, useAddCustomerInteraction } from '@/hooks/use-crm';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
+import { useDeleteCustomerInteraction } from '@/hooks/use-delete-customer-interaction';
+import { useProduct } from '@/hooks/use-product';
+import { useCustomerTimeline } from '@/hooks/use-customer-timeline';
+import { useCustomerStats } from '@/hooks/use-customer-stats';
+import { useCustomerPurchases } from '@/hooks/use-customer-purchases';
 
 interface CustomerDetailProps {
   customer: CustomerProfile;
   insights?: CustomerInsight[];
   interactions?: CustomerInteraction[];
-  purchases?: CustomerPurchase[];
 }
 
 export function CustomerDetail({ 
   customer, 
   insights = [], 
   interactions = [], 
-  purchases = [] 
 }: CustomerDetailProps) {
-  const { user } = useAuth();
+  const { user, hasPermission } = useAuth();
   const completeness = useProfileCompleteness(customer);
   const upsertCustomer = useUpsertCustomer();
   const addInteraction = useAddCustomerInteraction();
+  // Carrega nome do produto favorito se existir
+  const { data: favoriteProduct } = useProduct(customer.favorite_product);
+  const { data: timeline = [] } = useCustomerTimeline(customer.id);
+  const { data: stats } = useCustomerStats(customer.id);
+  const { data: purchases = [] } = useCustomerPurchases(customer.id);
   
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isInteractionDialogOpen, setIsInteractionDialogOpen] = useState(false);
@@ -45,6 +53,18 @@ export function CustomerDetail({
     created_by: user?.id || '',
     associated_sale_id: null
   });
+
+  // lista local para refletir deleções
+  const deleteInteraction = useDeleteCustomerInteraction();
+  const [interactionList, setInteractionList] = useState(interactions.filter(i => i.interaction_type !== 'fiado'));
+  useEffect(() => setInteractionList(interactions.filter(i=> i.interaction_type !== 'fiado')), [interactions]);
+
+  const handleDeleteInteraction = (id: string) => {
+    if (!window.confirm('Excluir esta interação?')) return;
+    deleteInteraction.mutate(id, {
+      onSuccess: () => setInteractionList(prev => prev.filter(i => i.id !== id))
+    });
+  };
 
   const handleSaveCustomer = async () => {
     await upsertCustomer.mutateAsync(editedCustomer);
@@ -210,14 +230,14 @@ export function CustomerDetail({
                   {purchases.length > 0 ? (
                     <div className="space-y-3">
                       {purchases.slice(0, 3).map((purchase) => (
-                        <div key={purchase.id} className="flex items-center justify-between border-b pb-2">
+                        <div key={purchase.purchase_id} className="flex items-center justify-between border-b pb-2">
                           <div>
-                            <p className="font-medium">{format(new Date(purchase.date), 'dd/MM/yyyy')}</p>
+                            <p className="font-medium">{format(new Date(purchase.created_at), 'dd/MM/yyyy')}</p>
                             <p className="text-xs text-muted-foreground">
-                              {purchase.items.length} {purchase.items.length === 1 ? 'item' : 'itens'}
+                              {(purchase.items ? purchase.items.length : 0)} {(purchase.items ? purchase.items.length : 0) === 1 ? 'item' : 'itens'}
                             </p>
                           </div>
-                          <p className="font-semibold">R$ {purchase.total.toFixed(2)}</p>
+                          <p className="font-semibold">R$ {(purchase.total ?? 0).toFixed(2)}</p>
                         </div>
                       ))}
                     </div>
@@ -243,7 +263,7 @@ export function CustomerDetail({
                       {customer.favorite_product && (
                         <div>
                           <p className="text-xs text-muted-foreground">Produto Favorito</p>
-                          <p>{customer.favorite_product}</p>
+                          <p>{favoriteProduct?.name ?? customer.favorite_product}</p>
                         </div>
                       )}
                     </div>
@@ -262,16 +282,16 @@ export function CustomerDetail({
               {purchases.length > 0 ? (
                 <div className="space-y-6">
                   {purchases.map((purchase) => (
-                    <div key={purchase.id} className="border-b pb-4">
+                    <div key={purchase.purchase_id} className="border-b pb-4">
                       <div className="flex items-center justify-between mb-2">
                         <div>
-                          <p className="font-medium">{format(new Date(purchase.date), 'dd/MM/yyyy')}</p>
-                          <p className="text-xs text-muted-foreground">ID: {purchase.id}</p>
+                          <p className="font-medium">{format(new Date(purchase.created_at), 'dd/MM/yyyy')}</p>
+                          <p className="text-xs text-muted-foreground">ID: {purchase.purchase_id}</p>
                         </div>
                         <div className="text-right">
-                          <p className="font-semibold">R$ {purchase.total.toFixed(2)}</p>
+                          <p className="font-semibold">R$ {(purchase.total ?? 0).toFixed(2)}</p>
                           <p className="text-xs text-muted-foreground">
-                            {purchase.items.length} {purchase.items.length === 1 ? 'item' : 'itens'}
+                            {(purchase.items ? purchase.items.length : 0)} {(purchase.items ? purchase.items.length : 0) === 1 ? 'item' : 'itens'}
                           </p>
                         </div>
                       </div>
@@ -286,11 +306,11 @@ export function CustomerDetail({
                             </tr>
                           </thead>
                           <tbody>
-                            {purchase.items.map((item, idx) => (
+                            {(purchase.items ?? []).map((item: any, idx: number) => (
                               <tr key={idx}>
                                 <td className="py-1">{item.product_name}</td>
                                 <td className="text-center">{item.quantity}</td>
-                                <td className="text-right">R$ {item.unit_price.toFixed(2)}</td>
+                                <td className="text-right">R$ {((item.unit_price ?? 0) as number).toFixed(2)}</td>
                               </tr>
                             ))}
                           </tbody>
@@ -358,10 +378,10 @@ export function CustomerDetail({
                 </Button>
               </div>
               
-              {interactions.length > 0 ? (
+              {interactionList.length > 0 ? (
                 <div className="space-y-4">
-                  {interactions.map((interaction) => (
-                    <div key={interaction.id} className="border-b pb-4">
+                  {interactionList.map((interaction) => (
+                    <div key={interaction.id} className="border-b pb-4 flex justify-between items-start">
                       <div className="flex items-center gap-2 mb-1">
                         <span className={cn(
                           "px-2 py-0.5 rounded-full text-xs",
@@ -377,6 +397,11 @@ export function CustomerDetail({
                         </span>
                       </div>
                       <p>{interaction.description}</p>
+            {hasPermission('admin') && (
+              <Button variant="ghost" size="icon" onClick={() => handleDeleteInteraction(interaction.id)}>
+                <Trash className="h-4 w-4 text-destructive" />
+              </Button>
+            )}
                     </div>
                   ))}
                 </div>

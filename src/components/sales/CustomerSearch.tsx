@@ -30,7 +30,7 @@ export function CustomerSearch({ selectedCustomer, onSelect, onAddNew }: Custome
 
   const { data: customers = [], isLoading, refetch } = useCustomers({
     search: debouncedSearchTerm,
-    limit: 10,
+    limit: 1000,
     enabled: open,
   });
 
