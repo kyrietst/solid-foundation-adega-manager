@@ -264,6 +264,7 @@ export const useUpsertCustomer = () => {
     onSuccess: (data, variables) => {
       // Invalida as queries de clientes para atualizar a lista
       queryClient.invalidateQueries({ queryKey: ['customers'] });
+      queryClient.invalidateQueries({ queryKey: ['reports'] });
       // Invalida a query do cliente específico, se ele já existia
       if (variables.id) {
         queryClient.invalidateQueries({ queryKey: ['customer', variables.id] });
@@ -375,7 +376,8 @@ export const useAddCustomerInteraction = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['customer-interactions', data.customer_id] });
-      queryClient.invalidateQueries({ queryKey: ['customer-interactions', ''] }); // Invalidar a lista de todas as interações
+      queryClient.invalidateQueries({ queryKey: ['customer-interactions', ''] });
+      queryClient.invalidateQueries({ queryKey: ['reports'] }); // Invalidar a lista de todas as interações
       
       toast({
         title: 'Interação registrada',
