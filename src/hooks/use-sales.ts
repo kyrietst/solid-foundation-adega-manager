@@ -406,6 +406,7 @@ export const useUpsertSale = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["sales"] });
       queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["reports"] });
       toast({
         title: "Venda registrada com sucesso!",
         description: "A venda foi registrada no sistema.",
@@ -490,6 +491,7 @@ export const useDeleteSale = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["sales"] });
       queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["reports"] });
       toast({
         title: "Venda excluída com sucesso!",
         description: "A venda foi removida do sistema.",
