@@ -7,7 +7,6 @@ import {
   RefreshCcw,
   Users, 
   Truck, 
-  FileText,
   Wine,
   Settings,
   LogOut
@@ -70,13 +69,6 @@ export const Sidebar = () => {
       icon: Truck, 
       roles: ['admin', 'employee', 'delivery'],
       description: 'Controle de entregas'
-    },
-    { 
-      id: 'reports', 
-      label: 'Relatórios', 
-      icon: FileText, 
-      roles: ['admin', 'employee'],
-      description: 'Relatórios e análises'
     },
     { 
       id: 'users', 

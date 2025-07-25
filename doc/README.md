@@ -1,240 +1,287 @@
-# Adega Manager - Documentação Técnica
+# Adega Manager - Documentação Completa
 
 ## Visão Geral
 
 O Adega Manager é uma aplicação web moderna desenvolvida para gerenciamento completo de adegas, oferecendo funcionalidades como controle de estoque, vendas, clientes (CRM), delivery e relatórios. A aplicação foi construída utilizando tecnologias modernas e seguindo as melhores práticas de desenvolvimento.
 
-> **Atualização 18/06/2025**: Hooks centrais e componente de notificações refatorados, eliminando duplicações e melhorando performance.
+> **Última Atualização**: 16/07/2025 - Documentação consolidada e refatorada
 
-## Stack Tecnológica
+---
 
-### Frontend
-- **React 18**: Framework principal para construção da interface
-- **TypeScript**: Linguagem principal, oferecendo tipagem estática
-- **Vite**: Build tool e dev server
-- **TailwindCSS**: Framework CSS para estilização
-- **Shadcn/ui**: Biblioteca de componentes baseada em Radix UI
-- **React Router Dom**: Gerenciamento de rotas
-- **React Query**: Gerenciamento de estado e cache de dados
-- **React Hook Form**: Gerenciamento de formulários
-- **Zod**: Validação de schemas
-- **Recharts**: Biblioteca para criação de gráficos
+## 📋 Índice da Documentação
 
-### Backend
-- **Supabase**: Plataforma de backend como serviço (BaaS)
-  - Banco de dados PostgreSQL
-  - Autenticação e autorização
-  - Armazenamento de arquivos
-  - Funções serverless
-  - Realtime subscriptions
-  - RLS (Row Level Security)
+### 🏗️ [ARCHITECTURE.md](./ARCHITECTURE.md)
+Documentação técnica completa da arquitetura do sistema:
+- **Stack Tecnológica**: React 18, TypeScript, Supabase, Tailwind CSS
+- **Estrutura do Projeto**: Organização de pastas e arquivos
+- **Banco de Dados**: 28 tabelas organizadas, RLS, triggers
+- **Componentes**: Padrões de desenvolvimento e reutilização
+- **Segurança**: Controle de acesso, validação, sanitização
+- **Performance**: Otimizações e boas práticas
+- **Monitoramento**: Logs, métricas, debugging
 
-## Estrutura do Projeto
+### 🧩 [MODULES.md](./MODULES.md)
+Detalhamento completo dos módulos do sistema:
+- **CRM** (✅ 100%): Segmentação, insights, interações
+- **Vendas** (🟡 80%): Checkout, pagamentos, carrinho
+- **Estoque** (🟡 70%): Controle FIFO, alertas, previsão
+- **Relatórios** (❌ Removido): Migrado para n8n
+- **Dashboard** (🟡 30%): Personalização, tempo real
+- **Delivery** (⏳ 20%): Rastreamento, rotas, avaliação
 
+### 🔧 [OPERATIONS.md](./OPERATIONS.md)
+Guia completo de operações e manutenção:
+- **Sistema de Backup**: Automático, rotação, restauração
+- **Deploy**: Ambientes, CI/CD, variáveis
+- **Monitoramento**: Métricas, logs, auditoria
+- **Manutenção**: Preventiva, troubleshooting, scripts
+- **Segurança**: Políticas, criptografia, conformidade LGPD
+- **Disaster Recovery**: Planos, testes, contatos
+
+### 👨‍💻 [DEVELOPMENT.md](./DEVELOPMENT.md)
+Guia completo para desenvolvedores:
+- **Configuração**: Ambiente, VS Code, Git
+- **Padrões**: Código, nomenclatura, estrutura
+- **Integração**: Supabase, hooks, real-time
+- **Testes**: Unitários, integração, E2E
+- **Boas Práticas**: Performance, segurança, acessibilidade
+- **Contribuição**: Fluxo, commits, code review
+
+### 🤖 [N8N_AUTOMATIONS.md](./N8N_AUTOMATIONS.md)
+Guia completo de automações com n8n:
+- **Estoque**: Alertas, pedidos automáticos, controle de validade
+- **CRM**: Campanhas, reativação, segmentação dinâmica
+- **Relatórios**: Geração automática, dashboards, análise preditiva
+- **Financeiro**: Cobrança, conciliação, fluxo de caixa
+- **Delivery**: Otimização de rotas, tracking, notificações
+- **Integrações**: WhatsApp, email, SMS, Slack
+
+---
+
+## 🚀 Quick Start
+
+### Requisitos
+- Node.js 18+
+- npm 9+
+- Git
+
+### Instalação Rápida
+
+```bash
+# 1. Clonar repositório
+git clone [url-do-repositorio]
+cd solid-foundation-adega-manager
+
+# 2. Instalar dependências
+npm install
+
+# 3. Configurar ambiente
+cp .env.example .env
+# Editar .env com suas credenciais Supabase
+
+# 4. Executar aplicação
+npm run dev
 ```
-src/
-├── components/     # Componentes reutilizáveis
-│   ├── ui/         # Componentes de UI específicos da aplicação
-│   ├── layout/     # Componentes de layout da aplicação
-├── contexts/       # Contextos React
-├── hooks/          # Hooks customizados
-├── integrations/   # Integrações com serviços externos
-├── lib/            # Utilitários e configurações
-└── pages/          # Páginas da aplicação
+
+### Comandos Principais
+
+```bash
+# Desenvolvimento
+npm run dev          # Servidor desenvolvimento (porta 8080)
+npm run build        # Build produção
+npm run lint         # Verificar código
+npm run preview      # Preview build
+
+# Banco de dados
+npm run backup       # Backup banco
+npm run restore      # Restaurar backup
+npm run setup:env    # Configurar ambiente
 ```
 
-## Módulos Principais
+---
 
-### 1. Dashboard
-Visão geral do negócio com estatísticas importantes, gráficos e indicadores de performance.
+## 📊 Status do Projeto
 
-### 2. Produtos e Estoque
-Gerenciamento completo de produtos, categorias, estoque e movimentação.
+### Módulos Implementados
 
-### 3. Vendas
-Registro e acompanhamento de vendas, checkout, pagamentos e histórico de transações.
+| Módulo | Status | Completude | Próximos Passos |
+|--------|--------|------------|-----------------|
+| **CRM** | ✅ Concluído | 100% | Manutenção |
+| **Vendas** | 🟡 Desenvolvimento | 80% | Pagamentos |
+| **Estoque** | 🟡 Desenvolvimento | 70% | Previsão |
+| **Relatórios** | ❌ Removido | 0% | Migrado para n8n |
+| **Dashboard** | 🟡 Planejado | 30% | Personalização |
+| **Delivery** | ⏳ Pendente | 20% | Rastreamento |
 
-### 4. CRM (Customer Relationship Management)
-Sistema completo de gestão de clientes com:
-- Perfis detalhados e indicador de completude
-- Segmentação automática de clientes
-- Registro e visualização de interações
-- Insights automáticos baseados em padrões de compra
-- Dashboard analítico com tendências e oportunidades
-- Automações de enriquecimento de dados
-
-### 5. Delivery
-Controle de entregas, rotas, status e integração com clientes.
-
-### 6. Relatórios
-Sistema de relatórios customizáveis para análise de dados.
-
-### 7. Usuários e Permissões
-Gerenciamento de usuários com diferentes níveis de acesso.
-
-### 8. Notificações
-Sistema de notificações em tempo real integrado ao Supabase Realtime, incluindo componente `NotificationBell` e popover detalhado.
-Gerenciamento de usuários com diferentes níveis de acesso.
-
-## Guia de Desenvolvimento
-
-### 1. Padrões de Código
-
-#### Nomenclatura
-- Use PascalCase para componentes React
-- Use camelCase para funções e variáveis
-- Use UPPER_CASE para constantes
-- Prefixe interfaces com 'I' (ex: IUser)
-- Prefixe tipos com 'T' (ex: TUserRole)
-
-#### Estrutura de Componentes
-- Um componente por arquivo
-- Mantenha componentes pequenos e focados
-- Use composição ao invés de herança
-- Extraia lógica complexa para hooks customizados
-
-### 2. Gerenciamento de Estado
-
-- Use React Query para dados do servidor
-- Use Context API para estado global da aplicação
-- Use useState para estado local de componentes
-- Evite prop drilling - prefira Context ou composição
-
-### 3. Segurança
+### Tecnologias Utilizadas
 
 #### Frontend
-- Sanitize todas as entradas de usuário
-- Use HTTPS para todas as requisições
-- Implemente rate limiting no cliente
-- Não armazene dados sensíveis no localStorage
-- Use tokens JWT com refresh token
-- Implemente logout automático por inatividade
+- **React 18** + TypeScript
+- **Vite** (build tool)
+- **Tailwind CSS** + Shadcn/ui
+- **React Query** (estado servidor)
+- **React Hook Form** + Zod
+- **Recharts** (gráficos)
 
-#### Backend (Supabase)
-- Use RLS (Row Level Security) para controle de acesso
-- Implemente políticas de segurança por tabela
-- Use funções SQL para operações complexas
-- Mantenha backups regulares do banco de dados
-- Monitore logs de acesso e erros
+#### Backend
+- **Supabase** (PostgreSQL)
+- **Row Level Security** (RLS)
+- **Real-time subscriptions**
+- **Edge Functions**
+- **Storage** para arquivos
 
-### 4. Performance
+---
 
-- Implemente lazy loading de rotas
-- Use memo e useMemo para otimizações
-- Otimize imagens antes do upload
-- Implemente infinite scroll onde apropriado
-- Use cache adequadamente
-- Minimize bundle size
+## 🏢 Funcionalidades Principais
 
-### 5. Acessibilidade
+### ✅ Sistema CRM Completo
+- Perfis detalhados de clientes
+- Segmentação automática (VIP, Regular, Novo, Inativo, Em risco)
+- Indicador de completude de perfil
+- Registro de interações
+- Insights automáticos baseados em IA
+- Timeline de atividades
+- Oportunidades de negócio
 
-- Use elementos semânticos HTML5
-- Implemente navegação por teclado
-- Mantenha contraste adequado
-- Forneça textos alternativos para imagens
-- Teste com leitores de tela
+### 🛒 Módulo de Vendas
+- Ponto de venda (PDV) completo
+- Busca avançada de clientes
+- Carrinho de compras inteligente
+- Múltiplos métodos de pagamento
+- Cálculo automático de descontos
+- Integração com estoque em tempo real
+- Histórico completo de transações
 
-### 6. Testes
+### 📦 Controle de Estoque
+- Movimentações automáticas
+- Controle FIFO (primeiro que entra, primeiro que sai)
+- Alertas de reposição
+- Previsão de demanda (MVP)
+- Integração com vendas
+- Relatórios de movimentação
 
-- Escreva testes unitários para componentes
-- Implemente testes de integração
-- Teste fluxos críticos end-to-end
-- Mantenha cobertura de testes adequada
+### 📊 Sistema de Relatórios (Migrado para n8n)
+- Geração automática de relatórios
+- Envio por email/WhatsApp
+- Dashboards externos integrados
+- Alertas proativos
+- Análise preditiva
+- Integrações com ferramentas de BI
 
-## Fluxo de Trabalho
+---
 
-1. **Desenvolvimento**
-   ```bash
-   npm run dev
-   ```
+## 🔐 Segurança
 
-2. **Build de Produção**
-   ```bash
-   npm run build
-   ```
+### Controle de Acesso
+- **Admin**: Acesso total ao sistema
+- **Employee**: Operações diárias
+- **Delivery**: Apenas entregas
 
-3. **Preview do Build**
-   ```bash
-   npm run preview
-   ```
+### Políticas de Segurança
+- Row Level Security (RLS) no banco
+- Validação em múltiplas camadas
+- Sanitização de dados
+- Auditoria completa
+- Backup automático criptografado
 
-4. **Linting**
-   ```bash
-   npm run lint
-   ```
+---
 
-## Boas Práticas
+## 🗃️ Banco de Dados
 
-### Commits
-- Use commits semânticos
-- Mantenha commits pequenos e focados
-- Escreva mensagens descritivas
+### Estrutura
+- **28 tabelas** organizadas por módulos
+- **PostgreSQL** no Supabase
+- **Triggers** para automação
+- **Funções RPC** para operações complexas
+- **Índices** otimizados para performance
 
-### Code Review
-- Revise mudanças de segurança com atenção
-- Verifique performance em mudanças críticas
-- Teste em diferentes navegadores
-- Valide acessibilidade
+### Principais Tabelas
+- `users`, `profiles` - Autenticação
+- `customers` - CRM completo
+- `products` - Catálogo de produtos
+- `sales`, `sale_items` - Vendas
+- `inventory_movements` - Estoque
+- `audit_logs` - Auditoria
 
-### Documentação
-- Mantenha esta documentação atualizada
-- Documente decisões arquiteturais
-- Comente código complexo
-- Mantenha um changelog
+---
 
-## Troubleshooting
+## 🔧 Manutenção
 
-### Problemas Comuns
+### Backup Automático
+- Backup diário automático
+- Rotação de 7 backups
+- Restauração em um clique
+- Armazenamento em JSON
+- Documentação completa
 
-1. **Erro de CORS**
-   - Verifique configurações do Supabase
-   - Confirme origens permitidas
+### Monitoramento
+- Logs estruturados
+- Métricas de performance
+- Alertas de sistema
+- Auditoria de ações
+- Dashboard de saúde
 
-2. **Problemas de Performance**
-   - Use React DevTools para profiling
-   - Verifique re-renders desnecessários
-   - Otimize queries do banco
+---
 
-3. **Erros de Autenticação**
-   - Verifique tokens
-   - Confirme políticas RLS
-   - Valide permissões
+## 📝 Changelog Recente
 
-4. **Dados CRM desatualizados**
-   - Verifique triggers de automação
-   - Confirme execução de funções do banco
-   - Valide integridade de dados
+### v1.3.0 (16/07/2025)
+- ✅ **Documentação consolidada** em 4 arquivos principais
+- ✅ **Refatoração completa** da estrutura de docs
+- ✅ **Guias especializados** por área (arquitetura, módulos, operações, desenvolvimento)
+- ✅ **Índice centralizado** para navegação
+- ✅ **Remoção de duplicações** e arquivos desnecessários
 
-## Roadmap e Melhorias Futuras
+### v1.2.0 (18/06/2025)
+- ✅ **Sistema CRM completo** implementado
+- ✅ **Hooks refatorados** para melhor performance
+- ✅ **Notificações em tempo real** integradas
+- ✅ **Indicador de completude** de perfil
+- ✅ **Segmentação automática** de clientes
 
-1. **Performance**
-   - Implementar SSR
-   - Otimizar bundle size
-   - Melhorar cache strategy
+---
 
-2. **Funcionalidades**
-   - Integração avançada com sistemas de pagamento
-   - App mobile
-   - Sistema de fidelidade e pontos
-   - Campanhas de marketing automatizadas
+## 🤝 Contribuição
 
-3. **Infraestrutura**
-   - CI/CD
-   - Monitoramento
-   - Analytics
+### Como Contribuir
+1. Leia o [DEVELOPMENT.md](./DEVELOPMENT.md) para configuração
+2. Siga os padrões de código estabelecidos
+3. Adicione testes para novas funcionalidades
+4. Faça commit seguindo convenções
+5. Abra Pull Request com descrição clara
 
-4. **CRM**
-   - Integração com email marketing
-   - Análise preditiva de comportamento
-   - Detecção automática de churn
+### Estrutura de Commits
+```bash
+feat(module): description    # Nova funcionalidade
+fix(module): description     # Correção de bug
+docs(module): description    # Documentação
+refactor(module): description # Refatoração
+test(module): description    # Testes
+```
 
-## Contato e Suporte
+---
 
-Para questões técnicas ou suporte:
-- Abra uma issue no repositório
-- Documente bugs encontrados
-- Sugira melhorias via pull requests
+## 📞 Suporte
 
-## Licença
+### Recursos
+- **Documentação Técnica**: [ARCHITECTURE.md](./ARCHITECTURE.md)
+- **Guia de Módulos**: [MODULES.md](./MODULES.md)
+- **Operações**: [OPERATIONS.md](./OPERATIONS.md)
+- **Desenvolvimento**: [DEVELOPMENT.md](./DEVELOPMENT.md)
 
-Este projeto é proprietário e confidencial. Todos os direitos reservados. 
+### Troubleshooting
+- Consulte a seção de troubleshooting em cada documento
+- Verifique logs de erro na aplicação
+- Consulte documentação do Supabase
+- Abra issue no repositório se necessário
+
+---
+
+## 📜 Licença
+
+Este projeto é proprietário e confidencial. Todos os direitos reservados.
+
+---
+
+**Adega Manager** - Sistema completo de gestão para adegas
+*Desenvolvido com React, TypeScript e Supabase*

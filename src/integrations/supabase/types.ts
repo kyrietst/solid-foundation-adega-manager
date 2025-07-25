@@ -9,6 +9,93 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      products: {
+        Row: {
+          id: string
+          name: string
+          description: string | null
+          price: number
+          stock_quantity: number
+          category: string
+          vintage: number | null
+          producer: string | null
+          country: string | null
+          region: string | null
+          alcohol_content: number | null
+          volume: number | null
+          volume_ml: number | null
+          image_url: string | null
+          supplier: string | null
+          minimum_stock: number
+          cost_price: number | null
+          margin_percent: number | null
+          created_at: string
+          updated_at: string
+          unit_type: 'un' | 'pct'
+          package_size: number
+          package_price: number | null
+          package_margin: number | null
+          turnover_rate: 'fast' | 'medium' | 'slow'
+          last_sale_date: string | null
+        }
+        Insert: {
+          id?: string
+          name: string
+          description?: string | null
+          price: number
+          stock_quantity: number
+          category: string
+          vintage?: number | null
+          producer?: string | null
+          country?: string | null
+          region?: string | null
+          alcohol_content?: number | null
+          volume?: number | null
+          volume_ml?: number | null
+          image_url?: string | null
+          supplier?: string | null
+          minimum_stock?: number
+          cost_price?: number | null
+          margin_percent?: number | null
+          created_at?: string
+          updated_at?: string
+          unit_type?: 'un' | 'pct'
+          package_size?: number
+          package_price?: number | null
+          package_margin?: number | null
+          turnover_rate?: 'fast' | 'medium' | 'slow'
+          last_sale_date?: string | null
+        }
+        Update: {
+          id?: string
+          name?: string
+          description?: string | null
+          price?: number
+          stock_quantity?: number
+          category?: string
+          vintage?: number | null
+          producer?: string | null
+          country?: string | null
+          region?: string | null
+          alcohol_content?: number | null
+          volume?: number | null
+          volume_ml?: number | null
+          image_url?: string | null
+          supplier?: string | null
+          minimum_stock?: number
+          cost_price?: number | null
+          margin_percent?: number | null
+          created_at?: string
+          updated_at?: string
+          unit_type?: 'un' | 'pct'
+          package_size?: number
+          package_price?: number | null
+          package_margin?: number | null
+          turnover_rate?: 'fast' | 'medium' | 'slow'
+          last_sale_date?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
