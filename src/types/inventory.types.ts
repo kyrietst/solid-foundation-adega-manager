@@ -32,6 +32,7 @@ export interface Product {
   package_margin?: number;
   turnover_rate: TurnoverRate;
   last_sale_date?: string;
+  barcode?: string;
 }
 
 export interface ProductFormData {
@@ -57,6 +58,7 @@ export interface ProductFormData {
   package_size: number;
   package_price?: number;
   package_margin?: number;
+  barcode?: string;
 }
 
 export interface ProductCalculations {
@@ -132,4 +134,26 @@ export type SortOption =
 export interface SortConfig {
   field: SortOption;
   direction: 'asc' | 'desc';
+}
+
+// Interfaces específicas para código de barras
+export interface BarcodeOperation {
+  barcode: string;
+  productId?: string;
+  timestamp: Date;
+  operation: 'scan' | 'manual_entry' | 'update';
+  success: boolean;
+  error?: string;
+}
+
+export interface BarcodeValidation {
+  isValid: boolean;
+  format?: 'EAN-8' | 'EAN-13' | 'UPC-A' | 'UPC-E' | 'CODE-128' | 'UNKNOWN';
+  error?: string;
+}
+
+export interface BarcodeComponentProps {
+  onScan: (barcode: string) => Promise<void>;
+  disabled?: boolean;
+  autoFocus?: boolean;
 }

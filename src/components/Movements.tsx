@@ -20,13 +20,13 @@ export const Movements: React.FC = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [form, setForm] = useState({
     type: 'out',
-    product_id: '',
+    product_id: undefined as string | undefined,
     quantity: '',
     reason: '',
-    customer_id: '',
+    customer_id: undefined as string | undefined,
     amount: '',
     due_date: '',
-    sale_id: ''
+    sale_id: undefined as string | undefined
   });
 
   // Carrega produtos (para dropdown e mapeamento)
@@ -147,7 +147,7 @@ export const Movements: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <Card>
+      <Card className="bg-adega-charcoal/20 border-white/10 backdrop-blur-xl shadow-xl">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Movimentações de Estoque</CardTitle>
           {userRole === 'admin' && (
@@ -196,11 +196,12 @@ export const Movements: React.FC = () => {
                   {/* Seleção de cliente (opcional, obrigatório para fiado) */}
                    <div>
                      <label className="block text-sm font-medium mb-1">Cliente (opcional)</label>
-                     <Select value={form.customer_id} onValueChange={(value) => setForm({ ...form, customer_id: value })}>
+                     <Select value={form.customer_id} onValueChange={(value) => setForm({ ...form, customer_id: value === 'none' ? undefined : value })}>
                        <SelectTrigger>
                          <SelectValue placeholder="Selecione" />
                        </SelectTrigger>
                        <SelectContent className="max-h-60 overflow-y-auto">
+                         <SelectItem value="none">Nenhum cliente</SelectItem>
                          {customers.map((c) => (
                            <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                          ))}
@@ -242,6 +243,7 @@ export const Movements: React.FC = () => {
                            <SelectValue placeholder="Selecione" />
                          </SelectTrigger>
                          <SelectContent className="max-h-60 overflow-y-auto">
+                           <SelectItem value="none">Selecione uma venda</SelectItem>
                            {salesList.map(s=>(<SelectItem key={s.id} value={s.id}>{new Date(s.created_at).toLocaleDateString()} - {s.id.slice(0,6)}</SelectItem>))}
                          </SelectContent>
                        </Select>

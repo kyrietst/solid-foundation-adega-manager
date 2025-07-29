@@ -69,9 +69,13 @@ export function Cart() {
   };
 
   return (
-    <div className="flex h-full flex-col bg-card border-l">
-      <header className="flex items-center justify-between p-4 border-b">
-        <h2 className="text-lg font-semibold flex items-center gap-2">
+    <div className="flex h-full flex-col bg-card lg:border-l">
+      <header className="flex items-center justify-between p-4 border-b lg:block">
+        <h2 className="text-lg font-semibold flex items-center gap-2 lg:hidden">
+          <ShoppingCart className="h-5 w-5" />
+          Carrinho de Vendas
+        </h2>
+        <h2 className="hidden lg:flex text-lg font-semibold items-center gap-2">
           <ShoppingCart className="h-5 w-5" />
           Carrinho de Vendas
         </h2>

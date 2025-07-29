@@ -147,7 +147,7 @@ export function CustomerDetail({
           />
         </div>
         
-        <Card>
+        <Card className="bg-adega-charcoal/20 border-white/10 backdrop-blur-xl shadow-xl">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm">Segmento</CardTitle>
           </CardHeader>
@@ -185,7 +185,7 @@ export function CustomerDetail({
         
         <TabsContent value="overview">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card>
+            <Card className="bg-adega-charcoal/20 border-white/10 backdrop-blur-xl shadow-xl">
               <CardHeader>
                 <CardTitle className="text-base">Informações Pessoais</CardTitle>
               </CardHeader>
@@ -222,7 +222,7 @@ export function CustomerDetail({
             </Card>
             
             <div className="space-y-4">
-              <Card>
+              <Card className="bg-adega-charcoal/20 border-white/10 backdrop-blur-xl shadow-xl">
                 <CardHeader>
                   <CardTitle className="text-base">Histórico de Compras</CardTitle>
                 </CardHeader>
@@ -247,7 +247,7 @@ export function CustomerDetail({
                 </CardContent>
               </Card>
               
-              <Card>
+              <Card className="bg-adega-charcoal/20 border-white/10 backdrop-blur-xl shadow-xl">
                 <CardHeader>
                   <CardTitle className="text-base">Preferências Detectadas</CardTitle>
                 </CardHeader>
@@ -277,7 +277,7 @@ export function CustomerDetail({
         </TabsContent>
         
         <TabsContent value="purchases">
-          <Card>
+          <Card className="bg-adega-charcoal/20 border-white/10 backdrop-blur-xl shadow-xl">
             <CardContent className="pt-6">
               {purchases.length > 0 ? (
                 <div className="space-y-6">
@@ -330,7 +330,7 @@ export function CustomerDetail({
         </TabsContent>
         
         <TabsContent value="insights">
-          <Card>
+          <Card className="bg-adega-charcoal/20 border-white/10 backdrop-blur-xl shadow-xl">
             <CardContent className="pt-6">
               {insights.length > 0 ? (
                 <div className="space-y-4">
@@ -367,7 +367,7 @@ export function CustomerDetail({
         </TabsContent>
         
         <TabsContent value="interactions">
-          <Card>
+          <Card className="bg-adega-charcoal/20 border-white/10 backdrop-blur-xl shadow-xl">
             <CardContent className="pt-6">
               <div className="flex justify-end mb-4">
                 <Button 

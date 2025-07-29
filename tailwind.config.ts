@@ -61,6 +61,21 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				// Paleta Black to Yellow - Elegant Gold System
+				'adega': {
+					'black': '#000000',          // Preto total
+					'charcoal': '#1a1a1a',      // Carvão escuro
+					'graphite': '#2d2d2d',      // Grafite
+					'slate': '#404040',         // Ardósia
+					'steel': '#595959',         // Aço
+					'pewter': '#737373',        // Estanho
+					'silver': '#8c8c8c',        // Prata
+					'platinum': '#a6a6a6',      // Platina
+					'champagne': '#bfbf8c',     // Champagne
+					'gold': '#d4af37',          // Ouro clássico
+					'amber': '#ffbf00',         // Âmbar
+					'yellow': '#ffd700'         // Amarelo dourado
 				}
 			},
 			borderRadius: {
@@ -84,11 +99,51 @@ export default {
 					to: {
 						height: '0'
 					}
-				}
+				},
+				// Keyframes oficiais da Aceternity UI
+				moveHorizontal: {
+					'0%': {
+						transform: 'translateX(-50%) translateY(-10%)',
+					},
+					'50%': {
+						transform: 'translateX(50%) translateY(10%)',
+					},
+					'100%': {
+						transform: 'translateX(-50%) translateY(-10%)',
+					},
+				},
+				moveInCircle: {
+					'0%': {
+						transform: 'rotate(0deg)',
+					},
+					'50%': {
+						transform: 'rotate(180deg)',
+					},
+					'100%': {
+						transform: 'rotate(360deg)',
+					},
+				},
+				moveVertical: {
+					'0%': {
+						transform: 'translateY(-50%)',
+					},
+					'50%': {
+						transform: 'translateY(50%)',
+					},
+					'100%': {
+						transform: 'translateY(-50%)',
+					},
+				},
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				// Background Gradient Animations
+				first: 'moveVertical 30s ease infinite',
+				second: 'moveInCircle 20s reverse infinite',
+				third: 'moveInCircle 40s linear infinite',
+				fourth: 'moveHorizontal 40s ease infinite',
+				fifth: 'moveInCircle 20s ease infinite',
 			}
 		}
 	},

@@ -10,6 +10,8 @@ import { Separator } from '@/components/ui/separator';
 import { Calculator, Package, DollarSign, TrendingUp } from 'lucide-react';
 import { ProductFormData, UnitType } from '@/types/inventory.types';
 import { useInventoryCalculations } from '@/hooks/useInventoryCalculations';
+import { BarcodeInput } from '@/components/inventory/BarcodeInput';
+import { useBarcode } from '@/hooks/use-barcode';
 
 interface ProductFormProps {
   initialData?: Partial<ProductFormData>;
@@ -62,10 +64,12 @@ export const ProductForm: React.FC<ProductFormProps> = ({
     package_size: 1,
     package_price: undefined,
     package_margin: undefined,
+    barcode: '',
     ...initialData
   });
 
   const { calculations, calculatePriceWithMargin, validateProductData } = useInventoryCalculations(formData);
+  const { validateBarcode } = useBarcode();
   const validation = validateProductData(formData);
 
   // Atualizar preço por pacote automaticamente quando necessário
@@ -89,6 +93,13 @@ export const ProductForm: React.FC<ProductFormProps> = ({
     }
   };
 
+  const handleBarcodeScanned = async (barcode: string) => {
+    const validation = validateBarcode(barcode);
+    if (validation.isValid) {
+      setFormData(prev => ({ ...prev, barcode }));
+    }
+  };
+
   const handleMarginChange = (margin: number) => {
     if (formData.cost_price) {
       const newPrice = calculatePriceWithMargin(formData.cost_price, margin);
@@ -103,7 +114,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Informações Básicas */}
-      <Card>
+      <Card className="bg-adega-charcoal/20 border-white/10 backdrop-blur-xl shadow-xl">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Package className="h-5 w-5" />
@@ -149,6 +160,23 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             </div>
 
             <div>
+              <BarcodeInput
+                onScan={handleBarcodeScanned}
+                placeholder="Escaneie ou digite o código de barras"
+                autoFocus={false}
+              />
+              {formData.barcode && (
+                <Input
+                  value={formData.barcode}
+                  onChange={(e) => handleInputChange('barcode', e.target.value.replace(/\D/g, ''))}
+                  placeholder="Código de barras"
+                  maxLength={14}
+                  className="mt-2 font-mono"
+                />
+              )}
+            </div>
+
+            <div>
               <Label htmlFor="unit_type">Venda em</Label>
               <Select value={formData.unit_type} onValueChange={(value: UnitType) => handleInputChange('unit_type', value)}>
                 <SelectTrigger>
@@ -176,7 +204,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
       </Card>
 
       {/* Preços e Margens */}
-      <Card>
+      <Card className="bg-adega-charcoal/20 border-white/10 backdrop-blur-xl shadow-xl">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <DollarSign className="h-5 w-5" />
@@ -285,7 +313,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
       </Card>
 
       {/* Estoque */}
-      <Card>
+      <Card className="bg-adega-charcoal/20 border-white/10 backdrop-blur-xl shadow-xl">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5" />
@@ -332,7 +360,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
       </Card>
 
       {/* Informações Adicionais */}
-      <Card>
+      <Card className="bg-adega-charcoal/20 border-white/10 backdrop-blur-xl shadow-xl">
         <CardHeader>
           <CardTitle>Informações Adicionais</CardTitle>
         </CardHeader>

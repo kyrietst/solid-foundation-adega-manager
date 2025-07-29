@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
+import { BackgroundWrapper } from "@/components/ui/background-wrapper";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
@@ -32,26 +33,28 @@ const App = () => (
     <TooltipProvider>
       <BrowserRouter>
         <AuthProvider>
-            <NotificationProvider>
-          <Toaster />
-                    <Sonner />
-          <TailwindColorClasses />
-          <Routes>
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/" element={<Index />}>
-              <Route index element={<div />} />
-              <Route path="dashboard" element={<div />} />
-              <Route path="sales" element={<div />} />
-              <Route path="inventory" element={<div />} />
-              <Route path="customers" element={<div />} />
-              <Route path="delivery" element={<div />} />
-              <Route path="movements" element={<div />} />
-              <Route path="users" element={<div />} />
-            </Route>
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </NotificationProvider>
-          </AuthProvider>
+          <NotificationProvider>
+            <BackgroundWrapper>
+              <Toaster />
+              <Sonner />
+              <TailwindColorClasses />
+              <Routes>
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/" element={<Index />}>
+                  <Route index element={<div />} />
+                  <Route path="dashboard" element={<div />} />
+                  <Route path="sales" element={<div />} />
+                  <Route path="inventory" element={<div />} />
+                  <Route path="customers" element={<div />} />
+                  <Route path="delivery" element={<div />} />
+                  <Route path="movements" element={<div />} />
+                  <Route path="users" element={<div />} />
+                </Route>
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BackgroundWrapper>
+          </NotificationProvider>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

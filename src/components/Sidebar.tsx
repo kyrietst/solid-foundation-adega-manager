@@ -1,184 +1,215 @@
-import React from 'react';
-import { NotificationBell } from '@/components/NotificationBell';
-import { 
-  BarChart3, 
-  ShoppingCart, 
-  Package, 
-  RefreshCcw,
-  Users, 
-  Truck, 
-  Wine,
-  Settings,
-  LogOut
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/ui/button';
-import { Link, useLocation } from 'react-router-dom';
+"use client";
+import React, { useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { Sidebar, SidebarBody, SidebarLink } from "@/components/ui/sidebar";
+import {
+  IconChartBar,
+  IconShoppingCart,
+  IconPackage,
+  IconRefresh,
+  IconUsers,
+  IconTruck,
+  IconSettings,
+  IconLogout,
+} from "@tabler/icons-react";
+import { motion } from "motion/react";
+import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
 
-export const Sidebar = () => {
-  const { user, userRole, signOut } = useAuth();
+export function AppSidebar() {
+  const navigate = useNavigate();
   const location = useLocation();
-  
-  const hasPermission = (roles: string | string[]) => {
-    if (!userRole) return false;
-    if (typeof roles === 'string') {
-      return roles === userRole;
-    }
-    return roles.includes(userRole);
-  };
-  const menuItems = [
-    { 
-      id: 'dashboard', 
-      label: 'Dashboard', 
-      icon: BarChart3, 
-      roles: ['admin', 'employee'],
-      description: 'Visão geral do sistema'
+  const { user, userRole, signOut } = useAuth();
+  const [open, setOpen] = useState(false);
+
+  // Definir links baseado na documentação
+  const allLinks = [
+    {
+      id: "dashboard",
+      label: "Dashboard",
+      href: "/dashboard",
+      icon: (
+        <IconChartBar className="h-5 w-5 shrink-0 text-adega-gold" />
+      ),
+      roles: ["admin", "employee"],
     },
-    { 
-      id: 'sales', 
-      label: 'Vendas', 
-      icon: ShoppingCart, 
-      roles: ['admin', 'employee'],
-      description: 'Gerenciar vendas e pedidos'
+    {
+      id: "sales",
+      label: "Vendas",
+      href: "/sales",
+      icon: (
+        <IconShoppingCart className="h-5 w-5 shrink-0 text-adega-gold" />
+      ),
+      roles: ["admin", "employee"],
     },
-    { 
-      id: 'inventory', 
-      label: 'Estoque', 
-      icon: Package, 
-      roles: ['admin', 'employee'],
-      description: 'Controle de produtos e estoque'
+    {
+      id: "inventory",
+      label: "Estoque",
+      href: "/inventory",
+      icon: (
+        <IconPackage className="h-5 w-5 shrink-0 text-adega-gold" />
+      ),
+      roles: ["admin", "employee"],
     },
-    { 
-      id: 'movements', 
-      label: 'Movimentações', 
-      icon: RefreshCcw, 
-      roles: ['admin'],
-      description: 'Histórico de movimentações de estoque'
+    {
+      id: "customers",
+      label: "Clientes",
+      href: "/customers",
+      icon: (
+        <IconUsers className="h-5 w-5 shrink-0 text-adega-gold" />
+      ),
+      roles: ["admin", "employee"],
     },
-    { 
-      id: 'customers', 
-      label: 'Clientes', 
-      icon: Users, 
-      roles: ['admin', 'employee'],
-      description: 'Gerenciar cadastro de clientes'
+    {
+      id: "delivery",
+      label: "Delivery",
+      href: "/delivery",
+      icon: (
+        <IconTruck className="h-5 w-5 shrink-0 text-adega-gold" />
+      ),
+      roles: ["admin", "employee", "delivery"],
     },
-    { 
-      id: 'delivery', 
-      label: 'Delivery', 
-      icon: Truck, 
-      roles: ['admin', 'employee', 'delivery'],
-      description: 'Controle de entregas'
+    {
+      id: "movements",
+      label: "Movimentações",
+      href: "/movements",
+      icon: (
+        <IconRefresh className="h-5 w-5 shrink-0 text-adega-gold" />
+      ),
+      roles: ["admin"],
     },
-    { 
-      id: 'users', 
-      label: 'Usuários', 
-      icon: Settings, 
-      roles: ['admin'],
-      description: 'Gerenciar usuários do sistema'
+    {
+      id: "users",
+      label: "Usuários",
+      href: "/users",
+      icon: (
+        <IconSettings className="h-5 w-5 shrink-0 text-adega-gold" />
+      ),
+      roles: ["admin"],
     },
   ];
 
-  // Filtra os itens do menu baseado no papel do usuário
-  const allowedMenuItems = menuItems.filter(item => {
-    // Se não há usuário ou role, não mostra nenhum item
-    if (!user || !userRole) {
-      console.log('No user or role found, hiding all items');
-      return false;
-    }
-    
-    // Admin principal tem acesso a tudo
-    if (user.email === 'adm@adega.com') {
-      return true;
+  // Filtrar links baseado no sistema de permissões da documentação
+  const getFilteredLinks = () => {
+    if (!userRole) return [];
+
+    // Admin principal (adm@adega.com) tem acesso a tudo
+    if (user?.email === 'adm@adega.com') {
+      return allLinks;
     }
 
-    // Se for entregador, só mostra a aba delivery
+    // Entregadores só veem delivery
     if (userRole === 'delivery') {
-      return item.id === 'delivery';
+      return allLinks.filter(item => item.id === 'delivery');
     }
 
-    // Para outros usuários, verifica se o role está incluído nos roles permitidos do item
-    return item.roles.includes(userRole);
-  });
+    // Outros usuários conforme roles permitidos
+    return allLinks.filter(item => item.roles.includes(userRole));
+  };
 
-  const getRoleDisplay = (role: string) => {
-    const roleMap = {
-      admin: 'Administrador',
-      employee: 'Funcionário',
-      delivery: 'Entregador'
-    };
-    return roleMap[role as keyof typeof roleMap] || role;
+  const filteredLinks = getFilteredLinks();
+
+  // Converter para formato esperado pelo SidebarLink
+  const links = filteredLinks.map(link => ({
+    label: link.label,
+    href: link.href,
+    icon: link.icon,
+  }));
+
+  const handleLinkClick = (href: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    console.log('Sidebar: Navigating to', href);
+    navigate(href);
+  };
+
+  const handleLogout = (e: React.MouseEvent) => {
+    e.preventDefault();
+    console.log('Sidebar: Logging out');
+    signOut();
+    navigate('/auth');
   };
 
   return (
-    <aside className="fixed inset-y-0 left-0 z-20 flex h-full w-64 flex-col bg-white shadow-lg">
-      {/* Header */}
-      <div className="flex h-[60px] items-center px-4">
-        <div className="p-4 font-bold text-xl flex items-center gap-2 justify-between">
-          <div className="flex items-center gap-2">
-            <Wine className="h-6 w-6 text-purple-600" />
-            <div>
-              <h2 className="text-base font-semibold text-gray-900">Adega</h2>
-              <p className="text-xs text-gray-500">Fundação Sólida</p>
+    <div className="h-screen">
+      <Sidebar open={open} setOpen={setOpen}>
+        <SidebarBody className="justify-between gap-8">
+          <div className="flex flex-1 flex-col overflow-x-hidden overflow-y-auto">
+            <div className="mb-8">
+              {open ? <Logo /> : <LogoIcon />}
             </div>
+            <nav className="flex flex-col gap-1">
+              {links.map((link, idx) => (
+                <SidebarLink 
+                  key={idx} 
+                  link={link} 
+                  onClick={(e) => handleLinkClick(link.href, e)}
+                  className={cn(
+                    location.pathname === link.href
+                      ? "bg-adega-charcoal/80 text-adega-yellow shadow-lg border border-white/10-gold/30"
+                      : "hover:bg-adega-graphite/40"
+                  )}
+                />
+              ))}
+            </nav>
           </div>
-          <NotificationBell />
-        </div>
-      </div>
-
-      {/* Navigation */}
-      <nav className="flex-1 space-y-1 px-2 py-2">
-        {allowedMenuItems.map((item) => {
-          const Icon = item.icon;
-          return (
-            <Link
-              key={item.id}
-              to={`/${item.id}`}
-              className={cn(
-                'flex items-center w-full gap-2 rounded-md px-2 py-2 text-sm transition-colors',
-                location.pathname === `/${item.id}` 
-                  ? 'bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
-                  : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800',
-                !hasPermission(item.roles) && 'opacity-50 cursor-not-allowed',
-              )}
-              aria-disabled={!hasPermission(item.roles)}
-            >
-              <Icon className="h-4 w-4" />
-              <span>{item.label}</span>
-            </Link>
-          );
-        })}
-      </nav>
-
-      {/* Footer */}
-      <div className="border-t border-gray-100 bg-white p-4">
-        <div className="mb-2">
-          <p className="text-sm font-medium text-gray-900">
-            {user?.email === 'adm@adega.com' ? 'Administrador' : user?.email?.split('@')[0]}
-          </p>
-          <p className="text-xs text-gray-600">
-            {user?.email === 'adm@adega.com' 
-              ? 'Administrador Principal' 
-              : userRole && getRoleDisplay(userRole)}
-          </p>
-          <p className="text-xs text-gray-500 truncate">{user?.email}</p>
-        </div>
-        <Button 
-          onClick={async () => {
-            console.log('Logout button clicked');
-            try {
-              await signOut();
-            } catch (error) {
-              console.error('Error during signOut:', error);
-            }
-          }}
-          variant="outline" 
-          className="w-full justify-start border-gray-200 text-gray-600 hover:text-gray-900"
-        >
-          <LogOut className="mr-2 h-4 w-4" />
-          <span>Sair</span>
-        </Button>
-      </div>
-    </aside>
+          <div className="border-t border-white/10-charcoal/50 pt-4 space-y-2">
+            {/* User Info */}
+            <SidebarLink
+              link={{
+                label: user?.email || "Usuário",
+                href: "#",
+                icon: (
+                  <div className="h-8 w-8 shrink-0 rounded-xl bg-gradient-to-r from-adega-gold to-adega-amber flex items-center justify-center text-black text-sm font-bold shadow-lg">
+                    {user?.email?.[0]?.toUpperCase() || 'U'}
+                  </div>
+                ),
+              }}
+              className="hover:bg-adega-graphite/40"
+            />
+            {/* Logout */}
+            <SidebarLink
+              link={{
+                label: "Sair",
+                href: "#",
+                icon: (
+                  <IconLogout className="h-5 w-5 shrink-0 text-red-400" />
+                ),
+              }}
+              onClick={handleLogout}
+              className="hover:bg-red-900/30 hover:text-red-300"
+            />
+          </div>
+        </SidebarBody>
+      </Sidebar>
+    </div>
   );
-}; 
+}
+
+export const Logo = () => {
+  return (
+    <div className="relative z-20 flex items-center space-x-3 py-2">
+      <div className="h-10 w-10 shrink-0 rounded-xl bg-gradient-to-r from-adega-gold to-adega-amber shadow-lg" />
+      <motion.div
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.3, ease: "easeOut" }}
+        className="flex flex-col"
+      >
+        <span className="font-bold text-white text-lg leading-tight">
+          Adega
+        </span>
+        <span className="text-adega-gold text-xs font-medium">
+          Manager
+        </span>
+      </motion.div>
+    </div>
+  );
+};
+
+export const LogoIcon = () => {
+  return (
+    <div className="relative z-20 flex items-center justify-center py-2">
+      <div className="h-10 w-10 shrink-0 rounded-xl bg-gradient-to-r from-adega-gold to-adega-amber shadow-lg" />
+    </div>
+  );
+};

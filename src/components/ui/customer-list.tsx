@@ -11,7 +11,7 @@ import { CustomerProfile, useUpsertCustomer } from '@/hooks/use-crm';
 import { cn } from '@/lib/utils';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, ChevronDown, Search } from 'lucide-react';
+import { CalendarIcon, ChevronDown, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ptBR } from 'date-fns/locale';
 
 interface CustomerListProps {
@@ -24,6 +24,8 @@ export function CustomerList({ customers, onSelectCustomer }: CustomerListProps)
   const [sortField, setSortField] = useState<keyof CustomerProfile>('name');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [isNewCustomerDialogOpen, setIsNewCustomerDialogOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   const [newCustomer, setNewCustomer] = useState<Partial<CustomerProfile>>({
     name: '',
     phone: '',
@@ -73,6 +75,17 @@ export function CustomerList({ customers, onSelectCustomer }: CustomerListProps)
     return 0;
   });
 
+  // Paginação
+  const totalPages = Math.ceil(sortedCustomers.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedCustomers = sortedCustomers.slice(startIndex, endIndex);
+
+  // Reset página quando busca muda
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
   const handleAddCustomer = async () => {
     if (!newCustomer.name) return;
     
@@ -120,25 +133,26 @@ export function CustomerList({ customers, onSelectCustomer }: CustomerListProps)
       </div>
       
       <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead 
-                className="cursor-pointer"
-                onClick={() => handleSort('name')}
-              >
-                <div className="flex items-center">
-                  Nome
-                  {sortField === 'name' && (
-                    <ChevronDown 
-                      className={cn(
-                        "ml-1 h-4 w-4", 
-                        sortDirection === 'desc' && "transform rotate-180"
-                      )} 
-                    />
-                  )}
-                </div>
-              </TableHead>
+        <div className="max-h-[500px] overflow-y-auto">
+          <Table>
+            <TableHeader className="sticky top-0 bg-background z-10">
+              <TableRow>
+                <TableHead 
+                  className="cursor-pointer"
+                  onClick={() => handleSort('name')}
+                >
+                  <div className="flex items-center">
+                    Nome
+                    {sortField === 'name' && (
+                      <ChevronDown 
+                        className={cn(
+                          "ml-1 h-4 w-4", 
+                          sortDirection === 'desc' && "transform rotate-180"
+                        )} 
+                      />
+                    )}
+                  </div>
+                </TableHead>
               <TableHead 
                 className="cursor-pointer"
                 onClick={() => handleSort('phone')}
@@ -221,9 +235,9 @@ export function CustomerList({ customers, onSelectCustomer }: CustomerListProps)
               </TableHead>
             </TableRow>
           </TableHeader>
-          <TableBody>
-            {sortedCustomers.length > 0 ? (
-              sortedCustomers.map((customer) => (
+            <TableBody>
+              {paginatedCustomers.length > 0 ? (
+                paginatedCustomers.map((customer) => (
                 <TableRow 
                   key={customer.id}
                   className="cursor-pointer hover:bg-gray-50"
@@ -257,19 +271,65 @@ export function CustomerList({ customers, onSelectCustomer }: CustomerListProps)
                   </TableCell>
                 </TableRow>
               ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
-                  {searchTerm 
-                    ? 'Nenhum cliente encontrado para esta busca'
-                    : 'Nenhum cliente cadastrado'
-                  }
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
+                    {searchTerm 
+                      ? 'Nenhum cliente encontrado para esta busca'
+                      : 'Nenhum cliente cadastrado'
+                    }
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
+
+      {/* Controles de Paginação */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between px-2">
+          <div className="text-sm text-muted-foreground">
+            Mostrando {startIndex + 1} a {Math.min(endIndex, sortedCustomers.length)} de {sortedCustomers.length} clientes
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Anterior
+            </Button>
+            
+            <div className="flex items-center space-x-1">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <Button
+                  key={page}
+                  variant={currentPage === page ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setCurrentPage(page)}
+                  className="w-8 h-8 p-0"
+                >
+                  {page}
+                </Button>
+              ))}
+            </div>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+            >
+              Próxima
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Dialog para adicionar novo cliente */}
       <Dialog open={isNewCustomerDialogOpen} onOpenChange={setIsNewCustomerDialogOpen}>

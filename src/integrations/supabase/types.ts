@@ -37,6 +37,7 @@ export type Database = {
           package_margin: number | null
           turnover_rate: 'fast' | 'medium' | 'slow'
           last_sale_date: string | null
+          barcode: string | null
         }
         Insert: {
           id?: string
@@ -65,6 +66,7 @@ export type Database = {
           package_margin?: number | null
           turnover_rate?: 'fast' | 'medium' | 'slow'
           last_sale_date?: string | null
+          barcode?: string | null
         }
         Update: {
           id?: string
@@ -93,6 +95,7 @@ export type Database = {
           package_margin?: number | null
           turnover_rate?: 'fast' | 'medium' | 'slow'
           last_sale_date?: string | null
+          barcode?: string | null
         }
         Relationships: []
       }

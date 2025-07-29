@@ -1,7 +1,19 @@
 {
   "permissions": {
     "allow": [
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "mcp__context7__resolve-library-id",
+      "Bash(time npm run build)",
+      "Bash(npm uninstall:*)",
+      "Bash(npm install:*)",
+      "Bash(npx tailwindcss:*)",
+      "Bash(cp:*)",
+      "Bash(npm run build:*)",
+      "Bash(grep:*)",
+      "Bash(npm update:*)",
+      "mcp__context7__get-library-docs",
+      "Bash(find:*)",
+      "Bash(npm run lint)"
     ],
     "deny": []
   }

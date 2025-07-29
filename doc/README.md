@@ -118,7 +118,7 @@ npm run setup:env    # Configurar ambiente
 #### Frontend
 - **React 18** + TypeScript
 - **Vite** (build tool)
-- **Tailwind CSS** + Shadcn/ui
+- **Tailwind CSS** + Aceternity UI + Shadcn/ui
 - **React Query** (estado servidor)
 - **React Hook Form** + Zod
 - **Recharts** (gráficos)

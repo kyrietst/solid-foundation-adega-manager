@@ -125,7 +125,7 @@ export function CustomerTrends({ salesData, customers }: CustomerTrendsProps) {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="bg-adega-charcoal/20 border-white/10 backdrop-blur-xl shadow-xl">
         <CardHeader>
           <CardTitle>Receita por Segmento</CardTitle>
         </CardHeader>
@@ -148,7 +148,7 @@ export function CustomerTrends({ salesData, customers }: CustomerTrendsProps) {
         </CardContent>
       </Card>
       
-      <Card>
+      <Card className="bg-adega-charcoal/20 border-white/10 backdrop-blur-xl shadow-xl">
         <CardHeader>
           <CardTitle>Estatísticas de Vendas</CardTitle>
         </CardHeader>

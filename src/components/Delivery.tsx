@@ -73,7 +73,7 @@ export const Delivery = () => {
     <div className="space-y-6">
       {/* Resumo de Entregas */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card>
+        <Card className="bg-adega-charcoal/20 border-white/10 backdrop-blur-xl shadow-xl">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total de Entregas</CardTitle>
             <Truck className="h-4 w-4 text-blue-600" />
@@ -83,7 +83,7 @@ export const Delivery = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-adega-charcoal/20 border-white/10 backdrop-blur-xl shadow-xl">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Pendentes</CardTitle>
             <Clock className="h-4 w-4 text-yellow-600" />
@@ -93,7 +93,7 @@ export const Delivery = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-adega-charcoal/20 border-white/10 backdrop-blur-xl shadow-xl">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Em Trânsito</CardTitle>
             <Truck className="h-4 w-4 text-blue-600" />
@@ -103,7 +103,7 @@ export const Delivery = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-adega-charcoal/20 border-white/10 backdrop-blur-xl shadow-xl">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Entregues</CardTitle>
             <CheckCircle className="h-4 w-4 text-green-600" />
@@ -115,7 +115,7 @@ export const Delivery = () => {
       </div>
 
       {/* Lista de Entregas */}
-      <Card>
+      <Card className="bg-adega-charcoal/20 border-white/10 backdrop-blur-xl shadow-xl">
         <CardHeader>
           <CardTitle>Controle de Entregas</CardTitle>
         </CardHeader>
@@ -180,7 +180,7 @@ export const Delivery = () => {
       </Card>
 
       {/* Mapa de Entregas (Placeholder) */}
-      <Card>
+      <Card className="bg-adega-charcoal/20 border-white/10 backdrop-blur-xl shadow-xl">
         <CardHeader>
           <CardTitle>Mapa de Entregas</CardTitle>
         </CardHeader>

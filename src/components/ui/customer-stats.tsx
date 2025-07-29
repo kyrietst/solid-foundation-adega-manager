@@ -25,7 +25,7 @@ export function CustomerStats() {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-      <Card>
+      <Card className="bg-adega-charcoal/20 border-white/10 backdrop-blur-xl shadow-xl">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Total de Clientes</CardTitle>
           <Users className="h-4 w-4 text-blue-600" />
@@ -35,7 +35,7 @@ export function CustomerStats() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="bg-adega-charcoal/20 border-white/10 backdrop-blur-xl shadow-xl">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Clientes VIP</CardTitle>
           <Star className="h-4 w-4 text-purple-600" />
@@ -47,7 +47,7 @@ export function CustomerStats() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="bg-adega-charcoal/20 border-white/10 backdrop-blur-xl shadow-xl">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Receita Total</CardTitle>
           <DollarSign className="h-4 w-4 text-green-600" />
@@ -59,7 +59,7 @@ export function CustomerStats() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="bg-adega-charcoal/20 border-white/10 backdrop-blur-xl shadow-xl">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Ticket Médio</CardTitle>
           <TrendingUp className="h-4 w-4 text-orange-600" />

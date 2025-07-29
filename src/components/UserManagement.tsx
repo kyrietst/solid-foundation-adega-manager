@@ -294,7 +294,7 @@ export const UserManagement = () => {
 
   return (
     <div className="space-y-4">
-      <Card>
+      <Card className="bg-adega-charcoal/20 border-white/10 backdrop-blur-xl shadow-xl">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-2xl font-bold">Gerenciar Usuários</CardTitle>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>

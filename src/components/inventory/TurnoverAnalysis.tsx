@@ -173,7 +173,7 @@ export const TurnoverAnalysis: React.FC<TurnoverAnalysisProps> = ({ className })
   return (
     <div className={`space-y-6 ${className}`}>
       {/* Controles */}
-      <Card>
+      <Card className="bg-adega-charcoal/20 border-white/10 backdrop-blur-xl shadow-xl">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5" />
@@ -248,7 +248,7 @@ export const TurnoverAnalysis: React.FC<TurnoverAnalysisProps> = ({ className })
       </Card>
 
       {/* Lista de Produtos */}
-      <Card>
+      <Card className="bg-adega-charcoal/20 border-white/10 backdrop-blur-xl shadow-xl">
         <CardHeader>
           <CardTitle>Análise Detalhada por Produto</CardTitle>
         </CardHeader>

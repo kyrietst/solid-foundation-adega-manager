@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
-import { Sidebar } from '@/components/Sidebar';
 import { Dashboard } from '@/components/Dashboard';
 import { Sales } from '@/components/Sales';
 import { Inventory } from '@/components/Inventory';
@@ -8,6 +7,7 @@ import { Customers } from '@/components/Customers';
 import { Delivery } from '@/components/Delivery';
 import { Movements } from '@/components/Movements';
 import { UserManagement } from '@/components/UserManagement';
+import { AppSidebar } from '@/components/Sidebar';
 import { useAuth } from '@/contexts/AuthContext';
 
 const Index = () => {
@@ -29,8 +29,11 @@ const Index = () => {
   // Mostra loading enquanto carrega as permissões
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-600"></div>
+      <div className="flex items-center justify-center min-h-screen bg-black">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-yellow-500/30 border-t-yellow-400"></div>
+          <div className="text-yellow-400 font-medium text-lg">Carregando...</div>
+        </div>
       </div>
     );
   }
@@ -48,41 +51,48 @@ const Index = () => {
     if (userRole === 'delivery') {
       if (activeTab !== 'delivery') {
         console.log('Delivery user trying to access non-delivery tab');
-        return <div className="p-4 text-red-600">Acesso negado. Você só tem permissão para acessar a área de Delivery.</div>;
+        return <div className="p-4 text-red-400 bg-red-900/20 rounded-lg border border-red-500/30">Acesso negado. Você só tem permissão para acessar a área de Delivery.</div>;
       }
       return <Delivery />;
     }
 
     switch (activeTab) {
       case 'dashboard':
-        return hasPermission(['admin', 'employee']) ? <Dashboard /> : <div className="p-4 text-red-600">Acesso negado</div>;
+        return hasPermission(['admin', 'employee']) ? <Dashboard /> : <div className="p-4 text-red-400 bg-red-900/20 rounded-lg border border-red-500/30">Acesso negado</div>;
       case 'sales':
-        return hasPermission(['admin', 'employee']) ? <Sales /> : <div className="p-4 text-red-600">Acesso negado</div>;
+        return hasPermission(['admin', 'employee']) ? <Sales /> : <div className="p-4 text-red-400 bg-red-900/20 rounded-lg border border-red-500/30">Acesso negado</div>;
       case 'inventory':
-        return hasPermission(['admin', 'employee']) ? <Inventory /> : <div className="p-4 text-red-600">Acesso negado</div>;
+        return hasPermission(['admin', 'employee']) ? <Inventory /> : <div className="p-4 text-red-400 bg-red-900/20 rounded-lg border border-red-500/30">Acesso negado</div>;
       case 'customers':
-        return hasPermission(['admin', 'employee']) ? <Customers /> : <div className="p-4 text-red-600">Acesso negado</div>;
+        return hasPermission(['admin', 'employee']) ? <Customers /> : <div className="p-4 text-red-400 bg-red-900/20 rounded-lg border border-red-500/30">Acesso negado</div>;
       case 'delivery':
-        return hasPermission(['admin', 'employee', 'delivery']) ? <Delivery /> : <div className="p-4 text-red-600">Acesso negado</div>;
+        return hasPermission(['admin', 'employee', 'delivery']) ? <Delivery /> : <div className="p-4 text-red-400 bg-red-900/20 rounded-lg border border-red-500/30">Acesso negado</div>;
       case 'movements':
-        return hasPermission(['admin']) ? <Movements /> : <div className="p-4 text-red-600">Acesso negado</div>;
+        return hasPermission(['admin']) ? <Movements /> : <div className="p-4 text-red-400 bg-red-900/20 rounded-lg border border-red-500/30">Acesso negado</div>;
       case 'users':
-        return hasPermission('admin') ? <UserManagement /> : <div className="p-4 text-red-600">Acesso negado</div>;
+        return hasPermission('admin') ? <UserManagement /> : <div className="p-4 text-red-400 bg-red-900/20 rounded-lg border border-red-500/30">Acesso negado</div>;
       default:
-        return hasPermission(['admin', 'employee']) ? <Dashboard /> : <div className="p-4 text-red-600">Acesso negado</div>;
+        return hasPermission(['admin', 'employee']) ? <Dashboard /> : <div className="p-4 text-red-400 bg-red-900/20 rounded-lg border border-red-500/30">Acesso negado</div>;
     }
   };
 
   return (
-    <div className="flex h-screen bg-gray-100">
-      <Sidebar />
-      <main className="flex-1 pl-64 overflow-x-hidden overflow-y-auto">
-        <div className="container mx-auto px-6 py-8">
-          {renderContent()}
-          <Outlet />
+    <div className="w-full h-screen flex flex-row relative">
+        {/* Sidebar */}
+        <AppSidebar />
+        
+        {/* Main content area */}  
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <main className="flex-1 overflow-y-auto">
+            <div className="p-4 lg:p-8 h-full">
+              <div className="max-w-7xl mx-auto h-full">
+                {renderContent()}
+                <Outlet />
+              </div>
+            </div>
+          </main>
         </div>
-      </main>
-    </div>
+      </div>
   );
 };
 
