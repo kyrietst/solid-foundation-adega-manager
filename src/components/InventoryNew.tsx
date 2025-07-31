@@ -21,16 +21,20 @@ import {
   Grid3X3,
   List,
   Eye,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight
+  ChevronDown
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { ProductForm } from '@/components/inventory/ProductForm';
 import { Product, ProductFormData, InventoryFilters, UnitType, TurnoverRate } from '@/types/inventory.types';
+import { formatCurrency } from '@/lib/utils';
+import { StatCard } from '@/components/ui/stat-card';
+import { LoadingScreen } from '@/components/ui/loading-spinner';
+import { SearchInput } from '@/components/ui/search-input';
+import { FilterToggle } from '@/components/ui/filter-toggle';
+import { EmptyProducts } from '@/components/ui/empty-state';
+import { usePagination } from '@/hooks/use-pagination';
+import { PaginationControls } from '@/components/ui/pagination-controls';
 
 export const InventoryNew = () => {
   const { userRole } = useAuth();
@@ -46,9 +50,8 @@ export const InventoryNew = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<InventoryFilters>({});
   
-  // Estados de paginação
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(12); // 12 para grid, ajustável
+  // Estados locais
+  const [initialItemsPerPage] = useState(12); // 12 para grid, ajustável
 
   // Query para produtos
   const { data: products = [], isLoading } = useQuery({
@@ -146,8 +149,8 @@ export const InventoryNew = () => {
     };
   }, [products]);
 
-  // Filtered products with pagination
-  const { filteredProducts, paginatedProducts, totalPages, totalItems } = useMemo(() => {
+  // Filtered products (sem paginação)
+  const filteredProducts = useMemo(() => {
     let filtered = products;
 
     // Search filter
@@ -189,24 +192,26 @@ export const InventoryNew = () => {
       filtered = filtered.filter(product => product.supplier === filters.supplier);
     }
 
-    // Paginação
-    const totalItems = filtered.length;
-    const totalPages = Math.ceil(totalItems / itemsPerPage);
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const paginatedProducts = filtered.slice(startIndex, startIndex + itemsPerPage);
+    return filtered;
+  }, [products, searchTerm, filters]);
 
-    return {
-      filteredProducts: filtered,
-      paginatedProducts,
-      totalPages,
-      totalItems
-    };
-  }, [products, searchTerm, filters, currentPage, itemsPerPage]);
-
-  // Reset to page 1 when filters change
-  useMemo(() => {
-    setCurrentPage(1);
-  }, [searchTerm, filters]);
+  // Hook de paginação reutilizável
+  const {
+    currentPage,
+    itemsPerPage,
+    totalPages,
+    totalItems,
+    paginatedItems: paginatedProducts,
+    goToPage,
+    nextPage,
+    prevPage,
+    setItemsPerPage,
+    goToFirstPage,
+    goToLastPage
+  } = usePagination(filteredProducts, {
+    initialItemsPerPage: initialItemsPerPage,
+    resetOnItemsChange: true // Reset para página 1 quando filtros mudam
+  });
 
   // Helper functions
   const getUniqueCategories = () => {
@@ -217,16 +222,7 @@ export const InventoryNew = () => {
     return [...new Set(products.map(p => p.supplier).filter(Boolean))].sort();
   };
 
-  // Pagination handlers
-  const handlePageChange = (newPage: number) => {
-    setCurrentPage(newPage);
-  };
-
-  const handleItemsPerPageChange = (value: string) => {
-    setItemsPerPage(parseInt(value));
-    setCurrentPage(1);
-  };
-
+  // View mode handler
   const handleViewModeChange = (mode: 'grid' | 'table') => {
     setViewMode(mode);
     // Adjust items per page based on view mode
@@ -235,7 +231,6 @@ export const InventoryNew = () => {
     } else {
       setItemsPerPage(20);
     }
-    setCurrentPage(1);
   };
 
   // Handlers
@@ -267,105 +262,9 @@ export const InventoryNew = () => {
     setIsEditDialogOpen(true);
   };
 
-  // Pagination component
-  const PaginationControls = () => {
-    if (totalPages <= 1) return null;
-    
-    const pages = [];
-    const maxVisiblePages = 5;
-    
-    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
-    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-    
-    if (endPage - startPage + 1 < maxVisiblePages) {
-      startPage = Math.max(1, endPage - maxVisiblePages + 1);
-    }
-    
-    for (let i = startPage; i <= endPage; i++) {
-      pages.push(i);
-    }
-    
-    return (
-      <div className="flex items-center justify-between pt-4 border-t">
-        <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-          <span>
-            Mostrando {((currentPage - 1) * itemsPerPage) + 1} a {Math.min(currentPage * itemsPerPage, totalItems)} de {totalItems} produtos
-          </span>
-          <div className="flex items-center space-x-2 ml-4">
-            <span>Itens por página:</span>
-            <Select value={itemsPerPage.toString()} onValueChange={handleItemsPerPageChange}>
-              <SelectTrigger className="w-20">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="6">6</SelectItem>
-                <SelectItem value="12">12</SelectItem>
-                <SelectItem value="20">20</SelectItem>
-                <SelectItem value="50">50</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-        
-        <div className="flex items-center space-x-1">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handlePageChange(1)}
-            disabled={currentPage === 1}
-          >
-            <ChevronsLeft className="h-4 w-4" />
-          </Button>
-          
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          
-          {pages.map((page) => (
-            <Button
-              key={page}
-              variant={currentPage === page ? "default" : "outline"}
-              size="sm"
-              onClick={() => handlePageChange(page)}
-              className="min-w-[40px]"
-            >
-              {page}
-            </Button>
-          ))}
-          
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === totalPages}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-          
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handlePageChange(totalPages)}
-            disabled={currentPage === totalPages}
-          >
-            <ChevronsRight className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-    );
-  };
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary/30 border-t-primary"></div>
-      </div>
-    );
+    return <LoadingScreen text="Carregando produtos..." />;
   }
 
   return (
@@ -391,62 +290,45 @@ export const InventoryNew = () => {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        <Card className="bg-adega-charcoal/20 border-white/10 backdrop-blur-xl shadow-xl">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-adega-platinum">Total</CardTitle>
-            <Package className="h-4 w-4 text-adega-gold" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-adega-yellow">{calculations.totalProducts}</div>
-            <p className="text-xs text-adega-silver">produtos</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-adega-charcoal/20 border-white/10 backdrop-blur-xl shadow-xl">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-adega-platinum">Valor Total</CardTitle>
-            <DollarSign className="h-4 w-4 text-adega-gold" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-xl font-bold text-adega-yellow">
-              R$ {calculations.totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-            </div>
-            <p className="text-xs text-adega-silver">estoque</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-adega-charcoal/20 border-adega-amber/30 backdrop-blur-xl shadow-xl">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-adega-platinum">Baixo</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-adega-amber" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-adega-amber">{calculations.lowStockProducts.length}</div>
-            <p className="text-xs text-adega-silver">atenção</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-adega-charcoal/20 border-white/10 backdrop-blur-xl shadow-xl">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-adega-platinum">Giro Rápido</CardTitle>
-            <TrendingUp className="h-4 w-4 text-adega-gold" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-adega-yellow">{calculations.turnoverStats.fast}</div>
-            <p className="text-xs text-adega-silver">produtos</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-adega-charcoal/20 border-red-500/30 backdrop-blur-xl shadow-xl">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-adega-platinum">Giro Lento</CardTitle>
-            <BarChart3 className="h-4 w-4 text-red-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-400">{calculations.turnoverStats.slow}</div>
-            <p className="text-xs text-adega-silver">produtos</p>
-          </CardContent>
-        </Card>
+        <StatCard
+          title="Total"
+          value={calculations.totalProducts}
+          description="produtos"
+          icon={Package}
+          variant="default"
+        />
+        
+        <StatCard
+          title="Valor Total"
+          value={formatCurrency(calculations.totalValue)}
+          description="estoque"
+          icon={DollarSign}
+          variant="default"
+        />
+        
+        <StatCard
+          title="Baixo"
+          value={calculations.lowStockProducts.length}
+          description="atenção"
+          icon={AlertTriangle}
+          variant="warning"
+        />
+        
+        <StatCard
+          title="Giro Rápido"
+          value={calculations.turnoverStats.fast}
+          description="produtos"
+          icon={TrendingUp}
+          variant="default"
+        />
+        
+        <StatCard
+          title="Giro Lento"
+          value={calculations.turnoverStats.slow}
+          description="produtos"
+          icon={BarChart3}
+          variant="error"
+        />
       </div>
 
       {/* Controls and Search */}
@@ -455,29 +337,22 @@ export const InventoryNew = () => {
           <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
             <div className="flex items-center space-x-4">
               <CardTitle>Produtos em Estoque</CardTitle>
-              <Badge variant="secondary">{totalItems} {totalItems !== products.length ? `de ${products.length}` : ''}</Badge>
+              <Badge variant="secondary">{filteredProducts.length} {filteredProducts.length !== products.length ? `de ${products.length}` : ''}</Badge>
             </div>
             
             <div className="flex items-center space-x-2">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                <Input
-                  placeholder="Buscar produtos..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 w-64"
-                />
-              </div>
+              <SearchInput
+                value={searchTerm}
+                onChange={setSearchTerm}
+                placeholder="Buscar produtos..."
+                className="w-64"
+              />
               
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowFilters(!showFilters)}
-              >
-                <Filter className="h-4 w-4 mr-2" />
-                Filtros
-                <ChevronDown className={`h-4 w-4 ml-2 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
-              </Button>
+              <FilterToggle
+                isOpen={showFilters}
+                onToggle={() => setShowFilters(!showFilters)}
+                label="Filtros"
+              />
 
               <div className="flex border rounded-md">
                 <Button
@@ -608,14 +483,10 @@ export const InventoryNew = () => {
 
         <CardContent>
           {totalItems === 0 ? (
-            <div className="flex items-center justify-center h-32">
-              <div className="text-center">
-                <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <div className="text-muted-foreground">
-                  {products.length === 0 ? 'Nenhum produto cadastrado' : 'Nenhum produto encontrado com os filtros aplicados'}
-                </div>
-              </div>
-            </div>
+            <EmptyProducts 
+              hasFilters={products.length > 0}
+              onCreateNew={() => setIsCreateDialogOpen(true)}
+            />
           ) : viewMode === 'grid' ? (
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -700,7 +571,7 @@ export const InventoryNew = () => {
                           <div className="flex items-center justify-between text-sm">
                             <span className="text-adega-silver">Preço:</span>
                             <span className="font-semibold text-adega-gold">
-                              R$ {product.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              {formatCurrency(product.price)}
                             </span>
                           </div>
                         )}
@@ -727,7 +598,18 @@ export const InventoryNew = () => {
                 );
               })}
               </div>
-              <PaginationControls />
+              <PaginationControls 
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={totalItems}
+                itemsPerPage={itemsPerPage}
+                onPageChange={goToPage}
+                onItemsPerPageChange={(value) => setItemsPerPage(parseInt(value))}
+                itemsPerPageOptions={[6, 12, 20, 50]}
+                showItemsPerPage={true}
+                showInfo={true}
+                itemLabel="produtos"
+              />
             </>
           ) : (
             /* Table View */
@@ -792,7 +674,7 @@ export const InventoryNew = () => {
                         </td>
                         {userRole === 'admin' && (
                           <td className="p-3 font-medium">
-                            R$ {product.price.toFixed(2)}
+                            {formatCurrency(product.price)}
                           </td>
                         )}
                         <td className="p-3">
@@ -829,7 +711,18 @@ export const InventoryNew = () => {
                   })}
                 </tbody>
               </table>
-              <PaginationControls />
+              <PaginationControls 
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={totalItems}
+                itemsPerPage={itemsPerPage}
+                onPageChange={goToPage}
+                onItemsPerPageChange={(value) => setItemsPerPage(parseInt(value))}
+                itemsPerPageOptions={[6, 12, 20, 50]}
+                showItemsPerPage={true}
+                showInfo={true}
+                itemLabel="produtos"
+              />
             </div>
           )}
         </CardContent>

@@ -413,7 +413,188 @@ WHERE stock_quantity > 0;
 
 ---
 
-## 9. Debugging e Troubleshooting
+## 9. Componentes Reutilizáveis e Padrões (v2.0.0)
+
+### Sistema de Paginação Reutilizável
+
+**Hook `usePagination`** - Gerenciamento completo de paginação
+```tsx
+import { usePagination } from '@/hooks/use-pagination';
+
+const {
+  currentPage,
+  itemsPerPage, 
+  totalPages,
+  totalItems,
+  paginatedItems,
+  goToPage,
+  setItemsPerPage
+} = usePagination(items, {
+  initialItemsPerPage: 12,
+  resetOnItemsChange: true
+});
+```
+
+**Componente `PaginationControls`** - UI padronizada
+```tsx
+import { PaginationControls } from '@/components/ui/pagination-controls';
+
+<PaginationControls 
+  currentPage={currentPage}
+  totalPages={totalPages}
+  totalItems={totalItems}
+  itemsPerPage={itemsPerPage}
+  onPageChange={goToPage}
+  onItemsPerPageChange={(value) => setItemsPerPage(parseInt(value))}
+  itemsPerPageOptions={[6, 12, 20, 50]}
+  showItemsPerPage={true}
+  showInfo={true}
+  itemLabel="produtos"
+/>
+```
+
+### Hooks Genéricos para Supabase
+
+**`useEntity`** - Query de entidade única
+```tsx
+import { useEntity } from '@/hooks/use-entity';
+
+const { data: product, isLoading } = useEntity({
+  table: 'products',
+  id: productId,
+  enabled: !!productId
+});
+```
+
+**`useEntityList`** - Listas com filtros
+```tsx
+import { useEntityList } from '@/hooks/use-entity';
+
+const { data: customers = [] } = useEntityList({
+  table: 'customers',
+  filters: { segment: 'VIP' },
+  search: { columns: ['name', 'email'], term: searchTerm },
+  orderBy: { column: 'created_at', ascending: false },
+  limit: 50
+});
+```
+
+**`useEntityMutation`** - CRUD operations
+```tsx
+import { useCreateEntity, useUpdateEntity } from '@/hooks/use-entity';
+
+const createProduct = useCreateEntity('products', {
+  successMessage: 'Produto criado com sucesso!',
+  invalidateKeys: [['products'], ['products_list']]
+});
+
+createProduct.mutate({
+  name: 'Novo Produto',
+  price: 29.99,
+  stock_quantity: 100
+});
+```
+
+### Sistema de Themes Adega Wine Cellar
+
+**Paleta de Cores** - 12 cores progressão black-to-gold
+```tsx
+import { adegaColors } from '@/lib/theme';
+import { cardVariants, getTextClasses } from '@/lib/theme-utils';
+
+// Uso direto das cores
+className="text-adega-gold bg-adega-charcoal"
+
+// Uso dos variants padronizados
+className={cardVariants.success}
+className={getTextClasses('heading')}
+```
+
+**Utility Functions** - 30+ helpers para styling consistente
+```tsx
+import { 
+  getValueClasses, 
+  getStockStatusClasses, 
+  getTurnoverClasses 
+} from '@/lib/theme-utils';
+
+// Valores monetários
+<span className={getValueClasses('lg', 'gold')}>
+  {formatCurrency(price)}
+</span>
+
+// Status de estoque
+const statusClasses = getStockStatusClasses(currentStock, minimumStock);
+<Badge className={statusClasses.badge}>Status</Badge>
+```
+
+### Componentes UI Padronizados
+
+**StatCard** - Cartões estatísticos com 6 variantes
+```tsx
+import { StatCard } from '@/components/ui/stat-card';
+
+<StatCard
+  title="Total de Vendas"
+  value={formatCurrency(totalSales)}
+  description="Últimos 30 dias"
+  icon={DollarSign}
+  variant="success"
+/>
+```
+
+**EmptyState** - Estados vazios padronizados
+```tsx
+import { EmptyProducts, EmptyCustomers } from '@/components/ui/empty-state';
+
+// Pré-configurados
+<EmptyProducts />
+<EmptyCustomers />
+
+// Customizado
+<EmptyState
+  icon={Package}
+  title="Nenhum produto encontrado"
+  description="Tente ajustar os filtros"
+  action={<Button>Adicionar Produto</Button>}
+/>
+```
+
+### Form Hook com Toast
+
+**`useFormWithToast`** - Formulários padronizados
+```tsx
+import { useFormWithToast } from '@/hooks/use-form-with-toast';
+
+const { form, onSubmit, isSubmitting } = useFormWithToast({
+  schema: productSchema,
+  defaultValues: { name: '', price: 0 },
+  onSuccess: (data) => console.log('Produto criado:', data),
+  successMessage: 'Produto criado com sucesso!'
+});
+```
+
+### Diretrizes de Uso
+
+**✅ SEMPRE use componentes reutilizáveis quando disponível:**
+- `PaginationControls` ao invés de paginação customizada
+- `StatCard` ao invés de cards customizados
+- `EmptyState` ao invés de estados vazios inline
+- `useEntity` hooks ao invés de queries manuais
+
+**✅ Sistema de Themes:**
+- Use cores da paleta `adegaColors`
+- Prefira `theme-utils` helpers
+- Mantenha consistência visual
+
+**✅ Formulários:**
+- Use `useFormWithToast` para formulários simples
+- Sempre valide com Zod schemas
+- Implemente loading states
+
+---
+
+## 10. Debugging e Troubleshooting
 
 ### Common Issues
 

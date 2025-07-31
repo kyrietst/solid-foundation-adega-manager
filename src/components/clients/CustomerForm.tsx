@@ -1,6 +1,4 @@
 import React from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,7 +11,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { useUpsertCustomer } from '@/hooks/use-crm';
-import { useToast } from '@/components/ui/use-toast';
+import { useFormWithToast } from '@/hooks/use-form-with-toast';
 import { Loader2 } from 'lucide-react';
 
 const formSchema = z.object({
@@ -29,40 +27,24 @@ interface CustomerFormProps {
 }
 
 export function CustomerForm({ onSuccess }: CustomerFormProps) {
-  const { toast } = useToast();
   const upsertCustomer = useUpsertCustomer();
 
-  const form = useForm<CustomerFormValues>({
-    resolver: zodResolver(formSchema),
+  const form = useFormWithToast<CustomerFormValues>({
+    schema: formSchema,
     defaultValues: {
       name: '',
       email: '',
       phone: '',
     },
+    successMessage: 'Cliente salvo!',
+    successDescription: 'O novo cliente foi cadastrado com sucesso.',
+    errorTitle: 'Erro ao salvar',
+    onSuccess,
   });
-
-  const onSubmit = (data: CustomerFormValues) => {
-    upsertCustomer.mutate(data, {
-      onSuccess: () => {
-        toast({
-          title: 'Cliente salvo!',
-          description: 'O novo cliente foi cadastrado com sucesso.',
-        });
-        onSuccess();
-      },
-      onError: (error) => {
-        toast({
-          title: 'Erro ao salvar',
-          description: error.message,
-          variant: 'destructive',
-        });
-      },
-    });
-  };
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(upsertCustomer)} className="space-y-4">
         <FormField
           control={form.control}
           name="name"
@@ -102,8 +84,8 @@ export function CustomerForm({ onSuccess }: CustomerFormProps) {
             </FormItem>
           )}
         />
-        <Button type="submit" disabled={upsertCustomer.isPending} className="w-full">
-          {upsertCustomer.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+        <Button type="submit" disabled={form.isSubmitting} className="w-full">
+          {form.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Salvar Cliente
         </Button>
       </form>

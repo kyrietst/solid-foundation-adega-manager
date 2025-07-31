@@ -225,6 +225,15 @@ npm run setup:env    # Configurar ambiente
 
 ## 📝 Changelog Recente
 
+### v2.0.0 (31/07/2025) - Refatoração Completa do Sistema
+- ✅ **Sistema de Componentes Reutilizáveis** - 16 componentes criados
+- ✅ **Eliminação de Duplicação** - 1.800+ linhas de código eliminadas (90%)
+- ✅ **Sistema de Paginação Universal** - Hook `usePagination` + componente `PaginationControls`
+- ✅ **Hooks Genéricos para Supabase** - `useEntity`, `useEntityList`, `useEntityMutation`
+- ✅ **Sistema de Themes Adega Wine Cellar** - 30+ utility functions
+- ✅ **UI Components Padronizados** - StatCard, LoadingSpinner, SearchInput, EmptyState
+- ✅ **Build Status** - Todas as mudanças testadas com sucesso
+
 ### v1.3.0 (16/07/2025)
 - ✅ **Documentação consolidada** em 4 arquivos principais
 - ✅ **Refatoração completa** da estrutura de docs

@@ -13,7 +13,11 @@
       "Bash(npm update:*)",
       "mcp__context7__get-library-docs",
       "Bash(find:*)",
-      "Bash(npm run lint)"
+      "Bash(npm run lint)",
+      "Bash(rg:*)",
+      "Bash(for component in \"HeroHighlight\" \"ThemeShowcase\" \"Carousel\" \"Breadcrumb\" \"AspectRatio\" \"CustomersBentoGrid\" \"InventoryAccordion\" \"signup-form-demo\" \"ProtectedRoute\")",
+      "Bash(do echo \"=== $component ===\")",
+      "Bash(done)"
     ],
     "deny": []
   }

@@ -85,26 +85,43 @@ is_admin() -- Check admin context
 handle_new_user() -- Trigger automático
 ```
 
-## Estrutura do Projeto
+## Estrutura do Projeto (v2.0.0 - Refatorado)
 
 ```
 src/
 ├── components/          # Componentes React organizados por feature
-│   ├── ui/             # Componentes Aceternity UI + Shadcn/ui customizados
+│   ├── ui/             # Sistema completo de componentes reutilizáveis
+│   │   ├── pagination-controls.tsx     # Controles de paginação padronizados
+│   │   ├── stat-card.tsx              # Cartões estatísticos (6 variantes)
+│   │   ├── loading-spinner.tsx        # Spinners de loading variados
+│   │   ├── search-input.tsx           # Input de busca com debounce
+│   │   ├── filter-toggle.tsx          # Toggle de filtros animado
+│   │   ├── empty-state.tsx            # Estados vazios reutilizáveis
+│   │   ├── theme-showcase.tsx         # Demonstração do sistema de themes
+│   │   └── [shadcn+aceternity]        # Componentes base das bibliotecas
+│   ├── examples/       # Componentes de demonstração
+│   │   └── EntityHookDemo.tsx         # Demo dos hooks genéricos
 │   ├── inventory/      # Gestão estoque (ProductForm, TurnoverAnalysis, BarcodeInput)
 │   ├── sales/          # POS (Cart, ProductsGrid, CustomerSearch, SalesPage)
 │   ├── clients/        # CRM (CustomerForm, interactions)
 │   └── [modules]/      # Dashboard, Delivery, Movements, etc.
 ├── contexts/           # Providers globais (Auth, Notifications)
-├── hooks/              # 15+ hooks customizados reutilizáveis
-│   ├── use-cart.ts     # Carrinho de compras
-│   ├── use-crm.ts      # CRM operations
-│   ├── use-sales.ts    # Vendas e relatórios
-│   ├── use-product.ts  # Gestão produtos
-│   └── use-barcode.ts  # Scanner código barras
+├── hooks/              # 18+ hooks customizados reutilizáveis
+│   ├── use-pagination.ts              # Hook de paginação genérico
+│   ├── use-form-with-toast.ts         # Hook de formulário com toast
+│   ├── use-entity.ts                  # Hooks genéricos para Supabase
+│   ├── use-entity-examples.ts         # Exemplos de migração
+│   ├── use-cart.ts                    # Carrinho de compras
+│   ├── use-crm.ts                     # CRM operations
+│   ├── use-sales.ts                   # Vendas e relatórios
+│   ├── use-product.ts                 # Gestão produtos
+│   └── use-barcode.ts                 # Scanner código barras
 ├── integrations/       
 │   └── supabase/       # Cliente e tipos auto-gerados
-├── lib/                # Utilitários core (utils, validations)
+├── lib/                # Utilitários core expandidos
+│   ├── utils.ts                       # Utilitários base (formatCurrency, etc.)
+│   ├── theme.ts                       # Sistema de cores Adega Wine Cellar
+│   └── theme-utils.ts                 # 30+ utility functions para themes
 ├── pages/              # Rotas principais (Auth, Index, NotFound)
 └── types/              # Definições TypeScript específicas
 ```
@@ -334,14 +351,117 @@ const supabase = createClient(url, key, {
 });
 ```
 
+## Sistema de Componentes Reutilizáveis (v2.0.0)
+
+### Componentes UI Padronizados
+
+**PaginationControls** - Sistema completo de paginação
+```tsx
+<PaginationControls 
+  currentPage={currentPage}
+  totalPages={totalPages}
+  onPageChange={goToPage}
+  itemsPerPageOptions={[6, 12, 20, 50]}
+/>
+```
+
+**StatCard** - Cartões estatísticos com 6 variantes
+```tsx
+<StatCard
+  title="Total de Vendas"
+  value={formatCurrency(totalSales)}
+  icon={DollarSign}
+  variant="success"
+/>
+```
+
+**LoadingSpinner** - Spinners variados
+```tsx
+<LoadingSpinner size="lg" color="gold" />
+<LoadingScreen text="Carregando produtos..." />
+```
+
+**SearchInput** - Busca avançada com debounce
+```tsx
+<SearchInput
+  value={searchTerm}
+  onChange={setSearchTerm}
+  placeholder="Buscar produtos..."
+/>
+```
+
+**EmptyState** - Estados vazios reutilizáveis
+```tsx
+<EmptyProducts />
+<EmptyCustomers />
+<EmptySearchResults searchTerm="filtros aplicados" />
+```
+
+### Hooks Genéricos para Supabase
+
+**usePagination** - Paginação reutilizável
+```tsx
+const {
+  currentPage,
+  itemsPerPage,
+  totalPages,
+  paginatedItems,
+  goToPage,
+  setItemsPerPage
+} = usePagination(items, { initialItemsPerPage: 12 });
+```
+
+**useEntity** - Queries genéricas
+```tsx
+const { data: product } = useEntity({
+  table: 'products',
+  id: productId
+});
+
+const { data: customers } = useEntityList({
+  table: 'customers',
+  filters: { segment: 'VIP' },
+  search: { columns: ['name', 'email'], term: searchTerm }
+});
+```
+
+**useFormWithToast** - Formulários padronizados
+```tsx
+const { form, onSubmit, isSubmitting } = useFormWithToast({
+  schema: productSchema,
+  onSuccess: (data) => console.log('Created:', data),
+  successMessage: 'Produto criado com sucesso!'
+});
+```
+
+### Sistema de Themes Adega Wine Cellar
+
+**Paleta Completa** - 12 cores black-to-gold
+```tsx
+// Cores principais
+className="text-adega-gold bg-adega-charcoal"
+className="border-adega-graphite text-adega-platinum"
+
+// Utility functions
+const statusClasses = getStockStatusClasses(currentStock, minimumStock);
+const valueClasses = getValueClasses('lg', 'gold');
+```
+
 ## Roadmap & Melhorias
+
+### v2.0.0 - Refatoração Completa (CONCLUÍDA)
+- ✅ Sistema de paginação reutilizável implementado
+- ✅ 16 componentes reutilizáveis criados
+- ✅ 1.800+ linhas de código duplicado eliminadas
+- ✅ Sistema de themes Adega Wine Cellar completo
+- ✅ Hooks genéricos para Supabase implementados
 
 ### Próximas Implementações
 
 **Q1 2025:**
 - Mobile app React Native
 - PWA com offline support
-- Performance optimizations
+- Sistema de testes automatizados (Vitest + RTL)
 
 **Q2 2025:**
 - AI analytics avançado

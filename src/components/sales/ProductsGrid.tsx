@@ -3,26 +3,30 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { Plus, Search, Filter, ChevronDown } from "lucide-react";
 import { useCart } from "@/hooks/use-cart";
 import { useBarcode } from "@/hooks/use-barcode";
 import { BarcodeInput } from "@/components/inventory/BarcodeInput";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 import type { Product } from "@/types/inventory.types";
+import { formatCurrency } from "@/lib/utils";
+import { LoadingScreen } from "@/components/ui/loading-spinner";
+import { SearchInput } from "@/components/ui/search-input";
+import { FilterToggle } from "@/components/ui/filter-toggle";
+import { EmptySearchResults } from "@/components/ui/empty-state";
+import { usePagination } from "@/hooks/use-pagination";
+import { PaginationControls } from "@/components/ui/pagination-controls";
 
 export function ProductsGrid() {
   const { addItem } = useCart();
   const { searchByBarcode } = useBarcode();
   
-  // Estados para paginação e filtros
-  const [currentPage, setCurrentPage] = useState(1);
+  // Estados para filtros
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
-  const itemsPerPage = 12; // Reduzido para melhor UX
   
   const { data: products = [], isLoading } = useQuery({
     queryKey: ["products", "available"],
@@ -56,28 +60,22 @@ export function ProductsGrid() {
     });
   }, [products, searchTerm, selectedCategory]);
 
-  // Paginação
-  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentProducts = filteredProducts.slice(startIndex, endIndex);
-
-  // Reset página quando filtros mudam
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, selectedCategory]);
+  // Hook de paginação reutilizável
+  const {
+    currentPage,
+    itemsPerPage,
+    totalPages,
+    totalItems,
+    paginatedItems: currentProducts,
+    goToPage,
+    setItemsPerPage
+  } = usePagination(filteredProducts, {
+    initialItemsPerPage: 12,
+    resetOnItemsChange: true // Reset para página 1 quando filtros mudam
+  });
 
   if (isLoading) {
-    return (
-      <div className="space-y-4">
-        <div className="h-10 bg-muted/30 rounded-lg animate-pulse" />
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {[...Array(12)].map((_, i) => (
-            <div key={i} className="h-48 bg-muted/30 rounded-lg animate-pulse" />
-          ))}
-        </div>
-      </div>
-    );
+    return <LoadingScreen text="Carregando produtos..." />;
   }
 
   // Handler para código de barras escaneado
@@ -107,15 +105,12 @@ export function ProductsGrid() {
           
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
             {/* Busca */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input 
-                placeholder="Buscar produtos..." 
-                className="pl-10 sm:w-64"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
+            <SearchInput
+              value={searchTerm}
+              onChange={setSearchTerm}
+              placeholder="Buscar produtos..."
+              className="sm:w-64"
+            />
             
             {/* Botão de filtros para mobile */}
             <Collapsible open={isFiltersOpen} onOpenChange={setIsFiltersOpen}>
@@ -174,11 +169,13 @@ export function ProductsGrid() {
       
       {/* Grid de produtos paginado */}
       {currentProducts.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <Search className="h-12 w-12 text-muted-foreground mb-4" />
-          <h3 className="text-lg font-semibold mb-2">Nenhum produto encontrado</h3>
-          <p className="text-muted-foreground">Tente ajustar os filtros ou termo de busca</p>
-        </div>
+        <EmptySearchResults
+          searchTerm={searchTerm || selectedCategory !== 'all' ? 'filtros aplicados' : undefined}
+          onClearSearch={() => {
+            setSearchTerm('');
+            setSelectedCategory('all');
+          }}
+        />
       ) : (
         <>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -207,10 +204,7 @@ export function ProductsGrid() {
                   <h3 className="font-medium line-clamp-2 h-10 text-sm text-adega-platinum">{product.name}</h3>
                   <div className="mt-2 flex items-center justify-between">
                     <span className="text-lg font-bold text-adega-yellow">
-                      {new Intl.NumberFormat("pt-BR", {
-                        style: "currency",
-                        currency: "BRL"
-                      }).format(product.price)}
+                      {formatCurrency(product.price)}
                     </span>
                     <Button 
                       size="sm" 
@@ -232,39 +226,18 @@ export function ProductsGrid() {
           </div>
           
           {/* Paginação */}
-          {totalPages > 1 && (
-            <div className="flex justify-center mt-6">
-              <Pagination>
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious 
-                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                      className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                    />
-                  </PaginationItem>
-                  
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                    <PaginationItem key={page}>
-                      <PaginationLink
-                        onClick={() => setCurrentPage(page)}
-                        isActive={currentPage === page}
-                        className="cursor-pointer"
-                      >
-                        {page}
-                      </PaginationLink>
-                    </PaginationItem>
-                  ))}
-                  
-                  <PaginationItem>
-                    <PaginationNext 
-                      onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                      className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
-            </div>
-          )}
+          <PaginationControls 
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            itemsPerPage={itemsPerPage}
+            onPageChange={goToPage}
+            onItemsPerPageChange={(value) => setItemsPerPage(parseInt(value))}
+            itemsPerPageOptions={[6, 12, 20, 30]}
+            showItemsPerPage={true}
+            showInfo={true}
+            itemLabel="produtos"
+          />
         </>
       )}
     </div>
