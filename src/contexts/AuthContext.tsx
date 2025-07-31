@@ -49,11 +49,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const fetchUserRole = async (currentUser: User) => {
     try {
-      console.log('Fetching user role for:', currentUser.email);
-      
       // Se é o admin principal, define o role diretamente
       if (currentUser.email === 'adm@adega.com') {
-        console.log('Setting admin role for main admin');
         setUserRole('admin');
         return;
       }
@@ -66,8 +63,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         .single();
 
       if (profileError) {
-        console.error('Error fetching user role from profiles table:', profileError);
-        
         // If not found in profiles table, try users table
         const { data: userData, error: userError } = await supabase
           .from('users')
@@ -76,14 +71,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           .single();
 
         if (userError) {
-          console.error('Error fetching user role from users table:', userError);
           throw new Error('Could not fetch user role from any table');
         }
 
-        console.log('Role found in users:', userData.role);
         setUserRole(userData.role);
       } else {
-        console.log('Role found in profiles:', profileData.role);
         setUserRole(profileData.role);
       }
     } catch (error) {
@@ -107,19 +99,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     // Se não há usuário, não tem permissão
     if (!user) {
-      console.log('No user found');
       return false;
     }
 
     // Se o email é adm@adega.com, tem todas as permissões
     if (user.email === 'adm@adega.com') {
-      console.log('Main admin access granted');
       return true;
     }
 
     // Se não há role definido e não é o admin principal, não tem permissão
     if (!userRole) {
-      console.log('No role found');
       return false;
     }
 
@@ -198,7 +187,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return;
       }
 
-      console.log('Successfully signed out from Supabase');
       
       // Show success message
       toast({
@@ -209,7 +197,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       // Force navigation to auth page
       window.location.href = '/auth';
     } catch (error) {
-      console.error('Error in signOut:', error);
       toast({
         title: "Error",
         description: "An unexpected error occurred while signing out.",

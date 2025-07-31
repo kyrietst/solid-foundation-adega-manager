@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, Filter, ChevronDown } from "lucide-react";
+import { Plus, ChevronDown } from "lucide-react";
 import { useCart } from "@/hooks/use-cart";
 import { useBarcode } from "@/hooks/use-barcode";
 import { BarcodeInput } from "@/components/inventory/BarcodeInput";

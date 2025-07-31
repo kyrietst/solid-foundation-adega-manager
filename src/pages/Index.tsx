@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { Dashboard } from '@/components/Dashboard';
 import { Sales } from '@/components/Sales';
@@ -21,7 +21,6 @@ const Index = () => {
   // Redireciona entregadores para a aba delivery
   useEffect(() => {
     if (userRole === 'delivery' && activeTab !== 'delivery') {
-      console.log('Delivery user detected, redirecting to delivery tab');
       navigate('/delivery', { replace: true });
     }
   }, [userRole, activeTab, navigate]);
@@ -40,17 +39,13 @@ const Index = () => {
 
   // Se não tem usuário ou role, não renderiza nada
   if (!user || !userRole) {
-    console.log('No user or role found, redirecting to auth');
     return null;
   }
 
   const renderContent = () => {
-    console.log('Rendering content for role:', userRole, 'tab:', activeTab);
-
     // Se for entregador, só pode ver a aba delivery
     if (userRole === 'delivery') {
       if (activeTab !== 'delivery') {
-        console.log('Delivery user trying to access non-delivery tab');
         return <div className="p-4 text-red-400 bg-red-900/20 rounded-lg border border-red-500/30">Acesso negado. Você só tem permissão para acessar a área de Delivery.</div>;
       }
       return <Delivery />;

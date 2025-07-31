@@ -16,12 +16,8 @@ import {
   TrendingUp, 
   DollarSign, 
   BarChart3, 
-  Search,
-  Filter,
   Grid3X3,
-  List,
-  Eye,
-  ChevronDown
+  List
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -51,7 +47,7 @@ export const InventoryNew = () => {
   const [filters, setFilters] = useState<InventoryFilters>({});
   
   // Estados locais
-  const [initialItemsPerPage] = useState(12); // 12 para grid, ajustável
+  const INITIAL_ITEMS_PER_PAGE = 12; // 12 para grid, ajustável
 
   // Query para produtos
   const { data: products = [], isLoading } = useQuery({
@@ -203,13 +199,9 @@ export const InventoryNew = () => {
     totalItems,
     paginatedItems: paginatedProducts,
     goToPage,
-    nextPage,
-    prevPage,
-    setItemsPerPage,
-    goToFirstPage,
-    goToLastPage
+    setItemsPerPage
   } = usePagination(filteredProducts, {
-    initialItemsPerPage: initialItemsPerPage,
+    initialItemsPerPage: INITIAL_ITEMS_PER_PAGE,
     resetOnItemsChange: true // Reset para página 1 quando filtros mudam
   });
 

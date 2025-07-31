@@ -118,13 +118,11 @@ export function AppSidebar() {
 
   const handleLinkClick = (href: string, e: React.MouseEvent) => {
     e.preventDefault();
-    console.log('Sidebar: Navigating to', href);
     navigate(href);
   };
 
   const handleLogout = (e: React.MouseEvent) => {
     e.preventDefault();
-    console.log('Sidebar: Logging out');
     signOut();
     navigate('/auth');
   };

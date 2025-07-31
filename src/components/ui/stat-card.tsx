@@ -1,8 +1,6 @@
-import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LucideIcon } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { cardVariants, getTextClasses, getIconClasses } from '@/lib/theme-utils';
+import { cn, getValueClasses } from '@/lib/theme-utils';
 
 export interface StatCardProps {
   title: string;
