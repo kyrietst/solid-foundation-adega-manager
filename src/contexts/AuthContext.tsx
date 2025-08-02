@@ -1,8 +1,9 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { useAuthErrorHandler } from '@/hooks/auth/useAuthErrorHandler';
 import { UserRole } from '@/types/supabase';
 
 interface AuthContextType {
@@ -22,6 +23,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Configurar error handler de autenticação
+  const authErrorHandler = useAuthErrorHandler({
+    showToast: true,
+    redirectToLogin: false, // Controlaremos isso manualmente
+    clearStorage: true,
+    retryAttempts: 1,
+    onError: (error) => {
+      console.error('Erro capturado pelo AuthErrorHandler:', error);
+      setUser(null);
+      setUserRole(null);
+    }
+  });
 
   useEffect(() => {
     // Check active sessions and sets the user
@@ -48,7 +62,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const fetchUserRole = async (currentUser: User) => {
-    try {
+    const fetchRoleOperation = async () => {
       // Se é o admin principal, define o role diretamente
       if (currentUser.email === 'adm@adega.com') {
         setUserRole('admin');
@@ -78,19 +92,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       } else {
         setUserRole(profileData.role);
       }
-    } catch (error) {
-      console.error('Error in fetchUserRole:', error);
-      toast({
-        title: "Error",
-        description: "Could not fetch user role. Please try logging in again.",
-        variant: "destructive",
-      });
-      // Em caso de erro, fazer logout para forçar nova autenticação
+    };
+
+    // Usar o handler de erro de auth com retry
+    const result = await authErrorHandler.retryWithAuth(
+      fetchRoleOperation, 
+      'busca de role do usuário',
+      1 // 1 tentativa de retry
+    );
+
+    // Se não conseguiu buscar o role após retry, fazer logout limpo
+    if (result === null) {
+      console.log('Não foi possível buscar role do usuário, fazendo logout...');
       await signOut();
     }
   };
 
-  const hasPermission = (requiredRole: UserRole | UserRole[]) => {
+  const hasPermission = useCallback((requiredRole: UserRole | UserRole[]) => {
     console.log('Checking permission:', { 
       user: user?.email, 
       userRole, 
@@ -130,89 +148,132 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const hasAccess = roleHierarchy[userRole] >= roleHierarchy[requiredRole];
     console.log('Hierarchy permission check:', { hasAccess });
     return hasAccess;
-  };
+  }, [user, userRole]);
 
-  const signIn = async (email: string, password: string) => {
-    try {
-      const { error } = await supabase.auth.signInWithPassword({
+  const signIn = useCallback(async (email: string, password: string) => {
+    const signInOperation = async () => {
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
+        // Criar mensagens mais específicas para erros de auth
+        let errorMessage = error.message;
+        if (error.message.includes('Invalid login credentials')) {
+          errorMessage = 'Email ou senha incorretos. Verifique suas credenciais.';
+        } else if (error.message.includes('Email not confirmed')) {
+          errorMessage = 'Email não confirmado. Verifique sua caixa de entrada.';
+        } else if (error.message.includes('Too many requests')) {
+          errorMessage = 'Muitas tentativas de login. Tente novamente em alguns minutos.';
+        }
+
         toast({
-          title: "Error signing in",
-          description: error.message,
+          title: "Erro no Login",
+          description: errorMessage,
           variant: "destructive",
         });
-        return { error };
+        throw error;
       }
 
-      toast({
-        title: "Welcome back!",
-        description: "You have successfully signed in.",
-      });
+      return data;
+    };
 
-      navigate('/');
-      return { error: null };
+    try {
+      const result = await authErrorHandler.withAuthErrorHandling(
+        signInOperation,
+        'login do usuário'
+      )();
+
+      if (result) {
+        toast({
+          title: "Bem-vindo de volta!",
+          description: "Login realizado com sucesso.",
+        });
+
+        navigate('/');
+        return { error: null };
+      } else {
+        // Error foi tratado pelo authErrorHandler
+        return { error: new Error('Login falhou') };
+      }
     } catch (error) {
-      console.error('Error in signIn:', error);
+      // Erro não relacionado à auth, tratar normalmente
+      console.error('Erro inesperado no signIn:', error);
       toast({
-        title: "Error",
-        description: "An unexpected error occurred. Please try again.",
+        title: "Erro Inesperado",
+        description: "Ocorreu um erro inesperado. Tente novamente.",
         variant: "destructive",
       });
       return { error: error as Error };
     }
-  };
+  }, [toast, navigate, authErrorHandler]);
 
-  const signOut = async () => {
-    try {
-      console.log('Starting signOut process...');
+  const signOut = useCallback(async () => {
+    const signOutOperation = async () => {
+      console.log('Iniciando processo de logout...');
       
-      // First clear local state
+      // Primeiro limpar estado local
       setUser(null);
       setUserRole(null);
       
-      // Then sign out from Supabase
+      // Depois fazer logout no Supabase
       const { error } = await supabase.auth.signOut();
       
       if (error) {
-        console.error('Error in supabase.auth.signOut:', error);
-        toast({
-          title: "Error signing out",
-          description: error.message,
-          variant: "destructive",
-        });
-        return;
+        console.error('Erro no supabase.auth.signOut:', error);
+        throw error;
       }
 
-      
-      // Show success message
-      toast({
-        title: "Signed out",
-        description: "You have been successfully signed out.",
-      });
+      return true;
+    };
 
-      // Force navigation to auth page
-      window.location.href = '/auth';
+    try {
+      const result = await authErrorHandler.withAuthErrorHandling(
+        signOutOperation,
+        'logout do usuário'
+      )();
+
+      if (result) {
+        // Limpar storage adicional
+        await authErrorHandler.clearAuthState();
+
+        toast({
+          title: "Logout Realizado",
+          description: "Você foi desconectado com sucesso.",
+        });
+
+        // Forçar navegação para auth
+        setTimeout(() => {
+          window.location.href = '/auth';
+        }, 1000);
+      }
     } catch (error) {
+      // Em caso de erro, ainda tentar limpar estado e redirecionar
+      console.error('Erro durante logout, forçando limpeza:', error);
+      
+      await authErrorHandler.clearAuthState();
+      setUser(null);
+      setUserRole(null);
+      
       toast({
-        title: "Error",
-        description: "An unexpected error occurred while signing out.",
+        title: "Logout Forçado",
+        description: "Ocorreu um erro, mas você foi desconectado.",
         variant: "destructive",
       });
-    }
-  };
 
-  const value = {
+      window.location.href = '/auth';
+    }
+  }, [toast, authErrorHandler]);
+
+  const value = useMemo(() => ({
     user,
     userRole,
     loading,
     signIn,
     signOut,
     hasPermission,
-  };
+  }), [user, userRole, loading, signIn, signOut, hasPermission]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

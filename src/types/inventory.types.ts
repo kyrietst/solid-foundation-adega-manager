@@ -1,4 +1,17 @@
 // Tipos específicos para o módulo de estoque aprimorado
+import type { 
+  Price, 
+  StockQuantity, 
+  Volume, 
+  Year, 
+  Percentage, 
+  NonNegativeInteger 
+} from './branded.types';
+import type { 
+  WineCategory, 
+  ProducingCountry, 
+  WineRegion 
+} from './enums.types';
 
 export type UnitType = 'un' | 'pct';
 export type TurnoverRate = 'fast' | 'medium' | 'slow';
@@ -7,29 +20,29 @@ export interface Product {
   id: string;
   name: string;
   description?: string;
-  price: number;
-  stock_quantity: number;
-  category: string;
-  vintage?: number;
+  price: Price;
+  stock_quantity: StockQuantity;
+  category: WineCategory;
+  vintage?: Year;
   producer?: string;
-  country?: string;
-  region?: string;
-  alcohol_content?: number;
-  volume?: number; // Mantendo compatibilidade com campo antigo
-  volume_ml?: number; // Novo campo em mililitros
+  country?: ProducingCountry;
+  region?: WineRegion;
+  alcohol_content?: Percentage;
+  volume?: Volume; // Mantendo compatibilidade com campo antigo
+  volume_ml?: Volume; // Novo campo em mililitros
   image_url?: string;
   supplier?: string;
-  minimum_stock: number;
-  cost_price?: number;
-  margin_percent?: number;
+  minimum_stock: StockQuantity;
+  cost_price?: Price;
+  margin_percent?: Percentage;
   created_at: string;
   updated_at: string;
   
   // Novos campos para estoque aprimorado
   unit_type: UnitType;
-  package_size: number;
-  package_price?: number;
-  package_margin?: number;
+  package_size: NonNegativeInteger;
+  package_price?: Price;
+  package_margin?: Percentage;
   turnover_rate: TurnoverRate;
   last_sale_date?: string;
   barcode?: string;
@@ -38,42 +51,42 @@ export interface Product {
 export interface ProductFormData {
   name: string;
   description?: string;
-  category: string;
-  price: number;
-  cost_price?: number;
-  margin_percent?: number;
-  stock_quantity: number;
-  minimum_stock: number;
+  category: WineCategory;
+  price: Price;
+  cost_price?: Price;
+  margin_percent?: Percentage;
+  stock_quantity: StockQuantity;
+  minimum_stock: StockQuantity;
   supplier?: string;
   producer?: string;
-  country?: string;
-  region?: string;
-  vintage?: number;
-  alcohol_content?: number;
-  volume_ml?: number;
+  country?: ProducingCountry;
+  region?: WineRegion;
+  vintage?: Year;
+  alcohol_content?: Percentage;
+  volume_ml?: Volume;
   image_url?: string;
   
   // Novos campos
   unit_type: UnitType;
-  package_size: number;
-  package_price?: number;
-  package_margin?: number;
+  package_size: NonNegativeInteger;
+  package_price?: Price;
+  package_margin?: Percentage;
   barcode?: string;
 }
 
 export interface ProductCalculations {
   // Cálculos automáticos de margem
-  unitMargin?: number;
-  packageMargin?: number;
-  unitProfitAmount?: number;
-  packageProfitAmount?: number;
+  unitMargin?: Percentage;
+  packageMargin?: Percentage;
+  unitProfitAmount?: Price;
+  packageProfitAmount?: Price;
   
   // Conversões
-  pricePerUnit?: number;
-  pricePerPackage?: number;
+  pricePerUnit?: Price;
+  pricePerPackage?: Price;
   
   // Métricas de giro
-  daysSinceLastSale?: number;
+  daysSinceLastSale?: NonNegativeInteger;
   salesVelocity?: 'high' | 'medium' | 'low';
   reorderRecommendation?: boolean;
 }
@@ -156,4 +169,35 @@ export interface BarcodeComponentProps {
   onScan: (barcode: string) => Promise<void>;
   disabled?: boolean;
   autoFocus?: boolean;
+}
+
+// Interface para movimentações de estoque
+export interface InventoryMovement {
+  id: string;
+  type: 'in' | 'out' | 'fiado' | 'devolucao';
+  product_id: string;
+  quantity: StockQuantity;
+  reason: string | null;
+  customer_id: string | null;
+  amount: Price | null;
+  due_date: string | null;
+  sale_id: string | null;
+  user_id: string | null;
+  date: string;
+  created_at: string;
+  updated_at: string;
+  
+  // Relacionamentos opcionais (quando fazemos JOIN)
+  product?: {
+    name: string;
+    unit_type: UnitType;
+    price: Price;
+  };
+  customer?: {
+    name: string;
+    phone?: string;
+  };
+  user?: {
+    name: string;
+  };
 }

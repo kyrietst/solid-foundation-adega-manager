@@ -1,7 +1,17 @@
+/**
+ * @fileoverview Hook principal para operações de CRM (Customer Relationship Management)
+ * Gerencia clientes, insights, interações e análises comportamentais
+ * 
+ * @author Adega Manager Team
+ * @version 2.0.0
+ * @since 1.0.0
+ */
+
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from './use-toast';
+import { useProfileCompletenessCalculator } from '@/hooks/crm/useProfileCompletenessCalculator';
 
 // Tipos
 export type CustomerSegment = 'VIP' | 'Regular' | 'Novo' | 'Inativo' | 'Em risco';
@@ -62,7 +72,21 @@ export type CustomerEvent = {
   created_at?: string; // opcional para inserções manuais
 };
 
-// Utilitário para registrar evento e recalcular insights
+/**
+ * Registra evento do cliente e recalcula insights automaticamente
+ * @param event - Evento do cliente (compra, movimento, etc.)
+ * @returns Promise<void>
+ * @example
+ * ```typescript
+ * await recordCustomerEvent({
+ *   customer_id: 'uuid',
+ *   type: 'sale',
+ *   origin_id: 'sale_uuid',
+ *   value: 150.00,
+ *   description: 'Compra de vinhos'
+ * });
+ * ```
+ */
 export const recordCustomerEvent = async (event: CustomerEvent) => {
   if (!event.customer_id) return;
   // Garante timestamp server-side
@@ -99,7 +123,20 @@ export interface SaleData {
   created_at: string;
 }
 
-// Hook para obter clientes com suporte a busca e paginação
+/**
+ * Hook principal para obter lista de clientes com funcionalidades avançadas
+ * @param params - Parâmetros de filtro e paginação
+ * @param params.search - Termo de busca (nome, email, telefone)
+ * @param params.limit - Limite de resultados (padrão: sem limite)
+ * @returns Query com lista de clientes e metadados
+ * @example
+ * ```typescript
+ * const { data: customers, isLoading } = useCustomers({ 
+ *   search: 'João', 
+ *   limit: 50 
+ * });
+ * ```
+ */
 export const useCustomers = (params?: { 
   search?: string; 
   limit?: number;
@@ -395,49 +432,15 @@ export const useAddCustomerInteraction = () => {
 };
 
 // Hook para calcular a completude do perfil do cliente
+// Refatorado para usar hook especializado
 export const useProfileCompleteness = (customer: CustomerProfile | undefined) => {
-  const [completeness, setCompleteness] = useState({
-    score: 0,
-    suggestions: [] as string[]
-  });
+  const completeness = useProfileCompletenessCalculator(customer);
   
-  useEffect(() => {
-    if (!customer) return;
-    
-    const fields = [
-      { name: 'name', label: 'Nome', weight: 15, required: true },
-      { name: 'phone', label: 'Telefone', weight: 15, required: true },
-      { name: 'email', label: 'Email', weight: 10, required: false },
-      { name: 'address', label: 'Endereço', weight: 10, required: false },
-      { name: 'birthday', label: 'Data de aniversário', weight: 10, required: false },
-      { name: 'contact_preference', label: 'Preferência de contato', weight: 10, required: false },
-      { name: 'contact_permission', label: 'Permissão de contato', weight: 15, required: true },
-      { name: 'notes', label: 'Observações', weight: 5, required: false },
-    ];
-    
-    let score = 0;
-    const suggestions: string[] = [];
-    
-    fields.forEach(field => {
-      if (customer[field.name as keyof CustomerProfile]) {
-        score += field.weight;
-      } else if (field.required) {
-        suggestions.push(`Adicionar ${field.label}`);
-      } else {
-        suggestions.push(`Completar ${field.label}`);
-      }
-    });
-    
-    // Limitar a 3 sugestões
-    const topSuggestions = suggestions.slice(0, 3);
-    
-    setCompleteness({
-      score,
-      suggestions: topSuggestions
-    });
-  }, [customer]);
-  
-  return completeness;
+  // Manter interface compatível com versão anterior
+  return {
+    score: completeness.score,
+    suggestions: completeness.suggestions
+  };
 };
 
 // Hook para obter estatísticas gerais dos clientes

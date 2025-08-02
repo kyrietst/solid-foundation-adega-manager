@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 
 export interface PaginationOptions {
   initialPage?: number;
@@ -63,7 +63,8 @@ export function usePagination<T>(
   }, [items, currentPage, itemsPerPage]);
 
   // Resetar página quando dados mudam (se habilitado)
-  useMemo(() => {
+  // Usando useEffect para side effect ao invés de useMemo
+  useEffect(() => {
     if (resetPageOnDataChange && currentPage > totalPages && totalPages > 0) {
       setCurrentPageState(1);
     }
@@ -81,12 +82,12 @@ export function usePagination<T>(
   }, []);
 
   const nextPage = useCallback(() => {
-    setCurrentPage(currentPage + 1);
-  }, [currentPage, setCurrentPage]);
+    setCurrentPageState(prev => Math.min(prev + 1, totalPages));
+  }, [totalPages]);
 
   const prevPage = useCallback(() => {
-    setCurrentPage(currentPage - 1);
-  }, [currentPage, setCurrentPage]);
+    setCurrentPageState(prev => Math.max(prev - 1, 1));
+  }, []);
 
   const goToFirstPage = useCallback(() => {
     setCurrentPage(1);

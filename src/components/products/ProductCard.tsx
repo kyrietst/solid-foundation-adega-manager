@@ -1,0 +1,70 @@
+/**
+ * Card individual do produto
+ * Sub-componente especializado para exibição de produto individual
+ */
+
+import React from 'react';
+import { Button } from '@/components/ui/button';
+import { Plus } from 'lucide-react';
+import type { Product } from '@/types/inventory.types';
+import { formatCurrency } from '@/lib/utils';
+
+interface ProductCardProps {
+  product: Product;
+  onAddToCart: (product: Product) => void;
+}
+
+export const ProductCard: React.FC<ProductCardProps> = ({
+  product,
+  onAddToCart,
+}) => {
+  const isOutOfStock = product.stock_quantity === 0;
+  const stockColor = isOutOfStock ? 'bg-red-500/90' : 'bg-adega-charcoal/90';
+
+  return (
+    <div className="border border-adega-gold/30 rounded-lg overflow-hidden hover:shadow-xl transition-all duration-300 bg-adega-charcoal/20 backdrop-blur-xl hover:bg-adega-charcoal/30">
+      {/* Imagem do produto */}
+      <div className="aspect-square bg-muted/30 relative">
+        {product.image_url ? (
+          <img 
+            src={product.image_url} 
+            alt={product.name}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-adega-silver">
+            <span className="text-xs">Sem imagem</span>
+          </div>
+        )}
+        
+        {/* Badge de estoque */}
+        <div className={`absolute bottom-2 right-2 ${stockColor} px-2 py-1 rounded-full text-xs font-medium text-white border border-white/10`}>
+          {isOutOfStock ? 'Sem estoque' : `${product.stock_quantity} em estoque`}
+        </div>
+      </div>
+
+      {/* Informações do produto */}
+      <div className="p-3">
+        <h3 className="font-medium line-clamp-2 h-10 text-sm text-adega-platinum">
+          {product.name}
+        </h3>
+        
+        <div className="mt-2 flex items-center justify-between">
+          <span className="text-lg font-bold text-adega-yellow">
+            {formatCurrency(product.price)}
+          </span>
+          
+          <Button 
+            size="sm" 
+            onClick={() => onAddToCart(product)}
+            disabled={isOutOfStock}
+            variant={isOutOfStock ? 'secondary' : 'default'}
+          >
+            <Plus className="h-4 w-4 mr-1" />
+            {isOutOfStock ? 'Indisponível' : 'Adicionar'}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};

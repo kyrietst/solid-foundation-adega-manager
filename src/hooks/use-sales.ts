@@ -2,6 +2,24 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { recordCustomerEvent } from "./use-crm";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import { DeliveryAddress } from "@/types/sales.types";
+
+// Interfaces para dados de query
+interface RawSaleItem {
+  id: string;
+  sale_id: string;
+  product_id: string;
+  quantity: number;
+  unit_price: number;
+}
+
+interface RawProduct {
+  id: string;
+  name: string;
+}
+
+// Tipos para roles
+type AllowedRole = 'admin' | 'employee';
 
 // Tipos
 type Sale = {
@@ -16,7 +34,7 @@ type Sale = {
   payment_status: 'pending' | 'paid' | 'cancelled';
   status: 'pending' | 'completed' | 'cancelled' | 'delivering' | 'delivered' | 'returned';
   delivery: boolean | null;
-  delivery_address: any | null; // Usando any para Json
+  delivery_address: DeliveryAddress | null;
   delivery_user_id: string | null;
   notes: string | null;
   created_at: string;
@@ -162,26 +180,26 @@ export const useSales = (params?: {
 
       // Busca itens das vendas
       const saleIds = sales.map(s => s.id);
-      let itemsBySale: Record<string, Sale["items"]> = {};
+      const itemsBySale: Record<string, Sale["items"]> = {};
       if (saleIds.length > 0) {
         const { data: itemsData, error: itemsError } = await supabase
           .from('sale_items')
           .select('id, sale_id, product_id, quantity, unit_price')
           .in('sale_id', saleIds);
         // Mapeia nomes dos produtos
-        let productMap: Record<string,string> = {};
+        const productMap: Record<string,string> = {};
         if(!itemsError && itemsData && itemsData.length){
-          const productIds = [...new Set(itemsData.map((it:any)=>it.product_id))];
+          const productIds = [...new Set(itemsData.map((it: RawSaleItem) => it.product_id))];
           if(productIds.length){
             const { data: prodData } = await supabase
               .from('products')
               .select('id,name')
               .in('id', productIds);
-            prodData?.forEach((p:any)=>{ productMap[p.id]=p.name; });
+            prodData?.forEach((p: RawProduct) => { productMap[p.id] = p.name; });
           }
         }
         if (!itemsError && itemsData) {
-          itemsData.forEach((it: any) => {
+          itemsData.forEach((it: RawSaleItem) => {
             if (!itemsBySale[it.sale_id]) itemsBySale[it.sale_id] = [];
             itemsBySale[it.sale_id].push({
               id: it.id,
@@ -257,8 +275,8 @@ export const useUpsertSale = () => {
       }
 
       // Verifica se o usuário tem uma função que permite criar vendas
-      const allowedRoles = ['admin', 'employee'] as const;
-      if (!allowedRoles.includes(profile.role as any)) {
+      const allowedRoles: AllowedRole[] = ['admin', 'employee'];
+      if (!allowedRoles.includes(profile.role as AllowedRole)) {
         throw new Error("Você não tem permissão para criar vendas. Apenas administradores e funcionários podem criar vendas.");
       }
 

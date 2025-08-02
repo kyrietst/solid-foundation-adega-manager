@@ -1,0 +1,141 @@
+/**
+ * Componente card individual de cliente
+ * Extraído do CustomersNew.tsx para reutilização
+ */
+
+import React from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Phone, Mail, MapPin, Calendar, Eye, Edit } from 'lucide-react';
+import { formatCurrency } from '@/lib/utils';
+import { CustomerCardProps } from './types';
+import { CustomerSegmentBadge } from './CustomerSegmentBadge';
+
+export const CustomerCard: React.FC<CustomerCardProps> = ({
+  customer,
+  onSelect,
+  onEdit,
+  canEdit = false,
+}) => {
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleDateString('pt-BR');
+  };
+
+  return (
+    <Card className="bg-adega-charcoal/20 border-white/10 hover:bg-adega-charcoal/30 transition-colors">
+      <CardContent className="p-4">
+        {/* Header do Card */}
+        <div className="flex justify-between items-start mb-3">
+          <div className="flex-1 min-w-0">
+            <h3 className="font-semibold text-adega-platinum truncate" title={customer.name}>
+              {customer.name}
+            </h3>
+            <div className="mt-1">
+              <CustomerSegmentBadge segment={customer.segment || ''} />
+            </div>
+          </div>
+          
+          <div className="flex gap-1 ml-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onSelect(customer)}
+              className="h-8 w-8 p-0 hover:bg-adega-gold/20"
+              title="Ver detalhes"
+            >
+              <Eye className="h-3 w-3" />
+            </Button>
+            {canEdit && onEdit && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onEdit(customer)}
+                className="h-8 w-8 p-0 hover:bg-blue-500/20"
+                title="Editar cliente"
+              >
+                <Edit className="h-3 w-3" />
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Informações de Contato */}
+        <div className="space-y-2 mb-3">
+          {customer.email && (
+            <div className="flex items-center gap-2 text-sm">
+              <Mail className="h-3 w-3 text-adega-platinum/60" />
+              <span className="text-adega-platinum/80 truncate" title={customer.email}>
+                {customer.email}
+              </span>
+            </div>
+          )}
+          
+          {customer.phone && (
+            <div className="flex items-center gap-2 text-sm">
+              <Phone className="h-3 w-3 text-adega-platinum/60" />
+              <span className="text-adega-platinum/80">
+                {customer.phone}
+              </span>
+            </div>
+          )}
+          
+          {customer.address && (
+            <div className="flex items-center gap-2 text-sm">
+              <MapPin className="h-3 w-3 text-adega-platinum/60" />
+              <span className="text-adega-platinum/80 truncate" title={customer.address}>
+                {customer.address}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Informações de Compra */}
+        <div className="space-y-2 pt-2 border-t border-white/10">
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-adega-platinum/60">LTV:</span>
+            <span className="font-semibold text-adega-gold">
+              {formatCurrency(customer.lifetime_value || 0)}
+            </span>
+          </div>
+          
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-adega-platinum/60">Primeira compra:</span>
+            <span className="text-sm text-adega-platinum/80">
+              {formatDate(customer.first_purchase_date)}
+            </span>
+          </div>
+          
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-adega-platinum/60">Última compra:</span>
+            <span className="text-sm text-adega-platinum/80">
+              {formatDate(customer.last_purchase_date)}
+            </span>
+          </div>
+
+          {customer.favorite_category && (
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-adega-platinum/60">Categoria favorita:</span>
+              <span className="text-sm text-adega-platinum/80 truncate">
+                {customer.favorite_category}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Data de Aniversário */}
+        {customer.birthday && (
+          <div className="mt-2 pt-2 border-t border-white/10">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-3 w-3 text-adega-platinum/60" />
+              <span className="text-sm text-adega-platinum/60">Aniversário:</span>
+              <span className="text-sm text-adega-platinum/80">
+                {formatDate(customer.birthday)}
+              </span>
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+};

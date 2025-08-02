@@ -4,8 +4,10 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
-import { NotificationProvider } from "@/contexts/NotificationContext";
 import { BackgroundWrapper } from "@/components/ui/background-wrapper";
+import { ErrorBoundary } from "@/components/error/ErrorBoundary";
+import { RouteErrorBoundary } from "@/components/error/RouteErrorBoundary";
+import { AuthErrorBoundary } from "@/components/error/AuthErrorBoundary";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
@@ -29,35 +31,100 @@ const TailwindColorClasses = () => (
 );
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <BrowserRouter>
-        <AuthProvider>
-          <NotificationProvider>
-            <BackgroundWrapper>
-              <Toaster />
-              <Sonner />
-              <TailwindColorClasses />
-              <Routes>
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/" element={<Index />}>
-                  <Route index element={<div />} />
-                  <Route path="dashboard" element={<div />} />
-                  <Route path="sales" element={<div />} />
-                  <Route path="inventory" element={<div />} />
-                  <Route path="customers" element={<div />} />
-                  <Route path="delivery" element={<div />} />
-                  <Route path="movements" element={<div />} />
-                  <Route path="users" element={<div />} />
-                </Route>
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </BackgroundWrapper>
-          </NotificationProvider>
-        </AuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+  <ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <BrowserRouter>
+          <AuthErrorBoundary>
+            <AuthProvider>
+              <BackgroundWrapper>
+                <Toaster />
+                <Sonner />
+                <TailwindColorClasses />
+                <Routes>
+                  <Route 
+                    path="/auth" 
+                    element={
+                      <RouteErrorBoundary routeName="Autenticação">
+                        <Auth />
+                      </RouteErrorBoundary>
+                    } 
+                  />
+                  <Route 
+                    path="/" 
+                    element={
+                      <RouteErrorBoundary routeName="Aplicação Principal">
+                        <Index />
+                      </RouteErrorBoundary>
+                    }
+                  >
+                    <Route index element={<div />} />
+                    <Route 
+                      path="dashboard" 
+                      element={
+                        <RouteErrorBoundary routeName="Dashboard">
+                          <div />
+                        </RouteErrorBoundary>
+                      } 
+                    />
+                    <Route 
+                      path="sales" 
+                      element={
+                        <RouteErrorBoundary routeName="Vendas">
+                          <div />
+                        </RouteErrorBoundary>
+                      } 
+                    />
+                    <Route 
+                      path="inventory" 
+                      element={
+                        <RouteErrorBoundary routeName="Estoque">
+                          <div />
+                        </RouteErrorBoundary>
+                      } 
+                    />
+                    <Route 
+                      path="customers" 
+                      element={
+                        <RouteErrorBoundary routeName="Clientes">
+                          <div />
+                        </RouteErrorBoundary>
+                      } 
+                    />
+                    <Route 
+                      path="delivery" 
+                      element={
+                        <RouteErrorBoundary routeName="Entregas">
+                          <div />
+                        </RouteErrorBoundary>
+                      } 
+                    />
+                    <Route 
+                      path="movements" 
+                      element={
+                        <RouteErrorBoundary routeName="Movimentos">
+                          <div />
+                        </RouteErrorBoundary>
+                      } 
+                    />
+                    <Route 
+                      path="users" 
+                      element={
+                        <RouteErrorBoundary routeName="Usuários">
+                          <div />
+                        </RouteErrorBoundary>
+                      } 
+                    />
+                  </Route>
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </BackgroundWrapper>
+            </AuthProvider>
+          </AuthErrorBoundary>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;

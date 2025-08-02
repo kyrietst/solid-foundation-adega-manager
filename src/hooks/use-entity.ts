@@ -11,6 +11,7 @@ import { useQuery, useMutation, useQueryClient, UseQueryOptions, UseMutationOpti
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Database } from '@/integrations/supabase/types';
+import type { WithId, BaseEntity, ListResponse, hasId } from '@/types/generic.types';
 
 // ============================================================================
 // TYPES E INTERFACES
@@ -95,10 +96,12 @@ export interface UseEntityMutationOptions<T extends TableName, TData = unknown> 
 /**
  * Hook para buscar uma entidade específica por ID
  * Abstrai o padrão comum de .select().eq('id', id).single()
+ * 
+ * @template T - Nome da tabela que deve existir no database schema
  */
 export function useEntity<T extends TableName>(
   options: UseEntityOptions<T>
-): ReturnType<typeof useQuery<TableRow<T>, Error>> {
+): ReturnType<typeof useQuery<TableRow<T> & WithId, Error>> {
   const {
     table,
     id,
@@ -120,7 +123,13 @@ export function useEntity<T extends TableName>(
         .single();
 
       if (error) throw error;
-      return data as TableRow<T>;
+      
+      // Type guard para garantir que tem ID
+      if (!hasId(data)) {
+        throw new Error(`Entidade retornada não possui ID válido`);
+      }
+      
+      return data as TableRow<T> & WithId;
     },
     enabled: enabled && !!id,
     staleTime,
@@ -135,10 +144,12 @@ export function useEntity<T extends TableName>(
 /**
  * Hook para buscar lista de entidades com filtros, ordenação e busca
  * Abstrai padrões comuns de queries de lista identificados
+ * 
+ * @template T - Nome da tabela que deve existir no database schema
  */
 export function useEntityList<T extends TableName>(
   options: UseEntityListOptions<T>
-): ReturnType<typeof useQuery<TableRow<T>[], Error>> {
+): ReturnType<typeof useQuery<(TableRow<T> & WithId)[], Error>> {
   const {
     table,
     select = '*',
@@ -192,7 +203,10 @@ export function useEntityList<T extends TableName>(
       const { data, error } = await query;
       if (error) throw error;
       
-      return (data as TableRow<T>[]) || [];
+      // Filtra apenas entidades válidas com ID
+      const validData = (data || []).filter(hasId) as (TableRow<T> & WithId)[];
+      
+      return validData;
     },
     enabled,
     staleTime,
