@@ -84,8 +84,7 @@ export const CustomersNew = () => {
   };
 
   const handleEditCustomer = (customer: CustomerProfile) => {
-    // TODO: Implementar edição de cliente
-    console.log('Edit customer:', customer.id);
+    // TODO: Implement customer editing
   };
 
   const handleCreateSuccess = () => {

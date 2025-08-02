@@ -103,17 +103,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     // Se não conseguiu buscar o role após retry, fazer logout limpo
     if (result === null) {
-      console.log('Não foi possível buscar role do usuário, fazendo logout...');
       await signOut();
     }
   };
 
   const hasPermission = useCallback((requiredRole: UserRole | UserRole[]) => {
-    console.log('Checking permission:', { 
-      user: user?.email, 
-      userRole, 
-      requiredRole 
-    });
 
     // Se não há usuário, não tem permissão
     if (!user) {
@@ -140,13 +134,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Se requiredRole é um array, verifica se o userRole está incluído
     if (Array.isArray(requiredRole)) {
       const hasAccess = requiredRole.includes(userRole);
-      console.log('Array permission check:', { hasAccess });
       return hasAccess;
     }
 
     // Se não é array, compara os níveis de hierarquia
     const hasAccess = roleHierarchy[userRole] >= roleHierarchy[requiredRole];
-    console.log('Hierarchy permission check:', { hasAccess });
     return hasAccess;
   }, [user, userRole]);
 
@@ -211,7 +203,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signOut = useCallback(async () => {
     const signOutOperation = async () => {
-      console.log('Iniciando processo de logout...');
       
       // Primeiro limpar estado local
       setUser(null);

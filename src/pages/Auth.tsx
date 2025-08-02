@@ -14,7 +14,6 @@ const Auth = () => {
   const { signIn, user, loading } = useAuth();
 
   useEffect(() => {
-    console.log('Auth component mounted/updated', { user, loading });
     
     // Check if we're coming from a logout
     const isLogout = window.location.search.includes('logout=true');
@@ -24,7 +23,6 @@ const Auth = () => {
   }, []);
 
   if (loading) {
-    console.log('Auth is loading...');
     return (
       <div className="flex items-center justify-center min-h-screen bg-black">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-500"></div>
@@ -34,19 +32,16 @@ const Auth = () => {
 
   // If user exists and we're not in a logout process, redirect to home
   if (user) {
-    console.log('User exists, redirecting to /', { user });
     return <Navigate to="/" replace />;
   }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Login form submitted');
     setIsLoading(true);
 
     const { error } = await signIn(email, password);
 
     if (!error) {
-      console.log('Login successful');
     } else {
       console.error('Login error:', error);
     }
