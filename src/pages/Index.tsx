@@ -3,11 +3,11 @@ import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { AppSidebar } from '@/app/layout/Sidebar';
 import { useAuth } from '@/app/providers/AuthContext';
 import { LoadingScreen } from '@/shared/ui/composite/loading-spinner';
+import SalesPage from '@/features/sales/components/SalesPage';
 
 // Lazy loading dos componentes principais para code splitting
 const Dashboard = lazy(() => import('@/features/dashboard/components/Dashboard'));
-const Sales = lazy(() => import('@/features/sales/components/SalesPage'));
-const Inventory = lazy(() => import('@/features/inventory/components/ProductsGridContainer'));
+const Inventory = lazy(() => import('@/features/inventory/components/InventoryManagement'));
 const Customers = lazy(() => import('@/features/customers/components/CustomersLite'));
 const Delivery = lazy(() => import('@/features/delivery/components/Delivery'));
 const Movements = lazy(() => import('@/features/movements/components/Movements'));
@@ -77,14 +77,16 @@ const Index = () => {
         ) : <AccessDenied />;
       case 'sales':
         return hasPermission(['admin', 'employee']) ? (
-          <Suspense fallback={<LoadingScreen text="Carregando vendas..." />}>
-            <Sales />
-          </Suspense>
+          <SalesPage />
         ) : <AccessDenied />;
       case 'inventory':
         return hasPermission(['admin', 'employee']) ? (
           <Suspense fallback={<LoadingScreen text="Carregando inventário..." />}>
-            <Inventory />
+            <Inventory 
+              showAddButton={hasPermission('admin')} 
+              showSearch={true} 
+              showFilters={true} 
+            />
           </Suspense>
         ) : <AccessDenied />;
       case 'customers':

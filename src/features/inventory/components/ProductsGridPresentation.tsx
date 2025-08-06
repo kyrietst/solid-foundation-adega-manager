@@ -30,6 +30,7 @@ export interface ProductsGridPresentationProps {
   // Configuração
   showSearch: boolean;
   showFilters: boolean;
+  showAddButton?: boolean;
   gridColumns: {
     mobile: number;
     tablet: number;
@@ -54,6 +55,7 @@ export interface ProductsGridPresentationProps {
   onItemsPerPageChange: (value: string) => void;
   onBarcodeScanned: (barcode: string) => void;
   onAddToCart: (product: Product) => void;
+  onAddProduct?: () => void;
 }
 
 export const ProductsGridPresentation: React.FC<ProductsGridPresentationProps> = ({
@@ -68,6 +70,7 @@ export const ProductsGridPresentation: React.FC<ProductsGridPresentationProps> =
   filterDescription,
   showSearch,
   showFilters,
+  showAddButton,
   gridColumns,
   className,
   currentPage,
@@ -84,6 +87,7 @@ export const ProductsGridPresentation: React.FC<ProductsGridPresentationProps> =
   onItemsPerPageChange,
   onBarcodeScanned,
   onAddToCart,
+  onAddProduct,
 }) => {
   if (isLoading) {
     return <LoadingScreen text="Carregando produtos..." />;
@@ -98,6 +102,7 @@ export const ProductsGridPresentation: React.FC<ProductsGridPresentationProps> =
             filteredCount={filteredCount}
             totalProducts={totalProducts}
             hasActiveFilters={hasActiveFilters}
+            onAddProduct={showAddButton ? onAddProduct : undefined}
           />
           
           <ProductFilters

@@ -98,10 +98,10 @@ void main() {
         vec3 normal = getNormal(p);
         float fresnel = pow(1.0 + dot(ray, normal), 3.0);
         
-        // Wine cellar themed colors - purple/gold gradient
-        vec3 wineColor = mix(vec3(0.4, 0.2, 0.6), vec3(0.8, 0.6, 0.2), fresnel);
+        // Black to bright white gradient
+        vec3 fluidColor = mix(vec3(0.0, 0.0, 0.0), vec3(1.0, 1.0, 1.0), fresnel);
         
-        gl_FragColor = vec4(wineColor, 0.15);
+        gl_FragColor = vec4(fluidColor, 0.8);
     } else {
         gl_FragColor = vec4(0.0, 0.0, 0.0, 0.05);
     }
@@ -148,7 +148,7 @@ function LavaLampShader() {
         vertexShader={vertexShader}
         fragmentShader={fragmentShader}
         transparent={true}
-        blending={THREE.NormalBlending}
+        blending={THREE.MultiplyBlending}
         depthWrite={false}
       />
     </mesh>

@@ -8,9 +8,16 @@ import type { Product } from '@/types/inventory.types';
 import { useProductsGridLogic, ProductsGridConfig } from '@/hooks/products/useProductsGridLogic';
 import { ProductsGridPresentation } from './ProductsGridPresentation';
 
-export interface ProductsGridContainerProps extends ProductsGridConfig {}
+export interface ProductsGridContainerProps extends ProductsGridConfig {
+  showAddButton?: boolean;
+  onAddProduct?: () => void;
+}
 
-export const ProductsGridContainer: React.FC<ProductsGridContainerProps> = (config) => {
+export const ProductsGridContainer: React.FC<ProductsGridContainerProps> = ({ 
+  showAddButton, 
+  onAddProduct, 
+  ...config 
+}) => {
   // Lógica centralizada
   const {
     // Dados
@@ -69,6 +76,7 @@ export const ProductsGridContainer: React.FC<ProductsGridContainerProps> = (conf
     // Configuração
     showSearch,
     showFilters,
+    showAddButton,
     gridColumns,
     className,
 
@@ -89,6 +97,7 @@ export const ProductsGridContainer: React.FC<ProductsGridContainerProps> = (conf
     onItemsPerPageChange: (value: string) => setItemsPerPage(parseInt(value)),
     onBarcodeScanned: handleBarcodeScanned,
     onAddToCart: handleAddToCart,
+    onAddProduct,
   };
 
   return <ProductsGridPresentation {...presentationProps} />;

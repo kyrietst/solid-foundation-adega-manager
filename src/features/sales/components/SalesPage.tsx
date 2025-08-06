@@ -16,7 +16,7 @@ interface CustomerProfile {
   phone?: string;
 }
 
-export function SalesPage() {
+function SalesPage() {
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerProfile | null>(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const { items } = useCart();
