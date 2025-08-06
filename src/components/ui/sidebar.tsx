@@ -1,8 +1,9 @@
 "use client";
-import { cn } from "@/lib/utils";
+
+import { cn } from "@/core/config/utils";
 import React, { useState, createContext, useContext } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { IconMenu2, IconX } from "@tabler/icons-react";
+import { Menu, X } from "lucide-react";
 
 interface Links {
   label: string;
@@ -45,7 +46,7 @@ export const SidebarProvider = ({
   const setOpen = setOpenProp !== undefined ? setOpenProp : setOpenState;
 
   return (
-    <SidebarContext.Provider value={{ open, setOpen, animate: animate }}>
+    <SidebarContext.Provider value={{ open, setOpen, animate }}>
       {children}
     </SidebarContext.Provider>
   );
@@ -85,26 +86,20 @@ export const DesktopSidebar = ({
 }: React.ComponentProps<typeof motion.div>) => {
   const { open, setOpen, animate } = useSidebar();
   return (
-    <>
-      <motion.div
-        className={cn(
-          "h-full px-3 py-4 hidden lg:flex lg:flex-col bg-black/20 backdrop-blur-xl border-r border-white/10 w-[280px] shrink-0 relative z-20 shadow-2xl",
-          className
-        )}
-        animate={{
-          width: animate ? (open ? "280px" : "70px") : "280px",
-        }}
-        transition={{
-          duration: 0.3,
-          ease: "easeInOut",
-        }}
-        onMouseEnter={() => setOpen(true)}
-        onMouseLeave={() => setOpen(false)}
-        {...props}
-      >
-        {children}
-      </motion.div>
-    </>
+    <motion.div
+      className={cn(
+        "h-full px-4 py-4 hidden md:flex md:flex-col bg-adega-charcoal/90 backdrop-blur-xl border-r border-adega-graphite/30 w-[300px] flex-shrink-0",
+        className
+      )}
+      animate={{
+        width: animate ? (open ? "300px" : "60px") : "300px",
+      }}
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+      {...props}
+    >
+      {children}
+    </motion.div>
   );
 };
 
@@ -118,21 +113,15 @@ export const MobileSidebar = ({
     <>
       <div
         className={cn(
-          "h-16 px-4 py-3 flex flex-row lg:hidden items-center justify-between bg-black/30 backdrop-blur-xl border-b border-white/10 w-full shadow-lg"
+          "h-10 px-4 py-4 flex flex-row md:hidden items-center justify-between bg-adega-charcoal/90 backdrop-blur-xl w-full"
         )}
         {...props}
       >
-        <div className="flex items-center space-x-2">
-          <div className="h-8 w-8 shrink-0 rounded-lg bg-gradient-to-r from-yellow-500 to-yellow-600" />
-          <span className="font-bold text-white text-lg">Adega</span>
-        </div>
-        <div className="flex justify-end z-20">
-          <button
+        <div className="flex justify-end z-20 w-full">
+          <Menu
+            className="text-adega-gold cursor-pointer"
             onClick={() => setOpen(!open)}
-            className="p-2 rounded-lg hover:bg-zinc-800 transition-colors"
-          >
-            <IconMenu2 className="text-white h-6 w-6" />
-          </button>
+          />
         </div>
         <AnimatePresence>
           {open && (
@@ -145,25 +134,17 @@ export const MobileSidebar = ({
                 ease: "easeInOut",
               }}
               className={cn(
-                "fixed h-full w-full inset-0 bg-black/40 backdrop-blur-xl z-[5] flex flex-col",
+                "fixed h-full w-full inset-0 bg-adega-black p-10 z-[100] flex flex-col justify-between",
                 className
               )}
             >
-              <div className="flex items-center justify-between p-6 border-b border-zinc-800/50">
-                <div className="flex items-center space-x-3">
-                  <div className="h-10 w-10 shrink-0 rounded-xl bg-gradient-to-r from-yellow-500 to-yellow-600" />
-                  <span className="font-bold text-white text-xl">Adega Manager</span>
-                </div>
-                <button
-                  className="p-2 rounded-lg hover:bg-zinc-800 transition-colors"
-                  onClick={() => setOpen(!open)}
-                >
-                  <IconX className="text-white h-6 w-6" />
-                </button>
+              <div
+                className="absolute right-10 top-10 z-50 text-adega-gold cursor-pointer"
+                onClick={() => setOpen(!open)}
+              >
+                <X />
               </div>
-              <div className="flex-1 overflow-y-auto p-6">
-                {children}
-              </div>
+              {children}
             </motion.div>
           )}
         </AnimatePresence>
@@ -185,27 +166,20 @@ export const SidebarLink = ({
   const { open, animate } = useSidebar();
   return (
     <div
-      onClick={onClick}
       className={cn(
-        "flex items-center justify-start gap-3 group/sidebar py-3 px-3 cursor-pointer hover:bg-zinc-800/60 rounded-xl transition-all duration-200 hover:shadow-lg hover:scale-[1.02]",
+        "flex items-center justify-start gap-2 group/sidebar py-2 px-2 rounded-lg transition-all duration-200 cursor-pointer",
         className
       )}
+      onClick={onClick}
       {...props}
     >
-      <div className="shrink-0 group-hover/sidebar:scale-110 transition-transform duration-200">
-        {link.icon}
-      </div>
-
+      {link.icon}
       <motion.span
         animate={{
           display: animate ? (open ? "inline-block" : "none") : "inline-block",
           opacity: animate ? (open ? 1 : 0) : 1,
         }}
-        transition={{
-          duration: 0.2,
-          ease: "easeInOut",
-        }}
-        className="text-gray-100 text-sm font-medium group-hover/sidebar:text-white transition-colors duration-200 whitespace-pre inline-block !p-0 !m-0"
+        className="text-adega-platinum text-sm group-hover/sidebar:translate-x-1 transition duration-150 whitespace-pre inline-block !p-0 !m-0"
       >
         {link.label}
       </motion.span>

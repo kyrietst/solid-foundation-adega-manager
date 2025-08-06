@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    --background: 0 0% 0% / 0;
     --foreground: 222.2 84% 4.9%;
 
     --card: 0 0% 100%;
@@ -52,7 +52,7 @@
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
+    --background: 0 0% 0% / 0;
     --foreground: 210 40% 98%;
 
     --card: 222.2 84% 4.9%;
@@ -96,6 +96,18 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-transparent text-foreground;
+  }
+}
+
+/* Animation for CSS background alternative */
+@keyframes subtleShift {
+  0% {
+    transform: translateX(-2%) translateY(-2%) scale(1.02);
+    filter: hue-rotate(0deg);
+  }
+  100% {
+    transform: translateX(2%) translateY(2%) scale(1.05);
+    filter: hue-rotate(10deg);
   }
 }

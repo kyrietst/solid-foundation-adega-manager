@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
+import { Label } from '@/shared/ui/primitives/label';
+import { Input } from '@/shared/ui/primitives/input';
 import { Wine } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/app/providers/AuthContext';
 import { Navigate } from 'react-router-dom';
-import { cn } from '@/lib/utils';
-import { WavyBackground } from '@/components/ui/wavy-background';
+import { cn } from '@/core/config/utils';
+import { WavyBackground } from '@/shared/ui/layout/wavy-background';
 
 const Auth = () => {
   const [email, setEmail] = useState('');

@@ -4,7 +4,7 @@
  */
 
 import { useCallback, useRef, useState, useEffect } from 'react';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/shared/hooks/common/use-toast';
 import { 
   TimeoutConfig, 
   getTimeoutConfig, 

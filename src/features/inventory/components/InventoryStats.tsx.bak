@@ -1,0 +1,49 @@
+/**
+ * Componente de estatísticas do inventory
+ * Extraído do InventoryNew.tsx para separar responsabilidades
+ */
+
+import React from 'react';
+import { StatCard } from '@/components/ui/stat-card';
+import { Package, AlertTriangle, TrendingUp, DollarSign } from 'lucide-react';
+import { formatCurrency } from '@/lib/utils';
+import { InventoryStatsProps } from './types';
+
+export const InventoryStats: React.FC<InventoryStatsProps> = ({
+  totalProducts,
+  lowStockCount,
+  totalValue,
+  turnoverStats,
+}) => {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+      <StatCard
+        title="Total de Produtos"
+        value={totalProducts.toString()}
+        icon={Package}
+        variant="default"
+      />
+      
+      <StatCard
+        title="Estoque Baixo"
+        value={lowStockCount.toString()}
+        icon={AlertTriangle}
+        variant={lowStockCount > 0 ? "warning" : "success"}
+      />
+      
+      <StatCard
+        title="Valor Total"
+        value={formatCurrency(totalValue)}
+        icon={DollarSign}
+        variant="success"
+      />
+      
+      <StatCard
+        title="Giro Rápido"
+        value={turnoverStats.fast.toString()}
+        icon={TrendingUp}
+        variant="purple"
+      />
+    </div>
+  );
+};

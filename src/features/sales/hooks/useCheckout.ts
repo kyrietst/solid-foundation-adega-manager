@@ -1,0 +1,159 @@
+/**
+ * Hook para processo de checkout
+ * Centraliza lógica de finalização de venda
+ */
+
+import { useState } from 'react';
+import { useCart, useCartTotal, type CartItem } from './use-cart';
+import { useCustomer } from '@/features/customers/hooks/use-crm';
+import { usePaymentMethods, useUpsertSale } from './use-sales';
+import { useToast } from '@/shared/hooks/use-toast';
+import { useCartValidation, CartValidationConfig } from './useCartValidation';
+
+export const useCheckout = (
+  config: CartValidationConfig & {
+    onSaleComplete?: (saleId: string) => void;
+  } = {}
+) => {
+  const { onSaleComplete, ...validationConfig } = config;
+  
+  const { 
+    items, 
+    updateItemQuantity, 
+    removeItem, 
+    customerId, 
+    setCustomer, 
+    clearCart 
+  } = useCart();
+  
+  const { data: paymentMethods = [], isLoading: isLoadingPaymentMethods } = usePaymentMethods();
+  const { data: selectedCustomer } = useCustomer(customerId || '');
+  const subtotal = useCartTotal();
+  const upsertSale = useUpsertSale();
+  const { toast } = useToast();
+
+  // Estados locais
+  const [paymentMethodId, setPaymentMethodId] = useState<string>('');
+  const [discount, setDiscount] = useState(0);
+  const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
+
+  // Validações
+  const { validateCart, getCartSummary, canApplyDiscount, getMaxAllowedDiscount } = 
+    useCartValidation(validationConfig);
+
+  // Resumo do carrinho
+  const cartSummary = getCartSummary(items, discount);
+
+  // Validação atual
+  const validation = validateCart(items, customerId, paymentMethodId, discount);
+
+  // Handler para finalizar venda
+  const handleFinishSale = async () => {
+    const currentValidation = validateCart(items, customerId, paymentMethodId, discount);
+    
+    if (!currentValidation.isValid) {
+      // Mostrar primeiro erro
+      toast({ 
+        title: 'Erro na validação', 
+        description: currentValidation.errors[0], 
+        variant: 'destructive' 
+      });
+      return;
+    }
+
+    try {
+      const saleData = await new Promise<{ id: string }>((resolve, reject) => {
+        upsertSale.mutate(
+          {
+            customer_id: customerId!,
+            payment_method_id: paymentMethodId,
+            total_amount: cartSummary.total,
+            items: items.map(item => ({ 
+              product_id: item.id, 
+              quantity: item.quantity, 
+              unit_price: item.price 
+            }))
+          },
+          {
+            onSuccess: (data) => resolve(data),
+            onError: (error) => reject(error)
+          }
+        );
+      });
+
+      // Sucesso
+      toast({ 
+        title: 'Venda finalizada!', 
+        description: 'A venda foi registrada com sucesso.' 
+      });
+      
+      // Reset do estado
+      clearCart();
+      setDiscount(0);
+      setPaymentMethodId('');
+      onSaleComplete?.(saleData.id);
+
+    } catch (error: any) {
+      toast({ 
+        title: 'Erro ao finalizar a venda', 
+        description: error.message, 
+        variant: 'destructive' 
+      });
+    }
+  };
+
+  // Handler para aplicar desconto
+  const handleDiscountChange = (value: number) => {
+    const maxDiscount = getMaxAllowedDiscount(subtotal);
+    const validDiscount = Math.max(0, Math.min(value, maxDiscount));
+    setDiscount(validDiscount);
+  };
+
+  // Handler para remover desconto
+  const clearDiscount = () => setDiscount(0);
+
+  // Handler para abrir modal de cliente
+  const openCustomerModal = () => setIsCustomerModalOpen(true);
+
+  // Handler para fechar modal de cliente
+  const closeCustomerModal = () => setIsCustomerModalOpen(false);
+
+  return {
+    // Dados
+    items,
+    selectedCustomer,
+    paymentMethods,
+    cartSummary,
+    validation,
+
+    // Estados
+    paymentMethodId,
+    discount,
+    isCustomerModalOpen,
+    isLoadingPaymentMethods,
+    isProcessingSale: upsertSale.isPending,
+
+    // Configuração
+    config: {
+      ...validationConfig,
+      maxAllowedDiscount: getMaxAllowedDiscount(subtotal),
+    },
+
+    // Ações do carrinho
+    updateItemQuantity,
+    removeItem,
+    setCustomer,
+    clearCart,
+
+    // Ações do checkout
+    setPaymentMethodId,
+    handleDiscountChange,
+    clearDiscount,
+    handleFinishSale,
+    openCustomerModal,
+    closeCustomerModal,
+
+    // Utilities
+    canApplyDiscount: (value: number) => canApplyDiscount(subtotal, value),
+  };
+};

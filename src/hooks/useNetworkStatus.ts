@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/shared/hooks/common/use-toast';
 import { criticalDataCache } from '@/lib/critical-data-cache';
 
 export interface NetworkStatus {

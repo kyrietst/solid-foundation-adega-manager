@@ -4,7 +4,7 @@
  */
 
 import { useState, useCallback } from 'react';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/shared/hooks/common/use-toast';
 
 export interface AsyncOperationConfig {
   showSuccessToast?: boolean;

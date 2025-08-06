@@ -4,10 +4,10 @@
  */
 
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useCart } from '@/hooks/use-cart';
-import { useBarcode } from '@/hooks/use-barcode';
-import { usePagination } from '@/hooks/use-pagination';
+import { supabase } from '@/core/api/supabase/client';
+import { useCart } from '@/features/sales/hooks/use-cart';
+import { useBarcode } from '@/features/inventory/hooks/use-barcode';
+import { usePagination } from '@/shared/hooks/common/use-pagination';
 import { useProductFilters } from './useProductFilters';
 import { useProductCategories } from './useProductCategories';
 import type { Product } from '@/types/inventory.types';

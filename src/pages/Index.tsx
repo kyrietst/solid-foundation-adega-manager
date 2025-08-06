@@ -1,14 +1,17 @@
-import { useEffect } from 'react';
+import { useEffect, lazy, Suspense } from 'react';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
-import { Dashboard } from '@/components/Dashboard';
-import { Sales } from '@/components/Sales';
-import { Inventory } from '@/components/Inventory';
-import { Customers } from '@/components/Customers';
-import { Delivery } from '@/components/Delivery';
-import { Movements } from '@/components/Movements';
-import { UserManagement } from '@/components/UserManagement';
-import { AppSidebar } from '@/components/Sidebar';
-import { useAuth } from '@/contexts/AuthContext';
+import { AppSidebar } from '@/app/layout/Sidebar';
+import { useAuth } from '@/app/providers/AuthContext';
+import { LoadingScreen } from '@/shared/ui/composite/loading-spinner';
+
+// Lazy loading dos componentes principais para code splitting
+const Dashboard = lazy(() => import('@/features/dashboard/components/Dashboard'));
+const Sales = lazy(() => import('@/features/sales/components/SalesPage'));
+const Inventory = lazy(() => import('@/features/inventory/components/ProductsGridContainer'));
+const Customers = lazy(() => import('@/features/customers/components/CustomersLite'));
+const Delivery = lazy(() => import('@/features/delivery/components/Delivery'));
+const Movements = lazy(() => import('@/features/movements/components/Movements'));
+const UserManagement = lazy(() => import('@/features/users/components/UserManagement'));
 
 const Index = () => {
   const navigate = useNavigate();
@@ -43,51 +46,97 @@ const Index = () => {
   }
 
   const renderContent = () => {
+    const AccessDenied = () => (
+      <div className="p-4 text-red-400 bg-red-900/20 rounded-lg border border-red-500/30">
+        Acesso negado
+      </div>
+    );
+
     // Se for entregador, só pode ver a aba delivery
     if (userRole === 'delivery') {
       if (activeTab !== 'delivery') {
-        return <div className="p-4 text-red-400 bg-red-900/20 rounded-lg border border-red-500/30">Acesso negado. Você só tem permissão para acessar a área de Delivery.</div>;
+        return (
+          <div className="p-4 text-red-400 bg-red-900/20 rounded-lg border border-red-500/30">
+            Acesso negado. Você só tem permissão para acessar a área de Delivery.
+          </div>
+        );
       }
-      return <Delivery />;
+      return (
+        <Suspense fallback={<LoadingScreen text="Carregando delivery..." />}>
+          <Delivery />
+        </Suspense>
+      );
     }
 
     switch (activeTab) {
       case 'dashboard':
-        return hasPermission(['admin', 'employee']) ? <Dashboard /> : <div className="p-4 text-red-400 bg-red-900/20 rounded-lg border border-red-500/30">Acesso negado</div>;
+        return hasPermission(['admin', 'employee']) ? (
+          <Suspense fallback={<LoadingScreen text="Carregando dashboard..." />}>
+            <Dashboard />
+          </Suspense>
+        ) : <AccessDenied />;
       case 'sales':
-        return hasPermission(['admin', 'employee']) ? <Sales /> : <div className="p-4 text-red-400 bg-red-900/20 rounded-lg border border-red-500/30">Acesso negado</div>;
+        return hasPermission(['admin', 'employee']) ? (
+          <Suspense fallback={<LoadingScreen text="Carregando vendas..." />}>
+            <Sales />
+          </Suspense>
+        ) : <AccessDenied />;
       case 'inventory':
-        return hasPermission(['admin', 'employee']) ? <Inventory /> : <div className="p-4 text-red-400 bg-red-900/20 rounded-lg border border-red-500/30">Acesso negado</div>;
+        return hasPermission(['admin', 'employee']) ? (
+          <Suspense fallback={<LoadingScreen text="Carregando inventário..." />}>
+            <Inventory />
+          </Suspense>
+        ) : <AccessDenied />;
       case 'customers':
-        return hasPermission(['admin', 'employee']) ? <Customers /> : <div className="p-4 text-red-400 bg-red-900/20 rounded-lg border border-red-500/30">Acesso negado</div>;
+        return hasPermission(['admin', 'employee']) ? (
+          <Suspense fallback={<LoadingScreen text="Carregando clientes..." />}>
+            <Customers />
+          </Suspense>
+        ) : <AccessDenied />;
       case 'delivery':
-        return hasPermission(['admin', 'employee', 'delivery']) ? <Delivery /> : <div className="p-4 text-red-400 bg-red-900/20 rounded-lg border border-red-500/30">Acesso negado</div>;
+        return hasPermission(['admin', 'employee', 'delivery']) ? (
+          <Suspense fallback={<LoadingScreen text="Carregando delivery..." />}>
+            <Delivery />
+          </Suspense>
+        ) : <AccessDenied />;
       case 'movements':
-        return hasPermission(['admin']) ? <Movements /> : <div className="p-4 text-red-400 bg-red-900/20 rounded-lg border border-red-500/30">Acesso negado</div>;
+        return hasPermission(['admin']) ? (
+          <Suspense fallback={<LoadingScreen text="Carregando movimentações..." />}>
+            <Movements />
+          </Suspense>
+        ) : <AccessDenied />;
       case 'users':
-        return hasPermission('admin') ? <UserManagement /> : <div className="p-4 text-red-400 bg-red-900/20 rounded-lg border border-red-500/30">Acesso negado</div>;
+        return hasPermission('admin') ? (
+          <Suspense fallback={<LoadingScreen text="Carregando usuários..." />}>
+            <UserManagement />
+          </Suspense>
+        ) : <AccessDenied />;
       default:
-        return hasPermission(['admin', 'employee']) ? <Dashboard /> : <div className="p-4 text-red-400 bg-red-900/20 rounded-lg border border-red-500/30">Acesso negado</div>;
+        return hasPermission(['admin', 'employee']) ? (
+          <Suspense fallback={<LoadingScreen text="Carregando dashboard..." />}>
+            <Dashboard />
+          </Suspense>
+        ) : <AccessDenied />;
     }
   };
 
   return (
     <div className="w-full h-screen flex flex-row relative">
-        {/* Sidebar */}
-        <AppSidebar />
-        
-        {/* Main content area */}  
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <main className="flex-1 overflow-y-auto">
-            <div className="p-4 lg:p-8 h-full">
-              <div className="max-w-7xl mx-auto h-full">
-                {renderContent()}
-                <Outlet />
-              </div>
+      {/* Sidebar */}
+      <AppSidebar />
+      
+      {/* Main content area */}  
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <main className="flex-1 overflow-y-auto">
+          <div className="p-4 lg:p-8 h-full">
+            <div className="max-w-7xl mx-auto h-full">
+              {renderContent()}
+              <Outlet />
             </div>
-          </main>
-        </div>
+          </div>
+        </main>
       </div>
+    </div>
   );
 };
 

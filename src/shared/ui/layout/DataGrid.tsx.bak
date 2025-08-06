@@ -1,0 +1,181 @@
+/**
+ * DataGrid - Componente base para grids de dados
+ * Grid genérico com filtros, busca e paginação integrados
+ */
+
+import React from 'react';
+import { cn } from '@/core/config/utils';
+import { SearchInput } from '@/components/ui/search-input';
+import { PaginationControls } from '@/components/ui/pagination-controls';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { EmptyState } from '@/components/ui/empty-state';
+import { FilterToggle } from '@/components/ui/filter-toggle';
+
+export interface DataGridProps<T = any> {
+  data: T[];
+  loading?: boolean;
+  error?: Error | null;
+  
+  // Grid Layout
+  children: (item: T, index: number) => React.ReactNode;
+  columns?: {
+    mobile: number;
+    tablet: number;
+    desktop: number;
+  };
+  gap?: 'sm' | 'md' | 'lg';
+  
+  // Search & Filters
+  searchValue?: string;
+  onSearchChange?: (value: string) => void;
+  searchPlaceholder?: string;
+  filters?: React.ReactNode;
+  showFilters?: boolean;
+  onToggleFilters?: () => void;
+  
+  // Pagination
+  currentPage?: number;
+  totalPages?: number;
+  onPageChange?: (page: number) => void;
+  itemsPerPage?: number;
+  itemsPerPageOptions?: number[];
+  onItemsPerPageChange?: (itemsPerPage: number) => void;
+  
+  // Empty States
+  emptyTitle?: string;
+  emptyDescription?: string;
+  emptyIcon?: React.ReactNode;
+  emptyAction?: React.ReactNode;
+  
+  // Styling
+  className?: string;
+  containerClassName?: string;
+  gridClassName?: string;
+}
+
+const gapClasses = {
+  sm: 'gap-2',
+  md: 'gap-4',
+  lg: 'gap-6'
+};
+
+export function DataGrid<T = any>({
+  data,
+  loading = false,
+  error = null,
+  children,
+  columns = { mobile: 1, tablet: 2, desktop: 3 },
+  gap = 'md',
+  searchValue,
+  onSearchChange,
+  searchPlaceholder = 'Buscar...',
+  filters,
+  showFilters = false,
+  onToggleFilters,
+  currentPage,
+  totalPages,
+  onPageChange,
+  itemsPerPage,
+  itemsPerPageOptions,
+  onItemsPerPageChange,
+  emptyTitle = 'Nenhum item encontrado',
+  emptyDescription = 'Não há itens para exibir no momento.',
+  emptyIcon,
+  emptyAction,
+  className,
+  containerClassName,
+  gridClassName
+}: DataGridProps<T>) {
+  // Grid responsive classes
+  const gridClasses = cn(
+    'grid',
+    `grid-cols-${columns.mobile}`,
+    `md:grid-cols-${columns.tablet}`,
+    `lg:grid-cols-${columns.desktop}`,
+    gapClasses[gap],
+    gridClassName
+  );
+
+  return (
+    <div className={cn('space-y-4', containerClassName)}>
+      {/* Search and Filters Bar */}
+      {(onSearchChange || filters) && (
+        <div className="flex flex-col sm:flex-row gap-4">
+          {/* Search Input */}
+          {onSearchChange && (
+            <div className="flex-1">
+              <SearchInput
+                value={searchValue || ''}
+                onChange={onSearchChange}
+                placeholder={searchPlaceholder}
+              />
+            </div>
+          )}
+          
+          {/* Filter Toggle */}
+          {filters && (
+            <FilterToggle
+              isOpen={showFilters}
+              onToggle={onToggleFilters}
+              label="Filtros"
+            />
+          )}
+        </div>
+      )}
+
+      {/* Filters Panel */}
+      {filters && showFilters && (
+        <div className="bg-muted/50 rounded-lg p-4 border">
+          {filters}
+        </div>
+      )}
+
+      {/* Grid Content */}
+      <div className={cn('min-h-[200px]', className)}>
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <LoadingSpinner size="lg" />
+          </div>
+        ) : error ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center space-y-2">
+              <p className="text-destructive font-medium">Erro ao carregar dados</p>
+              <p className="text-sm text-muted-foreground">{error.message}</p>
+            </div>
+          </div>
+        ) : data.length === 0 ? (
+          <div className="flex items-center justify-center py-12">
+            <EmptyState
+              title={emptyTitle}
+              description={emptyDescription}
+              icon={emptyIcon}
+              action={emptyAction}
+            />
+          </div>
+        ) : (
+          <div className={gridClasses}>
+            {data.map((item, index) => (
+              <div key={index} className="animate-in fade-in-50 duration-200">
+                {children(item, index)}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Pagination */}
+      {totalPages && totalPages > 1 && onPageChange && (
+        <div className="flex justify-center mt-6">
+          <PaginationControls
+            currentPage={currentPage || 1}
+            totalPages={totalPages}
+            onPageChange={onPageChange}
+            itemsPerPage={itemsPerPage}
+            itemsPerPageOptions={itemsPerPageOptions}
+            onItemsPerPageChange={onItemsPerPageChange}
+          />
+        </div>
+      )}
+    </div>
+  );
+}

@@ -1,0 +1,345 @@
+/**
+ * DataTable - Componente base para tabelas de dados
+ * Tabela genérica com sorting, filtros e paginação
+ */
+
+import React from 'react';
+import { cn } from '@/core/config/utils';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/shared/ui/primitives/table';
+import { SearchInput } from '@/shared/ui/composite/search-input';
+import { PaginationControls } from '@/shared/ui/composite/pagination-controls';
+import { LoadingSpinner } from '@/shared/ui/composite/loading-spinner';
+import { EmptyState } from '@/shared/ui/composite/empty-state';
+import { FilterToggle } from '@/shared/ui/composite/filter-toggle';
+import { Button } from '@/shared/ui/primitives/button';
+import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+
+export interface TableColumn<T = any> {
+  key: string;
+  title: string;
+  sortable?: boolean;
+  width?: string;
+  align?: 'left' | 'center' | 'right';
+  render?: (value: any, item: T, index: number) => React.ReactNode;
+  className?: string;
+}
+
+export interface DataTableProps<T = any> {
+  data: T[];
+  columns: TableColumn<T>[];
+  loading?: boolean;
+  error?: Error | null;
+  
+  // Sorting
+  sortKey?: string;
+  sortDirection?: 'asc' | 'desc';
+  onSort?: (key: string, direction: 'asc' | 'desc') => void;
+  
+  // Search & Filters
+  searchValue?: string;
+  onSearchChange?: (value: string) => void;
+  searchPlaceholder?: string;
+  filters?: React.ReactNode;
+  showFilters?: boolean;
+  onToggleFilters?: () => void;
+  
+  // Row Selection
+  selectedRows?: string[];
+  onRowSelect?: (id: string) => void;
+  onSelectAll?: (selected: boolean) => void;
+  rowIdField?: string;
+  
+  // Row Actions
+  onRowClick?: (item: T) => void;
+  rowActions?: (item: T) => React.ReactNode;
+  
+  // Pagination
+  currentPage?: number;
+  totalPages?: number;
+  onPageChange?: (page: number) => void;
+  itemsPerPage?: number;
+  itemsPerPageOptions?: number[];
+  onItemsPerPageChange?: (itemsPerPage: number) => void;
+  
+  // Empty States
+  emptyTitle?: string;
+  emptyDescription?: string;
+  emptyIcon?: React.ReactNode;
+  emptyAction?: React.ReactNode;
+  
+  // Styling
+  className?: string;
+  striped?: boolean;
+  hoverable?: boolean;
+  compact?: boolean;
+}
+
+export function DataTable<T = any>({
+  data,
+  columns,
+  loading = false,
+  error = null,
+  sortKey,
+  sortDirection,
+  onSort,
+  searchValue,
+  onSearchChange,
+  searchPlaceholder = 'Buscar...',
+  filters,
+  showFilters = false,
+  onToggleFilters,
+  selectedRows = [],
+  onRowSelect,
+  onSelectAll,
+  rowIdField = 'id',
+  onRowClick,
+  rowActions,
+  currentPage,
+  totalPages,
+  onPageChange,
+  itemsPerPage,
+  itemsPerPageOptions,
+  onItemsPerPageChange,
+  emptyTitle = 'Nenhum item encontrado',
+  emptyDescription = 'Não há itens para exibir no momento.',
+  emptyIcon,
+  emptyAction,
+  className,
+  striped = true,
+  hoverable = true,
+  compact = false
+}: DataTableProps<T>) {
+  
+  const handleSort = (columnKey: string) => {
+    if (!onSort) return;
+    
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortKey === columnKey && sortDirection === 'asc') {
+      direction = 'desc';
+    }
+    
+    onSort(columnKey, direction);
+  };
+
+  const getSortIcon = (columnKey: string) => {
+    if (sortKey !== columnKey) {
+      return <ArrowUpDown className="w-4 h-4" />;
+    }
+    return sortDirection === 'asc' 
+      ? <ArrowUp className="w-4 h-4" />
+      : <ArrowDown className="w-4 h-4" />;
+  };
+
+  const renderCellValue = (column: TableColumn<T>, item: T, index: number) => {
+    const value = (item as any)[column.key];
+    
+    if (column.render) {
+      return column.render(value, item, index);
+    }
+    
+    return value;
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Search and Filters Bar */}
+      {(onSearchChange || filters) && (
+        <div className="flex flex-col sm:flex-row gap-4">
+          {/* Search Input */}
+          {onSearchChange && (
+            <div className="flex-1">
+              <SearchInput
+                value={searchValue || ''}
+                onChange={onSearchChange}
+                placeholder={searchPlaceholder}
+              />
+            </div>
+          )}
+          
+          {/* Filter Toggle */}
+          {filters && (
+            <FilterToggle
+              isOpen={showFilters}
+              onToggle={onToggleFilters}
+              label="Filtros"
+            />
+          )}
+        </div>
+      )}
+
+      {/* Filters Panel */}
+      {filters && showFilters && (
+        <div className="bg-muted/50 rounded-lg p-4 border">
+          {filters}
+        </div>
+      )}
+
+      {/* Table */}
+      <div className="rounded-md border">
+        <Table className={className}>
+          <TableHeader>
+            <TableRow>
+              {/* Select All Checkbox */}
+              {onSelectAll && (
+                <TableHead className="w-12">
+                  <input
+                    type="checkbox"
+                    checked={data.length > 0 && selectedRows.length === data.length}
+                    onChange={(e) => onSelectAll(e.target.checked)}
+                    className="rounded border-gray-300"
+                  />
+                </TableHead>
+              )}
+              
+              {/* Column Headers */}
+              {columns.map((column) => (
+                <TableHead
+                  key={column.key}
+                  className={cn(
+                    column.className,
+                    column.width && `w-[${column.width}]`,
+                    column.align === 'center' && 'text-center',
+                    column.align === 'right' && 'text-right',
+                    compact && 'py-2'
+                  )}
+                >
+                  {column.sortable && onSort ? (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-auto p-0 font-medium hover:bg-transparent"
+                      onClick={() => handleSort(column.key)}
+                    >
+                      <span>{column.title}</span>
+                      {getSortIcon(column.key)}
+                    </Button>
+                  ) : (
+                    column.title
+                  )}
+                </TableHead>
+              ))}
+              
+              {/* Actions Column */}
+              {rowActions && (
+                <TableHead className="w-12">
+                  <span className="sr-only">Ações</span>
+                </TableHead>
+              )}
+            </TableRow>
+          </TableHeader>
+          
+          <TableBody>
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={columns.length + (onSelectAll ? 1 : 0) + (rowActions ? 1 : 0)}>
+                  <div className="flex items-center justify-center py-12">
+                    <LoadingSpinner size="lg" />
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : error ? (
+              <TableRow>
+                <TableCell colSpan={columns.length + (onSelectAll ? 1 : 0) + (rowActions ? 1 : 0)}>
+                  <div className="flex items-center justify-center py-12">
+                    <div className="text-center space-y-2">
+                      <p className="text-destructive font-medium">Erro ao carregar dados</p>
+                      <p className="text-sm text-muted-foreground">{error.message}</p>
+                    </div>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : data.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={columns.length + (onSelectAll ? 1 : 0) + (rowActions ? 1 : 0)}>
+                  <div className="flex items-center justify-center py-12">
+                    <EmptyState
+                      title={emptyTitle}
+                      description={emptyDescription}
+                      icon={emptyIcon}
+                      action={emptyAction}
+                    />
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : (
+              data.map((item, index) => {
+                const rowId = (item as any)[rowIdField];
+                const isSelected = selectedRows.includes(rowId);
+                
+                return (
+                  <TableRow
+                    key={rowId || index}
+                    className={cn(
+                      hoverable && onRowClick && 'cursor-pointer',
+                      striped && index % 2 === 0 && 'bg-muted/50',
+                      isSelected && 'bg-muted'
+                    )}
+                    onClick={() => onRowClick?.(item)}
+                  >
+                    {/* Row Selection */}
+                    {onRowSelect && (
+                      <TableCell className="w-12">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => onRowSelect(rowId)}
+                          onClick={(e) => e.stopPropagation()}
+                          className="rounded border-gray-300"
+                        />
+                      </TableCell>
+                    )}
+                    
+                    {/* Data Cells */}
+                    {columns.map((column) => (
+                      <TableCell
+                        key={column.key}
+                        className={cn(
+                          column.className,
+                          column.align === 'center' && 'text-center',
+                          column.align === 'right' && 'text-right',
+                          compact && 'py-2'
+                        )}
+                      >
+                        {renderCellValue(column, item, index)}
+                      </TableCell>
+                    ))}
+                    
+                    {/* Row Actions */}
+                    {rowActions && (
+                      <TableCell className="w-12">
+                        <div onClick={(e) => e.stopPropagation()}>
+                          {rowActions(item)}
+                        </div>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                );
+              })
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* Pagination */}
+      {totalPages && totalPages > 1 && onPageChange && (
+        <div className="flex justify-center mt-6">
+          <PaginationControls
+            currentPage={currentPage || 1}
+            totalPages={totalPages}
+            onPageChange={onPageChange}
+            itemsPerPage={itemsPerPage}
+            itemsPerPageOptions={itemsPerPageOptions}
+            onItemsPerPageChange={onItemsPerPageChange}
+          />
+        </div>
+      )}
+    </div>
+  );
+}

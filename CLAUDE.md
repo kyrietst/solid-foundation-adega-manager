@@ -28,24 +28,42 @@ This file provides comprehensive guidance to Claude Code (claude.ai/code) and ot
 - `npm run backup:full` - Create full system backup with configurations
 - `npm run setup:env` - Setup environment variables
 
+### Testing Commands
+- `npm run test` - Run Vitest test suite
+- `npm run test:ui` - Vitest UI interface
+- `npm run test:coverage` - Generate coverage reports (80%+ required)
+- `npm run test:watch` - Watch mode for development
+- `npm run test:maintenance` - Test maintenance utilities
+
 ### Critical Notes
-- **No test runner configured** - Manual testing required
+- **Vitest testing framework** - Comprehensive test suite with accessibility testing
 - **Port 8080** - Development server default port
-- **TypeScript strict mode disabled** - `noImplicitAny: false` for flexibility
-- **Always lint before commits** - Code quality enforcement
+- **TypeScript relaxed mode** - `strict: false` for development flexibility
+- **Always lint before commits** - Zero warnings policy enforced
+- **Coverage thresholds** - 80% lines, 70% branches, 85% functions required
 
 ## Architecture Overview (Current State)
 
 ### Technology Stack
-- **Frontend**: React 18 + TypeScript + Vite (ultra-fast build)
-- **UI Framework**: Aceternity UI (premium components with animations) + Shadcn/ui + Tailwind CSS design system
-- **Navigation**: Modern sidebar with Aceternity UI components, role-based filtering, and hover animations
+- **Frontend**: React 18.3.1 + TypeScript 5.5.3 + Vite 5.4.1 (ultra-fast build with SWC)
+- **UI Framework**: 
+  - **Aceternity UI** - Premium animated components
+  - **Shadcn/ui** - Built on Radix UI primitives (20+ components)
+  - **Tailwind CSS 3.4.17** - 12-color Adega Wine Cellar palette + dark mode
+- **Navigation**: Modern sidebar with role-based filtering and hover animations
 - **Backend**: Supabase PostgreSQL with enterprise features
-- **State Management**: React Query (server state) + Context API (global state)
-- **Forms**: React Hook Form + Zod validation (type-safe)
-- **Charts**: Recharts for analytics and dashboards
-- **Icons**: Lucide React (consistent icon system)
-- **Additional**: Zustand for complex state, Date-fns for date manipulation
+- **State Management**: 
+  - **TanStack React Query 5.56.2** - Server state with intelligent caching
+  - **Zustand 5.0.5** - Global client state
+  - **Context API** - Auth and notifications
+- **Forms**: React Hook Form 7.53.0 + Zod 3.23.8 validation (type-safe)
+- **Data Visualization**: 
+  - **Recharts 2.15.3** - Analytics and dashboards
+  - **TanStack React Table 8.21.3** - Advanced data grids
+  - **TanStack React Virtual 3.13.12** - Performance virtualization
+- **Icons**: Lucide React + Tabler Icons (comprehensive icon system)
+- **Animations**: Motion 12.23.9 (Framer Motion) + Aceternity keyframes
+- **Additional**: Date-fns 3.6.0, Simplex-noise 4.0.3, React Router DOM 6.26.2
 
 ### Database Current State (925+ records)
 
@@ -190,13 +208,30 @@ src/
 
 ## Development Guidelines (Critical)
 
+### Build System & Configuration
+- **Vite Configuration**: Advanced chunk splitting for optimal performance
+  - `vendor` chunk: Core React libraries
+  - `charts` chunk: Recharts isolated for better caching
+  - `ui` chunk: Radix UI + Lucide icons
+  - `supabase` chunk: Database and query libraries
+- **Development Server**: Port 8080, IPv6 support, hot reload
+- **TypeScript**: Relaxed mode (`strict: false`) for development flexibility
+- **Bundle Optimization**: Strategic code splitting, tree shaking enabled
+
 ### Code Style and Quality
-- **TypeScript**: Strict mode disabled for flexibility, but maintain type safety
-- **ESLint**: Configured with React hooks rules - **ALWAYS run before commits**
+- **ESLint**: Flat config with React hooks rules - **ZERO warnings policy**
+- **TypeScript**: Relaxed mode but maintain type safety in practice
 - **Absolute imports**: Use `@/` prefix for all src directory imports
 - **Component naming**: PascalCase for components, camelCase for functions
 - **File organization**: Feature-based structure, group related functionality
-- **UI Components**: Prefer Aceternity UI components for modern animations and interactions
+- **UI Components**: Aceternity UI first, then Shadcn/ui, then custom components
+
+### Testing Requirements
+- **Vitest Framework**: Modern testing with JSDOM environment
+- **Coverage Thresholds**: Lines 80%, Branches 70%, Functions 85%, Statements 80%
+- **Accessibility Testing**: jest-axe + @axe-core/react for WCAG compliance
+- **Test Structure**: Component tests, hook tests, accessibility tests
+- **Performance Testing**: Multi-threaded pool (1-4 threads), 10s timeouts
 
 ### Database Operations (Security Critical)
 - **All operations through Supabase client** - Never direct SQL from frontend
@@ -230,6 +265,51 @@ src/
 - **Input validation** - Zod schemas for all user inputs
 - **Audit trail** - Log sensitive operations automatically
 - **Environment variables** - Never expose sensitive data to frontend
+
+## Build Configuration Details
+
+### Vite Configuration
+```ts
+// Key optimizations in vite.config.ts
+export default defineConfig({
+  plugins: [react()],
+  server: { port: 8080, host: '::' },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          charts: ['recharts'],
+          ui: ['@radix-ui/react-*', 'lucide-react'],
+          supabase: ['@supabase/supabase-js', '@tanstack/react-query']
+        }
+      }
+    }
+  }
+})
+```
+
+### TypeScript Configuration
+```ts
+// Relaxed mode for development flexibility
+{
+  "strict": false,
+  "noImplicitAny": false,
+  "noUnusedLocals": false,
+  "strictNullChecks": false
+}
+```
+
+### Tailwind Theme System
+```ts
+// 12-color Adega Wine Cellar palette
+colors: {
+  'adega-black': 'hsl(0, 0%, 8%)',
+  'adega-charcoal': 'hsl(0, 0%, 16%)',
+  // ... through to ...
+  'adega-yellow': 'hsl(45, 100%, 70%)'
+}
+```
 
 ## Environment Setup
 

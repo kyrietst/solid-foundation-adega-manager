@@ -1,0 +1,89 @@
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/primitives/card';
+import { LucideIcon } from 'lucide-react';
+import { cn, getValueClasses } from '@/core/config/theme-utils';
+
+export interface StatCardProps {
+  title: string;
+  value: string | number;
+  description?: string;
+  icon?: LucideIcon;
+  variant?: 'default' | 'success' | 'warning' | 'error' | 'purple' | 'gold';
+  className?: string;
+}
+
+const variantStyles = {
+  default: {
+    card: cardVariants.default,
+    title: getTextClasses('secondary'),
+    value: 'text-adega-yellow',
+    description: getTextClasses('secondary'),
+    icon: 'primary'
+  },
+  success: {
+    card: cardVariants.success,
+    title: getTextClasses('secondary'),
+    value: 'text-green-400',
+    description: getTextClasses('secondary'),
+    icon: 'success'
+  },
+  warning: {
+    card: cardVariants.warning,
+    title: getTextClasses('secondary'),
+    value: 'text-adega-amber',
+    description: getTextClasses('secondary'),
+    icon: 'warning'
+  },
+  error: {
+    card: cardVariants.error,
+    title: getTextClasses('secondary'),
+    value: 'text-red-400',
+    description: getTextClasses('secondary'),
+    icon: 'error'
+  },
+  purple: {
+    card: cardVariants.premium,
+    title: getTextClasses('secondary'),
+    value: 'text-purple-400',
+    description: getTextClasses('secondary'),
+    icon: 'premium'
+  },
+  gold: {
+    card: cardVariants.default,
+    title: getTextClasses('secondary'),
+    value: 'text-adega-gold',
+    description: getTextClasses('secondary'),
+    icon: 'primary'
+  }
+};
+
+export const StatCard: React.FC<StatCardProps> = ({
+  title,
+  value,
+  description,
+  icon: Icon,
+  variant = 'default',
+  className
+}) => {
+  const styles = variantStyles[variant];
+
+  return (
+    <Card className={cn(styles.card, className)}>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className={`text-sm font-medium ${styles.title}`}>
+          {title}
+        </CardTitle>
+        {Icon && <Icon className={getIconClasses(styles.icon as keyof typeof import('@/lib/theme').iconStyles, 'small')} />}
+      </CardHeader>
+      <CardContent>
+        <div className={`text-2xl font-bold ${styles.value}`}>
+          {typeof value === 'number' ? value.toLocaleString('pt-BR') : value}
+        </div>
+        {description && (
+          <p className={`text-xs ${styles.description}`}>
+            {description}
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  );
+};

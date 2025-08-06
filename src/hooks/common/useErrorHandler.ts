@@ -4,7 +4,7 @@
  */
 
 import { useCallback } from 'react';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/shared/hooks/common/use-toast';
 
 export interface ErrorConfig {
   showToast?: boolean;

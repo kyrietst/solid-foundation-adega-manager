@@ -1,0 +1,120 @@
+/**
+ * Componente linha da tabela de produto
+ * Extraído do InventoryNew.tsx para reutilização
+ */
+
+import React from 'react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Edit, Trash2 } from 'lucide-react';
+import { formatCurrency } from '@/lib/utils';
+import { ProductRowProps } from './types';
+
+export const ProductRow: React.FC<ProductRowProps> = ({
+  product,
+  onEdit,
+  onDelete,
+  canDelete,
+}) => {
+  const getTurnoverColor = (rate: string) => {
+    switch (rate) {
+      case 'fast': return 'bg-green-500/20 text-green-400 border-green-500/30';
+      case 'medium': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
+      case 'slow': return 'bg-red-500/20 text-red-400 border-red-500/30';
+      default: return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+    }
+  };
+
+  const getStockStatus = () => {
+    const ratio = product.stock_quantity / product.minimum_stock;
+    if (ratio <= 1) return { status: 'Baixo', color: 'bg-red-500/20 text-red-400 border-red-500/30' };
+    if (ratio <= 3) return { status: 'Adequado', color: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' };
+    return { status: 'Alto', color: 'bg-green-500/20 text-green-400 border-green-500/30' };
+  };
+
+  const stockStatus = getStockStatus();
+
+  return (
+    <tr className="border-b border-white/10 hover:bg-adega-charcoal/20 transition-colors">
+      {/* Nome e Categoria */}
+      <td className="p-4">
+        <div>
+          <div className="font-medium text-adega-platinum">{product.name}</div>
+          <div className="text-sm text-adega-platinum/60">{product.category}</div>
+        </div>
+      </td>
+
+      {/* Preço */}
+      <td className="p-4">
+        <span className="font-semibold text-adega-gold">
+          {formatCurrency(product.price)}
+        </span>
+      </td>
+
+      {/* Estoque */}
+      <td className="p-4">
+        <div className="flex items-center gap-2">
+          <span className="text-adega-platinum">
+            {product.stock_quantity} {product.unit_type}
+          </span>
+          <Badge className={stockStatus.color} variant="outline">
+            {stockStatus.status}
+          </Badge>
+        </div>
+      </td>
+
+      {/* Estoque Mínimo */}
+      <td className="p-4">
+        <span className="text-adega-platinum/60">
+          {product.minimum_stock} {product.unit_type}
+        </span>
+      </td>
+
+      {/* Taxa de Giro */}
+      <td className="p-4">
+        <Badge className={getTurnoverColor(product.turnover_rate)} variant="outline">
+          {product.turnover_rate === 'fast' ? 'Rápido' : 
+           product.turnover_rate === 'medium' ? 'Médio' : 'Lento'}
+        </Badge>
+      </td>
+
+      {/* Fornecedor */}
+      <td className="p-4">
+        <span className="text-adega-platinum/60">
+          {product.supplier || '-'}
+        </span>
+      </td>
+
+      {/* Código de Barras */}
+      <td className="p-4">
+        <span className="text-xs text-adega-platinum/40 font-mono">
+          {product.barcode || '-'}
+        </span>
+      </td>
+
+      {/* Ações */}
+      <td className="p-4">
+        <div className="flex gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onEdit(product)}
+            className="h-8 w-8 p-0 hover:bg-adega-gold/20"
+          >
+            <Edit className="h-3 w-3" />
+          </Button>
+          {canDelete && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onDelete(product.id)}
+              className="h-8 w-8 p-0 hover:bg-red-500/20 text-red-400"
+            >
+              <Trash2 className="h-3 w-3" />
+            </Button>
+          )}
+        </div>
+      </td>
+    </tr>
+  );
+};

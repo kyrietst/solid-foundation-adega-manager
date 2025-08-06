@@ -1,0 +1,62 @@
+/**
+ * Componente de estatísticas de clientes
+ * Extraído do CustomersNew.tsx para separar responsabilidades
+ */
+
+import React from 'react';
+import { Users, Star, DollarSign, Receipt, Activity } from 'lucide-react';
+import { StatCard } from '@/shared/ui/composite/stat-card';
+import { formatCurrency } from '@/core/config/utils';
+import { CustomerStatsProps } from './types';
+
+export const CustomerStats: React.FC<CustomerStatsProps> = ({
+  totalCustomers,
+  vipCustomers,
+  totalRevenue,
+  averageTicket,
+  activeCustomers,
+}) => {
+  return (
+    <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+      <StatCard
+        title="Total"
+        value={totalCustomers}
+        description="clientes"
+        icon={Users}
+        variant="default"
+      />
+      
+      <StatCard
+        title="VIP"
+        value={vipCustomers}
+        description="premium"
+        icon={Star}
+        variant="gold"
+      />
+      
+      <StatCard
+        title="Receita Total"
+        value={formatCurrency(totalRevenue)}
+        description="lifetime"
+        icon={DollarSign}
+        variant="default"
+      />
+      
+      <StatCard
+        title="Ticket Médio"
+        value={formatCurrency(averageTicket)}
+        description="por cliente"
+        icon={Receipt}
+        variant="default"
+      />
+      
+      <StatCard
+        title="Ativos"
+        value={activeCustomers}
+        description="30 dias"
+        icon={Activity}
+        variant="success"
+      />
+    </div>
+  );
+};

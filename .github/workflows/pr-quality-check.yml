@@ -1,0 +1,326 @@
+name: 🔍 PR Quality Check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [ main, develop ]
+
+# Cancel previous runs on same PR
+concurrency:
+  group: pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '20.x'
+
+jobs:
+  # Job 1: Quick feedback for PRs
+  quick-check:
+    name: ⚡ Quick Quality Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout PR code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: 🔧 Install dependencies
+        run: npm ci
+      
+      - name: 🎨 ESLint with error reporting
+        run: |
+          npm run lint 2>&1 | tee eslint-results.txt || true
+          if [ ${PIPESTATUS[0]} -ne 0 ]; then
+            echo "❌ ESLint found issues" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            tail -20 eslint-results.txt >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          else
+            echo "✅ ESLint passed - No issues found" >> $GITHUB_STEP_SUMMARY
+          fi
+      
+      - name: 📝 TypeScript strict check
+        run: |
+          npx tsc --noEmit --strict 2>&1 | tee tsc-results.txt || true
+          if [ ${PIPESTATUS[0]} -ne 0 ]; then
+            echo "❌ TypeScript found type errors" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            tail -20 tsc-results.txt >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          else
+            echo "✅ TypeScript check passed" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  # Job 2: Changed files analysis
+  analyze-changes:
+    name: 📊 Change Analysis
+    runs-on: ubuntu-latest
+    
+    outputs:
+      has-test-changes: ${{ steps.changes.outputs.has-test-changes }}
+      has-hook-changes: ${{ steps.changes.outputs.has-hook-changes }}
+      has-component-changes: ${{ steps.changes.outputs.has-component-changes }}
+      critical-files-changed: ${{ steps.changes.outputs.critical-files-changed }}
+    
+    steps:
+      - name: 📥 Checkout PR code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: 🔍 Analyze changed files
+        id: changes
+        run: |
+          # Get list of changed files
+          git diff --name-only origin/main...HEAD > changed-files.txt
+          
+          # Check for test changes
+          if grep -E "\.(test|spec)\.(ts|tsx)$" changed-files.txt; then
+            echo "has-test-changes=true" >> $GITHUB_OUTPUT
+            echo "📝 Test files modified" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "has-test-changes=false" >> $GITHUB_OUTPUT
+          fi
+          
+          # Check for hook changes
+          if grep -E "hooks/.*\.(ts|tsx)$" changed-files.txt | grep -v test; then
+            echo "has-hook-changes=true" >> $GITHUB_OUTPUT
+            echo "🎣 Hook files modified - extra testing needed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "has-hook-changes=false" >> $GITHUB_OUTPUT
+          fi
+          
+          # Check for component changes
+          if grep -E "components/.*\.(tsx)$" changed-files.txt | grep -v test; then
+            echo "has-component-changes=true" >> $GITHUB_OUTPUT
+            echo "🧩 Component files modified" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "has-component-changes=false" >> $GITHUB_OUTPUT
+          fi
+          
+          # Check for critical files (financial, security)
+          if grep -E "(financial|security|checkout|payment|auth)" changed-files.txt; then
+            echo "critical-files-changed=true" >> $GITHUB_OUTPUT
+            echo "⚠️ **CRITICAL FILES CHANGED** - Enhanced testing required" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "critical-files-changed=false" >> $GITHUB_OUTPUT
+          fi
+          
+          # Show changed files summary
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📂 Files Changed:" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          cat changed-files.txt >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+  # Job 3: Targeted testing based on changes
+  targeted-tests:
+    name: 🎯 Targeted Tests
+    runs-on: ubuntu-latest
+    needs: [quick-check, analyze-changes]
+    
+    strategy:
+      matrix:
+        test-type: 
+          - unit
+          - integration
+          - performance
+    
+    steps:
+      - name: 📥 Checkout PR code
+        uses: actions/checkout@v4
+      
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: 🔧 Install dependencies
+        run: npm ci
+      
+      - name: 🧪 Run targeted tests - ${{ matrix.test-type }}
+        run: |
+          case "${{ matrix.test-type }}" in
+            "unit")
+              if [ "${{ needs.analyze-changes.outputs.has-hook-changes }}" = "true" ]; then
+                echo "Running enhanced hook tests due to hook changes"
+                npm test -- src/hooks/ src/shared/hooks/ --coverage
+              else
+                echo "Running standard unit tests"
+                npm test -- --testPathPattern="\.test\.(ts|tsx)$" --testPathPattern="!performance" --testPathPattern="!accessibility"
+              fi
+              ;;
+            "integration")
+              if [ "${{ needs.analyze-changes.outputs.critical-files-changed }}" = "true" ]; then
+                echo "Running full integration tests due to critical changes"
+                npm test -- src/__tests__/integration/
+              else
+                echo "Skipping integration tests - no critical changes"
+              fi
+              ;;
+            "performance")
+              if [ "${{ needs.analyze-changes.outputs.has-component-changes }}" = "true" ]; then
+                echo "Running performance tests due to component changes"
+                npm test -- src/__tests__/performance/
+              else
+                echo "Skipping performance tests - no component changes"
+              fi
+              ;;
+          esac
+
+  # Job 4: Security scan for critical changes
+  security-scan:
+    name: 🔒 Security Scan
+    runs-on: ubuntu-latest
+    needs: analyze-changes
+    if: needs.analyze-changes.outputs.critical-files-changed == 'true'
+    
+    steps:
+      - name: 📥 Checkout PR code
+        uses: actions/checkout@v4
+      
+      - name: 🔍 Security patterns check
+        run: |
+          echo "🔒 Scanning for security patterns..." >> $GITHUB_STEP_SUMMARY
+          
+          # Check for common security issues
+          ISSUES_FOUND=0
+          
+          # Check for hardcoded secrets
+          if grep -r -E "(password|secret|key|token).*=.*['\"][^'\"]{8,}" src/ --exclude-dir=__tests__ | grep -v "mock\|test\|example"; then
+            echo "⚠️ Potential hardcoded secrets found" >> $GITHUB_STEP_SUMMARY
+            ISSUES_FOUND=1
+          fi
+          
+          # Check for console.log in production code
+          if grep -r "console\.log" src/ --exclude-dir=__tests__ --include="*.ts" --include="*.tsx"; then
+            echo "⚠️ console.log statements found in production code" >> $GITHUB_STEP_SUMMARY
+            ISSUES_FOUND=1
+          fi
+          
+          # Check for direct DOM manipulation (XSS risk)
+          if grep -r "innerHTML\|dangerouslySetInnerHTML" src/ --exclude-dir=__tests__; then
+            echo "⚠️ Potential XSS risk - innerHTML usage found" >> $GITHUB_STEP_SUMMARY
+            ISSUES_FOUND=1
+          fi
+          
+          if [ $ISSUES_FOUND -eq 0 ]; then
+            echo "✅ No security issues detected" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Security issues found - please review" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+
+  # Job 5: PR Quality Summary
+  pr-summary:
+    name: 📋 PR Quality Summary
+    runs-on: ubuntu-latest
+    needs: [quick-check, analyze-changes, targeted-tests, security-scan]
+    if: always()
+    
+    steps:
+      - name: 📋 Generate PR summary
+        run: |
+          echo "## 🔍 PR Quality Check Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Overall status
+          if [ "${{ needs.quick-check.result }}" = "success" ] && \
+             [ "${{ needs.targeted-tests.result }}" = "success" ] && \
+             ([ "${{ needs.security-scan.result }}" = "success" ] || [ "${{ needs.security-scan.result }}" = "skipped" ]); then
+            echo "✅ **PR Quality Check: PASSED**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "🎉 This PR is ready for review and meets all quality standards." >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.security-scan.result }}" = "failure" ]; then
+            echo "❌ **PR Quality Check: FAILED - Security Issues**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "🔒 **CRITICAL**: Security issues detected. Please address before proceeding." >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.quick-check.result }}" = "failure" ]; then
+            echo "❌ **PR Quality Check: FAILED - Code Quality**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "🎨 Please fix linting or TypeScript errors before proceeding." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **PR Quality Check: FAILED - Tests**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "🧪 Some tests are failing. Please review and fix." >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📊 Check Results:" >> $GITHUB_STEP_SUMMARY
+          echo "- Code Quality: ${{ needs.quick-check.result == 'success' && '✅' || '❌' }} ${{ needs.quick-check.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Change Analysis: ${{ needs.analyze-changes.result == 'success' && '✅' || '❌' }} ${{ needs.analyze-changes.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Targeted Tests: ${{ needs.targeted-tests.result == 'success' && '✅' || '❌' }} ${{ needs.targeted-tests.result }}" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ needs.analyze-changes.outputs.critical-files-changed }}" = "true" ]; then
+            echo "- Security Scan: ${{ needs.security-scan.result == 'success' && '✅' || '❌' }} ${{ needs.security-scan.result }}" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- Security Scan: ⏭️ skipped (no critical changes)" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🎯 Change Summary:" >> $GITHUB_STEP_SUMMARY
+          echo "- Hook changes: ${{ needs.analyze-changes.outputs.has-hook-changes == 'true' && '🎣 Yes' || '❌ No' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Component changes: ${{ needs.analyze-changes.outputs.has-component-changes == 'true' && '🧩 Yes' || '❌ No' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Test changes: ${{ needs.analyze-changes.outputs.has-test-changes == 'true' && '📝 Yes' || '❌ No' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Critical files: ${{ needs.analyze-changes.outputs.critical-files-changed == 'true' && '⚠️ Yes (enhanced checks applied)' || '✅ No' }}" >> $GITHUB_STEP_SUMMARY
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "💡 **Tip**: Add tests for new functionality to maintain coverage thresholds." >> $GITHUB_STEP_SUMMARY
+          echo "🚀 **Remember**: This PR will impact a production system with 925+ real records." >> $GITHUB_STEP_SUMMARY
+
+  # Job 6: Auto-assign reviewers for critical changes
+  assign-reviewers:
+    name: 👥 Auto-assign Reviewers
+    runs-on: ubuntu-latest
+    needs: analyze-changes
+    if: needs.analyze-changes.outputs.critical-files-changed == 'true'
+    
+    steps:
+      - name: 👥 Request additional reviews for critical changes
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.pulls.requestReviewers({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+              reviewers: [], // Add reviewer usernames here
+              team_reviewers: ['senior-developers'] // Add team names here if applicable
+            });
+            
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              labels: ['critical-changes', 'needs-review']
+            });
+            
+            const comment = `## ⚠️ Critical Changes Detected
+            
+            This PR modifies critical system components (financial, security, or authentication logic).
+            
+            **Enhanced Review Required:**
+            - 🔍 Extra security review
+            - 🧪 Comprehensive testing verification  
+            - 💰 Financial logic validation
+            - 🔒 Security impact assessment
+            
+            **Reminder:** This system manages 925+ real production records.`;
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: comment
+            });

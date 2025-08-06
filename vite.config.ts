@@ -23,4 +23,33 @@ export default defineConfig(({ mode }) => ({
     include: ['simplex-noise'],
     force: true
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Vendor libraries - bibliotecas de terceiros
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          // Chart libraries - bibliotecas de gráficos
+          charts: ['recharts'],
+          // UI libraries - bibliotecas de interface
+          ui: [
+            'lucide-react', 
+            '@radix-ui/react-accordion',
+            '@radix-ui/react-avatar',
+            '@radix-ui/react-dialog',
+            '@radix-ui/react-dropdown-menu',
+            '@radix-ui/react-popover',
+            '@radix-ui/react-select',
+            '@radix-ui/react-separator',
+            '@radix-ui/react-switch',
+            '@radix-ui/react-toast'
+          ],
+          // Supabase and data libraries - bibliotecas de dados
+          supabase: ['@supabase/supabase-js', '@tanstack/react-query'],
+          // Utils and helpers - utilitários
+          utils: ['date-fns', 'clsx', 'tailwind-merge']
+        }
+      }
+    }
+  },
 }));

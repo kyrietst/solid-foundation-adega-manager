@@ -4,8 +4,8 @@
  */
 
 import { useCallback, useState, useRef, useEffect } from 'react';
-import { useToast } from '@/components/ui/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/shared/hooks/common/use-toast';
+import { supabase } from '@/core/api/supabase/client';
 
 export interface AuditLogEntry {
   id?: string;

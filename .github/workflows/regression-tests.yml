@@ -1,0 +1,125 @@
+name: Regression Tests
+
+on:
+  pull_request:
+    branches: [ main ]
+    types: [opened, synchronize, reopened]
+
+jobs:
+  regression-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout código
+      uses: actions/checkout@v4
+      with:
+        # Fetch de todo o histórico para comparar com main
+        fetch-depth: 0
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20.x
+        cache: 'npm'
+        
+    - name: Instalar dependências
+      run: npm ci
+      
+    - name: Executar testes críticos de regressão
+      run: |
+        echo "🧪 Executando testes críticos de regressão..."
+        
+        # Executar apenas testes críticos para validação rápida
+        npm run test:run -- --reporter=verbose 2>&1 | tee regression-results.txt
+        
+        # Verificar se há falhas críticas
+        CRITICAL_FAILURES=$(grep -c "× " regression-results.txt || true)
+        
+        if [ "$CRITICAL_FAILURES" -gt 0 ]; then
+          echo "❌ Detectadas $CRITICAL_FAILURES falhas críticas"
+          echo "🚨 REGRESSÃO DETECTADA - Revisar mudanças"
+          exit 1
+        else
+          echo "✅ Nenhuma regressão crítica detectada"
+        fi
+        
+    - name: Validar operações financeiras críticas
+      run: |
+        echo "💰 Validando operações financeiras críticas..."
+        
+        # Executar especificamente testes de sales e checkout
+        npm run test:run -- --testNamePattern="checkout|sales|cart" --reporter=verbose 2>&1 | tee financial-tests.txt
+        
+        FINANCIAL_FAILURES=$(grep -c "× " financial-tests.txt || true)
+        
+        if [ "$FINANCIAL_FAILURES" -gt 0 ]; then
+          echo "💸 ALERTA: Falhas em operações financeiras detectadas!"
+          echo "🛑 Bloqueando merge até correção"
+          exit 1
+        else
+          echo "✅ Operações financeiras validadas"
+        fi
+        
+    - name: Validar segurança e permissões
+      run: |
+        echo "🔐 Validando segurança e permissões..."
+        
+        # Executar testes de autenticação e permissões
+        npm run test:run -- --testNamePattern="auth|permission|security" --reporter=verbose 2>&1 | tee security-tests.txt
+        
+        SECURITY_FAILURES=$(grep -c "× " security-tests.txt || true)
+        
+        if [ "$SECURITY_FAILURES" -gt 0 ]; then
+          echo "🚨 ALERTA DE SEGURANÇA: Falhas detectadas!"
+          echo "🛑 Bloqueando merge por questões de segurança"
+          exit 1
+        else
+          echo "✅ Segurança e permissões validadas"
+        fi
+        
+    - name: Relatório de regressão
+      if: always()
+      run: |
+        echo "📋 RELATÓRIO DE REGRESSÃO COMPLETO"
+        echo "================================="
+        
+        # Extrair métricas gerais
+        if [ -f regression-results.txt ]; then
+          TOTAL=$(grep -o "[0-9]\+ tests" regression-results.txt | head -1 | grep -o "[0-9]\+" || echo "0")
+          PASSED=$(grep -o "[0-9]\+ passed" regression-results.txt | head -1 | grep -o "[0-9]\+" || echo "0")
+          
+          if [ "$TOTAL" -gt 0 ]; then
+            SUCCESS_RATE=$(echo "scale=1; $PASSED * 100 / $TOTAL" | bc -l)
+            echo "📊 Taxa geral: $SUCCESS_RATE% ($PASSED/$TOTAL)"
+          fi
+        fi
+        
+        # Status por área crítica
+        echo ""
+        echo "🔍 STATUS POR ÁREA CRÍTICA:"
+        
+        if [ -f financial-tests.txt ]; then
+          FINANCIAL_TOTAL=$(grep -o "[0-9]\+ tests" financial-tests.txt | head -1 | grep -o "[0-9]\+" || echo "0")
+          FINANCIAL_PASSED=$(grep -o "[0-9]\+ passed" financial-tests.txt | head -1 | grep -o "[0-9]\+" || echo "0")
+          echo "💰 Financeiro: $FINANCIAL_PASSED/$FINANCIAL_TOTAL"
+        fi
+        
+        if [ -f security-tests.txt ]; then
+          SECURITY_TOTAL=$(grep -o "[0-9]\+ tests" security-tests.txt | head -1 | grep -o "[0-9]\+" || echo "0")
+          SECURITY_PASSED=$(grep -o "[0-9]\+ passed" security-tests.txt | head -1 | grep -o "[0-9]\+" || echo "0")
+          echo "🔐 Segurança: $SECURITY_PASSED/$SECURITY_TOTAL"
+        fi
+        
+        echo ""
+        echo "✅ Validação de regressão concluída"
+        
+    - name: Upload resultados de regressão
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: regression-test-results
+        path: |
+          regression-results.txt
+          financial-tests.txt
+          security-tests.txt
+        retention-days: 30

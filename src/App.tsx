@@ -1,13 +1,13 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster } from "@/shared/ui/primitives/toaster";
+import { Toaster as Sonner } from "@/shared/components/sonner";
+import { TooltipProvider } from "@/shared/ui/primitives/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "@/contexts/AuthContext";
-import { BackgroundWrapper } from "@/components/ui/background-wrapper";
-import { ErrorBoundary } from "@/components/error/ErrorBoundary";
-import { RouteErrorBoundary } from "@/components/error/RouteErrorBoundary";
-import { AuthErrorBoundary } from "@/components/error/AuthErrorBoundary";
+import { AuthProvider } from "@/app/providers/AuthContext";
+import { ErrorBoundary } from "@/shared/components/ErrorBoundary";
+import { RouteErrorBoundary } from "@/shared/components/RouteErrorBoundary";
+import { AuthErrorBoundary } from "@/shared/components/AuthErrorBoundary";
+import { LavaLamp } from "@/components/ui/fluid-blob";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
@@ -37,88 +37,94 @@ const App = () => (
         <BrowserRouter>
           <AuthErrorBoundary>
             <AuthProvider>
-              <BackgroundWrapper>
+              <div className="min-h-screen w-full relative">
+                {/* Background fluid blob */}
+                <div className="fixed inset-0 z-0">
+                  <LavaLamp />
+                </div>
                 <Toaster />
                 <Sonner />
                 <TailwindColorClasses />
-                <Routes>
-                  <Route 
-                    path="/auth" 
-                    element={
-                      <RouteErrorBoundary routeName="Autenticação">
-                        <Auth />
-                      </RouteErrorBoundary>
-                    } 
-                  />
-                  <Route 
-                    path="/" 
-                    element={
-                      <RouteErrorBoundary routeName="Aplicação Principal">
-                        <Index />
-                      </RouteErrorBoundary>
-                    }
-                  >
-                    <Route index element={<div />} />
+                <div className="relative z-10">
+                  <Routes>
                     <Route 
-                      path="dashboard" 
+                      path="/auth" 
                       element={
-                        <RouteErrorBoundary routeName="Dashboard">
-                          <div />
+                        <RouteErrorBoundary routeName="Autenticação">
+                          <Auth />
                         </RouteErrorBoundary>
                       } 
                     />
                     <Route 
-                      path="sales" 
+                      path="/" 
                       element={
-                        <RouteErrorBoundary routeName="Vendas">
-                          <div />
+                        <RouteErrorBoundary routeName="Aplicação Principal">
+                          <Index />
                         </RouteErrorBoundary>
-                      } 
-                    />
-                    <Route 
-                      path="inventory" 
-                      element={
-                        <RouteErrorBoundary routeName="Estoque">
-                          <div />
-                        </RouteErrorBoundary>
-                      } 
-                    />
-                    <Route 
-                      path="customers" 
-                      element={
-                        <RouteErrorBoundary routeName="Clientes">
-                          <div />
-                        </RouteErrorBoundary>
-                      } 
-                    />
-                    <Route 
-                      path="delivery" 
-                      element={
-                        <RouteErrorBoundary routeName="Entregas">
-                          <div />
-                        </RouteErrorBoundary>
-                      } 
-                    />
-                    <Route 
-                      path="movements" 
-                      element={
-                        <RouteErrorBoundary routeName="Movimentos">
-                          <div />
-                        </RouteErrorBoundary>
-                      } 
-                    />
-                    <Route 
-                      path="users" 
-                      element={
-                        <RouteErrorBoundary routeName="Usuários">
-                          <div />
-                        </RouteErrorBoundary>
-                      } 
-                    />
-                  </Route>
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </BackgroundWrapper>
+                      }
+                    >
+                      <Route index element={<div />} />
+                      <Route 
+                        path="dashboard" 
+                        element={
+                          <RouteErrorBoundary routeName="Dashboard">
+                            <div />
+                          </RouteErrorBoundary>
+                        } 
+                      />
+                      <Route 
+                        path="sales" 
+                        element={
+                          <RouteErrorBoundary routeName="Vendas">
+                            <div />
+                          </RouteErrorBoundary>
+                        } 
+                      />
+                      <Route 
+                        path="inventory" 
+                        element={
+                          <RouteErrorBoundary routeName="Estoque">
+                            <div />
+                          </RouteErrorBoundary>
+                        } 
+                      />
+                      <Route 
+                        path="customers" 
+                        element={
+                          <RouteErrorBoundary routeName="Clientes">
+                            <div />
+                          </RouteErrorBoundary>
+                        } 
+                      />
+                      <Route 
+                        path="delivery" 
+                        element={
+                          <RouteErrorBoundary routeName="Entregas">
+                            <div />
+                          </RouteErrorBoundary>
+                        } 
+                      />
+                      <Route 
+                        path="movements" 
+                        element={
+                          <RouteErrorBoundary routeName="Movimentos">
+                            <div />
+                          </RouteErrorBoundary>
+                        } 
+                      />
+                      <Route 
+                        path="users" 
+                        element={
+                          <RouteErrorBoundary routeName="Usuários">
+                            <div />
+                          </RouteErrorBoundary>
+                        } 
+                      />
+                    </Route>
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </div>
+              </div>
             </AuthProvider>
           </AuthErrorBoundary>
         </BrowserRouter>

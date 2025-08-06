@@ -6,12 +6,12 @@
 
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent } from '@/components/ui/card';
+import { supabase } from '@/core/api/supabase/client';
+import { Card, CardContent } from '@/shared/ui/primitives/card';
 import { AlertTriangle } from 'lucide-react';
-import { useSpecificPermissions } from '@/hooks/usePermissions';
+import { useSpecificPermissions } from '@/shared/hooks/auth/usePermissions';
 import { Product, ProductFormData, InventoryFilters } from '@/types/inventory.types';
-import { LoadingScreen } from '@/components/ui/loading-spinner';
+import { LoadingScreen } from '@/shared/ui/composite/loading-spinner';
 import { usePagination } from '@/hooks/use-pagination';
 
 // Componentes refatorados
@@ -22,10 +22,10 @@ import { InventoryTable } from './inventory/InventoryTable';
 import { ProductDialog } from './inventory/ProductDialog';
 
 // Hooks customizados
-import { useInventoryCalculations } from '@/hooks/inventory/useInventoryCalculations';
+import { useInventoryCalculations } from '@/features/inventory/hooks/useInventoryCalculations';
 import { useProductFilters } from '@/hooks/common/useFilters';
-import { useInventoryView } from '@/hooks/inventory/useInventoryView';
-import { useInventoryOperations } from '@/hooks/inventory/useInventoryOperations';
+import { useInventoryView } from '@/features/inventory/hooks/useInventoryView';
+import { useInventoryOperations } from '@/features/inventory/hooks/useInventoryOperations';
 import { useEntityDialogs } from '@/hooks/common/useDialogState';
 
 export const InventoryNew = () => {

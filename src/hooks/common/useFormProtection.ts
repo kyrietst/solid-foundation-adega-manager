@@ -4,7 +4,7 @@
  */
 
 import { useCallback, useState, useRef, useEffect } from 'react';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/shared/hooks/common/use-toast';
 
 export interface FormProtectionConfig {
   enableDoubleSubmitProtection?: boolean;
