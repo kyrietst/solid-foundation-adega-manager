@@ -37,6 +37,8 @@ export interface ProductsGridPresentationProps {
     desktop: number;
   };
   className?: string;
+  variant?: 'default' | 'premium' | 'success' | 'warning' | 'error';
+  glassEffect?: boolean;
 
   // Paginação
   currentPage: number;
@@ -73,6 +75,8 @@ export const ProductsGridPresentation: React.FC<ProductsGridPresentationProps> =
   showAddButton,
   gridColumns,
   className,
+  variant = 'default',
+  glassEffect = true,
   currentPage,
   itemsPerPage,
   totalPages,
@@ -140,6 +144,8 @@ export const ProductsGridPresentation: React.FC<ProductsGridPresentationProps> =
             products={currentProducts}
             gridColumns={gridColumns}
             onAddToCart={onAddToCart}
+            variant={variant}
+            glassEffect={glassEffect}
           />
           
           {/* Paginação */}

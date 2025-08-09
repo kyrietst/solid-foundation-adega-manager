@@ -51,13 +51,13 @@ export interface WithQuantity {
 // ============================================================================
 
 // Tipo genérico para entidades básicas do sistema
-export type BaseEntity<T = {}> = WithId & WithTimestamps & T;
+export type BaseEntity<T = Record<string, unknown>> = WithId & WithTimestamps & T;
 
 // Tipo genérico para entidades auditáveis
-export type AuditableEntity<T = {}> = BaseEntity<T> & WithCreatedBy;
+export type AuditableEntity<T = Record<string, unknown>> = BaseEntity<T> & WithCreatedBy;
 
 // Tipo genérico para entidades com soft delete
-export type SoftDeletableEntity<T = {}> = AuditableEntity<T> & WithSoftDelete;
+export type SoftDeletableEntity<T = Record<string, unknown>> = AuditableEntity<T> & WithSoftDelete;
 
 // Tipo genérico para dados de formulário (sem campos automáticos)
 export type FormData<T extends WithId> = Omit<T, 'id' | 'created_at' | 'updated_at'>;
@@ -123,7 +123,7 @@ export type Validator<T> = (value: unknown) => value is T;
 // Tipo genérico para schemas de validação
 export interface ValidationSchema<T> {
   validate(data: unknown): data is T;
-  validateAsync(data: unknown): Promise<data is T>;
+  validateAsync(data: unknown): Promise<boolean>;
   errors: ValidationError[];
 }
 
@@ -262,7 +262,7 @@ export type NumberKeys<T> = Extract<keyof T, number>;
 
 // Tipo para valores que são funções
 export type FunctionValues<T> = {
-  [K in keyof T]: T[K] extends (...args: any[]) => any ? T[K] : never;
+  [K in keyof T]: T[K] extends (...args: unknown[]) => unknown ? T[K] : never;
 };
 
 // Tipo para deep partial
@@ -281,20 +281,21 @@ export type DeepReadonly<T> = {
 
 // Type guard para verificar se tem ID
 export const hasId = <T>(obj: T): obj is T & WithId => {
-  return typeof obj === 'object' && obj !== null && 'id' in obj && typeof (obj as any).id === 'string';
+  return typeof obj === 'object' && obj !== null && 'id' in obj && typeof (obj as Record<string, unknown>).id === 'string';
 };
 
 // Type guard para verificar se tem timestamps
 export const hasTimestamps = <T>(obj: T): obj is T & WithTimestamps => {
+  const record = obj as Record<string, unknown>;
   return typeof obj === 'object' && obj !== null && 
          'created_at' in obj && 'updated_at' in obj &&
-         typeof (obj as any).created_at === 'string' &&
-         typeof (obj as any).updated_at === 'string';
+         typeof record.created_at === 'string' &&
+         typeof record.updated_at === 'string';
 };
 
 // Type guard para verificar se tem nome
 export const hasName = <T>(obj: T): obj is T & WithName => {
-  return typeof obj === 'object' && obj !== null && 'name' in obj && typeof (obj as any).name === 'string';
+  return typeof obj === 'object' && obj !== null && 'name' in obj && typeof (obj as Record<string, unknown>).name === 'string';
 };
 
 // Type guard genérico para arrays

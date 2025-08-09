@@ -3,7 +3,10 @@
  * Armazena dados essenciais localmente para acesso offline
  */
 
-export interface CacheItem<T = any> {
+import type { Product } from '@/core/types/inventory.types';
+import type { CustomerProfile } from '@/features/customers/hooks/use-crm';
+
+export interface CacheItem<T = unknown> {
   data: T;
   timestamp: number;
   ttl: number; // Time to live em ms
@@ -266,7 +269,7 @@ class CriticalDataCache {
   }
 
   // Cache para produtos críticos
-  public cacheProducts(products: any[]): void {
+  public cacheProducts(products: Product[]): void {
     products.forEach(product => {
       this.set(`product_${product.id}`, product, {
         category: 'products',
@@ -277,7 +280,7 @@ class CriticalDataCache {
   }
 
   // Cache para dados de clientes
-  public cacheCustomers(customers: any[]): void {
+  public cacheCustomers(customers: CustomerProfile[]): void {
     customers.forEach(customer => {
       this.set(`customer_${customer.id}`, customer, {
         category: 'customers',
@@ -288,7 +291,7 @@ class CriticalDataCache {
   }
 
   // Cache para configurações do sistema
-  public cacheSettings(settings: Record<string, any>): void {
+  public cacheSettings(settings: Record<string, unknown>): void {
     Object.entries(settings).forEach(([key, value]) => {
       this.set(`setting_${key}`, value, {
         category: 'settings',
@@ -299,24 +302,24 @@ class CriticalDataCache {
   }
 
   // Obter produtos do cache
-  public getCachedProducts(): any[] {
-    const products: any[] = [];
+  public getCachedProducts(): Product[] {
+    const products: Product[] = [];
     for (const [key, item] of this.cache.entries()) {
       if (key.startsWith('product_') && item.category === 'products') {
         const data = this.get(key);
-        if (data) products.push(data);
+        if (data) products.push(data as Product);
       }
     }
     return products;
   }
 
   // Obter clientes do cache
-  public getCachedCustomers(): any[] {
-    const customers: any[] = [];
+  public getCachedCustomers(): CustomerProfile[] {
+    const customers: CustomerProfile[] = [];
     for (const [key, item] of this.cache.entries()) {
       if (key.startsWith('customer_') && item.category === 'customers') {
         const data = this.get(key);
-        if (data) customers.push(data);
+        if (data) customers.push(data as CustomerProfile);
       }
     }
     return customers;

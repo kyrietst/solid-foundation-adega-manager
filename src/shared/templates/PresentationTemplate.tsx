@@ -84,7 +84,7 @@ export const YourPresentation: React.FC<YourPresentationProps> = ({
  * return (
  *   <div className="container">
  *     {/* Header */}
- *     <YourHeader title="..." />
+ *     <YourHeader title="Title" />
  *     
  *     {/* Main content baseado no estado */}
  *     {isLoading ? (

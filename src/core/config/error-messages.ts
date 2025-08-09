@@ -3,6 +3,13 @@
  * Padroniza todas as mensagens da aplicação em português
  */
 
+interface SupabaseError {
+  message?: string;
+  code?: string;
+  details?: string;
+  hint?: string;
+}
+
 export type ErrorCategory = 
   | 'auth'
   | 'database'
@@ -321,7 +328,7 @@ export const getErrorMessage = (
 };
 
 // Função para mapear erro do Supabase
-export const mapSupabaseError = (error: any): ErrorMessage => {
+export const mapSupabaseError = (error: SupabaseError | null): ErrorMessage => {
   if (!error) {
     return getErrorMessage('system', 'unexpected_error');
   }
@@ -379,7 +386,7 @@ export const mapSupabaseError = (error: any): ErrorMessage => {
 
 // Função para obter mensagem contextual
 export const getContextualErrorMessage = (
-  error: any,
+  error: SupabaseError | null,
   context: string
 ): ErrorMessage => {
   const baseMessage = mapSupabaseError(error);

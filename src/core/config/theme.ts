@@ -6,27 +6,82 @@
  */
 
 // ============================================================================
-// PALETA DE CORES ADEGA WINE CELLAR
+// PALETA DE CORES ADEGA WINE CELLAR - Sistema Completo v2.1
 // ============================================================================
 
+// Cores Primárias - Base do Sistema
+export const primaryColors = {
+  'primary-black': '#000000',     // Cor primária preta
+  'primary-yellow': '#FFD700',    // Cor primária amarela (gold)
+} as const;
+
+// Escalas Estendidas
+export const extendedScales = {
+  // Escala Black (100-60)
+  'black-100': '#000000',
+  'black-90': '#1a1a1a',
+  'black-80': '#333333',
+  'black-70': '#4a4a4a',
+  'black-60': '#666666',
+  
+  // Escala Yellow (100-60)
+  'yellow-100': '#FFD700',
+  'yellow-90': '#FFC107',
+  'yellow-80': '#FFB300',
+  'yellow-70': '#FF8F00',
+  'yellow-60': '#FF6F00',
+} as const;
+
+// Neutrals Profissionais (Tailwind-based)
+export const professionalNeutrals = {
+  'gray-950': '#030712',
+  'gray-900': '#111827',
+  'gray-800': '#1f2937',
+  'gray-700': '#374151',
+  'gray-600': '#4b5563',
+  'gray-500': '#6b7280',
+  'gray-400': '#9ca3af',
+  'gray-300': '#d1d5db',
+  'gray-200': '#e5e7eb',
+  'gray-100': '#f3f4f6',
+  'gray-50': '#f9fafb',
+} as const;
+
+// Acentos Modernos
+export const modernAccents = {
+  'accent-blue': '#3b82f6',
+  'accent-green': '#10b981',
+  'accent-red': '#ef4444',
+  'accent-purple': '#8b5cf6',
+  'accent-orange': '#f97316',
+} as const;
+
+// Variáveis Glass (RGBA)
+export const glassVariables = {
+  'glass-black': 'rgba(0, 0, 0, 0.8)',
+  'glass-yellow': 'rgba(255, 215, 0, 0.1)',
+  'glass-overlay': 'rgba(17, 24, 39, 0.9)',
+} as const;
+
+// Consolidação da Paleta Completa
 export const adegaColors = {
-  // Gradação Escura (Backgrounds e estrutura)
-  black: '#000000',           // Preto total
-  charcoal: '#1a1a1a',      // Carvão escuro - Background principal
-  graphite: '#2d2d2d',      // Grafite - Hover states
-  slate: '#404040',          // Ardósia
-  steel: '#595959',          // Aço
-  
-  // Gradação Clara (Textos e detalhes)
-  pewter: '#737373',         // Estanho
-  silver: '#8c8c8c',        // Prata - Texto secundário
-  platinum: '#a6a6a6',      // Platina - Texto principal
-  
-  // Gradação Dourada (Acentos e destaques)
-  champagne: '#bfbf8c',     // Champagne
-  gold: '#d4af37',          // Ouro clássico - Accent principal
-  amber: '#ffbf00',         // Âmbar - Warnings/alertas
-  yellow: '#ffd700'         // Amarelo dourado - Valores importantes
+  ...primaryColors,
+  ...extendedScales,
+  ...professionalNeutrals,
+  ...modernAccents,
+  // Mantém compatibilidade com o sistema anterior
+  black: '#000000',
+  charcoal: '#1a1a1a',
+  graphite: '#2d2d2d',
+  slate: '#404040',
+  steel: '#595959',
+  pewter: '#737373',
+  silver: '#8c8c8c',
+  platinum: '#a6a6a6',
+  champagne: '#bfbf8c',
+  gold: '#d4af37',
+  amber: '#ffbf00',
+  yellow: '#ffd700'
 } as const;
 
 // ============================================================================
@@ -105,62 +160,116 @@ export const semanticColors = {
 } as const;
 
 // ============================================================================
-// PADRÕES DE COMPONENTES
+// PADRÕES DE COMPONENTES GLASS MORPHISM v2.1
 // ============================================================================
 
 export const componentPatterns = {
-  // Cards padrão
+  // Cards padrão com Glass Morphism
   glassCard: [
-    'bg-adega-charcoal/20',
-    'border-white/10',
-    'backdrop-blur-xl',
-    'shadow-xl'
-  ].join(' '),
-  
-  // Cards com hover
-  interactiveCard: [
-    'bg-adega-charcoal/20',
-    'border-white/10',
+    'bg-gray-900/80',
+    'border',
+    'border-gray-700',
     'backdrop-blur-xl',
     'shadow-xl',
-    'hover:bg-adega-charcoal/30',
+    'rounded-lg'
+  ].join(' '),
+  
+  // Cards Premium com Glass
+  glassPremium: [
+    'bg-gradient-to-br',
+    'from-black-100',
+    'to-gray-900',
+    'border',
+    'border-primary-yellow/20',
+    'backdrop-blur-xl',
+    'shadow-2xl',
+    'rounded-lg'
+  ].join(' '),
+  
+  // Cards com hover interativo
+  interactiveCard: [
+    'bg-gray-900/80',
+    'border',
+    'border-gray-700',
+    'backdrop-blur-xl',
+    'shadow-xl',
+    'hover:bg-gray-900/90',
     'hover:shadow-2xl',
+    'hover:transform',
+    'hover:-translate-y-1',
     'transition-all',
-    'duration-200'
+    'duration-200',
+    'rounded-lg'
+  ].join(' '),
+  
+  // Glass Yellow (Accent)
+  glassYellow: [
+    'bg-primary-yellow/5',
+    'border',
+    'border-primary-yellow/10',
+    'backdrop-blur-xl',
+    'shadow-xl',
+    'rounded-lg'
   ].join(' '),
   
   // Cards de alerta
   alertCard: [
-    'border-adega-amber/30',
-    'bg-adega-amber/5',
+    'bg-gray-900/80',
+    'border',
+    'border-accent-orange/30',
     'backdrop-blur-xl',
-    'shadow-xl'
+    'shadow-xl',
+    'rounded-lg'
   ].join(' '),
   
   // Inputs de formulário
   formInput: [
-    'bg-adega-charcoal/60',
-    'border-white/10',
-    'text-adega-platinum',
+    'bg-gray-900/60',
+    'border',
+    'border-gray-700',
+    'text-gray-100',
     'rounded-xl',
-    'backdrop-blur-xl'
+    'backdrop-blur-xl',
+    'focus:border-primary-yellow',
+    'focus:ring-2',
+    'focus:ring-primary-yellow/20'
   ].join(' '),
   
-  // Botões primários
+  // Botões primários (Yellow)
   primaryButton: [
-    'bg-adega-gold',
-    'text-adega-charcoal',
-    'hover:bg-adega-amber',
-    'transition-colors',
+    'bg-primary-yellow',
+    'text-black-100',
+    'hover:bg-yellow-90',
+    'hover:transform',
+    'hover:-translate-y-1',
+    'transition-all',
+    'duration-200',
+    'focus:ring-2',
+    'focus:ring-primary-yellow/20'
+  ].join(' '),
+  
+  // Botões outline
+  outlineButton: [
+    'border-2',
+    'border-primary-yellow',
+    'text-primary-yellow',
+    'hover:bg-primary-yellow',
+    'hover:text-black-100',
+    'hover:transform',
+    'hover:-translate-y-1',
+    'transition-all',
     'duration-200'
   ].join(' '),
   
-  // Botões secundários
-  secondaryButton: [
-    'border-adega-gold',
-    'text-adega-gold',
-    'hover:bg-adega-gold',
-    'hover:text-adega-charcoal',
+  // Botões ghost com glass
+  ghostButton: [
+    'bg-gray-900/50',
+    'border',
+    'border-gray-700/50',
+    'backdrop-blur-sm',
+    'text-gray-100',
+    'hover:bg-gray-800/80',
+    'hover:backdrop-blur-lg',
     'transition-all',
     'duration-200'
   ].join(' ')

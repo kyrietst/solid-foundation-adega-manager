@@ -7,15 +7,23 @@ import React, { useMemo } from 'react';
 import { Card, CardContent } from '@/shared/ui/primitives/card';
 import { Button } from '@/shared/ui/primitives/button';
 import { Phone, Mail, MapPin, Calendar, Eye, Edit } from 'lucide-react';
-import { formatCurrency } from '@/core/config/utils';
+import { formatCurrency, cn } from '@/core/config/utils';
+import { getGlassCardClasses } from '@/core/config/theme-utils';
 import { CustomerCardProps } from './types';
 import { CustomerSegmentBadge } from './CustomerSegmentBadge';
 
-export const CustomerCard = React.memo<CustomerCardProps>(({
+interface ModernCustomerCardProps extends CustomerCardProps {
+  variant?: 'default' | 'premium' | 'success' | 'warning' | 'error';
+  glassEffect?: boolean;
+}
+
+export const CustomerCard = React.memo<ModernCustomerCardProps>(({
   customer,
   onSelect,
   onEdit,
   canEdit = false,
+  variant = 'default',
+  glassEffect = true,
 }) => {
   // Memoizar formatação de datas para evitar recriações desnecessárias
   const formattedFirstPurchase = useMemo(() => {
@@ -33,17 +41,26 @@ export const CustomerCard = React.memo<CustomerCardProps>(({
     return new Date(customer.birthday).toLocaleDateString('pt-BR');
   }, [customer.birthday]);
 
+  const glassClasses = glassEffect ? getGlassCardClasses(variant) : '';
+
   return (
-    <Card className="bg-adega-charcoal/20 border-white/10 hover:bg-adega-charcoal/30 transition-colors">
+    <Card className={cn(
+      glassClasses,
+      'hover:border-primary-yellow/60 transition-all duration-300 hover:scale-[1.02]'
+    )}>
       <CardContent className="p-4">
         {/* Header do Card */}
         <div className="flex justify-between items-start mb-3">
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-adega-platinum truncate" title={customer.name}>
+            <h3 className="font-semibold text-gray-100 truncate" title={customer.name}>
               {customer.name}
             </h3>
             <div className="mt-1">
-              <CustomerSegmentBadge segment={customer.segment || ''} />
+              <CustomerSegmentBadge 
+                segment={customer.segment || ''} 
+                variant={variant}
+                glassEffect={glassEffect}
+              />
             </div>
           </div>
           
@@ -52,7 +69,7 @@ export const CustomerCard = React.memo<CustomerCardProps>(({
               variant="ghost"
               size="sm"
               onClick={() => onSelect(customer)}
-              className="h-8 w-8 p-0 hover:bg-adega-gold/20"
+              className="h-8 w-8 p-0 hover:bg-primary-yellow/20 text-gray-300 hover:text-primary-yellow"
               aria-label={`Ver detalhes do cliente ${customer.name}`}
               title="Ver detalhes"
             >
@@ -63,7 +80,7 @@ export const CustomerCard = React.memo<CustomerCardProps>(({
                 variant="ghost"
                 size="sm"
                 onClick={() => onEdit(customer)}
-                className="h-8 w-8 p-0 hover:bg-blue-500/20"
+                className="h-8 w-8 p-0 hover:bg-accent-blue/20 text-gray-300 hover:text-accent-blue"
                 aria-label={`Editar cliente ${customer.name}`}
                 title="Editar cliente"
               >
@@ -77,8 +94,8 @@ export const CustomerCard = React.memo<CustomerCardProps>(({
         <div className="space-y-2 mb-3">
           {customer.email && (
             <div className="flex items-center gap-2 text-sm">
-              <Mail className="h-3 w-3 text-adega-silver" aria-hidden="true" />
-              <span className="text-adega-platinum truncate" title={customer.email}>
+              <Mail className="h-3 w-3 text-gray-400" aria-hidden="true" />
+              <span className="text-gray-200 truncate" title={customer.email}>
                 {customer.email}
               </span>
             </div>
@@ -86,8 +103,8 @@ export const CustomerCard = React.memo<CustomerCardProps>(({
           
           {customer.phone && (
             <div className="flex items-center gap-2 text-sm">
-              <Phone className="h-3 w-3 text-adega-silver" aria-hidden="true" />
-              <span className="text-adega-platinum">
+              <Phone className="h-3 w-3 text-gray-400" aria-hidden="true" />
+              <span className="text-gray-200">
                 {customer.phone}
               </span>
             </div>
@@ -95,8 +112,8 @@ export const CustomerCard = React.memo<CustomerCardProps>(({
           
           {customer.address && (
             <div className="flex items-center gap-2 text-sm">
-              <MapPin className="h-3 w-3 text-adega-silver" aria-hidden="true" />
-              <span className="text-adega-platinum truncate" title={customer.address}>
+              <MapPin className="h-3 w-3 text-gray-400" aria-hidden="true" />
+              <span className="text-gray-200 truncate" title={customer.address}>
                 {customer.address}
               </span>
             </div>
@@ -104,32 +121,32 @@ export const CustomerCard = React.memo<CustomerCardProps>(({
         </div>
 
         {/* Informações de Compra */}
-        <div className="space-y-2 pt-2 border-t border-white/10">
+        <div className="space-y-2 pt-2 border-t border-primary-yellow/20">
           <div className="flex justify-between items-center">
-            <span className="text-sm text-adega-silver">LTV:</span>
-            <span className="font-semibold text-adega-gold">
+            <span className="text-sm text-gray-400">LTV:</span>
+            <span className="font-semibold text-primary-yellow">
               {formatCurrency(customer.lifetime_value || 0)}
             </span>
           </div>
           
           <div className="flex justify-between items-center">
-            <span className="text-sm text-adega-silver">Primeira compra:</span>
-            <span className="text-sm text-adega-platinum">
+            <span className="text-sm text-gray-400">Primeira compra:</span>
+            <span className="text-sm text-gray-200">
               {formattedFirstPurchase}
             </span>
           </div>
           
           <div className="flex justify-between items-center">
-            <span className="text-sm text-adega-silver">Última compra:</span>
-            <span className="text-sm text-adega-platinum">
+            <span className="text-sm text-gray-400">Última compra:</span>
+            <span className="text-sm text-gray-200">
               {formattedLastPurchase}
             </span>
           </div>
 
           {customer.favorite_category && (
             <div className="flex justify-between items-center">
-              <span className="text-sm text-adega-silver">Categoria favorita:</span>
-              <span className="text-sm text-adega-platinum truncate">
+              <span className="text-sm text-gray-400">Categoria favorita:</span>
+              <span className="text-sm text-gray-200 truncate">
                 {customer.favorite_category}
               </span>
             </div>
@@ -138,11 +155,11 @@ export const CustomerCard = React.memo<CustomerCardProps>(({
 
         {/* Data de Aniversário */}
         {customer.birthday && (
-          <div className="mt-2 pt-2 border-t border-white/10">
+          <div className="mt-2 pt-2 border-t border-primary-yellow/20">
             <div className="flex items-center gap-2">
-              <Calendar className="h-3 w-3 text-adega-silver" aria-hidden="true" />
-              <span className="text-sm text-adega-silver">Aniversário:</span>
-              <span className="text-sm text-adega-platinum">
+              <Calendar className="h-3 w-3 text-gray-400" aria-hidden="true" />
+              <span className="text-sm text-gray-400">Aniversário:</span>
+              <span className="text-sm text-gray-200">
                 {formattedBirthday}
               </span>
             </div>

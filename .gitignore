@@ -96,4 +96,4 @@ temp/
 .lovable/
 
 # System files
-.fuse_hidden*
+.fuse_hidden*flattened-codebase.xml

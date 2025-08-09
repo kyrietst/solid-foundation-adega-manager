@@ -41,8 +41,7 @@ const Auth = () => {
 
     const { error } = await signIn(email, password);
 
-    if (!error) {
-    } else {
+    if (error) {
       console.error('Login error:', error);
     }
 
@@ -52,9 +51,9 @@ const Auth = () => {
   return (
     <WavyBackground 
       className="flex items-center justify-center"
-      colors={["#38bdf8", "#818cf8", "#c084fc", "#e879f9", "#22d3ee"]}
+      colors={["#000000", "#FFD700"]}
       waveWidth={50}
-      backgroundFill="black"
+      backgroundFill="#000000"
       blur={10}
       speed="slow"
       waveOpacity={0.5}

@@ -178,7 +178,7 @@ export const adjustTimeoutForNetwork = (
 
 // Função para detectar velocidade da rede (simplificada)
 export const detectNetworkSpeed = (): keyof typeof NETWORK_TIMEOUT_MULTIPLIERS => {
-  // @ts-ignore - navigator.connection pode não estar disponível
+  // @ts-expect-error - navigator.connection pode não estar disponível em todos os browsers
   const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
   
   if (!connection) return 'normal';

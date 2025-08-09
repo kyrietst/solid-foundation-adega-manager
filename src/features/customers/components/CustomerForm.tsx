@@ -13,6 +13,8 @@ import {
 import { useUpsertCustomer } from '@/features/customers/hooks/use-crm';
 import { useFormWithToast } from '@/shared/hooks/common/use-form-with-toast';
 import { Loader2 } from 'lucide-react';
+import { cn } from '@/core/config/utils';
+import { getGlassCardClasses } from '@/core/config/theme-utils';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: 'O nome deve ter pelo menos 2 caracteres.' }),
@@ -24,9 +26,15 @@ type CustomerFormValues = z.infer<typeof formSchema>;
 
 interface CustomerFormProps {
   onSuccess: () => void;
+  variant?: 'default' | 'premium' | 'success' | 'warning' | 'error';
+  glassEffect?: boolean;
 }
 
-export function CustomerForm({ onSuccess }: CustomerFormProps) {
+export function CustomerForm({ 
+  onSuccess,
+  variant = 'default',
+  glassEffect = true
+}: CustomerFormProps) {
   const upsertCustomer = useUpsertCustomer();
 
   const form = useFormWithToast<CustomerFormValues>({
@@ -42,9 +50,11 @@ export function CustomerForm({ onSuccess }: CustomerFormProps) {
     onSuccess,
   });
 
+  const glassClasses = glassEffect ? getGlassCardClasses(variant) : '';
+
   return (
     <Form {...form}>
-      <fieldset className="space-y-4">
+      <fieldset className={cn('space-y-4 p-6 rounded-lg', glassClasses)}>
         <legend className="sr-only">Informações do Cliente</legend>
         <form onSubmit={form.handleSubmit(upsertCustomer)} className="space-y-4">
         <FormField
@@ -52,11 +62,12 @@ export function CustomerForm({ onSuccess }: CustomerFormProps) {
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Nome *</FormLabel>
+              <FormLabel className="text-gray-200">Nome *</FormLabel>
               <FormControl>
                 <Input 
                   placeholder="Nome completo do cliente" 
                   aria-required="true"
+                  className="bg-gray-800/50 border-primary-yellow/30 text-gray-200 focus:border-primary-yellow placeholder:text-gray-400"
                   {...field} 
                 />
               </FormControl>
@@ -69,12 +80,13 @@ export function CustomerForm({ onSuccess }: CustomerFormProps) {
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email</FormLabel>
+              <FormLabel className="text-gray-200">Email</FormLabel>
               <FormControl>
                 <Input 
                   placeholder="email@exemplo.com" 
                   type="email"
                   aria-required="false"
+                  className="bg-gray-800/50 border-primary-yellow/30 text-gray-200 focus:border-primary-yellow placeholder:text-gray-400"
                   {...field} 
                 />
               </FormControl>
@@ -87,12 +99,13 @@ export function CustomerForm({ onSuccess }: CustomerFormProps) {
           name="phone"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Telefone</FormLabel>
+              <FormLabel className="text-gray-200">Telefone</FormLabel>
               <FormControl>
                 <Input 
                   placeholder="(99) 99999-9999" 
                   type="tel"
                   aria-required="false"
+                  className="bg-gray-800/50 border-primary-yellow/30 text-gray-200 focus:border-primary-yellow placeholder:text-gray-400"
                   {...field} 
                 />
               </FormControl>
@@ -100,8 +113,12 @@ export function CustomerForm({ onSuccess }: CustomerFormProps) {
             </FormItem>
           )}
         />
-          <Button type="submit" disabled={form.isSubmitting} className="w-full">
-            {form.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />}
+          <Button 
+            type="submit" 
+            disabled={form.isSubmitting} 
+            className="w-full bg-primary-yellow text-black hover:bg-primary-yellow/90 font-semibold"
+          >
+            {form.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin text-black" aria-hidden="true" />}
             Salvar Cliente
           </Button>
         </form>

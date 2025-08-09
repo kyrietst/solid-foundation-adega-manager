@@ -46,6 +46,12 @@ export interface Product {
   turnover_rate: TurnoverRate;
   last_sale_date?: string;
   barcode?: string;
+  
+  // Campos adicionados na história 1.1 - Schema e Políticas de Segurança
+  measurement_type?: string; // Tipo de medição (Volume, Unidade, etc.)
+  measurement_value?: string; // Valor da medição para campos dinâmicos
+  is_package?: boolean; // Se o produto é um pacote vs unidade individual
+  units_per_package?: NonNegativeInteger; // Número de unidades por pacote
 }
 
 export interface ProductFormData {
@@ -72,6 +78,12 @@ export interface ProductFormData {
   package_price?: Price;
   package_margin?: Percentage;
   barcode?: string;
+  
+  // Campos adicionados na história 1.1 - Schema e Políticas de Segurança
+  measurement_type?: string; // Tipo de medição para campos dinâmicos
+  measurement_value?: string; // Valor da medição para campos dinâmicos
+  is_package?: boolean; // Se é pacote vs unidade individual
+  units_per_package?: NonNegativeInteger; // Unidades por pacote
 }
 
 export interface ProductCalculations {

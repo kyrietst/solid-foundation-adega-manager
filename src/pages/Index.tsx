@@ -3,6 +3,7 @@ import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { AppSidebar } from '@/app/layout/Sidebar';
 import { useAuth } from '@/app/providers/AuthContext';
 import { LoadingScreen } from '@/shared/ui/composite/loading-spinner';
+import { Breadcrumb } from '@/shared/ui/layout/Breadcrumb';
 import SalesPage from '@/features/sales/components/SalesPage';
 
 // Lazy loading dos componentes principais para code splitting
@@ -12,6 +13,10 @@ const Customers = lazy(() => import('@/features/customers/components/CustomersLi
 const Delivery = lazy(() => import('@/features/delivery/components/Delivery'));
 const Movements = lazy(() => import('@/features/movements/components/Movements'));
 const UserManagement = lazy(() => import('@/features/users/components/UserManagement'));
+// História 1.5: Página de Relatórios (old)
+const Reports = lazy(() => import('@/features/reports/components/Reports'));
+// Sprint 2: Advanced Reports System
+const AdvancedReports = lazy(() => import('@/features/reports/components/AdvancedReports'));
 
 const Index = () => {
   const navigate = useNavigate();
@@ -113,6 +118,12 @@ const Index = () => {
             <UserManagement />
           </Suspense>
         ) : <AccessDenied />;
+      case 'reports':
+        return hasPermission(['admin', 'employee']) ? (
+          <Suspense fallback={<LoadingScreen text="Carregando relatórios..." />}>
+            <AdvancedReports />
+          </Suspense>
+        ) : <AccessDenied />;
       default:
         return hasPermission(['admin', 'employee']) ? (
           <Suspense fallback={<LoadingScreen text="Carregando dashboard..." />}>
@@ -129,6 +140,22 @@ const Index = () => {
       
       {/* Main content area */}  
       <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Breadcrumb Navigation */}
+        {activeTab && activeTab !== 'dashboard' && (
+          <div className="border-b border-gray-700/50 bg-gray-900/20 backdrop-blur-sm">
+            <div className="max-w-7xl mx-auto px-4 lg:px-8 py-3">
+              <Breadcrumb 
+                variant="premium"
+                glassEffect={true}
+                responsive={true}
+                showHome={true}
+                homeLabel="Dashboard"
+                homePath="/dashboard"
+              />
+            </div>
+          </div>
+        )}
+        
         <main className="flex-1 overflow-y-auto">
           <div className="p-4 lg:p-8 h-full">
             <div className="max-w-7xl mx-auto h-full">

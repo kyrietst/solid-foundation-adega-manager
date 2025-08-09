@@ -1,6 +1,7 @@
 /**
  * Modal de detalhes completos do cliente
  * Extraído do CustomersNew.tsx para separar responsabilidades
+ * Enhanced for Story 2.3: Glass morphism + Black/Gold theme
  */
 
 import React from 'react';
@@ -13,6 +14,8 @@ import {
 import { Button } from '@/shared/ui/primitives/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/primitives/card';
 import { Badge } from '@/shared/ui/primitives/badge';
+import { cn } from '@/core/config/utils';
+import { getGlassCardClasses } from '@/core/config/theme-utils';
 import { 
   User, 
   Phone, 
@@ -74,13 +77,19 @@ export const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
     return frequency ? frequencies[frequency as keyof typeof frequencies] || frequency : 'Não definido';
   };
 
+  const glassClasses = getGlassCardClasses('premium');
+  
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto bg-adega-charcoal border-white/10">
+      <DialogContent className={cn(
+        "max-w-6xl max-h-[90vh] overflow-y-auto backdrop-blur-xl shadow-2xl",
+        glassClasses,
+        "bg-gray-900/90 border border-primary-yellow/30"
+      )}>
         <DialogHeader>
           <div className="flex items-center justify-between">
-            <DialogTitle className="text-adega-platinum flex items-center gap-2">
-              <User className="h-5 w-5" />
+            <DialogTitle className="text-white flex items-center gap-2 font-semibold">
+              <User className="h-5 w-5 text-primary-yellow" />
               {customer.name}
             </DialogTitle>
             {canEdit && onEdit && (
@@ -88,7 +97,7 @@ export const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
                 variant="outline"
                 size="sm"
                 onClick={() => onEdit(customer)}
-                className="border-white/10 hover:bg-adega-gold/20"
+                className="border-primary-yellow/30 text-primary-yellow hover:bg-primary-yellow/20 hover:border-primary-yellow/50 transition-all duration-200"
               >
                 <Edit className="h-4 w-4 mr-2" />
                 Editar
@@ -101,9 +110,9 @@ export const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
           {/* Coluna 1: Informações Básicas */}
           <div className="space-y-4">
             {/* Informações de Contato */}
-            <Card className="bg-adega-charcoal/20 border-white/10">
+            <Card className={cn(getGlassCardClasses('default'), "bg-gray-800/30 border-gray-700/40 backdrop-blur-sm")}>
               <CardHeader>
-                <CardTitle className="text-sm text-adega-platinum">Informações de Contato</CardTitle>
+                <CardTitle className="text-sm text-gray-200 font-medium">Informações de Contato</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex items-center gap-2">

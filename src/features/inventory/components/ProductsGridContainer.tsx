@@ -11,11 +11,15 @@ import { ProductsGridPresentation } from './ProductsGridPresentation';
 export interface ProductsGridContainerProps extends ProductsGridConfig {
   showAddButton?: boolean;
   onAddProduct?: () => void;
+  variant?: 'default' | 'premium' | 'success' | 'warning' | 'error';
+  glassEffect?: boolean;
 }
 
 export const ProductsGridContainer: React.FC<ProductsGridContainerProps> = ({ 
   showAddButton, 
-  onAddProduct, 
+  onAddProduct,
+  variant = 'default',
+  glassEffect = true,
   ...config 
 }) => {
   // Lógica centralizada
@@ -79,6 +83,8 @@ export const ProductsGridContainer: React.FC<ProductsGridContainerProps> = ({
     showAddButton,
     gridColumns,
     className,
+    variant,
+    glassEffect,
 
     // Paginação
     currentPage,

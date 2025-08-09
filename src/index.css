@@ -35,20 +35,20 @@
     --radius: 0.5rem;
 
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* ========================================================================== */
+    /* GLASS MORPHISM VARIABLES - Sistema v2.1 */
+    /* ========================================================================== */
+    --glass-black: rgba(0, 0, 0, 0.8);
+    --glass-yellow: rgba(255, 215, 0, 0.1);
+    --glass-overlay: rgba(17, 24, 39, 0.9);
   }
 
   .dark {
@@ -97,6 +97,122 @@
 
   body {
     @apply bg-transparent text-foreground;
+  }
+}
+
+/* ============================================================================ */
+/* GLASS MORPHISM COMPONENT CLASSES - Sistema v2.1 */
+/* ============================================================================ */
+
+@layer components {
+  /* Base Glass Card - Multi-layer fallback strategy */
+  .glass-card {
+    /* Base fallback for all browsers */
+    background: #1f2937;
+    
+    /* Enhanced fallback for modern browsers without backdrop-filter */
+    background: linear-gradient(135deg, 
+      rgba(17, 24, 39, 0.95), 
+      rgba(31, 41, 55, 0.85)
+    );
+    
+    /* Glass effect for supported browsers */
+    background: rgba(17, 24, 39, 0.8);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px); /* Safari/Firefox fallback */
+    
+    /* Enhanced visual depth */
+    border: 1px solid rgba(75, 85, 99, 0.2);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    
+    /* Hardware acceleration */
+    transform: translateZ(0);
+    will-change: backdrop-filter;
+  }
+
+  /* Glass Yellow Accent */
+  .glass-yellow {
+    background: rgba(255, 215, 0, 0.05);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 215, 0, 0.1);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  }
+
+  /* Glass Premium with Gradient */
+  .glass-premium {
+    background: linear-gradient(135deg, 
+      rgba(0, 0, 0, 0.8), 
+      rgba(17, 24, 39, 0.6)
+    );
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 215, 0, 0.2);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+  }
+
+  /* Glass utilities for different blur levels */
+  .glass-subtle {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    background: rgba(17, 24, 39, 0.6);
+  }
+
+  .glass-strong {
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    background: rgba(17, 24, 39, 0.9);
+  }
+}
+
+/* Feature detection with CSS supports */
+@supports (backdrop-filter: blur(16px)) {
+  .glass-card {
+    background: rgba(17, 24, 39, 0.8);
+    backdrop-filter: blur(16px);
+  }
+  .glass-yellow {
+    background: rgba(255, 215, 0, 0.05);
+    backdrop-filter: blur(16px);
+  }
+}
+
+@supports not (backdrop-filter: blur(16px)) {
+  .glass-card {
+    background: linear-gradient(135deg, 
+      rgba(17, 24, 39, 0.95), 
+      rgba(31, 41, 55, 0.9)
+    );
+  }
+  .glass-yellow {
+    background: linear-gradient(135deg, 
+      rgba(255, 215, 0, 0.1), 
+      rgba(255, 215, 0, 0.05)
+    );
+  }
+}
+
+/* Mobile Performance Optimization */
+@media (max-width: 768px) {
+  .glass-card,
+  .glass-yellow,
+  .glass-premium {
+    backdrop-filter: blur(8px); /* Reduced blur for mobile */
+    -webkit-backdrop-filter: blur(8px);
+  }
+}
+
+/* Disable on very low-end devices */
+@media (max-width: 640px) and (max-resolution: 1dppx) {
+  .glass-card {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: rgba(17, 24, 39, 0.95);
+  }
+  .glass-yellow {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: rgba(255, 215, 0, 0.1);
   }
 }
 

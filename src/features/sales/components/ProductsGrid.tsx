@@ -18,6 +18,8 @@ export interface ProductsGridProps {
     desktop: number;
   };
   className?: string;
+  variant?: 'default' | 'premium' | 'success' | 'warning' | 'error';
+  glassEffect?: boolean;
 }
 
 export function ProductsGrid(props: ProductsGridProps) {

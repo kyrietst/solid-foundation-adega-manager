@@ -11,6 +11,7 @@ import {
   IconTruck,
   IconSettings,
   IconLogout,
+  IconReportAnalytics,
 } from "@tabler/icons-react";
 import { motion } from "motion/react";
 import { cn } from "@/core/config/utils";
@@ -29,7 +30,7 @@ export function AppSidebar() {
       label: "Dashboard",
       href: "/dashboard",
       icon: (
-        <IconChartBar className="h-5 w-5 shrink-0 text-adega-gold" />
+        <IconChartBar className="h-5 w-5 shrink-0 text-primary-yellow" />
       ),
       roles: ["admin", "employee"],
     },
@@ -38,7 +39,7 @@ export function AppSidebar() {
       label: "Vendas",
       href: "/sales",
       icon: (
-        <IconShoppingCart className="h-5 w-5 shrink-0 text-adega-gold" />
+        <IconShoppingCart className="h-5 w-5 shrink-0 text-primary-yellow" />
       ),
       roles: ["admin", "employee"],
     },
@@ -47,7 +48,7 @@ export function AppSidebar() {
       label: "Estoque",
       href: "/inventory",
       icon: (
-        <IconPackage className="h-5 w-5 shrink-0 text-adega-gold" />
+        <IconPackage className="h-5 w-5 shrink-0 text-primary-yellow" />
       ),
       roles: ["admin", "employee"],
     },
@@ -56,7 +57,7 @@ export function AppSidebar() {
       label: "Clientes",
       href: "/customers",
       icon: (
-        <IconUsers className="h-5 w-5 shrink-0 text-adega-gold" />
+        <IconUsers className="h-5 w-5 shrink-0 text-primary-yellow" />
       ),
       roles: ["admin", "employee"],
     },
@@ -65,7 +66,7 @@ export function AppSidebar() {
       label: "Delivery",
       href: "/delivery",
       icon: (
-        <IconTruck className="h-5 w-5 shrink-0 text-adega-gold" />
+        <IconTruck className="h-5 w-5 shrink-0 text-primary-yellow" />
       ),
       roles: ["admin", "employee", "delivery"],
     },
@@ -74,16 +75,25 @@ export function AppSidebar() {
       label: "Movimentações",
       href: "/movements",
       icon: (
-        <IconRefresh className="h-5 w-5 shrink-0 text-adega-gold" />
+        <IconRefresh className="h-5 w-5 shrink-0 text-primary-yellow" />
       ),
       roles: ["admin"],
+    },
+    {
+      id: "reports",
+      label: "Relatórios",
+      href: "/reports",
+      icon: (
+        <IconReportAnalytics className="h-5 w-5 shrink-0 text-primary-yellow" />
+      ),
+      roles: ["admin", "employee"],
     },
     {
       id: "users",
       label: "Usuários",
       href: "/users",
       icon: (
-        <IconSettings className="h-5 w-5 shrink-0 text-adega-gold" />
+        <IconSettings className="h-5 w-5 shrink-0 text-primary-yellow" />
       ),
       roles: ["admin"],
     },
@@ -132,9 +142,9 @@ export function AppSidebar() {
   return (
     <div className="h-screen">
       <Sidebar open={open} setOpen={setOpen}>
-        <SidebarBody className="justify-between gap-8">
+        <SidebarBody className="justify-between gap-6">
           <div className="flex flex-1 flex-col overflow-x-hidden overflow-y-auto">
-            <div className="mb-8">
+            <div className="mb-6 px-1">
               {open ? <Logo /> : <LogoIcon />}
             </div>
             <nav className="flex flex-col gap-1" aria-label="Navegação principal">
@@ -145,26 +155,26 @@ export function AppSidebar() {
                   onClick={(e) => handleLinkClick(link.href, e)}
                   className={cn(
                     location.pathname === link.href
-                      ? "bg-adega-charcoal/80 text-adega-yellow shadow-lg border border-adega-gold/30"
-                      : "hover:bg-adega-graphite/40"
+                      ? "bg-primary-yellow/10 text-primary-yellow border border-primary-yellow/20"
+                      : "hover:bg-white/10"
                   )}
                 />
               ))}
             </nav>
           </div>
-          <div className="border-t border-adega-charcoal/50 pt-4 space-y-2">
+          <div className="border-t border-white/10 pt-3 space-y-2">
             {/* User Info */}
             <SidebarLink
               link={{
                 label: user?.email || "Usuário",
                 href: "#",
                 icon: (
-                  <div className="h-8 w-8 shrink-0 rounded-xl bg-gradient-to-r from-adega-gold to-adega-amber flex items-center justify-center text-black text-sm font-bold shadow-lg">
+                  <div className="h-5 w-5 shrink-0 rounded-md bg-gradient-to-r from-primary-yellow to-yellow-90 flex items-center justify-center text-black-100 text-[10px] font-bold shadow-lg">
                     {user?.email?.[0]?.toUpperCase() || 'U'}
                   </div>
                 ),
               }}
-              className="hover:bg-adega-graphite/40"
+              className="hover:bg-white/10"
             />
             {/* Logout */}
             <SidebarLink
@@ -172,11 +182,11 @@ export function AppSidebar() {
                 label: "Sair",
                 href: "#",
                 icon: (
-                  <IconLogout className="h-5 w-5 shrink-0 text-red-400" />
+                  <IconLogout className="h-5 w-5 shrink-0 text-accent-red" />
                 ),
               }}
               onClick={handleLogout}
-              className="hover:bg-red-900/30 hover:text-red-300"
+              className="hover:bg-accent-red/20 hover:text-accent-red"
             />
           </div>
         </SidebarBody>
@@ -188,7 +198,7 @@ export function AppSidebar() {
 export const Logo = () => {
   return (
     <div className="relative z-20 flex items-center space-x-3 py-2">
-      <div className="h-10 w-10 shrink-0 rounded-xl bg-gradient-to-r from-adega-gold to-adega-amber shadow-lg" />
+      <div className="h-10 w-10 shrink-0 rounded-xl bg-gradient-to-r from-primary-yellow to-yellow-90 shadow-lg" />
       <motion.div
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
@@ -198,7 +208,7 @@ export const Logo = () => {
         <span className="font-bold text-white text-lg leading-tight">
           Adega
         </span>
-        <span className="text-adega-gold text-xs font-medium">
+        <span className="text-primary-yellow text-xs font-medium">
           Manager
         </span>
       </motion.div>
@@ -209,7 +219,7 @@ export const Logo = () => {
 export const LogoIcon = () => {
   return (
     <div className="relative z-20 flex items-center justify-center py-2">
-      <div className="h-10 w-10 shrink-0 rounded-xl bg-gradient-to-r from-adega-gold to-adega-amber shadow-lg" />
+      <div className="h-10 w-10 shrink-0 rounded-xl bg-gradient-to-r from-primary-yellow to-yellow-90 shadow-lg" />
     </div>
   );
 };

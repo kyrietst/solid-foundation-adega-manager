@@ -34,6 +34,7 @@ interface AllTheProvidersProps {
   queryClient?: QueryClient;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 const AllTheProviders = ({ children, queryClient }: AllTheProvidersProps) => {
   const testQueryClient = queryClient || createTestQueryClient();
 
@@ -137,6 +138,7 @@ export const submitForm = async (form: HTMLFormElement) => {
 };
 
 // Export everything including our custom render
+// eslint-disable-next-line react-refresh/only-export-components
 export * from '@testing-library/react';
 export { customRender as render };
 export { createTestQueryClient, mockToast };

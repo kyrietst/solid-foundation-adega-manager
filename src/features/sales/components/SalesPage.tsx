@@ -8,6 +8,8 @@ import { RecentSales } from "./RecentSales";
 import { useState } from "react";
 import { ShoppingCart } from "lucide-react";
 import { useCart, useCartItemCount } from "@/features/sales/hooks/use-cart";
+import { cn } from '@/core/config/utils';
+import { getGlassCardClasses } from '@/core/config/theme-utils';
 
 interface CustomerProfile {
   id: string;
@@ -16,47 +18,63 @@ interface CustomerProfile {
   phone?: string;
 }
 
-function SalesPage() {
+interface SalesPageProps {
+  variant?: 'default' | 'premium' | 'success' | 'warning' | 'error';
+  glassEffect?: boolean;
+}
+
+function SalesPage({
+  variant = 'premium',
+  glassEffect = true
+}: SalesPageProps = {}) {
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerProfile | null>(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const { items } = useCart();
   const totalQuantity = useCartItemCount();
   
+  const glassClasses = glassEffect ? getGlassCardClasses(variant) : '';
+  
   return (
     <div className="flex flex-col h-screen">
       {/* Header */}
-      <div className="border-b border-white/10/30 bg-adega-charcoal/20 backdrop-blur-xl p-6 shadow-xl">
+      <div className={cn(
+        'border-b border-primary-yellow/20 p-6 shadow-xl',
+        glassClasses
+      )}>
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl lg:text-4xl font-bold text-adega-yellow mb-2">Ponto de Venda</h1>
-            <p className="text-adega-platinum text-lg">Sistema POS Inteligente</p>
+            <h1 className="text-3xl lg:text-4xl font-bold text-primary-yellow mb-2">Ponto de Venda</h1>
+            <p className="text-gray-300 text-lg">Sistema POS Inteligente</p>
           </div>
           
           {/* Botão do carrinho para mobile */}
           <div className="lg:hidden">
             <Sheet open={isCartOpen} onOpenChange={setIsCartOpen}>
               <SheetTrigger asChild>
-                <Button className="relative bg-adega-gold hover:bg-adega-amber border-0 shadow-lg text-black font-semibold">
+                <Button className="relative bg-primary-yellow hover:bg-primary-yellow/90 border-0 shadow-lg text-black font-semibold">
                   <ShoppingCart className="h-5 w-5" />
                   {totalQuantity > 0 && (
-                    <span className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full text-xs w-6 h-6 flex items-center justify-center font-bold shadow-lg">
+                    <span className="absolute -top-2 -right-2 bg-accent-red text-white rounded-full text-xs w-6 h-6 flex items-center justify-center font-bold shadow-lg">
                       {totalQuantity}
                     </span>
                   )}
                   <span className="ml-2 hidden sm:inline font-medium">Carrinho</span>
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-full sm:w-96 p-0 bg-adega-charcoal/95 border-white/10/30">
-                <SheetHeader className="p-6 border-b border-white/10/30">
-                  <SheetTitle className="flex items-center gap-3 text-adega-yellow">
-                    <div className="p-2 rounded-xl bg-adega-gold/20">
-                      <ShoppingCart className="h-6 w-6 text-adega-gold" />
+              <SheetContent side="right" className={cn(
+                'w-full sm:w-96 p-0 border-primary-yellow/20',
+                glassClasses
+              )}>
+                <SheetHeader className="p-6 border-b border-primary-yellow/20">
+                  <SheetTitle className="flex items-center gap-3 text-primary-yellow">
+                    <div className="p-2 rounded-xl bg-primary-yellow/20">
+                      <ShoppingCart className="h-6 w-6 text-primary-yellow" />
                     </div>
                     <span className="text-xl font-semibold">Carrinho de Vendas</span>
                   </SheetTitle>
                 </SheetHeader>
                 <div className="h-full">
-                  <Cart />
+                  <Cart variant={variant} glassEffect={glassEffect} />
                 </div>
               </SheetContent>
             </Sheet>
@@ -67,9 +85,19 @@ function SalesPage() {
       <div className="flex-1 overflow-hidden">
         <Tabs defaultValue="new-sale" className="h-full flex flex-col">
           <div className="px-4 pt-4">
-            <TabsList>
-              <TabsTrigger value="new-sale">Nova Venda</TabsTrigger>
-              <TabsTrigger value="recent-sales">Vendas Recentes</TabsTrigger>
+            <TabsList className="glass-subtle border border-primary-yellow/20">
+              <TabsTrigger 
+                value="new-sale" 
+                className="text-gray-300 data-[state=active]:text-primary-yellow data-[state=active]:bg-primary-yellow/10"
+              >
+                Nova Venda
+              </TabsTrigger>
+              <TabsTrigger 
+                value="recent-sales"
+                className="text-gray-300 data-[state=active]:text-primary-yellow data-[state=active]:bg-primary-yellow/10"
+              >
+                Vendas Recentes
+              </TabsTrigger>
             </TabsList>
           </div>
           
@@ -80,39 +108,58 @@ function SalesPage() {
                 <div className="space-y-4">
                   <CustomerSearch 
                     onSelect={setSelectedCustomer} 
-                    selectedCustomer={selectedCustomer} 
+                    selectedCustomer={selectedCustomer}
+                    variant={variant}
+                    glassEffect={glassEffect}
                   />
-                  <ProductsGrid />
+                  <ProductsGrid 
+                    variant={variant}
+                    glassEffect={glassEffect}
+                  />
                 </div>
               </div>
-              <div className="border-l border-white/10/30 bg-adega-charcoal/10 backdrop-blur-xl">
-                <Cart />
+              <div className={cn(
+                'border-l border-primary-yellow/20',
+                glassClasses
+              )}>
+                <Cart variant={variant} glassEffect={glassEffect} />
               </div>
             </div>
             
             {/* Layout para mobile/tablet */}
             <div className="lg:hidden flex flex-col h-full">
-              <div className="p-4 border-b border-white/10/30 bg-adega-charcoal/10 backdrop-blur-xl">
+              <div className={cn(
+                'p-4 border-b border-primary-yellow/20',
+                glassClasses
+              )}>
                 <CustomerSearch 
                   onSelect={setSelectedCustomer} 
-                  selectedCustomer={selectedCustomer} 
+                  selectedCustomer={selectedCustomer}
+                  variant={variant}
+                  glassEffect={glassEffect}
                 />
               </div>
               <div className="flex-1 overflow-y-auto p-4">
-                <ProductsGrid />
+                <ProductsGrid 
+                  variant={variant}
+                  glassEffect={glassEffect}
+                />
               </div>
               
               {/* Carrinho sticky no mobile - apenas quando tem itens */}
               {items.length > 0 && (
-                <div className="border-t border-white/10/30 bg-adega-charcoal/10 backdrop-blur-xl p-4">
+                <div className={cn(
+                  'border-t border-primary-yellow/20 p-4',
+                  glassClasses
+                )}>
                   <Button 
                     onClick={() => setIsCartOpen(true)} 
-                    className="w-full h-12 text-lg relative"
+                    className="w-full h-12 text-lg relative bg-primary-yellow text-black hover:bg-primary-yellow/90 font-semibold"
                     size="lg"
                   >
                     <ShoppingCart className="h-5 w-5 mr-2" />
                     Ver Carrinho ({totalQuantity} {totalQuantity === 1 ? 'item' : 'itens'})
-                    <span className="absolute -top-1 -right-1 bg-background text-foreground rounded-full text-xs w-6 h-6 flex items-center justify-center border">
+                    <span className="absolute -top-1 -right-1 bg-accent-red text-white rounded-full text-xs w-6 h-6 flex items-center justify-center border border-primary-yellow/30">
                       {totalQuantity}
                     </span>
                   </Button>

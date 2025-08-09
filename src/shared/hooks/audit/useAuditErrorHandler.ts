@@ -77,7 +77,7 @@ export const useAuditErrorHandler = (config: AuditErrorConfig = {}) => {
     if (enableQueue) {
       loadQueueFromStorage();
     }
-  }, [enableQueue]);
+  }, [enableQueue, loadQueueFromStorage]);
 
   // Processar queue periodicamente
   useEffect(() => {
@@ -88,7 +88,7 @@ export const useAuditErrorHandler = (config: AuditErrorConfig = {}) => {
 
       return () => clearInterval(interval);
     }
-  }, [enableQueue, state.queueSize, state.isProcessing]);
+  }, [enableQueue, state.queueSize, state.isProcessing, processQueue]);
 
   // Carregar queue do localStorage
   const loadQueueFromStorage = useCallback(() => {

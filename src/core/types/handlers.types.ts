@@ -4,7 +4,7 @@
  */
 
 // Event handlers genéricos
-export interface BaseEventHandlers<T = any> {
+export interface BaseEventHandlers<T = unknown> {
   onSelect?: (item: T) => void;
   onCreate?: (data?: Partial<T>) => void;
   onEdit?: (item: T) => void;
@@ -14,29 +14,29 @@ export interface BaseEventHandlers<T = any> {
   onCancel?: () => void;
   onSave?: (data: T) => void;
   onClose?: () => void;
-  onOpen?: (data?: any) => void;
+  onOpen?: (data?: T) => void;
 }
 
 // Event handlers para listas/grids
-export interface ListEventHandlers<T = any> extends BaseEventHandlers<T> {
+export interface ListEventHandlers<T = unknown> extends BaseEventHandlers<T> {
   onSort?: (field: keyof T, direction: 'asc' | 'desc') => void;
-  onFilter?: (filters: Record<string, any>) => void;
+  onFilter?: (filters: Record<string, unknown>) => void;
   onSearch?: (term: string) => void;
   onPageChange?: (page: number) => void;
   onItemsPerPageChange?: (count: number) => void;
 }
 
 // Event handlers para formulários
-export interface FormEventHandlers<T = any> {
+export interface FormEventHandlers<T = unknown> {
   onSubmit?: (data: T) => void;
   onCancel?: () => void;
   onReset?: () => void;
-  onFieldChange?: (field: keyof T, value: any) => void;
+  onFieldChange?: (field: keyof T, value: unknown) => void;
   onValidate?: (data: T) => boolean | string[];
 }
 
 // Event handlers para modal/dialog
-export interface DialogEventHandlers<T = any> {
+export interface DialogEventHandlers<T = unknown> {
   onOpen?: (data?: T) => void;
   onClose?: () => void;
   onConfirm?: (data?: T) => void;
@@ -63,7 +63,7 @@ export interface CustomerEventHandlers extends BaseEventHandlers {
 
 // Sales
 export interface SaleEventHandlers extends BaseEventHandlers {
-  onProcess?: (saleData: any) => void;
+  onProcess?: (saleData: Record<string, unknown>) => void;
   onRefund?: (saleId: string) => void;
   onPrintReceipt?: (saleId: string) => void;
   onMarkPaid?: (saleId: string) => void;
@@ -72,7 +72,7 @@ export interface SaleEventHandlers extends BaseEventHandlers {
 
 // Cart
 export interface CartEventHandlers {
-  onAddItem?: (item: any) => void;
+  onAddItem?: (item: Record<string, unknown>) => void;
   onRemoveItem?: (itemId: string) => void;
   onUpdateQuantity?: (itemId: string, quantity: number) => void;
   onClearCart?: () => void;
@@ -98,7 +98,7 @@ export interface FileEventHandlers {
 }
 
 // Utility types for props
-export type WithEventHandlers<T, H extends Record<string, any>> = T & H;
+export type WithEventHandlers<T, H extends Record<string, unknown>> = T & H;
 
 // Helper to extract handler props
 export type ExtractHandlers<T> = {
@@ -106,7 +106,7 @@ export type ExtractHandlers<T> = {
 };
 
 // Component props pattern
-export interface ComponentWithHandlers<T = any> {
+export interface ComponentWithHandlers<T = unknown> {
   data?: T[];
   loading?: boolean;
   error?: string | null;

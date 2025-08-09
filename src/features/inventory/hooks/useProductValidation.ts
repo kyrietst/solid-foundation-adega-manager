@@ -4,6 +4,7 @@
  */
 
 import { ProductFormData } from '@/types/inventory.types';
+import { isBeverageCategory } from '@/features/inventory/utils/categoryUtils';
 
 export interface ProductValidationResult {
   isValid: boolean;
@@ -68,9 +69,46 @@ export const useProductValidation = () => {
       fieldErrors.alcohol_content = 'Teor alcoólico inválido';
     }
 
-    if (formData.volume_ml && formData.volume_ml <= 0) {
-      errors.push('Volume deve ser maior que zero');
-      fieldErrors.volume_ml = 'Volume deve ser maior que zero';
+    // Validação dinâmica baseada na categoria (História 1.2)
+    if (formData.category && isBeverageCategory(formData.category)) {
+      // Para bebidas, volume é obrigatório
+      if (!formData.volume_ml || formData.volume_ml <= 0) {
+        errors.push('Volume é obrigatório para bebidas');
+        fieldErrors.volume_ml = 'Volume deve ser maior que zero';
+      }
+    } else {
+      // Para outras categorias, validação básica se preenchido
+      if (formData.volume_ml && formData.volume_ml <= 0) {
+        errors.push('Volume deve ser maior que zero');
+        fieldErrors.volume_ml = 'Volume deve ser maior que zero';
+      }
+    }
+
+    // Validação do valor de medição
+    if (formData.measurement_value && formData.measurement_value.trim() === '') {
+      errors.push('Valor de medição não pode estar vazio');
+      fieldErrors.measurement_value = 'Valor de medição é obrigatório';
+    }
+
+    // Validações específicas para pacotes (História 1.3)
+    if (formData.is_package) {
+      // Se é pacote, units_per_package é obrigatório e deve ser >= 2
+      if (!formData.units_per_package || formData.units_per_package < 2) {
+        errors.push('Unidades por pacote deve ser no mínimo 2');
+        fieldErrors.units_per_package = 'Deve ser no mínimo 2 unidades';
+      }
+    } else {
+      // Se não é pacote, units_per_package deve ser 1
+      if (formData.units_per_package && formData.units_per_package !== 1) {
+        errors.push('Para unidade individual, deve ser 1');
+        fieldErrors.units_per_package = 'Para unidade individual deve ser 1';
+      }
+    }
+
+    // Validação do package_size (campo legado) vs units_per_package
+    if (formData.package_size && formData.package_size <= 0) {
+      errors.push('Unidades por pacote deve ser maior que zero');
+      fieldErrors.package_size = 'Deve ser maior que zero';
     }
 
     if (formData.barcode && formData.barcode.length > 0 && formData.barcode.length < 8) {

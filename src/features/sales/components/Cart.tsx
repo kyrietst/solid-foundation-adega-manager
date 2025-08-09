@@ -12,6 +12,8 @@ export interface CartProps {
   allowDiscounts?: boolean;
   onSaleComplete?: (saleId: string) => void;
   maxItems?: number;
+  variant?: 'default' | 'premium' | 'success' | 'warning' | 'error';
+  glassEffect?: boolean;
 }
 
 export function Cart(props: CartProps) {

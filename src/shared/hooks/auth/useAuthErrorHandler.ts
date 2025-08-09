@@ -71,7 +71,7 @@ export const useAuthErrorHandler = (config: AuthErrorConfig = {}) => {
 
     const contextMessage = context ? ` durante ${context}` : '';
     
-    let title = 'Erro de Autenticação';
+    const title = 'Erro de Autenticação';
     let description = `Sua sessão expirou${contextMessage}. Fazendo logout...`;
 
     // Mensagens específicas baseadas no tipo de erro

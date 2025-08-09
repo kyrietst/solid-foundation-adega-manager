@@ -140,6 +140,7 @@ const DefaultFallback: React.FC = () => (
 /**
  * Hook para controlar estado de imagem externamente
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export const useImageState = () => {
   const [state, setState] = useState<ImageState>('loading');
 

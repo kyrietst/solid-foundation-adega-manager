@@ -17,7 +17,24 @@
       "Bash(rg:*)",
       "Bash(for component in \"HeroHighlight\" \"ThemeShowcase\" \"Carousel\" \"Breadcrumb\" \"AspectRatio\" \"CustomersBentoGrid\" \"InventoryAccordion\" \"signup-form-demo\" \"ProtectedRoute\")",
       "Bash(do echo \"=== $component ===\")",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(mkdir:*)",
+      "Bash(md-tree:*)",
+      "mcp__supabase__list_tables",
+      "mcp__supabase__apply_migration",
+      "mcp__supabase__execute_sql",
+      "Bash(npx eslint:*)",
+      "Bash(cd:*)",
+      "Bash(npm run lint:*)",
+      "Bash(npm run test:*)",
+      "Bash(touch:*)",
+      "Bash(npx tsc:*)",
+      "Bash(mv:*)",
+      "Bash(ls:*)",
+      "Bash(git push:*)",
+      "Bash(git stash:*)",
+      "Bash(git add:*)",
+      "Bash(git rebase:*)"
     ],
     "deny": []
   }

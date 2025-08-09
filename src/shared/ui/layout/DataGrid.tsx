@@ -11,7 +11,7 @@ import { LoadingSpinner } from '@/shared/ui/composite/loading-spinner';
 import { EmptyState } from '@/shared/ui/composite/empty-state';
 import { FilterToggle } from '@/shared/ui/composite/filter-toggle';
 
-export interface DataGridProps<T = any> {
+export interface DataGridProps<T = Record<string, unknown>> {
   data: T[];
   loading?: boolean;
   error?: Error | null;
@@ -59,7 +59,7 @@ const gapClasses = {
   lg: 'gap-6'
 };
 
-export function DataGrid<T = any>({
+export function DataGrid<T = Record<string, unknown>>({
   data,
   loading = false,
   error = null,

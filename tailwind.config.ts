@@ -62,20 +62,62 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
-				// Paleta Black to Yellow - Elegant Gold System
+				// ============================================================================
+				// SISTEMA DE CORES ADEGA WINE CELLAR v2.1 - Arquitetura Completa
+				// ============================================================================
+				
+				// Cores Primárias
+				'primary-black': '#000000',
+				'primary-yellow': '#FFD700',
+				
+				// Extended Black Scale (100-60)
+				'black-100': '#000000',
+				'black-90': '#1a1a1a',
+				'black-80': '#333333',
+				'black-70': '#4a4a4a',
+				'black-60': '#666666',
+				
+				// Extended Yellow Scale (100-60)
+				'yellow-100': '#FFD700',
+				'yellow-90': '#FFC107',
+				'yellow-80': '#FFB300',
+				'yellow-70': '#FF8F00',
+				'yellow-60': '#FF6F00',
+				
+				// Professional Neutrals (gray-950 to gray-50) - Tailwind compatible
+				'gray-950': '#030712',
+				'gray-900': '#111827',
+				'gray-800': '#1f2937',
+				'gray-700': '#374151',
+				'gray-600': '#4b5563',
+				'gray-500': '#6b7280',
+				'gray-400': '#9ca3af',
+				'gray-300': '#d1d5db',
+				'gray-200': '#e5e7eb',
+				'gray-100': '#f3f4f6',
+				'gray-50': '#f9fafb',
+				
+				// Modern Accents
+				'accent-blue': '#3b82f6',
+				'accent-green': '#10b981',
+				'accent-red': '#ef4444',
+				'accent-purple': '#8b5cf6',
+				'accent-orange': '#f97316',
+				
+				// Mantém compatibilidade com paleta anterior
 				'adega': {
-					'black': '#000000',          // Preto total
-					'charcoal': '#1a1a1a',      // Carvão escuro
-					'graphite': '#2d2d2d',      // Grafite
-					'slate': '#404040',         // Ardósia
-					'steel': '#595959',         // Aço
-					'pewter': '#737373',        // Estanho
-					'silver': '#8c8c8c',        // Prata
-					'platinum': '#a6a6a6',      // Platina
-					'champagne': '#bfbf8c',     // Champagne
-					'gold': '#d4af37',          // Ouro clássico
-					'amber': '#ffbf00',         // Âmbar
-					'yellow': '#ffd700'         // Amarelo dourado
+					'black': '#000000',
+					'charcoal': '#1a1a1a',
+					'graphite': '#2d2d2d',
+					'slate': '#404040',
+					'steel': '#595959',
+					'pewter': '#737373',
+					'silver': '#8c8c8c',
+					'platinum': '#a6a6a6',
+					'champagne': '#bfbf8c',
+					'gold': '#d4af37',
+					'amber': '#ffbf00',
+					'yellow': '#ffd700'
 				}
 			},
 			borderRadius: {
@@ -147,5 +189,8 @@ export default {
 			}
 		}
 	},
-	plugins: [require("tailwindcss-animate")],
+	plugins: [
+		// eslint-disable-next-line @typescript-eslint/no-require-imports
+		require("tailwindcss-animate")
+	],
 } satisfies Config;

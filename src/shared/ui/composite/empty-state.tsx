@@ -1,6 +1,6 @@
 import { LucideIcon, Users, Package, Search, FileX } from 'lucide-react';
 import { Button } from '@/shared/ui/primitives/button';
-import { cn } from '@/core/config/utils';
+import { cn, getEmptyStateClasses } from '@/core/config/theme-utils';
 
 export interface EmptyStateProps {
   icon: LucideIcon;
@@ -42,20 +42,21 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   className
 }) => {
   const styles = variantStyles[variant];
+  const emptyStateStyles = getEmptyStateClasses();
 
   return (
-    <div className={cn(styles.container, className)}>
+    <div className={cn(emptyStateStyles.container, styles.container, className)}>
       <div className={styles.content}>
-        <Icon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+        <Icon className={emptyStateStyles.icon} />
         
         {title && (
-          <h3 className="text-lg font-semibold mb-2 text-foreground">
+          <h3 className={emptyStateStyles.title}>
             {title}
           </h3>
         )}
         
         <div className={cn(
-          title ? 'text-muted-foreground' : 'text-muted-foreground',
+          emptyStateStyles.description,
           !title && 'text-sm'
         )}>
           {description}
@@ -67,6 +68,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
               variant={action.variant || 'outline'}
               onClick={action.onClick}
               size="sm"
+              className={emptyStateStyles.action}
             >
               {action.label}
             </Button>

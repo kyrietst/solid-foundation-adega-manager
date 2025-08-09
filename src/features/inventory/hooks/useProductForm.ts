@@ -29,10 +29,15 @@ export const useProductForm = (initialData: Partial<ProductFormData> = {}) => {
     package_price: undefined,
     package_margin: undefined,
     barcode: '',
+    // Novos campos da História 1.1 e 1.3
+    measurement_type: undefined,
+    measurement_value: undefined,
+    is_package: false,
+    units_per_package: 1,
     ...initialData
   });
 
-  const handleInputChange = (field: keyof ProductFormData, value: string | number | UnitType) => {
+  const handleInputChange = (field: keyof ProductFormData, value: string | number | UnitType | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -59,6 +64,11 @@ export const useProductForm = (initialData: Partial<ProductFormData> = {}) => {
       package_price: undefined,
       package_margin: undefined,
       barcode: '',
+      // Novos campos da História 1.1 e 1.3
+      measurement_type: undefined,
+      measurement_value: undefined,
+      is_package: false,
+      units_per_package: 1,
       ...initialData
     });
   };

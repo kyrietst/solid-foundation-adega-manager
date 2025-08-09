@@ -120,6 +120,14 @@ const App = () => (
                           </RouteErrorBoundary>
                         } 
                       />
+                      <Route 
+                        path="reports" 
+                        element={
+                          <RouteErrorBoundary routeName="Relatórios">
+                            <div />
+                          </RouteErrorBoundary>
+                        } 
+                      />
                     </Route>
                     <Route path="*" element={<NotFound />} />
                   </Routes>

@@ -36,7 +36,7 @@ export const LoadingTable: React.FC<LoadingTableProps> = ({
   className,
   compact = false
 }) => {
-  const renderSkeletonCell = (column: any, index: number) => {
+  const renderSkeletonCell = (column: { title: string; width?: string; align?: 'left' | 'center' | 'right' }, index: number) => {
     const width = column.width || '100%';
     const baseWidth = Math.floor(Math.random() * 40) + 60; // 60-100%
     

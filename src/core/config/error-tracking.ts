@@ -102,7 +102,7 @@ class ErrorTracker {
     // Erros de recursos (imagens, scripts, etc.)
     window.addEventListener('error', (event) => {
       if (event.target !== window) {
-        this.captureError(new Error(`Resource loading error: ${(event.target as any)?.src || 'unknown'}`), {
+        this.captureError(new Error(`Resource loading error: ${(event.target as HTMLElement)?.getAttribute?.('src') || 'unknown'}`), {
           component: 'resource_loader',
           action: 'resource_load_error'
         });

@@ -15,7 +15,7 @@ export interface NotificationItem {
   priority: 'high' | 'medium' | 'low';
   read: boolean;
   created_at: string;
-  data?: any;
+  data?: Record<string, unknown>;
 }
 
 export interface LowStockProduct {
@@ -32,14 +32,19 @@ export const useNotifications = () => {
   const { data: lowStockProducts = [], isLoading: isLoadingLowStock } = useQuery({
     queryKey: ['notifications', 'low-stock'],
     queryFn: async () => {
+      // Buscar todos os produtos e filtrar no client-side 
+      // Correção: PostgREST não pode comparar duas colunas diretamente
       const { data, error } = await supabase
         .from('products')
-        .select('id, name, stock_quantity, minimum_stock, category, supplier')
-        .lt('stock_quantity', 'minimum_stock')
-        .order('stock_quantity', { ascending: true });
+        .select('id, name, stock_quantity, minimum_stock, category, supplier');
       
       if (error) throw error;
-      return data as LowStockProduct[];
+      
+      // Filtrar produtos com estoque baixo no client-side
+      const safeData = (data ?? []) as LowStockProduct[];
+      return safeData
+        .filter((p) => p.stock_quantity < (p.minimum_stock ?? 5))
+        .sort((a, b) => a.stock_quantity - b.stock_quantity);
     },
     refetchInterval: 5 * 60 * 1000, // Refetch a cada 5 minutos
   });
@@ -71,20 +76,6 @@ export const useNotifications = () => {
         type: 'low_stock',
         title: 'Estoque Baixo',
         message: `${product.name} - ${product.stock_quantity} restantes (mínimo: ${product.minimum_stock})`,
-        priority: 'medium',
-        read: false,
-        created_at: new Date().toISOString(),
-        data: product
-      });
-    });
-
-    // Notificações de produto sem estoque
-    outOfStockProducts.forEach(product => {
-      items.push({
-        id: `out_of_stock_${product.id}`,
-        type: 'out_of_stock',
-        title: 'Produto Sem Estoque',
-        message: `${product.name} está sem estoque`,
         priority: 'medium',
         read: false,
         created_at: new Date().toISOString(),

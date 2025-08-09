@@ -21,6 +21,7 @@ const SidebarContext = createContext<SidebarContextProps | undefined>(
   undefined
 );
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useSidebar = () => {
   const context = useContext(SidebarContext);
   if (!context) {
@@ -88,7 +89,8 @@ export const DesktopSidebar = ({
   return (
     <motion.div
       className={cn(
-        "h-full px-4 py-4 hidden md:flex md:flex-col bg-adega-charcoal/90 backdrop-blur-xl border-r border-adega-graphite/30 w-[300px] flex-shrink-0",
+        // Glassy dark sidebar with subtle border and stronger blur
+        "h-full px-3 py-4 hidden md:flex md:flex-col bg-black/50 backdrop-blur-xl border-r border-white/10 w-[300px] flex-shrink-0 z-20",
         className
       )}
       animate={{
@@ -113,7 +115,8 @@ export const MobileSidebar = ({
     <>
       <div
         className={cn(
-          "h-10 px-4 py-4 flex flex-row md:hidden items-center justify-between bg-adega-charcoal/90 backdrop-blur-xl w-full"
+          // Mobile top bar glassy as well
+          "h-12 px-4 py-3 flex flex-row md:hidden items-center justify-between bg-black/60 backdrop-blur-xl border-b border-white/10 shadow-lg w-full"
         )}
         {...props}
       >
@@ -134,7 +137,7 @@ export const MobileSidebar = ({
                 ease: "easeInOut",
               }}
               className={cn(
-                "fixed h-full w-full inset-0 bg-adega-black p-10 z-[100] flex flex-col justify-between",
+                "fixed h-full w-full inset-0 bg-black/70 backdrop-blur-xl p-10 z-[100] flex flex-col justify-between",
                 className
               )}
             >
@@ -167,7 +170,7 @@ export const SidebarLink = ({
   return (
     <div
       className={cn(
-        "flex items-center justify-start gap-2 group/sidebar py-2 px-2 rounded-lg transition-all duration-200 cursor-pointer",
+        "flex items-center justify-start gap-2 group/sidebar py-2 px-2 rounded-lg transition-all duration-200 cursor-pointer hover:transform hover:-translate-y-0.5",
         className
       )}
       onClick={onClick}
@@ -179,7 +182,7 @@ export const SidebarLink = ({
           display: animate ? (open ? "inline-block" : "none") : "inline-block",
           opacity: animate ? (open ? 1 : 0) : 1,
         }}
-        className="text-adega-platinum text-sm group-hover/sidebar:translate-x-1 transition duration-150 whitespace-pre inline-block !p-0 !m-0"
+        className="text-gray-100 text-sm group-hover/sidebar:translate-x-1 transition duration-150 whitespace-pre inline-block !p-0 !m-0"
       >
         {link.label}
       </motion.span>

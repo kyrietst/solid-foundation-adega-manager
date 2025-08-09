@@ -14,6 +14,8 @@ interface ProductFormContainerProps {
   onCancel: () => void;
   isLoading?: boolean;
   isEdit?: boolean;
+  variant?: 'default' | 'premium' | 'success' | 'warning' | 'error';
+  glassEffect?: boolean;
 }
 
 export const ProductFormContainer: React.FC<ProductFormContainerProps> = ({
@@ -21,7 +23,9 @@ export const ProductFormContainer: React.FC<ProductFormContainerProps> = ({
   onSubmit,
   onCancel,
   isLoading = false,
-  isEdit = false
+  isEdit = false,
+  variant = 'default',
+  glassEffect = true
 }) => {
   // Lógica centralizada
   const {
@@ -34,6 +38,9 @@ export const ProductFormContainer: React.FC<ProductFormContainerProps> = ({
     handleCancel,
     handleBarcodeScanned,
     handleMarginChange,
+    // História 1.4: Novos handlers para cálculos
+    handleCostPriceChange,
+    handlePriceChange,
   } = useProductFormLogic({
     initialData,
     onSubmit,
@@ -51,6 +58,8 @@ export const ProductFormContainer: React.FC<ProductFormContainerProps> = ({
     // Estados
     isLoading,
     isEdit,
+    variant,
+    glassEffect,
 
     // Handlers
     onInputChange: handleInputChange,
@@ -58,6 +67,9 @@ export const ProductFormContainer: React.FC<ProductFormContainerProps> = ({
     onCancel: handleCancel,
     onBarcodeScanned: handleBarcodeScanned,
     onMarginChange: handleMarginChange,
+    // História 1.4: Handlers de cálculos em tempo real
+    onCostPriceChange: handleCostPriceChange,
+    onPriceChange: handlePriceChange,
   };
 
   return <ProductFormPresentation {...presentationProps} />;

@@ -4,25 +4,14 @@
  */
 
 import { ProductFormData } from '@/core/types/inventory.types';
+import { WINE_CATEGORIES } from '@/core/types/enums.types';
 import { useBarcode } from '@/features/inventory/hooks/use-barcode';
 import { useProductForm } from './useProductForm';
 import { useProductCalculations } from './useProductCalculations';
 import { useProductValidation } from './useProductValidation';
 
-export const CATEGORIES = [
-  'Vinho Tinto',
-  'Vinho Branco',
-  'Vinho Rosé',
-  'Espumante',
-  'Champagne',
-  'Whisky',
-  'Vodka',
-  'Gin',
-  'Rum',
-  'Cachaça',
-  'Cerveja',
-  'Outros'
-];
+// Utilizar as categorias do enum para garantir consistência
+export const CATEGORIES = [...WINE_CATEGORIES];
 
 interface UseProductFormLogicProps {
   initialData?: Partial<ProductFormData>;
@@ -38,8 +27,14 @@ export const useProductFormLogic = ({
   // Estado do formulário
   const { formData, handleInputChange, resetForm, updateFormData } = useProductForm(initialData);
 
-  // Cálculos automáticos
-  const { calculations, validation, handleMarginChange } = useProductCalculations(formData, updateFormData);
+  // Cálculos automáticos - História 1.4
+  const { 
+    calculations, 
+    validation, 
+    handleMarginChange, 
+    handleCostPriceChange, 
+    handlePriceChange 
+  } = useProductCalculations(formData, updateFormData);
 
   // Validações
   const { validateProduct } = useProductValidation();
@@ -84,6 +79,9 @@ export const useProductFormLogic = ({
     handleCancel,
     handleBarcodeScanned,
     handleMarginChange,
+    // História 1.4: Novos handlers para cálculos em tempo real
+    handleCostPriceChange,
+    handlePriceChange,
     updateFormData,
 
     // Utilities

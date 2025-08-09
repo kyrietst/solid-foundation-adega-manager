@@ -8,6 +8,7 @@ import { Badge } from '@/shared/ui/primitives/badge';
 import { CustomerSegmentBadgeProps } from './types';
 import { useCustomerSegmentation } from '@/features/customers/hooks/useCustomerSegmentation';
 import { Crown, Users, UserCheck, UserPlus, CircleHelp } from 'lucide-react';
+import { cn } from '@/core/config/utils';
 
 // Mapeamento de ícones por segmento para indicação visual além da cor
 const getSegmentIcon = (segment: string) => {
@@ -29,38 +30,53 @@ const getSegmentIcon = (segment: string) => {
   }
 };
 
-// Mapeamento de padrões visuais por segmento
-const getSegmentPattern = (segment: string) => {
+// Mapeamento de padrões visuais modernos por segmento
+const getSegmentPattern = (segment: string, glassEffect: boolean) => {
+  const basePattern = glassEffect ? 'glass-subtle' : '';
+  
   switch (segment.toLowerCase()) {
     case 'vip':
     case 'alto valor':
-      return 'font-bold border-2'; // Borda dupla para VIP
+      return cn(basePattern, 'font-bold border-2 border-primary-yellow/60 text-primary-yellow bg-primary-yellow/10');
     case 'regular':
     case 'frequente':
-      return 'font-semibold'; // Negrito para regular
+      return cn(basePattern, 'font-semibold border-accent-green/60 text-accent-green bg-accent-green/10');
     case 'ativo':
     case 'recorrente':
-      return 'font-medium'; // Médio para ativo
+      return cn(basePattern, 'font-medium border-accent-blue/60 text-accent-blue bg-accent-blue/10');
     case 'novo':
     case 'potencial':
-      return 'font-normal border-dashed'; // Tracejado para novo
+      return cn(basePattern, 'font-normal border-dashed border-gray-400 text-gray-300 bg-gray-400/10');
     default:
-      return 'font-light opacity-75'; // Transparente para indefinido
+      return cn(basePattern, 'font-light opacity-75 border-gray-500 text-gray-400 bg-gray-500/10');
   }
 };
 
-export const CustomerSegmentBadge: React.FC<CustomerSegmentBadgeProps> = ({
+interface ModernCustomerSegmentBadgeProps extends CustomerSegmentBadgeProps {
+  variant?: 'default' | 'premium' | 'success' | 'warning' | 'error';
+  glassEffect?: boolean;
+}
+
+export const CustomerSegmentBadge: React.FC<ModernCustomerSegmentBadgeProps> = ({
   segment,
   className = '',
+  variant = 'default',
+  glassEffect = true,
 }) => {
   // Hook para lógica de segmentação (cores)
   const { getSegmentColor } = useCustomerSegmentation([]);
   
   if (!segment) {
     const Icon = CircleHelp;
+    const glassClasses = glassEffect ? 'glass-subtle' : '';
+    
     return (
       <Badge 
-        className={`bg-gray-500/20 text-gray-400 border-gray-500/30 font-light opacity-75 ${className}`}
+        className={cn(
+          'bg-gray-500/20 text-gray-400 border-gray-500/30 font-light opacity-75',
+          glassClasses,
+          className
+        )}
         variant="outline"
         aria-label="Segmento não definido"
       >
@@ -71,11 +87,14 @@ export const CustomerSegmentBadge: React.FC<CustomerSegmentBadgeProps> = ({
   }
 
   const Icon = getSegmentIcon(segment);
-  const pattern = getSegmentPattern(segment);
+  const pattern = getSegmentPattern(segment, glassEffect);
   
   return (
     <Badge 
-      className={`${getSegmentColor(segment)} ${pattern} ${className}`}
+      className={cn(
+        pattern,
+        className
+      )}
       variant="outline"
       aria-label={`Segmento do cliente: ${segment}`}
     >

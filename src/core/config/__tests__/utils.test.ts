@@ -95,7 +95,9 @@ describe('cn - Utility para classes CSS', () => {
   });
 
   it('deve lidar com classes condicionais', () => {
-    expect(cn('base', true && 'conditional', false && 'ignored')).toBe('base conditional');
+    const shouldInclude = true;
+    const shouldIgnore = false;
+    expect(cn('base', shouldInclude && 'conditional', shouldIgnore && 'ignored')).toBe('base conditional');
   });
 
   it('deve resolver conflitos de Tailwind CSS', () => {

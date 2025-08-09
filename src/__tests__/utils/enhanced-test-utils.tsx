@@ -223,13 +223,13 @@ export const createMockSale = (overrides: Partial<any> = {}) => ({
 /**
  * Generate large datasets for performance testing
  */
-export const createLargeDataset = <T>(
+export const createLargeDataset = <T extends Record<string, unknown>>(
   factory: (overrides?: Partial<T>) => T,
   size: number = 1000,
   customizer?: (index: number) => Partial<T>
 ): T[] => {
   return Array.from({ length: size }, (_, index) => 
-    factory(customizer ? customizer(index) : { id: `item-${index}` })
+    factory(customizer ? customizer(index) : { id: `item-${index}` } as Partial<T>)
   )
 }
 
@@ -243,9 +243,9 @@ export const createLargeDataset = <T>(
 export const measurePerformance = async <T>(
   operation: () => Promise<T> | T,
   options: {
-    name?: string
-    threshold?: number
-    iterations?: number
+    name?: string;
+    threshold?: number;
+    iterations?: number;
   } = {}
 ): Promise<{
   result: T

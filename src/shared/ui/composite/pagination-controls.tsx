@@ -12,14 +12,15 @@ import {
   ChevronsLeft,
   ChevronsRight,
 } from 'lucide-react';
+import { cn, getPaginationClasses } from '@/core/config/theme-utils';
 
 export interface PaginationControlsProps {
   currentPage: number;
   totalPages: number;
-  totalItems: number;
-  itemsPerPage: number;
+  totalItems?: number;
+  itemsPerPage?: number;
   onPageChange: (page: number) => void;
-  onItemsPerPageChange: (itemsPerPage: number) => void;
+  onItemsPerPageChange?: (itemsPerPage: number) => void;
   
   // Opções de customização
   itemsPerPageOptions?: number[];
@@ -29,13 +30,17 @@ export interface PaginationControlsProps {
   itemLabel?: string; // singular
   itemsLabel?: string; // plural
   className?: string;
+  
+  // Glass Morphism & Theme
+  variant?: 'default' | 'premium' | 'success' | 'warning' | 'error';
+  glassEffect?: boolean;
 }
 
 export const PaginationControls = ({
   currentPage,
   totalPages,
-  totalItems,
-  itemsPerPage,
+  totalItems = 0,
+  itemsPerPage = 10,
   onPageChange,
   onItemsPerPageChange,
   itemsPerPageOptions = [6, 12, 20, 50],
@@ -44,7 +49,9 @@ export const PaginationControls = ({
   showItemsCount = true,
   itemLabel = 'item',
   itemsLabel = 'itens',
-  className = ''
+  className = '',
+  variant = 'default',
+  glassEffect = true
 }: PaginationControlsProps) => {
   
   // Não mostrar paginação se houver apenas uma página
@@ -76,27 +83,31 @@ export const PaginationControls = ({
   const endItem = Math.min(currentPage * itemsPerPage, totalItems);
   
   const handleItemsPerPageChange = (value: string) => {
-    onItemsPerPageChange(parseInt(value));
+    if (onItemsPerPageChange) {
+      onItemsPerPageChange(parseInt(value));
+    }
   };
 
+  const paginationStyles = getPaginationClasses();
+  
   return (
-    <div className={`flex items-center justify-between pt-4 border-t ${className}`}>
+    <div className={cn(paginationStyles.container, className)}>
       {/* Informações e seletor de itens por página */}
-      <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+      <div className="flex items-center space-x-2 text-sm text-gray-400">
         {showItemsCount && (
           <span>
             Mostrando {startItem} a {endItem} de {totalItems} {totalItems === 1 ? itemLabel : itemsLabel}
           </span>
         )}
         
-        {showItemsPerPage && (
+        {showItemsPerPage && onItemsPerPageChange && (
           <div className="flex items-center space-x-2 ml-4">
             <span>Itens por página:</span>
             <Select 
               value={itemsPerPage.toString()} 
               onValueChange={handleItemsPerPageChange}
             >
-              <SelectTrigger className="w-20">
+              <SelectTrigger className={cn("w-20 bg-gray-800/60 border-gray-700 text-gray-100 backdrop-blur-sm")}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -120,6 +131,7 @@ export const PaginationControls = ({
           onClick={() => onPageChange(1)}
           disabled={currentPage === 1}
           aria-label="Primeira página"
+          className={paginationStyles.button}
         >
           <ChevronsLeft className="h-4 w-4" />
         </Button>
@@ -131,6 +143,7 @@ export const PaginationControls = ({
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
           aria-label="Página anterior"
+          className={paginationStyles.button}
         >
           <ChevronLeft className="h-4 w-4" />
         </Button>
@@ -142,7 +155,10 @@ export const PaginationControls = ({
             variant={currentPage === page ? "default" : "outline"}
             size="sm"
             onClick={() => onPageChange(page)}
-            className="min-w-[40px]"
+            className={cn(
+              "min-w-[40px]",
+              currentPage === page ? paginationStyles.activeButton : paginationStyles.button
+            )}
             aria-label={`Página ${page}`}
             aria-current={currentPage === page ? "page" : undefined}
           >
@@ -157,6 +173,7 @@ export const PaginationControls = ({
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
           aria-label="Próxima página"
+          className={paginationStyles.button}
         >
           <ChevronRight className="h-4 w-4" />
         </Button>
@@ -168,6 +185,7 @@ export const PaginationControls = ({
           onClick={() => onPageChange(totalPages)}
           disabled={currentPage === totalPages}
           aria-label="Última página"
+          className={paginationStyles.button}
         >
           <ChevronsRight className="h-4 w-4" />
         </Button>

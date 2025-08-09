@@ -13,6 +13,8 @@ interface ProductFormProps {
   onCancel: () => void;
   isLoading?: boolean;
   isEdit?: boolean;
+  variant?: 'default' | 'premium' | 'success' | 'warning' | 'error';
+  glassEffect?: boolean;
 }
 
 export const ProductForm: React.FC<ProductFormProps> = (props) => {

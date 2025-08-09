@@ -1,9 +1,9 @@
 import React from 'react';
-import { cn } from '@/core/config/utils';
+import { cn, getLoadingSpinnerClasses } from '@/core/config/theme-utils';
 
 export interface LoadingSpinnerProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
-  color?: 'primary' | 'secondary' | 'white' | 'gold';
+  color?: 'default' | 'yellow' | 'white';
   className?: string;
   text?: string;
 }
@@ -16,15 +16,14 @@ const sizeStyles = {
 };
 
 const colorStyles = {
-  primary: 'border-primary/30 border-t-primary',
-  secondary: 'border-secondary/30 border-t-secondary',
-  white: 'border-white/30 border-t-white',
-  gold: 'border-adega-gold/30 border-t-adega-gold'
+  default: 'border-gray-600/30 border-t-gray-400',
+  yellow: 'border-primary-yellow/30 border-t-primary-yellow',
+  white: 'border-white/30 border-t-white'
 };
 
 export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
   size = 'md',
-  color = 'primary',
+  color = 'default',
   className,
   text
 }) => {
@@ -39,7 +38,7 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
     return (
       <div className="flex flex-col items-center justify-center space-y-2">
         <div className={spinnerClasses} />
-        <p className="text-sm text-muted-foreground">{text}</p>
+        <p className="text-sm text-gray-400">{text}</p>
       </div>
     );
   }
@@ -53,8 +52,8 @@ export const LoadingScreen: React.FC<{
   size?: LoadingSpinnerProps['size'];
 }> = ({ text = 'Carregando...', size = 'lg' }) => {
   return (
-    <div className="flex items-center justify-center h-64">
-      <LoadingSpinner size={size} color="primary" text={text} />
+    <div className="flex items-center justify-center h-64 glass-subtle rounded-lg">
+      <LoadingSpinner size={size} color="yellow" text={text} />
     </div>
   );
 };

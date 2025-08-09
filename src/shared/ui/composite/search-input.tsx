@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Input } from '@/shared/ui/primitives/input';
 import { Search, X } from 'lucide-react';
-import { cn } from '@/core/config/utils';
+import { cn, getGlassInputClasses, getSearchInputClasses } from '@/core/config/theme-utils';
 import { Button } from '@/shared/ui/primitives/button';
 
 export interface SearchInputProps {
@@ -47,7 +47,7 @@ export const SearchInput: React.FC<SearchInputProps> = ({
   const styles = sizeStyles[size];
 
   // Estabilizar onChange para evitar re-execuções desnecessárias do useEffect
-  const stableOnChange = useCallback(onChange, []);
+  const stableOnChange = useCallback(onChange, [onChange]);
 
   // Debounce effect otimizado
   useEffect(() => {
@@ -79,7 +79,7 @@ export const SearchInput: React.FC<SearchInputProps> = ({
   return (
     <div className={cn('relative', className)}>
       <Search className={cn(
-        'absolute top-1/2 transform -translate-y-1/2 text-muted-foreground',
+        'absolute top-1/2 transform -translate-y-1/2 text-gray-400',
         styles.icon
       )} />
       
@@ -88,7 +88,11 @@ export const SearchInput: React.FC<SearchInputProps> = ({
         onChange={handleChange}
         placeholder={placeholder}
         disabled={disabled}
-        className={cn(styles.input)}
+        className={cn(
+          getGlassInputClasses('search'),
+          styles.input,
+          'placeholder:text-gray-500'
+        )}
       />
       
       {showClearButton && internalValue && (
@@ -98,11 +102,11 @@ export const SearchInput: React.FC<SearchInputProps> = ({
           onClick={handleClear}
           disabled={disabled}
           className={cn(
-            'absolute top-1/2 transform -translate-y-1/2 p-0 hover:bg-transparent',
+            'absolute top-1/2 transform -translate-y-1/2 p-0 hover:bg-gray-800/60 hover:backdrop-blur-sm rounded-full',
             styles.clear
           )}
         >
-          <X className="h-3 w-3 text-muted-foreground hover:text-foreground" />
+          <X className="h-3 w-3 text-gray-400 hover:text-gray-100 transition-colors duration-200" />
         </Button>
       )}
     </div>

@@ -91,25 +91,23 @@ void main() {
     vec2 newUV = (vUv - vec2(0.5)) * resolution.zw + vec2(0.5);
     vec3 cameraPos = vec3(0.0, 0.0, 5.0);
     vec3 ray = normalize(vec3((vUv - vec2(0.5)) * resolution.zw, -1));
+    vec3 color = vec3(1.0);
     
     float t = rayMarch(cameraPos, ray);
     if (t > 0.0) {
         vec3 p = cameraPos + ray * t;
         vec3 normal = getNormal(p);
         float fresnel = pow(1.0 + dot(ray, normal), 3.0);
-        
-        // Black to bright white gradient
-        vec3 fluidColor = mix(vec3(0.0, 0.0, 0.0), vec3(1.0, 1.0, 1.0), fresnel);
-        
-        gl_FragColor = vec4(fluidColor, 0.8);
+        color = vec3(fresnel);
+        gl_FragColor = vec4(color, 1.0);
     } else {
-        gl_FragColor = vec4(0.0, 0.0, 0.0, 0.05);
+        gl_FragColor = vec4(1.0);
     }
 }
 `;
 
 function LavaLampShader() {
-  const meshRef = useRef();
+  const meshRef = useRef<THREE.Mesh | null>(null);
   const { size } = useThree();
   
   const uniforms = useMemo(() => ({
@@ -147,9 +145,6 @@ function LavaLampShader() {
         uniforms={uniforms}
         vertexShader={vertexShader}
         fragmentShader={fragmentShader}
-        transparent={true}
-        blending={THREE.MultiplyBlending}
-        depthWrite={false}
       />
     </mesh>
   );
@@ -157,7 +152,7 @@ function LavaLampShader() {
 
 export const LavaLamp = () => {
   return (
-    <div className="w-full h-full absolute inset-0 pointer-events-none">
+    <div style={{ width: '100%', height: '100%', background: '#000', position: 'absolute', inset: 0, pointerEvents: 'none' }}>
       <Canvas
         camera={{
           left: -0.5,
@@ -169,12 +164,7 @@ export const LavaLamp = () => {
           position: [0, 0, 2]
         }}
         orthographic
-        gl={{ 
-          antialias: true,
-          alpha: true,
-          premultipliedAlpha: false
-        }}
-        style={{ background: 'transparent' }}
+        gl={{ antialias: true }}
       >
         <LavaLampShader />
       </Canvas>

@@ -1,10 +1,13 @@
 /**
  * FormDialog - Componente base para modais de formulário
- * Modal genérico com form, validação e estados de loading
+ * Modal genérico com form, validação, estados de loading e glass morphism
+ * Enhanced for Story 2.3: Glass morphism + Black/Gold theme
  */
 
 import React from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/core/config/utils';
+import { getGlassCardClasses, getGlassInputClasses } from '@/core/config/theme-utils';
 import {
   Dialog,
   DialogContent,
@@ -41,6 +44,8 @@ export interface FormDialogProps {
   // Styling
   size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
   className?: string;
+  variant?: 'default' | 'premium' | 'success' | 'warning' | 'error';
+  glassEffect?: boolean;
   
   // Behavior
   closeOnClickOutside?: boolean;
@@ -72,6 +77,8 @@ export const FormDialog: React.FC<FormDialogProps> = ({
   errorMessage,
   size = 'md',
   className,
+  variant = 'premium',
+  glassEffect = true,
   closeOnClickOutside = true,
   showCloseButton = true,
   preventClose = false
@@ -93,29 +100,86 @@ export const FormDialog: React.FC<FormDialogProps> = ({
     onOpenChange(false);
   };
 
+  // Glass morphism classes
+  const glassClasses = glassEffect ? getGlassCardClasses(variant) : '';
+  const dialogClasses = cn(
+    sizeClasses[size], 
+    glassEffect && 'backdrop-blur-xl bg-gray-900/90 border border-primary-yellow/30 shadow-2xl',
+    className
+  );
+
+  // Animation variants
+  const overlayVariants = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1 },
+    exit: { opacity: 0 }
+  };
+
+  const modalVariants = {
+    hidden: { 
+      opacity: 0,
+      scale: 0.95,
+      y: -20
+    },
+    visible: { 
+      opacity: 1,
+      scale: 1,
+      y: 0,
+      transition: {
+        type: "spring",
+        damping: 25,
+        stiffness: 300,
+        duration: 0.2
+      }
+    },
+    exit: { 
+      opacity: 0,
+      scale: 0.95,
+      y: -20,
+      transition: {
+        duration: 0.15
+      }
+    }
+  };
+
   return (
     <Dialog 
       open={open} 
       onOpenChange={handleOpenChange}
       modal={closeOnClickOutside}
     >
-      <DialogContent 
-        className={cn(sizeClasses[size], className)}
-        onInteractOutside={(e) => {
-          if (!closeOnClickOutside || (preventClose && loading)) {
-            e.preventDefault();
-          }
-        }}
-      >
+      <AnimatePresence mode="wait">
+        {open && (
+          <DialogContent 
+            className={dialogClasses}
+            onInteractOutside={(e) => {
+              if (!closeOnClickOutside || (preventClose && loading)) {
+                e.preventDefault();
+              }
+            }}
+            asChild
+          >
+            <motion.div
+              variants={modalVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+            >
         {/* Header */}
         <DialogHeader>
           <div className="flex items-center justify-between">
             <div className="flex-1 pr-4">
-              <DialogTitle className="text-lg font-semibold">
+              <DialogTitle className={cn(
+                "text-lg font-semibold",
+                glassEffect ? "text-white" : "text-gray-900"
+              )}>
                 {title}
               </DialogTitle>
               {description && (
-                <DialogDescription className="mt-1">
+                <DialogDescription className={cn(
+                  "mt-1",
+                  glassEffect ? "text-gray-300" : "text-gray-600"
+                )}>
                   {description}
                 </DialogDescription>
               )}
@@ -125,7 +189,12 @@ export const FormDialog: React.FC<FormDialogProps> = ({
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-8 w-8 p-0"
+                className={cn(
+                  "h-8 w-8 p-0 transition-colors",
+                  glassEffect 
+                    ? "text-gray-300 hover:text-primary-yellow hover:bg-gray-800/60" 
+                    : "text-gray-600 hover:text-gray-900"
+                )}
                 onClick={() => onOpenChange(false)}
                 disabled={loading}
               >
@@ -138,8 +207,18 @@ export const FormDialog: React.FC<FormDialogProps> = ({
 
         {/* Error Message */}
         {errorMessage && (
-          <div className="bg-destructive/10 border border-destructive/20 rounded-md p-3">
-            <p className="text-sm text-destructive">{errorMessage}</p>
+          <div className={cn(
+            "rounded-md p-3 border",
+            glassEffect 
+              ? "bg-red-500/10 border-red-500/30 backdrop-blur-sm" 
+              : "bg-destructive/10 border-destructive/20"
+          )}>
+            <p className={cn(
+              "text-sm font-medium",
+              glassEffect ? "text-red-400" : "text-destructive"
+            )}>
+              {errorMessage}
+            </p>
           </div>
         )}
 
@@ -150,13 +229,19 @@ export const FormDialog: React.FC<FormDialogProps> = ({
           </div>
 
           {/* Footer Actions */}
-          <DialogFooter className="flex-col sm:flex-row gap-2">
+          <DialogFooter className={cn(
+            "flex-col sm:flex-row gap-2",
+            glassEffect && "border-t border-gray-700/30 pt-4"
+          )}>
             <Button
               type="button"
               variant="outline"
               onClick={handleCancel}
               disabled={loading && preventClose}
-              className="order-2 sm:order-1"
+              className={cn(
+                "order-2 sm:order-1",
+                glassEffect && "border-gray-600/50 text-gray-300 hover:text-white hover:border-gray-500"
+              )}
             >
               {cancelLabel}
             </Button>
@@ -164,14 +249,20 @@ export const FormDialog: React.FC<FormDialogProps> = ({
             <Button
               type="submit"
               disabled={disabled || loading || hasErrors}
-              className="order-1 sm:order-2"
+              className={cn(
+                "order-1 sm:order-2",
+                glassEffect && "bg-primary-yellow text-gray-900 hover:bg-primary-yellow/90 font-medium"
+              )}
             >
               {loading && <LoadingSpinner size="sm" className="mr-2" />}
               {submitLabel}
             </Button>
           </DialogFooter>
         </form>
-      </DialogContent>
+            </motion.div>
+          </DialogContent>
+        )}
+      </AnimatePresence>
     </Dialog>
   );
 };

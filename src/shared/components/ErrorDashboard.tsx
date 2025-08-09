@@ -3,7 +3,7 @@
  * Visualiza estatísticas e tendências de erros da aplicação
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/primitives/card';
 import { Badge } from '@/shared/ui/primitives/badge';
 import { Button } from '@/shared/ui/primitives/button';
@@ -33,7 +33,7 @@ export const ErrorDashboard: React.FC<ErrorDashboardProps> = ({ className }) => 
   const [isLoading, setIsLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState(7);
 
-  const loadAggregation = async () => {
+  const loadAggregation = useCallback(async () => {
     setIsLoading(true);
     try {
       const data = await getAggregation(selectedPeriod);
@@ -43,11 +43,11 @@ export const ErrorDashboard: React.FC<ErrorDashboardProps> = ({ className }) => 
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [getAggregation, selectedPeriod]);
 
   useEffect(() => {
     loadAggregation();
-  }, [selectedPeriod]);
+  }, [selectedPeriod, loadAggregation]);
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
