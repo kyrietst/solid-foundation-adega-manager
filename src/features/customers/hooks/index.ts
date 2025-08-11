@@ -4,3 +4,4 @@ export * from './use-crm';
 
 // Re-export individual hooks that exist in separate files
 export { useProfileCompletenessCalculator } from './useProfileCompletenessCalculator';
+export { useCustomerTags } from './useCustomerTags';

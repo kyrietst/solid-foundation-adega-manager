@@ -128,6 +128,30 @@ const App = () => (
                           </RouteErrorBoundary>
                         } 
                       />
+                      <Route 
+                        path="crm" 
+                        element={
+                          <RouteErrorBoundary routeName="CRM Dashboard">
+                            <div />
+                          </RouteErrorBoundary>
+                        } 
+                      />
+                      <Route 
+                        path="automations" 
+                        element={
+                          <RouteErrorBoundary routeName="Automações">
+                            <div />
+                          </RouteErrorBoundary>
+                        } 
+                      />
+                      <Route 
+                        path="customer/:id" 
+                        element={
+                          <RouteErrorBoundary routeName="Perfil do Cliente">
+                            <div />
+                          </RouteErrorBoundary>
+                        } 
+                      />
                     </Route>
                     <Route path="*" element={<NotFound />} />
                   </Routes>

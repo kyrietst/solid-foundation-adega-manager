@@ -7,3 +7,4 @@ export { FilterToggle } from './filter-toggle';
 export { PaginationControls } from './pagination-controls';
 export { Skeleton, ProductCardSkeleton, CustomerCardSkeleton, TableRowSkeleton, ProductGridSkeleton, CustomerListSkeleton, MetricCardSkeleton, ChartSkeleton } from './skeleton';
 export { OptimizedImage, ProductImage, CustomerAvatar } from './optimized-image';
+export { MaintenancePlaceholder } from './maintenance-placeholder';

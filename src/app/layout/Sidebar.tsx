@@ -12,6 +12,8 @@ import {
   IconSettings,
   IconLogout,
   IconReportAnalytics,
+  IconChartPie,
+  IconRobot,
 } from "@tabler/icons-react";
 import { motion } from "motion/react";
 import { cn } from "@/core/config/utils";
@@ -28,7 +30,7 @@ export function AppSidebar() {
     {
       id: "dashboard",
       label: "Dashboard",
-      href: "/dashboard",
+      href: "dashboard",
       icon: (
         <IconChartBar className="h-5 w-5 shrink-0 text-primary-yellow" />
       ),
@@ -37,7 +39,7 @@ export function AppSidebar() {
     {
       id: "sales",
       label: "Vendas",
-      href: "/sales",
+      href: "sales",
       icon: (
         <IconShoppingCart className="h-5 w-5 shrink-0 text-primary-yellow" />
       ),
@@ -46,7 +48,7 @@ export function AppSidebar() {
     {
       id: "inventory",
       label: "Estoque",
-      href: "/inventory",
+      href: "inventory",
       icon: (
         <IconPackage className="h-5 w-5 shrink-0 text-primary-yellow" />
       ),
@@ -55,16 +57,25 @@ export function AppSidebar() {
     {
       id: "customers",
       label: "Clientes",
-      href: "/customers",
+      href: "customers",
       icon: (
         <IconUsers className="h-5 w-5 shrink-0 text-primary-yellow" />
       ),
       roles: ["admin", "employee"],
     },
     {
+      id: "crm",
+      label: "CRM Dashboard",
+      href: "crm",
+      icon: (
+        <IconChartPie className="h-5 w-5 shrink-0 text-primary-yellow" />
+      ),
+      roles: ["admin", "employee"],
+    },
+    {
       id: "delivery",
       label: "Delivery",
-      href: "/delivery",
+      href: "delivery",
       icon: (
         <IconTruck className="h-5 w-5 shrink-0 text-primary-yellow" />
       ),
@@ -73,16 +84,25 @@ export function AppSidebar() {
     {
       id: "movements",
       label: "Movimentações",
-      href: "/movements",
+      href: "movements",
       icon: (
         <IconRefresh className="h-5 w-5 shrink-0 text-primary-yellow" />
       ),
       roles: ["admin"],
     },
     {
+      id: "automations",
+      label: "Automações",
+      href: "automations",
+      icon: (
+        <IconRobot className="h-5 w-5 shrink-0 text-primary-yellow" />
+      ),
+      roles: ["admin"],
+    },
+    {
       id: "reports",
       label: "Relatórios",
-      href: "/reports",
+      href: "reports",
       icon: (
         <IconReportAnalytics className="h-5 w-5 shrink-0 text-primary-yellow" />
       ),
@@ -91,7 +111,7 @@ export function AppSidebar() {
     {
       id: "users",
       label: "Usuários",
-      href: "/users",
+      href: "users",
       icon: (
         <IconSettings className="h-5 w-5 shrink-0 text-primary-yellow" />
       ),
@@ -130,7 +150,7 @@ export function AppSidebar() {
     if (e) {
       e.preventDefault();
     }
-    navigate(href);
+    navigate(`/${href}`);
   }, [navigate]);
 
   const handleLogout = useCallback((e: React.MouseEvent) => {
@@ -154,7 +174,7 @@ export function AppSidebar() {
                   link={link} 
                   onClick={(e) => handleLinkClick(link.href, e)}
                   className={cn(
-                    location.pathname === link.href
+                    location.pathname === `/${link.href}`
                       ? "bg-primary-yellow/10 text-primary-yellow border border-primary-yellow/20"
                       : "hover:bg-white/10"
                   )}

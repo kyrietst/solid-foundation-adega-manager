@@ -7,6 +7,5 @@ export { LoadingGrid } from './LoadingGrid';
 export { LoadingTable } from './LoadingTable';
 export { PageContainer } from './PageContainer';
 export { SectionHeader } from './SectionHeader';
-export { BackgroundWrapper } from './background-wrapper';
 export { PageAccordion } from './page-accordion';
 export { WavyBackground } from './wavy-background';

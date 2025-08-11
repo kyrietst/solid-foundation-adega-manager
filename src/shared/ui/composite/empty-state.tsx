@@ -1,9 +1,10 @@
+import React, { isValidElement } from 'react';
 import { LucideIcon, Users, Package, Search, FileX } from 'lucide-react';
 import { Button } from '@/shared/ui/primitives/button';
 import { cn, getEmptyStateClasses } from '@/core/config/theme-utils';
 
 export interface EmptyStateProps {
-  icon: LucideIcon;
+  icon?: LucideIcon | React.ReactNode;
   title?: string;
   description: string;
   action?: {
@@ -34,7 +35,7 @@ const variantStyles = {
 };
 
 export const EmptyState: React.FC<EmptyStateProps> = ({
-  icon: Icon,
+  icon,
   title,
   description,
   action,
@@ -44,10 +45,24 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   const styles = variantStyles[variant];
   const emptyStateStyles = getEmptyStateClasses();
 
+  let IconElement: React.ReactNode;
+  if (icon) {
+    if (isValidElement(icon)) {
+      IconElement = React.cloneElement(icon as React.ReactElement, { className: emptyStateStyles.icon });
+    } else if (typeof icon === 'function') {
+      const IconComp = icon as LucideIcon;
+      IconElement = <IconComp className={emptyStateStyles.icon} />;
+    } else {
+      IconElement = <FileX className={emptyStateStyles.icon} />;
+    }
+  } else {
+    IconElement = <FileX className={emptyStateStyles.icon} />;
+  }
+
   return (
     <div className={cn(emptyStateStyles.container, styles.container, className)}>
       <div className={styles.content}>
-        <Icon className={emptyStateStyles.icon} />
+        {IconElement}
         
         {title && (
           <h3 className={emptyStateStyles.title}>

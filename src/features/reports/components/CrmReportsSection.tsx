@@ -9,7 +9,7 @@ import { Button } from '@/shared/ui/primitives/button';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
 import { Users, TrendingUp, AlertCircle, Heart, DollarSign, Download } from 'lucide-react';
-import { DataTable } from '@/shared/ui/layout/DataTable';
+import ContributorsTable from '@/shared/ui/thirdparty/ruixen-contributors-table';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 
 interface CustomerMetrics {
@@ -360,7 +360,7 @@ export const CrmReportsSection: React.FC = () => {
 
       {/* Data Tables */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Top Customers */}
+        {/* Top Customers (substituída pela nova tabela 21st.dev para testes) */}
         <Card className="border-white/10 bg-black/40 backdrop-blur-xl">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-white">Top Clientes por LTV</CardTitle>
@@ -370,17 +370,11 @@ export const CrmReportsSection: React.FC = () => {
             </Button>
           </CardHeader>
           <CardContent>
-            <DataTable
-              columns={customerColumns}
-              data={topCustomers || []}
-              isLoading={loadingCustomers}
-              searchKey="customer_name"
-              searchPlaceholder="Buscar cliente..."
-            />
+            <ContributorsTable />
           </CardContent>
         </Card>
 
-        {/* Segment Analysis */}
+        {/* Segment Analysis (substituída pela nova tabela 21st.dev para testes) */}
         <Card className="border-white/10 bg-black/40 backdrop-blur-xl">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-white">Análise por Segmento</CardTitle>
@@ -390,13 +384,7 @@ export const CrmReportsSection: React.FC = () => {
             </Button>
           </CardHeader>
           <CardContent>
-            <DataTable
-              columns={segmentColumns}
-              data={segments || []}
-              isLoading={loadingSegments}
-              searchKey="segment"
-              searchPlaceholder="Buscar segmento..."
-            />
+            <ContributorsTable />
           </CardContent>
         </Card>
       </div>

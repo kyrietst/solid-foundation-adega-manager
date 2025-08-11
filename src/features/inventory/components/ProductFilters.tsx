@@ -7,7 +7,7 @@ import React from 'react';
 import { Button } from '@/shared/ui/primitives/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/primitives/select';
 import { ChevronDown, Filter } from 'lucide-react';
-import { SearchInput } from '@/shared/ui/composite/search-input';
+import { SearchBar21st } from '@/shared/ui/thirdparty/search-bar-21st';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/shared/ui/primitives/collapsible';
 
 interface ProductFiltersProps {
@@ -42,12 +42,14 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
     <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
       {/* Busca */}
       {showSearch && (
-        <SearchInput
-          value={searchTerm}
-          onChange={onSearchChange}
-          placeholder="Buscar produtos..."
-          className="sm:w-64"
-        />
+        <div className="sm:w-64">
+          <SearchBar21st
+            value={searchTerm}
+            onChange={onSearchChange}
+            placeholder="Buscar produtos..."
+            debounceMs={150}
+          />
+        </div>
       )}
       
       {/* Filtros */}

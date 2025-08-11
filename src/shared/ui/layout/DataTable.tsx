@@ -16,7 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/shared/ui/primitives/table';
-import { SearchInput } from '@/shared/ui/composite/search-input';
+import { SearchBar21st } from '@/shared/ui/thirdparty/search-bar-21st';
 import { PaginationControls } from '@/shared/ui/composite/pagination-controls';
 import { LoadingSpinner } from '@/shared/ui/composite/loading-spinner';
 import { EmptyState } from '@/shared/ui/composite/empty-state';
@@ -193,10 +193,11 @@ export function DataTable<T = Record<string, unknown>>({
           {/* Search Input */}
           {onSearchChange && (
             <div className="flex-1">
-              <SearchInput
+              <SearchBar21st
                 value={searchValue || ''}
                 onChange={onSearchChange}
                 placeholder={searchPlaceholder}
+                debounceMs={150}
               />
             </div>
           )}

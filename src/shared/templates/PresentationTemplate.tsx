@@ -108,9 +108,9 @@ export const YourPresentation: React.FC<YourPresentationProps> = ({
  * );
  * 
  * VANTAGENS DESTA ABORDAGEM:
- * - Fácil de testar (apenas props → JSX)
- * - Reutilizável em diferentes contextos
+ * - Facil de testar (apenas props -> JSX)
+ * - Reutilizavel em diferentes contextos
  * - Sem side effects ou estado interno
  * - Performance otimizada (React.memo friendly)
- * - Manutenção simplificada
+ * - Manutencao simplificada
  */

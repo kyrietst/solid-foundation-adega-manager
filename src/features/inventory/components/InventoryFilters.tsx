@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { SearchInput } from '@/shared/ui/composite/search-input';
+import { SearchBar21st } from '@/shared/ui/thirdparty/search-bar-21st';
 import { FilterToggle } from '@/shared/ui/composite/filter-toggle';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/primitives/select';
 import { InventoryFiltersProps } from './types';
@@ -30,12 +30,12 @@ export const InventoryFilters: React.FC<InventoryFiltersProps> = ({
     <div className="space-y-4">
       {/* Busca Principal */}
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-        <div className="flex-1">
-          <SearchInput
+        <div className="flex-1 max-w-xl">
+          <SearchBar21st
             value={searchTerm}
             onChange={onSearchChange}
             placeholder="Buscar por nome, categoria, código de barras ou fornecedor..."
-            className="w-full"
+            debounceMs={200}
           />
         </div>
         

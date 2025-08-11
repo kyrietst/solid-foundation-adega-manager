@@ -4,6 +4,9 @@
 
 @layer base {
   :root {
+    /* Brand colors for spotlight effect */
+    --brand: 256 84% 54%;   /* purple */
+    --brand-2: 196 91% 48%; /* cyan/blue */
     --background: 0 0% 0% / 0;
     --foreground: 222.2 84% 4.9%;
 
@@ -105,6 +108,23 @@
 /* ============================================================================ */
 
 @layer components {
+  /* Spotlight hover effect for cards/sections */
+  .hero-spotlight {
+    position: relative;
+    isolation: isolate;
+    background:
+      radial-gradient(
+        600px circle at var(--x, 50%) var(--y, 50%),
+        hsl(var(--brand) / 0.18),
+        transparent 40%
+      ),
+      radial-gradient(
+        1200px circle at 50% -10%,
+        hsl(var(--brand-2) / 0.12),
+        transparent 50%
+      );
+    transition: background-position 120ms ease-out;
+  }
   /* Base Glass Card - Multi-layer fallback strategy */
   .glass-card {
     /* Base fallback for all browsers */
@@ -163,6 +183,8 @@
     -webkit-backdrop-filter: blur(24px);
     background: rgba(17, 24, 39, 0.9);
   }
+
+  /* (removed yellow theme helper per user request) */
 }
 
 /* Feature detection with CSS supports */

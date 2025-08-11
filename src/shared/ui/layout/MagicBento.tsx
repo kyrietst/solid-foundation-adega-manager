@@ -11,7 +11,7 @@ export interface MagicBentoProps {
  */
 export function MagicBento({ className, children }: MagicBentoProps) {
   return (
-    <div className={cn('grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 auto-rows-[160px] gap-4', className)}>
+    <div className={cn('grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 auto-rows-[220px] gap-6', className)}>
       {children}
     </div>
   );

@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/primitives/table';
 import { Button } from '@/shared/ui/primitives/button';
-import { Input } from '@/shared/ui/primitives/input';
+import { SearchBar21st } from '@/shared/ui/thirdparty/search-bar-21st';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shared/ui/primitives/dialog';
 import { Label } from '@/shared/ui/primitives/label';
+import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '@/shared/ui/primitives/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/primitives/select';
 import { Checkbox } from '@/shared/ui/primitives/checkbox';
 import { format } from 'date-fns';
@@ -26,6 +27,8 @@ export function CustomerList({ customers, onSelectCustomer }: CustomerListProps)
   const [isNewCustomerDialogOpen, setIsNewCustomerDialogOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+  const ALL_COLUMNS = ['Nome', 'Telefone', 'Email', 'Última Compra', 'Valor Total', 'Segmento'] as const;
+  const [visibleColumns, setVisibleColumns] = useState<string[]>([...ALL_COLUMNS]);
   const [newCustomer, setNewCustomer] = useState<Partial<CustomerProfile>>({
     name: '',
     phone: '',
@@ -118,18 +121,36 @@ export function CustomerList({ customers, onSelectCustomer }: CustomerListProps)
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row gap-4 justify-between">
-        <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
+        <div className="relative flex-1 max-w-md">
+          <SearchBar21st
             placeholder="Buscar clientes..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-9"
+            onChange={setSearchTerm}
+            debounceMs={150}
           />
         </div>
-        <Button onClick={() => setIsNewCustomerDialogOpen(true)}>
-          Novo Cliente
-        </Button>
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-muted-foreground">{sortedCustomers.length} de {customers.length} clientes</span>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">Colunas</Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56">
+              {ALL_COLUMNS.map((col) => (
+                <DropdownMenuCheckboxItem
+                  key={col}
+                  checked={visibleColumns.includes(col)}
+                  onCheckedChange={() => setVisibleColumns(prev => prev.includes(col) ? prev.filter(c => c !== col) : [...prev, col])}
+                >
+                  {col}
+                </DropdownMenuCheckboxItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button onClick={() => setIsNewCustomerDialogOpen(true)}>
+            Novo Cliente
+          </Button>
+        </div>
       </div>
       
       <div className="rounded-md border">
@@ -137,102 +158,66 @@ export function CustomerList({ customers, onSelectCustomer }: CustomerListProps)
           <Table>
             <TableHeader className="sticky top-0 bg-background z-10">
               <TableRow>
-                <TableHead 
-                  className="cursor-pointer"
-                  onClick={() => handleSort('name')}
-                >
-                  <div className="flex items-center">
-                    Nome
-                    {sortField === 'name' && (
-                      <ChevronDown 
-                        className={cn(
-                          "ml-1 h-4 w-4", 
-                          sortDirection === 'desc' && "transform rotate-180"
-                        )} 
-                      />
-                    )}
-                  </div>
-                </TableHead>
-              <TableHead 
-                className="cursor-pointer"
-                onClick={() => handleSort('phone')}
-              >
-                <div className="flex items-center">
-                  Telefone
-                  {sortField === 'phone' && (
-                    <ChevronDown 
-                      className={cn(
-                        "ml-1 h-4 w-4", 
-                        sortDirection === 'desc' && "transform rotate-180"
-                      )} 
-                    />
-                  )}
-                </div>
-              </TableHead>
-              <TableHead 
-                className="cursor-pointer"
-                onClick={() => handleSort('email')}
-              >
-                <div className="flex items-center">
-                  Email
-                  {sortField === 'email' && (
-                    <ChevronDown 
-                      className={cn(
-                        "ml-1 h-4 w-4", 
-                        sortDirection === 'desc' && "transform rotate-180"
-                      )} 
-                    />
-                  )}
-                </div>
-              </TableHead>
-              <TableHead 
-                className="cursor-pointer"
-                onClick={() => handleSort('last_purchase_date')}
-              >
-                <div className="flex items-center">
-                  Última Compra
-                  {sortField === 'last_purchase_date' && (
-                    <ChevronDown 
-                      className={cn(
-                        "ml-1 h-4 w-4", 
-                        sortDirection === 'desc' && "transform rotate-180"
-                      )} 
-                    />
-                  )}
-                </div>
-              </TableHead>
-              <TableHead 
-                className="cursor-pointer"
-                onClick={() => handleSort('lifetime_value')}
-              >
-                <div className="flex items-center">
-                  Valor Total
-                  {sortField === 'lifetime_value' && (
-                    <ChevronDown 
-                      className={cn(
-                        "ml-1 h-4 w-4", 
-                        sortDirection === 'desc' && "transform rotate-180"
-                      )} 
-                    />
-                  )}
-                </div>
-              </TableHead>
-              <TableHead 
-                className="cursor-pointer"
-                onClick={() => handleSort('segment')}
-              >
-                <div className="flex items-center">
-                  Segmento
-                  {sortField === 'segment' && (
-                    <ChevronDown 
-                      className={cn(
-                        "ml-1 h-4 w-4", 
-                        sortDirection === 'desc' && "transform rotate-180"
-                      )} 
-                    />
-                  )}
-                </div>
-              </TableHead>
+                {visibleColumns.includes('Nome') && (
+                  <TableHead className="cursor-pointer" onClick={() => handleSort('name')}>
+                    <div className="flex items-center">
+                      Nome
+                      {sortField === 'name' && (
+                        <ChevronDown className={cn("ml-1 h-4 w-4", sortDirection === 'desc' && "transform rotate-180")} />
+                      )}
+                    </div>
+                  </TableHead>
+                )}
+                {visibleColumns.includes('Telefone') && (
+                  <TableHead className="cursor-pointer" onClick={() => handleSort('phone')}>
+                    <div className="flex items-center">
+                      Telefone
+                      {sortField === 'phone' && (
+                        <ChevronDown className={cn("ml-1 h-4 w-4", sortDirection === 'desc' && "transform rotate-180")} />
+                      )}
+                    </div>
+                  </TableHead>
+                )}
+                {visibleColumns.includes('Email') && (
+                  <TableHead className="cursor-pointer" onClick={() => handleSort('email')}>
+                    <div className="flex items-center">
+                      Email
+                      {sortField === 'email' && (
+                        <ChevronDown className={cn("ml-1 h-4 w-4", sortDirection === 'desc' && "transform rotate-180")} />
+                      )}
+                    </div>
+                  </TableHead>
+                )}
+                {visibleColumns.includes('Última Compra') && (
+                  <TableHead className="cursor-pointer" onClick={() => handleSort('last_purchase_date')}>
+                    <div className="flex items-center">
+                      Última Compra
+                      {sortField === 'last_purchase_date' && (
+                        <ChevronDown className={cn("ml-1 h-4 w-4", sortDirection === 'desc' && "transform rotate-180")} />
+                      )}
+                    </div>
+                  </TableHead>
+                )}
+                {visibleColumns.includes('Valor Total') && (
+                  <TableHead className="cursor-pointer" onClick={() => handleSort('lifetime_value')}>
+                    <div className="flex items-center">
+                      Valor Total
+                      {sortField === 'lifetime_value' && (
+                        <ChevronDown className={cn("ml-1 h-4 w-4", sortDirection === 'desc' && "transform rotate-180")} />
+                      )}
+                    </div>
+                  </TableHead>
+                )}
+                {visibleColumns.includes('Segmento') && (
+                  <TableHead className="cursor-pointer" onClick={() => handleSort('segment')}>
+                    <div className="flex items-center">
+                      Segmento
+                      {sortField === 'segment' && (
+                        <ChevronDown className={cn("ml-1 h-4 w-4", sortDirection === 'desc' && "transform rotate-180")} />
+                      )}
+                    </div>
+                  </TableHead>
+                )}
             </TableRow>
           </TableHeader>
             <TableBody>
@@ -243,37 +228,49 @@ export function CustomerList({ customers, onSelectCustomer }: CustomerListProps)
                   className="cursor-pointer hover:bg-gray-50"
                   onClick={() => onSelectCustomer(customer)}
                 >
-                  <TableCell className="font-medium">{customer.name}</TableCell>
-                  <TableCell>{customer.phone || '-'}</TableCell>
-                  <TableCell>{customer.email || '-'}</TableCell>
-                  <TableCell>
-                    {customer.last_purchase_date 
-                      ? format(new Date(customer.last_purchase_date), 'dd/MM/yyyy')
-                      : '-'
-                    }
-                  </TableCell>
-                  <TableCell className="font-medium">
-                    {customer.lifetime_value 
-                      ? `R$ ${customer.lifetime_value.toFixed(2)}`
-                      : 'R$ 0,00'
-                    }
-                  </TableCell>
-                  <TableCell>
-                    <span 
-                      className="px-2 py-1 rounded-full text-xs font-medium inline-flex items-center"
-                      style={{
-                        backgroundColor: segmentColors[customer.segment as keyof typeof segmentColors]?.bg || segmentColors.default.bg,
-                        color: segmentColors[customer.segment as keyof typeof segmentColors]?.text || segmentColors.default.text
-                      }}
-                    >
-                      {customer.segment || 'Não definido'}
-                    </span>
-                  </TableCell>
+                  {visibleColumns.includes('Nome') && (
+                    <TableCell className="font-medium">{customer.name}</TableCell>
+                  )}
+                  {visibleColumns.includes('Telefone') && (
+                    <TableCell>{customer.phone || '-'}</TableCell>
+                  )}
+                  {visibleColumns.includes('Email') && (
+                    <TableCell>{customer.email || '-'}</TableCell>
+                  )}
+                  {visibleColumns.includes('Última Compra') && (
+                    <TableCell>
+                      {customer.last_purchase_date 
+                        ? format(new Date(customer.last_purchase_date), 'dd/MM/yyyy')
+                        : '-'
+                      }
+                    </TableCell>
+                  )}
+                  {visibleColumns.includes('Valor Total') && (
+                    <TableCell className="font-medium">
+                      {customer.lifetime_value 
+                        ? `R$ ${customer.lifetime_value.toFixed(2)}`
+                        : 'R$ 0,00'
+                      }
+                    </TableCell>
+                  )}
+                  {visibleColumns.includes('Segmento') && (
+                    <TableCell>
+                      <span 
+                        className="px-2 py-1 rounded-full text-xs font-medium inline-flex items-center"
+                        style={{
+                          backgroundColor: segmentColors[customer.segment as keyof typeof segmentColors]?.bg || segmentColors.default.bg,
+                          color: segmentColors[customer.segment as keyof typeof segmentColors]?.text || segmentColors.default.text
+                        }}
+                      >
+                        {customer.segment || 'Não definido'}
+                      </span>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
+                  <TableCell colSpan={visibleColumns.length} className="text-center py-6 text-muted-foreground">
                     {searchTerm 
                       ? 'Nenhum cliente encontrado para esta busca'
                       : 'Nenhum cliente cadastrado'

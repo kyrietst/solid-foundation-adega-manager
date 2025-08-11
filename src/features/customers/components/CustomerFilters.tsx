@@ -29,12 +29,14 @@ export const CustomerFilters: React.FC<CustomerFiltersProps> = ({
         <CardContent className="p-4">
           <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
             <div className="flex items-center space-x-4">
-              <SearchInput
-                value={searchTerm}
-                onChange={onSearchChange}
-                placeholder="Buscar clientes..."
-                className="w-64"
-              />
+              <div className="w-64">
+                <SearchBar21st
+                  value={searchTerm}
+                  onChange={onSearchChange}
+                  placeholder="Buscar clientes..."
+                  debounceMs={150}
+                />
+              </div>
               
               <div className="flex items-center gap-2">
                 <FilterToggle

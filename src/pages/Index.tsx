@@ -5,18 +5,32 @@ import { useAuth } from '@/app/providers/AuthContext';
 import { LoadingScreen } from '@/shared/ui/composite/loading-spinner';
 import { Breadcrumb } from '@/shared/ui/layout/Breadcrumb';
 import SalesPage from '@/features/sales/components/SalesPage';
+import { WhitePageShell } from '@/shared/ui/layout/WhitePageShell';
 
 // Lazy loading dos componentes principais para code splitting
 const Dashboard = lazy(() => import('@/features/dashboard/components/Dashboard'));
 const Inventory = lazy(() => import('@/features/inventory/components/InventoryManagement'));
 const Customers = lazy(() => import('@/features/customers/components/CustomersLite'));
+const CrmDashboard = lazy(() => 
+  import('@/features/customers/components/CrmDashboard').then(m => ({ default: m.CrmDashboard }))
+);
+const AutomationCenter = lazy(() => 
+  import('@/features/customers/components/AutomationCenter').then(m => ({ default: m.AutomationCenter }))
+);
+const CustomerProfile = lazy(() => 
+  import('@/features/customers/components/CustomerProfile').then(m => ({ default: m.CustomerProfile }))
+);
 const Delivery = lazy(() => import('@/features/delivery/components/Delivery'));
 const Movements = lazy(() => import('@/features/movements/components/Movements'));
 const UserManagement = lazy(() => import('@/features/users/components/UserManagement'));
 // História 1.5: Página de Relatórios (old)
-const Reports = lazy(() => import('@/features/reports/components/Reports'));
+const Reports = lazy(() =>
+  import('@/features/reports/components/Reports').then((m) => ({ default: m.Reports }))
+);
 // Sprint 2: Advanced Reports System
-const AdvancedReports = lazy(() => import('@/features/reports/components/AdvancedReports'));
+const AdvancedReports = lazy(() =>
+  import('@/features/reports/components/AdvancedReports').then((m) => ({ default: m.AdvancedReports }))
+);
 
 const Index = () => {
   const navigate = useNavigate();
@@ -82,46 +96,85 @@ const Index = () => {
         ) : <AccessDenied />;
       case 'sales':
         return hasPermission(['admin', 'employee']) ? (
-          <SalesPage />
+          <WhitePageShell>
+            <SalesPage />
+          </WhitePageShell>
         ) : <AccessDenied />;
       case 'inventory':
         return hasPermission(['admin', 'employee']) ? (
           <Suspense fallback={<LoadingScreen text="Carregando inventário..." />}>
-            <Inventory 
-              showAddButton={hasPermission('admin')} 
-              showSearch={true} 
-              showFilters={true} 
-            />
+            <WhitePageShell>
+              <Inventory 
+                showAddButton={hasPermission('admin')} 
+                showSearch={true} 
+                showFilters={true} 
+              />
+            </WhitePageShell>
           </Suspense>
         ) : <AccessDenied />;
       case 'customers':
         return hasPermission(['admin', 'employee']) ? (
           <Suspense fallback={<LoadingScreen text="Carregando clientes..." />}>
-            <Customers />
+            <WhitePageShell>
+              <Customers />
+            </WhitePageShell>
+          </Suspense>
+        ) : <AccessDenied />;
+      case 'crm':
+        return hasPermission(['admin', 'employee']) ? (
+          <Suspense fallback={<LoadingScreen text="Carregando CRM Dashboard..." />}>
+            <WhitePageShell>
+              <CrmDashboard />
+            </WhitePageShell>
           </Suspense>
         ) : <AccessDenied />;
       case 'delivery':
         return hasPermission(['admin', 'employee', 'delivery']) ? (
           <Suspense fallback={<LoadingScreen text="Carregando delivery..." />}>
-            <Delivery />
+            <WhitePageShell>
+              <Delivery />
+            </WhitePageShell>
           </Suspense>
         ) : <AccessDenied />;
       case 'movements':
         return hasPermission(['admin']) ? (
           <Suspense fallback={<LoadingScreen text="Carregando movimentações..." />}>
-            <Movements />
+            <WhitePageShell>
+              <Movements />
+            </WhitePageShell>
           </Suspense>
         ) : <AccessDenied />;
       case 'users':
         return hasPermission('admin') ? (
           <Suspense fallback={<LoadingScreen text="Carregando usuários..." />}>
-            <UserManagement />
+            <WhitePageShell>
+              <UserManagement />
+            </WhitePageShell>
+          </Suspense>
+        ) : <AccessDenied />;
+      case 'automations':
+        return hasPermission(['admin']) ? (
+          <Suspense fallback={<LoadingScreen text="Carregando automações..." />}>
+            <WhitePageShell>
+              <AutomationCenter />
+            </WhitePageShell>
+          </Suspense>
+        ) : <AccessDenied />;
+      case 'customer':
+        // Handle /customer/:id route
+        return hasPermission(['admin', 'employee']) ? (
+          <Suspense fallback={<LoadingScreen text="Carregando perfil do cliente..." />}>
+            <WhitePageShell>
+              <CustomerProfile />
+            </WhitePageShell>
           </Suspense>
         ) : <AccessDenied />;
       case 'reports':
         return hasPermission(['admin', 'employee']) ? (
           <Suspense fallback={<LoadingScreen text="Carregando relatórios..." />}>
-            <AdvancedReports />
+            <WhitePageShell>
+              <AdvancedReports />
+            </WhitePageShell>
           </Suspense>
         ) : <AccessDenied />;
       default:

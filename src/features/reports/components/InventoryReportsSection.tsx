@@ -9,7 +9,7 @@ import { Button } from '@/shared/ui/primitives/button';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
 import { Package, TrendingDown, AlertTriangle, BarChart3, Download } from 'lucide-react';
-import { DataTable } from '@/shared/ui/layout/DataTable';
+import ContributorsTable from '@/shared/ui/thirdparty/ruixen-contributors-table';
 
 interface InventoryKpi {
   product_id: string;
@@ -319,7 +319,7 @@ export const InventoryReportsSection: React.FC = () => {
         </Card>
       </div>
 
-      {/* Inventory Analysis Table */}
+      {/* Inventory Analysis Table (substituída pela nova tabela 21st.dev para testes) */}
       <Card className="border-white/10 bg-black/40 backdrop-blur-xl">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-white">Análise de Estoque (DOH & Giro)</CardTitle>
@@ -329,17 +329,11 @@ export const InventoryReportsSection: React.FC = () => {
           </Button>
         </CardHeader>
         <CardContent>
-          <DataTable
-            columns={inventoryColumns}
-            data={inventoryData || []}
-            isLoading={isLoading}
-            searchKey="name"
-            searchPlaceholder="Buscar produto..."
-          />
+          <ContributorsTable />
         </CardContent>
       </Card>
 
-      {/* Recent Movements */}
+      {/* Recent Movements (substituída pela nova tabela 21st.dev para testes) */}
       <Card className="border-white/10 bg-black/40 backdrop-blur-xl">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-white">Movimentações Recentes</CardTitle>
@@ -349,13 +343,7 @@ export const InventoryReportsSection: React.FC = () => {
           </Button>
         </CardHeader>
         <CardContent>
-          <DataTable
-            columns={movementColumns}
-            data={movements || []}
-            isLoading={loadingMovements}
-            searchKey="products.name"
-            searchPlaceholder="Buscar movimento..."
-          />
+          <ContributorsTable />
         </CardContent>
       </Card>
 

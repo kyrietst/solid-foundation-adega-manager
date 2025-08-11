@@ -13,6 +13,8 @@ import { RecentActivities } from './RecentActivities';
 import { MetricCard } from '@/features/dashboard/hooks/useDashboardMetrics';
 import { SalesDataPoint, RecentActivity } from '@/features/dashboard/hooks/useDashboardData';
 import { MagicBento as BentoGrid, MagicBentoItem as BentoItem } from '@/shared/ui/layout/MagicBento';
+import { PageContainer } from '@/shared/ui/layout/PageContainer';
+import { SectionHeader } from '@/shared/ui/layout/SectionHeader';
 import { KpiCards } from './KpiCards';
 import { AlertsPanel } from './AlertsPanel';
 import { SalesChartSection } from './SalesChartSection';
@@ -55,46 +57,49 @@ export const DashboardPresentation: React.FC<DashboardPresentationProps> = ({
   showEmployeeNote,
 }) => {
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-white">Dashboard</h1>
+    <PageContainer padding="lg" spacing="lg" maxWidth="2xl">
+      <SectionHeader
+        title="Dashboard"
+        description="Visão geral do negócio, atividades recentes e indicadores de vendas"
+        variant="prominent"
+      />
 
-
-      {/* Bento grid layout: hero metrics + chart + list */}
-      <BentoGrid className="mt-2">
-        {/* KPIs compactos ocupando 4 colunas por 2 linhas */}
+      {/* Bento grid layout: KPIs + gráficos + listas, com espaçamento consistente */}
+      <BentoGrid className="mt-4">
+        {/* KPIs compactos */}
         <BentoItem className="col-span-1 md:col-span-4 row-span-2">
           <KpiSection />
         </BentoItem>
 
-        {/* Gráfico grande (2 col x 4 rows no lg) */}
-        <BentoItem className="col-span-1 md:col-span-4 lg:col-span-4 row-span-4">
+        {/* Gráfico principal */}
+        <BentoItem className="col-span-1 md:col-span-4 lg:col-span-4 row-span-3">
           <SalesChartSection />
         </BentoItem>
 
-        {/* Atividades recentes (2 col x 4 rows no lg) */}
-        <BentoItem className="col-span-1 md:col-span-4 lg:col-span-2 row-span-4">
+        {/* Atividades recentes */}
+        <BentoItem className="col-span-1 md:col-span-4 lg:col-span-2 row-span-3">
           <RecentActivities activities={recentActivities} isLoading={isLoadingActivities} />
         </BentoItem>
 
         {/* Painel financeiro (somente admin) */}
         {showFinancialMetrics && sensitiveMetrics && (
-          <BentoItem className="col-span-1 md:col-span-4 lg:col-span-2 row-span-3">
+          <BentoItem className="col-span-1 md:col-span-4 lg:col-span-3 row-span-2">
             <AdminPanel metrics={sensitiveMetrics} isLoading={isLoadingFinancials} />
           </BentoItem>
         )}
 
         {/* Alertas */}
-        <BentoItem className="col-span-1 md:col-span-4 lg:col-span-2 row-span-3">
+        <BentoItem className="col-span-1 md:col-span-4 lg:col-span-3 row-span-2">
           <AlertsPanel maxItems={8} />
         </BentoItem>
 
         {/* Top 5 Produtos */}
-        <BentoItem className="col-span-1 md:col-span-4 lg:col-span-2 row-span-3">
+        <BentoItem className="col-span-1 md:col-span-4 lg:col-span-3 row-span-2">
           <TopProductsCard />
         </BentoItem>
 
         {/* Mix por Categoria */}
-        <BentoItem className="col-span-1 md:col-span-4 lg:col-span-2 row-span-3">
+        <BentoItem className="col-span-1 md:col-span-4 lg:col-span-3 row-span-2">
           <CategoryMixDonut />
         </BentoItem>
 
@@ -109,7 +114,7 @@ export const DashboardPresentation: React.FC<DashboardPresentationProps> = ({
           </BentoItem>
         )}
       </BentoGrid>
-    </div>
+    </PageContainer>
   );
 };
 

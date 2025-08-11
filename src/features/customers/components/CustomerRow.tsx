@@ -9,6 +9,7 @@ import { Eye, Edit, Phone, Mail } from 'lucide-react';
 import { formatCurrency } from '@/core/config/utils';
 import { CustomerRowProps } from './types';
 import { CustomerSegmentBadge } from './CustomerSegmentBadge';
+import { CustomerTagDisplay } from './CustomerTagDisplay';
 
 export const CustomerRow: React.FC<CustomerRowProps> = ({
   customer,
@@ -87,6 +88,13 @@ export const CustomerRow: React.FC<CustomerRowProps> = ({
         <span className="text-adega-platinum/60">
           {customer.favorite_category || '-'}
         </span>
+      </td>
+
+      {/* Tags */}
+      <td className="p-4">
+        <div className="max-w-[200px]">
+          <CustomerTagDisplay tags={customer.tags} maxVisible={2} size="sm" />
+        </div>
       </td>
 
       {/* Ações */}

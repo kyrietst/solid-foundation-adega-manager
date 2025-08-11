@@ -11,6 +11,14 @@ export { CustomerStats } from './CustomerStats';
 export { CustomerTable } from './CustomerTable';
 export { Customers } from './Customers';
 export { CustomersNew } from './CustomersNew';
+export { CrmDashboard } from './CrmDashboard';
+export { CustomerTagManager } from './CustomerTagManager';
+export { CustomerTagDisplay } from './CustomerTagDisplay';
+export { GoogleMapsPlaceholder } from './GoogleMapsPlaceholder';
+export { N8NPlaceholder } from './N8NPlaceholder';
+export { AutomationCenter } from './AutomationCenter';
+export { BirthdayCalendar } from './BirthdayCalendar';
+export { CustomerProfile } from './CustomerProfile';
 
 // UI Components moved from /ui/
 export { CustomerActivity } from './customer-activity';

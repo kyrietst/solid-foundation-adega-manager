@@ -9,12 +9,13 @@ import React from 'react';
 
 // 1. Defina a interface para as props do container
 export interface YourContainerProps {
-  // Props que vêm do componente pai
+  // Props que vem do componente pai
   // Exemplo: initialData?, onSuccess?, onCancel?, etc.
+  initialData?: unknown;
 }
 
 export const YourContainer: React.FC<YourContainerProps> = ({
-  // Desestruture as props aqui
+  initialData
 }) => {
   // 2. Use hooks para lógica de negócio
   // const {
@@ -31,7 +32,7 @@ export const YourContainer: React.FC<YourContainerProps> = ({
   //   handleCancel,
   // } = useYourLogicHook(config);
 
-  // 3. Preparar props para o componente de apresentação
+  // 3. Preparar props para o componente de apresentacao
   const presentationProps = {
     // Dados processados
     // data,
@@ -41,12 +42,13 @@ export const YourContainer: React.FC<YourContainerProps> = ({
     // formData,
     // validation,
     
-    // Configuração
+    // Configuracao
     // config,
     
     // Handlers (sempre prefixar com 'on')
     // onSubmit: handleSubmit,
     // onCancel: handleCancel,
+    initialData
   };
 
   // 4. Renderizar apenas o componente de apresentação

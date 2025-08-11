@@ -59,6 +59,9 @@ export const CustomerTable: React.FC<CustomerTableProps> = ({
                   Categoria Favorita
                 </th>
                 <th scope="col" className="text-left p-4 font-medium text-adega-platinum">
+                  Tags
+                </th>
+                <th scope="col" className="text-left p-4 font-medium text-adega-platinum">
                   Ações
                 </th>
               </tr>
@@ -91,7 +94,7 @@ export const CustomerTable: React.FC<CustomerTableProps> = ({
                           transform: `translateY(${virtualItem.start}px)`,
                         }}
                       >
-                        <td colSpan={7} className="p-0">
+                        <td colSpan={8} className="p-0">
                           <CustomerRow
                             customer={customer}
                             onSelect={onSelectCustomer}

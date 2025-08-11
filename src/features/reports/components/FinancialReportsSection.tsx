@@ -9,7 +9,7 @@ import { Button } from '@/shared/ui/primitives/button';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
 import { DollarSign, Clock, CreditCard, AlertTriangle, Download, TrendingDown } from 'lucide-react';
-import { DataTable } from '@/shared/ui/layout/DataTable';
+import ContributorsTable from '@/shared/ui/thirdparty/ruixen-contributors-table';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 interface FinancialMetrics {
@@ -392,7 +392,7 @@ export const FinancialReportsSection: React.FC = () => {
 
       {/* Data Tables */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Accounts Receivable */}
+        {/* Accounts Receivable (substituída pela nova tabela 21st.dev para testes) */}
         <Card className="border-white/10 bg-black/40 backdrop-blur-xl">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-white">Contas a Receber</CardTitle>
@@ -402,17 +402,11 @@ export const FinancialReportsSection: React.FC = () => {
             </Button>
           </CardHeader>
           <CardContent>
-            <DataTable
-              columns={arColumns}
-              data={accountsReceivable || []}
-              isLoading={loadingAR}
-              searchKey="customer_name"
-              searchPlaceholder="Buscar cliente..."
-            />
+            <ContributorsTable />
           </CardContent>
         </Card>
 
-        {/* Payment Methods Analysis */}
+        {/* Payment Methods Analysis (substituída pela nova tabela 21st.dev para testes) */}
         <Card className="border-white/10 bg-black/40 backdrop-blur-xl">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-white">Análise Métodos de Pagamento</CardTitle>
@@ -422,13 +416,7 @@ export const FinancialReportsSection: React.FC = () => {
             </Button>
           </CardHeader>
           <CardContent>
-            <DataTable
-              columns={paymentColumns}
-              data={paymentAnalysis || []}
-              isLoading={loadingPayments}
-              searchKey="method"
-              searchPlaceholder="Buscar método..."
-            />
+            <ContributorsTable />
           </CardContent>
         </Card>
       </div>
