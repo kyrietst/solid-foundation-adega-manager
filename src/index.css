@@ -100,6 +100,27 @@
 
   body {
     @apply bg-transparent text-foreground;
+    min-width: 320px; /* iPhone SE portrait width baseline */
+    min-height: 568px; /* iPhone SE portrait height baseline */
+  }
+
+  /* Clamp layout width/height to improve desktop and small monitor experience */
+  #root, .app-root, .app-shell {
+    min-width: 320px;
+    min-height: 568px;
+  }
+
+  /* Desktop max layout guidance (prevents over-stretch on 4K while allowing fluid center) */
+  .container-xl {
+    max-width: 1440px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .container-viewport {
+    min-width: 320px;
+    min-height: 568px;
+    max-width: 1920px; /* Optional hard guard for ultra-wide dev monitors */
+    max-height: 1080px; /* Keep grid tiles predictable on huge screens */
   }
 }
 

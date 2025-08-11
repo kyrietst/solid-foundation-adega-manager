@@ -12,7 +12,6 @@ import { AdminPanel } from './AdminPanel';
 import { RecentActivities } from './RecentActivities';
 import { MetricCard } from '@/features/dashboard/hooks/useDashboardMetrics';
 import { SalesDataPoint, RecentActivity } from '@/features/dashboard/hooks/useDashboardData';
-import { MagicBento as BentoGrid, MagicBentoItem as BentoItem } from '@/shared/ui/layout/MagicBento';
 import { PageContainer } from '@/shared/ui/layout/PageContainer';
 import { SectionHeader } from '@/shared/ui/layout/SectionHeader';
 import { KpiCards } from './KpiCards';
@@ -57,63 +56,62 @@ export const DashboardPresentation: React.FC<DashboardPresentationProps> = ({
   showEmployeeNote,
 }) => {
   return (
-    <PageContainer padding="lg" spacing="lg" maxWidth="2xl">
+    <PageContainer padding="lg" spacing="lg" maxWidth="full">
       <SectionHeader
         title="Dashboard"
         description="Visão geral do negócio, atividades recentes e indicadores de vendas"
         variant="prominent"
       />
 
-      {/* Bento grid layout: KPIs + gráficos + listas, com espaçamento consistente */}
-      <BentoGrid className="mt-4">
-        {/* KPIs compactos */}
-        <BentoItem className="col-span-1 md:col-span-4 row-span-2">
+      <div className="mt-4 space-y-6">
+        {/* KPIs no topo, largura total */}
+        <div>
           <KpiSection />
-        </BentoItem>
+        </div>
 
-        {/* Gráfico principal */}
-        <BentoItem className="col-span-1 md:col-span-4 lg:col-span-4 row-span-3">
-          <SalesChartSection />
-        </BentoItem>
-
-        {/* Atividades recentes */}
-        <BentoItem className="col-span-1 md:col-span-4 lg:col-span-2 row-span-3">
-          <RecentActivities activities={recentActivities} isLoading={isLoadingActivities} />
-        </BentoItem>
+        {/* Linha: Gráfico principal + Atividades recentes */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <SalesChartSection />
+          </div>
+          <div>
+            <RecentActivities activities={recentActivities} isLoading={isLoadingActivities} />
+          </div>
+        </div>
 
         {/* Painel financeiro (somente admin) */}
         {showFinancialMetrics && sensitiveMetrics && (
-          <BentoItem className="col-span-1 md:col-span-4 lg:col-span-3 row-span-2">
-            <AdminPanel metrics={sensitiveMetrics} isLoading={isLoadingFinancials} />
-          </BentoItem>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2">
+              <AdminPanel metrics={sensitiveMetrics} isLoading={isLoadingFinancials} />
+            </div>
+          </div>
         )}
 
-        {/* Alertas */}
-        <BentoItem className="col-span-1 md:col-span-4 lg:col-span-3 row-span-2">
-          <AlertsPanel maxItems={8} />
-        </BentoItem>
-
-        {/* Top 5 Produtos */}
-        <BentoItem className="col-span-1 md:col-span-4 lg:col-span-3 row-span-2">
-          <TopProductsCard />
-        </BentoItem>
-
-        {/* Mix por Categoria */}
-        <BentoItem className="col-span-1 md:col-span-4 lg:col-span-3 row-span-2">
-          <CategoryMixDonut />
-        </BentoItem>
+        {/* Linha com três cartões auxiliares */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div>
+            <AlertsPanel maxItems={8} />
+          </div>
+          <div>
+            <TopProductsCard />
+          </div>
+          <div>
+            <CategoryMixDonut />
+          </div>
+        </div>
 
         {/* Nota para funcionários, quando aplicável */}
         {showEmployeeNote && (
-          <BentoItem className="col-span-1 md:col-span-4 row-span-1">
+          <div>
             <div className="p-4 bg-yellow-900/30 border border-yellow-700/50 rounded-lg backdrop-blur-sm">
               <p className="text-sm text-yellow-300">
                 Nota: Algumas métricas financeiras e estratégicas estão disponíveis apenas para administradores.
               </p>
             </div>
-          </BentoItem>
+          </div>
         )}
-      </BentoGrid>
+      </div>
     </PageContainer>
   );
 };

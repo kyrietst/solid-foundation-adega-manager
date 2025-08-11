@@ -61,9 +61,11 @@ export const PageContainer: React.FC<PageContainerProps> = ({
   background = 'transparent'
 }) => {
   return (
-    <div 
+    <div
       className={cn(
-        'w-full mx-auto',
+        maxWidth === 'full'
+          ? 'w-full'
+          : 'w-full mx-auto container-xl container-viewport',
         maxWidthClasses[maxWidth],
         paddingClasses[padding],
         backgroundClasses[background],
