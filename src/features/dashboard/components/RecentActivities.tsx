@@ -57,7 +57,7 @@ export const RecentActivities: React.FC<RecentActivitiesProps> = ({
           Atividades Recentes
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="max-h-[420px] overflow-y-auto">
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
             <LoadingSpinner size="lg" />

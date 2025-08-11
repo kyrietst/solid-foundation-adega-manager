@@ -18,8 +18,7 @@ import { KpiCards } from './KpiCards';
 import { AlertsPanel } from './AlertsPanel';
 import { SalesChartSection } from './SalesChartSection';
 import { useSalesKpis, useCustomerKpis, useInventoryKpis } from '../hooks/useDashboardKpis';
-import { TopProductsCard } from './TopProductsCard';
-import { CategoryMixDonut } from './CategoryMixDonut';
+import { SalesInsightsTabs } from './SalesInsightsTabs';
 
 export interface DashboardPresentationProps {
   // Dados processados
@@ -70,11 +69,11 @@ export const DashboardPresentation: React.FC<DashboardPresentationProps> = ({
         </div>
 
         {/* Linha: Gráfico principal + Atividades recentes */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="lg:col-span-8">
             <SalesChartSection />
           </div>
-          <div>
+          <div className="lg:col-span-4">
             <RecentActivities activities={recentActivities} isLoading={isLoadingActivities} />
           </div>
         </div>
@@ -88,16 +87,13 @@ export const DashboardPresentation: React.FC<DashboardPresentationProps> = ({
           </div>
         )}
 
-        {/* Linha com três cartões auxiliares */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div>
+        {/* Linha com insights em abas + alertas com rolagem interna */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="lg:col-span-8">
+            <SalesInsightsTabs />
+          </div>
+          <div className="lg:col-span-4">
             <AlertsPanel maxItems={8} />
-          </div>
-          <div>
-            <TopProductsCard />
-          </div>
-          <div>
-            <CategoryMixDonut />
           </div>
         </div>
 

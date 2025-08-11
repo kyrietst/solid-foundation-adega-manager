@@ -20,6 +20,7 @@ export interface KpiCardsProps {
   items: KpiData[];
   className?: string;
   showAnimation?: boolean;
+  compact?: boolean;
 }
 
 const accentMap = {
@@ -81,7 +82,7 @@ function DeltaIndicator({ delta }: { delta: number }) {
   );
 }
 
-function KpiCard({ kpi, index, showAnimation = true }: { kpi: KpiData; index: number; showAnimation?: boolean }) {
+function KpiCard({ kpi, index, showAnimation = true, compact = true }: { kpi: KpiData; index: number; showAnimation?: boolean; compact?: boolean }) {
   const cardContent = (
     <motion.div
       initial={showAnimation ? { y: 20, opacity: 0 } : false}

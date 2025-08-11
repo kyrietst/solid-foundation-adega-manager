@@ -100,7 +100,7 @@ export function AlertsPanel({ items, className, maxItems = 6 }: AlertsPanelProps
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-2">
+      <CardContent className="space-y-2 max-h-[420px] overflow-y-auto">
         {isLoading ? (
           <div className="space-y-2">
             {Array.from({ length: 3 }).map((_, i) => (
