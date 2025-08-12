@@ -152,6 +152,14 @@ const App = () => (
                           </RouteErrorBoundary>
                         } 
                       />
+                      <Route 
+                        path="activities" 
+                        element={
+                          <RouteErrorBoundary routeName="Atividades">
+                            <div />
+                          </RouteErrorBoundary>
+                        } 
+                      />
                     </Route>
                     <Route path="*" element={<NotFound />} />
                   </Routes>

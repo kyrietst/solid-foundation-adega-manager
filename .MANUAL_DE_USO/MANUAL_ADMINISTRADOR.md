@@ -89,6 +89,31 @@ O sistema possui um **menu lateral inteligente** que se expande ao passar o mous
 **O que é:** Visão geral de toda sua operação
 **Para que serve:** Acompanhar performance em tempo real
 
+#### Como “ler” a nova Dashboard (padronizada)
+- KPIs no topo (em um único bloco):
+  - Vendas 30d, Ticket Médio, Clientes Ativos e Estoque Crítico.
+  - Clique em cada KPI para ver mais detalhes (relatórios/área correspondente).
+- Métricas Financeiras (apenas admin):
+  - Cards sensíveis logo abaixo dos KPIs, sem título, focados em valores consolidados.
+- Tendência de Vendas (esquerda) + Alertas (direita):
+  - Alturas alinhadas para facilitar comparação.
+  - Em “Alertas” você vê:
+    - Avisos de estoque (crítico/zerado) e financeiros (contas em atraso).
+    - Prévia das 3 últimas atividades do sistema (ações de vendedores/delivery/admin).
+    - Total em estoque (quando disponível).
+    - Link “Ver todos” abre a página de auditoria.
+- Insights de Vendas:
+  - Dois painéis lado a lado com mesma altura: “Top 5 Produtos (Mês Atual)” e “Mix por Categorias”.
+  - Use para decidir reposição e campanhas de destaque.
+
+#### Auditoria de Atividades (novo)
+- Caminho: Menu superior → “Alertas” → link “Ver todos” OU acessar `/activities` diretamente.
+- O que você encontra:
+  - Tabela de logs com “Quando”, “Usuário”, “Perfil”, “Ação”, “Entidade” e “Detalhes”.
+  - Filtros por busca, perfil (admin/employee/delivery) e limite de itens.
+- Para que serve:
+  - Investigar ações suspeitas, corrigir erros operacionais e garantir transparência.
+
 ### 🛒 **Vendas** (Ícone: Carrinho)
 **O que é:** Sistema de ponto de venda (PDV)
 **Para que serve:** Realizar vendas diárias
@@ -96,6 +121,8 @@ O sistema possui um **menu lateral inteligente** que se expande ao passar o mous
 ### 📦 **Estoque** (Ícone: Caixa)
 **O que é:** Controle completo do inventário
 **Para que serve:** Gerenciar produtos e estoque
+
+> Dica: o “Total em estoque” também aparece no card de “Alertas” da Dashboard. Para cálculo imediato, garanta que a função `get_inventory_total_value` esteja ativa no banco (ou use o fallback automático por produtos).
 
 ### 👥 **Clientes** (Ícone: Pessoas)
 **O que é:** Base de dados de clientes

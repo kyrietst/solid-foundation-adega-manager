@@ -81,7 +81,7 @@ export const DashboardPresentation: React.FC<DashboardPresentationProps> = ({
             <SalesChartSection className="h-full" contentHeight={360} cardHeight={420} />
           </div>
           <div className="lg:col-span-4">
-            <AlertsPanel maxItems={8} previewActivities={recentActivities} cardHeight={420} />
+            <AlertsPanel maxItems={6} previewActivities={recentActivities} cardHeight={460} />
           </div>
 
           {/* Insights em abas ocupando largura total */}

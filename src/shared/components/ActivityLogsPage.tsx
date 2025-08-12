@@ -1,7 +1,14 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/primitives/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/primitives/table';
+import { Badge } from '@/shared/ui/primitives/badge';
+import { Button } from '@/shared/ui/primitives/button';
+import { SearchBar21st } from '@/shared/ui/thirdparty/search-bar-21st';
+import { LoadingSpinner } from '@/shared/ui/composite/loading-spinner';
+import { Clock, User, Shield, Activity, Database, FileText, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
+import { cn } from '@/core/config/utils';
 
 export interface ActivityLogRow {
   id: string;
@@ -14,22 +21,110 @@ export interface ActivityLogRow {
   created_at: string;
 }
 
+// Badge para perfil do usuário
+const RoleBadge = ({ role }: { role: string | null }) => {
+  if (!role) return <span className="text-gray-400">—</span>;
+  
+  const roleColors = {
+    admin: "bg-red-500/20 text-red-400 border-red-500/30",
+    employee: "bg-blue-500/20 text-blue-400 border-blue-500/30", 
+    delivery: "bg-green-500/20 text-green-400 border-green-500/30",
+    system: "bg-purple-500/20 text-purple-400 border-purple-500/30"
+  };
+  
+  const roleName = {
+    admin: "Admin",
+    employee: "Vendedor", 
+    delivery: "Delivery",
+    system: "Sistema"
+  };
+  
+  const colorClass = roleColors[role as keyof typeof roleColors] || "bg-gray-500/20 text-gray-400 border-gray-500/30";
+  const displayName = roleName[role as keyof typeof roleName] || role;
+  
+  return (
+    <Badge className={cn("text-xs", colorClass)}>
+      {displayName}
+    </Badge>
+  );
+};
+
+// Badge para tipo de ação
+const ActionBadge = ({ action }: { action: string }) => {
+  const actionColors = {
+    login: "bg-green-500/20 text-green-400 border-green-500/30",
+    create: "bg-blue-500/20 text-blue-400 border-blue-500/30",
+    update: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
+    delete: "bg-red-500/20 text-red-400 border-red-500/30",
+    system: "bg-purple-500/20 text-purple-400 border-purple-500/30"
+  };
+  
+  let colorClass = "bg-gray-500/20 text-gray-400 border-gray-500/30";
+  if (action.includes('login')) colorClass = actionColors.login;
+  else if (action.includes('create')) colorClass = actionColors.create;
+  else if (action.includes('update')) colorClass = actionColors.update;
+  else if (action.includes('delete')) colorClass = actionColors.delete;
+  else if (action.includes('system')) colorClass = actionColors.system;
+  
+  return (
+    <Badge className={cn("text-xs font-mono", colorClass)}>
+      {action}
+    </Badge>
+  );
+};
+
+// Badge para entidade 
+const EntityBadge = ({ entity, entityId }: { entity: string | null; entityId: string | null }) => {
+  if (!entity) return <span className="text-gray-400">—</span>;
+  
+  const entityColors = {
+    sales: "bg-green-500/10 text-green-400 border-green-500/30",
+    products: "bg-blue-500/10 text-blue-400 border-blue-500/30",
+    customers: "bg-purple-500/10 text-purple-400 border-purple-500/30",
+    auth: "bg-orange-500/10 text-orange-400 border-orange-500/30",
+    system: "bg-gray-500/10 text-gray-400 border-gray-500/30"
+  };
+  
+  const colorClass = entityColors[entity as keyof typeof entityColors] || "bg-gray-500/10 text-gray-400 border-gray-500/30";
+  
+  return (
+    <div className="flex items-center gap-1">
+      <Badge variant="outline" className={cn("text-xs", colorClass)}>
+        {entity}
+      </Badge>
+      {entityId && <span className="text-xs text-gray-500 font-mono">#{entityId.slice(-8)}</span>}
+    </div>
+  );
+};
+
+type SortField = 'created_at' | 'actor' | 'role' | 'action' | 'entity' | null;
+type SortDirection = 'asc' | 'desc';
+
 export default function ActivityLogsPage() {
   const [search, setSearch] = useState('');
   const [role, setRole] = useState<string | 'all'>('all');
+  const [entity, setEntity] = useState<string | 'all'>('all');
   const [limit, setLimit] = useState(50);
+  const [sortField, setSortField] = useState<SortField>('created_at');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['activity-logs', { search, role, limit }],
+    queryKey: ['activity-logs', { search, role, entity, limit, sortField, sortDirection }],
     queryFn: async (): Promise<ActivityLogRow[]> => {
       let query = supabase
         .from('activity_logs')
         .select('id, actor, role, action, entity, entity_id, details, created_at')
-        .order('created_at', { ascending: false })
         .limit(limit);
 
       if (role !== 'all') query = query.eq('role', role);
-      if (search) query = query.ilike('details', `%${search}%`).ilike('action', `%${search}%`);
+      if (entity !== 'all') query = query.eq('entity', entity);
+      if (search) {
+        query = query.or(`details.ilike.%${search}%,action.ilike.%${search}%,actor.ilike.%${search}%`);
+      }
+      
+      if (sortField) {
+        query = query.order(sortField, { ascending: sortDirection === 'asc' });
+      }
 
       const { data, error } = await query;
       if (error) throw error;
@@ -39,84 +134,236 @@ export default function ActivityLogsPage() {
   });
 
   const rows = data || [];
+  
+  const uniqueEntities = ['all', ...new Set(rows.map(r => r.entity).filter(Boolean))];
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('desc');
+    }
+  };
+
+  const getSortIcon = (field: SortField) => {
+    if (sortField !== field) return <ArrowUpDown className="w-4 h-4" />;
+    return sortDirection === 'asc' ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />;
+  };
+
+  if (isLoading) {
+    return (
+      <div className="container my-6 space-y-4 p-4 border border-border rounded-lg bg-background shadow-sm">
+        <div className="flex items-center justify-center py-8">
+          <LoadingSpinner size="lg" text="Carregando atividades..." />
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container my-6 space-y-4 p-4 border border-border rounded-lg bg-background shadow-sm">
+        <div className="flex items-center justify-center py-8">
+          <div className="text-center text-red-400">
+            <Activity className="w-8 h-8 mx-auto mb-2" />
+            <p>Erro ao carregar atividades</p>
+            <p className="text-sm text-gray-400 mt-1">{error.message}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
+    <div className="container my-6 space-y-4 p-4 border border-border rounded-lg bg-background shadow-sm">
       <div>
-        <h1 className="text-2xl font-semibold text-white">Atividades do Sistema</h1>
-        <p className="text-sm text-gray-400">Auditoria de ações de usuários (admins, vendedores, delivery).</p>
+        <h1 className="text-2xl font-semibold text-white flex items-center gap-2">
+          <Activity className="w-6 h-6" />
+          Atividades do Sistema
+        </h1>
+        <p className="text-sm text-gray-400">Auditoria completa de ações de usuários e sistema.</p>
       </div>
 
-      <Card className="border-white/10 bg-black/40 backdrop-blur-xl">
-        <CardHeader>
-          <CardTitle className="text-gray-200 text-base">Filtros</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-            <div className="md:col-span-6">
-              <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar por ação ou detalhes" className="w-full bg-black/40 border border-white/10 rounded-md px-3 py-2 text-sm text-gray-200" />
-            </div>
-            <div className="md:col-span-3">
-              <select value={role} onChange={(e) => setRole(e.target.value as any)} className="w-full bg-black/40 border border-white/10 rounded-md px-3 py-2 text-sm text-gray-200">
-                <option value="all">Todos os perfis</option>
-                <option value="admin">Admin</option>
-                <option value="employee">Vendedor</option>
-                <option value="delivery">Delivery</option>
-              </select>
-            </div>
-            <div className="md:col-span-3">
-              <select value={limit} onChange={(e) => setLimit(Number(e.target.value))} className="w-full bg-black/40 border border-white/10 rounded-md px-3 py-2 text-sm text-gray-200">
-                <option value={25}>25</option>
-                <option value={50}>50</option>
-                <option value={100}>100</option>
-              </select>
-            </div>
+      {/* Filtros */}
+      <div className="flex flex-wrap gap-4 items-center justify-between">
+        <div className="flex gap-2 flex-wrap items-center">
+          <div className="w-64 md:w-80">
+            <SearchBar21st
+              placeholder="Buscar atividades..."
+              value={search}
+              onChange={(val) => setSearch(val)}
+              debounceMs={150}
+              disableResizeAnimation
+              showOnFocus
+            />
           </div>
-        </CardContent>
-      </Card>
+          <select
+            value={role}
+            onChange={(e) => setRole(e.target.value)}
+            className="px-3 py-2 border border-border rounded-md bg-background text-sm"
+          >
+            <option value="all">Todos os perfis</option>
+            <option value="admin">Admin</option>
+            <option value="employee">Vendedor</option>
+            <option value="delivery">Delivery</option>
+            <option value="system">Sistema</option>
+          </select>
+          <select
+            value={entity}
+            onChange={(e) => setEntity(e.target.value)}
+            className="px-3 py-2 border border-border rounded-md bg-background text-sm"
+          >
+            <option value="all">Todas as entidades</option>
+            {uniqueEntities.slice(1).map((ent) => (
+              <option key={ent} value={ent}>
+                {ent}
+              </option>
+            ))}
+          </select>
+          <select
+            value={limit}
+            onChange={(e) => setLimit(Number(e.target.value))}
+            className="px-3 py-2 border border-border rounded-md bg-background text-sm"
+          >
+            <option value={25}>25 registros</option>
+            <option value={50}>50 registros</option>
+            <option value={100}>100 registros</option>
+            <option value={200}>200 registros</option>
+          </select>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">
+            {rows.length} atividade{rows.length !== 1 ? 's' : ''}
+          </span>
+        </div>
+      </div>
 
-      <Card className="border-white/10 bg-black/40 backdrop-blur-xl">
-        <CardHeader>
-          <CardTitle className="text-gray-200 text-base">Resultados</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {error && (
-            <div className="text-red-400 text-sm">Erro ao carregar logs</div>
-          )}
-          {isLoading ? (
-            <div className="text-gray-400 text-sm">Carregando...</div>
-          ) : rows.length === 0 ? (
-            <div className="text-gray-400 text-sm">Nenhuma atividade encontrada.</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-sm">
-                <thead className="text-gray-400">
-                  <tr>
-                    <th className="text-left py-2 pr-4">Quando</th>
-                    <th className="text-left py-2 pr-4">Usuário</th>
-                    <th className="text-left py-2 pr-4">Perfil</th>
-                    <th className="text-left py-2 pr-4">Ação</th>
-                    <th className="text-left py-2 pr-4">Entidade</th>
-                    <th className="text-left py-2 pr-4">Detalhes</th>
-                  </tr>
-                </thead>
-                <tbody className="text-gray-200">
-                  {rows.map((r) => (
-                    <tr key={r.id} className="border-t border-white/5">
-                      <td className="py-2 pr-4 whitespace-nowrap">{new Date(r.created_at).toLocaleString('pt-BR')}</td>
-                      <td className="py-2 pr-4">{r.actor || '—'}</td>
-                      <td className="py-2 pr-4">{r.role || '—'}</td>
-                      <td className="py-2 pr-4">{r.action}</td>
-                      <td className="py-2 pr-4">{r.entity}{r.entity_id ? ` #${r.entity_id}` : ''}</td>
-                      <td className="py-2 pr-4 max-w-[420px] truncate" title={r.details || ''}>{r.details || '—'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {/* Tabela */}
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[160px]">
+                <Button
+                  variant="ghost"
+                  onClick={() => handleSort('created_at')}
+                  className="flex items-center gap-2 p-0 hover:bg-transparent text-gray-400 hover:text-white"
+                >
+                  <Clock className="w-4 h-4" />
+                  Quando
+                  {getSortIcon('created_at')}
+                </Button>
+              </TableHead>
+              <TableHead className="w-[180px]">
+                <Button
+                  variant="ghost"
+                  onClick={() => handleSort('actor')}
+                  className="flex items-center gap-2 p-0 hover:bg-transparent text-gray-400 hover:text-white"
+                >
+                  <User className="w-4 h-4" />
+                  Usuário
+                  {getSortIcon('actor')}
+                </Button>
+              </TableHead>
+              <TableHead className="w-[120px]">
+                <Button
+                  variant="ghost"
+                  onClick={() => handleSort('role')}
+                  className="flex items-center gap-2 p-0 hover:bg-transparent text-gray-400 hover:text-white"
+                >
+                  <Shield className="w-4 h-4" />
+                  Perfil
+                  {getSortIcon('role')}
+                </Button>
+              </TableHead>
+              <TableHead className="w-[140px]">
+                <Button
+                  variant="ghost"
+                  onClick={() => handleSort('action')}
+                  className="flex items-center gap-2 p-0 hover:bg-transparent text-gray-400 hover:text-white"
+                >
+                  <Activity className="w-4 h-4" />
+                  Ação
+                  {getSortIcon('action')}
+                </Button>
+              </TableHead>
+              <TableHead className="w-[140px]">
+                <Button
+                  variant="ghost"
+                  onClick={() => handleSort('entity')}
+                  className="flex items-center gap-2 p-0 hover:bg-transparent text-gray-400 hover:text-white"
+                >
+                  <Database className="w-4 h-4" />
+                  Entidade
+                  {getSortIcon('entity')}
+                </Button>
+              </TableHead>
+              <TableHead>
+                <div className="flex items-center gap-2 text-gray-400">
+                  <FileText className="w-4 h-4" />
+                  Detalhes
+                </div>
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {rows.length ? (
+              rows.map((row) => (
+                <TableRow key={row.id}>
+                  <TableCell className="font-mono text-xs whitespace-nowrap">
+                    {new Date(row.created_at).toLocaleString('pt-BR', {
+                      day: '2-digit',
+                      month: '2-digit', 
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center">
+                        <span className="text-xs font-semibold text-primary">
+                          {(row.actor || 'S').charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      <span className="text-sm">{row.actor || 'Sistema'}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <RoleBadge role={row.role} />
+                  </TableCell>
+                  <TableCell>
+                    <ActionBadge action={row.action} />
+                  </TableCell>
+                  <TableCell>
+                    <EntityBadge entity={row.entity} entityId={row.entity_id} />
+                  </TableCell>
+                  <TableCell className="max-w-[300px]">
+                    <div className="truncate" title={row.details || ''}>
+                      {row.details || '—'}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center py-8">
+                  <div className="flex flex-col items-center gap-2">
+                    <Activity className="w-8 h-8 text-gray-400" />
+                    <p className="text-gray-400">Nenhuma atividade encontrada.</p>
+                    {(search || role !== 'all' || entity !== 'all') && (
+                      <p className="text-sm text-gray-500">
+                        Tente ajustar os filtros de busca.
+                      </p>
+                    )}
+                  </div>
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }

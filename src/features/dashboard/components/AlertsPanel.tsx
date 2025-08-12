@@ -4,6 +4,8 @@ import { AlertTriangle, Info, XCircle, ExternalLink, ShoppingCart, Package, User
 import { useSmartAlerts, Alert } from '../hooks/useSmartAlerts';
 import { cn } from '@/core/config/utils';
 import { RecentActivity } from '@/features/dashboard/hooks/useDashboardData';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/core/api/supabase/client';
 
 export interface AlertItem {
   id: string;
@@ -49,6 +51,28 @@ interface AlertsPanelProps {
 
 export function AlertsPanel({ items, className, maxItems = 6, previewActivities, cardHeight }: AlertsPanelProps) {
   const { data: alertsData, isLoading, error } = useSmartAlerts();
+  const shouldFetchInventoryTotal = alertsData?.inventoryTotalValue == null;
+  const { data: inventoryTotal } = useQuery({
+    queryKey: ['inventory-total-value'],
+    enabled: shouldFetchInventoryTotal,
+    staleTime: 5 * 60 * 1000,
+    queryFn: async (): Promise<number | null> => {
+      try {
+        const { data: rpcData, error: rpcError } = await supabase.rpc('get_inventory_total_value');
+        if (!rpcError && rpcData && typeof rpcData.total_value === 'number') {
+          return Number(rpcData.total_value);
+        }
+      } catch {}
+      try {
+        const { data, error } = await supabase.from('products').select('price, stock_quantity');
+        if (!error && data) {
+          return data.reduce((sum: number, p: any) => sum + Number(p.price || 0) * Number(p.stock_quantity || 0), 0);
+        }
+      } catch {}
+      return null;
+    },
+  });
+  const totalInventoryValue = alertsData?.inventoryTotalValue ?? inventoryTotal ?? null;
   
   // Use smart alerts by default, fall back to legacy items prop
   const alerts = items || alertsData?.alerts || [];
@@ -71,7 +95,7 @@ export function AlertsPanel({ items, className, maxItems = 6, previewActivities,
   }
 
   return (
-    <Card className={cn("border-white/10 bg-black/40 backdrop-blur-xl", className)} style={cardHeight ? { height: cardHeight } : undefined}>
+    <Card className={cn("border-white/10 bg-black/40 backdrop-blur-xl", className)} style={cardHeight ? { minHeight: cardHeight } : undefined}>
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm text-gray-400 flex items-center gap-2">
@@ -103,7 +127,7 @@ export function AlertsPanel({ items, className, maxItems = 6, previewActivities,
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-3 max-h-[520px] overflow-y-auto">
+      <CardContent className="space-y-3">
         {isLoading ? (
           <div className="space-y-2">
             {Array.from({ length: 3 }).map((_, i) => (
@@ -170,11 +194,11 @@ export function AlertsPanel({ items, className, maxItems = 6, previewActivities,
         )}
 
         {/* Total de estoque (quando disponível) */}
-        {alertsData?.inventoryTotalValue != null && (
+        {totalInventoryValue != null && (
           <div className="pt-3 mt-2 border-t border-white/10 text-center">
             <div className="text-xs text-gray-400">Total em estoque</div>
             <div className="text-lg font-semibold text-amber-400">
-              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(alertsData.inventoryTotalValue)}
+              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalInventoryValue)}
             </div>
             <div className="text-[10px] text-gray-500 mt-1">Baseado no valor do estoque</div>
           </div>
