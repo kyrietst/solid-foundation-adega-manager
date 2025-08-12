@@ -104,7 +104,7 @@ export function TopProductsCard({ className, period = 30, limit = 5, useCurrentM
 
       <CardContent className="space-y-3">
         {isLoading ? (
-          <div className="space-y-3">
+          <div className="space-y-3 h-[380px]">
             {Array.from({ length: limit }).map((_, i) => (
               <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-white/5 animate-pulse">
                 <div className="flex-1">

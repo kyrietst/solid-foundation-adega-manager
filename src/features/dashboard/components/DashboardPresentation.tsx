@@ -62,51 +62,44 @@ export const DashboardPresentation: React.FC<DashboardPresentationProps> = ({
         variant="prominent"
       />
 
-      <div className="mt-4 space-y-6">
-        {/* KPIs no topo, largura total */}
-        <div>
-          <KpiSection />
-        </div>
+      <div className="mt-4">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          {/* KPIs no topo, largura total */}
+          <div className="lg:col-span-12">
+            <KpiSection />
+          </div>
 
-        {/* Linha: Gráfico principal + Atividades recentes */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Métricas financeiras logo abaixo dos KPIs, no mesmo bloco superior */}
+          {showFinancialMetrics && sensitiveMetrics && (
+            <div className="lg:col-span-12">
+              <AdminPanel metrics={sensitiveMetrics} isLoading={isLoadingFinancials} showHeader={false} />
+            </div>
+          )}
+
+          {/* Linha: Tendência de Vendas (8) + Alertas (4) como antes */}
           <div className="lg:col-span-8">
-            <SalesChartSection />
+            <SalesChartSection className="h-full" contentHeight={360} cardHeight={420} />
           </div>
           <div className="lg:col-span-4">
-            <RecentActivities activities={recentActivities} isLoading={isLoadingActivities} />
+            <AlertsPanel maxItems={8} previewActivities={recentActivities} cardHeight={420} />
           </div>
-        </div>
 
-        {/* Painel financeiro (somente admin) */}
-        {showFinancialMetrics && sensitiveMetrics && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2">
-              <AdminPanel metrics={sensitiveMetrics} isLoading={isLoadingFinancials} />
-            </div>
-          </div>
-        )}
-
-        {/* Linha com insights em abas + alertas com rolagem interna */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <div className="lg:col-span-8">
+          {/* Insights em abas ocupando largura total */}
+          <div className="lg:col-span-12">
             <SalesInsightsTabs />
           </div>
-          <div className="lg:col-span-4">
-            <AlertsPanel maxItems={8} />
-          </div>
-        </div>
 
-        {/* Nota para funcionários, quando aplicável */}
-        {showEmployeeNote && (
-          <div>
-            <div className="p-4 bg-yellow-900/30 border border-yellow-700/50 rounded-lg backdrop-blur-sm">
-              <p className="text-sm text-yellow-300">
-                Nota: Algumas métricas financeiras e estratégicas estão disponíveis apenas para administradores.
-              </p>
+          {/* Nota para funcionários, quando aplicável */}
+          {showEmployeeNote && (
+            <div className="lg:col-span-12">
+              <div className="p-4 bg-yellow-900/30 border border-yellow-700/50 rounded-lg backdrop-blur-sm">
+                <p className="text-sm text-yellow-300">
+                  Nota: Algumas métricas financeiras e estratégicas estão disponíveis apenas para administradores.
+                </p>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </PageContainer>
   );
@@ -175,6 +168,12 @@ function KpiSection() {
     });
   }
 
-  return <KpiCards items={items} showAnimation={true} />;
+  return (
+    <Card className="border-white/10 bg-black/40 backdrop-blur-xl">
+      <CardContent className="pt-6">
+        <KpiCards items={items} showAnimation={true} />
+      </CardContent>
+    </Card>
+  );
 }
 

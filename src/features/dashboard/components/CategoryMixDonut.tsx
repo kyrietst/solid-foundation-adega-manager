@@ -14,6 +14,7 @@ interface CategoryMix {
 interface CategoryMixDonutProps {
   className?: string;
   period?: number; // days
+  showTotal?: boolean; // exibir bloco Total dentro do card (default: false)
 }
 
 const COLORS = [
@@ -27,7 +28,7 @@ const COLORS = [
   '#f43f5e', // rose
 ];
 
-export function CategoryMixDonut({ className, period = 30 }: CategoryMixDonutProps) {
+export function CategoryMixDonut({ className, period = 30, showTotal = false }: CategoryMixDonutProps) {
   const { data: categoryData, isLoading, error } = useQuery({
     queryKey: ['category-mix', period],
     queryFn: async (): Promise<CategoryMix[]> => {
@@ -175,13 +176,13 @@ export function CategoryMixDonut({ className, period = 30 }: CategoryMixDonutPro
 
       <CardContent>
         {isLoading ? (
-          <div className="h-[280px] flex items-center justify-center">
+          <div className="h-[380px] flex items-center justify-center">
             <div className="w-8 h-8 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin" />
           </div>
         ) : data && data.length > 0 ? (
           <div className="space-y-4">
             {/* Chart */}
-            <div className="h-[200px]">
+            <div className="h-[280px]">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -225,18 +226,20 @@ export function CategoryMixDonut({ className, period = 30 }: CategoryMixDonutPro
               ))}
             </div>
 
-            {/* Total */}
-            <div className="pt-3 border-t border-white/10 text-center">
-              <div className="text-sm text-gray-400">Total</div>
-              <div className="text-lg font-semibold text-amber-400">
-                {formatCurrency(totalRevenue)}
-              </div>
-              {!hasRealSalesData && (
-                <div className="text-xs text-gray-500 mt-1">
-                  Baseado no valor do estoque
+            {/* Total - opcional (vamos mover para o card de Alertas) */}
+            {showTotal && (
+              <div className="pt-3 border-t border-white/10 text-center">
+                <div className="text-sm text-gray-400">Total</div>
+                <div className="text-lg font-semibold text-amber-400">
+                  {formatCurrency(totalRevenue)}
                 </div>
-              )}
-            </div>
+                {!hasRealSalesData && (
+                  <div className="text-xs text-gray-500 mt-1">
+                    Baseado no valor do estoque
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         ) : (
           <div className="h-[280px] flex flex-col items-center justify-center text-center">

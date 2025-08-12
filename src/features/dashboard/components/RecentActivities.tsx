@@ -16,6 +16,8 @@ interface RecentActivitiesProps {
   isLoading?: boolean;
   variant?: 'default' | 'premium' | 'success' | 'warning' | 'error';
   glassEffect?: boolean;
+  contentHeight?: number;
+  classNameOverride?: string;
 }
 
 export const RecentActivities: React.FC<RecentActivitiesProps> = ({
@@ -23,6 +25,8 @@ export const RecentActivities: React.FC<RecentActivitiesProps> = ({
   isLoading = false,
   variant = 'premium',
   glassEffect = true,
+  contentHeight = 360,
+  classNameOverride,
 }) => {
   // Mapear tipos de atividade para ícones e cores
   const getActivityIcon = (type: RecentActivity['type']) => {
@@ -51,13 +55,13 @@ export const RecentActivities: React.FC<RecentActivitiesProps> = ({
   const glassClasses = glassEffect ? getGlassCardClasses(variant) : '';
 
   return (
-    <Card className={cn(glassClasses, 'shadow-xl')}>
+    <Card className={cn(glassClasses, 'shadow-xl', classNameOverride)}>
       <CardHeader>
         <CardTitle className="text-primary-yellow text-xl font-semibold">
           Atividades Recentes
         </CardTitle>
       </CardHeader>
-      <CardContent className="max-h-[420px] overflow-y-auto">
+      <CardContent className="overflow-y-auto" style={{ maxHeight: contentHeight }}>
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
             <LoadingSpinner size="lg" />

@@ -1,8 +1,9 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/primitives/card';
-import { AlertTriangle, Info, XCircle, ExternalLink } from 'lucide-react';
+import { AlertTriangle, Info, XCircle, ExternalLink, ShoppingCart, Package, Users, Truck } from 'lucide-react';
 import { useSmartAlerts, Alert } from '../hooks/useSmartAlerts';
 import { cn } from '@/core/config/utils';
+import { RecentActivity } from '@/features/dashboard/hooks/useDashboardData';
 
 export interface AlertItem {
   id: string;
@@ -42,9 +43,11 @@ interface AlertsPanelProps {
   items?: AlertItem[]; // Legacy prop for backward compatibility
   className?: string;
   maxItems?: number;
+  previewActivities?: RecentActivity[]; // preview das últimas atividades reais
+  cardHeight?: number; // altura fixa para alinhar com outros cards
 }
 
-export function AlertsPanel({ items, className, maxItems = 6 }: AlertsPanelProps) {
+export function AlertsPanel({ items, className, maxItems = 6, previewActivities, cardHeight }: AlertsPanelProps) {
   const { data: alertsData, isLoading, error } = useSmartAlerts();
   
   // Use smart alerts by default, fall back to legacy items prop
@@ -68,7 +71,7 @@ export function AlertsPanel({ items, className, maxItems = 6 }: AlertsPanelProps
   }
 
   return (
-    <Card className={cn("border-white/10 bg-black/40 backdrop-blur-xl", className)}>
+    <Card className={cn("border-white/10 bg-black/40 backdrop-blur-xl", className)} style={cardHeight ? { height: cardHeight } : undefined}>
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm text-gray-400 flex items-center gap-2">
@@ -100,7 +103,7 @@ export function AlertsPanel({ items, className, maxItems = 6 }: AlertsPanelProps
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-2 max-h-[420px] overflow-y-auto">
+      <CardContent className="space-y-3 max-h-[520px] overflow-y-auto">
         {isLoading ? (
           <div className="space-y-2">
             {Array.from({ length: 3 }).map((_, i) => (
@@ -166,16 +169,57 @@ export function AlertsPanel({ items, className, maxItems = 6 }: AlertsPanelProps
           })
         )}
 
-        {alerts.length > maxItems && (
-          <div className="text-center pt-2">
+        {/* Total de estoque (quando disponível) */}
+        {alertsData?.inventoryTotalValue != null && (
+          <div className="pt-3 mt-2 border-t border-white/10 text-center">
+            <div className="text-xs text-gray-400">Total em estoque</div>
+            <div className="text-lg font-semibold text-amber-400">
+              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(alertsData.inventoryTotalValue)}
+            </div>
+            <div className="text-[10px] text-gray-500 mt-1">Baseado no valor do estoque</div>
+          </div>
+        )}
+
+        {/* Prévia últimas atividades reais */}
+        {previewActivities && previewActivities.length > 0 && (
+          <div className="pt-2 mt-2 border-t border-white/10">
+            <div className="text-xs uppercase tracking-wide text-gray-400 mb-2">Últimas atividades</div>
+            <div className="space-y-2">
+              {previewActivities.slice(0, 3).map((act) => {
+                const iconMap = { sale: ShoppingCart, stock: Package, customer: Users, delivery: Truck } as const;
+                const Icon = iconMap[act.type as keyof typeof iconMap] || ShoppingCart;
+                return (
+                  <div key={act.id} className="flex items-start gap-2 text-xs text-gray-300">
+                    <Icon className="h-3.5 w-3.5 text-amber-400 mt-0.5" />
+                    <div className="flex-1 min-w-0 truncate">
+                      <span className="font-medium text-white/90">{act.description}</span>
+                      <span className="text-gray-400"> — {act.details}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        <div className="flex items-center justify-between pt-2">
+          {alerts.length > maxItems ? (
             <a 
               href="/reports?tab=alerts" 
               className="text-xs text-amber-400 hover:text-amber-300 transition-colors"
             >
               Ver mais {alerts.length - maxItems} alerta{alerts.length - maxItems > 1 ? 's' : ''}...
             </a>
-          </div>
-        )}
+          ) : (
+            <span />
+          )}
+          <a 
+            href="/activities" 
+            className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
+          >
+            Ver todos
+          </a>
+        </div>
       </CardContent>
     </Card>
   );

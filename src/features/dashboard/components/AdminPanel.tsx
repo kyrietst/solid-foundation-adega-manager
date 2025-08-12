@@ -15,6 +15,7 @@ interface AdminPanelProps {
   variant?: 'default' | 'premium' | 'success' | 'warning' | 'error';
   glassEffect?: boolean;
   showFinancialIcon?: boolean;
+  showHeader?: boolean;
 }
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({
@@ -23,6 +24,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   variant = 'premium',
   glassEffect = true,
   showFinancialIcon = true,
+  showHeader = true,
 }) => {
   return (
     <section 
@@ -30,20 +32,22 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       role="region" 
       aria-labelledby="admin-panel-title"
     >
-      <div className="flex items-center gap-3 mt-8">
-        {showFinancialIcon && (
-          <div className="p-2 rounded-lg bg-primary-yellow/10 border border-primary-yellow/30">
-            <Shield className="h-5 w-5 text-primary-yellow" aria-hidden="true" />
-          </div>
-        )}
-        <h3 
-          id="admin-panel-title" 
-          className="text-xl font-semibold text-gray-100 flex items-center gap-2"
-        >
-          Métricas Financeiras
-          <TrendingUp className="h-5 w-5 text-primary-yellow" aria-hidden="true" />
-        </h3>
-      </div>
+      {showHeader && (
+        <div className="flex items-center gap-3 mt-2">
+          {showFinancialIcon && (
+            <div className="p-2 rounded-lg bg-primary-yellow/10 border border-primary-yellow/30">
+              <Shield className="h-5 w-5 text-primary-yellow" aria-hidden="true" />
+            </div>
+          )}
+          <h3 
+            id="admin-panel-title" 
+            className="text-xl font-semibold text-gray-100 flex items-center gap-2"
+          >
+            Métricas Financeiras
+            <TrendingUp className="h-5 w-5 text-primary-yellow" aria-hidden="true" />
+          </h3>
+        </div>
+      )}
       
       <div className={cn(
         'p-6 rounded-xl backdrop-blur-sm border transition-all duration-300',

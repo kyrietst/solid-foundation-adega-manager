@@ -16,6 +16,7 @@ export interface AlertsData {
   criticalCount: number;
   warningCount: number;
   infoCount: number;
+  inventoryTotalValue?: number;
 }
 
 export function useSmartAlerts() {
@@ -167,6 +168,18 @@ export function useSmartAlerts() {
         console.error('Error fetching dead stock alerts:', error);
       }
 
+      // 5. Total de valor em estoque (para mostrar no card)
+      try {
+        const { data: stockValueData, error: stockValueError } = await supabase
+          .rpc('get_inventory_total_value');
+        if (!stockValueError && stockValueData && typeof stockValueData.total_value === 'number') {
+          // anexar no retorno final
+          var inventoryTotalValue = Number(stockValueData.total_value);
+        }
+      } catch (error) {
+        console.error('Error fetching inventory total value:', error);
+      }
+
       // Sort alerts by severity priority
       const severityOrder = { critical: 0, warning: 1, info: 2 };
       alerts.sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity]);
@@ -179,7 +192,8 @@ export function useSmartAlerts() {
         alerts: alerts.slice(0, 10), // Limit to top 10 alerts
         criticalCount,
         warningCount,
-        infoCount
+        infoCount,
+        inventoryTotalValue
       };
     },
     staleTime: 5 * 60 * 1000, // 5 minutes cache

@@ -31,6 +31,7 @@ const Reports = lazy(() =>
 const AdvancedReports = lazy(() =>
   import('@/features/reports/components/AdvancedReports').then((m) => ({ default: m.AdvancedReports }))
 );
+const ActivitiesPage = lazy(() => import('@/shared/components/ActivityLogsPage'));
 
 const Index = () => {
   const navigate = useNavigate();
@@ -177,6 +178,14 @@ const Index = () => {
             </WhitePageShell>
           </Suspense>
         ) : <AccessDenied />;
+      case 'activities':
+        return hasPermission(['admin']) ? (
+          <Suspense fallback={<LoadingScreen text="Carregando atividades..." />}>
+            <WhitePageShell>
+              <ActivitiesPage />
+            </WhitePageShell>
+          </Suspense>
+        ) : <AccessDenied />;
       default:
         return hasPermission(['admin', 'employee']) ? (
           <Suspense fallback={<LoadingScreen text="Carregando dashboard..." />}>
@@ -211,7 +220,7 @@ const Index = () => {
         
         <main className="flex-1 overflow-y-auto">
           <div className="p-4 lg:p-8 h-full">
-            <div className="max-w-7xl mx-auto h-full">
+            <div className={activeTab === 'dashboard' ? 'max-w-[1400px] 2xl:max-w-[1600px] mx-auto h-full' : 'max-w-7xl mx-auto h-full'}>
               {renderContent()}
               <Outlet />
             </div>

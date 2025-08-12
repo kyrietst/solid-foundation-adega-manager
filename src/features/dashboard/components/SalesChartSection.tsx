@@ -16,6 +16,8 @@ interface SalesChartData {
 
 interface SalesChartSectionProps {
   className?: string;
+  contentHeight?: number;
+  cardHeight?: number; // altura fixa do card (para alinhar com outros cards)
 }
 
 const periodOptions = [
@@ -29,7 +31,7 @@ const chartTypes = [
   { value: 'bar', label: 'Barras', icon: BarChart3 }
 ];
 
-export function SalesChartSection({ className }: SalesChartSectionProps) {
+export function SalesChartSection({ className, contentHeight = 360, cardHeight }: SalesChartSectionProps) {
   const [selectedPeriod, setSelectedPeriod] = useState(30);
   const [chartType, setChartType] = useState<'line' | 'bar'>('line');
 
@@ -118,8 +120,10 @@ export function SalesChartSection({ className }: SalesChartSectionProps) {
     );
   }
 
+  const computedContentHeight = cardHeight ? Math.max(180, cardHeight - 80) : contentHeight;
+
   return (
-    <Card className={cn("border-white/10 bg-black/40 backdrop-blur-xl", className)}>
+    <Card className={cn("border-white/10 bg-black/40 backdrop-blur-xl", className)} style={cardHeight ? { height: cardHeight } : undefined}>
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <CardTitle className="text-white flex items-center gap-2">
@@ -173,11 +177,11 @@ export function SalesChartSection({ className }: SalesChartSectionProps) {
 
       <CardContent>
         {isLoading ? (
-          <div className="h-[300px] flex items-center justify-center">
+          <div style={{ height: computedContentHeight }} className="flex items-center justify-center">
             <div className="w-8 h-8 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin" />
           </div>
         ) : (
-          <div className="h-[300px]">
+          <div style={{ height: computedContentHeight }}>
             <ResponsiveContainer width="100%" height="100%">
               {chartType === 'line' ? (
                 <LineChart data={salesData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
