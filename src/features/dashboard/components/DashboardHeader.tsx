@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { BlurIn } from "@/components/ui/blur-in";
+import { GradientText } from "@/components/ui/gradient-text";
 import { cn } from '@/core/config/utils';
 
 interface DashboardHeaderProps {
@@ -28,18 +28,14 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               {/* Header Container */}
               <div className="relative w-full text-left px-4 lg:px-8">
                 {/* Título animado */}
-                <BlurIn
-                  word="DASHBOARD"
-                  duration={1.2}
-                  variant={{
-                    hidden: { filter: "blur(15px)", opacity: 0 },
-                    visible: { filter: "blur(0px)", opacity: 1 }
-                  }}
-                  className="text-xl lg:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#FF2400] via-[#FFDA04] to-[#FF2400] drop-shadow-lg"
-                  style={{
-                    textShadow: '0 2px 4px rgba(0,0,0,0.3), 0 0 20px rgba(255, 218, 4, 0.2)'
-                  }}
-                />
+                <GradientText
+                  colors={["#FF2400", "#FFDA04", "#FF2400", "#FFDA04", "#FF2400"]}
+                  animationSpeed={6}
+                  showBorder={false}
+                  className="text-xl lg:text-2xl font-bold"
+                >
+                  DASHBOARD
+                </GradientText>
                 
                 {/* Sublinhado elegante - 4 camadas */}
                 <div className="w-full h-6 relative mt-2">
