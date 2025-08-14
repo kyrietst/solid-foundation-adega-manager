@@ -20,6 +20,7 @@ import { AlertsPanel } from './AlertsPanel';
 import { SalesChartSection } from './SalesChartSection';
 import { useSalesKpis, useCustomerKpis, useInventoryKpis } from '../hooks/useDashboardKpis';
 import { SalesInsightsTabs } from './SalesInsightsTabs';
+import { DashboardHeader } from './DashboardHeader';
 
 export interface DashboardPresentationProps {
   // Dados processados
@@ -51,11 +52,8 @@ export const DashboardPresentation: React.FC<DashboardPresentationProps> = ({
 }) => {
   return (
     <PageContainer padding="lg" spacing="lg" maxWidth="full">
-      <div className="py-6">
-        <h1 className={`${text.h1} ${shadows.strong} text-2xl`}>
-          DASHBOARD
-        </h1>
-      </div>
+      {/* Header padronizado */}
+      <DashboardHeader variant="premium" />
 
       <div className="mt-4">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
