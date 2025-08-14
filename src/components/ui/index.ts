@@ -5,5 +5,6 @@ export { BlurIn } from './blur-in';
 export { MovingBorder, Button as MovingBorderButton } from './moving-border';
 export { GlowEffect } from './glow-effect';
 export { NeonGradientCard } from './neon-gradient-card';
+export { SparklesCore } from './sparkles';
 export { Sidebar } from './sidebar';
 export { FluidBlob } from './fluid-blob';
