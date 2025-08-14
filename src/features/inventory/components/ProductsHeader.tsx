@@ -23,7 +23,7 @@ interface ProductsTitleProps {
 
 export const ProductsTitle: React.FC<ProductsTitleProps> = () => {
   return (
-    <div className="relative w-full text-center mb-6">
+    <div className="relative w-full text-left mb-6">
       <GradientText
         colors={["#FF2400", "#FFDA04", "#FF2400", "#FFDA04", "#FF2400"]}
         animationSpeed={6}
@@ -32,15 +32,6 @@ export const ProductsTitle: React.FC<ProductsTitleProps> = () => {
       >
         PRODUTOS DISPONÍVEIS
       </GradientText>
-      
-      {/* Efeito de sublinhado elegante */}
-      <div className="w-full h-6 relative mt-2">
-        {/* Gradientes do sublinhado com mais opacidade */}
-        <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FF2400]/80 to-transparent h-[2px] w-full blur-sm" />
-        <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FF2400] to-transparent h-px w-full" />
-        <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FFDA04]/80 to-transparent h-[3px] w-3/4 blur-sm mx-auto" />
-        <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FFDA04] to-transparent h-px w-3/4 mx-auto" />
-      </div>
     </div>
   );
 };
