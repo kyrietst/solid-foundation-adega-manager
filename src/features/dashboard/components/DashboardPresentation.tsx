@@ -51,11 +51,11 @@ export const DashboardPresentation: React.FC<DashboardPresentationProps> = ({
   showEmployeeNote,
 }) => {
   return (
-    <PageContainer padding="lg" spacing="lg" maxWidth="full">
+    <div className="w-full min-h-screen flex flex-col">
       {/* Header padronizado */}
       <DashboardHeader variant="premium" />
 
-      <div className="mt-4">
+      <div className="flex-1 px-4 pb-4 lg:px-8 lg:pb-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* KPIs no topo, largura total */}
           <div className="lg:col-span-12">
@@ -88,7 +88,7 @@ export const DashboardPresentation: React.FC<DashboardPresentationProps> = ({
           )}
         </div>
       </div>
-    </PageContainer>
+    </div>
   );
 };
 
