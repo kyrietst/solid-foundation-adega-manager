@@ -10,6 +10,7 @@ import { ProductsGridContainer } from '../../inventory/components/ProductsGridCo
 export interface ProductsGridProps {
   showSearch?: boolean;
   showFilters?: boolean;
+  showHeader?: boolean;
   initialCategory?: string;
   onProductSelect?: (product: Product) => void;
   gridColumns?: {

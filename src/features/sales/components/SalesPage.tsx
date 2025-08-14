@@ -137,6 +137,7 @@ function SalesPage({
                   <ProductsGrid 
                     variant={variant}
                     glassEffect={glassEffect}
+                    showHeader={false}
                     gridColumns={{
                       mobile: 1,
                       tablet: 2,
@@ -159,6 +160,7 @@ function SalesPage({
                 <ProductsGrid 
                   variant={variant}
                   glassEffect={glassEffect}
+                  showHeader={false}
                   gridColumns={{
                     mobile: 2,
                     tablet: 3,

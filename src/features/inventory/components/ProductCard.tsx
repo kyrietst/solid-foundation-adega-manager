@@ -8,7 +8,7 @@ import { Button } from '@/shared/ui/primitives/button';
 import { Plus } from 'lucide-react';
 import type { Product } from '@/types/inventory.types';
 import { formatCurrency, cn } from '@/core/config/utils';
-import { getGlassCardClasses } from '@/core/config/theme-utils';
+import { getGlassCardClasses, getHoverTransformClasses } from '@/core/config/theme-utils';
 import { text, shadows } from "@/core/config/theme";
 import { ProductImage } from '@/shared/ui/composite/optimized-image';
 
@@ -31,7 +31,12 @@ export const ProductCard = React.memo<ProductCardProps>(({
 
   return (
     <div 
-      className="group bg-black/70 backdrop-blur-xl border border-white/20 shadow-lg rounded-xl overflow-hidden hover:shadow-2xl hover:shadow-purple-500/20 transition-all duration-500 hover:border-purple-400/60 hover:scale-[1.03] hover:-translate-y-1 hero-spotlight"
+      className={cn(
+        "group hero-spotlight rounded-2xl border border-white/20 bg-black/70 backdrop-blur-md text-card-foreground shadow-[0_8px_24px_rgba(0,0,0,0.6)] overflow-hidden transition-all duration-200",
+        getHoverTransformClasses('lift'),
+        "hover:shadow-2xl hover:shadow-purple-500/20 hover:border-purple-400/60",
+        glassClasses
+      )}
       onMouseMove={(e) => {
         const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
         const x = ((e.clientX - rect.left) / rect.width) * 100;
@@ -63,24 +68,24 @@ export const ProductCard = React.memo<ProductCardProps>(({
         </div>
       </div>
 
-      {/* Informações do produto */}
-      <div className="p-4 space-y-3">
+      {/* Informações do produto - Seguindo padrão CardHeader/CardContent */}
+      <div className="p-5 space-y-3">
         <div className="space-y-2">
           <h3 
-            className="font-bold line-clamp-2 h-12 text-lg leading-tight"
-            style={{ color: '#FF4B01' }}
+            className="font-bold line-clamp-2 h-12 text-lg leading-tight text-gray-300"
+            style={{ color: '#FF2400' }}
           >
             {product.name}
           </h3>
           
-          {/* Preço com destaque maior */}
+          {/* Preço com cores padronizadas */}
           <div className="flex items-center justify-between">
             <div className="space-y-1">
-              <span className="text-2xl font-bold block text-yellow-400">
+              <span className="text-2xl font-bold block text-primary-yellow">
                 {formatCurrency(product.price)}
               </span>
               {product.category && (
-                <span className="text-xs opacity-75 text-gray-300">
+                <span className="text-xs text-gray-400">
                   {product.category}
                 </span>
               )}
@@ -88,16 +93,17 @@ export const ProductCard = React.memo<ProductCardProps>(({
           </div>
         </div>
         
-        {/* Botão de ação melhorado */}
+        {/* Botão com cores padronizadas do sistema */}
         <Button 
           size="sm" 
           onClick={() => onAddToCart(product)}
           disabled={isOutOfStock}
           className={cn(
-            'w-full h-10 font-semibold transition-all duration-300 transform',
+            'w-full h-10 font-semibold transition-all duration-200',
+            getHoverTransformClasses('scale'),
             isOutOfStock 
               ? 'bg-gray-600/30 text-gray-400 border border-gray-500/40 cursor-not-allowed backdrop-blur-sm'
-              : 'bg-gradient-to-r from-yellow-400 to-yellow-500 text-black hover:from-yellow-300 hover:to-yellow-400 border border-yellow-400/50 shadow-lg hover:shadow-yellow-400/30 hover:scale-105 active:scale-95'
+              : 'bg-gradient-to-r from-primary-yellow to-yellow-500 text-black hover:from-yellow-300 hover:to-yellow-400 border border-primary-yellow/50 shadow-lg hover:shadow-yellow-400/30'
           )}
           aria-label={isOutOfStock ? `Produto ${product.name} indisponível` : `Adicionar ${product.name} ao carrinho`}
         >

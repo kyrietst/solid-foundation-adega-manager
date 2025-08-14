@@ -8,9 +8,11 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
 import { useNotifications } from '@/shared/hooks/common/useNotifications';
 import { ProductsGridContainer } from './ProductsGridContainer';
+import { ProductsHeader } from './ProductsHeader';
 import { ProductForm } from './ProductForm';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shared/ui/primitives/dialog';
 import type { ProductFormData } from '@/core/types/inventory.types';
+import { useProductsGridLogic } from '@/hooks/products/useProductsGridLogic';
 
 interface InventoryManagementProps {
   showAddButton?: boolean;
@@ -30,6 +32,17 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);
   const queryClient = useQueryClient();
   const { showSuccess, showError } = useNotifications();
+
+  // Get products data for header stats
+  const {
+    products,
+    filteredCount,
+    totalProducts,
+    hasActiveFilters,
+  } = useProductsGridLogic({
+    showSearch,
+    showFilters,
+  });
 
   // Mutation para adicionar produto
   const addProductMutation = useMutation({
@@ -97,14 +110,28 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
 
   return (
     <div className={className}>
-      {/* Grid de produtos com botão de adicionar */}
-      <ProductsGridContainer
-        showSearch={showSearch}
-        showFilters={showFilters}
-        showAddButton={showAddButton}
-        onAddToCart={onProductSelect}
-        onAddProduct={showAddButton ? handleAddProduct : undefined}
-      />
+      {/* Header fora do container - "PRODUTOS DISPONÍVEIS" */}
+      <div className="mb-6">
+        <ProductsHeader
+          filteredCount={filteredCount}
+          totalProducts={totalProducts}
+          hasActiveFilters={hasActiveFilters}
+          onAddProduct={showAddButton ? handleAddProduct : undefined}
+        />
+      </div>
+
+      {/* Container com background glass morphism */}
+      <div className="h-full bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg hero-spotlight p-4 flex flex-col min-h-0">
+        {/* Grid de produtos sem header */}
+        <ProductsGridContainer
+          showSearch={showSearch}
+          showFilters={showFilters}
+          showAddButton={false}
+          showHeader={false}
+          onAddToCart={onProductSelect}
+          onAddProduct={undefined}
+        />
+      </div>
 
       {/* Modal para adicionar produto */}
       <Dialog open={isAddProductOpen} onOpenChange={setIsAddProductOpen}>

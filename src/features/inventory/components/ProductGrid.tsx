@@ -34,10 +34,9 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
 
   return (
     <div className={cn(
-      'grid gap-6 p-6 rounded-xl bg-black/20 backdrop-blur-sm border border-white/10 h-full overflow-y-auto',
+      'grid gap-6 p-6 h-full overflow-y-auto',
       `grid-cols-${gridColumns.mobile} md:grid-cols-${gridColumns.tablet} lg:grid-cols-${gridColumns.desktop} xl:grid-cols-${Math.min(gridColumns.desktop + 1, 6)}`,
       'transition-all duration-300 auto-rows-max',
-      glassClasses,
       className
     )}>
       {products.map((product, index) => (

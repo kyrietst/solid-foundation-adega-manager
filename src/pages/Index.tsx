@@ -101,13 +101,11 @@ const Index = () => {
       case 'inventory':
         return hasPermission(['admin', 'employee']) ? (
           <Suspense fallback={<LoadingScreen text="Carregando inventário..." />}>
-            <WhitePageShell>
-              <Inventory 
-                showAddButton={hasPermission('admin')} 
-                showSearch={true} 
-                showFilters={true} 
-              />
-            </WhitePageShell>
+            <Inventory 
+              showAddButton={hasPermission('admin')} 
+              showSearch={true} 
+              showFilters={true} 
+            />
           </Suspense>
         ) : <AccessDenied />;
       case 'customers':

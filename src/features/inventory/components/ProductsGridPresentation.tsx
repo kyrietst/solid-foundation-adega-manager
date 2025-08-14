@@ -33,6 +33,7 @@ export interface ProductsGridPresentationProps {
   showSearch: boolean;
   showFilters: boolean;
   showAddButton?: boolean;
+  showHeader?: boolean;
   gridColumns: {
     mobile: number;
     tablet: number;
@@ -75,6 +76,7 @@ export const ProductsGridPresentation: React.FC<ProductsGridPresentationProps> =
   showSearch,
   showFilters,
   showAddButton,
+  showHeader = true,
   gridColumns,
   className,
   variant = 'default',
@@ -103,16 +105,31 @@ export const ProductsGridPresentation: React.FC<ProductsGridPresentationProps> =
     <div className={`flex flex-col h-full space-y-4 ${className || ''}`}>
       {/* Header com busca e filtros */}
       <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <ProductsHeader
-            filteredCount={filteredCount}
-            totalProducts={totalProducts}
-            hasActiveFilters={hasActiveFilters}
-            onAddProduct={showAddButton ? onAddProduct : undefined}
-          />
-          
-          {/* Apenas busca no header */}
-          {showSearch && (
+        {showHeader && (
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <ProductsHeader
+              filteredCount={filteredCount}
+              totalProducts={totalProducts}
+              hasActiveFilters={hasActiveFilters}
+              onAddProduct={showAddButton ? onAddProduct : undefined}
+            />
+            
+            {/* Apenas busca no header */}
+            {showSearch && (
+              <div className="sm:w-64">
+                <SearchBar21st
+                  value={searchTerm}
+                  onChange={onSearchChange}
+                  placeholder="Buscar produtos..."
+                  debounceMs={150}
+                />
+              </div>
+            )}
+          </div>
+        )}
+        
+        {!showHeader && showSearch && (
+          <div className="flex justify-end">
             <div className="sm:w-64">
               <SearchBar21st
                 value={searchTerm}
@@ -121,8 +138,8 @@ export const ProductsGridPresentation: React.FC<ProductsGridPresentationProps> =
                 debounceMs={150}
               />
             </div>
-          )}
-        </div>
+          </div>
+        )}
         
         {/* Código de barras e filtro de categoria na mesma linha */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">

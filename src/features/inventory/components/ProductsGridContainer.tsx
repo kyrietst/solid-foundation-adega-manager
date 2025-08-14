@@ -10,6 +10,7 @@ import { ProductsGridPresentation } from './ProductsGridPresentation';
 
 export interface ProductsGridContainerProps extends ProductsGridConfig {
   showAddButton?: boolean;
+  showHeader?: boolean;
   onAddProduct?: () => void;
   variant?: 'default' | 'premium' | 'success' | 'warning' | 'error';
   glassEffect?: boolean;
@@ -17,6 +18,7 @@ export interface ProductsGridContainerProps extends ProductsGridConfig {
 
 export const ProductsGridContainer: React.FC<ProductsGridContainerProps> = ({ 
   showAddButton, 
+  showHeader = true,
   onAddProduct,
   variant = 'default',
   glassEffect = true,
@@ -81,6 +83,7 @@ export const ProductsGridContainer: React.FC<ProductsGridContainerProps> = ({
     showSearch,
     showFilters,
     showAddButton,
+    showHeader,
     gridColumns,
     className,
     variant,
