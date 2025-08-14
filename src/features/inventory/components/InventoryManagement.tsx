@@ -8,7 +8,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
 import { useNotifications } from '@/shared/hooks/common/useNotifications';
 import { ProductsGridContainer } from './ProductsGridContainer';
-import { ProductsHeader } from './ProductsHeader';
+import { ProductsTitle } from './ProductsHeader';
 import { ProductForm } from './ProductForm';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shared/ui/primitives/dialog';
 import type { ProductFormData } from '@/core/types/inventory.types';
@@ -110,26 +110,19 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
 
   return (
     <div className={className}>
-      {/* Header fora do container - "PRODUTOS DISPONÍVEIS" */}
-      <div className="mb-6">
-        <ProductsHeader
-          filteredCount={filteredCount}
-          totalProducts={totalProducts}
-          hasActiveFilters={hasActiveFilters}
-          onAddProduct={showAddButton ? handleAddProduct : undefined}
-        />
-      </div>
+      {/* Título fora do box background */}
+      <ProductsTitle />
 
       {/* Container com background glass morphism */}
       <div className="h-full bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg hero-spotlight p-4 flex flex-col min-h-0">
-        {/* Grid de produtos sem header */}
+        {/* Grid de produtos com controles dentro do box */}
         <ProductsGridContainer
           showSearch={showSearch}
           showFilters={showFilters}
-          showAddButton={false}
-          showHeader={false}
+          showAddButton={showAddButton}
+          showHeader={true}
           onAddToCart={onProductSelect}
-          onAddProduct={undefined}
+          onAddProduct={showAddButton ? handleAddProduct : undefined}
         />
       </div>
 

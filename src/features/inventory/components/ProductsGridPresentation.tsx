@@ -106,26 +106,12 @@ export const ProductsGridPresentation: React.FC<ProductsGridPresentationProps> =
       {/* Header com busca e filtros */}
       <div className="space-y-4">
         {showHeader && (
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <ProductsHeader
-              filteredCount={filteredCount}
-              totalProducts={totalProducts}
-              hasActiveFilters={hasActiveFilters}
-              onAddProduct={showAddButton ? onAddProduct : undefined}
-            />
-            
-            {/* Apenas busca no header */}
-            {showSearch && (
-              <div className="sm:w-64">
-                <SearchBar21st
-                  value={searchTerm}
-                  onChange={onSearchChange}
-                  placeholder="Buscar produtos..."
-                  debounceMs={150}
-                />
-              </div>
-            )}
-          </div>
+          <ProductsHeader
+            filteredCount={filteredCount}
+            totalProducts={totalProducts}
+            hasActiveFilters={hasActiveFilters}
+            onAddProduct={showAddButton ? onAddProduct : undefined}
+          />
         )}
         
         {!showHeader && showSearch && (
