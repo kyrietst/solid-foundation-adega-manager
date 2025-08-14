@@ -48,7 +48,7 @@ const CustomersLite = () => {
       <div className="flex flex-col gap-4">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold text-white">Clientes</h1>
+            <h1 className="text-3xl font-bold text-white">CLIENTES</h1>
             <p className="text-gray-400 mt-1">Gerencie sua base de clientes</p>
           </div>
           <div className="flex gap-2">
@@ -56,7 +56,7 @@ const CustomersLite = () => {
               Exportar
             </Button>
             <Button className="bg-primary-yellow text-black hover:bg-yellow-90" onClick={() => setLoading(true)}>
-              Novo Cliente
+              NOVO CLIENTE
             </Button>
           </div>
         </div>

@@ -105,9 +105,9 @@ export function CategoryMixDonut({ className, period = 30, showTotal = false }: 
       const percentage = totalRevenue > 0 ? (data.value / totalRevenue) * 100 : 0;
       
       return (
-        <div className="bg-black/90 backdrop-blur-xl border border-white/20 rounded-xl p-3 shadow-2xl">
-          <p className="text-sm text-white font-medium">{data.payload.category}</p>
-          <p className="text-xs text-amber-400">
+        <div className="bg-black/95 backdrop-blur-xl border border-white/30 rounded-xl p-3 shadow-2xl">
+          <p className="text-sm text-white font-semibold">{data.payload.category}</p>
+          <p className="text-xs text-amber-300 font-semibold">
             {formatCurrency(data.value)} ({percentage.toFixed(1)}%)
           </p>
         </div>
@@ -140,44 +140,44 @@ export function CategoryMixDonut({ className, period = 30, showTotal = false }: 
 
   if (error) {
     return (
-      <Card className={cn("border-white/10 bg-black/40 backdrop-blur-xl", className)}>
+      <Card className={cn("border-red-500/40 bg-black/80 backdrop-blur-xl shadow-lg", className)}>
         <CardHeader>
-          <CardTitle className="text-red-400 flex items-center gap-2">
+          <CardTitle className="text-red-300 font-bold flex items-center gap-2">
             <PieChartIcon className="h-5 w-5" />
             Erro - Mix Categorias
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-gray-400 text-sm">Não foi possível carregar os dados.</p>
+          <p className="text-gray-200 text-sm font-medium">Não foi possível carregar os dados.</p>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card className={cn("border-white/10 bg-black/40 backdrop-blur-xl", className)}>
+    <Card className={cn("border-white/20 bg-black/80 backdrop-blur-xl shadow-lg", className)}>
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-white flex items-center gap-2">
-            <PieChartIcon className="h-5 w-5 text-amber-400" />
+          <CardTitle className="text-white text-lg font-bold tracking-tight flex items-center gap-2">
+            <PieChartIcon className="h-5 w-5 text-amber-300" />
             Mix por Categoria
             {!hasRealSalesData && (
-              <span className="text-xs text-gray-400 ml-2">(Estoque)</span>
+              <span className="text-xs text-gray-300 ml-2">(Estoque)</span>
             )}
           </CardTitle>
           <a 
             href="/reports?tab=categories" 
-            className="text-gray-400 hover:text-amber-400 transition-colors"
+            className="text-gray-300 hover:text-amber-300 transition-colors"
           >
             <ExternalLink className="h-4 w-4" />
           </a>
         </div>
       </CardHeader>
 
-      <CardContent>
+      <CardContent className="text-sm text-gray-200">
         {isLoading ? (
           <div className="h-[380px] flex items-center justify-center">
-            <div className="w-8 h-8 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin" />
+            <div className="w-8 h-8 border-2 border-amber-300/30 border-t-amber-300 rounded-full animate-spin" />
           </div>
         ) : data && data.length > 0 ? (
           <div className="space-y-4">

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/primitives/card';
 import { cn } from '@/core/config/utils';
+import { text, shadows } from '@/core/config/theme';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TrendingUp, TrendingDown, Minus, ExternalLink } from 'lucide-react';
 
@@ -9,7 +10,7 @@ export interface KpiData {
   label: string;
   value: string | number;
   delta?: number; // variação percentual
-  accent?: 'amber' | 'green' | 'red' | 'blue' | 'purple';
+  valueType?: 'positive' | 'negative' | 'neutral'; // tipo semântico do valor
   icon?: React.ComponentType<{ className?: string }>;
   href?: string;
   isLoading?: boolean;
@@ -23,20 +24,11 @@ export interface KpiCardsProps {
   compact?: boolean;
 }
 
-const accentMap = {
-  amber: 'text-amber-400',
-  green: 'text-emerald-400',
-  red: 'text-red-400',
-  blue: 'text-blue-400',
-  purple: 'text-purple-400',
-} as const;
-
-const accentBgMap = {
-  amber: 'bg-amber-500/10 border-amber-500/30',
-  green: 'bg-emerald-500/10 border-emerald-500/30',
-  red: 'bg-red-500/10 border-red-500/30',
-  blue: 'bg-blue-500/10 border-blue-500/30',
-  purple: 'bg-purple-500/10 border-purple-500/30',
+// Cores semânticas para valores KPI (Fluidlamp Optimized)
+const valueTypeColors = {
+  positive: cn(text.h3, shadows.light), // Verde com sombra
+  negative: 'text-red-400 font-semibold [text-shadow:_0_1px_2px_rgba(0,0,0,0.4)]', // Vermelho
+  neutral: cn(text.h4, shadows.light), // Azul neutro com sombra
 } as const;
 
 function formatValue(value: string | number): string {
@@ -55,9 +47,9 @@ function formatValue(value: string | number): string {
 function DeltaIndicator({ delta }: { delta: number }) {
   if (delta === 0) {
     return (
-      <div className="flex items-center gap-1 text-gray-400">
+      <div className={cn("flex items-center gap-1", text.h6, shadows.subtle)}>
         <Minus className="h-3 w-3" />
-        <span className="text-xs">0%</span>
+        <span className="text-xs font-semibold">0%</span>
       </div>
     );
   }
@@ -68,8 +60,10 @@ function DeltaIndicator({ delta }: { delta: number }) {
       animate={{ scale: 1, opacity: 1 }}
       transition={{ delay: 0.2 }}
       className={cn(
-        'flex items-center gap-1 text-xs font-medium',
-        delta > 0 ? 'text-emerald-400' : 'text-red-400'
+        'flex items-center gap-1 text-xs font-semibold',
+        delta > 0 
+          ? cn(text.h3, shadows.light) // Verde para positivo
+          : 'text-red-400 [text-shadow:_0_1px_2px_rgba(0,0,0,0.4)]' // Vermelho para negativo
       )}
     >
       {delta > 0 ? (
@@ -95,9 +89,8 @@ function KpiCard({ kpi, index, showAnimation = true, compact = true }: { kpi: Kp
     >
       <Card 
         className={cn(
-          "relative border-white/10 bg-black/40 backdrop-blur-xl transition-all duration-300 group overflow-hidden",
-          "hover:border-white/30 hover:shadow-lg hover:shadow-black/20 hover:-translate-y-1",
-          kpi.accent && accentBgMap[kpi.accent],
+          "relative border-white/20 bg-black/70 backdrop-blur-xl transition-all duration-300 group overflow-hidden shadow-lg h-[120px] flex flex-col",
+          "hover:border-white/40 hover:shadow-xl hover:shadow-black/30 hover:-translate-y-1 hover:bg-black/80",
           kpi.href && "cursor-pointer",
           kpi.isLoading && "animate-pulse"
         )}
@@ -107,26 +100,26 @@ function KpiCard({ kpi, index, showAnimation = true, compact = true }: { kpi: Kp
         
         <CardHeader className="pb-2 relative">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-sm text-gray-400 font-medium">{kpi.label}</CardTitle>
+            <CardTitle className={cn("text-sm font-semibold", text.secondary, shadows.subtle)}>{kpi.label}</CardTitle>
             <div className="flex items-center gap-2">
               {kpi.icon && (
-                <kpi.icon className={cn("h-4 w-4", kpi.accent ? accentMap[kpi.accent] : "text-gray-400")} />
+                <kpi.icon className="h-4 w-4 text-gray-300" />
               )}
               {kpi.href && (
-                <ExternalLink className="h-3 w-3 text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <ExternalLink className="h-3 w-3 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
               )}
             </div>
           </div>
           {kpi.subLabel && (
-            <div className="text-xs text-gray-500">{kpi.subLabel}</div>
+            <div className={cn("text-xs font-medium", text.h5, shadows.subtle)}>{kpi.subLabel}</div>
           )}
         </CardHeader>
 
-        <CardContent className="pt-0 relative">
+        <CardContent className="pt-0 relative flex-1 flex flex-col justify-center">
           {kpi.isLoading ? (
             <div className="space-y-2">
-              <div className="h-8 bg-white/10 rounded animate-pulse" />
-              <div className="h-4 bg-white/5 rounded w-2/3 animate-pulse" />
+              <div className="h-8 bg-white/15 rounded animate-pulse" />
+              <div className="h-4 bg-white/10 rounded w-2/3 animate-pulse" />
             </div>
           ) : (
             <div>
@@ -135,8 +128,8 @@ function KpiCard({ kpi, index, showAnimation = true, compact = true }: { kpi: Kp
                 animate={{ scale: 1 }}
                 transition={{ delay: showAnimation ? index * 0.1 + 0.1 : 0 }}
                 className={cn(
-                  'text-2xl font-bold text-white tracking-tight',
-                  kpi.accent && accentMap[kpi.accent]
+                  'text-3xl font-extrabold tracking-tight',
+                  kpi.valueType ? valueTypeColors[kpi.valueType] : 'text-white'
                 )}
               >
                 {formatValue(kpi.value)}

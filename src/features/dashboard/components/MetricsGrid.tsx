@@ -36,7 +36,7 @@ export const MetricsGrid: React.FC<MetricsGridProps> = ({
   return (
     <section className="space-y-4" role="region" aria-labelledby={title ? 'metrics-title' : undefined}>
       {title && (
-        <h3 id="metrics-title" className="text-xl font-semibold text-gray-100">{title}</h3>
+        <h3 id="metrics-title" className="text-xl font-bold text-white">{title}</h3>
       )}
       
       <div 
@@ -47,20 +47,28 @@ export const MetricsGrid: React.FC<MetricsGridProps> = ({
         {metrics.map((metric, index) => {
           const Icon = metric.icon;
           
-          // Cores baseadas na variante modernizada
-          const iconColorClass = {
-            default: 'text-primary-yellow',
-            success: 'text-accent-green',
-            warning: 'text-primary-yellow',
-            error: 'text-accent-red',
-          }[metric.variant || 'default'];
+          // Cores baseadas no accent (se disponível) ou na variante
+          const accentColorMap = {
+            amber: { icon: 'text-amber-300', border: 'border-amber-400/50' },
+            blue: { icon: 'text-blue-300', border: 'border-blue-400/50' },
+            green: { icon: 'text-emerald-300', border: 'border-emerald-400/50' },
+            purple: { icon: 'text-purple-300', border: 'border-purple-400/50' },
+            red: { icon: 'text-red-300', border: 'border-red-400/50' },
+          };
 
-          const borderColorClass = {
-            default: 'border-primary-yellow/30',
-            success: 'border-accent-green/30',
-            warning: 'border-primary-yellow/30',
-            error: 'border-accent-red/30',
-          }[metric.variant || 'default'];
+          const variantColorMap = {
+            default: { icon: 'text-amber-300', border: 'border-amber-400/50' },
+            success: { icon: 'text-emerald-300', border: 'border-emerald-400/50' },
+            warning: { icon: 'text-amber-300', border: 'border-amber-400/50' },
+            error: { icon: 'text-red-300', border: 'border-red-400/50' },
+          };
+
+          const colors = metric.accent 
+            ? accentColorMap[metric.accent] 
+            : variantColorMap[metric.variant || 'default'];
+
+          const iconColorClass = colors.icon;
+          const borderColorClass = colors.border;
 
           const glassClasses = glassEffect ? getGlassCardClasses(metric.variant || variant) : '';
 
@@ -68,25 +76,25 @@ export const MetricsGrid: React.FC<MetricsGridProps> = ({
             <Card 
               key={index} 
               className={cn(
-                glassClasses,
+                "bg-black/70 backdrop-blur-xl border-white/20 shadow-lg",
                 borderColorClass,
-                'shadow-xl hover:border-primary-yellow/60 hover:scale-[1.02] transition-all duration-300'
+                'hover:border-white/40 hover:scale-[1.02] transition-all duration-300 hover:shadow-xl hover:bg-black/80'
               )}
               role="article"
               aria-labelledby={`metric-title-${index}`}
               aria-describedby={`metric-desc-${index}`}
             >
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle id={`metric-title-${index}`} className="text-sm font-medium text-gray-200">
+                <CardTitle id={`metric-title-${index}`} className="text-sm font-semibold text-gray-100">
                   {metric.title}
                 </CardTitle>
                 <Icon className={`h-4 w-4 ${iconColorClass}`} aria-hidden="true" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-gray-100" aria-label={`Valor: ${metric.value}`}>
+                <div className="text-3xl font-extrabold text-white tracking-tight" aria-label={`Valor: ${metric.value}`}>
                   {metric.value}
                 </div>
-                <p id={`metric-desc-${index}`} className="text-xs text-gray-400 mt-1">
+                <p id={`metric-desc-${index}`} className="text-xs text-gray-300 mt-1 font-medium">
                   {metric.description}
                 </p>
               </CardContent>

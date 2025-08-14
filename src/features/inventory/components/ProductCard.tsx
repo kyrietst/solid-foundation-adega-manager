@@ -9,6 +9,7 @@ import { Plus } from 'lucide-react';
 import type { Product } from '@/types/inventory.types';
 import { formatCurrency, cn } from '@/core/config/utils';
 import { getGlassCardClasses } from '@/core/config/theme-utils';
+import { text, shadows } from "@/core/config/theme";
 import { ProductImage } from '@/shared/ui/composite/optimized-image';
 
 interface ProductCardProps {
@@ -29,54 +30,79 @@ export const ProductCard = React.memo<ProductCardProps>(({
   const glassClasses = glassEffect ? getGlassCardClasses(variant) : '';
 
   return (
-    <div className={cn(
-      'border border-primary-yellow/30 rounded-lg overflow-hidden hover:shadow-xl transition-all duration-300 hover:border-primary-yellow/60 hover:scale-[1.02]',
-      glassClasses
-    )}>
+    <div 
+      className="group bg-black/70 backdrop-blur-xl border border-white/20 shadow-lg rounded-xl overflow-hidden hover:shadow-2xl hover:shadow-purple-500/20 transition-all duration-500 hover:border-purple-400/60 hover:scale-[1.03] hover:-translate-y-1 hero-spotlight"
+      onMouseMove={(e) => {
+        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width) * 100;
+        const y = ((e.clientY - rect.top) / rect.height) * 100;
+        (e.currentTarget as HTMLElement).style.setProperty("--x", `${x}%`);
+        (e.currentTarget as HTMLElement).style.setProperty("--y", `${y}%`);
+      }}
+    >
       {/* Imagem do produto */}
-      <div className="aspect-square bg-muted/30 relative">
+      <div className="aspect-square bg-gradient-to-br from-gray-800/50 to-gray-900/50 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10"></div>
         <ProductImage
           src={product.image_url}
           alt={product.name}
-          className="w-full h-full object-cover rounded-t-lg"
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
           containerClassName="w-full h-full"
         />
         
-        {/* Badge de estoque */}
+        {/* Badge de estoque melhorado */}
         <div className={cn(
-          'absolute bottom-2 right-2 px-2 py-1 rounded-full text-xs font-medium text-white border border-primary-yellow/20',
-          stockColor
+          'absolute top-2 right-2 px-3 py-1 rounded-full text-xs font-bold border backdrop-blur-md shadow-lg transition-all duration-300 group-hover:scale-105',
+          isOutOfStock 
+            ? 'bg-red-500/30 text-red-200 border-red-400/50 shadow-red-500/25' 
+            : product.stock_quantity <= 5
+            ? 'bg-orange-500/30 text-orange-200 border-orange-400/50 shadow-orange-500/25'
+            : 'bg-emerald-500/30 text-emerald-200 border-emerald-400/50 shadow-emerald-500/25',
+          shadows.medium
         )}>
-          {isOutOfStock ? 'Sem estoque' : `${product.stock_quantity} em estoque`}
+          {isOutOfStock ? '⚠️ Esgotado' : product.stock_quantity <= 5 ? `⚡ ${product.stock_quantity} restam` : `✓ ${product.stock_quantity} disponível`}
         </div>
       </div>
 
       {/* Informações do produto */}
-      <div className="p-3">
-        <h3 className="font-medium line-clamp-2 h-10 text-sm text-gray-100">
-          {product.name}
-        </h3>
-        
-        <div className="mt-2 flex items-center justify-between">
-          <span className="text-lg font-bold text-primary-yellow">
-            {formatCurrency(product.price)}
-          </span>
+      <div className="p-4 space-y-3">
+        <div className="space-y-2">
+          <h3 className={cn(text.h1, shadows.strong, "font-semibold line-clamp-2 h-12 text-base leading-tight group-hover:text-yellow-300 transition-colors duration-300")}>
+            {product.name}
+          </h3>
           
-          <Button 
-            size="sm" 
-            onClick={() => onAddToCart(product)}
-            disabled={isOutOfStock}
-            className={cn(
-              isOutOfStock 
-                ? 'bg-gray-600 text-gray-300 cursor-not-allowed'
-                : 'bg-primary-yellow text-black hover:bg-primary-yellow/90 font-semibold'
-            )}
-            aria-label={isOutOfStock ? `Produto ${product.name} indisponível` : `Adicionar ${product.name} ao carrinho`}
-          >
-            <Plus className="h-4 w-4 mr-1" aria-hidden="true" />
-            {isOutOfStock ? 'Indisponível' : 'Adicionar'}
-          </Button>
+          {/* Preço com destaque maior */}
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <span className={cn(text.h1, shadows.strong, "text-2xl font-bold block bg-gradient-to-r from-yellow-400 to-yellow-300 bg-clip-text text-transparent")}>
+                {formatCurrency(product.price)}
+              </span>
+              {product.category && (
+                <span className={cn(text.h6, shadows.subtle, "text-xs opacity-75")}>
+                  {product.category}
+                </span>
+              )}
+            </div>
+          </div>
         </div>
+        
+        {/* Botão de ação melhorado */}
+        <Button 
+          size="sm" 
+          onClick={() => onAddToCart(product)}
+          disabled={isOutOfStock}
+          className={cn(
+            'w-full h-10 font-semibold transition-all duration-300 transform',
+            isOutOfStock 
+              ? 'bg-gray-600/30 text-gray-400 border border-gray-500/40 cursor-not-allowed backdrop-blur-sm'
+              : 'bg-gradient-to-r from-yellow-400 to-yellow-500 text-black hover:from-yellow-300 hover:to-yellow-400 border border-yellow-400/50 shadow-lg hover:shadow-yellow-400/30 hover:scale-105 active:scale-95',
+            shadows.medium
+          )}
+          aria-label={isOutOfStock ? `Produto ${product.name} indisponível` : `Adicionar ${product.name} ao carrinho`}
+        >
+          <Plus className="h-4 w-4 mr-2" aria-hidden="true" />
+          {isOutOfStock ? '❌ Indisponível' : '🛒 Adicionar'}
+        </Button>
       </div>
     </div>
   );

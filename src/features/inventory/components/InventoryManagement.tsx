@@ -110,7 +110,7 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
       <Dialog open={isAddProductOpen} onOpenChange={setIsAddProductOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Adicionar Novo Produto</DialogTitle>
+            <DialogTitle>ADICIONAR NOVO PRODUTO</DialogTitle>
           </DialogHeader>
           
           <ProductForm

@@ -61,7 +61,7 @@ export const ChartsSection: React.FC<ChartsSectionProps> = ({
   return (
     <section className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8" role="region" aria-label="Gráficos de vendas">
       {/* Gráfico de Barras - Vendas por Mês */}
-      <Card className="border-white/10 bg-black/40 backdrop-blur-xl shadow-[0_8px_24px_rgba(0,0,0,0.5)]">
+      <Card className="border-white/20 bg-black/80 backdrop-blur-xl shadow-lg">
         <CardHeader>
           <CardTitle className="text-primary-yellow">Vendas por Mês</CardTitle>
         </CardHeader>
@@ -99,7 +99,7 @@ export const ChartsSection: React.FC<ChartsSectionProps> = ({
       </Card>
 
       {/* Gráfico de Linha - Tendência */}
-      <Card className="border-white/10 bg-black/40 backdrop-blur-xl shadow-[0_8px_24px_rgba(0,0,0,0.5)]">
+      <Card className="border-white/20 bg-black/80 backdrop-blur-xl shadow-lg">
         <CardHeader>
           <CardTitle className="text-primary-yellow">Tendência de Vendas</CardTitle>
         </CardHeader>

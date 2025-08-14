@@ -10,6 +10,7 @@ import { useCustomer } from '@/features/customers/hooks/use-crm';
 import { usePaymentMethods, useUpsertSale } from '@/features/sales/hooks/use-sales';
 import { formatCurrency, cn } from '@/core/config/utils';
 import { getGlassCardClasses, getValueClasses } from '@/core/config/theme-utils';
+import { text, shadows } from "@/core/config/theme";
 
 import { Button } from '@/shared/ui/primitives/button';
 import { Input } from '@/shared/ui/primitives/input';
@@ -119,10 +120,10 @@ export function FullCart({
 
   if (items.length === 0) {
     return (
-      <div className={cn(glassClasses, 'p-6 text-center', className)}>
-        <ShoppingCart className="mx-auto h-12 w-12 text-primary-yellow/70 mb-4" aria-hidden="true" />
-        <p className="text-gray-300">Seu carrinho está vazio</p>
-        <p className="text-sm text-gray-400 mt-2">
+      <div className={cn('bg-black/30 backdrop-blur-xl border border-white/20 rounded-lg p-6 text-center', className)}>
+        <ShoppingCart className="mx-auto h-12 w-12 text-yellow-400 mb-4" aria-hidden="true" />
+        <p className={cn(text.h4, shadows.medium)}>Seu carrinho está vazio</p>
+        <p className={cn(text.h6, shadows.subtle, "text-sm mt-2")}>
           Adicione produtos para começar uma venda
         </p>
       </div>
@@ -130,17 +131,26 @@ export function FullCart({
   }
 
   return (
-    <div className={cn(glassClasses, 'flex flex-col h-full', className)}>
+    <div 
+      className={cn('bg-black/70 backdrop-blur-xl border border-white/20 shadow-lg rounded-lg flex flex-col h-full hero-spotlight', className)}
+      onMouseMove={(e) => {
+        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width) * 100;
+        const y = ((e.clientY - rect.top) / rect.height) * 100;
+        (e.currentTarget as HTMLElement).style.setProperty("--x", `${x}%`);
+        (e.currentTarget as HTMLElement).style.setProperty("--y", `${y}%`);
+      }}
+    >
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-primary-yellow/20">
-        <h3 className="text-lg font-semibold text-gray-100">
+      <div className="flex items-center justify-between p-4 border-b border-white/20">
+        <h3 className={cn(text.h3, shadows.medium, "text-lg font-semibold")}>
           Carrinho ({items.length}/{maxItems})
         </h3>
         <Button
           variant="ghost"
           size="sm"
           onClick={clearCart}
-          className="text-accent-red hover:text-accent-red/80 hover:bg-accent-red/10"
+          className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
           aria-label="Limpar carrinho completamente"
         >
           <Trash2 className="h-4 w-4" aria-hidden="true" />
@@ -148,18 +158,18 @@ export function FullCart({
       </div>
 
       {/* Customer Search */}
-      <div className="p-4 border-b border-primary-yellow/20 space-y-3">
+      <div className="p-4 border-b border-white/20 space-y-3">
         {selectedCustomer ? (
-          <div className="flex items-center justify-between p-3 glass-subtle rounded-lg border border-accent-green/20">
+          <div className="flex items-center justify-between p-3 bg-emerald-500/20 border border-emerald-500/30 backdrop-blur-sm rounded-lg">
             <div>
-              <p className="font-medium text-sm text-gray-100">{selectedCustomer.name}</p>
-              <p className="text-xs text-gray-400">{selectedCustomer.email}</p>
+              <p className={cn(text.h5, shadows.light, "font-medium text-sm")}>{selectedCustomer.name}</p>
+              <p className={cn(text.h6, shadows.subtle, "text-xs")}>{selectedCustomer.email}</p>
             </div>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setCustomer('')}
-              className="text-accent-red hover:text-accent-red/80 hover:bg-accent-red/10"
+              className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
               aria-label={`Remover cliente ${selectedCustomer.name} da venda`}
             >
               Remover
@@ -170,14 +180,14 @@ export function FullCart({
             <CustomerSearch onCustomerSelect={setCustomer} />
             <Dialog open={isCustomerModalOpen} onOpenChange={setIsCustomerModalOpen}>
               <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="w-full border-primary-yellow/30 text-gray-200 hover:bg-primary-yellow/10 hover:border-primary-yellow">
-                  <UserPlus className="h-4 w-4 mr-2 text-primary-yellow" aria-hidden="true" />
+                <Button variant="outline" size="sm" className="w-full border-yellow-400/30 text-yellow-400 hover:bg-yellow-400/10 hover:border-yellow-400/50 backdrop-blur-sm">
+                  <UserPlus className="h-4 w-4 mr-2 text-yellow-400" aria-hidden="true" />
                   Cadastrar Cliente
                 </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle className="text-gray-100">Novo Cliente</DialogTitle>
+                  <DialogTitle className={cn(text.h2, shadows.medium)}>Novo Cliente</DialogTitle>
                 </DialogHeader>
                 <CustomerForm 
                   onSuccess={() => setIsCustomerModalOpen(false)}

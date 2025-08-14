@@ -24,7 +24,7 @@ export function TopProductsCard(): JSX.Element {
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 
   return (
-    <Card className="relative border-red-500/40 bg-black/50 backdrop-blur-xl">
+    <Card className="relative border-white/20 bg-black/80 backdrop-blur-xl shadow-lg">
       <PlaceholderBadge />
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">

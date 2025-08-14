@@ -10,6 +10,7 @@ import { LoadingSpinner } from '@/shared/ui/composite/loading-spinner';
 import { RecentActivity } from '@/features/dashboard/hooks/useDashboardData';
 import { cn } from '@/core/config/utils';
 import { getGlassCardClasses } from '@/core/config/theme-utils';
+import { text, shadows } from "@/core/config/theme";
 
 interface RecentActivitiesProps {
   activities: RecentActivity[];
@@ -43,10 +44,10 @@ export const RecentActivities: React.FC<RecentActivitiesProps> = ({
   // Cores por tipo de atividade no tema modernizado
   const getActivityColors = (type: RecentActivity['type']) => {
     const colorMap = {
-      sale: { icon: 'text-accent-green', bg: 'bg-accent-green/10', border: 'border-accent-green/30' },
-      stock: { icon: 'text-accent-blue', bg: 'bg-accent-blue/10', border: 'border-accent-blue/30' },
-      customer: { icon: 'text-primary-yellow', bg: 'bg-primary-yellow/10', border: 'border-primary-yellow/30' },
-      delivery: { icon: 'text-accent-purple', bg: 'bg-accent-purple/10', border: 'border-accent-purple/30' },
+      sale: { icon: 'text-emerald-400', bg: 'bg-emerald-500/20', border: 'border-emerald-500/30' },
+      stock: { icon: 'text-blue-400', bg: 'bg-blue-500/20', border: 'border-blue-500/30' },
+      customer: { icon: 'text-yellow-400', bg: 'bg-yellow-500/20', border: 'border-yellow-500/30' },
+      delivery: { icon: 'text-purple-400', bg: 'bg-purple-500/20', border: 'border-purple-500/30' },
     };
 
     return colorMap[type] || colorMap.sale;
@@ -55,9 +56,18 @@ export const RecentActivities: React.FC<RecentActivitiesProps> = ({
   const glassClasses = glassEffect ? getGlassCardClasses(variant) : '';
 
   return (
-    <Card className={cn(glassClasses, 'shadow-xl', classNameOverride)}>
+    <Card 
+      className={cn('bg-black/70 backdrop-blur-xl border border-white/20 shadow-lg hero-spotlight', classNameOverride)}
+      onMouseMove={(e) => {
+        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width) * 100;
+        const y = ((e.clientY - rect.top) / rect.height) * 100;
+        (e.currentTarget as HTMLElement).style.setProperty("--x", `${x}%`);
+        (e.currentTarget as HTMLElement).style.setProperty("--y", `${y}%`);
+      }}
+    >
       <CardHeader>
-        <CardTitle className="text-primary-yellow text-xl font-semibold">
+        <CardTitle className={cn(text.h2, shadows.medium, "text-xl font-semibold")}>
           Atividades Recentes
         </CardTitle>
       </CardHeader>
@@ -68,7 +78,7 @@ export const RecentActivities: React.FC<RecentActivitiesProps> = ({
           </div>
         ) : activities.length === 0 ? (
           <div className="text-center py-8">
-            <p className="text-gray-400">Nenhuma atividade recente encontrada</p>
+            <p className={cn(text.h5, shadows.subtle)}>Nenhuma atividade recente encontrada</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -81,9 +91,9 @@ export const RecentActivities: React.FC<RecentActivitiesProps> = ({
                   key={activity.id}
                   className={cn(
                     'flex items-center space-x-4 p-4 rounded-xl transition-all duration-300',
-                    'bg-gray-800/30 hover:bg-gray-800/50 border backdrop-blur-sm',
+                    'bg-black/30 hover:bg-black/50 border backdrop-blur-sm',
                     colors.border,
-                    'hover:border-primary-yellow/40 hover:scale-[1.01]'
+                    'hover:border-white/40 hover:scale-[1.01]'
                   )}
                   role="listitem"
                   aria-label={`Atividade: ${activity.description}`}
@@ -97,14 +107,14 @@ export const RecentActivities: React.FC<RecentActivitiesProps> = ({
                     <IconComponent className={cn('h-5 w-5', colors.icon)} aria-hidden="true" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-100 truncate" title={activity.description}>
+                    <p className={cn(text.h4, shadows.medium, "text-sm font-semibold truncate")} title={activity.description}>
                       {activity.description}
                     </p>
-                    <p className="text-xs text-gray-400 mt-1 truncate" title={activity.details}>
+                    <p className={cn(text.h6, shadows.subtle, "text-xs mt-1 truncate")} title={activity.details}>
                       {activity.details}
                     </p>
                   </div>
-                  <div className="w-2 h-8 rounded-full bg-gradient-to-b from-primary-yellow/60 to-primary-yellow/20" aria-hidden="true" />
+                  <div className="w-2 h-8 rounded-full bg-gradient-to-b from-yellow-400/60 to-yellow-400/20" aria-hidden="true" />
                 </div>
               );
             })}

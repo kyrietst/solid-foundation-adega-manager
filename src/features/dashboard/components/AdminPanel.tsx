@@ -35,24 +35,24 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       {showHeader && (
         <div className="flex items-center gap-3 mt-2">
           {showFinancialIcon && (
-            <div className="p-2 rounded-lg bg-primary-yellow/10 border border-primary-yellow/30">
-              <Shield className="h-5 w-5 text-primary-yellow" aria-hidden="true" />
+            <div className="p-2 rounded-lg bg-amber-500/15 border border-amber-400/40">
+              <Shield className="h-5 w-5 text-amber-300" aria-hidden="true" />
             </div>
           )}
           <h3 
             id="admin-panel-title" 
-            className="text-xl font-semibold text-gray-100 flex items-center gap-2"
+            className="text-xl font-bold text-white flex items-center gap-2"
           >
             Métricas Financeiras
-            <TrendingUp className="h-5 w-5 text-primary-yellow" aria-hidden="true" />
+            <TrendingUp className="h-5 w-5 text-amber-300" aria-hidden="true" />
           </h3>
         </div>
       )}
       
       <div className={cn(
-        'p-6 rounded-xl backdrop-blur-sm border transition-all duration-300',
-        glassEffect ? 'bg-gray-900/30 border-primary-yellow/20' : 'bg-gray-800/50 border-gray-600/30',
-        'hover:border-primary-yellow/40 hover:bg-gray-900/40'
+        'p-6 rounded-xl backdrop-blur-xl border transition-all duration-300 shadow-lg',
+        glassEffect ? 'bg-black/80 border-amber-400/40' : 'bg-black/80 border-white/30',
+        'hover:border-amber-300/60 hover:bg-black/85'
       )}>
         <MetricsGrid 
           metrics={metrics}

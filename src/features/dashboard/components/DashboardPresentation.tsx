@@ -14,6 +14,7 @@ import { MetricCard } from '@/features/dashboard/hooks/useDashboardMetrics';
 import { SalesDataPoint, RecentActivity } from '@/features/dashboard/hooks/useDashboardData';
 import { PageContainer } from '@/shared/ui/layout/PageContainer';
 import { SectionHeader } from '@/shared/ui/layout/SectionHeader';
+import { text, shadows } from '@/core/config/theme';
 import { KpiCards } from './KpiCards';
 import { AlertsPanel } from './AlertsPanel';
 import { SalesChartSection } from './SalesChartSection';
@@ -23,44 +24,38 @@ import { SalesInsightsTabs } from './SalesInsightsTabs';
 export interface DashboardPresentationProps {
   // Dados processados
   publicMetrics: MetricCard[];
-  sensitiveMetrics?: MetricCard[];
   salesData: SalesDataPoint[];
   recentActivities: RecentActivity[];
   
   // Estados de loading
   isLoading: boolean;
   isLoadingCounts: boolean;
-  isLoadingFinancials: boolean;
   isLoadingSales: boolean;
   isLoadingActivities: boolean;
   
   // Configuração de apresentação
   userRole: string;
-  showFinancialMetrics: boolean;
   showEmployeeNote: boolean;
 }
 
 export const DashboardPresentation: React.FC<DashboardPresentationProps> = ({
   publicMetrics,
-  sensitiveMetrics,
   salesData,
   recentActivities,
   isLoading,
   isLoadingCounts,
-  isLoadingFinancials,
   isLoadingSales,
   isLoadingActivities,
   userRole,
-  showFinancialMetrics,
   showEmployeeNote,
 }) => {
   return (
     <PageContainer padding="lg" spacing="lg" maxWidth="full">
-      <SectionHeader
-        title="Dashboard"
-        description="Visão geral do negócio, atividades recentes e indicadores de vendas"
-        variant="prominent"
-      />
+      <div className="py-6">
+        <h1 className={`${text.h1} ${shadows.strong} text-2xl`}>
+          DASHBOARD
+        </h1>
+      </div>
 
       <div className="mt-4">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -69,16 +64,10 @@ export const DashboardPresentation: React.FC<DashboardPresentationProps> = ({
             <KpiSection />
           </div>
 
-          {/* Métricas financeiras logo abaixo dos KPIs, no mesmo bloco superior */}
-          {showFinancialMetrics && sensitiveMetrics && (
-            <div className="lg:col-span-12">
-              <AdminPanel metrics={sensitiveMetrics} isLoading={isLoadingFinancials} showHeader={false} />
-            </div>
-          )}
 
           {/* Linha: Tendência de Vendas (8) + Alertas (4) como antes */}
           <div className="lg:col-span-8">
-            <SalesChartSection className="h-full" contentHeight={360} cardHeight={420} />
+            <SalesChartSection className="h-full" contentHeight={400} cardHeight={460} />
           </div>
           <div className="lg:col-span-4">
             <AlertsPanel maxItems={6} previewActivities={recentActivities} cardHeight={460} />
@@ -92,8 +81,8 @@ export const DashboardPresentation: React.FC<DashboardPresentationProps> = ({
           {/* Nota para funcionários, quando aplicável */}
           {showEmployeeNote && (
             <div className="lg:col-span-12">
-              <div className="p-4 bg-yellow-900/30 border border-yellow-700/50 rounded-lg backdrop-blur-sm">
-                <p className="text-sm text-yellow-300">
+              <div className="p-4 bg-yellow-900/40 border border-yellow-500/60 rounded-lg backdrop-blur-sm">
+                <p className="text-sm font-medium text-yellow-100">
                   Nota: Algumas métricas financeiras e estratégicas estão disponíveis apenas para administradores.
                 </p>
               </div>
@@ -169,7 +158,7 @@ function KpiSection() {
   }
 
   return (
-    <Card className="border-white/10 bg-black/40 backdrop-blur-xl">
+    <Card className="border-white/20 bg-black/80 backdrop-blur-xl shadow-lg">
       <CardContent className="pt-6">
         <KpiCards items={items} showAnimation={true} />
       </CardContent>

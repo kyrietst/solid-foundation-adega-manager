@@ -276,26 +276,53 @@ export const componentPatterns = {
 } as const;
 
 // ============================================================================
-// UTILITÁRIOS DE HIERARQUIA DE TEXTO
+// HIERARQUIA DE TEXTO FLUIDLAMP OPTIMIZED (v2.1)
 // ============================================================================
 
 export const textHierarchy = {
-  // Hierarquia principal
-  primary: 'text-adega-platinum',     // Títulos, texto principal
-  secondary: 'text-adega-silver',     // Labels, descrições
-  accent: 'text-adega-gold',          // Valores, preços, destaques
-  value: 'text-adega-yellow',         // Métricas importantes
-  warning: 'text-adega-amber',        // Avisos, alertas
+  // Hierarquia principal (Otimizada para background dinâmico)
+  h1: 'text-yellow-400 font-extrabold', // #FBBF24 - Títulos principais
+  h2: 'text-amber-400 font-bold',       // #F59E0B - Subtítulos importantes  
+  h3: 'text-emerald-400 font-semibold', // #10B981 - Texto informativo/valores
+  h4: 'text-blue-400 font-medium',      // #3B82F6 - Links/interação
+  h5: 'text-purple-400 font-normal',    // #8B5CF6 - Metadata/timestamps
+  h6: 'text-gray-300 font-normal',      // #D1D5DB - Texto de apoio
+
+  // Legacy (manter compatibilidade)
+  primary: 'text-yellow-400',           // Títulos, texto principal (era platinum)
+  secondary: 'text-amber-400',          // Labels, descrições (era silver)
+  accent: 'text-yellow-500',            // Valores, preços, destaques (era gold)
+  value: 'text-emerald-400',            // Métricas importantes (era yellow)
+  warning: 'text-orange-400',           // Avisos, alertas (era amber)
   
-  // Tamanhos com hierarquia
-  heading: 'text-2xl font-bold text-adega-platinum',
-  subheading: 'text-lg font-semibold text-adega-platinum',
-  body: 'text-sm text-adega-silver',
-  caption: 'text-xs text-adega-silver',
+  // Tamanhos com hierarquia (atualizado)
+  heading: 'text-2xl font-extrabold text-yellow-400',
+  subheading: 'text-lg font-bold text-amber-400', 
+  body: 'text-sm font-medium text-emerald-400',
+  caption: 'text-xs font-normal text-purple-400',
   
   // Estados especiais
-  muted: 'text-muted-foreground',
-  contrast: 'text-foreground'
+  muted: 'text-gray-400',
+  contrast: 'text-white'
+} as const;
+
+// ============================================================================
+// TEXT SHADOWS PARA FLUIDLAMP (Novo)
+// ============================================================================
+
+export const textShadows = {
+  // Sombras para legibilidade sobre background dinâmico
+  strong: '[text-shadow:_0_2px_4px_rgba(0,0,0,0.8)]',    // H1
+  medium: '[text-shadow:_0_1px_3px_rgba(0,0,0,0.6)]',    // H2
+  light: '[text-shadow:_0_1px_2px_rgba(0,0,0,0.4)]',     // H3-H6
+  subtle: '[text-shadow:_0_1px_1px_rgba(0,0,0,0.3)]',    // Texto geral
+  
+  // Utilitários combinados
+  h1Shadow: 'text-yellow-400 font-extrabold [text-shadow:_0_2px_4px_rgba(0,0,0,0.8)]',
+  h2Shadow: 'text-amber-400 font-bold [text-shadow:_0_1px_3px_rgba(0,0,0,0.6)]',
+  h3Shadow: 'text-emerald-400 font-semibold [text-shadow:_0_1px_2px_rgba(0,0,0,0.4)]',
+  h4Shadow: 'text-blue-400 font-medium [text-shadow:_0_1px_2px_rgba(0,0,0,0.4)]',
+  h5Shadow: 'text-purple-400 font-normal [text-shadow:_0_1px_1px_rgba(0,0,0,0.3)]',
 } as const;
 
 // ============================================================================
@@ -412,6 +439,7 @@ export {
   semanticColors as semantic,
   componentPatterns as patterns,
   textHierarchy as text,
+  textShadows as shadows,
   iconStyles as icons,
   themeConfig as config
 };

@@ -13,6 +13,7 @@ export interface MetricCard {
   icon: any;
   description: string;
   variant?: 'default' | 'success' | 'warning' | 'error';
+  accent?: 'amber' | 'blue' | 'green' | 'purple' | 'red';
 }
 
 export const useDashboardMetrics = (
@@ -74,28 +75,32 @@ export const useDashboardMetrics = (
         value: formatCurrency(financials.totalRevenue),
         icon: DollarSign,
         description: `${formatCurrency(financials.totalRevenue)} este mês`,
-        variant: financials.totalRevenue > 0 ? 'success' : 'warning'
+        variant: financials.totalRevenue > 0 ? 'success' : 'warning',
+        accent: 'amber' as const
       },
       {
         title: 'Lucro Líquido',
         value: formatCurrency(financials.netProfit),
         icon: TrendingUp,
         description: `${formatCurrency(financials.netProfit)} de lucro`,
-        variant: financials.netProfit > 0 ? 'success' : 'error'
+        variant: financials.netProfit > 0 ? 'success' : 'error',
+        accent: 'green' as const
       },
       {
         title: 'Margem de Lucro',
         value: formatPercentage(financials.profitMargin),
         icon: Percent,
         description: `${formatPercentage(financials.profitMargin)} de margem`,
-        variant: financials.profitMargin > 30 ? 'success' : financials.profitMargin > 15 ? 'warning' : 'error'
+        variant: financials.profitMargin > 30 ? 'success' : financials.profitMargin > 15 ? 'warning' : 'error',
+        accent: 'purple' as const
       },
       {
         title: 'Custos Operacionais',
         value: formatCurrency(financials.operationalCosts),
         icon: TrendingDown,
         description: `${formatCurrency(financials.operationalCosts)} em custos`,
-        variant: 'default'
+        variant: 'default',
+        accent: 'red' as const
       }
     ];
   }, [financials]);

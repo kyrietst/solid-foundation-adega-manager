@@ -8,9 +8,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/primitives
 import { Button } from '@/shared/ui/primitives/button';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
-import { DollarSign, Clock, CreditCard, AlertTriangle, Download, TrendingDown } from 'lucide-react';
+import { DollarSign, Clock, CreditCard, AlertTriangle, Download, TrendingDown, TrendingUp, Percent } from 'lucide-react';
 import ContributorsTable from '@/shared/ui/thirdparty/ruixen-contributors-table';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { useDashboardMetrics } from '@/features/dashboard/hooks/useDashboardMetrics';
+import { useDashboardData } from '@/features/dashboard/hooks/useDashboardData';
 
 interface FinancialMetrics {
   current_amount: number;
@@ -23,6 +25,10 @@ interface FinancialMetrics {
 
 export const FinancialReportsSection: React.FC = () => {
   const [windowDays, setWindowDays] = useState(90);
+
+  // Dashboard financial metrics (moved from dashboard)
+  const { financials, isLoadingFinancials } = useDashboardData();
+  const { sensitiveMetrics } = useDashboardMetrics(undefined, financials);
 
   // Financial Metrics Query
   const { data: financialMetrics, isLoading: loadingMetrics } = useQuery({
@@ -257,8 +263,64 @@ export const FinancialReportsSection: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Financial Metrics Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {/* Principal Financial KPIs (moved from dashboard) */}
+      {sensitiveMetrics && sensitiveMetrics.length > 0 && (
+        <div className="space-y-4">
+          <h3 className="text-xl font-bold text-white">Métricas Financeiras Principais</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {sensitiveMetrics.map((metric, index) => {
+              const Icon = metric.icon;
+              
+              // Cores baseadas no accent
+              const accentColorMap = {
+                amber: { icon: 'text-amber-300', border: 'border-amber-400/50' },
+                blue: { icon: 'text-blue-300', border: 'border-blue-400/50' },
+                green: { icon: 'text-emerald-300', border: 'border-emerald-400/50' },
+                purple: { icon: 'text-purple-300', border: 'border-purple-400/50' },
+                red: { icon: 'text-red-300', border: 'border-red-400/50' },
+              };
+
+              const variantColorMap = {
+                default: { icon: 'text-amber-300', border: 'border-amber-400/50' },
+                success: { icon: 'text-emerald-300', border: 'border-emerald-400/50' },
+                warning: { icon: 'text-amber-300', border: 'border-amber-400/50' },
+                error: { icon: 'text-red-300', border: 'border-red-400/50' },
+              };
+
+              const colors = metric.accent 
+                ? accentColorMap[metric.accent] 
+                : variantColorMap[metric.variant || 'default'];
+
+              const iconColorClass = colors.icon;
+              const borderColorClass = colors.border;
+
+              return (
+                <Card 
+                  key={index}
+                  className={`bg-black/70 backdrop-blur-xl border-white/20 shadow-lg ${borderColorClass} hover:border-white/40 hover:scale-[1.02] transition-all duration-300 hover:shadow-xl hover:bg-black/80`}
+                >
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-3">
+                      <Icon className={`h-8 w-8 ${iconColorClass}`} />
+                      <div>
+                        <p className="text-sm text-gray-400">{metric.title}</p>
+                        <p className="text-2xl font-bold text-white">
+                          {isLoadingFinancials ? '...' : metric.value}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Receivables Analysis Cards */}
+      <div className="space-y-4">
+        <h3 className="text-xl font-bold text-white">Análise de Recebíveis</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card className="border-white/10 bg-black/40 backdrop-blur-xl">
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
@@ -314,6 +376,7 @@ export const FinancialReportsSection: React.FC = () => {
             </div>
           </CardContent>
         </Card>
+        </div>
       </div>
 
       {/* Charts Section */}

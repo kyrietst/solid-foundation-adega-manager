@@ -65,17 +65,17 @@ export const MovementsPresentation: React.FC<MovementsPresentationProps> = ({
     <div className="space-y-6">
       <Card className="bg-adega-charcoal/20 border-white/10 backdrop-blur-xl shadow-xl">
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-white">Movimentações de Estoque</CardTitle>
+          <CardTitle className="text-white">MOVIMENTAÇÕES DE ESTOQUE</CardTitle>
           {canCreateMovement && (
             <Dialog open={isDialogOpen} onOpenChange={onDialogOpenChange}>
               <DialogTrigger asChild>
                 <Button>
-                  <Plus className="h-4 w-4 mr-2" /> Nova Movimentação
+                  <Plus className="h-4 w-4 mr-2" /> NOVA MOVIMENTAÇÃO
                 </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Registrar Movimentação</DialogTitle>
+                  <DialogTitle>REGISTRAR MOVIMENTAÇÃO</DialogTitle>
                 </DialogHeader>
                 <MovementDialog
                   formData={formData}

@@ -3,7 +3,6 @@ import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { AppSidebar } from '@/app/layout/Sidebar';
 import { useAuth } from '@/app/providers/AuthContext';
 import { LoadingScreen } from '@/shared/ui/composite/loading-spinner';
-import { Breadcrumb } from '@/shared/ui/layout/Breadcrumb';
 import SalesPage from '@/features/sales/components/SalesPage';
 import { WhitePageShell } from '@/shared/ui/layout/WhitePageShell';
 
@@ -97,9 +96,7 @@ const Index = () => {
         ) : <AccessDenied />;
       case 'sales':
         return hasPermission(['admin', 'employee']) ? (
-          <WhitePageShell>
-            <SalesPage />
-          </WhitePageShell>
+          <SalesPage />
         ) : <AccessDenied />;
       case 'inventory':
         return hasPermission(['admin', 'employee']) ? (
@@ -202,25 +199,9 @@ const Index = () => {
       
       {/* Main content area */}  
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Breadcrumb Navigation */}
-        {activeTab && activeTab !== 'dashboard' && (
-          <div className="border-b border-gray-700/50 bg-gray-900/20 backdrop-blur-sm">
-            <div className="max-w-7xl mx-auto px-4 lg:px-8 py-3">
-              <Breadcrumb 
-                variant="premium"
-                glassEffect={true}
-                responsive={true}
-                showHome={true}
-                homeLabel="Dashboard"
-                homePath="/dashboard"
-              />
-            </div>
-          </div>
-        )}
-        
         <main className="flex-1 overflow-y-auto">
           <div className="p-4 lg:p-8 h-full">
-            <div className={activeTab === 'dashboard' ? 'max-w-[1400px] 2xl:max-w-[1600px] mx-auto h-full' : 'max-w-7xl mx-auto h-full'}>
+            <div className={activeTab === 'dashboard' || activeTab === 'sales' ? 'max-w-[1400px] 2xl:max-w-[1600px] mx-auto h-full' : 'max-w-7xl mx-auto h-full'}>
               {renderContent()}
               <Outlet />
             </div>

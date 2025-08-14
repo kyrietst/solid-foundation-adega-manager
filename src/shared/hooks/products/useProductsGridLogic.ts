@@ -92,7 +92,7 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
     goToPage,
     setItemsPerPage
   } = usePagination(filteredProducts, {
-    initialItemsPerPage: 12,
+    initialItemsPerPage: 20,
     resetOnItemsChange: true
   });
 

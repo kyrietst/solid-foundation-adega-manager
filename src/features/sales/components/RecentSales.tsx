@@ -7,6 +7,8 @@ import { FileText, Download, CalendarDays, CreditCard, ChevronRight, User, Truck
 import { useAuth } from "@/app/providers/AuthContext";
 import { useState } from "react";
 import { useToast } from "@/shared/hooks/common/use-toast";
+import { text, shadows } from "@/core/config/theme";
+import { cn } from "@/core/config/utils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -119,16 +121,29 @@ export function RecentSales() {
     const statusLower = status.toLowerCase();
     switch (statusLower) {
       case 'completed':
-        return 'bg-green-100 text-green-800';
+        return cn('bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 backdrop-blur-sm', shadows.light);
       case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
+        return cn('bg-amber-500/20 text-amber-400 border border-amber-500/30 backdrop-blur-sm', shadows.light);
       case 'cancelled':
       case 'canceled':
-        return 'bg-red-100 text-red-800';
+        return cn('bg-red-500/20 text-red-400 border border-red-500/30 backdrop-blur-sm', shadows.light);
       case 'returned':
-        return 'bg-purple-100 text-purple-800';
+        return cn('bg-purple-500/20 text-purple-400 border border-purple-500/30 backdrop-blur-sm', shadows.light);
       default:
-        return 'bg-gray-100 text-gray-800';
+        return cn('bg-gray-500/20 text-gray-400 border border-gray-500/30 backdrop-blur-sm', shadows.light);
+    }
+  };
+
+  const getPaymentStatusBadge = (status: string) => {
+    switch (status) {
+      case 'paid':
+        return cn('bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 backdrop-blur-sm', shadows.light);
+      case 'pending':
+        return cn('bg-amber-500/20 text-amber-400 border border-amber-500/30 backdrop-blur-sm', shadows.light);
+      case 'cancelled':
+        return cn('bg-red-500/20 text-red-400 border border-red-500/30 backdrop-blur-sm', shadows.light);
+      default:
+        return cn('bg-gray-500/20 text-gray-400 border border-gray-500/30 backdrop-blur-sm', shadows.light);
     }
   };
 
@@ -157,8 +172,10 @@ export function RecentSales() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Vendas Recentes</h2>
-          <p className="text-sm text-muted-foreground">
+          <h2 className={cn(text.h2, shadows.medium, "text-2xl font-bold tracking-tight")}>
+            Vendas Recentes
+          </h2>
+          <p className={cn(text.h6, shadows.subtle, "text-sm")}>
             Visualize as últimas transações realizadas
           </p>
         </div>
@@ -175,10 +192,12 @@ export function RecentSales() {
       </div>
       
       {sales?.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 border-2 border-dashed rounded-lg">
-          <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-          <h3 className="text-lg font-medium">Nenhuma venda encontrada</h3>
-          <p className="text-sm text-muted-foreground text-center max-w-md mt-1">
+        <div className="flex flex-col items-center justify-center py-12 bg-black/30 border border-white/20 backdrop-blur-xl rounded-lg">
+          <FileText className="h-12 w-12 text-gray-400 mb-4" />
+          <h3 className={cn(text.h4, shadows.medium, "text-lg font-medium")}>
+            Nenhuma venda encontrada
+          </h3>
+          <p className={cn(text.h6, shadows.subtle, "text-sm text-center max-w-md mt-1")}>
             Quando você realizar vendas, elas aparecerão aqui.
           </p>
         </div>
@@ -187,16 +206,23 @@ export function RecentSales() {
           {sales?.map((sale) => (
             <div 
               key={sale.id} 
-              className="bg-card border rounded-lg p-4 hover:shadow-md transition-all duration-200"
+              className="bg-black/70 backdrop-blur-xl border border-white/20 shadow-lg rounded-lg p-4 hover:shadow-xl transition-all duration-200 hero-spotlight"
+              onMouseMove={(e) => {
+                const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                const x = ((e.clientX - rect.left) / rect.width) * 100;
+                const y = ((e.clientY - rect.top) / rect.height) * 100;
+                (e.currentTarget as HTMLElement).style.setProperty("--x", `${x}%`);
+                (e.currentTarget as HTMLElement).style.setProperty("--y", `${y}%`);
+              }}
             >
               <div className="flex flex-col sm:flex-row justify-between gap-4">
                 <div className="space-y-1">
                   <div className="flex items-center gap-3">
-                    <h3 className="font-semibold text-lg">
+                    <h3 className={cn(text.h3, shadows.medium, "font-semibold text-lg")}>
                       Venda #{sale.id.slice(0, 8).toUpperCase()}
                     </h3>
                     <span 
-                      className={`text-xs px-2 py-1 rounded-full ${getStatusBadge(sale.status)}`}
+                      className={cn("text-xs px-2 py-1 rounded-full", getStatusBadge(sale.status))}
                     >
                       {
                         (() => {
@@ -213,36 +239,38 @@ export function RecentSales() {
                       }
                     </span>
                   </div>
-                  <div className="flex flex-col gap-2 text-sm text-muted-foreground">
+                  <div className="flex flex-col gap-2 text-sm">
                     <div className="flex items-center gap-2">
-                      <CreditCard className="h-4 w-4" />
-                      <span>{formatPaymentMethod(sale.payment_method)}</span>
-                      <span className={`text-xs px-2 py-0.5 rounded-full ${
-                        sale.payment_status === 'paid' ? 'bg-green-100 text-green-800' :
-                        sale.payment_status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-gray-100 text-gray-800'
-                      }`}>
+                      <CreditCard className="h-4 w-4 text-blue-400" />
+                      <span className={cn(text.h6, shadows.subtle)}>
+                        {formatPaymentMethod(sale.payment_method)}
+                      </span>
+                      <span className={cn("text-xs px-2 py-0.5 rounded-full", getPaymentStatusBadge(sale.payment_status))}>
                         {formatPaymentStatus(sale.payment_status)}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <User className="h-4 w-4" />
-                      <span>Vendedor: {sale.seller?.name || 'Não informado'}</span>
+                      <User className="h-4 w-4 text-purple-400" />
+                      <span className={cn(text.h6, shadows.subtle)}>
+                        Vendedor: {sale.seller?.name || 'Não informado'}
+                      </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <User className="h-4 w-4" />
-                      <span>Cliente: {sale.customer?.name || 'Não informado'}</span>
+                      <User className="h-4 w-4 text-amber-400" />
+                      <span className={cn(text.h6, shadows.subtle)}>
+                        Cliente: {sale.customer?.name || 'Não informado'}
+                      </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <CalendarDays className="h-4 w-4" />
-                      <span>
+                      <CalendarDays className="h-4 w-4 text-emerald-400" />
+                      <span className={cn(text.h6, shadows.subtle)}>
                         {format(new Date(sale.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                       </span>
                     </div>
                   </div>
                 </div>
                 <div className="flex flex-col items-end gap-1">
-                  <p className="text-xl font-bold text-right">
+                  <p className={cn(text.h1, shadows.strong, "text-xl font-bold text-right")}>
                     {new Intl.NumberFormat("pt-BR", {
                       style: "currency",
                       currency: "BRL"
@@ -275,16 +303,23 @@ export function RecentSales() {
               
               {/* Detalhes expandidos da venda */}
               {expandedSaleId === sale.id && (
-                <div className="mt-4 pt-4 border-t">
-                  <h4 className="font-medium mb-2">Itens da venda:</h4>
+                <div className="mt-4 pt-4 border-t border-white/20">
+                  <h4 className={cn(text.h4, shadows.medium, "font-medium mb-2")}>
+                    Itens da venda:
+                  </h4>
                   {sale.items && sale.items.length > 0 ? (
                     <div className="space-y-2">
                       {sale.items.map((item) => (
                         <div key={item.id} className="flex justify-between text-sm">
                           <div>
-                            <span className="font-medium">{item.quantity}x</span> {item.product?.name || 'Produto não encontrado'}
+                            <span className={cn(text.h5, shadows.light, "font-medium")}>
+                              {item.quantity}x
+                            </span>{" "}
+                            <span className={cn(text.h6, shadows.subtle)}>
+                              {item.product?.name || 'Produto não encontrado'}
+                            </span>
                           </div>
-                          <div>
+                          <div className={cn(text.h4, shadows.light)}>
                             {new Intl.NumberFormat("pt-BR", {
                               style: "currency",
                               currency: "BRL"
@@ -294,13 +329,19 @@ export function RecentSales() {
                       ))}
                     </div>
                   ) : (
-                    <p className="text-sm text-muted-foreground">Nenhum item encontrado nesta venda.</p>
+                    <p className={cn(text.h6, shadows.subtle, "text-sm")}>
+                      Nenhum item encontrado nesta venda.
+                    </p>
                   )}
                   
                   {sale.notes && (
-                    <div className="mt-3 pt-3 border-t">
-                      <h4 className="font-medium mb-1">Observações:</h4>
-                      <p className="text-sm text-muted-foreground">{sale.notes}</p>
+                    <div className="mt-3 pt-3 border-t border-white/20">
+                      <h4 className={cn(text.h5, shadows.medium, "font-medium mb-1")}>
+                        Observações:
+                      </h4>
+                      <p className={cn(text.h6, shadows.subtle, "text-sm")}>
+                        {sale.notes}
+                      </p>
                     </div>
                   )}
                 </div>

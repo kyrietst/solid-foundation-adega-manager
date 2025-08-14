@@ -15,37 +15,32 @@ export const DashboardContainer: React.FC = () => {
   // Buscar dados reais do dashboard
   const {
     counts,
-    financials,
     salesData,
     recentActivities,
     isLoading,
     isLoadingCounts,
-    isLoadingFinancials,
     isLoadingSales,
     isLoadingActivities
   } = useDashboardData();
 
-  // Processar métricas para apresentação
-  const { publicMetrics, sensitiveMetrics } = useDashboardMetrics(counts, financials);
+  // Processar métricas para apresentação (apenas métricas públicas)
+  const { publicMetrics } = useDashboardMetrics(counts);
 
   // Preparar dados para o componente de apresentação
   const presentationProps = {
     // Dados processados
     publicMetrics,
-    sensitiveMetrics: userRole === 'admin' ? sensitiveMetrics : undefined,
     salesData: salesData || [],
     recentActivities: recentActivities || [],
     
     // Estados de loading
     isLoading,
     isLoadingCounts,
-    isLoadingFinancials,
     isLoadingSales,
     isLoadingActivities,
     
     // Configuração de apresentação
     userRole,
-    showFinancialMetrics: userRole === 'admin',
     showEmployeeNote: userRole === 'employee',
   };
 

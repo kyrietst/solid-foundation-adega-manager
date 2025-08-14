@@ -89,8 +89,8 @@ export const DesktopSidebar = ({
   return (
     <motion.div
       className={cn(
-        // Glassy dark sidebar with subtle border and stronger blur
-        "h-full px-3 py-4 hidden md:flex md:flex-col bg-black/50 backdrop-blur-xl border-r border-white/10 w-[300px] flex-shrink-0 z-20",
+        // Glassy sidebar matching cards style with hero spotlight effect
+        "h-full px-3 py-4 hidden md:flex md:flex-col bg-black/70 backdrop-blur-xl border-r border-white/20 shadow-lg w-[300px] flex-shrink-0 z-20 hero-spotlight",
         className
       )}
       animate={{
@@ -98,6 +98,13 @@ export const DesktopSidebar = ({
       }}
       onMouseEnter={() => setOpen(true)}
       onMouseLeave={() => setOpen(false)}
+      onMouseMove={(e) => {
+        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width) * 100;
+        const y = ((e.clientY - rect.top) / rect.height) * 100;
+        (e.currentTarget as HTMLElement).style.setProperty("--x", `${x}%`);
+        (e.currentTarget as HTMLElement).style.setProperty("--y", `${y}%`);
+      }}
       {...props}
     >
       {children}
@@ -115,8 +122,8 @@ export const MobileSidebar = ({
     <>
       <div
         className={cn(
-          // Mobile top bar glassy as well
-          "h-12 px-4 py-3 flex flex-row md:hidden items-center justify-between bg-black/60 backdrop-blur-xl border-b border-white/10 shadow-lg w-full"
+          // Mobile top bar matching cards style
+          "h-12 px-4 py-3 flex flex-row md:hidden items-center justify-between bg-black/70 backdrop-blur-xl border-b border-white/20 shadow-lg w-full"
         )}
         {...props}
       >
@@ -137,9 +144,16 @@ export const MobileSidebar = ({
                 ease: "easeInOut",
               }}
               className={cn(
-                "fixed h-full w-full inset-0 bg-black/70 backdrop-blur-xl p-10 z-[100] flex flex-col justify-between",
+                "fixed h-full w-full inset-0 bg-black/80 backdrop-blur-xl border border-white/20 shadow-2xl p-10 z-[100] flex flex-col justify-between hero-spotlight",
                 className
               )}
+              onMouseMove={(e) => {
+                const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                const x = ((e.clientX - rect.left) / rect.width) * 100;
+                const y = ((e.clientY - rect.top) / rect.height) * 100;
+                (e.currentTarget as HTMLElement).style.setProperty("--x", `${x}%`);
+                (e.currentTarget as HTMLElement).style.setProperty("--y", `${y}%`);
+              }}
             >
               <div
                 className="absolute right-10 top-10 z-50 text-adega-gold cursor-pointer"

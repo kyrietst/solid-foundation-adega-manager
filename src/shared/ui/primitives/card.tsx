@@ -9,8 +9,8 @@ const Card = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      // Neo glass dark card default + spotlight hover effect
-      "hero-spotlight rounded-2xl border border-white/10 bg-black/40 backdrop-blur-xl text-card-foreground shadow-[0_8px_24px_rgba(0,0,0,0.5)]",
+      // Neo glass dark card default (maior contraste)
+      "hero-spotlight rounded-2xl border border-white/20 bg-black/70 backdrop-blur-md text-card-foreground shadow-[0_8px_24px_rgba(0,0,0,0.6)]",
       className
     )}
     onMouseMove={(e) => {

@@ -34,19 +34,28 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
 
   return (
     <div className={cn(
-      'grid gap-4 p-4 rounded-lg',
-      `grid-cols-${gridColumns.mobile} md:grid-cols-${gridColumns.tablet} lg:grid-cols-${gridColumns.desktop}`,
+      'grid gap-6 p-6 rounded-xl bg-black/20 backdrop-blur-sm border border-white/10 h-full overflow-y-auto',
+      `grid-cols-${gridColumns.mobile} md:grid-cols-${gridColumns.tablet} lg:grid-cols-${gridColumns.desktop} xl:grid-cols-${Math.min(gridColumns.desktop + 1, 6)}`,
+      'transition-all duration-300 auto-rows-max',
       glassClasses,
       className
     )}>
-      {products.map((product) => (
-        <ProductCard 
-          key={product.id} 
-          product={product} 
-          onAddToCart={onAddToCart}
-          variant={variant}
-          glassEffect={glassEffect}
-        />
+      {products.map((product, index) => (
+        <div
+          key={product.id}
+          className="transform transition-all duration-300"
+          style={{
+            animationDelay: `${index * 50}ms`,
+            animation: 'fadeInUp 0.6s ease-out forwards'
+          }}
+        >
+          <ProductCard 
+            product={product} 
+            onAddToCart={onAddToCart}
+            variant={variant}
+            glassEffect={glassEffect}
+          />
+        </div>
       ))}
     </div>
   );

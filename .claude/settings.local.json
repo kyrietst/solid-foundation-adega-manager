@@ -34,7 +34,8 @@
       "Bash(git push:*)",
       "Bash(git stash:*)",
       "Bash(git add:*)",
-      "Bash(git rebase:*)"
+      "Bash(git rebase:*)",
+      "Bash(cd:*)"
     ],
     "deny": []
   }

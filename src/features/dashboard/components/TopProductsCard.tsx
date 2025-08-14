@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
 import { TrendingUp, Package, ExternalLink } from 'lucide-react';
 import { cn } from '@/core/config/utils';
+import { text, shadows } from "@/core/config/theme";
 
 interface TopProduct {
   product_id: string;
@@ -71,38 +72,47 @@ export function TopProductsCard({ className, period = 30, limit = 5, useCurrentM
 
   if (error) {
     return (
-      <Card className={cn("border-white/10 bg-black/40 backdrop-blur-xl", className)}>
+      <Card className={cn("border-red-500/40 bg-black/80 backdrop-blur-xl shadow-lg", className)}>
         <CardHeader>
-          <CardTitle className="text-red-400 flex items-center gap-2">
+          <CardTitle className="text-red-300 font-bold flex items-center gap-2">
             <Package className="h-5 w-5" />
             Erro - Top Produtos
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-gray-400 text-sm">Não foi possível carregar os dados.</p>
+          <p className="text-gray-200 text-sm font-medium">Não foi possível carregar os dados.</p>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card className={cn("border-white/10 bg-black/40 backdrop-blur-xl", className)}>
+    <Card 
+      className={cn("bg-black/70 backdrop-blur-xl border border-white/20 shadow-lg hero-spotlight", className)}
+      onMouseMove={(e) => {
+        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width) * 100;
+        const y = ((e.clientY - rect.top) / rect.height) * 100;
+        (e.currentTarget as HTMLElement).style.setProperty("--x", `${x}%`);
+        (e.currentTarget as HTMLElement).style.setProperty("--y", `${y}%`);
+      }}
+    >
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-white flex items-center gap-2">
+          <CardTitle className={cn(text.h2, shadows.medium, "text-lg font-bold tracking-tight flex items-center gap-2")}>
             <TrendingUp className="h-5 w-5 text-amber-400" />
             Top {limit} Produtos {useCurrentMonth ? '(Mês Atual)' : `(${period}d)`}
           </CardTitle>
           <a 
             href="/reports?tab=sales&view=top-products" 
-            className="text-gray-400 hover:text-amber-400 transition-colors"
+            className={cn(text.h6, shadows.subtle, "hover:text-amber-400 transition-colors")}
           >
             <ExternalLink className="h-4 w-4" />
           </a>
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-3 text-sm text-gray-200">
         {isLoading ? (
           <div className="space-y-3 h-[380px]">
             {Array.from({ length: limit }).map((_, i) => (
@@ -134,20 +144,20 @@ export function TopProductsCard({ className, period = 30, limit = 5, useCurrentM
                   </div>
                   
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-white truncate">
+                    <div className={cn(text.h4, shadows.medium, "text-sm font-medium truncate")}>
                       {product.name}
                     </div>
-                    <div className="text-xs text-gray-400">
+                    <div className={cn(text.h6, shadows.subtle, "text-xs")}>
                       {product.category} • {formatQuantity(product.qty)} vendidos
                     </div>
                   </div>
                 </div>
                 
                 <div className="text-right flex-shrink-0">
-                  <div className="text-sm font-semibold text-amber-400">
+                  <div className={cn(text.h2, shadows.medium, "text-sm font-semibold")}>
                     {formatCurrency(product.revenue)}
                   </div>
-                  <div className="text-xs text-gray-400">
+                  <div className={cn(text.h6, shadows.subtle, "text-xs")}>
                     receita
                   </div>
                 </div>

@@ -29,7 +29,7 @@ export function AppSidebar() {
   const allLinks = [
     {
       id: "dashboard",
-      label: "Dashboard",
+      label: "DASHBOARD",
       href: "dashboard",
       icon: (
         <IconChartBar className="h-5 w-5 shrink-0 text-primary-yellow" />
@@ -38,7 +38,7 @@ export function AppSidebar() {
     },
     {
       id: "sales",
-      label: "Vendas",
+      label: "VENDAS",
       href: "sales",
       icon: (
         <IconShoppingCart className="h-5 w-5 shrink-0 text-primary-yellow" />
@@ -47,7 +47,7 @@ export function AppSidebar() {
     },
     {
       id: "inventory",
-      label: "Estoque",
+      label: "ESTOQUE",
       href: "inventory",
       icon: (
         <IconPackage className="h-5 w-5 shrink-0 text-primary-yellow" />
@@ -56,7 +56,7 @@ export function AppSidebar() {
     },
     {
       id: "customers",
-      label: "Clientes",
+      label: "CLIENTES",
       href: "customers",
       icon: (
         <IconUsers className="h-5 w-5 shrink-0 text-primary-yellow" />
@@ -65,7 +65,7 @@ export function AppSidebar() {
     },
     {
       id: "crm",
-      label: "CRM Dashboard",
+      label: "CRM DASHBOARD",
       href: "crm",
       icon: (
         <IconChartPie className="h-5 w-5 shrink-0 text-primary-yellow" />
@@ -74,7 +74,7 @@ export function AppSidebar() {
     },
     {
       id: "delivery",
-      label: "Delivery",
+      label: "DELIVERY",
       href: "delivery",
       icon: (
         <IconTruck className="h-5 w-5 shrink-0 text-primary-yellow" />
@@ -83,7 +83,7 @@ export function AppSidebar() {
     },
     {
       id: "movements",
-      label: "Movimentações",
+      label: "MOVIMENTAÇÕES",
       href: "movements",
       icon: (
         <IconRefresh className="h-5 w-5 shrink-0 text-primary-yellow" />
@@ -92,7 +92,7 @@ export function AppSidebar() {
     },
     {
       id: "automations",
-      label: "Automações",
+      label: "AUTOMAÇÕES",
       href: "automations",
       icon: (
         <IconRobot className="h-5 w-5 shrink-0 text-primary-yellow" />
@@ -101,7 +101,7 @@ export function AppSidebar() {
     },
     {
       id: "reports",
-      label: "Relatórios",
+      label: "RELATÓRIOS",
       href: "reports",
       icon: (
         <IconReportAnalytics className="h-5 w-5 shrink-0 text-primary-yellow" />
@@ -110,7 +110,7 @@ export function AppSidebar() {
     },
     {
       id: "users",
-      label: "Usuários",
+      label: "USUÁRIOS",
       href: "users",
       icon: (
         <IconSettings className="h-5 w-5 shrink-0 text-primary-yellow" />
@@ -199,7 +199,7 @@ export function AppSidebar() {
             {/* Logout */}
             <SidebarLink
               link={{
-                label: "Sair",
+                label: "SAIR",
                 href: "#",
                 icon: (
                   <IconLogout className="h-5 w-5 shrink-0 text-accent-red" />

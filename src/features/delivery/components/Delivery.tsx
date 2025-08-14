@@ -111,7 +111,7 @@ export const Delivery = () => {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card className="bg-adega-charcoal/20 border-white/10 backdrop-blur-xl shadow-xl">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Entregas</CardTitle>
+            <CardTitle className="text-sm font-medium">TOTAL DE ENTREGAS</CardTitle>
             <Truck className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
@@ -121,7 +121,7 @@ export const Delivery = () => {
 
         <Card className="bg-adega-charcoal/20 border-white/10 backdrop-blur-xl shadow-xl">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pendentes</CardTitle>
+            <CardTitle className="text-sm font-medium">PENDENTES</CardTitle>
             <Clock className="h-4 w-4 text-yellow-600" />
           </CardHeader>
           <CardContent>
@@ -131,7 +131,7 @@ export const Delivery = () => {
 
         <Card className="bg-adega-charcoal/20 border-white/10 backdrop-blur-xl shadow-xl">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Em Trânsito</CardTitle>
+            <CardTitle className="text-sm font-medium">EM TRÂNSITO</CardTitle>
             <Truck className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
@@ -141,7 +141,7 @@ export const Delivery = () => {
 
         <Card className="bg-adega-charcoal/20 border-white/10 backdrop-blur-xl shadow-xl">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Entregues</CardTitle>
+            <CardTitle className="text-sm font-medium">ENTREGUES</CardTitle>
             <CheckCircle className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
@@ -154,7 +154,7 @@ export const Delivery = () => {
       <Card className="bg-adega-charcoal/20 border-white/10 backdrop-blur-xl shadow-xl">
         <CardHeader>
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-            <CardTitle>Controle de Entregas</CardTitle>
+            <CardTitle>CONTROLE DE ENTREGAS</CardTitle>
             <div className="flex flex-col sm:flex-row gap-3 sm:items-center w-full sm:w-auto">
               <div className="w-full sm:w-80">
                 <SearchBar21st placeholder="Buscar entregas..." value={searchTerm} onChange={setSearchTerm} debounceMs={150} />
@@ -284,7 +284,7 @@ export const Delivery = () => {
       {/* Mapa de Entregas (Placeholder) */}
       <Card className="bg-adega-charcoal/20 border-white/10 backdrop-blur-xl shadow-xl">
         <CardHeader>
-          <CardTitle>Mapa de Entregas</CardTitle>
+          <CardTitle>MAPA DE ENTREGAS</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-64 bg-gray-100 rounded-lg flex items-center justify-center">
