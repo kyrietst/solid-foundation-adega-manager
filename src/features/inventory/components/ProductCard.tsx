@@ -57,8 +57,7 @@ export const ProductCard = React.memo<ProductCardProps>(({
             ? 'bg-red-500/30 text-red-200 border-red-400/50 shadow-red-500/25' 
             : product.stock_quantity <= 5
             ? 'bg-orange-500/30 text-orange-200 border-orange-400/50 shadow-orange-500/25'
-            : 'bg-emerald-500/30 text-emerald-200 border-emerald-400/50 shadow-emerald-500/25',
-          shadows.medium
+            : 'bg-emerald-500/30 text-emerald-200 border-emerald-400/50 shadow-emerald-500/25'
         )}>
           {isOutOfStock ? '⚠️ Esgotado' : product.stock_quantity <= 5 ? `⚡ ${product.stock_quantity} restam` : `✓ ${product.stock_quantity} disponível`}
         </div>
@@ -67,18 +66,21 @@ export const ProductCard = React.memo<ProductCardProps>(({
       {/* Informações do produto */}
       <div className="p-4 space-y-3">
         <div className="space-y-2">
-          <h3 className={cn(text.h1, shadows.strong, "font-semibold line-clamp-2 h-12 text-base leading-tight group-hover:text-yellow-300 transition-colors duration-300")}>
+          <h3 
+            className="font-bold line-clamp-2 h-12 text-lg leading-tight"
+            style={{ color: '#FF4B01' }}
+          >
             {product.name}
           </h3>
           
           {/* Preço com destaque maior */}
           <div className="flex items-center justify-between">
             <div className="space-y-1">
-              <span className={cn(text.h1, shadows.strong, "text-2xl font-bold block bg-gradient-to-r from-yellow-400 to-yellow-300 bg-clip-text text-transparent")}>
+              <span className="text-2xl font-bold block text-yellow-400">
                 {formatCurrency(product.price)}
               </span>
               {product.category && (
-                <span className={cn(text.h6, shadows.subtle, "text-xs opacity-75")}>
+                <span className="text-xs opacity-75 text-gray-300">
                   {product.category}
                 </span>
               )}
@@ -95,8 +97,7 @@ export const ProductCard = React.memo<ProductCardProps>(({
             'w-full h-10 font-semibold transition-all duration-300 transform',
             isOutOfStock 
               ? 'bg-gray-600/30 text-gray-400 border border-gray-500/40 cursor-not-allowed backdrop-blur-sm'
-              : 'bg-gradient-to-r from-yellow-400 to-yellow-500 text-black hover:from-yellow-300 hover:to-yellow-400 border border-yellow-400/50 shadow-lg hover:shadow-yellow-400/30 hover:scale-105 active:scale-95',
-            shadows.medium
+              : 'bg-gradient-to-r from-yellow-400 to-yellow-500 text-black hover:from-yellow-300 hover:to-yellow-400 border border-yellow-400/50 shadow-lg hover:shadow-yellow-400/30 hover:scale-105 active:scale-95'
           )}
           aria-label={isOutOfStock ? `Produto ${product.name} indisponível` : `Adicionar ${product.name} ao carrinho`}
         >

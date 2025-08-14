@@ -176,6 +176,12 @@ export default {
 						transform: 'translateY(-50%)',
 					},
 				},
+				// Keyframes para o texto gradiente
+				gradient: {
+					"0%": { backgroundPosition: "0% 50%" },
+					"50%": { backgroundPosition: "100% 50%" },
+					"100%": { backgroundPosition: "0% 50%" },
+				},
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
@@ -186,6 +192,15 @@ export default {
 				third: 'moveInCircle 40s linear infinite',
 				fourth: 'moveHorizontal 40s ease infinite',
 				fifth: 'moveInCircle 20s ease infinite',
+				// Animação para o texto gradiente
+				gradient: "gradient 8s linear infinite",
+				// Keyframes para o NeonGradientCard
+				"background-position-spin": {
+					"0%": { backgroundPosition: "top center" },
+					"100%": { backgroundPosition: "bottom center" },
+				},
+				// Animação para o NeonGradientCard
+				"background-position-spin": "background-position-spin 3000ms infinite alternate",
 			}
 		}
 	},
