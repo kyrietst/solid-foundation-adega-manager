@@ -377,8 +377,8 @@ export default function CustomerDataTable() {
   }
 
   return (
-    <div className="my-6 space-y-4 overflow-x-auto">
-      <div className="flex flex-wrap gap-4 items-center justify-between mb-4">
+    <div className="space-y-4 h-full flex flex-col overflow-hidden">
+      <div className="flex flex-wrap gap-4 items-center justify-between flex-shrink-0">
         <div className="flex gap-2 flex-wrap items-center">
           <div className="w-64 md:w-80">
             <SearchBar21st
@@ -470,134 +470,154 @@ export default function CustomerDataTable() {
         </div>
       </div>
 
-      <div className="bg-black/40 rounded-lg border border-white/10 overflow-hidden">
-        <Table className="w-full">
-          <TableHeader>
+      <div className="bg-black/40 rounded-lg border border-white/10 flex-1 min-h-0 overflow-hidden">
+        <div className="h-full overflow-y-auto max-h-[60vh] scrollbar-thin scrollbar-track-gray-900 scrollbar-thumb-gray-600 hover:scrollbar-thumb-gray-500">
+          <Table className="w-full table-fixed">
+          <TableHeader className="sticky top-0 z-10">
             <TableRow className="border-b border-white/10 bg-black/20 hover:bg-black/30">
             {visibleColumns.includes("Cliente") && (
-              <TableHead className="w-[200px] text-gray-300 font-semibold">
-                <Button
-                  variant="ghost"
-                  onClick={() => handleSort('cliente')}
-                  className="flex items-center gap-2 p-0 hover:bg-transparent text-gray-300 hover:text-yellow-400"
-                >
-                  <User className="w-4 h-4" />
-                  Cliente
-                  {getSortIcon('cliente')}
-                </Button>
-              </TableHead>
-            )}
-            {visibleColumns.includes("Categoria Favorita") && (
-              <TableHead className="w-[180px] text-gray-300 font-semibold">Categoria Favorita</TableHead>
-            )}
-            {visibleColumns.includes("Segmento") && (
-              <TableHead className="w-[150px] text-gray-300 font-semibold">Segmento</TableHead>
-            )}
-            {visibleColumns.includes("Método Preferido") && (
-              <TableHead className="w-[150px] text-gray-300 font-semibold">
-                <div className="flex items-center gap-2">
-                  <CreditCard className="w-4 h-4" />
-                  Método Preferido
+              <TableHead className="w-[140px] text-gray-300 font-semibold text-center px-2">
+                <div className="flex justify-center">
+                  <Button
+                    variant="ghost"
+                    onClick={() => handleSort('cliente')}
+                    className="flex items-center justify-center gap-1 px-2 py-1 bg-black/20 border border-gray-700/50 hover:bg-gray-800/60 text-gray-300 hover:text-yellow-400 rounded-md transition-colors duration-200 text-xs"
+                  >
+                    Cliente
+                    {getSortIcon('cliente')}
+                  </Button>
                 </div>
               </TableHead>
             )}
+            {visibleColumns.includes("Categoria Favorita") && (
+              <TableHead className="w-[110px] text-gray-300 font-semibold text-center">
+                <Button
+                  variant="ghost"
+                  className="flex items-center justify-center gap-2 px-3 py-2 bg-black/20 border border-gray-700/50 hover:bg-gray-800/60 text-gray-300 hover:text-yellow-400 rounded-md transition-colors duration-200 cursor-default"
+                >
+                  Categoria Favorita
+                </Button>
+              </TableHead>
+            )}
+            {visibleColumns.includes("Segmento") && (
+              <TableHead className="w-[90px] text-gray-300 font-semibold text-center">
+                <Button
+                  variant="ghost"
+                  className="flex items-center justify-center gap-2 px-3 py-2 bg-black/20 border border-gray-700/50 hover:bg-gray-800/60 text-gray-300 hover:text-yellow-400 rounded-md transition-colors duration-200 cursor-default"
+                >
+                  Segmento
+                </Button>
+              </TableHead>
+            )}
+            {visibleColumns.includes("Método Preferido") && (
+              <TableHead className="w-[100px] text-gray-300 font-semibold text-center">
+                <Button
+                  variant="ghost"
+                  className="flex items-center justify-center gap-2 px-3 py-2 bg-black/20 border border-gray-700/50 hover:bg-gray-800/60 text-gray-300 hover:text-yellow-400 rounded-md transition-colors duration-200 cursor-default"
+                >
+                  Método Preferido
+                </Button>
+              </TableHead>
+            )}
             {visibleColumns.includes("Última Compra") && (
-              <TableHead className="w-[140px] text-gray-300 font-semibold">
+              <TableHead className="w-[120px] text-gray-300 font-semibold text-center">
                 <Button
                   variant="ghost"
                   onClick={() => handleSort('ultimaCompra')}
-                  className="flex items-center gap-2 p-0 hover:bg-transparent text-gray-300 hover:text-yellow-400"
+                  className="flex items-center justify-center gap-2 px-3 py-2 bg-black/20 border border-gray-700/50 hover:bg-gray-800/60 text-gray-300 hover:text-yellow-400 rounded-md transition-colors duration-200"
                 >
-                  <Calendar className="w-4 h-4" />
                   Última Compra
                   {getSortIcon('ultimaCompra')}
                 </Button>
               </TableHead>
             )}
             {visibleColumns.includes("Insights de IA") && (
-              <TableHead className="w-[130px] text-gray-300 font-semibold">
+              <TableHead className="w-[110px] text-gray-300 font-semibold text-center">
                 <Button
                   variant="ghost"
                   onClick={() => handleSort('insightsCount')}
-                  className="flex items-center gap-2 p-0 hover:bg-transparent text-gray-300 hover:text-yellow-400"
+                  className="flex items-center justify-center gap-2 px-3 py-2 bg-black/20 border border-gray-700/50 hover:bg-gray-800/60 text-gray-300 hover:text-yellow-400 rounded-md transition-colors duration-200"
                 >
-                  <Brain className="w-4 h-4" />
                   Insights de IA
                   {getSortIcon('insightsCount')}
                 </Button>
               </TableHead>
             )}
             {visibleColumns.includes("Status") && (
-              <TableHead className="w-[120px] text-gray-300 font-semibold">Status</TableHead>
+              <TableHead className="w-[100px] text-gray-300 font-semibold text-center">
+                <Button
+                  variant="ghost"
+                  className="flex items-center justify-center gap-2 px-3 py-2 bg-black/20 border border-gray-700/50 hover:bg-gray-800/60 text-gray-300 hover:text-yellow-400 rounded-md transition-colors duration-200 cursor-default"
+                >
+                  Status
+                </Button>
+              </TableHead>
             )}
             {visibleColumns.includes("Cidade") && (
-              <TableHead className="w-[120px] text-gray-300 font-semibold">
+              <TableHead className="w-[100px] text-gray-300 font-semibold text-center">
                 <Button
                   variant="ghost"
                   onClick={() => handleSort('cidade')}
-                  className="flex items-center gap-2 p-0 hover:bg-transparent text-gray-300 hover:text-yellow-400"
+                  className="flex items-center justify-center gap-2 px-3 py-2 bg-black/20 border border-gray-700/50 hover:bg-gray-800/60 text-gray-300 hover:text-yellow-400 rounded-md transition-colors duration-200"
                 >
-                  <MapPin className="w-4 h-4" />
                   Cidade
                   {getSortIcon('cidade')}
                 </Button>
               </TableHead>
             )}
             {visibleColumns.includes("Próximo Aniversário") && (
-              <TableHead className="w-[160px] text-gray-300 font-semibold">
+              <TableHead className="w-[130px] text-gray-300 font-semibold text-center">
                 <Button
                   variant="ghost"
                   onClick={() => handleSort('diasParaAniversario')}
-                  className="flex items-center gap-2 p-0 hover:bg-transparent text-gray-300 hover:text-yellow-400"
+                  className="flex items-center justify-center gap-2 px-3 py-2 bg-black/20 border border-gray-700/50 hover:bg-gray-800/60 text-gray-300 hover:text-yellow-400 rounded-md transition-colors duration-200"
                 >
-                  <Gift className="w-4 h-4" />
                   Próximo Aniversário
                   {getSortIcon('diasParaAniversario')}
                 </Button>
               </TableHead>
             )}
             {visibleColumns.includes("LGPD") && (
-              <TableHead className="w-[80px] text-gray-300 font-semibold">
-                <div className="flex items-center gap-2">
-                  <Shield className="w-4 h-4" />
+              <TableHead className="w-[70px] text-gray-300 font-semibold text-center">
+                <Button
+                  variant="ghost"
+                  className="flex items-center justify-center gap-2 px-3 py-2 bg-black/20 border border-gray-700/50 hover:bg-gray-800/60 text-gray-300 hover:text-yellow-400 rounded-md transition-colors duration-200 cursor-default"
+                >
                   LGPD
-                </div>
+                </Button>
               </TableHead>
             )}
             {visibleColumns.includes("Completude") && (
-              <TableHead className="w-[120px] text-gray-300 font-semibold">
+              <TableHead className="w-[100px] text-gray-300 font-semibold text-center">
                 <Button
                   variant="ghost"
                   onClick={() => handleSort('profileCompleteness')}
-                  className="flex items-center gap-2 p-0 hover:bg-transparent text-gray-300 hover:text-yellow-400"
+                  className="flex items-center justify-center gap-2 px-3 py-2 bg-black/20 border border-gray-700/50 hover:bg-gray-800/60 text-gray-300 hover:text-yellow-400 rounded-md transition-colors duration-200"
                 >
-                  <BarChart3 className="w-4 h-4" />
                   Completude
                   {getSortIcon('profileCompleteness')}
                 </Button>
               </TableHead>
             )}
             {visibleColumns.includes("Último Contato") && (
-              <TableHead className="w-[140px] text-gray-300 font-semibold">
+              <TableHead className="w-[120px] text-gray-300 font-semibold text-center">
                 <Button
                   variant="ghost"
                   onClick={() => handleSort('diasSemContato')}
-                  className="flex items-center gap-2 p-0 hover:bg-transparent text-gray-300 hover:text-yellow-400"
+                  className="flex items-center justify-center gap-2 px-3 py-2 bg-black/20 border border-gray-700/50 hover:bg-gray-800/60 text-gray-300 hover:text-yellow-400 rounded-md transition-colors duration-200"
                 >
-                  <MessageCircle className="w-4 h-4" />
                   Último Contato
                   {getSortIcon('diasSemContato')}
                 </Button>
               </TableHead>
             )}
             {visibleColumns.includes("Valor em Aberto") && (
-              <TableHead className="w-[140px] text-gray-300 font-semibold">
+              <TableHead className="w-[120px] text-gray-300 font-semibold text-center">
                 <Button
                   variant="ghost"
                   onClick={() => handleSort('valorEmAberto')}
-                  className="flex items-center gap-2 p-0 hover:bg-transparent text-gray-300 hover:text-yellow-400"
+                  className="flex items-center justify-center gap-2 px-3 py-2 bg-black/20 border border-gray-700/50 hover:bg-gray-800/60 text-gray-300 hover:text-yellow-400 rounded-md transition-colors duration-200"
                 >
-                  <DollarSign className="w-4 h-4" />
                   Valor em Aberto
                   {getSortIcon('valorEmAberto')}
                 </Button>
@@ -726,6 +746,7 @@ export default function CustomerDataTable() {
           )}
         </TableBody>
       </Table>
+        </div>
       </div>
     </div>
   );

@@ -5,6 +5,7 @@ import { LoadingScreen } from '@/shared/ui/composite/loading-spinner';
 import { useCustomers } from '@/features/customers/hooks/use-crm';
 import { SearchBar21st } from '@/shared/ui/thirdparty/search-bar-21st';
 import { getGlassCardClasses } from '@/core/config/theme-utils';
+import { BlurIn } from '@/components/ui/blur-in';
 import CustomerDataTable from './CustomerDataTable';
 
 const CustomersLite = () => {
@@ -43,27 +44,47 @@ const CustomersLite = () => {
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="w-full h-full flex flex-col p-4">
       {/* Header */}
-      <div className="flex flex-col gap-4">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-white">CLIENTES</h1>
-            <p className="text-gray-400 mt-1">Gerencie sua base de clientes</p>
+      <div className="flex-shrink-0 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
+        {/* Header sem container */}
+        <div className="relative w-full text-center sm:text-left">
+          {/* Título animado */}
+          <BlurIn
+            word="GESTÃO DE CLIENTES"
+            duration={1.2}
+            variant={{
+              hidden: { filter: "blur(15px)", opacity: 0 },
+              visible: { filter: "blur(0px)", opacity: 1 }
+            }}
+            className="text-xl lg:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#FF2400] via-[#FFDA04] to-[#FF2400] drop-shadow-lg"
+            style={{
+              textShadow: '0 2px 4px rgba(0,0,0,0.3), 0 0 20px rgba(255, 218, 4, 0.2)'
+            }}
+          />
+          
+          {/* Sublinhado elegante */}
+          <div className="w-full h-6 relative mt-2">
+            <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FF2400]/80 to-transparent h-[2px] w-full blur-sm" />
+            <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FF2400] to-transparent h-px w-full" />
+            <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FFDA04]/80 to-transparent h-[3px] w-3/4 blur-sm mx-auto" />
+            <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FFDA04] to-transparent h-px w-3/4 mx-auto" />
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" className="border-white/20 text-gray-200" onClick={() => { /* TODO: export */ }}>
-              Exportar
-            </Button>
-            <Button className="bg-primary-yellow text-black hover:bg-yellow-90" onClick={() => setLoading(true)}>
-              NOVO CLIENTE
-            </Button>
-          </div>
+        </div>
+        
+        {/* Botões de ação */}
+        <div className="flex gap-2">
+          <Button variant="outline" className="border-white/20 text-gray-200 bg-gray-800/60 hover:bg-gray-700/80" onClick={() => { /* TODO: export */ }}>
+            Exportar
+          </Button>
+          <Button className="bg-yellow-400/20 border border-yellow-400/30 text-yellow-400 hover:bg-yellow-400/30" onClick={() => setLoading(true)}>
+            NOVO CLIENTE
+          </Button>
         </div>
       </div>
 
       {/* KPIs Resumo */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="flex-shrink-0 grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
         <Card className="bg-black/60 border-white/10 backdrop-blur-xl">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm text-gray-400">Total de Clientes</CardTitle>
@@ -90,9 +111,9 @@ const CustomersLite = () => {
         </Card>
       </div>
 
-      {/* Card com efeito glassmorphism */}
+      {/* Tabela de Clientes */}
       <section 
-        className="bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-6 md:p-8 hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300 hero-spotlight"
+        className="flex-1 min-h-0 bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg hero-spotlight p-4 flex flex-col hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300 overflow-hidden"
         onMouseMove={(e) => {
           const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
           const x = ((e.clientX - rect.left) / rect.width) * 100;
@@ -101,10 +122,7 @@ const CustomersLite = () => {
           (e.currentTarget as HTMLElement).style.setProperty("--y", `${y}%`);
         }}
       >
-        <CardHeader className="p-0 mb-4">
-          <CardTitle className="text-adega-platinum">Análise de Clientes - Dados Reais</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
+        <CardContent className="p-0 flex-1 min-h-0 overflow-hidden">
           <CustomerDataTable />
         </CardContent>
       </section>

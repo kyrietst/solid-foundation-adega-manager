@@ -51,11 +51,11 @@ export function getValueClasses(size: 'sm' | 'md' | 'lg' = 'md', variant: 'defau
  */
 export function getGlassCardClasses(variant: 'default' | 'premium' | 'subtle' | 'strong' | 'yellow' = 'default') {
   const variants = {
-    default: 'glass-card rounded-lg',
-    premium: 'glass-premium rounded-lg',
-    subtle: 'glass-subtle rounded-lg border border-gray-700/50',
-    strong: 'glass-strong rounded-lg border border-gray-600',
-    yellow: 'glass-yellow rounded-lg'
+    default: 'bg-black/60 backdrop-blur-sm border border-white/10 rounded-lg',
+    premium: 'bg-black/40 backdrop-blur-sm border border-yellow-400/30 rounded-lg shadow-lg',
+    subtle: 'bg-black/20 backdrop-blur-sm border border-gray-700/50 rounded-lg',
+    strong: 'bg-black/80 backdrop-blur-sm border border-gray-600 rounded-lg',
+    yellow: 'bg-yellow-400/10 backdrop-blur-sm border border-yellow-400/30 rounded-lg'
   };
   
   return variants[variant];

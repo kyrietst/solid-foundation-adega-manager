@@ -194,8 +194,8 @@ const Index = () => {
       {/* Main content area */}  
       <div className="flex-1 flex flex-col overflow-hidden">
         <main className="flex-1 overflow-y-auto">
-          <div className="p-4 lg:p-8 h-full">
-            <div className={activeTab === 'dashboard' || activeTab === 'sales' || activeTab === 'inventory' ? 'max-w-[1400px] 2xl:max-w-[1600px] mx-auto h-full' : 'max-w-7xl mx-auto h-full'}>
+          <div className={activeTab === 'customers' ? 'p-2 lg:p-4 h-full' : 'p-4 lg:p-8 h-full'}>
+            <div className={activeTab === 'dashboard' || activeTab === 'sales' || activeTab === 'inventory' || activeTab === 'customers' ? 'max-w-[1500px] 2xl:max-w-[1800px] mx-auto h-full' : 'max-w-7xl mx-auto h-full'}>
               {renderContent()}
               <Outlet />
             </div>
