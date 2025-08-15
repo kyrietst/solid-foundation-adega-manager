@@ -68,9 +68,9 @@ const InsightsBadge = ({
   const color = getInsightColor(level);
   
   const badgeClass = {
-    green: "bg-green-500/20 text-green-700 border-green-300",
-    yellow: "bg-yellow-500/20 text-yellow-700 border-yellow-300", 
-    red: "bg-red-500/20 text-red-700 border-red-300"
+    green: "bg-green-500/20 text-green-400 border-green-400/30",
+    yellow: "bg-yellow-500/20 text-yellow-400 border-yellow-400/30", 
+    red: "bg-red-500/20 text-red-400 border-red-400/30"
   };
   
   return (
@@ -124,8 +124,8 @@ const LGPDBadge = ({ hasPermission }: { hasPermission: boolean }) => {
             variant={hasPermission ? "default" : "destructive"} 
             className={cn("flex items-center gap-1", 
               hasPermission 
-                ? "bg-green-500/20 text-green-700 border-green-300" 
-                : "bg-red-500/20 text-red-700 border-red-300"
+                ? "bg-green-500/20 text-green-400 border-green-400/30" 
+                : "bg-red-500/20 text-red-400 border-red-400/30"
             )}
           >
             {hasPermission ? <CheckCircle2 className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
@@ -155,7 +155,7 @@ const ProfileCompleteness = ({ percentage }: { percentage: number }) => {
         <TooltipTrigger asChild>
           <div className="flex items-center gap-2 min-w-[80px]">
             <div className="flex-1">
-              <div className="w-full bg-gray-200 rounded-full h-2">
+              <div className="w-full bg-gray-600 rounded-full h-2">
                 <div 
                   className={cn("h-2 rounded-full transition-all duration-300", barColor)}
                   style={{ width: `${percentage}%` }}
@@ -352,11 +352,11 @@ export default function CustomerDataTable() {
 
   if (isLoading) {
     return (
-      <div className="container my-6 space-y-4 p-4 border border-border rounded-lg bg-background shadow-sm">
+      <div className="my-6 space-y-4 p-4">
         <div className="flex items-center justify-center py-8">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-            <p className="text-muted-foreground mt-2">Carregando dados dos clientes...</p>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-400 mx-auto"></div>
+            <p className="text-gray-400 mt-2">Carregando dados dos clientes...</p>
           </div>
         </div>
       </div>
@@ -365,11 +365,11 @@ export default function CustomerDataTable() {
 
   if (error) {
     return (
-      <div className="container my-6 space-y-4 p-4 border border-border rounded-lg bg-background shadow-sm">
+      <div className="my-6 space-y-4 p-4">
         <div className="flex items-center justify-center py-8">
-          <div className="text-center text-red-600">
+          <div className="text-center text-red-400">
             <p>Erro ao carregar dados dos clientes</p>
-            <p className="text-sm text-muted-foreground mt-1">{error.message}</p>
+            <p className="text-sm text-gray-400 mt-1">{error.message}</p>
           </div>
         </div>
       </div>
@@ -377,7 +377,7 @@ export default function CustomerDataTable() {
   }
 
   return (
-    <div className="container my-6 space-y-4 p-4 border border-border rounded-lg bg-background shadow-sm overflow-x-auto">
+    <div className="my-6 space-y-4 overflow-x-auto">
       <div className="flex flex-wrap gap-4 items-center justify-between mb-4">
         <div className="flex gap-2 flex-wrap items-center">
           <div className="w-64 md:w-80">
@@ -394,7 +394,7 @@ export default function CustomerDataTable() {
           <select
             value={segmentFilter}
             onChange={(e) => setSegmentFilter(e.target.value)}
-            className="px-3 py-2 border border-border rounded-md bg-background text-sm"
+            className="px-3 py-2 border border-gray-600/50 rounded-md bg-gray-800/60 text-gray-100 text-sm hover:bg-gray-700/80 focus:ring-2 focus:ring-yellow-400/50"
           >
             <option value="">Todos os segmentos</option>
             {CUSTOMER_SEGMENTS.map((segment) => (
@@ -406,7 +406,7 @@ export default function CustomerDataTable() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 border border-border rounded-md bg-background text-sm"
+            className="px-3 py-2 border border-gray-600/50 rounded-md bg-gray-800/60 text-gray-100 text-sm hover:bg-gray-700/80 focus:ring-2 focus:ring-yellow-400/50"
           >
             <option value="">Todos os status</option>
             {CUSTOMER_STATUSES.map((status) => (
@@ -418,7 +418,7 @@ export default function CustomerDataTable() {
           <select
             value={lastPurchaseFilter}
             onChange={(e) => setLastPurchaseFilter(e.target.value)}
-            className="px-3 py-2 border border-border rounded-md bg-background text-sm"
+            className="px-3 py-2 border border-gray-600/50 rounded-md bg-gray-800/60 text-gray-100 text-sm hover:bg-gray-700/80 focus:ring-2 focus:ring-yellow-400/50"
           >
             <option value="">Última compra</option>
             <option value="7days">Últimos 7 dias</option>
@@ -430,7 +430,7 @@ export default function CustomerDataTable() {
           <select
             value={birthdayFilter}
             onChange={(e) => setBirthdayFilter(e.target.value)}
-            className="px-3 py-2 border border-border rounded-md bg-background text-sm"
+            className="px-3 py-2 border border-gray-600/50 rounded-md bg-gray-800/60 text-gray-100 text-sm hover:bg-gray-700/80 focus:ring-2 focus:ring-yellow-400/50"
           >
             <option value="">Aniversários</option>
             <option value="today">Hoje 🎉</option>
@@ -441,21 +441,26 @@ export default function CustomerDataTable() {
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">
+          <span className="text-sm text-gray-400">
             {filteredAndSortedData.length} de {customers.length} clientes
           </span>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="bg-gray-800/60 border-gray-600 text-gray-100 hover:bg-gray-700/80"
+              >
                 Colunas
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-48">
+            <DropdownMenuContent className="w-48 bg-gray-800/95 border-gray-600">
               {TABLE_COLUMNS.map((col) => (
                 <DropdownMenuCheckboxItem
                   key={col}
                   checked={visibleColumns.includes(col)}
                   onCheckedChange={() => toggleColumn(col)}
+                  className="text-gray-100 hover:bg-gray-700/80 focus:bg-gray-700/80"
                 >
                   {col}
                 </DropdownMenuCheckboxItem>
@@ -465,15 +470,16 @@ export default function CustomerDataTable() {
         </div>
       </div>
 
-      <Table className="w-full">
-        <TableHeader>
-          <TableRow>
+      <div className="bg-black/40 rounded-lg border border-white/10 overflow-hidden">
+        <Table className="w-full">
+          <TableHeader>
+            <TableRow className="border-b border-white/10 bg-black/20 hover:bg-black/30">
             {visibleColumns.includes("Cliente") && (
-              <TableHead className="w-[200px]">
+              <TableHead className="w-[200px] text-gray-300 font-semibold">
                 <Button
                   variant="ghost"
                   onClick={() => handleSort('cliente')}
-                  className="flex items-center gap-2 p-0 hover:bg-transparent"
+                  className="flex items-center gap-2 p-0 hover:bg-transparent text-gray-300 hover:text-yellow-400"
                 >
                   <User className="w-4 h-4" />
                   Cliente
@@ -482,13 +488,13 @@ export default function CustomerDataTable() {
               </TableHead>
             )}
             {visibleColumns.includes("Categoria Favorita") && (
-              <TableHead className="w-[180px]">Categoria Favorita</TableHead>
+              <TableHead className="w-[180px] text-gray-300 font-semibold">Categoria Favorita</TableHead>
             )}
             {visibleColumns.includes("Segmento") && (
-              <TableHead className="w-[150px]">Segmento</TableHead>
+              <TableHead className="w-[150px] text-gray-300 font-semibold">Segmento</TableHead>
             )}
             {visibleColumns.includes("Método Preferido") && (
-              <TableHead className="w-[150px]">
+              <TableHead className="w-[150px] text-gray-300 font-semibold">
                 <div className="flex items-center gap-2">
                   <CreditCard className="w-4 h-4" />
                   Método Preferido
@@ -496,11 +502,11 @@ export default function CustomerDataTable() {
               </TableHead>
             )}
             {visibleColumns.includes("Última Compra") && (
-              <TableHead className="w-[140px]">
+              <TableHead className="w-[140px] text-gray-300 font-semibold">
                 <Button
                   variant="ghost"
                   onClick={() => handleSort('ultimaCompra')}
-                  className="flex items-center gap-2 p-0 hover:bg-transparent"
+                  className="flex items-center gap-2 p-0 hover:bg-transparent text-gray-300 hover:text-yellow-400"
                 >
                   <Calendar className="w-4 h-4" />
                   Última Compra
@@ -509,11 +515,11 @@ export default function CustomerDataTable() {
               </TableHead>
             )}
             {visibleColumns.includes("Insights de IA") && (
-              <TableHead className="w-[130px]">
+              <TableHead className="w-[130px] text-gray-300 font-semibold">
                 <Button
                   variant="ghost"
                   onClick={() => handleSort('insightsCount')}
-                  className="flex items-center gap-2 p-0 hover:bg-transparent"
+                  className="flex items-center gap-2 p-0 hover:bg-transparent text-gray-300 hover:text-yellow-400"
                 >
                   <Brain className="w-4 h-4" />
                   Insights de IA
@@ -522,14 +528,14 @@ export default function CustomerDataTable() {
               </TableHead>
             )}
             {visibleColumns.includes("Status") && (
-              <TableHead className="w-[120px]">Status</TableHead>
+              <TableHead className="w-[120px] text-gray-300 font-semibold">Status</TableHead>
             )}
             {visibleColumns.includes("Cidade") && (
-              <TableHead className="w-[120px]">
+              <TableHead className="w-[120px] text-gray-300 font-semibold">
                 <Button
                   variant="ghost"
                   onClick={() => handleSort('cidade')}
-                  className="flex items-center gap-2 p-0 hover:bg-transparent"
+                  className="flex items-center gap-2 p-0 hover:bg-transparent text-gray-300 hover:text-yellow-400"
                 >
                   <MapPin className="w-4 h-4" />
                   Cidade
@@ -538,11 +544,11 @@ export default function CustomerDataTable() {
               </TableHead>
             )}
             {visibleColumns.includes("Próximo Aniversário") && (
-              <TableHead className="w-[160px]">
+              <TableHead className="w-[160px] text-gray-300 font-semibold">
                 <Button
                   variant="ghost"
                   onClick={() => handleSort('diasParaAniversario')}
-                  className="flex items-center gap-2 p-0 hover:bg-transparent"
+                  className="flex items-center gap-2 p-0 hover:bg-transparent text-gray-300 hover:text-yellow-400"
                 >
                   <Gift className="w-4 h-4" />
                   Próximo Aniversário
@@ -551,7 +557,7 @@ export default function CustomerDataTable() {
               </TableHead>
             )}
             {visibleColumns.includes("LGPD") && (
-              <TableHead className="w-[80px]">
+              <TableHead className="w-[80px] text-gray-300 font-semibold">
                 <div className="flex items-center gap-2">
                   <Shield className="w-4 h-4" />
                   LGPD
@@ -559,11 +565,11 @@ export default function CustomerDataTable() {
               </TableHead>
             )}
             {visibleColumns.includes("Completude") && (
-              <TableHead className="w-[120px]">
+              <TableHead className="w-[120px] text-gray-300 font-semibold">
                 <Button
                   variant="ghost"
                   onClick={() => handleSort('profileCompleteness')}
-                  className="flex items-center gap-2 p-0 hover:bg-transparent"
+                  className="flex items-center gap-2 p-0 hover:bg-transparent text-gray-300 hover:text-yellow-400"
                 >
                   <BarChart3 className="w-4 h-4" />
                   Completude
@@ -572,11 +578,11 @@ export default function CustomerDataTable() {
               </TableHead>
             )}
             {visibleColumns.includes("Último Contato") && (
-              <TableHead className="w-[140px]">
+              <TableHead className="w-[140px] text-gray-300 font-semibold">
                 <Button
                   variant="ghost"
                   onClick={() => handleSort('diasSemContato')}
-                  className="flex items-center gap-2 p-0 hover:bg-transparent"
+                  className="flex items-center gap-2 p-0 hover:bg-transparent text-gray-300 hover:text-yellow-400"
                 >
                   <MessageCircle className="w-4 h-4" />
                   Último Contato
@@ -585,11 +591,11 @@ export default function CustomerDataTable() {
               </TableHead>
             )}
             {visibleColumns.includes("Valor em Aberto") && (
-              <TableHead className="w-[140px]">
+              <TableHead className="w-[140px] text-gray-300 font-semibold">
                 <Button
                   variant="ghost"
                   onClick={() => handleSort('valorEmAberto')}
-                  className="flex items-center gap-2 p-0 hover:bg-transparent"
+                  className="flex items-center gap-2 p-0 hover:bg-transparent text-gray-300 hover:text-yellow-400"
                 >
                   <DollarSign className="w-4 h-4" />
                   Valor em Aberto
@@ -601,19 +607,24 @@ export default function CustomerDataTable() {
         </TableHeader>
         <TableBody>
           {filteredAndSortedData.length ? (
-            filteredAndSortedData.map((customer) => (
-              <TableRow key={customer.id}>
+            filteredAndSortedData.map((customer, index) => (
+              <TableRow 
+                key={customer.id} 
+                className={`border-b border-white/10 hover:bg-white/5 transition-colors ${
+                  index % 2 === 0 ? 'bg-black/10' : 'bg-black/20'
+                }`}
+              >
                 {visibleColumns.includes("Cliente") && (
-                  <TableCell className="font-medium whitespace-nowrap">
+                  <TableCell className="font-medium whitespace-nowrap text-gray-100">
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                        <span className="text-sm font-semibold text-primary">
+                      <div className="w-8 h-8 bg-yellow-400/20 rounded-full flex items-center justify-center">
+                        <span className="text-sm font-semibold text-yellow-400">
                           {customer.cliente.charAt(0).toUpperCase()}
                         </span>
                       </div>
                       <Link 
                         to={`/customer/${customer.id}`} 
-                        className="hover:underline hover:text-primary transition-colors text-white"
+                        className="hover:underline hover:text-yellow-400 transition-colors text-gray-100"
                         title={`Ver perfil completo de ${customer.cliente}`}
                       >
                         {customer.cliente}
@@ -622,22 +633,22 @@ export default function CustomerDataTable() {
                   </TableCell>
                 )}
                 {visibleColumns.includes("Categoria Favorita") && (
-                  <TableCell className="whitespace-nowrap">
+                  <TableCell className="whitespace-nowrap text-gray-100">
                     {customer.categoriaFavorita || "Não definida"}
                   </TableCell>
                 )}
                 {visibleColumns.includes("Segmento") && (
                   <TableCell className="whitespace-nowrap">
-                    <Badge variant="outline">{customer.segmento}</Badge>
+                    <Badge variant="outline" className="bg-gray-700/50 text-gray-100 border-gray-600/50">{customer.segmento}</Badge>
                   </TableCell>
                 )}
                 {visibleColumns.includes("Método Preferido") && (
-                  <TableCell className="whitespace-nowrap">
+                  <TableCell className="whitespace-nowrap text-gray-100">
                     {formatPaymentMethod(customer.metodoPreferido)}
                   </TableCell>
                 )}
                 {visibleColumns.includes("Última Compra") && (
-                  <TableCell className="whitespace-nowrap">
+                  <TableCell className="whitespace-nowrap text-gray-100">
                     {formatLastPurchase(customer.ultimaCompra)}
                   </TableCell>
                 )}
@@ -658,7 +669,7 @@ export default function CustomerDataTable() {
                   </TableCell>
                 )}
                 {visibleColumns.includes("Cidade") && (
-                  <TableCell className="whitespace-nowrap">
+                  <TableCell className="whitespace-nowrap text-gray-100">
                     {customer.cidade || "Não informada"}
                   </TableCell>
                 )}
@@ -666,8 +677,8 @@ export default function CustomerDataTable() {
                   <TableCell className="whitespace-nowrap">
                     <div className={cn("flex items-center gap-1", 
                       customer.diasParaAniversario !== null && customer.diasParaAniversario <= 7 
-                        ? "text-yellow-600 font-medium" 
-                        : ""
+                        ? "text-yellow-400 font-medium" 
+                        : "text-gray-100"
                     )}>
                       {formatNextBirthday(customer.proximoAniversario, customer.diasParaAniversario)}
                     </div>
@@ -699,13 +710,13 @@ export default function CustomerDataTable() {
               </TableRow>
             ))
           ) : (
-            <TableRow>
+            <TableRow className="border-b border-white/10">
               <TableCell colSpan={visibleColumns.length} className="text-center py-6">
                 <div className="flex flex-col items-center gap-2">
-                  <User className="w-8 h-8 text-muted-foreground" />
-                  <p>Nenhum cliente encontrado.</p>
+                  <User className="w-8 h-8 text-gray-400" />
+                  <p className="text-gray-300">Nenhum cliente encontrado.</p>
                   {(segmentFilter || statusFilter || searchTerm || lastPurchaseFilter || birthdayFilter) && (
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-gray-400">
                       Tente ajustar os filtros de busca.
                     </p>
                   )}
@@ -715,6 +726,7 @@ export default function CustomerDataTable() {
           )}
         </TableBody>
       </Table>
+      </div>
     </div>
   );
 }

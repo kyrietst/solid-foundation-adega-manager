@@ -90,9 +90,9 @@ const CustomersLite = () => {
         </Card>
       </div>
 
-      {/* Card com efeito spotlight que segue o mouse (teste) */}
-      <section
-        className="hero-spotlight rounded-2xl p-6 md:p-8 border border-black/5 bg-white text-gray-900 shadow-[0_8px_28px_rgba(0,0,0,0.12)]"
+      {/* Card com efeito glassmorphism */}
+      <section 
+        className="bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-6 md:p-8 hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300 hero-spotlight"
         onMouseMove={(e) => {
           const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
           const x = ((e.clientX - rect.left) / rect.width) * 100;
@@ -102,7 +102,7 @@ const CustomersLite = () => {
         }}
       >
         <CardHeader className="p-0 mb-4">
-          <CardTitle>Análise de Clientes - Dados Reais</CardTitle>
+          <CardTitle className="text-adega-platinum">Análise de Clientes - Dados Reais</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           <CustomerDataTable />

@@ -111,17 +111,13 @@ const Index = () => {
       case 'customers':
         return hasPermission(['admin', 'employee']) ? (
           <Suspense fallback={<LoadingScreen text="Carregando clientes..." />}>
-            <WhitePageShell>
-              <Customers />
-            </WhitePageShell>
+            <Customers />
           </Suspense>
         ) : <AccessDenied />;
       case 'crm':
         return hasPermission(['admin', 'employee']) ? (
           <Suspense fallback={<LoadingScreen text="Carregando CRM Dashboard..." />}>
-            <WhitePageShell>
-              <CrmDashboard />
-            </WhitePageShell>
+            <CrmDashboard />
           </Suspense>
         ) : <AccessDenied />;
       case 'delivery':
