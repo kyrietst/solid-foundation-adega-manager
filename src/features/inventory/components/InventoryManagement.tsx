@@ -129,30 +129,46 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
     setIsHistoryModalOpen(true);
   };
 
-  // Mutation para ajuste de estoque
+  // Mutation para ajuste de estoque com registro de movimentação
   const stockAdjustmentMutation = useMutation({
     mutationFn: async (adjustment: StockAdjustment) => {
+      const currentStock = selectedProduct?.stock_quantity || 0;
       let newStockQuantity: number;
       
-      if (adjustment.type === 'correction') {
+      if (adjustment.type === 'ajuste') {
         newStockQuantity = adjustment.newStock || 0;
       } else {
-        const currentStock = selectedProduct?.stock_quantity || 0;
-        newStockQuantity = adjustment.type === 'entry' 
+        newStockQuantity = adjustment.type === 'entrada' 
           ? currentStock + adjustment.quantity
           : Math.max(0, currentStock - adjustment.quantity);
       }
 
+      // Usar nossa função de registro de movimentação
+      const { data: movementData, error: movementError } = await supabase
+        .rpc('record_product_movement', {
+          p_product_id: adjustment.productId,
+          p_type: adjustment.type,
+          p_quantity: adjustment.type === 'ajuste' 
+            ? (newStockQuantity - currentStock) // Diferença para ajustes
+            : adjustment.quantity,
+          p_reason: adjustment.reason,
+          p_source: 'manual',
+          p_user_id: (await supabase.auth.getUser()).data.user?.id || null
+        });
+
+      if (movementError) {
+        console.error('Erro ao registrar movimentação:', movementError);
+        throw movementError;
+      }
+
+      // Buscar o produto atualizado
       const { data, error } = await supabase
         .from('products')
-        .update({ stock_quantity: newStockQuantity })
+        .select('*')
         .eq('id', adjustment.productId)
-        .select()
         .single();
 
       if (error) throw error;
-
-      // TODO: Registrar movimento na tabela stock_movements
       
       return data;
     },
@@ -160,8 +176,8 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
       queryClient.invalidateQueries({ queryKey: ['products'] });
       setIsStockAdjustmentOpen(false);
       
-      const typeText = variables.type === 'entry' ? 'Entrada' : 
-                      variables.type === 'exit' ? 'Saída' : 'Correção';
+      const typeText = variables.type === 'entrada' ? 'Entrada' : 
+                      variables.type === 'saida' ? 'Saída' : 'Correção';
       showSuccess(`${typeText} de estoque realizada com sucesso!`);
     },
     onError: (error: any) => {

@@ -16,7 +16,6 @@ import {
   Plus, 
   Minus, 
   Settings,
-  X,
   AlertTriangle,
   CheckCircle
 } from 'lucide-react';
@@ -33,13 +32,13 @@ interface StockAdjustmentModalProps {
 
 export interface StockAdjustment {
   productId: string;
-  type: 'entry' | 'exit' | 'correction';
+  type: 'entrada' | 'saida' | 'ajuste';
   quantity: number;
   reason: string;
   newStock?: number;
 }
 
-type AdjustmentType = 'entry' | 'exit' | 'correction';
+type AdjustmentType = 'entrada' | 'saida' | 'ajuste';
 
 export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
   product,
@@ -48,14 +47,14 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
   onConfirm,
   isLoading = false,
 }) => {
-  const [adjustmentType, setAdjustmentType] = useState<AdjustmentType>('entry');
+  const [adjustmentType, setAdjustmentType] = useState<AdjustmentType>('entrada');
   const [quantity, setQuantity] = useState<string>('');
   const [reason, setReason] = useState<string>('');
 
   if (!product) return null;
 
   const handleClose = () => {
-    setAdjustmentType('entry');
+    setAdjustmentType('entrada');
     setQuantity('');
     setReason('');
     onClose();
@@ -73,7 +72,7 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
     };
 
     // Para correção, calcular o novo estoque
-    if (adjustmentType === 'correction') {
+    if (adjustmentType === 'ajuste') {
       adjustment.newStock = quantityNum;
     }
 
@@ -82,11 +81,11 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
 
   const getDefaultReason = (type: AdjustmentType): string => {
     switch (type) {
-      case 'entry':
+      case 'entrada':
         return 'Entrada de mercadoria';
-      case 'exit':
+      case 'saida':
         return 'Saída de mercadoria';
-      case 'correction':
+      case 'ajuste':
         return 'Correção de estoque';
       default:
         return 'Ajuste de estoque';
@@ -98,11 +97,11 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
     const currentStock = product.stock_quantity;
 
     switch (adjustmentType) {
-      case 'entry':
+      case 'entrada':
         return currentStock + quantityNum;
-      case 'exit':
+      case 'saida':
         return Math.max(0, currentStock - quantityNum);
-      case 'correction':
+      case 'ajuste':
         return quantityNum;
       default:
         return currentStock;
@@ -111,48 +110,38 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
 
   const getTypeIcon = (type: AdjustmentType) => {
     switch (type) {
-      case 'entry':
+      case 'entrada':
         return <Plus className="h-4 w-4" />;
-      case 'exit':
+      case 'saida':
         return <Minus className="h-4 w-4" />;
-      case 'correction':
+      case 'ajuste':
         return <Settings className="h-4 w-4" />;
     }
   };
 
   const getTypeColor = (type: AdjustmentType) => {
     switch (type) {
-      case 'entry':
+      case 'entrada':
         return 'text-green-400 border-green-400/30 bg-green-400/10';
-      case 'exit':
+      case 'saida':
         return 'text-red-400 border-red-400/30 bg-red-400/10';
-      case 'correction':
+      case 'ajuste':
         return 'text-yellow-400 border-yellow-400/30 bg-yellow-400/10';
     }
   };
 
   const isValidQuantity = quantity !== '' && parseInt(quantity) > 0;
   const newStock = isValidQuantity ? calculateNewStock() : product.stock_quantity;
-  const willBeNegative = adjustmentType === 'exit' && parseInt(quantity || '0') > product.stock_quantity;
+  const willBeNegative = adjustmentType === 'saida' && parseInt(quantity || '0') > product.stock_quantity;
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-md bg-adega-charcoal/95 border-adega-gold/30 backdrop-blur-xl">
         <DialogHeader className="border-b border-white/10 pb-4">
-          <div className="flex items-center justify-between">
-            <DialogTitle className="text-lg font-bold text-adega-platinum flex items-center">
-              <Package className="h-5 w-5 mr-2 text-yellow-400" />
-              Ajustar Estoque
-            </DialogTitle>
-            <Button
-              onClick={handleClose}
-              variant="ghost"
-              size="sm"
-              className="text-gray-400 hover:text-gray-100"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
+          <DialogTitle className="text-lg font-bold text-adega-platinum flex items-center">
+            <Package className="h-5 w-5 mr-2 text-yellow-400" />
+            Ajustar Estoque
+          </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6 mt-4">
@@ -172,39 +161,142 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
             <Label className="text-sm font-medium text-gray-200">
               Tipo de ajuste:
             </Label>
-            <RadioGroup
-              value={adjustmentType}
-              onValueChange={(value) => setAdjustmentType(value as AdjustmentType)}
-              className="space-y-2"
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="entry" id="entry" />
-                <Label htmlFor="entry" className="flex items-center text-green-400">
-                  <Plus className="h-4 w-4 mr-1" />
-                  Entrada (adicionar estoque)
-                </Label>
+            <div className="grid grid-cols-1 gap-3">
+              {/* Entrada */}
+              <div
+                onClick={() => setAdjustmentType('entrada')}
+                className={cn(
+                  "relative p-4 rounded-lg border-2 cursor-pointer transition-all duration-300",
+                  "hover:scale-105 hover:shadow-lg transform",
+                  adjustmentType === 'entrada' 
+                    ? "border-green-400 bg-green-400/10 shadow-green-400/20 shadow-lg" 
+                    : "border-gray-600/50 bg-black/20 hover:border-green-400/50 hover:bg-green-400/5"
+                )}
+              >
+                <div className="flex items-center space-x-3">
+                  <div className={cn(
+                    "p-2 rounded-full transition-all duration-300",
+                    adjustmentType === 'entrada' 
+                      ? "bg-green-400 text-black shadow-green-400/50 shadow-md" 
+                      : "bg-green-400/20 text-green-400"
+                  )}>
+                    <Plus className={cn(
+                      "h-4 w-4 transition-transform duration-300",
+                      adjustmentType === 'entrada' && "scale-110"
+                    )} />
+                  </div>
+                  <div className="flex-1">
+                    <div className={cn(
+                      "font-medium transition-colors duration-300",
+                      adjustmentType === 'entrada' ? "text-green-300" : "text-green-400"
+                    )}>
+                      Entrada (adicionar estoque)
+                    </div>
+                    <div className="text-xs text-gray-400">
+                      Recebimento de mercadoria
+                    </div>
+                  </div>
+                  {adjustmentType === 'entrada' && (
+                    <div className="absolute -top-1 -right-1">
+                      <div className="w-3 h-3 bg-green-400 rounded-full animate-ping"></div>
+                      <div className="absolute top-0 w-3 h-3 bg-green-400 rounded-full"></div>
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="exit" id="exit" />
-                <Label htmlFor="exit" className="flex items-center text-red-400">
-                  <Minus className="h-4 w-4 mr-1" />
-                  Saída (remover estoque)
-                </Label>
+
+              {/* Saída */}
+              <div
+                onClick={() => setAdjustmentType('saida')}
+                className={cn(
+                  "relative p-4 rounded-lg border-2 cursor-pointer transition-all duration-300",
+                  "hover:scale-105 hover:shadow-lg transform",
+                  adjustmentType === 'saida' 
+                    ? "border-red-400 bg-red-400/10 shadow-red-400/20 shadow-lg" 
+                    : "border-gray-600/50 bg-black/20 hover:border-red-400/50 hover:bg-red-400/5"
+                )}
+              >
+                <div className="flex items-center space-x-3">
+                  <div className={cn(
+                    "p-2 rounded-full transition-all duration-300",
+                    adjustmentType === 'saida' 
+                      ? "bg-red-400 text-black shadow-red-400/50 shadow-md" 
+                      : "bg-red-400/20 text-red-400"
+                  )}>
+                    <Minus className={cn(
+                      "h-4 w-4 transition-transform duration-300",
+                      adjustmentType === 'saida' && "scale-110"
+                    )} />
+                  </div>
+                  <div className="flex-1">
+                    <div className={cn(
+                      "font-medium transition-colors duration-300",
+                      adjustmentType === 'saida' ? "text-red-300" : "text-red-400"
+                    )}>
+                      Saída (remover estoque)
+                    </div>
+                    <div className="text-xs text-gray-400">
+                      Retirada de produtos
+                    </div>
+                  </div>
+                  {adjustmentType === 'saida' && (
+                    <div className="absolute -top-1 -right-1">
+                      <div className="w-3 h-3 bg-red-400 rounded-full animate-ping"></div>
+                      <div className="absolute top-0 w-3 h-3 bg-red-400 rounded-full"></div>
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="correction" id="correction" />
-                <Label htmlFor="correction" className="flex items-center text-yellow-400">
-                  <Settings className="h-4 w-4 mr-1" />
-                  Correção (definir valor exato)
-                </Label>
+
+              {/* Ajuste */}
+              <div
+                onClick={() => setAdjustmentType('ajuste')}
+                className={cn(
+                  "relative p-4 rounded-lg border-2 cursor-pointer transition-all duration-300",
+                  "hover:scale-105 hover:shadow-lg transform",
+                  adjustmentType === 'ajuste' 
+                    ? "border-yellow-400 bg-yellow-400/10 shadow-yellow-400/20 shadow-lg" 
+                    : "border-gray-600/50 bg-black/20 hover:border-yellow-400/50 hover:bg-yellow-400/5"
+                )}
+              >
+                <div className="flex items-center space-x-3">
+                  <div className={cn(
+                    "p-2 rounded-full transition-all duration-300",
+                    adjustmentType === 'ajuste' 
+                      ? "bg-yellow-400 text-black shadow-yellow-400/50 shadow-md" 
+                      : "bg-yellow-400/20 text-yellow-400"
+                  )}>
+                    <Settings className={cn(
+                      "h-4 w-4 transition-transform duration-300",
+                      adjustmentType === 'ajuste' && "scale-110 rotate-180"
+                    )} />
+                  </div>
+                  <div className="flex-1">
+                    <div className={cn(
+                      "font-medium transition-colors duration-300",
+                      adjustmentType === 'ajuste' ? "text-yellow-300" : "text-yellow-400"
+                    )}>
+                      Correção (definir valor exato)
+                    </div>
+                    <div className="text-xs text-gray-400">
+                      Inventário e acertos
+                    </div>
+                  </div>
+                  {adjustmentType === 'ajuste' && (
+                    <div className="absolute -top-1 -right-1">
+                      <div className="w-3 h-3 bg-yellow-400 rounded-full animate-ping"></div>
+                      <div className="absolute top-0 w-3 h-3 bg-yellow-400 rounded-full"></div>
+                    </div>
+                  )}
+                </div>
               </div>
-            </RadioGroup>
+            </div>
           </div>
 
           {/* Quantidade */}
           <div className="space-y-2">
             <Label htmlFor="quantity" className="text-sm font-medium text-gray-200">
-              {adjustmentType === 'correction' ? 'Novo estoque:' : 'Quantidade:'}
+              {adjustmentType === 'ajuste' ? 'Novo estoque:' : 'Quantidade:'}
             </Label>
             <Input
               id="quantity"
@@ -212,7 +304,7 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
               min="1"
               value={quantity}
               onChange={(e) => setQuantity(e.target.value)}
-              placeholder={adjustmentType === 'correction' ? 'Estoque correto' : 'Quantidade a ajustar'}
+              placeholder={adjustmentType === 'ajuste' ? 'Estoque correto' : 'Quantidade a ajustar'}
               className="bg-gray-800/60 border-gray-600 text-gray-100"
             />
             
@@ -248,8 +340,8 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
                   <Badge className={cn("mr-2", getTypeColor(adjustmentType))}>
                     {getTypeIcon(adjustmentType)}
                     <span className="ml-1">
-                      {adjustmentType === 'correction' ? 'Correção' : 
-                       adjustmentType === 'entry' ? `+${quantity}` : `-${quantity}`}
+                      {adjustmentType === 'ajuste' ? 'Correção' : 
+                       adjustmentType === 'entrada' ? `+${quantity}` : `-${quantity}`}
                     </span>
                   </Badge>
                   <Badge className="bg-gray-700/50 text-gray-100 border-gray-600/50">

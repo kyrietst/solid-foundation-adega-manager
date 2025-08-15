@@ -3,7 +3,7 @@
  * Mostra todas as entradas, saídas e ajustes de um produto
  */
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shared/ui/primitives/dialog';
 import { Button } from '@/shared/ui/primitives/button';
 import { Badge } from '@/shared/ui/primitives/badge';
@@ -17,10 +17,12 @@ import {
   User,
   ArrowUp,
   ArrowDown,
-  RotateCcw
+  RotateCcw,
+  Loader2
 } from 'lucide-react';
 import { cn } from '@/core/config/utils';
 import { formatCurrency } from '@/core/config/utils';
+import { supabase } from '@/core/api/supabase/client';
 import type { Product } from '@/types/inventory.types';
 
 interface StockHistoryModalProps {
@@ -32,108 +34,112 @@ interface StockHistoryModalProps {
 interface StockMovement {
   id: string;
   date: Date;
-  type: 'entry' | 'exit' | 'adjustment' | 'sale';
+  type: 'entrada' | 'saida' | 'ajuste' | 'venda';
   quantity: number;
   reason: string;
   user: string;
   balanceAfter: number;
   reference?: string;
+  stockChange: number;
 }
 
-// Simular histórico de movimentações baseado no produto
-const generateStockHistory = (product: Product): StockMovement[] => {
-  // Usar ID do produto para seed consistente
-  const seed = product.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  const movements: StockMovement[] = [];
-  
-  let currentBalance = product.stock_quantity;
-  const movementCount = (seed % 8) + 5; // 5-12 movimentações
-  
-  for (let i = 0; i < movementCount; i++) {
-    const movementSeed = seed + i;
-    const daysAgo = (movementSeed % 60) + 1; // 1-60 dias atrás
-    const movementType = ['entry', 'exit', 'adjustment', 'sale'][movementSeed % 4] as StockMovement['type'];
-    
-    let quantity: number;
-    let reason: string;
-    let reference: string | undefined;
-    
-    switch (movementType) {
-      case 'entry':
-        quantity = (movementSeed % 20) + 5; // 5-24 unidades
-        reason = 'Recebimento de fornecedor';
-        reference = `NF-${1000 + (movementSeed % 999)}`;
-        currentBalance -= quantity; // Histórico vai do mais recente ao mais antigo
-        break;
-      case 'exit':
-        quantity = (movementSeed % 10) + 1; // 1-10 unidades
-        reason = 'Saída manual';
-        currentBalance += quantity;
-        break;
-      case 'adjustment':
-        quantity = (movementSeed % 5) + 1; // 1-5 unidades
-        reason = 'Ajuste de inventário';
-        currentBalance += Math.random() > 0.5 ? quantity : -quantity;
-        break;
-      case 'sale':
-        quantity = (movementSeed % 8) + 1; // 1-8 unidades
-        reason = 'Venda no sistema';
-        reference = `VD-${2000 + (movementSeed % 999)}`;
-        currentBalance += quantity;
-        break;
+// Buscar histórico real de movimentações do banco de dados
+const fetchRealStockHistory = async (productId: string): Promise<StockMovement[]> => {
+  try {
+    // Primeiro, buscar o product ID real pelo nome
+    const { data: productData } = await supabase
+      .from('products')
+      .select('id')
+      .eq('name', productId)
+      .single();
+
+    if (!productData) {
+      console.warn('Produto não encontrado:', productId);
+      return [];
     }
-    
-    movements.push({
-      id: `mov-${i}`,
-      date: new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000),
-      type: movementType,
-      quantity: Math.abs(quantity),
-      reason,
-      user: ['Admin', 'João Silva', 'Maria Santos', 'Carlos Oliveira'][movementSeed % 4],
-      balanceAfter: Math.max(0, currentBalance),
-      reference
-    });
+
+    // Agora buscar as movimentações usando o ID correto
+    const { data, error } = await supabase
+      .from('inventory_movements')
+      .select(`
+        id,
+        date,
+        type,
+        quantity,
+        reason,
+        reference_number,
+        previous_stock,
+        new_stock,
+        user_id,
+        profiles!inner(name)
+      `)
+      .eq('product_id', productData.id)
+      .order('date', { ascending: false });
+
+    if (error) {
+      console.error('Erro ao buscar histórico:', error);
+      return [];
+    }
+
+    return (data || []).map(movement => ({
+      id: movement.id,
+      date: new Date(movement.date),
+      type: movement.type as StockMovement['type'],
+      quantity: movement.quantity,
+      reason: movement.reason || 'Sem motivo especificado',
+      user: movement.profiles?.name || 'Usuário desconhecido',
+      balanceAfter: movement.new_stock || 0,
+      reference: movement.reference_number || undefined,
+      stockChange: movement.type === 'entrada' ? movement.quantity : -movement.quantity
+    }));
+  } catch (error) {
+    console.error('Erro ao buscar movimentações:', error);
+    return [];
   }
-  
-  return movements.sort((a, b) => b.date.getTime() - a.date.getTime()); // Mais recente primeiro
 };
 
 const getMovementIcon = (type: StockMovement['type']) => {
   switch (type) {
-    case 'entry':
+    case 'entrada':
       return ArrowUp;
-    case 'exit':
+    case 'saida':
       return ArrowDown;
-    case 'adjustment':
+    case 'ajuste':
       return RotateCcw;
-    case 'sale':
+    case 'venda':
+      return Package;
+    default:
       return Package;
   }
 };
 
 const getMovementColor = (type: StockMovement['type']) => {
   switch (type) {
-    case 'entry':
+    case 'entrada':
       return 'text-green-400 bg-green-400/10 border-green-400/30';
-    case 'exit':
+    case 'saida':
       return 'text-red-400 bg-red-400/10 border-red-400/30';
-    case 'adjustment':
+    case 'ajuste':
       return 'text-yellow-400 bg-yellow-400/10 border-yellow-400/30';
-    case 'sale':
+    case 'venda':
       return 'text-blue-400 bg-blue-400/10 border-blue-400/30';
+    default:
+      return 'text-gray-400 bg-gray-400/10 border-gray-400/30';
   }
 };
 
 const getMovementLabel = (type: StockMovement['type']) => {
   switch (type) {
-    case 'entry':
+    case 'entrada':
       return 'Entrada';
-    case 'exit':
+    case 'saida':
       return 'Saída';
-    case 'adjustment':
+    case 'ajuste':
       return 'Ajuste';
-    case 'sale':
+    case 'venda':
       return 'Venda';
+    default:
+      return type;
   }
 };
 
@@ -142,9 +148,21 @@ export const StockHistoryModal: React.FC<StockHistoryModalProps> = ({
   isOpen,
   onClose,
 }) => {
-  const movements = useMemo(() => {
-    return product ? generateStockHistory(product) : [];
-  }, [product]);
+  const [movements, setMovements] = useState<StockMovement[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (product && isOpen) {
+      setIsLoading(true);
+      fetchRealStockHistory(product.name) // Usando name como ID temporariamente
+        .then(setMovements)
+        .catch(error => {
+          console.error('Erro ao carregar movimentações:', error);
+          setMovements([]);
+        })
+        .finally(() => setIsLoading(false));
+    }
+  }, [product, isOpen]);
 
   if (!product) return null;
 
@@ -170,16 +188,22 @@ export const StockHistoryModal: React.FC<StockHistoryModalProps> = ({
 
         {/* Lista de movimentações */}
         <div className="flex-1 overflow-y-auto mt-4 space-y-3 max-h-[60vh]">
-          {movements.length === 0 ? (
+          {isLoading ? (
+            <div className="text-center py-12">
+              <Loader2 className="h-16 w-16 text-yellow-400 mx-auto mb-4 animate-spin" />
+              <p className="text-gray-400">Carregando histórico de movimentações...</p>
+            </div>
+          ) : movements.length === 0 ? (
             <div className="text-center py-12">
               <Package className="h-16 w-16 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-400">Nenhuma movimentação encontrada</p>
+              <p className="text-xs text-gray-500 mt-2">Este produto ainda não possui histórico de movimentações</p>
             </div>
           ) : (
             movements.map((movement) => {
               const MovementIcon = getMovementIcon(movement.type);
               const colorClasses = getMovementColor(movement.type);
-              const isPositive = movement.type === 'entry';
+              const isPositive = movement.type === 'entrada';
               
               return (
                 <div
@@ -250,21 +274,21 @@ export const StockHistoryModal: React.FC<StockHistoryModalProps> = ({
           <div className="grid grid-cols-3 gap-4 text-center">
             <div className="bg-green-400/10 rounded-lg p-3 border border-green-400/30">
               <div className="text-green-400 font-bold text-lg">
-                {movements.filter(m => m.type === 'entry').reduce((sum, m) => sum + m.quantity, 0)}
+                {movements.filter(m => m.type === 'entrada').reduce((sum, m) => sum + m.quantity, 0)}
               </div>
               <div className="text-xs text-green-400/70">Total Entradas</div>
             </div>
             
             <div className="bg-red-400/10 rounded-lg p-3 border border-red-400/30">
               <div className="text-red-400 font-bold text-lg">
-                {movements.filter(m => m.type === 'exit' || m.type === 'sale').reduce((sum, m) => sum + m.quantity, 0)}
+                {movements.filter(m => m.type === 'saida' || m.type === 'venda').reduce((sum, m) => sum + m.quantity, 0)}
               </div>
               <div className="text-xs text-red-400/70">Total Saídas</div>
             </div>
             
             <div className="bg-yellow-400/10 rounded-lg p-3 border border-yellow-400/30">
               <div className="text-yellow-400 font-bold text-lg">
-                {movements.filter(m => m.type === 'adjustment').length}
+                {movements.filter(m => m.type === 'ajuste').length}
               </div>
               <div className="text-xs text-yellow-400/70">Ajustes</div>
             </div>

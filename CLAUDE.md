@@ -30,17 +30,20 @@ This file provides comprehensive guidance to Claude Code (claude.ai/code) and ot
 
 ### Testing Commands
 - `npm run test` - Run Vitest test suite
-- `npm run test:ui` - Vitest UI interface
-- `npm run test:coverage` - Generate coverage reports (80%+ required)
+- `npm run test:ui` - Vitest UI interface  
+- `npm run test:run` - Run tests once (CI mode)
+- `npm run test:coverage` - Generate coverage reports
 - `npm run test:watch` - Watch mode for development
 - `npm run test:maintenance` - Test maintenance utilities
+- `npm run test:cleanup` - Cleanup test artifacts
+- `npm run test:health` - Health check for test environment
 
 ### Critical Notes
-- **Vitest testing framework** - Comprehensive test suite with accessibility testing
-- **Port 8080** - Development server default port
-- **TypeScript relaxed mode** - `strict: false` for development flexibility
-- **Always lint before commits** - Zero warnings policy enforced
-- **Coverage thresholds** - 80% lines, 70% branches, 85% functions required
+- **Vitest testing framework** - Modern testing with JSDOM environment and accessibility testing
+- **Port 8080** - Development server default port with IPv6 support
+- **TypeScript relaxed mode** - Flexible development with selective strict checking
+- **Always lint before commits** - Zero warnings policy enforced via ESLint flat config
+- **Test setup** - Global mocks for matchMedia, IntersectionObserver, localStorage included
 
 ## Architecture Overview (Current State)
 
@@ -119,44 +122,41 @@ handle_new_user() -- Automatic user setup
 ### Directory Structure (v2.0.0 - Refactored)
 ```
 src/
-├── components/          # React components organized by feature
-│   ├── ui/             # Sistema completo de componentes reutilizáveis (v2.0.0)
-│   │   ├── pagination-controls.tsx     # Sistema de paginação padronizado
-│   │   ├── stat-card.tsx              # Cartões estatísticos (6 variantes)
-│   │   ├── loading-spinner.tsx        # Spinners de loading variados  
-│   │   ├── search-input.tsx           # Input de busca com debounce
-│   │   ├── filter-toggle.tsx          # Toggle de filtros animado
-│   │   ├── empty-state.tsx            # Estados vazios reutilizáveis
-│   │   ├── theme-showcase.tsx         # Demo do sistema de themes
-│   │   ├── sidebar.tsx                # Modern animated sidebar
-│   │   └── [shadcn+aceternity]        # Base components
-│   ├── examples/       # Componentes de demonstração
-│   │   └── EntityHookDemo.tsx         # Demo dos hooks genéricos
-│   ├── Sidebar.tsx     # Main sidebar component with Aceternity UI integration
-│   ├── inventory/      # Stock management (ProductForm, TurnoverAnalysis, BarcodeInput)
-│   ├── sales/          # POS system (Cart, ProductsGrid, CustomerSearch, SalesPage)
-│   ├── clients/        # CRM (CustomerForm, interactions, timeline)
-│   └── [modules]/      # Dashboard, Delivery, Movements, UserManagement
-├── contexts/           # Global providers (Auth, Notifications)
-├── hooks/              # 18+ custom hooks reutilizáveis (v2.0.0)
-│   ├── use-pagination.ts              # Hook de paginação genérico
-│   ├── use-form-with-toast.ts         # Hook de formulário com toast
-│   ├── use-entity.ts                  # Hooks genéricos para Supabase
-│   ├── use-entity-examples.ts         # Exemplos de migração
-│   ├── use-cart.ts                    # Shopping cart management
-│   ├── use-crm.ts                     # CRM operations and analytics
-│   ├── use-sales.ts                   # Sales processing and reporting
-│   ├── use-product.ts                 # Product management
-│   ├── use-barcode.ts                 # Barcode scanning integration
-│   └── [specialized]                  # useInventoryCalculations, useLowStock, etc.
-├── integrations/       
-│   └── supabase/       # Supabase client and auto-generated types
-├── lib/                # Core utilities expandidos (v2.0.0)
-│   ├── utils.ts                       # Base utilities (formatCurrency, etc.)
-│   ├── theme.ts                       # Sistema de cores Adega Wine Cellar
-│   └── theme-utils.ts                 # 30+ utility functions para themes
-├── pages/              # Main routes (Auth, Index, NotFound)
-└── types/              # TypeScript definitions (inventory.types.ts, supabase.ts)
+├── app/                    # Application setup (layout, providers, router)
+│   ├── layout/            # Sidebar.tsx - Main navigation component
+│   ├── providers/         # AuthContext, NotificationContext
+│   └── router/            # Route configuration
+├── components/            # Legacy components (Inventory.tsx, Sales.tsx)
+├── core/                  # Core system architecture
+│   ├── api/supabase/     # Supabase client and types
+│   ├── config/           # Theme, utils, error handling, timeouts
+│   └── types/            # TypeScript definitions (branded, database, generic)
+├── features/              # Feature-based modules (v2.0.0)
+│   ├── customers/        # CRM system - 25+ components
+│   ├── dashboard/        # Executive overview - KPIs and charts
+│   ├── inventory/        # Stock management - Product forms, barcode
+│   ├── sales/            # POS system - Cart, checkout, products grid
+│   ├── delivery/         # Logistics management
+│   ├── movements/        # Stock operations and audit
+│   ├── reports/          # Advanced reporting system
+│   └── users/            # User management and permissions
+├── shared/                # Shared components and utilities (v2.0.0)
+│   ├── ui/               # Complete UI system
+│   │   ├── composite/    # StatCard, PaginationControls, LoadingSpinner
+│   │   ├── primitives/   # Shadcn/ui base components (25+ components)
+│   │   └── layout/       # DataTable, FormDialog, PageContainer
+│   ├── hooks/            # 40+ reusable hooks
+│   │   ├── common/       # usePagination, useEntity, useFormWithToast
+│   │   ├── auth/         # usePermissions, useAuthErrorHandler
+│   │   └── audit/        # useAuditErrorHandler
+│   └── templates/        # Container/Presentation templates
+├── hooks/                 # Feature-specific hooks
+├── pages/                # Main routes (Auth, Index, NotFound)
+└── __tests__/            # Comprehensive test suite
+    ├── accessibility/    # WCAG compliance tests
+    ├── integration/      # End-to-end workflow tests
+    ├── performance/      # Performance testing
+    └── utils/           # Test utilities and mocks
 ```
 
 ## Application Modules (Production Features)
@@ -220,11 +220,12 @@ src/
 
 ### Code Style and Quality
 - **ESLint**: Flat config with React hooks rules - **ZERO warnings policy**
-- **TypeScript**: Relaxed mode but maintain type safety in practice
+- **TypeScript**: Relaxed mode but maintain type safety in practice  
 - **Absolute imports**: Use `@/` prefix for all src directory imports
 - **Component naming**: PascalCase for components, camelCase for functions
-- **File organization**: Feature-based structure, group related functionality
-- **UI Components**: Aceternity UI first, then Shadcn/ui, then custom components
+- **File organization**: Feature-based structure with shared utilities
+- **UI Components**: Check shared/ui first, then Aceternity UI, then Shadcn/ui, then custom
+- **Test structure**: Accessibility, integration, performance, unit tests organized
 
 ### Testing Requirements
 - **Vitest Framework**: Modern testing with JSDOM environment
@@ -241,15 +242,15 @@ src/
 - **Audit logging** - Critical operations must be logged automatically
 
 ### Component Development Best Practices (v2.0.0)
-- **Use reusable components first** - Check if `PaginationControls`, `StatCard`, `LoadingSpinner`, `SearchInput`, `EmptyState` can be used
-- **Single responsibility** - Each component should have one clear purpose
-- **Custom hooks** - Use `usePagination`, `useEntity`, `useFormWithToast` hooks when applicable
+- **Use shared/ui components first** - Check `shared/ui/composite/` for StatCard, PaginationControls, LoadingSpinner, SearchInput, EmptyState
+- **Follow feature-based structure** - Place new components in appropriate `features/` module  
+- **Leverage shared hooks** - Use `usePagination`, `useEntity`, `useFormWithToast` from `shared/hooks/common/`
 - **TypeScript interfaces** - Define clear prop types for all components
-- **Existing patterns** - Follow established patterns in the codebase
-- **Performance considerations** - Use React.memo, useMemo, useCallback appropriately
-- **Aceternity UI Integration** - Use Aceternity components for enhanced UX with animations
+- **Container/Presentation pattern** - Separate business logic from UI rendering
+- **Performance optimization** - Use React.memo, useMemo, useCallback appropriately
+- **Accessibility compliance** - Follow WCAG 2.1 AA standards with proper ARIA attributes
 - **Role-based rendering** - Always implement proper role-based access control in UI
-- **Theme consistency** - Use Adega Wine Cellar theme utilities from `@/lib/theme-utils`
+- **Theme consistency** - Use Adega Wine Cellar theme utilities from `@/core/config/theme-utils`
 
 ### UI/UX Development with Aceternity UI
 - **Component Selection** - Always check Aceternity UI library first for components
@@ -271,30 +272,45 @@ src/
 ### Vite Configuration
 ```ts
 // Key optimizations in vite.config.ts
-export default defineConfig({
-  plugins: [react()],
-  server: { port: 8080, host: '::' },
+export default defineConfig(({ mode }) => ({
+  server: { host: "::", port: 8080 },
+  plugins: [
+    react(),
+    mode === 'development' && componentTagger(),
+  ].filter(Boolean),
+  resolve: {
+    alias: { "@": path.resolve(__dirname, "./src") }
+  },
+  optimizeDeps: {
+    include: ['simplex-noise'],
+    force: true
+  },
   build: {
     rollupOptions: {
       output: {
         manualChunks: {
-          vendor: ['react', 'react-dom'],
+          vendor: ['react', 'react-dom', 'react-router-dom'],
           charts: ['recharts'],
-          ui: ['@radix-ui/react-*', 'lucide-react'],
-          supabase: ['@supabase/supabase-js', '@tanstack/react-query']
+          ui: ['lucide-react', '@radix-ui/react-*'],
+          supabase: ['@supabase/supabase-js', '@tanstack/react-query'],
+          utils: ['date-fns', 'clsx', 'tailwind-merge']
         }
       }
     }
   }
-})
+}))
 ```
 
 ### TypeScript Configuration
 ```ts
 // Relaxed mode for development flexibility
 {
-  "strict": false,
+  "baseUrl": ".",
+  "paths": { "@/*": ["./src/*"] },
   "noImplicitAny": false,
+  "noUnusedParameters": false,
+  "skipLibCheck": true,
+  "allowJs": true,
   "noUnusedLocals": false,
   "strictNullChecks": false
 }
@@ -302,12 +318,31 @@ export default defineConfig({
 
 ### Tailwind Theme System
 ```ts
-// 12-color Adega Wine Cellar palette
+// Adega Wine Cellar v2.1 - Complete color architecture
 colors: {
-  'adega-black': 'hsl(0, 0%, 8%)',
-  'adega-charcoal': 'hsl(0, 0%, 16%)',
-  // ... through to ...
-  'adega-yellow': 'hsl(45, 100%, 70%)'
+  // Primary Colors
+  'primary-black': '#000000',
+  'primary-yellow': '#FFD700',
+  
+  // Extended Scales (100-60)
+  'black-100': '#000000',
+  'black-90': '#1a1a1a',
+  'yellow-100': '#FFD700',
+  'yellow-90': '#FFC107',
+  
+  // Professional Neutrals (Tailwind compatible)
+  'gray-950': '#030712',
+  'gray-900': '#111827',
+  // ... through gray-50
+  
+  // Modern Accents
+  'accent-blue': '#3b82f6',
+  'accent-green': '#10b981',
+  'accent-red': '#ef4444',
+  'accent-purple': '#8b5cf6',
+  
+  // Legacy Adega palette (maintained compatibility)
+  'adega': { 'black': '#000000', 'yellow': '#ffd700' }
 }
 ```
 
@@ -517,16 +552,43 @@ Always remember: This is a **production system** with real business data. Priori
 - **Developer Experience**: Standardized patterns for faster development
 
 ### Available MCP Tools
-- **Aceternity UI MCP**: For component installation and management
-- **Shadcn UI MCP**: For base component operations
-- **Supabase MCP**: For database operations and management
-- **Context7 MCP**: For documentation and code reference
+- **Aceternity UI MCP**: For component installation and management (`mcp__aceternityui__*`)
+- **Shadcn UI MCP**: For base component operations (`mcp__shadcn-ui__*`)  
+- **Supabase MCP**: For database operations and management (`mcp__supabase__*`)
+- **Context7 MCP**: For documentation and code reference (`mcp__context7__*`)
+
+### MCP Integration Workflow
+1. **Component Selection**: Use `mcp__aceternityui__search_components` to find UI components
+2. **Installation**: Use `mcp__aceternityui__get_component_info` for installation instructions
+3. **Database Operations**: Use `mcp__supabase__*` tools for schema changes and queries
+4. **Documentation**: Use `mcp__context7__*` for library documentation and references
+
+### Testing Architecture (Current Implementation)
+- **Framework**: Vitest with JSDOM environment and React Testing Library
+- **Global Setup**: Mocks for matchMedia, IntersectionObserver, ResizeObserver, localStorage
+- **Test Categories**:
+  - `accessibility/` - WCAG 2.1 AA compliance with jest-axe
+  - `integration/` - End-to-end workflow testing
+  - `performance/` - Component performance and optimization tests
+  - `utils/` - Enhanced test utilities and monitoring
+- **Coverage**: Automatic coverage generation with v8 provider
+- **Cleanup**: Automated test maintenance scripts for artifact management
 
 ## Quick Reference: v2.0.0 Reusable Components
 
 ### Most Common Components (Use These First!)
 
 ```tsx
+// Import from shared/ui and shared/hooks
+import { StatCard } from '@/shared/ui/composite/stat-card';
+import { PaginationControls } from '@/shared/ui/composite/pagination-controls';
+import { LoadingSpinner } from '@/shared/ui/composite/loading-spinner';
+import { SearchInput } from '@/shared/ui/composite/search-input';
+import { EmptyState } from '@/shared/ui/composite/empty-state';
+import { usePagination } from '@/shared/hooks/common/use-pagination';
+import { useEntityList } from '@/shared/hooks/common/use-entity';
+import { useFormWithToast } from '@/shared/hooks/common/use-form-with-toast';
+
 // Pagination for any list
 const { currentPage, itemsPerPage, paginatedItems, goToPage, setItemsPerPage } = 
   usePagination(items, { initialItemsPerPage: 12 });
@@ -538,7 +600,7 @@ const { currentPage, itemsPerPage, paginatedItems, goToPage, setItemsPerPage } =
   itemsPerPageOptions={[6, 12, 20, 50]}
 />
 
-// Statistics cards
+// Statistics cards with variants
 <StatCard 
   title="Total Sales" 
   value={formatCurrency(value)} 
@@ -547,32 +609,34 @@ const { currentPage, itemsPerPage, paginatedItems, goToPage, setItemsPerPage } =
 />
 
 // Loading states
-<LoadingSpinner size="lg" color="gold" />
-<LoadingScreen text="Loading products..." />
+<LoadingSpinner size="lg" variant="gold" />
 
-// Search inputs
-<SearchInput value={search} onChange={setSearch} placeholder="Search..." />
+// Search inputs with debounce
+<SearchInput value={search} onChange={setSearch} placeholder="Search products..." />
 
-// Empty states
-<EmptyProducts />
-<EmptyCustomers />
-<EmptySearchResults searchTerm="applied filters" />
+// Empty states (pre-configured)
+<EmptyState 
+  title="No products found" 
+  description="Add your first product to get started"
+  action={<Button onClick={onAddProduct}>Add Product</Button>}
+/>
 
-// Entity queries (replaces custom hooks)
-const { data: products } = useEntityList({
+// Generic entity queries
+const { data: products, isLoading } = useEntityList({
   table: 'products',
   filters: { category: selectedCategory },
   search: { columns: ['name'], term: searchTerm }
 });
 
-// Forms with toast
-const { form, onSubmit } = useFormWithToast({
+// Standardized forms with toast notifications
+const { form, onSubmit, isSubmitting } = useFormWithToast({
   schema: productSchema,
   onSuccess: (data) => console.log('Created!'),
   successMessage: 'Product created successfully!'
 });
 
-// Theme utilities
+// Theme utilities from core/config
+import { getStockStatusClasses, getValueClasses } from '@/core/config/theme-utils';
 const statusClasses = getStockStatusClasses(stock, minStock);
 const valueClasses = getValueClasses('lg', 'gold');
 ```
