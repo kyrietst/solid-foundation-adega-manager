@@ -48,7 +48,7 @@ const CustomersLite = () => {
       {/* Header */}
       <div className="flex-shrink-0 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
         {/* Header sem container */}
-        <div className="relative w-full text-center sm:text-left">
+        <div className="relative text-center sm:text-left">
           {/* Título animado */}
           <BlurIn
             word="GESTÃO DE CLIENTES"
