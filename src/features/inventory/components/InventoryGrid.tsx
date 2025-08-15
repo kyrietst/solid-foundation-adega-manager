@@ -1,39 +1,63 @@
 /**
- * Componente de visualização em grid dos produtos
- * Extraído do InventoryNew.tsx para separar responsabilidades
+ * Grid específico para gestão de estoque
+ * Usa InventoryCard ao invés de ProductCard (vendas)
  */
 
 import React from 'react';
-import { ProductCard } from './ProductCard';
-import { EmptyProducts } from '@/shared/ui/composite/empty-state';
-import { LoadingScreen } from '@/shared/ui/composite/loading-spinner';
-import { InventoryGridProps } from './types';
+import type { Product } from '@/types/inventory.types';
+import { cn } from '@/core/config/utils';
+import { InventoryCard } from './InventoryCard';
+
+interface InventoryGridProps {
+  products: Product[];
+  gridColumns: {
+    mobile: number;
+    tablet: number;
+    desktop: number;
+  };
+  onViewDetails: (product: Product) => void;
+  onEdit: (product: Product) => void;
+  onAdjustStock?: (product: Product) => void;
+  variant?: 'default' | 'premium' | 'success' | 'warning' | 'error';
+  glassEffect?: boolean;
+  className?: string;
+}
 
 export const InventoryGrid: React.FC<InventoryGridProps> = ({
   products,
-  onEditProduct,
-  onDeleteProduct,
-  canDeleteProduct,
-  isLoading = false,
+  gridColumns,
+  onViewDetails,
+  onEdit,
+  onAdjustStock,
+  variant = 'default',
+  glassEffect = true,
+  className = '',
 }) => {
-  if (isLoading) {
-    return <LoadingScreen text="Carregando produtos..." />;
-  }
-
-  if (products.length === 0) {
-    return <EmptyProducts />;
-  }
-
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-      {products.map((product) => (
-        <ProductCard
+    <div className={cn(
+      'grid gap-6 p-6 h-full overflow-y-auto',
+      `grid-cols-${gridColumns.mobile} md:grid-cols-${gridColumns.tablet} lg:grid-cols-${gridColumns.desktop} xl:grid-cols-${Math.min(gridColumns.desktop + 1, 6)}`,
+      'transition-all duration-300 auto-rows-max',
+      className
+    )}>
+      {products.map((product, index) => (
+        <div
           key={product.id}
-          product={product}
-          onEdit={onEditProduct}
-          onDelete={onDeleteProduct}
-          canDelete={canDeleteProduct}
-        />
+          className="transform transition-all duration-300"
+          style={{
+            animationDelay: `${index * 50}ms`,
+            animation: 'fadeInUp 0.6s ease-out forwards'
+          }}
+        >
+          <InventoryCard 
+            product={product} 
+            onViewDetails={onViewDetails}
+            onEdit={onEdit}
+            onAdjustStock={onAdjustStock}
+            variant={variant}
+            glassEffect={glassEffect}
+          />
+        </div>
       ))}
     </div>
   );

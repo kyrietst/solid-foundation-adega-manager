@@ -12,6 +12,7 @@ import { BarcodeInput } from '@/features/inventory/components/BarcodeInput';
 import { ProductsHeader, AddProductButton } from './ProductsHeader';
 import { ProductFilters } from './ProductFilters';
 import { ProductGrid } from './ProductGrid';
+import { InventoryGrid } from './InventoryGrid';
 import { SearchBar21st } from '@/shared/ui/thirdparty/search-bar-21st';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/primitives/select';
 
@@ -34,6 +35,7 @@ export interface ProductsGridPresentationProps {
   showFilters: boolean;
   showAddButton?: boolean;
   showHeader?: boolean;
+  mode?: 'sales' | 'inventory'; // Novo: determina se é para vendas ou estoque
   gridColumns: {
     mobile: number;
     tablet: number;
@@ -61,6 +63,9 @@ export interface ProductsGridPresentationProps {
   onBarcodeScanned: (barcode: string) => void;
   onAddToCart: (product: Product) => void;
   onAddProduct?: () => void;
+  onViewDetails?: (product: Product) => void;
+  onEdit?: (product: Product) => void;
+  onAdjustStock?: (product: Product) => void;
 }
 
 export const ProductsGridPresentation: React.FC<ProductsGridPresentationProps> = ({
@@ -77,6 +82,7 @@ export const ProductsGridPresentation: React.FC<ProductsGridPresentationProps> =
   showFilters,
   showAddButton,
   showHeader = true,
+  mode = 'sales', // Padrão é modo vendas
   gridColumns,
   className,
   variant = 'default',
@@ -96,6 +102,9 @@ export const ProductsGridPresentation: React.FC<ProductsGridPresentationProps> =
   onBarcodeScanned,
   onAddToCart,
   onAddProduct,
+  onViewDetails,
+  onEdit,
+  onAdjustStock,
 }) => {
   if (isLoading) {
     return <LoadingScreen text="Carregando produtos..." />;
@@ -192,13 +201,25 @@ export const ProductsGridPresentation: React.FC<ProductsGridPresentationProps> =
         ) : (
           <>
             <div className="flex-1 min-h-0">
-              <ProductGrid
-                products={currentProducts}
-                gridColumns={gridColumns}
-                onAddToCart={onAddToCart}
-                variant={variant}
-                glassEffect={glassEffect}
-              />
+              {mode === 'inventory' ? (
+                <InventoryGrid
+                  products={currentProducts}
+                  gridColumns={gridColumns}
+                  onViewDetails={onViewDetails || ((product) => console.log('View details:', product))}
+                  onEdit={onEdit || ((product) => console.log('Edit product:', product))}
+                  onAdjustStock={onAdjustStock || ((product) => console.log('Adjust stock:', product))}
+                  variant={variant}
+                  glassEffect={glassEffect}
+                />
+              ) : (
+                <ProductGrid
+                  products={currentProducts}
+                  gridColumns={gridColumns}
+                  onAddToCart={onAddToCart}
+                  variant={variant}
+                  glassEffect={glassEffect}
+                />
+              )}
             </div>
             
             {/* Paginação */}
