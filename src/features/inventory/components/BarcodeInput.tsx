@@ -75,11 +75,8 @@ export const BarcodeInput: React.FC<BarcodeInputProps> = ({
   const validation = barcode ? validateBarcode(barcode) : { isValid: true };
 
   return (
-    <div className={cn("space-y-2", className)}>
-      <Label htmlFor="barcode-input" className="text-sm font-medium">
-        Código de Barras
-      </Label>
-      <div className="flex gap-2">
+    <div className={cn(className)}>
+      <div className="flex gap-2 items-center">
         <Input
           id="barcode-input"
           ref={inputRef}
@@ -91,7 +88,7 @@ export const BarcodeInput: React.FC<BarcodeInputProps> = ({
           disabled={disabled || isProcessing}
           maxLength={14}
           className={cn(
-            "font-mono text-lg", // Font monospace para códigos
+            "font-mono text-lg h-12", // Font monospace para códigos + altura fixa
             !validation.isValid && "border-red-500 focus-visible:ring-red-500"
           )}
           autoComplete="off"
@@ -100,7 +97,7 @@ export const BarcodeInput: React.FC<BarcodeInputProps> = ({
           type="button"
           onClick={handleManualScan}
           disabled={disabled || isProcessing || !barcode.trim() || !validation.isValid}
-          size="sm"
+          className="h-12 px-3" // Altura fixa igual ao input
           variant="outline"
         >
           {isProcessing ? (

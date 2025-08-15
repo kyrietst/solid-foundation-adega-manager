@@ -8,11 +8,11 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
 import { useNotifications } from '@/shared/hooks/common/useNotifications';
 import { ProductsGridContainer } from './ProductsGridContainer';
-import { ProductsTitle } from './ProductsHeader';
+import { ProductsTitle, ProductsHeader } from './ProductsHeader';
+import { useProductsGridLogic } from '@/hooks/products/useProductsGridLogic';
 import { ProductForm } from './ProductForm';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shared/ui/primitives/dialog';
 import type { ProductFormData } from '@/core/types/inventory.types';
-import { useProductsGridLogic } from '@/hooks/products/useProductsGridLogic';
 
 interface InventoryManagementProps {
   showAddButton?: boolean;
@@ -32,17 +32,6 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);
   const queryClient = useQueryClient();
   const { showSuccess, showError } = useNotifications();
-
-  // Get products data for header stats
-  const {
-    products,
-    filteredCount,
-    totalProducts,
-    hasActiveFilters,
-  } = useProductsGridLogic({
-    showSearch,
-    showFilters,
-  });
 
   // Mutation para adicionar produto
   const addProductMutation = useMutation({
@@ -109,18 +98,24 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
   };
 
   return (
-    <div className={className}>
-      {/* Título fora do box background */}
-      <ProductsTitle />
+    <div className={`w-full h-full flex flex-col ${className || ''}`}>
+      {/* Título e contador na mesma linha, fora do box background */}
+      <div className="flex-shrink-0 flex justify-between items-center">
+        <ProductsTitle />
+        <div className="bg-black/50 backdrop-blur-sm border border-yellow-400/30 rounded-full px-4 py-2 shadow-lg">
+          <span className="text-sm font-bold text-gray-100">125</span>
+          <span className="text-xs ml-1 opacity-75 text-gray-300">produtos</span>
+        </div>
+      </div>
 
-      {/* Container com background glass morphism */}
-      <div className="h-full bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg hero-spotlight p-4 flex flex-col min-h-0">
+      {/* Container com background glass morphism - ocupa altura restante */}
+      <div className="flex-1 min-h-0 bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg hero-spotlight p-4 flex flex-col">
         {/* Grid de produtos com controles dentro do box */}
         <ProductsGridContainer
           showSearch={showSearch}
           showFilters={showFilters}
           showAddButton={showAddButton}
-          showHeader={true}
+          showHeader={false}
           onAddToCart={onProductSelect}
           onAddProduct={showAddButton ? handleAddProduct : undefined}
         />

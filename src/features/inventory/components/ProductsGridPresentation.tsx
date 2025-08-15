@@ -9,7 +9,7 @@ import { LoadingScreen } from '@/shared/ui/composite/loading-spinner';
 import { EmptySearchResults } from '@/shared/ui/composite/empty-state';
 import { PaginationControls } from '@/shared/ui/composite/pagination-controls';
 import { BarcodeInput } from '@/features/inventory/components/BarcodeInput';
-import { ProductsHeader } from './ProductsHeader';
+import { ProductsHeader, AddProductButton } from './ProductsHeader';
 import { ProductFilters } from './ProductFilters';
 import { ProductGrid } from './ProductGrid';
 import { SearchBar21st } from '@/shared/ui/thirdparty/search-bar-21st';
@@ -106,12 +106,25 @@ export const ProductsGridPresentation: React.FC<ProductsGridPresentationProps> =
       {/* Header com busca e filtros */}
       <div className="space-y-4">
         {showHeader && (
-          <ProductsHeader
-            filteredCount={filteredCount}
-            totalProducts={totalProducts}
-            hasActiveFilters={hasActiveFilters}
-            onAddProduct={showAddButton ? onAddProduct : undefined}
-          />
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <ProductsHeader
+              filteredCount={filteredCount}
+              totalProducts={totalProducts}
+              hasActiveFilters={hasActiveFilters}
+            />
+            
+            {/* SearchBar animada alinhada à direita */}
+            {showSearch && (
+              <div className="sm:w-64">
+                <SearchBar21st
+                  value={searchTerm}
+                  onChange={onSearchChange}
+                  placeholder="Buscar produtos..."
+                  debounceMs={150}
+                />
+              </div>
+            )}
+          </div>
         )}
         
         {!showHeader && showSearch && (
@@ -127,8 +140,8 @@ export const ProductsGridPresentation: React.FC<ProductsGridPresentationProps> =
           </div>
         )}
         
-        {/* Código de barras e filtro de categoria na mesma linha */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
+        {/* Código de barras, filtro de categoria e botão adicionar na mesma linha */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="max-w-md">
             <BarcodeInput
               onScan={onBarcodeScanned}
@@ -137,30 +150,35 @@ export const ProductsGridPresentation: React.FC<ProductsGridPresentationProps> =
             />
           </div>
           
-          {/* Filtro de categoria alinhado à direita */}
-          {showFilters && (
-            <div className="sm:w-64">
-              <Select value={selectedCategory} onValueChange={onCategoryChange}>
-                <SelectTrigger className="w-full h-12 bg-adega-charcoal/60 border-adega-gold/30 text-adega-platinum rounded-xl backdrop-blur-xl">
-                  <SelectValue placeholder="Todas as categorias" />
-                </SelectTrigger>
-                <SelectContent className="bg-adega-charcoal/95 border-adega-gold/30 backdrop-blur-xl">
-                  <SelectItem value="all" className="text-adega-platinum hover:bg-adega-graphite/50">
-                    Todas as categorias
-                  </SelectItem>
-                  {categories.map(category => (
-                    <SelectItem 
-                      key={category} 
-                      value={category} 
-                      className="text-adega-platinum hover:bg-adega-graphite/50"
-                    >
-                      {category}
+          {/* Filtro de categoria e botão adicionar alinhados à direita */}
+          <div className="flex items-center gap-4">
+            {showFilters && (
+              <div className="sm:w-64">
+                <Select value={selectedCategory} onValueChange={onCategoryChange}>
+                  <SelectTrigger className="w-full h-12 bg-adega-charcoal/60 border-adega-gold/30 text-adega-platinum rounded-xl backdrop-blur-xl">
+                    <SelectValue placeholder="Todas as categorias" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-adega-charcoal/95 border-adega-gold/30 backdrop-blur-xl">
+                    <SelectItem value="all" className="text-adega-platinum hover:bg-adega-graphite/50">
+                      Todas as categorias
                     </SelectItem>
-                  ))}
-                </SelectContent>
-                </Select>
-            </div>
-          )}
+                    {categories.map(category => (
+                      <SelectItem 
+                        key={category} 
+                        value={category} 
+                        className="text-adega-platinum hover:bg-adega-graphite/50"
+                      >
+                        {category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                  </Select>
+              </div>
+            )}
+            
+            {/* Botão adicionar produto */}
+            <AddProductButton onAddProduct={showAddButton ? onAddProduct : undefined} />
+          </div>
         </div>
       </div>
       
