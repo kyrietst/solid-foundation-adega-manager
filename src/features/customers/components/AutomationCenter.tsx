@@ -189,13 +189,41 @@ export const AutomationCenter = ({ className }: AutomationCenterProps) => {
             </Card>
           </div>
 
-          {/* Tabs para diferentes tipos de automação */}
+          {/* Tabs para diferentes tipos de automação com animações */}
           <Tabs defaultValue="workflows" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4 bg-gray-800/50">
-          <TabsTrigger value="workflows">Workflows</TabsTrigger>
-          <TabsTrigger value="campaigns">Campanhas</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
-          <TabsTrigger value="integrations">Integrações</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-4 bg-black/40 backdrop-blur-sm border border-white/10 rounded-xl p-1 shadow-lg">
+          <TabsTrigger 
+            value="workflows" 
+            className="relative data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500/20 data-[state=active]:to-blue-500/20 data-[state=active]:text-purple-300 data-[state=active]:border data-[state=active]:border-purple-400/30 data-[state=active]:shadow-lg data-[state=active]:shadow-purple-500/20 text-gray-400 hover:text-white transition-all duration-300 rounded-lg backdrop-blur-sm"
+          >
+            <Bot className="w-4 h-4 mr-2" />
+            Workflows
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-blue-500/10 rounded-lg opacity-0 data-[state=active]:opacity-100 transition-opacity duration-300" />
+          </TabsTrigger>
+          <TabsTrigger 
+            value="campaigns" 
+            className="relative data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500/20 data-[state=active]:to-red-500/20 data-[state=active]:text-orange-300 data-[state=active]:border data-[state=active]:border-orange-400/30 data-[state=active]:shadow-lg data-[state=active]:shadow-orange-500/20 text-gray-400 hover:text-white transition-all duration-300 rounded-lg backdrop-blur-sm"
+          >
+            <MessageSquare className="w-4 h-4 mr-2" />
+            Campanhas
+            <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 to-red-500/10 rounded-lg opacity-0 data-[state=active]:opacity-100 transition-opacity duration-300" />
+          </TabsTrigger>
+          <TabsTrigger 
+            value="analytics" 
+            className="relative data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500/20 data-[state=active]:to-emerald-500/20 data-[state=active]:text-green-300 data-[state=active]:border data-[state=active]:border-green-400/30 data-[state=active]:shadow-lg data-[state=active]:shadow-green-500/20 text-gray-400 hover:text-white transition-all duration-300 rounded-lg backdrop-blur-sm"
+          >
+            <TrendingUp className="w-4 h-4 mr-2" />
+            Analytics
+            <div className="absolute inset-0 bg-gradient-to-r from-green-500/10 to-emerald-500/10 rounded-lg opacity-0 data-[state=active]:opacity-100 transition-opacity duration-300" />
+          </TabsTrigger>
+          <TabsTrigger 
+            value="integrations" 
+            className="relative data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-500/20 data-[state=active]:to-amber-500/20 data-[state=active]:text-yellow-300 data-[state=active]:border data-[state=active]:border-yellow-400/30 data-[state=active]:shadow-lg data-[state=active]:shadow-yellow-500/20 text-gray-400 hover:text-white transition-all duration-300 rounded-lg backdrop-blur-sm"
+          >
+            <Zap className="w-4 h-4 mr-2" />
+            Integrações
+            <div className="absolute inset-0 bg-gradient-to-r from-yellow-500/10 to-amber-500/10 rounded-lg opacity-0 data-[state=active]:opacity-100 transition-opacity duration-300" />
+          </TabsTrigger>
         </TabsList>
 
         {/* Tab: Workflows */}
