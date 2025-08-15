@@ -14,6 +14,7 @@ import { useProductsGridLogic } from '@/hooks/products/useProductsGridLogic';
 import { ProductForm } from './ProductForm';
 import { ProductDetailsModal } from './ProductDetailsModal';
 import { StockAdjustmentModal, type StockAdjustment } from './StockAdjustmentModal';
+import { StockHistoryModal } from './StockHistoryModal';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shared/ui/primitives/dialog';
 import type { ProductFormData } from '@/core/types/inventory.types';
 import type { Product } from '@/types/inventory.types';
@@ -38,6 +39,7 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isStockAdjustmentOpen, setIsStockAdjustmentOpen] = useState(false);
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const queryClient = useQueryClient();
   const { showSuccess, showError } = useNotifications();
   const { handleMouseMove } = useMouseTracker();
@@ -123,9 +125,8 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
   };
 
   const handleViewHistory = (product: Product) => {
-    // TODO: Implementar histórico de movimentações
-    console.log('View history:', product);
-    showSuccess('Histórico de movimentações será implementado em breve');
+    setSelectedProduct(product);
+    setIsHistoryModalOpen(true);
   };
 
   // Mutation para ajuste de estoque
@@ -345,6 +346,16 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
           />
         </DialogContent>
       </Dialog>
+
+      {/* Modal de histórico de movimentações */}
+      <StockHistoryModal
+        product={selectedProduct}
+        isOpen={isHistoryModalOpen}
+        onClose={() => {
+          setIsHistoryModalOpen(false);
+          setSelectedProduct(null);
+        }}
+      />
     </div>
   );
 };
