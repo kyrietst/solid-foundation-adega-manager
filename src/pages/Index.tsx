@@ -145,9 +145,7 @@ const Index = () => {
       case 'automations':
         return hasPermission(['admin']) ? (
           <Suspense fallback={<LoadingScreen text="Carregando automações..." />}>
-            <WhitePageShell>
-              <AutomationCenter />
-            </WhitePageShell>
+            <AutomationCenter />
           </Suspense>
         ) : <AccessDenied />;
       case 'customer':

@@ -3,6 +3,7 @@ import { Badge } from '@/shared/ui/primitives/badge';
 import { Button } from '@/shared/ui/primitives/button';
 import { Progress } from '@/shared/ui/primitives/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/primitives/tabs';
+import { BlurIn } from '@/components/ui/blur-in';
 import {
   Bot,
   Zap,
@@ -82,68 +83,114 @@ export const AutomationCenter = ({ className }: AutomationCenterProps) => {
   };
 
   return (
-    <div className={`space-y-6 ${className}`}>
-      {/* Header com Estatísticas */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-gray-800/30 border-gray-700/40">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-500/20 rounded-lg">
-                <Bot className="h-5 w-5 text-purple-400" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-400">Workflows Ativos</p>
-                <p className="text-xl font-semibold text-white">{automationStats.activeWorkflows}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gray-800/30 border-gray-700/40">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-500/20 rounded-lg">
-                <Zap className="h-5 w-5 text-blue-400" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-400">Total Execuções</p>
-                <p className="text-xl font-semibold text-white">{automationStats.totalExecutions.toLocaleString()}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gray-800/30 border-gray-700/40">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-500/20 rounded-lg">
-                <TrendingUp className="h-5 w-5 text-green-400" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-400">Taxa de Sucesso</p>
-                <p className="text-xl font-semibold text-white">{automationStats.successRate}%</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gray-800/30 border-gray-700/40">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-orange-500/20 rounded-lg">
-                <Users className="h-5 w-5 text-orange-400" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-400">Clientes Impactados</p>
-                <p className="text-xl font-semibold text-white">{automationStats.customersImpacted}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+    <div className="w-full h-full flex flex-col p-4">
+      {/* Header padronizado */}
+      <div className="flex-shrink-0 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
+        {/* Header com BlurIn animation */}
+        <div className="relative text-center sm:text-left">
+          {/* Título animado */}
+          <BlurIn
+            word="AUTOMAÇÕES & INTEGRAÇÕES"
+            duration={1.2}
+            variant={{
+              hidden: { filter: "blur(15px)", opacity: 0 },
+              visible: { filter: "blur(0px)", opacity: 1 }
+            }}
+            className="text-xl lg:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#FF2400] via-[#FFDA04] to-[#FF2400] drop-shadow-lg"
+            style={{
+              textShadow: '0 2px 4px rgba(0,0,0,0.3), 0 0 20px rgba(255, 218, 4, 0.2)'
+            }}
+          />
+          
+          {/* Sublinhado elegante */}
+          <div className="w-full h-2 relative">
+            <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FF2400]/80 to-transparent h-[2px] w-full blur-sm" />
+            <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FF2400] to-transparent h-px w-full" />
+            <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FFDA04]/80 to-transparent h-[3px] w-3/4 blur-sm mx-auto" />
+            <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FFDA04] to-transparent h-px w-3/4 mx-auto" />
+          </div>
+        </div>
+        
+        {/* Contador de automações */}
+        <div className="bg-black/50 backdrop-blur-sm border border-yellow-400/30 rounded-full px-4 py-2 shadow-lg">
+          <span className="text-sm font-bold text-gray-100">{automationStats.activeWorkflows}</span>
+          <span className="text-xs ml-1 opacity-75 text-gray-300">automações ativas</span>
+        </div>
       </div>
 
-      {/* Tabs para diferentes tipos de automação */}
-      <Tabs defaultValue="workflows" className="space-y-4">
+      {/* Container principal com glassmorphism */}
+      <section 
+        className="flex-1 min-h-0 bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-4 flex flex-col hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300 overflow-hidden"
+        onMouseMove={(e) => {
+          const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+          const x = ((e.clientX - rect.left) / rect.width) * 100;
+          const y = ((e.clientY - rect.top) / rect.height) * 100;
+          (e.currentTarget as HTMLElement).style.setProperty("--x", `${x}%`);
+          (e.currentTarget as HTMLElement).style.setProperty("--y", `${y}%`);
+        }}
+      >
+        <div className="flex-1 min-h-0 overflow-y-auto space-y-6">
+          {/* Stats cards movidos para área de conteúdo */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card className="bg-gray-800/30 border-gray-700/40">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-purple-500/20 rounded-lg">
+                    <Bot className="h-5 w-5 text-purple-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-400">Workflows Ativos</p>
+                    <p className="text-xl font-semibold text-white">{automationStats.activeWorkflows}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gray-800/30 border-gray-700/40">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-blue-500/20 rounded-lg">
+                    <Zap className="h-5 w-5 text-blue-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-400">Total Execuções</p>
+                    <p className="text-xl font-semibold text-white">{automationStats.totalExecutions.toLocaleString()}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gray-800/30 border-gray-700/40">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-green-500/20 rounded-lg">
+                    <TrendingUp className="h-5 w-5 text-green-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-400">Taxa de Sucesso</p>
+                    <p className="text-xl font-semibold text-white">{automationStats.successRate}%</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gray-800/30 border-gray-700/40">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-orange-500/20 rounded-lg">
+                    <Users className="h-5 w-5 text-orange-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-400">Clientes Impactados</p>
+                    <p className="text-xl font-semibold text-white">{automationStats.customersImpacted}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Tabs para diferentes tipos de automação */}
+          <Tabs defaultValue="workflows" className="space-y-4">
         <TabsList className="grid w-full grid-cols-4 bg-gray-800/50">
           <TabsTrigger value="workflows">Workflows</TabsTrigger>
           <TabsTrigger value="campaigns">Campanhas</TabsTrigger>
@@ -244,6 +291,8 @@ export const AutomationCenter = ({ className }: AutomationCenterProps) => {
           </div>
         </TabsContent>
       </Tabs>
+        </div>
+      </section>
     </div>
   );
 };
