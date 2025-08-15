@@ -112,8 +112,8 @@ export const MovementsTable: React.FC<MovementsTableProps> = ({
   }
 
   return (
-    <div className="space-y-4 p-4">
-      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+    <div className="h-full flex flex-col space-y-4 p-4">
+      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between flex-shrink-0">
         <div className="w-full sm:w-80">
           <SearchBar21st placeholder="Buscar movimentações..." value={searchTerm} onChange={setSearchTerm} debounceMs={150} />
         </div>
@@ -138,82 +138,116 @@ export const MovementsTable: React.FC<MovementsTableProps> = ({
         </div>
       </div>
 
-      <div className="overflow-x-auto">
-      <table className="w-full border-collapse">
-        <thead>
-          <tr className="border-b border-white/10">
-            {visibleColumns.includes('Data') && (
-              <th className="text-left p-2 text-adega-platinum">
-                <button className="inline-flex items-center gap-2" onClick={() => handleSort('date')}>Data {icon('date')}</button>
-              </th>
-            )}
-            {visibleColumns.includes('Tipo') && (
-              <th className="text-left p-2 text-adega-platinum">
-                <button className="inline-flex items-center gap-2" onClick={() => handleSort('type')}>Tipo {icon('type')}</button>
-              </th>
-            )}
-            {visibleColumns.includes('Produto') && (
-              <th className="text-left p-2 text-adega-platinum">
-                <button className="inline-flex items-center gap-2" onClick={() => handleSort('product')}>Produto {icon('product')}</button>
-              </th>
-            )}
-            {visibleColumns.includes('Quantidade') && (
-              <th className="text-left p-2 text-adega-platinum">
-                <button className="inline-flex items-center gap-2" onClick={() => handleSort('quantity')}>Quantidade {icon('quantity')}</button>
-              </th>
-            )}
-            {visibleColumns.includes('Motivo') && (
-              <th className="text-left p-2 text-adega-platinum">
-                <button className="inline-flex items-center gap-2" onClick={() => handleSort('reason')}>Motivo {icon('reason')}</button>
-              </th>
-            )}
-            {visibleColumns.includes('Cliente') && (
-              <th className="text-left p-2 text-adega-platinum">
-                <button className="inline-flex items-center gap-2" onClick={() => handleSort('customer')}>Cliente {icon('customer')}</button>
-              </th>
-            )}
-            {visibleColumns.includes('Responsável') && (
-              <th className="text-left p-2 text-adega-platinum">
-                <button className="inline-flex items-center gap-2" onClick={() => handleSort('user')}>Responsável {icon('user')}</button>
-              </th>
-            )}
-          </tr>
-        </thead>
-        <tbody>
-          {dataset.map((movement: InventoryMovement) => (
-            <tr 
-              key={movement.id} 
-              className="border-b border-white/5 hover:bg-adega-charcoal/30 transition-colors"
-            >
-              {visibleColumns.includes('Data') && (
-                <td className="p-2 text-adega-silver">{new Date(movement.date).toLocaleString('pt-BR')}</td>
-              )}
-              {visibleColumns.includes('Tipo') && (
-                <td className="p-2">
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${typeInfo[movement.type]?.color || 'bg-gray-100 text-gray-700'}`}>
-                    {typeInfo[movement.type]?.label || movement.type}
-                  </span>
-                </td>
-              )}
-              {visibleColumns.includes('Produto') && (
-                <td className="p-2 text-white">{productsMap[movement.product_id]?.name ?? movement.product_id}</td>
-              )}
-              {visibleColumns.includes('Quantidade') && (
-                <td className="p-2 text-white font-medium">{movement.quantity}</td>
-              )}
-              {visibleColumns.includes('Motivo') && (
-                <td className="p-2 text-adega-silver">{movement.reason ?? '-'}</td>
-              )}
-              {visibleColumns.includes('Cliente') && (
-                <td className="p-2 text-adega-silver">{customers.find(c => c.id === movement.customer_id)?.name ?? '-'}</td>
-              )}
-              {visibleColumns.includes('Responsável') && (
-                <td className="p-2 text-adega-silver">{usersMap[movement.user_id] ?? movement.user_id}</td>
-              )}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      {/* Container com scroll para tabela - scroll ilimitado */}
+      <div className="bg-black/40 rounded-lg border border-white/10 overflow-hidden flex-1 min-h-0">
+        <div className="h-full overflow-y-scroll scrollbar-thin scrollbar-track-gray-900 scrollbar-thumb-gray-600 hover:scrollbar-thumb-gray-500">
+          <table className="w-full border-collapse table-fixed">
+            <thead className="sticky top-0 z-10">
+              <tr className="border-b border-white/10 bg-black/60 backdrop-blur-sm">
+                {visibleColumns.includes('Data') && (
+                  <th className="w-[140px] text-left p-3 text-adega-platinum font-semibold">
+                    <button className="inline-flex items-center gap-2 hover:text-yellow-400 transition-colors" onClick={() => handleSort('date')}>
+                      Data {icon('date')}
+                    </button>
+                  </th>
+                )}
+                {visibleColumns.includes('Tipo') && (
+                  <th className="w-[80px] text-left p-3 text-adega-platinum font-semibold">
+                    <button className="inline-flex items-center gap-2 hover:text-yellow-400 transition-colors" onClick={() => handleSort('type')}>
+                      Tipo {icon('type')}
+                    </button>
+                  </th>
+                )}
+                {visibleColumns.includes('Produto') && (
+                  <th className="w-[200px] text-left p-3 text-adega-platinum font-semibold">
+                    <button className="inline-flex items-center gap-2 hover:text-yellow-400 transition-colors" onClick={() => handleSort('product')}>
+                      Produto {icon('product')}
+                    </button>
+                  </th>
+                )}
+                {visibleColumns.includes('Quantidade') && (
+                  <th className="w-[100px] text-left p-3 text-adega-platinum font-semibold">
+                    <button className="inline-flex items-center gap-2 hover:text-yellow-400 transition-colors" onClick={() => handleSort('quantity')}>
+                      Qtd {icon('quantity')}
+                    </button>
+                  </th>
+                )}
+                {visibleColumns.includes('Motivo') && (
+                  <th className="w-[150px] text-left p-3 text-adega-platinum font-semibold">
+                    <button className="inline-flex items-center gap-2 hover:text-yellow-400 transition-colors" onClick={() => handleSort('reason')}>
+                      Motivo {icon('reason')}
+                    </button>
+                  </th>
+                )}
+                {visibleColumns.includes('Cliente') && (
+                  <th className="w-[160px] text-left p-3 text-adega-platinum font-semibold">
+                    <button className="inline-flex items-center gap-2 hover:text-yellow-400 transition-colors" onClick={() => handleSort('customer')}>
+                      Cliente {icon('customer')}
+                    </button>
+                  </th>
+                )}
+                {visibleColumns.includes('Responsável') && (
+                  <th className="w-[120px] text-left p-3 text-adega-platinum font-semibold">
+                    <button className="inline-flex items-center gap-2 hover:text-yellow-400 transition-colors" onClick={() => handleSort('user')}>
+                      Responsável {icon('user')}
+                    </button>
+                  </th>
+                )}
+              </tr>
+            </thead>
+            <tbody>
+              {dataset.map((movement: InventoryMovement, index: number) => (
+                <tr 
+                  key={movement.id} 
+                  className={`border-b border-white/5 hover:bg-white/5 transition-colors ${
+                    index % 2 === 0 ? 'bg-black/10' : 'bg-black/20'
+                  }`}
+                >
+                  {visibleColumns.includes('Data') && (
+                    <td className="p-3 text-adega-silver text-sm">
+                      {new Date(movement.date).toLocaleDateString('pt-BR', { 
+                        day: '2-digit', 
+                        month: '2-digit', 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                      })}
+                    </td>
+                  )}
+                  {visibleColumns.includes('Tipo') && (
+                    <td className="p-3">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${typeInfo[movement.type]?.color || 'bg-gray-100 text-gray-700'}`}>
+                        {typeInfo[movement.type]?.label || movement.type}
+                      </span>
+                    </td>
+                  )}
+                  {visibleColumns.includes('Produto') && (
+                    <td className="p-3 text-white text-sm font-medium truncate" title={productsMap[movement.product_id]?.name ?? movement.product_id}>
+                      {productsMap[movement.product_id]?.name ?? movement.product_id}
+                    </td>
+                  )}
+                  {visibleColumns.includes('Quantidade') && (
+                    <td className="p-3 text-white font-medium text-center">{movement.quantity}</td>
+                  )}
+                  {visibleColumns.includes('Motivo') && (
+                    <td className="p-3 text-adega-silver text-sm truncate" title={movement.reason ?? '-'}>
+                      {movement.reason ?? '-'}
+                    </td>
+                  )}
+                  {visibleColumns.includes('Cliente') && (
+                    <td className="p-3 text-adega-silver text-sm truncate" title={customers.find(c => c.id === movement.customer_id)?.name ?? '-'}>
+                      {customers.find(c => c.id === movement.customer_id)?.name ?? '-'}
+                    </td>
+                  )}
+                  {visibleColumns.includes('Responsável') && (
+                    <td className="p-3 text-adega-silver text-sm truncate" title={usersMap[movement.user_id] ?? movement.user_id}>
+                      {usersMap[movement.user_id] ?? movement.user_id}
+                    </td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

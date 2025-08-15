@@ -11,6 +11,7 @@ import CustomerDataTable from './CustomerDataTable';
 const CustomersLite = () => {
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
+  const [newClientsCount] = useState(() => Math.floor(Math.random() * 10));
   
   // Usar hook básico de customers
   const { data: customers, isLoading, error } = useCustomers({ search });
@@ -64,7 +65,7 @@ const CustomersLite = () => {
           />
           
           {/* Sublinhado elegante */}
-          <div className="w-full h-6 relative mt-2">
+          <div className="w-full h-2 relative">
             <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FF2400]/80 to-transparent h-[2px] w-full blur-sm" />
             <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FF2400] to-transparent h-px w-full" />
             <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FFDA04]/80 to-transparent h-[3px] w-3/4 blur-sm mx-auto" />
@@ -106,7 +107,7 @@ const CustomersLite = () => {
             <CardTitle className="text-sm text-gray-400">Últimos 30 dias</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold text-accent-green">+{Math.floor(Math.random() * 10)}</p>
+            <p className="text-2xl font-bold text-accent-green">+{newClientsCount}</p>
           </CardContent>
         </Card>
       </div>
