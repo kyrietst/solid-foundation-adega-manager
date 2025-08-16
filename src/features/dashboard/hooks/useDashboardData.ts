@@ -122,51 +122,119 @@ export const useDashboardData = () => {
     staleTime: 15 * 60 * 1000, // 15 minutos
   });
 
-  // Query para atividades recentes
+  // Query para atividades recentes - Vendas, Clientes e Produtos
   const { data: recentActivities, isLoading: isLoadingActivities } = useQuery({
     queryKey: ['dashboard', 'recent-activities'],
     queryFn: async (): Promise<RecentActivity[]> => {
-      // Buscar vendas recentes
-      const { data: recentSales, error: salesError } = await supabase
-        .from('sales')
-        .select(`
-          id,
-          total_amount,
-          created_at,
-          customers (name)
-        `)
-        .order('created_at', { ascending: false })
-        .limit(5);
-
-      if (salesError) throw salesError;
-
       const activities: RecentActivity[] = [];
 
-      // Converter vendas em atividades
-      recentSales?.forEach(sale => {
-        const timeDiff = new Date().getTime() - new Date(sale.created_at).getTime();
-        const timeAgo = timeDiff < 60000 ? 'Há poucos minutos' :
-                       timeDiff < 3600000 ? `Há ${Math.floor(timeDiff / 60000)} min` :
-                       `Há ${Math.floor(timeDiff / 3600000)} hora(s)`;
+      try {
+        // 1. Buscar vendas recentes
+        const { data: recentSales, error: salesError } = await supabase
+          .from('sales')
+          .select(`
+            id,
+            total_amount,
+            created_at,
+            customers (name)
+          `)
+          .order('created_at', { ascending: false })
+          .limit(3);
 
-        activities.push({
-          id: sale.id,
-          type: 'sale',
-          description: 'Nova venda realizada',
-          details: `${sale.customers?.name || 'Cliente'} - ${new Intl.NumberFormat('pt-BR', {
-            style: 'currency',
-            currency: 'BRL'
-          }).format(sale.total_amount)} - ${timeAgo}`,
-          timestamp: sale.created_at,
-          icon: 'ShoppingCart'
-        });
-      });
+        if (!salesError && recentSales) {
+          recentSales.forEach(sale => {
+            activities.push({
+              id: `sale-${sale.id}`,
+              type: 'sale',
+              description: 'Nova venda realizada',
+              details: `${sale.customers?.name || 'Cliente'} - ${new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL'
+              }).format(sale.total_amount)}`,
+              timestamp: sale.created_at,
+              icon: 'ShoppingCart'
+            });
+          });
+        }
 
-      return activities.sort((a, b) => 
-        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-      ).slice(0, 4);
+        // 2. Buscar clientes recém-cadastrados
+        const { data: recentCustomers, error: customersError } = await supabase
+          .from('customers')
+          .select('id, name, created_at')
+          .order('created_at', { ascending: false })
+          .limit(3);
+
+        if (!customersError && recentCustomers) {
+          recentCustomers.forEach(customer => {
+            activities.push({
+              id: `customer-${customer.id}`,
+              type: 'customer',
+              description: 'Novo cliente cadastrado',
+              details: `${customer.name}`,
+              timestamp: customer.created_at,
+              icon: 'Users'
+            });
+          });
+        }
+
+        // 3. Buscar produtos recém-cadastrados
+        const { data: recentProducts, error: productsError } = await supabase
+          .from('products')
+          .select('id, name, created_at')
+          .order('created_at', { ascending: false })
+          .limit(3);
+
+        if (!productsError && recentProducts) {
+          recentProducts.forEach(product => {
+            activities.push({
+              id: `product-${product.id}`,
+              type: 'stock',
+              description: 'Produto adicionado ao estoque',
+              details: `${product.name}`,
+              timestamp: product.created_at,
+              icon: 'Package'
+            });
+          });
+        }
+
+        // 4. Buscar movimentações de estoque recentes (entradas)
+        const { data: recentMovements, error: movementsError } = await supabase
+          .from('inventory_movements')
+          .select(`
+            id,
+            movement_type,
+            quantity,
+            created_at,
+            products (name)
+          `)
+          .in('movement_type', ['IN'])
+          .order('created_at', { ascending: false })
+          .limit(2);
+
+        if (!movementsError && recentMovements) {
+          recentMovements.forEach(movement => {
+            activities.push({
+              id: `movement-${movement.id}`,
+              type: 'stock',
+              description: 'Estoque atualizado',
+              details: `${movement.products?.name || 'Produto'} - ${movement.quantity > 0 ? '+' : ''}${movement.quantity} unidades`,
+              timestamp: movement.created_at,
+              icon: 'Package'
+            });
+          });
+        }
+
+      } catch (error) {
+        console.error('Erro ao buscar atividades recentes:', error);
+      }
+
+      // Ordenar por timestamp e limitar a 5 atividades mais recentes
+      return activities
+        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+        .slice(0, 5);
     },
-    staleTime: 2 * 60 * 1000, // 2 minutos
+    staleTime: 1 * 60 * 1000, // 1 minuto para atividades mais atualizadas
+    refetchInterval: 2 * 60 * 1000, // Atualiza automaticamente a cada 2 minutos
   });
 
   // Função para retry de seções individuais  
