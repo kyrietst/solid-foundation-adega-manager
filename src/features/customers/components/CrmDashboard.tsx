@@ -374,7 +374,7 @@ export const CrmDashboard: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto p-6">
+      <div className="w-full h-full flex flex-col p-4">
         <div className="flex items-center justify-center py-12">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-500 mx-auto mb-4"></div>
