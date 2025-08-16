@@ -144,7 +144,7 @@ export const MovementsTable: React.FC<MovementsTableProps> = ({
       </div>
 
       {/* Container com scroll para tabela */}
-      <div className="bg-black/40 rounded-lg border border-white/10 overflow-hidden flex-1 min-h-0">
+      <div className="bg-black/40 rounded-lg border border-white/10 overflow-hidden flex-1">
         <div className="h-full max-h-full overflow-auto scrollbar-thin scrollbar-track-gray-900 scrollbar-thumb-gray-600 hover:scrollbar-thumb-gray-500">
           <table className="w-full border-collapse min-w-full">
             <thead className="sticky top-0 z-10">

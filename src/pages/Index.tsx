@@ -123,9 +123,7 @@ const Index = () => {
       case 'delivery':
         return hasPermission(['admin', 'employee', 'delivery']) ? (
           <Suspense fallback={<LoadingScreen text="Carregando delivery..." />}>
-            <WhitePageShell>
-              <Delivery />
-            </WhitePageShell>
+            <Delivery />
           </Suspense>
         ) : <AccessDenied />;
       case 'movements':

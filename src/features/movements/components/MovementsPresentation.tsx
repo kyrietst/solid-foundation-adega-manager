@@ -94,16 +94,50 @@ export const MovementsPresentation: React.FC<MovementsPresentationProps> = ({
         {/* Botões de ação e contador */}
         <div className="flex gap-2 items-center">
           {/* Contador de movimentações */}
-          <div className="bg-black/50 backdrop-blur-sm border border-yellow-400/30 rounded-full px-4 py-2 shadow-lg">
-            <span className="text-sm font-bold text-gray-100">{movements.length}</span>
-            <span className="text-xs ml-1 opacity-75 text-gray-300">movimentações</span>
+          <div 
+            className="bg-black/50 backdrop-blur-sm border border-yellow-400/30 rounded-full px-4 py-2 shadow-lg hover:shadow-xl hover:shadow-yellow-400/20 hover:border-yellow-400/50 hover:scale-105 transition-all duration-300 relative overflow-hidden group"
+            onMouseMove={(e) => {
+              const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+              const x = ((e.clientX - rect.left) / rect.width) * 100;
+              const y = ((e.clientY - rect.top) / rect.height) * 100;
+              (e.currentTarget as HTMLElement).style.setProperty("--x", `${x}%`);
+              (e.currentTarget as HTMLElement).style.setProperty("--y", `${y}%`);
+            }}
+          >
+            {/* Purple glow effect */}
+            <div 
+              className="absolute inset-0 rounded-full bg-gradient-to-br from-purple-500/20 via-transparent to-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+              style={{
+                background: `radial-gradient(200px circle at var(--x, 50%) var(--y, 50%), rgba(147, 51, 234, 0.15), transparent 40%)`
+              }}
+            />
+            <span className="text-sm font-bold text-gray-100 relative z-10">{movements.length}</span>
+            <span className="text-xs ml-1 opacity-75 text-gray-300 relative z-10">movimentações</span>
           </div>
           
           {canCreateMovement && (
             <Dialog open={isDialogOpen} onOpenChange={onDialogOpenChange}>
               <DialogTrigger asChild>
-                <Button className="bg-yellow-400/20 border border-yellow-400/30 text-yellow-400 hover:bg-yellow-400/30">
-                  <Plus className="h-4 w-4 mr-2" /> NOVA MOVIMENTAÇÃO
+                <Button 
+                  className="bg-black/80 border border-yellow-400/30 text-yellow-400 hover:bg-yellow-400/20 hover:shadow-xl hover:shadow-yellow-400/30 hover:border-yellow-400/80 hover:scale-105 backdrop-blur-sm transition-all duration-300 relative overflow-hidden group"
+                  onMouseMove={(e) => {
+                    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                    const x = ((e.clientX - rect.left) / rect.width) * 100;
+                    const y = ((e.clientY - rect.top) / rect.height) * 100;
+                    (e.currentTarget as HTMLElement).style.setProperty("--x", `${x}%`);
+                    (e.currentTarget as HTMLElement).style.setProperty("--y", `${y}%`);
+                  }}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-yellow-400/5 via-yellow-400/10 to-yellow-400/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <Plus className="h-4 w-4 mr-2 relative z-10" /> 
+                  <span className="relative z-10">NOVA MOVIMENTAÇÃO</span>
+                  {/* Purple glow effect */}
+                  <div 
+                    className="absolute inset-0 rounded-md bg-gradient-to-br from-purple-500/20 via-transparent to-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+                    style={{
+                      background: `radial-gradient(300px circle at var(--x, 50%) var(--y, 50%), rgba(147, 51, 234, 0.15), transparent 40%)`
+                    }}
+                  />
                 </Button>
               </DialogTrigger>
               <DialogContent>
@@ -125,9 +159,9 @@ export const MovementsPresentation: React.FC<MovementsPresentationProps> = ({
         </div>
       </div>
 
-      {/* Container principal com glassmorphism */}
+      {/* Container principal com purple glow */}
       <section 
-        className="flex-1 min-h-0 h-[600px] bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-4 flex flex-col hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300 overflow-hidden"
+        className="flex-1 min-h-0 h-[600px] bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-4 hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300 relative overflow-hidden group"
         onMouseMove={(e) => {
           const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
           const x = ((e.clientX - rect.left) / rect.width) * 100;
@@ -136,7 +170,14 @@ export const MovementsPresentation: React.FC<MovementsPresentationProps> = ({
           (e.currentTarget as HTMLElement).style.setProperty("--y", `${y}%`);
         }}
       >
-        <div className="flex-1 min-h-0 overflow-hidden">
+        {/* Purple glow effect */}
+        <div 
+          className="absolute inset-0 rounded-xl bg-gradient-to-br from-purple-500/20 via-transparent to-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+          style={{
+            background: `radial-gradient(800px circle at var(--x, 50%) var(--y, 50%), rgba(147, 51, 234, 0.15), transparent 40%)`
+          }}
+        />
+        <div className="relative z-10 h-full">
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
               <LoadingSpinner size="lg" />
