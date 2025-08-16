@@ -7,8 +7,10 @@ export interface StatCardProps {
   value: string | number;
   description?: string;
   icon?: LucideIcon;
+  emoji?: string; // Novo: suporte para emoji no padrão CRM
   variant?: 'default' | 'success' | 'warning' | 'error' | 'purple' | 'premium';
   className?: string;
+  layout?: 'default' | 'crm'; // Novo: layout CRM ou padrão tradicional
 }
 
 const variantStyles = {
@@ -20,35 +22,35 @@ const variantStyles = {
     icon: 'secondary' as const
   },
   success: {
-    card: cn(getGlassCardClasses('default'), 'border-accent-green/30 bg-accent-green/5'),
+    card: cn(getGlassCardClasses('default'), 'hover:border-accent-green/60'),
     title: 'text-gray-300',
     value: 'text-accent-green',
     description: 'text-gray-400',
     icon: 'success' as const
   },
   warning: {
-    card: cn(getGlassCardClasses('default'), 'border-primary-yellow/30 bg-primary-yellow/5'),
+    card: cn(getGlassCardClasses('default'), 'hover:border-primary-yellow/60'),
     title: 'text-gray-300',
     value: 'text-primary-yellow',
     description: 'text-gray-400',
     icon: 'warning' as const
   },
   error: {
-    card: cn(getGlassCardClasses('default'), 'border-accent-red/30 bg-accent-red/5'),
+    card: cn(getGlassCardClasses('default'), 'hover:border-accent-red/60'),
     title: 'text-gray-300',
     value: 'text-accent-red',
     description: 'text-gray-400',
     icon: 'error' as const
   },
   purple: {
-    card: cn(getGlassCardClasses('default'), 'border-accent-purple/30 bg-accent-purple/5'),
+    card: cn(getGlassCardClasses('default'), 'hover:border-accent-purple/60'),
     title: 'text-gray-300',
     value: 'text-accent-purple',
     description: 'text-gray-400',
     icon: 'primary' as const
   },
   premium: {
-    card: getGlassCardClasses('premium'),
+    card: cn(getGlassCardClasses('premium'), 'hover:border-primary-yellow/60'),
     title: 'text-gray-300',
     value: 'text-primary-yellow',
     description: 'text-gray-400',
@@ -61,11 +63,47 @@ export const StatCard: React.FC<StatCardProps> = ({
   value,
   description,
   icon: Icon,
+  emoji,
   variant = 'default',
+  layout = 'default',
   className
 }) => {
   const styles = variantStyles[variant];
 
+  // Layout CRM: ícone + título + valor + descrição (padrão exato do CRM Dashboard)
+  if (layout === 'crm') {
+    return (
+      <Card className={cn(styles.card, 'h-[120px] hover:transform hover:-translate-y-1 transition-all duration-200', className)}>
+        <CardContent className="p-6 h-full flex items-center">
+          <div className="flex items-center gap-3 w-full">
+            {/* Ícone Lucide (não emoji) */}
+            {Icon && <Icon className={getIconClasses('lg', styles.icon)} />}
+            
+            <div className="flex-1">
+              {/* Título */}
+              <p className={cn('text-sm text-gray-400 font-medium', styles.title)}>
+                {title}
+              </p>
+              
+              {/* Valor Principal */}
+              <div className={cn('text-2xl font-bold text-white mt-1', styles.value)}>
+                {typeof value === 'number' ? value.toLocaleString('pt-BR') : value}
+              </div>
+              
+              {/* Descrição/Subtítulo */}
+              {description && (
+                <div className={cn('text-xs mt-1 flex items-center', styles.description)}>
+                  {description}
+                </div>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Layout padrão (mantém compatibilidade)
   return (
     <Card className={cn(styles.card, 'hover:transform hover:-translate-y-1 transition-all duration-200', className)}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

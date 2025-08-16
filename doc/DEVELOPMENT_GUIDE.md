@@ -2,7 +2,7 @@
 
 > **Enterprise Wine Cellar Management System - Technical Documentation**  
 > Complete development guide for contributors and maintainers  
-> Version: 2.0.0+ | Production System with 925+ Active Records
+> Version: 2.5.0+ | Production System with 925+ Active Records | Complete UI Standardization
 
 ---
 
@@ -336,6 +336,194 @@ npm run test:coverage # Verify coverage thresholds
 ```
 
 ---
+
+## UI Standardization Patterns (v2.5.0)
+
+### Modern Component Standardization
+
+#### Header Pattern with BlurIn Animation
+**Standard Implementation:**
+```tsx
+import { BlurIn } from '@/components/ui/blur-in';
+
+// Padrão de cabeçalho com animação e gradiente
+<BlurIn>
+  <h1 className="text-3xl md:text-4xl font-bold mb-8 text-center text-white">
+    <span className="bg-gradient-to-r from-yellow-400 via-yellow-500 to-amber-400 bg-clip-text text-transparent">
+      Título da Página
+    </span>
+    <div className="mt-4 w-24 h-1 bg-gradient-to-r from-yellow-400 to-amber-500 mx-auto rounded-full shadow-lg shadow-yellow-500/30"></div>
+  </h1>
+</BlurIn>
+```
+
+**Usage Guidelines:**
+- Use for all main page headers
+- BlurIn animation provides smooth entrance effect
+- Gradient text uses yellow/amber Adega theme colors
+- Underline gradient matches text gradient
+- Center alignment with responsive text sizing
+
+#### Glassmorphism Container Pattern
+**Standard Implementation:**
+```tsx
+// Container com glass morphism e mouse tracking
+<div 
+  className="bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg hero-spotlight p-6 hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300"
+  onMouseMove={handleMouseMove}
+>
+  {children}
+</div>
+```
+
+**Key Features:**
+- `bg-black/80` - Semi-transparent black background
+- `backdrop-blur-sm` - Glass blur effect
+- `border-white/10` - Subtle border
+- `hero-spotlight` - Custom CSS class for purple glow effect
+- `hover:shadow-purple-500/10` - Purple shadow on hover
+- `transition-all duration-300` - Smooth transitions
+
+#### Purple Glow Mouse Tracking Animation
+**Implementation:**
+```tsx
+import { useMouseTracker } from '@/hooks/ui/useMouseTracker';
+
+const { handleMouseMove } = useMouseTracker();
+
+// Apply to containers that need mouse tracking
+<div onMouseMove={handleMouseMove}>
+  {/* Content */}
+</div>
+```
+
+**CSS Classes Required:**
+```css
+.hero-spotlight {
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-spotlight::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(147, 51, 234, 0.1), transparent 40%);
+  pointer-events: none;
+}
+```
+
+#### Button Standardization
+**Standard Button Variants:**
+```tsx
+// Primary button with gradient
+<Button className="bg-gradient-to-r from-yellow-400 to-amber-500 hover:from-yellow-500 hover:to-amber-600 text-black font-semibold">
+  Ação Principal
+</Button>
+
+// Secondary button with outline
+<Button variant="outline" className="border-yellow-400/50 text-yellow-400 hover:bg-yellow-400/10">
+  Ação Secundária
+</Button>
+
+// Danger button for destructive actions
+<Button variant="destructive" className="bg-red-600/80 hover:bg-red-700 text-white">
+  Ação Destrutiva
+</Button>
+```
+
+#### Card Pattern with Enhanced Effects
+**Standard Card Implementation:**
+```tsx
+<Card className="bg-black/60 backdrop-blur-sm border border-white/10 hover:border-purple-400/30 transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/10">
+  <CardHeader>
+    <CardTitle className="text-white flex items-center gap-2">
+      <Icon className="w-5 h-5 text-yellow-400" />
+      Título do Card
+    </CardTitle>
+  </CardHeader>
+  <CardContent>
+    {/* Card content */}
+  </CardContent>
+</Card>
+```
+
+**Enhanced Features:**
+- Glass morphism background
+- Purple hover effects
+- Smooth transitions
+- Icon integration with yellow accent
+- Consistent spacing and typography
+
+#### Table Styling Pattern
+**Modern Table Implementation:**
+```tsx
+<div className="bg-black/60 backdrop-blur-sm border border-white/10 rounded-xl overflow-hidden">
+  <Table>
+    <TableHeader>
+      <TableRow className="border-white/10 hover:bg-white/5">
+        <TableHead className="text-yellow-400 font-semibold">Header</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow className="border-white/10 hover:bg-white/5 transition-colors">
+        <TableCell className="text-white">Content</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+```
+
+### Page Width Standardization
+
+#### Container Width Architecture
+**Implementation in Index.tsx:**
+```tsx
+// Simplified container logic with blacklist approach
+<div className={activeTab === 'customer' || activeTab === 'activities' 
+  ? 'max-w-7xl mx-auto h-full'                           // 1280px - Reading pages
+  : 'max-w-[1500px] 2xl:max-w-[1800px] mx-auto h-full'   // 1500px/1800px - All others
+}>
+```
+
+**Width Standards:**
+- **Reading Pages** (`max-w-7xl`): 1280px for customer profiles and activities
+- **Dashboard Pages** (`max-w-[1500px] 2xl:max-w-[1800px]`): 1500px (2XL: 1800px) for all main pages
+- **Responsive**: Automatically adjusts for smaller screens
+- **Consistent**: Single source of truth for width management
+
+**Benefits:**
+- Simplified maintenance (blacklist vs whitelist)
+- Automatic width assignment for new pages
+- Better utilization of screen real estate
+- Consistent user experience across modules
+
+### Animation and Transition Standards
+
+#### Transition Classes
+```css
+/* Standard transition durations */
+.transition-fast { transition: all 150ms ease-in-out; }
+.transition-normal { transition: all 300ms ease-in-out; }
+.transition-slow { transition: all 500ms ease-in-out; }
+
+/* Hover effects */
+.hover-lift:hover { transform: translateY(-2px); }
+.hover-scale:hover { transform: scale(1.02); }
+.hover-glow:hover { box-shadow: 0 0 20px rgba(147, 51, 234, 0.3); }
+```
+
+#### Loading States
+```tsx
+// Consistent loading spinner
+<LoadingSpinner size="lg" variant="gold" />
+
+// Loading screen for page transitions
+<LoadingScreen text="Carregando..." />
+```
 
 ## Code Standards & Patterns
 

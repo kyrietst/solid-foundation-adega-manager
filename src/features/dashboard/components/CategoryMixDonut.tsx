@@ -32,21 +32,23 @@ export function CategoryMixDonut({ className, period = 30, showTotal = false }: 
   const { data: categoryData, isLoading, error } = useQuery({
     queryKey: ['category-mix', period],
     queryFn: async (): Promise<CategoryMix[]> => {
-      const endDate = new Date();
-      const startDate = new Date();
-      startDate.setDate(endDate.getDate() - period);
-
-      const { data, error } = await supabase
-        .rpc('get_category_mix', {
-          start_date: startDate.toISOString(),
-          end_date: endDate.toISOString()
-        });
-
-      if (error) throw error;
-      return (data || []).map((item: any) => ({
-        category: item.category,
-        revenue: Number(item.revenue || 0)
-      }));
+      // MOCK DATA para teste - substituir por dados reais depois
+      console.log('🥧 Category Mix - Usando dados mockados para teste');
+      
+      // Simular delay de rede
+      await new Promise(resolve => setTimeout(resolve, 400));
+      
+      // Mix de categorias simulado com percentuais realistas
+      const mockCategoryData: CategoryMix[] = [
+        { category: 'Vinhos', revenue: 8750.30 },
+        { category: 'Destilados', revenue: 6420.80 },
+        { category: 'Cervejas', revenue: 4680.50 },
+        { category: 'Espumantes', revenue: 3920.40 },
+        { category: 'Licor', revenue: 2890.70 },
+        { category: 'Refrigerante', revenue: 1650.90 }
+      ];
+      
+      return mockCategoryData;
     },
     staleTime: 5 * 60 * 1000,
     refetchInterval: 5 * 60 * 1000,
@@ -131,7 +133,7 @@ export function CategoryMixDonut({ className, period = 30, showTotal = false }: 
         fill="white" 
         textAnchor={x > cx ? 'start' : 'end'} 
         dominantBaseline="central"
-        className="text-xs font-medium"
+        className="text-sm font-bold"
       >
         {`${(percent * 100).toFixed(0)}%`}
       </text>
@@ -176,13 +178,13 @@ export function CategoryMixDonut({ className, period = 30, showTotal = false }: 
 
       <CardContent className="text-sm text-gray-200">
         {isLoading ? (
-          <div className="h-[380px] flex items-center justify-center">
+          <div className="h-[460px] flex items-center justify-center">
             <div className="w-8 h-8 border-2 border-amber-300/30 border-t-amber-300 rounded-full animate-spin" />
           </div>
         ) : data && data.length > 0 ? (
           <div className="space-y-4">
             {/* Chart */}
-            <div className="h-[280px]">
+            <div className="h-[360px]">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -191,8 +193,8 @@ export function CategoryMixDonut({ className, period = 30, showTotal = false }: 
                     cy="50%"
                     labelLine={false}
                     label={renderCustomizedLabel}
-                    outerRadius={80}
-                    innerRadius={40}
+                    outerRadius={110}
+                    innerRadius={55}
                     fill="#8884d8"
                     dataKey="revenue"
                   >
@@ -209,16 +211,16 @@ export function CategoryMixDonut({ className, period = 30, showTotal = false }: 
             </div>
 
             {/* Legend */}
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-3">
               {data.map((entry, index) => (
-                <div key={entry.category} className="flex items-center gap-2">
+                <div key={entry.category} className="flex items-center gap-3">
                   <div 
-                    className="w-3 h-3 rounded-full" 
+                    className="w-4 h-4 rounded-full" 
                     style={{ backgroundColor: COLORS[index % COLORS.length] }}
                   />
                   <div className="flex-1 min-w-0">
-                    <div className="text-xs text-white truncate">{entry.category}</div>
-                    <div className="text-xs text-gray-400">
+                    <div className="text-sm text-white truncate font-medium">{entry.category}</div>
+                    <div className="text-sm text-gray-400 font-medium">
                       {formatCompact(entry.revenue)}
                     </div>
                   </div>
@@ -242,7 +244,7 @@ export function CategoryMixDonut({ className, period = 30, showTotal = false }: 
             )}
           </div>
         ) : (
-          <div className="h-[280px] flex flex-col items-center justify-center text-center">
+          <div className="h-[460px] flex flex-col items-center justify-center text-center">
             <PieChartIcon className="h-12 w-12 text-gray-600 mb-3" />
             <div className="text-sm text-gray-400 mb-2">Nenhum dado disponível</div>
             <div className="text-xs text-gray-500">

@@ -27,46 +27,26 @@ export function useSalesKpis(windowDays: number = 30) {
   return useQuery({
     queryKey: ['kpis-sales', windowDays],
     queryFn: async (): Promise<SalesKpis> => {
-      const endDate = new Date();
-      const startDate = new Date();
-      startDate.setDate(endDate.getDate() - windowDays);
-
-      const prevEndDate = new Date(startDate);
-      const prevStartDate = new Date();
-      prevStartDate.setDate(prevEndDate.getDate() - windowDays);
-
-      // Current period
-      const { data: currentData, error: currentError } = await supabase
-        .rpc('get_sales_metrics', {
-          start_date: startDate.toISOString(),
-          end_date: endDate.toISOString()
-        });
+      // MOCK DATA para teste - substituir por dados reais depois
+      console.log('📊 Sales KPIs - Usando dados mockados para teste');
       
-      if (currentError) throw currentError;
-
-      // Previous period for comparison
-      const { data: prevData, error: prevError } = await supabase
-        .rpc('get_sales_metrics', {
-          start_date: prevStartDate.toISOString(),
-          end_date: prevEndDate.toISOString()
-        });
-
-      if (prevError) throw prevError;
-
-      const current = currentData?.[0] || { total_revenue: 0, total_orders: 0 };
-      const prev = prevData?.[0] || { total_revenue: 0, total_orders: 0 };
-
-      const revenue = Number(current.total_revenue || 0);
-      const orders = Number(current.total_orders || 0);
-      const avgTicket = orders ? revenue / orders : 0;
-
-      const revenuePrev = Number(prev.total_revenue || 0);
-      const ordersPrev = Number(prev.total_orders || 0);
-      const avgTicketPrev = ordersPrev ? revenuePrev / ordersPrev : 0;
-
-      const revenueDelta = revenuePrev ? ((revenue - revenuePrev) / revenuePrev) * 100 : 0;
-      const ordersDelta = ordersPrev ? ((orders - ordersPrev) / ordersPrev) * 100 : 0;
-      const avgTicketDelta = avgTicketPrev ? ((avgTicket - avgTicketPrev) / avgTicketPrev) * 100 : 0;
+      // Simular delay de rede
+      await new Promise(resolve => setTimeout(resolve, 400));
+      
+      // Dados simulados de vendas
+      const revenue = 28450.75;
+      const orders = 47;
+      const avgTicket = revenue / orders;
+      
+      // Dados do período anterior (simulando crescimento)
+      const revenuePrev = 24300.50;
+      const ordersPrev = 39;
+      const avgTicketPrev = revenuePrev / ordersPrev;
+      
+      // Calcular deltas
+      const revenueDelta = ((revenue - revenuePrev) / revenuePrev) * 100;
+      const ordersDelta = ((orders - ordersPrev) / ordersPrev) * 100;
+      const avgTicketDelta = ((avgTicket - avgTicketPrev) / avgTicketPrev) * 100;
 
       return { 
         revenue, 
@@ -87,24 +67,16 @@ export function useCustomerKpis(windowDays: number = 30) {
   return useQuery({
     queryKey: ['kpis-customers', windowDays],
     queryFn: async (): Promise<CustomerKpis> => {
-      const endDate = new Date();
-      const startDate = new Date();
-      startDate.setDate(endDate.getDate() - windowDays);
-
-      const { data, error } = await supabase
-        .rpc('get_customer_metrics', {
-          start_date: startDate.toISOString(),
-          end_date: endDate.toISOString()
-        });
+      // MOCK DATA para teste - substituir por dados reais depois
+      console.log('👥 Customer KPIs - Usando dados mockados para teste');
       
-      if (error) throw error;
-      
-      const result = data?.[0] || { total_customers: 0, new_customers: 0 };
+      // Simular delay de rede
+      await new Promise(resolve => setTimeout(resolve, 300));
       
       return {
-        totalCustomers: Number(result.total_customers || 0),
-        newCustomers: Number(result.new_customers || 0),
-        activeCustomers: Number(result.active_customers || 0)
+        totalCustomers: 247,
+        newCustomers: 18,
+        activeCustomers: 89
       };
     },
     staleTime: 5 * 60 * 1000,
@@ -116,17 +88,16 @@ export function useInventoryKpis() {
   return useQuery({
     queryKey: ['kpis-inventory'],
     queryFn: async (): Promise<InventoryKpis> => {
-      const { data, error } = await supabase
-        .rpc('get_inventory_metrics');
+      // MOCK DATA para teste - substituir por dados reais depois
+      console.log('📦 Inventory KPIs - Usando dados mockados para teste');
       
-      if (error) throw error;
-      
-      const result = data?.[0] || { count: 0, sum: 0, sum_1: 0 };
+      // Simular delay de rede
+      await new Promise(resolve => setTimeout(resolve, 250));
       
       return {
-        totalProducts: Number(result.count || 0),
-        totalValue: Number(result.sum || 0),
-        lowStockCount: Number(result.sum_1 || 0) // This maps to the low stock count from the procedure
+        totalProducts: 156,
+        totalValue: 87450.30,
+        lowStockCount: 7 // Alguns produtos com estoque baixo para mostrar alerta
       };
     },
     staleTime: 5 * 60 * 1000,
@@ -138,11 +109,24 @@ export function useLowStockProducts(limit: number = 10) {
   return useQuery({
     queryKey: ['low-stock-products', limit],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .rpc('get_low_stock_products', { limit_count: limit });
+      // MOCK DATA para teste - substituir por dados reais depois
+      console.log('⚠️ Low Stock Products - Usando dados mockados para teste');
       
-      if (error) throw error;
-      return data || [];
+      // Simular delay de rede
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      // Produtos com estoque baixo simulados
+      const mockLowStockProducts = [
+        { id: 1, name: 'Vinho Tinto Reserva 2019', current_stock: 2, min_stock: 10, price: 89.90 },
+        { id: 2, name: 'Champagne Brut Premium', current_stock: 1, min_stock: 5, price: 159.90 },
+        { id: 3, name: 'Whisky Single Malt 18 Anos', current_stock: 3, min_stock: 8, price: 299.90 },
+        { id: 4, name: 'Vodka Premium Import', current_stock: 4, min_stock: 12, price: 79.90 },
+        { id: 5, name: 'Gin Artesanal 750ml', current_stock: 1, min_stock: 6, price: 119.90 },
+        { id: 6, name: 'Cerveja Artesanal IPA', current_stock: 5, min_stock: 20, price: 12.90 },
+        { id: 7, name: 'Rum Envelhecido 12 Anos', current_stock: 2, min_stock: 8, price: 189.90 }
+      ];
+      
+      return mockLowStockProducts.slice(0, limit);
     },
     staleTime: 5 * 60 * 1000,
     refetchInterval: 5 * 60 * 1000,

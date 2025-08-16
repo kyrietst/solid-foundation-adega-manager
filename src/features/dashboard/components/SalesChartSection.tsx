@@ -6,7 +6,6 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
 import { Calendar, TrendingUp, BarChart3 } from 'lucide-react';
 import { cn } from '@/core/config/utils';
-import { text, shadows } from '@/core/config/theme';
 
 interface SalesChartData {
   period: string;
@@ -39,25 +38,33 @@ export function SalesChartSection({ className, contentHeight = 360, cardHeight }
   const { data: salesData, isLoading, error } = useQuery({
     queryKey: ['sales-trends', selectedPeriod],
     queryFn: async (): Promise<SalesChartData[]> => {
+      // MOCK DATA para teste - substituir por dados reais depois
+      console.log('📈 Sales Trends Chart - Usando dados mockados para teste');
+      
+      // Simular delay de rede
+      await new Promise(resolve => setTimeout(resolve, 600));
+      
+      // Gerar dados mockados baseados no período selecionado
       const endDate = new Date();
-      const startDate = new Date();
-      startDate.setDate(endDate.getDate() - selectedPeriod);
-
-      const { data, error } = await supabase
-        .rpc('get_sales_trends', {
-          start_date: startDate.toISOString(),
-          end_date: endDate.toISOString(),
-          period_type: 'day'
+      const mockData: SalesChartData[] = [];
+      
+      for (let i = selectedPeriod - 1; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(endDate.getDate() - i);
+        
+        // Gerar valores aleatórios mas realistas
+        const baseRevenue = 800 + Math.random() * 1200; // Entre R$ 800 e R$ 2000
+        const orders = Math.floor(2 + Math.random() * 8); // Entre 2 e 10 vendas por dia
+        
+        mockData.push({
+          period: date.toISOString().split('T')[0],
+          period_label: date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+          revenue: Math.round(baseRevenue * 100) / 100,
+          orders: orders
         });
-
-      if (error) throw error;
-
-      return (data || []).map((item: any) => ({
-        period: item.period_start,
-        period_label: item.period_label || item.period_start,
-        revenue: Number(item.revenue || 0),
-        orders: Number(item.orders || 0)
-      }));
+      }
+      
+      return mockData;
     },
     staleTime: 5 * 60 * 1000,
     refetchInterval: 5 * 60 * 1000,
@@ -83,14 +90,14 @@ export function SalesChartSection({ className, contentHeight = 360, cardHeight }
     if (active && payload && payload.length) {
       return (
         <div className="bg-black/95 backdrop-blur-xl border border-white/30 rounded-xl p-4 shadow-2xl">
-          <p className={cn("text-sm mb-2", text.h5, shadows.subtle)}>{formatDate(label)}</p>
+          <p className="text-sm mb-2 text-gray-300 font-medium">{formatDate(label)}</p>
           {payload.map((entry: any, index: number) => (
             <div key={index} className="flex items-center gap-2">
               <div 
                 className="w-3 h-3 rounded-full" 
                 style={{ backgroundColor: entry.color }}
               />
-              <span className={cn("text-sm", text.h3, shadows.light)}>
+              <span className="text-sm text-white font-semibold">
                 {entry.dataKey === 'revenue' ? 'Receita: ' : 'Vendas: '}
                 {entry.dataKey === 'revenue' 
                   ? formatCurrency(entry.value) 
@@ -127,7 +134,7 @@ export function SalesChartSection({ className, contentHeight = 360, cardHeight }
     <Card className={cn("border-white/20 bg-black/80 backdrop-blur-xl shadow-lg", className)} style={cardHeight ? { height: cardHeight } : undefined}>
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
-          <CardTitle className={cn("text-lg tracking-tight flex items-center gap-2", text.h1, shadows.medium)}>
+          <CardTitle className="text-lg tracking-tight flex items-center gap-2 text-amber-400 font-bold">
             <TrendingUp className="h-5 w-5" />
             Tendência de Vendas
           </CardTitle>
@@ -145,7 +152,7 @@ export function SalesChartSection({ className, contentHeight = 360, cardHeight }
                     "text-xs h-7",
                     selectedPeriod === option.value 
                       ? "bg-amber-500 text-white hover:bg-amber-600 font-semibold" 
-                      : cn("hover:text-white hover:bg-white/15 font-medium", text.h4, shadows.subtle)
+                      : "hover:text-white hover:bg-white/15 font-medium text-gray-300"
                   )}
                 >
                   {option.label}
@@ -165,7 +172,7 @@ export function SalesChartSection({ className, contentHeight = 360, cardHeight }
                     "text-xs h-7",
                     chartType === type.value 
                       ? "bg-amber-500 text-white hover:bg-amber-600 font-semibold" 
-                      : cn("hover:text-white hover:bg-white/15 font-medium", text.h4, shadows.subtle)
+                      : "hover:text-white hover:bg-white/15 font-medium text-gray-300"
                   )}
                 >
                   <type.icon className="h-3 w-3" />
@@ -235,15 +242,17 @@ export function SalesChartSection({ className, contentHeight = 360, cardHeight }
         )}
 
         {salesData && salesData.length > 0 && (
-          <div className={cn("mt-4 flex items-center justify-between text-xs", text.h5, shadows.subtle)}>
-            <span>
-              {salesData.length} dias • Total: {formatCurrency(
-                salesData.reduce((sum, item) => sum + item.revenue, 0)
-              )}
-            </span>
-            <span>
-              {salesData.reduce((sum, item) => sum + item.orders, 0)} vendas
-            </span>
+          <div className="mt-4 pt-3 border-t border-white/10">
+            <div className="flex items-center justify-between text-xs text-gray-300">
+              <span className="font-medium">
+                {salesData.length} dias • Total: {formatCurrency(
+                  salesData.reduce((sum, item) => sum + item.revenue, 0)
+                )}
+              </span>
+              <span className="font-medium">
+                {salesData.reduce((sum, item) => sum + item.orders, 0)} vendas
+              </span>
+            </div>
           </div>
         )}
       </CardContent>

@@ -44,71 +44,41 @@ export const useDashboardData = () => {
     retryDelay: 1000
   });
 
-  // Query para contadores públicos com error handling granular
+  // Query para contadores públicos com dados mockados para teste
   const { data: counts, isLoading: isLoadingCounts, error: countsError, refetch: refetchCounts } = useQuery({
     queryKey: ['dashboard', 'counts'],
     queryFn: errorHandler.withErrorHandling('counts', async (): Promise<DashboardCounts> => {
-      // Usar Promise.allSettled para capturar falhas parciais
-      const [customersResult, productsResult, deliveriesResult] = await Promise.allSettled([
-        supabase.from('customers').select('id, segment'),
-        supabase.from('products').select('id, stock_quantity').filter('stock_quantity', 'gt', 0),
-        supabase.from('sales').select('id, status').eq('status', 'delivering')
-      ]);
-
-      // Processar resultados individualmente
-      let totalCustomers = 0;
-      let vipCustomers = 0;
-      let productsInStock = 0;
-      let pendingDeliveries = 0;
-
-      if (customersResult.status === 'fulfilled' && !customersResult.value.error) {
-        const customers = customersResult.value.data || [];
-        totalCustomers = customers.length;
-        vipCustomers = customers.filter(c => c.segment === 'VIP').length;
-      } else {
-        console.warn('Falha ao buscar clientes:', customersResult);
-      }
-
-      if (productsResult.status === 'fulfilled' && !productsResult.value.error) {
-        productsInStock = productsResult.value.data?.length || 0;
-      } else {
-        console.warn('Falha ao buscar produtos:', productsResult);
-      }
-
-      if (deliveriesResult.status === 'fulfilled' && !deliveriesResult.value.error) {
-        pendingDeliveries = deliveriesResult.value.data?.length || 0;
-      } else {
-        console.warn('Falha ao buscar entregas:', deliveriesResult);
-      }
-
+      // MOCK DATA para teste - substituir por dados reais depois
+      console.log('🧪 Dashboard - Usando dados mockados para teste');
+      
+      // Simular delay de rede
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
       return {
-        totalCustomers,
-        vipCustomers,
-        productsInStock,
-        pendingDeliveries,
+        totalCustomers: 247,
+        vipCustomers: 18,
+        productsInStock: 156,
+        pendingDeliveries: 12,
       };
     }, 'contadores do dashboard'),
     staleTime: 5 * 60 * 1000, // 5 minutos
     retry: false, // Error handler já faz retry
   });
 
-  // Query para dados financeiros (apenas admin) com error handling
+  // Query para dados financeiros com dados mockados para teste
   const { data: financials, isLoading: isLoadingFinancials, error: financialsError, refetch: refetchFinancials } = useQuery({
     queryKey: ['dashboard', 'financials'],
     queryFn: errorHandler.withErrorHandling('sales', async (): Promise<DashboardFinancials> => {
-      const { data: sales, error } = await supabase
-        .from('sales')
-        .select('total_amount, created_at')
-        .gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString());
-
-      if (error) throw error;
-
-      const totalRevenue = sales?.reduce((sum, sale) => sum + (sale.total_amount || 0), 0) || 0;
+      // MOCK DATA para teste - substituir por dados reais depois
+      console.log('💰 Dashboard - Usando dados financeiros mockados para teste');
       
-      // Cálculos simplificados - em produção viria de stored procedures
-      const operationalCosts = totalRevenue * 0.35; // 35% dos custos
+      // Simular delay de rede
+      await new Promise(resolve => setTimeout(resolve, 600));
+      
+      const totalRevenue = 45780.50;
+      const operationalCosts = totalRevenue * 0.38; // 38% dos custos
       const netProfit = totalRevenue - operationalCosts;
-      const profitMargin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
+      const profitMargin = (netProfit / totalRevenue) * 100;
 
       return {
         totalRevenue,
@@ -121,42 +91,32 @@ export const useDashboardData = () => {
     retry: false, // Error handler já faz retry
   });
 
-  // Query para dados de vendas por mês
+  // Query para dados de vendas por mês com dados mockados para teste
   const { data: salesData, isLoading: isLoadingSales } = useQuery({
     queryKey: ['dashboard', 'sales-data'],
     queryFn: async (): Promise<SalesDataPoint[]> => {
-      const { data, error } = await supabase
-        .from('sales')
-        .select('total_amount, created_at')
-        .gte('created_at', new Date(new Date().getFullYear(), 0, 1).toISOString())
-        .order('created_at', { ascending: true });
-
-      if (error) throw error;
-
-      // Agrupar por mês
-      const monthlyData: Record<string, number> = {};
+      // MOCK DATA para teste - substituir por dados reais depois
+      console.log('📊 Dashboard - Usando dados de vendas mockados para teste');
+      
+      // Simular delay de rede
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+      
+      // Dados de vendas simulados com tendência crescente
+      const salesValues = [
+        12450.30, 15600.80, 18200.50, 22100.75, 19800.40,
+        24300.90, 27650.25, 31200.60, 28900.15, 26700.85,
+        29400.70, 33150.45
+      ];
 
-      // Inicializar todos os meses com 0
-      months.forEach((month, index) => {
-        monthlyData[month] = 0;
-      });
-
-      // Somar vendas por mês
-      data?.forEach(sale => {
-        const date = new Date(sale.created_at);
-        const monthIndex = date.getMonth();
-        const monthName = months[monthIndex];
-        monthlyData[monthName] += sale.total_amount || 0;
-      });
-
-      return months.map(month => ({
+      return months.map((month, index) => ({
         month,
-        vendas: monthlyData[month],
+        vendas: salesValues[index],
         formatted: new Intl.NumberFormat('pt-BR', {
           style: 'currency',
           currency: 'BRL'
-        }).format(monthlyData[month])
+        }).format(salesValues[index])
       }));
     },
     staleTime: 15 * 60 * 1000, // 15 minutos

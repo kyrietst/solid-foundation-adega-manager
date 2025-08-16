@@ -21,6 +21,7 @@ import { SalesChartSection } from './SalesChartSection';
 import { useSalesKpis, useCustomerKpis, useInventoryKpis } from '../hooks/useDashboardKpis';
 import { SalesInsightsTabs } from './SalesInsightsTabs';
 import { DashboardHeader } from './DashboardHeader';
+import { DollarSign, ShoppingCart, TrendingUp, Users, AlertTriangle } from 'lucide-react';
 
 export interface DashboardPresentationProps {
   // Dados processados
@@ -65,10 +66,10 @@ export const DashboardPresentation: React.FC<DashboardPresentationProps> = ({
 
           {/* Linha: Tendência de Vendas (8) + Alertas (4) como antes */}
           <div className="lg:col-span-8">
-            <SalesChartSection className="h-full" contentHeight={400} cardHeight={460} />
+            <SalesChartSection className="h-full" contentHeight={440} cardHeight={520} />
           </div>
           <div className="lg:col-span-4">
-            <AlertsPanel maxItems={6} previewActivities={recentActivities} cardHeight={460} />
+            <AlertsPanel maxItems={6} previewActivities={recentActivities} cardHeight={520} />
           </div>
 
           {/* Insights em abas ocupando largura total */}
@@ -108,52 +109,50 @@ function KpiSection() {
   const items = [
     { 
       id: 'revenue', 
-      label: 'Receita (30d)', 
+      label: 'Receita Total', 
       value: formatCurrency(s?.revenue || 0),
       delta: s?.revenueDelta,
-      accent: 'amber' as const,
+      icon: DollarSign,
+      valueType: 'positive' as const,
       isLoading: l1,
-      href: '/reports?tab=sales&period=30d'
+      href: '/reports?tab=sales&period=30d',
+      subLabel: 'Últimos 30 dias'
     },
     { 
       id: 'orders', 
-      label: 'Vendas (30d)', 
+      label: 'Total de Vendas', 
       value: s?.orders || 0,
       delta: s?.ordersDelta,
-      accent: 'blue' as const,
+      icon: ShoppingCart,
+      valueType: 'positive' as const,
       isLoading: l1,
-      href: '/sales'
+      href: '/sales',
+      subLabel: 'Últimos 30 dias'
     },
     { 
       id: 'avg', 
       label: 'Ticket Médio', 
       value: formatCurrency(s?.avgTicket || 0),
       delta: s?.avgTicketDelta,
-      accent: 'green' as const,
+      icon: TrendingUp,
+      valueType: 'neutral' as const,
       isLoading: l1,
-      href: '/reports?tab=sales&metric=avg-ticket'
+      href: '/reports?tab=sales&metric=avg-ticket',
+      subLabel: 'Por venda'
     },
     {
       id: 'customers',
-      label: 'Clientes Ativos (30d)',
+      label: 'Clientes Ativos',
       value: c?.activeCustomers || 0,
-      accent: 'purple' as const,
+      icon: Users,
+      valueType: 'positive' as const,
       isLoading: l2,
-      href: '/customers?filter=active-30d'
+      href: '/customers?filter=active-30d',
+      subLabel: 'Últimos 30 dias'
     }
   ];
 
-  // Add inventory alert as 5th KPI if there are low stock items
-  if (i && i.lowStockCount > 0) {
-    items.push({
-      id: 'low-stock',
-      label: 'Estoque Crítico',
-      value: i.lowStockCount,
-      accent: 'red' as const,
-      isLoading: l3,
-      href: '/inventory?filter=low-stock'
-    });
-  }
+  // KPI "Em Risco" removido conforme solicitado
 
   return (
     <Card className="border-white/20 bg-black/80 backdrop-blur-xl shadow-lg">
