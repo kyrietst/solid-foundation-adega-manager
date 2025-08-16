@@ -137,9 +137,7 @@ const Index = () => {
       case 'users':
         return hasPermission('admin') ? (
           <Suspense fallback={<LoadingScreen text="Carregando usuários..." />}>
-            <WhitePageShell>
-              <UserManagement />
-            </WhitePageShell>
+            <UserManagement />
           </Suspense>
         ) : <AccessDenied />;
       case 'automations':
@@ -160,9 +158,7 @@ const Index = () => {
       case 'reports':
         return hasPermission(['admin', 'employee']) ? (
           <Suspense fallback={<LoadingScreen text="Carregando relatórios..." />}>
-            <WhitePageShell>
-              <AdvancedReports />
-            </WhitePageShell>
+            <AdvancedReports />
           </Suspense>
         ) : <AccessDenied />;
       case 'activities':

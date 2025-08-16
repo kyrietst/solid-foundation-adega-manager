@@ -6,10 +6,11 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/primitives/card';
 import { Button } from '@/shared/ui/primitives/button';
+import { LoadingSpinner } from '@/shared/ui/composite/loading-spinner';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
 import { Package, TrendingDown, AlertTriangle, BarChart3, Download } from 'lucide-react';
-import ContributorsTable from '@/shared/ui/thirdparty/ruixen-contributors-table';
+import { StandardReportsTable, TableColumn } from './StandardReportsTable';
 
 interface InventoryKpi {
   product_id: string;
@@ -23,8 +24,12 @@ interface InventoryKpi {
   is_dead_stock: boolean;
 }
 
-export const InventoryReportsSection: React.FC = () => {
-  const [windowDays, setWindowDays] = useState(60);
+interface InventoryReportsSectionProps {
+  period?: number;
+}
+
+export const InventoryReportsSection: React.FC<InventoryReportsSectionProps> = ({ period = 60 }) => {
+  const windowDays = period;
 
   // Inventory KPIs Query
   const { data: inventoryData, isLoading } = useQuery({
@@ -86,70 +91,70 @@ export const InventoryReportsSection: React.FC = () => {
     return 'text-red-400'; // Low turnover
   };
 
-  const inventoryColumns = [
+  const inventoryColumns: TableColumn[] = [
     {
-      accessorKey: 'name',
-      header: 'Produto',
-      cell: ({ row }: any) => (
+      key: 'name',
+      label: 'Produto',
+      width: 'w-[200px]',
+      render: (value, row) => (
         <div>
-          <div className="font-medium text-white">{row.getValue('name')}</div>
-          <div className="text-sm text-gray-400">{row.original.category}</div>
+          <div className="font-medium text-white">{value}</div>
+          <div className="text-sm text-gray-400">{row.category}</div>
         </div>
       ),
     },
     {
-      accessorKey: 'stock',
-      header: 'Estoque',
-      cell: ({ row }: any) => {
-        const stock = row.getValue('stock') as number;
-        const isCritical = row.original.is_critical;
+      key: 'stock',
+      label: 'Estoque',
+      width: 'w-[100px]',
+      render: (value, row) => {
+        const isCritical = row.is_critical;
         return (
           <div className={`font-medium ${isCritical ? 'text-red-400' : 'text-white'}`}>
-            {stock}
+            {value}
             {isCritical && <AlertTriangle className="h-3 w-3 inline ml-1" />}
           </div>
         );
       },
     },
     {
-      accessorKey: 'avg_daily_sales',
-      header: 'Vendas/Dia',
-      cell: ({ row }: any) => (
+      key: 'avg_daily_sales',
+      label: 'Vendas/Dia',
+      width: 'w-[120px]',
+      render: (value) => (
         <span className="text-blue-400">
-          {formatNumber(row.getValue('avg_daily_sales'))}
+          {formatNumber(value)}
         </span>
       ),
     },
     {
-      accessorKey: 'doh',
-      header: 'DOH (dias)',
-      cell: ({ row }: any) => {
-        const doh = row.getValue('doh') as number | null;
-        return (
-          <span className={getDohStatus(doh)}>
-            {doh ? Math.round(doh) : 'N/A'}
-          </span>
-        );
-      },
+      key: 'doh',
+      label: 'DOH (dias)',
+      width: 'w-[120px]',
+      render: (value) => (
+        <span className={getDohStatus(value)}>
+          {value ? Math.round(value) : 'N/A'}
+        </span>
+      ),
     },
     {
-      accessorKey: 'turnover',
-      header: 'Giro',
-      cell: ({ row }: any) => {
-        const turnover = row.getValue('turnover') as number | null;
-        return (
-          <span className={getTurnoverStatus(turnover)}>
-            {formatNumber(turnover)}
-          </span>
-        );
-      },
+      key: 'turnover',
+      label: 'Giro',
+      width: 'w-[100px]',
+      render: (value) => (
+        <span className={getTurnoverStatus(value)}>
+          {formatNumber(value)}
+        </span>
+      ),
     },
     {
-      accessorKey: 'status',
-      header: 'Status',
-      cell: ({ row }: any) => {
-        const isCritical = row.original.is_critical;
-        const isDeadStock = row.original.is_dead_stock;
+      key: 'status',
+      label: 'Status',
+      width: 'w-[120px]',
+      sortable: false,
+      render: (_, row) => {
+        const isCritical = row.is_critical;
+        const isDeadStock = row.is_dead_stock;
         
         if (isDeadStock) {
           return <span className="text-red-400 text-xs font-medium">DEAD STOCK</span>;
@@ -162,21 +167,22 @@ export const InventoryReportsSection: React.FC = () => {
     },
   ];
 
-  const movementColumns = [
+  const movementColumns: TableColumn[] = [
     {
-      accessorKey: 'date',
-      header: 'Data',
-      cell: ({ row }: any) => (
+      key: 'date',
+      label: 'Data',
+      width: 'w-[120px]',
+      render: (value) => (
         <span className="text-white">
-          {new Date(row.getValue('date')).toLocaleDateString('pt-BR')}
+          {new Date(value).toLocaleDateString('pt-BR')}
         </span>
       ),
     },
     {
-      accessorKey: 'type',
-      header: 'Tipo',
-      cell: ({ row }: any) => {
-        const type = row.getValue('type') as string;
+      key: 'type',
+      label: 'Tipo',
+      width: 'w-[100px]',
+      render: (value) => {
         const colors = {
           'in': 'text-green-400',
           'out': 'text-red-400',
@@ -184,41 +190,45 @@ export const InventoryReportsSection: React.FC = () => {
           'devolucao': 'text-blue-400'
         };
         return (
-          <span className={colors[type as keyof typeof colors] || 'text-white'}>
-            {type.toUpperCase()}
+          <span className={colors[value as keyof typeof colors] || 'text-white'}>
+            {value.toUpperCase()}
           </span>
         );
       },
     },
     {
-      accessorKey: 'products.name',
-      header: 'Produto',
-      cell: ({ row }: any) => (
+      key: 'products',
+      label: 'Produto',
+      width: 'w-[200px]',
+      render: (value) => (
         <div>
-          <div className="font-medium text-white">{row.original.products?.name}</div>
-          <div className="text-sm text-gray-400">{row.original.products?.category}</div>
+          <div className="font-medium text-white">{value?.name}</div>
+          <div className="text-sm text-gray-400">{value?.category}</div>
         </div>
       ),
     },
     {
-      accessorKey: 'quantity',
-      header: 'Quantidade',
-      cell: ({ row }: any) => (
-        <span className="text-white font-medium">{row.getValue('quantity')}</span>
+      key: 'quantity',
+      label: 'Quantidade',
+      width: 'w-[100px]',
+      render: (value) => (
+        <span className="text-white font-medium">{value}</span>
       ),
     },
     {
-      accessorKey: 'reason',
-      header: 'Motivo',
-      cell: ({ row }: any) => (
-        <span className="text-gray-400 text-sm">{row.getValue('reason') || 'N/A'}</span>
+      key: 'reason',
+      label: 'Motivo',
+      width: 'w-[150px]',
+      render: (value) => (
+        <span className="text-gray-400 text-sm">{value || 'N/A'}</span>
       ),
     },
     {
-      accessorKey: 'users.full_name',
-      header: 'Usuário',
-      cell: ({ row }: any) => (
-        <span className="text-blue-400">{row.original.users?.full_name}</span>
+      key: 'users',
+      label: 'Usuário',
+      width: 'w-[120px]',
+      render: (value) => (
+        <span className="text-blue-400">{value?.full_name}</span>
       ),
     },
   ];
@@ -235,120 +245,133 @@ export const InventoryReportsSection: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Period Selector */}
-      <Card className="border-white/10 bg-black/40 backdrop-blur-xl">
-        <CardHeader>
-          <CardTitle className="text-white">Período de Análise</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-2">
-            {[30, 60, 90, 180].map((days) => (
-              <Button
-                key={days}
-                variant={windowDays === days ? "default" : "outline"}
-                onClick={() => setWindowDays(days)}
-                className={windowDays === days ? "bg-amber-600" : ""}
-              >
-                {days} dias
-              </Button>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Summary Cards */}
+      {/* Summary Cards com glassmorphism padronizado */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        <Card className="border-white/10 bg-black/40 backdrop-blur-xl">
+        <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/10 hover:border-blue-400/30 hover:bg-gray-700/40">
           <CardContent className="p-4">
             <div className="text-center">
-              <Package className="h-6 w-6 text-blue-400 mx-auto mb-2" />
-              <p className="text-2xl font-bold text-white">{summary.total_products}</p>
+              <Package className="h-6 w-6 text-blue-400 mx-auto mb-2 transition-all duration-300" />
+              <div className="text-2xl font-bold text-white">
+                {isLoading ? <LoadingSpinner size="sm" color="yellow" /> : summary.total_products}
+              </div>
               <p className="text-xs text-gray-400">Total Produtos</p>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-white/10 bg-black/40 backdrop-blur-xl">
+        <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-red-500/10 hover:border-red-400/30 hover:bg-gray-700/40">
           <CardContent className="p-4">
             <div className="text-center">
-              <AlertTriangle className="h-6 w-6 text-red-400 mx-auto mb-2" />
-              <p className="text-2xl font-bold text-red-400">{summary.critical_stock}</p>
+              <AlertTriangle className="h-6 w-6 text-red-400 mx-auto mb-2 transition-all duration-300" />
+              <div className="text-2xl font-bold text-red-400">
+                {isLoading ? <LoadingSpinner size="sm" color="yellow" /> : summary.critical_stock}
+              </div>
               <p className="text-xs text-gray-400">Crítico</p>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-white/10 bg-black/40 backdrop-blur-xl">
+        <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-gray-500/10 hover:border-gray-400/30 hover:bg-gray-700/40">
           <CardContent className="p-4">
             <div className="text-center">
-              <TrendingDown className="h-6 w-6 text-gray-400 mx-auto mb-2" />
-              <p className="text-2xl font-bold text-gray-400">{summary.dead_stock}</p>
+              <TrendingDown className="h-6 w-6 text-gray-400 mx-auto mb-2 transition-all duration-300" />
+              <div className="text-2xl font-bold text-gray-400">
+                {isLoading ? <LoadingSpinner size="sm" color="yellow" /> : summary.dead_stock}
+              </div>
               <p className="text-xs text-gray-400">Dead Stock</p>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-white/10 bg-black/40 backdrop-blur-xl">
+        <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-green-500/10 hover:border-green-400/30 hover:bg-gray-700/40">
           <CardContent className="p-4">
             <div className="text-center">
-              <BarChart3 className="h-6 w-6 text-green-400 mx-auto mb-2" />
-              <p className="text-2xl font-bold text-green-400">{summary.fast_moving}</p>
+              <BarChart3 className="h-6 w-6 text-green-400 mx-auto mb-2 transition-all duration-300" />
+              <div className="text-2xl font-bold text-green-400">
+                {isLoading ? <LoadingSpinner size="sm" color="yellow" /> : summary.fast_moving}
+              </div>
               <p className="text-xs text-gray-400">Giro Rápido</p>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-white/10 bg-black/40 backdrop-blur-xl">
+        <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-yellow-500/10 hover:border-yellow-400/30 hover:bg-gray-700/40">
           <CardContent className="p-4">
             <div className="text-center">
-              <BarChart3 className="h-6 w-6 text-yellow-400 mx-auto mb-2" />
-              <p className="text-2xl font-bold text-yellow-400">{summary.medium_moving}</p>
+              <BarChart3 className="h-6 w-6 text-yellow-400 mx-auto mb-2 transition-all duration-300" />
+              <div className="text-2xl font-bold text-yellow-400">
+                {isLoading ? <LoadingSpinner size="sm" color="yellow" /> : summary.medium_moving}
+              </div>
               <p className="text-xs text-gray-400">Giro Médio</p>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-white/10 bg-black/40 backdrop-blur-xl">
+        <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-red-500/10 hover:border-red-400/30 hover:bg-gray-700/40">
           <CardContent className="p-4">
             <div className="text-center">
-              <BarChart3 className="h-6 w-6 text-red-400 mx-auto mb-2" />
-              <p className="text-2xl font-bold text-red-400">{summary.slow_moving}</p>
+              <BarChart3 className="h-6 w-6 text-red-400 mx-auto mb-2 transition-all duration-300" />
+              <div className="text-2xl font-bold text-red-400">
+                {isLoading ? <LoadingSpinner size="sm" color="yellow" /> : summary.slow_moving}
+              </div>
               <p className="text-xs text-gray-400">Giro Lento</p>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Inventory Analysis Table (substituída pela nova tabela 21st.dev para testes) */}
-      <Card className="border-white/10 bg-black/40 backdrop-blur-xl">
-        <CardHeader className="flex flex-row items-center justify-between">
+      {/* Inventory Analysis Table */}
+      <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/10 hover:border-blue-400/30 hover:bg-gray-700/40">
+        <CardHeader>
           <CardTitle className="text-white">Análise de Estoque (DOH & Giro)</CardTitle>
-          <Button className="bg-green-600 hover:bg-green-700">
-            <Download className="h-4 w-4 mr-2" />
-            Exportar CSV
-          </Button>
         </CardHeader>
-        <CardContent>
-          <ContributorsTable />
+        <CardContent className="h-96">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <LoadingSpinner size="lg" variant="blue" />
+            </div>
+          ) : (
+            <StandardReportsTable
+              data={inventoryData || []}
+              columns={inventoryColumns}
+              title="Análise de Estoque"
+              searchFields={['name', 'category']}
+              initialSortField="doh"
+              initialSortDirection="asc"
+              height="h-full"
+              maxRows={50}
+            />
+          )}
         </CardContent>
       </Card>
 
-      {/* Recent Movements (substituída pela nova tabela 21st.dev para testes) */}
-      <Card className="border-white/10 bg-black/40 backdrop-blur-xl">
-        <CardHeader className="flex flex-row items-center justify-between">
+      {/* Recent Movements */}
+      <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/10 hover:border-blue-400/30 hover:bg-gray-700/40">
+        <CardHeader>
           <CardTitle className="text-white">Movimentações Recentes</CardTitle>
-          <Button className="bg-blue-600 hover:bg-blue-700">
-            <Download className="h-4 w-4 mr-2" />
-            Exportar CSV
-          </Button>
         </CardHeader>
-        <CardContent>
-          <ContributorsTable />
+        <CardContent className="h-96">
+          {loadingMovements ? (
+            <div className="flex items-center justify-center py-8">
+              <LoadingSpinner size="lg" variant="blue" />
+            </div>
+          ) : (
+            <StandardReportsTable
+              data={movements || []}
+              columns={movementColumns}
+              title="Movimentações"
+              searchFields={['reason']}
+              initialSortField="date"
+              initialSortDirection="desc"
+              height="h-full"
+              maxRows={30}
+            />
+          )}
         </CardContent>
       </Card>
 
       {/* Legend */}
-      <Card className="border-white/10 bg-black/40 backdrop-blur-xl">
+      <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 hover:bg-gray-700/40">
         <CardHeader>
           <CardTitle className="text-white">Legenda</CardTitle>
         </CardHeader>

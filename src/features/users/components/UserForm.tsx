@@ -10,6 +10,7 @@ import { Label } from '@/shared/ui/primitives/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/primitives/select';
 import { UserFormProps, NewUserData } from './types';
 import { useRoleUtilities } from '@/features/users/hooks/useUserPermissions';
+import { Shield, User, Truck, Crown } from 'lucide-react';
 
 export const UserForm: React.FC<UserFormProps> = ({
   onSubmit,
@@ -45,137 +46,199 @@ export const UserForm: React.FC<UserFormProps> = ({
   const isFormValid = formData.name && formData.email && formData.password;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-      <fieldset className="space-y-4">
-        <legend className="text-lg font-semibold text-adega-platinum mb-4">Dados do Usuário</legend>
+    <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+      <fieldset className="space-y-5">
+        <legend className="text-lg font-bold text-white mb-4 border-b border-white/20 pb-2">Dados do Usuário</legend>
         {/* Nome */}
         <div>
-          <Label htmlFor="user-name" className="text-adega-platinum">
-            Nome *
+          <Label htmlFor="user-name" className="text-white font-medium mb-2 block">
+            Nome Completo *
           </Label>
           <Input
             id="user-name"
             value={formData.name}
             onChange={(e) => updateField('name', e.target.value)}
-            placeholder="Nome completo"
-            className="bg-adega-charcoal/30 border-white/10 text-adega-platinum"
+            placeholder="Digite o nome completo"
+            className="bg-black/40 border-white/30 text-white placeholder:text-white/50 focus:border-[#FFD700] focus:ring-[#FFD700]/20 transition-all duration-200"
             disabled={isSubmitting}
             aria-required="true"
             aria-invalid={!formData.name && formData.name !== ''}
             aria-describedby="user-name-error"
           />
           {!formData.name && formData.name !== '' && (
-            <p id="user-name-error" className="text-sm text-red-400 mt-1" role="alert">
-              Nome é obrigatório
+            <p id="user-name-error" className="text-sm text-red-400 mt-2" role="alert">
+              ⚠️ Nome é obrigatório
             </p>
           )}
         </div>
 
         {/* Email */}
         <div>
-          <Label htmlFor="user-email" className="text-adega-platinum">
-            Email *
+          <Label htmlFor="user-email" className="text-white font-medium mb-2 block">
+            Email de Acesso *
           </Label>
           <Input
             id="user-email"
             type="email"
             value={formData.email}
             onChange={(e) => updateField('email', e.target.value)}
-            placeholder="email@exemplo.com"
-            className="bg-adega-charcoal/30 border-white/10 text-adega-platinum"
+            placeholder="usuario@empresa.com"
+            className="bg-black/40 border-white/30 text-white placeholder:text-white/50 focus:border-[#FFD700] focus:ring-[#FFD700]/20 transition-all duration-200"
             disabled={isSubmitting}
             aria-required="true"
             aria-invalid={!formData.email && formData.email !== ''}
             aria-describedby="user-email-error"
           />
           {!formData.email && formData.email !== '' && (
-            <p id="user-email-error" className="text-sm text-red-400 mt-1" role="alert">
-              Email é obrigatório
+            <p id="user-email-error" className="text-sm text-red-400 mt-2" role="alert">
+              ⚠️ Email é obrigatório
             </p>
           )}
         </div>
 
         {/* Senha */}
         <div>
-          <Label htmlFor="user-password" className="text-adega-platinum">
-            Senha *
+          <Label htmlFor="user-password" className="text-white font-medium mb-2 block">
+            Senha de Acesso *
           </Label>
           <Input
             id="user-password"
             type="password"
             value={formData.password}
             onChange={(e) => updateField('password', e.target.value)}
-            placeholder="Senha segura"
-            className="bg-adega-charcoal/30 border-white/10 text-adega-platinum"
+            placeholder="Digite uma senha segura"
+            className="bg-black/40 border-white/30 text-white placeholder:text-white/50 focus:border-[#FFD700] focus:ring-[#FFD700]/20 transition-all duration-200"
             disabled={isSubmitting}
             aria-required="true"
             aria-invalid={!formData.password && formData.password !== ''}
             aria-describedby="user-password-error user-password-help"
           />
-          <p id="user-password-help" className="text-xs text-adega-silver mt-1">
-            Mínimo 6 caracteres
+          <p id="user-password-help" className="text-xs text-white/70 mt-2 flex items-center gap-1">
+            🔒 Mínimo 6 caracteres para segurança
           </p>
           {!formData.password && formData.password !== '' && (
-            <p id="user-password-error" className="text-sm text-red-400 mt-1" role="alert">
-              Senha é obrigatória
+            <p id="user-password-error" className="text-sm text-red-400 mt-2" role="alert">
+              ⚠️ Senha é obrigatória
             </p>
           )}
         </div>
 
       </fieldset>
       
-      <fieldset className="space-y-4">
-        <legend className="text-lg font-semibold text-adega-platinum mb-4">Permissões e Acesso</legend>
+      <fieldset className="space-y-6">
+        <legend className="text-lg font-bold text-white mb-4 border-b border-white/20 pb-2">Função e Permissões</legend>
         
-        {/* Função */}
-        <div>
-          <Label htmlFor="user-role" className="text-adega-platinum">
-            Função *
+        {/* Função com indicador visual */}
+        <div className="space-y-3">
+          <Label htmlFor="user-role" className="text-white font-medium mb-3 block">
+            Selecione a Função *
           </Label>
+          
+          {/* Indicador Visual da Função Selecionada */}
+          <div className={`p-4 rounded-xl border-2 transition-all duration-300 ${
+            formData.role === 'admin' 
+              ? 'bg-red-500/10 border-red-400 shadow-lg shadow-red-500/20' 
+              : formData.role === 'employee'
+              ? 'bg-blue-500/10 border-blue-400 shadow-lg shadow-blue-500/20'
+              : 'bg-green-500/10 border-green-400 shadow-lg shadow-green-500/20'
+          }`}>
+            <div className="flex items-center gap-3 mb-2">
+              {formData.role === 'admin' && <Crown className="h-6 w-6 text-red-400" />}
+              {formData.role === 'employee' && <User className="h-6 w-6 text-blue-400" />}
+              {formData.role === 'delivery' && <Truck className="h-6 w-6 text-green-400" />}
+              <span className={`font-bold text-lg ${
+                formData.role === 'admin' ? 'text-red-300' : 
+                formData.role === 'employee' ? 'text-blue-300' : 'text-green-300'
+              }`}>
+                {formData.role === 'admin' ? 'Administrador' : 
+                 formData.role === 'employee' ? 'Funcionário da Adega' : 'Entregador/Motoboy'}
+              </span>
+            </div>
+            <p className="text-white/80 text-sm">
+              {getRoleDescription(formData.role)}
+            </p>
+          </div>
+
           <Select 
             value={formData.role} 
             onValueChange={(value: 'admin' | 'employee' | 'delivery') => updateField('role', value)}
             disabled={isSubmitting}
           >
             <SelectTrigger 
-              className="bg-adega-charcoal/30 border-white/10 text-adega-platinum"
+              className="bg-black/40 border-white/30 text-white focus:border-[#FFD700] focus:ring-[#FFD700]/20 transition-all duration-200"
               aria-required="true"
               aria-describedby="user-role-help"
             >
-              <SelectValue placeholder="Selecione a função" />
+              <SelectValue placeholder="Selecione a função do usuário" />
             </SelectTrigger>
-            <SelectContent className="bg-adega-charcoal border-white/10">
-              <SelectItem value="employee">Funcionário da Adega</SelectItem>
-              <SelectItem value="delivery">Entregador/Motoboy</SelectItem>
-              <SelectItem value="admin">Administrador</SelectItem>
+            <SelectContent className="bg-gray-900 border-white/20 backdrop-blur-xl">
+              <SelectItem value="employee" className="text-white hover:bg-blue-500/20 focus:bg-blue-500/20">
+                <div className="flex items-center gap-2">
+                  <User className="h-4 w-4 text-blue-400" />
+                  <span>Funcionário da Adega</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="delivery" className="text-white hover:bg-green-500/20 focus:bg-green-500/20">
+                <div className="flex items-center gap-2">
+                  <Truck className="h-4 w-4 text-green-400" />
+                  <span>Entregador/Motoboy</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="admin" className="text-white hover:bg-red-500/20 focus:bg-red-500/20">
+                <div className="flex items-center gap-2">
+                  <Crown className="h-4 w-4 text-red-400" />
+                  <span>Administrador</span>
+                </div>
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
 
-        {/* Descrição dos Níveis de Acesso */}
+        {/* Descrição Detalhada dos Níveis de Acesso */}
         <div 
           id="user-role-help" 
-          className="bg-adega-charcoal/30 border border-white/10 p-3 rounded-lg text-sm"
+          className="bg-black/40 border border-white/20 p-4 rounded-xl"
           role="region"
           aria-labelledby="role-levels-title"
         >
-          <p id="role-levels-title" className="font-medium text-adega-gold mb-2">Níveis de Acesso:</p>
-          <ul className="text-adega-silver text-xs space-y-1">
-            <li><strong>Administrador:</strong> {getRoleDescription('admin')}</li>
-            <li><strong>Funcionário:</strong> {getRoleDescription('employee')}</li>
-            <li><strong>Entregador:</strong> {getRoleDescription('delivery')}</li>
-          </ul>
+          <p id="role-levels-title" className="font-bold text-[#FFD700] mb-3 flex items-center gap-2">
+            <Shield className="h-5 w-5" />
+            Comparativo de Permissões:
+          </p>
+          <div className="grid gap-3">
+            <div className="flex items-start gap-3 p-3 bg-red-500/5 border border-red-500/20 rounded-lg">
+              <Crown className="h-5 w-5 text-red-400 mt-0.5" />
+              <div>
+                <div className="font-medium text-red-300">Administrador</div>
+                <div className="text-white/70 text-sm">{getRoleDescription('admin')}</div>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 p-3 bg-blue-500/5 border border-blue-500/20 rounded-lg">
+              <User className="h-5 w-5 text-blue-400 mt-0.5" />
+              <div>
+                <div className="font-medium text-blue-300">Funcionário</div>
+                <div className="text-white/70 text-sm">{getRoleDescription('employee')}</div>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 p-3 bg-green-500/5 border border-green-500/20 rounded-lg">
+              <Truck className="h-5 w-5 text-green-400 mt-0.5" />
+              <div>
+                <div className="font-medium text-green-300">Entregador</div>
+                <div className="text-white/70 text-sm">{getRoleDescription('delivery')}</div>
+              </div>
+            </div>
+          </div>
         </div>
       </fieldset>
 
       {/* Botões */}
-      <div className="flex gap-2 pt-4">
+      <div className="flex gap-3 pt-6 border-t border-white/20">
         <Button 
           type="button"
           variant="outline" 
           onClick={onCancel}
           disabled={isSubmitting}
-          className="flex-1 border-white/10 hover:bg-white/10"
+          className="flex-1 bg-black/40 border-white/30 text-white hover:bg-white/10 hover:border-white/50 transition-all duration-200"
           aria-label="Cancelar criação do usuário"
         >
           Cancelar
@@ -183,10 +246,10 @@ export const UserForm: React.FC<UserFormProps> = ({
         <Button 
           type="submit"
           disabled={!isFormValid || isSubmitting}
-          className="flex-1 bg-adega-gold hover:bg-adega-gold/80 text-black"
+          className="flex-1 bg-gradient-to-r from-[#FFD700] to-[#FFA500] hover:from-[#FFA500] hover:to-[#FFD700] text-black font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
           aria-label={isSubmitting ? 'Criando usuário...' : 'Criar novo usuário'}
         >
-          {isSubmitting ? 'Criando...' : 'Criar Usuário'}
+          {isSubmitting ? '⏳ Criando...' : '✨ Criar Usuário'}
         </Button>
       </div>
     </form>

@@ -9,7 +9,8 @@ import { Button } from '@/shared/ui/primitives/button';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
 import { DollarSign, Clock, CreditCard, AlertTriangle, Download, TrendingDown, TrendingUp, Percent } from 'lucide-react';
-import ContributorsTable from '@/shared/ui/thirdparty/ruixen-contributors-table';
+import { LoadingSpinner } from '@/shared/ui/composite/loading-spinner';
+import { StandardReportsTable, TableColumn } from './StandardReportsTable';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { useDashboardMetrics } from '@/features/dashboard/hooks/useDashboardMetrics';
 import { useDashboardData } from '@/features/dashboard/hooks/useDashboardData';
@@ -23,14 +24,18 @@ interface FinancialMetrics {
   dso: number;
 }
 
-export const FinancialReportsSection: React.FC = () => {
-  const [windowDays, setWindowDays] = useState(90);
+interface FinancialReportsSectionProps {
+  period?: number;
+}
 
-  // Dashboard financial metrics (moved from dashboard)
+export const FinancialReportsSection: React.FC<FinancialReportsSectionProps> = ({ period = 90 }) => {
+  const windowDays = period;
+
+  // Dashboard financial metrics (restaurado)
   const { financials, isLoadingFinancials } = useDashboardData();
   const { sensitiveMetrics } = useDashboardMetrics(undefined, financials);
 
-  // Financial Metrics Query
+  // Financial Metrics Query (restaurado)
   const { data: financialMetrics, isLoading: loadingMetrics } = useQuery({
     queryKey: ['financial-metrics', windowDays],
     queryFn: async (): Promise<FinancialMetrics> => {
@@ -50,7 +55,7 @@ export const FinancialReportsSection: React.FC = () => {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Accounts Receivable Query
+  // Accounts Receivable Query (restaurado)
   const { data: accountsReceivable, isLoading: loadingAR } = useQuery({
     queryKey: ['accounts-receivable'],
     queryFn: async () => {
@@ -58,8 +63,7 @@ export const FinancialReportsSection: React.FC = () => {
         .from('accounts_receivable')
         .select(`
           *,
-          customers!inner(name),
-          sales!inner(payment_method, created_at)
+          customers!inner(name)
         `)
         .eq('status', 'open')
         .order('due_date', { ascending: true });
@@ -68,8 +72,8 @@ export const FinancialReportsSection: React.FC = () => {
       return (data || []).map((ar: any) => ({
         ...ar,
         customer_name: ar.customers?.name,
-        payment_method: ar.sales?.payment_method,
-        sale_date: ar.sales?.created_at,
+        payment_method: 'Não informado', // Como não há sale_id associado
+        sale_date: ar.created_at, // Usar data de criação do AR
         days_overdue: Math.max(0, Math.floor(
           (new Date().getTime() - new Date(ar.due_date).getTime()) / (1000 * 60 * 60 * 24)
         ))
@@ -78,7 +82,7 @@ export const FinancialReportsSection: React.FC = () => {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Payment Methods Analysis
+  // Payment Methods Analysis (restaurado)
   const { data: paymentAnalysis, isLoading: loadingPayments } = useQuery({
     queryKey: ['payment-methods-analysis', windowDays],
     queryFn: async () => {
@@ -88,10 +92,11 @@ export const FinancialReportsSection: React.FC = () => {
 
       const { data, error } = await supabase
         .from('sales')
-        .select('payment_method, total_amount, status')
+        .select('payment_method, final_amount, status')
         .gte('created_at', startDate.toISOString())
         .lte('created_at', endDate.toISOString())
-        .eq('status', 'completed');
+        .eq('status', 'completed')
+        .gt('final_amount', 0);
 
       if (error) throw error;
 
@@ -106,7 +111,7 @@ export const FinancialReportsSection: React.FC = () => {
           };
         }
         acc[method].count += 1;
-        acc[method].total_amount += Number(sale.total_amount || 0);
+        acc[method].total_amount += Number(sale.final_amount || 0);
         return acc;
       }, {});
 
@@ -143,38 +148,41 @@ export const FinancialReportsSection: React.FC = () => {
 
   const COLORS = ['#10b981', '#f59e0b', '#f97316', '#ef4444', '#991b1b'];
 
-  const arColumns = [
+  const arColumns: TableColumn[] = [
     {
-      accessorKey: 'customer_name',
-      header: 'Cliente',
-      cell: ({ row }: any) => (
-        <span className="text-white font-medium">{row.getValue('customer_name')}</span>
+      key: 'customer_name',
+      label: 'Cliente',
+      width: 'w-[250px]',
+      render: (value) => (
+        <span className="text-white font-medium">{value}</span>
       ),
     },
     {
-      accessorKey: 'amount',
-      header: 'Valor',
-      cell: ({ row }: any) => (
+      key: 'amount',
+      label: 'Valor',
+      width: 'w-[180px]',
+      render: (value) => (
         <span className="text-green-400 font-medium">
-          {formatCurrency(row.getValue('amount'))}
+          {formatCurrency(value)}
         </span>
       ),
     },
     {
-      accessorKey: 'due_date',
-      header: 'Vencimento',
-      cell: ({ row }: any) => (
+      key: 'due_date',
+      label: 'Vencimento',
+      width: 'w-[160px]',
+      render: (value) => (
         <span className="text-white">
-          {new Date(row.getValue('due_date')).toLocaleDateString('pt-BR')}
+          {new Date(value).toLocaleDateString('pt-BR')}
         </span>
       ),
     },
     {
-      accessorKey: 'days_overdue',
-      header: 'Status',
-      cell: ({ row }: any) => {
-        const days = row.getValue('days_overdue') as number;
-        const status = getOverdueStatus(days);
+      key: 'days_overdue',
+      label: 'Status',
+      width: 'w-[150px]',
+      render: (value) => {
+        const status = getOverdueStatus(value);
         return (
           <span className={status.color}>
             {status.label}
@@ -183,44 +191,49 @@ export const FinancialReportsSection: React.FC = () => {
       },
     },
     {
-      accessorKey: 'payment_method',
-      header: 'Método',
-      cell: ({ row }: any) => (
-        <span className="text-blue-400">{row.getValue('payment_method')}</span>
+      key: 'payment_method',
+      label: 'Método',
+      width: 'w-[160px]',
+      render: (value) => (
+        <span className="text-blue-400">{value}</span>
       ),
     },
   ];
 
-  const paymentColumns = [
+  const paymentColumns: TableColumn[] = [
     {
-      accessorKey: 'method',
-      header: 'Método de Pagamento',
-      cell: ({ row }: any) => (
-        <span className="text-white font-medium">{row.getValue('method')}</span>
+      key: 'method',
+      label: 'Método de Pagamento',
+      width: 'w-[280px]',
+      render: (value) => (
+        <span className="text-white font-medium">{value}</span>
       ),
     },
     {
-      accessorKey: 'count',
-      header: 'Quantidade',
-      cell: ({ row }: any) => (
-        <span className="text-blue-400 font-medium">{row.getValue('count')}</span>
+      key: 'count',
+      label: 'Quantidade',
+      width: 'w-[150px]',
+      render: (value) => (
+        <span className="text-blue-400 font-medium">{value}</span>
       ),
     },
     {
-      accessorKey: 'total_amount',
-      header: 'Total',
-      cell: ({ row }: any) => (
+      key: 'total_amount',
+      label: 'Total',
+      width: 'w-[180px]',
+      render: (value) => (
         <span className="text-green-400 font-medium">
-          {formatCurrency(row.getValue('total_amount'))}
+          {formatCurrency(value)}
         </span>
       ),
     },
     {
-      accessorKey: 'avg_amount',
-      header: 'Ticket Médio',
-      cell: ({ row }: any) => (
+      key: 'avg_amount',
+      label: 'Ticket Médio',
+      width: 'w-[180px]',
+      render: (value) => (
         <span className="text-purple-400">
-          {formatCurrency(row.getValue('avg_amount'))}
+          {formatCurrency(value)}
         </span>
       ),
     },
@@ -242,27 +255,6 @@ export const FinancialReportsSection: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Period Selector */}
-      <Card className="border-white/10 bg-black/40 backdrop-blur-xl">
-        <CardHeader>
-          <CardTitle className="text-white">Período de Análise</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-2">
-            {[30, 60, 90, 180, 365].map((days) => (
-              <Button
-                key={days}
-                variant={windowDays === days ? "default" : "outline"}
-                onClick={() => setWindowDays(days)}
-                className={windowDays === days ? "bg-amber-600" : ""}
-              >
-                {days} dias
-              </Button>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Principal Financial KPIs (moved from dashboard) */}
       {sensitiveMetrics && sensitiveMetrics.length > 0 && (
         <div className="space-y-4">
@@ -297,16 +289,16 @@ export const FinancialReportsSection: React.FC = () => {
               return (
                 <Card 
                   key={index}
-                  className={`bg-black/70 backdrop-blur-xl border-white/20 shadow-lg ${borderColorClass} hover:border-white/40 hover:scale-[1.02] transition-all duration-300 hover:shadow-xl hover:bg-black/80`}
+                  className={`bg-gray-800/30 border-gray-700/40 backdrop-blur-sm shadow-lg ${borderColorClass} hover:border-white/40 hover:scale-[1.02] transition-all duration-300 hover:shadow-xl hover:bg-gray-700/40`}
                 >
                   <CardContent className="p-6">
                     <div className="flex items-center gap-3">
                       <Icon className={`h-8 w-8 ${iconColorClass}`} />
                       <div>
                         <p className="text-sm text-gray-400">{metric.title}</p>
-                        <p className="text-2xl font-bold text-white">
-                          {isLoadingFinancials ? '...' : metric.value}
-                        </p>
+                        <div className="text-2xl font-bold text-white">
+                          {isLoadingFinancials ? <LoadingSpinner size="sm" variant="gold" /> : metric.value}
+                        </div>
                       </div>
                     </div>
                   </CardContent>
@@ -321,10 +313,10 @@ export const FinancialReportsSection: React.FC = () => {
       <div className="space-y-4">
         <h3 className="text-xl font-bold text-white">Análise de Recebíveis</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="border-white/10 bg-black/40 backdrop-blur-xl">
+        <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-green-500/10 hover:border-green-400/30 hover:bg-gray-700/40">
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
-              <DollarSign className="h-8 w-8 text-green-400" />
+              <DollarSign className="h-8 w-8 text-green-400 transition-all duration-300" />
               <div>
                 <p className="text-sm text-gray-400">Total a Receber</p>
                 <p className="text-2xl font-bold text-white">
@@ -335,10 +327,10 @@ export const FinancialReportsSection: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card className="border-white/10 bg-black/40 backdrop-blur-xl">
+        <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-red-500/10 hover:border-red-400/30 hover:bg-gray-700/40">
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
-              <AlertTriangle className="h-8 w-8 text-red-400" />
+              <AlertTriangle className="h-8 w-8 text-red-400 transition-all duration-300" />
               <div>
                 <p className="text-sm text-gray-400">Em Atraso</p>
                 <p className="text-2xl font-bold text-red-400">
@@ -349,10 +341,10 @@ export const FinancialReportsSection: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card className="border-white/10 bg-black/40 backdrop-blur-xl">
+        <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-orange-500/10 hover:border-orange-400/30 hover:bg-gray-700/40">
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
-              <TrendingDown className="h-8 w-8 text-orange-400" />
+              <TrendingDown className="h-8 w-8 text-orange-400 transition-all duration-300" />
               <div>
                 <p className="text-sm text-gray-400">% Atraso</p>
                 <p className="text-2xl font-bold text-orange-400">
@@ -363,10 +355,10 @@ export const FinancialReportsSection: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card className="border-white/10 bg-black/40 backdrop-blur-xl">
+        <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/10 hover:border-blue-400/30 hover:bg-gray-700/40">
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
-              <Clock className="h-8 w-8 text-blue-400" />
+              <Clock className="h-8 w-8 text-blue-400 transition-all duration-300" />
               <div>
                 <p className="text-sm text-gray-400">DSO</p>
                 <p className="text-2xl font-bold text-blue-400">
@@ -382,12 +374,9 @@ export const FinancialReportsSection: React.FC = () => {
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Aging Analysis Chart */}
-        <Card className="border-white/10 bg-black/40 backdrop-blur-xl">
-          <CardHeader className="flex flex-row items-center justify-between">
+        <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 hover:bg-gray-700/40">
+          <CardHeader>
             <CardTitle className="text-white">Análise de Aging</CardTitle>
-            <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
-              <Download className="h-4 w-4" />
-            </Button>
           </CardHeader>
           <CardContent>
             <div className="h-80">
@@ -405,7 +394,11 @@ export const FinancialReportsSection: React.FC = () => {
                     }}
                     formatter={(value) => [formatCurrency(Number(value)), 'Valor']}
                   />
-                  <Bar dataKey="amount" fill={(entry, index) => COLORS[index]} />
+                  <Bar dataKey="amount">
+                    {agingData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index]} />
+                    ))}
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -413,12 +406,9 @@ export const FinancialReportsSection: React.FC = () => {
         </Card>
 
         {/* Payment Methods Distribution */}
-        <Card className="border-white/10 bg-black/40 backdrop-blur-xl">
-          <CardHeader className="flex flex-row items-center justify-between">
+        <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/10 hover:border-blue-400/30 hover:bg-gray-700/40">
+          <CardHeader>
             <CardTitle className="text-white">Distribuição por Método</CardTitle>
-            <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
-              <Download className="h-4 w-4" />
-            </Button>
           </CardHeader>
           <CardContent>
             <div className="h-80">
@@ -454,38 +444,60 @@ export const FinancialReportsSection: React.FC = () => {
       </div>
 
       {/* Data Tables */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Accounts Receivable (substituída pela nova tabela 21st.dev para testes) */}
-        <Card className="border-white/10 bg-black/40 backdrop-blur-xl">
-          <CardHeader className="flex flex-row items-center justify-between">
+      <div className="space-y-6">
+        {/* Accounts Receivable */}
+        <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-red-500/10 hover:border-red-400/30 hover:bg-gray-700/40">
+          <CardHeader>
             <CardTitle className="text-white">Contas a Receber</CardTitle>
-            <Button className="bg-red-600 hover:bg-red-700">
-              <Download className="h-4 w-4 mr-2" />
-              Exportar CSV
-            </Button>
           </CardHeader>
-          <CardContent>
-            <ContributorsTable />
+          <CardContent className="h-80">
+            {loadingAR ? (
+              <div className="flex items-center justify-center py-8">
+                <LoadingSpinner size="lg" variant="red" />
+              </div>
+            ) : (
+              <StandardReportsTable
+                data={accountsReceivable || []}
+                columns={arColumns}
+                title="Contas a Receber"
+                searchFields={['customer_name', 'payment_method']}
+                initialSortField="days_overdue"
+                initialSortDirection="desc"
+                height="h-full"
+                maxRows={25}
+              />
+            )}
           </CardContent>
         </Card>
 
-        {/* Payment Methods Analysis (substituída pela nova tabela 21st.dev para testes) */}
-        <Card className="border-white/10 bg-black/40 backdrop-blur-xl">
-          <CardHeader className="flex flex-row items-center justify-between">
+        {/* Payment Methods Analysis */}
+        <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/10 hover:border-blue-400/30 hover:bg-gray-700/40">
+          <CardHeader>
             <CardTitle className="text-white">Análise Métodos de Pagamento</CardTitle>
-            <Button className="bg-blue-600 hover:bg-blue-700">
-              <Download className="h-4 w-4 mr-2" />
-              Exportar CSV
-            </Button>
           </CardHeader>
-          <CardContent>
-            <ContributorsTable />
+          <CardContent className="h-80">
+            {loadingPayments ? (
+              <div className="flex items-center justify-center py-8">
+                <LoadingSpinner size="lg" variant="blue" />
+              </div>
+            ) : (
+              <StandardReportsTable
+                data={paymentAnalysis || []}
+                columns={paymentColumns}
+                title="Métodos de Pagamento"
+                searchFields={['method']}
+                initialSortField="total_amount"
+                initialSortDirection="desc"
+                height="h-full"
+                maxRows={15}
+              />
+            )}
           </CardContent>
         </Card>
       </div>
 
       {/* Summary & Insights */}
-      <Card className="border-white/10 bg-black/40 backdrop-blur-xl">
+      <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-green-500/10 hover:border-green-400/30 hover:bg-gray-700/40">
         <CardHeader>
           <CardTitle className="text-white">Resumo Financeiro</CardTitle>
         </CardHeader>

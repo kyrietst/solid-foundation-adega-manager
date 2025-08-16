@@ -59,11 +59,12 @@ export const UserCreateDialog: React.FC<UserCreateDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md bg-adega-charcoal border-white/10">
+      <DialogContent className="max-w-md bg-gray-900/95 border-white/20 backdrop-blur-xl shadow-2xl">
         <DialogHeader>
-          <DialogTitle className="text-adega-platinum">
+          <DialogTitle className="text-2xl font-bold text-white text-center mb-2">
             Criar Novo Usuário
           </DialogTitle>
+          <div className="w-16 h-1 bg-gradient-to-r from-[#FFD700] to-[#FFA500] mx-auto rounded-full"></div>
         </DialogHeader>
         
         <div className="mt-4">

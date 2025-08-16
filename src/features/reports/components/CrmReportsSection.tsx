@@ -9,7 +9,8 @@ import { Button } from '@/shared/ui/primitives/button';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
 import { Users, TrendingUp, AlertCircle, Heart, DollarSign, Download } from 'lucide-react';
-import ContributorsTable from '@/shared/ui/thirdparty/ruixen-contributors-table';
+import { LoadingSpinner } from '@/shared/ui/composite/loading-spinner';
+import { StandardReportsTable, TableColumn } from './StandardReportsTable';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 
 interface CustomerMetrics {
@@ -18,8 +19,12 @@ interface CustomerMetrics {
   active_customers: number;
 }
 
-export const CrmReportsSection: React.FC = () => {
-  const [windowDays, setWindowDays] = useState(30);
+interface CrmReportsSectionProps {
+  period?: number;
+}
+
+export const CrmReportsSection: React.FC<CrmReportsSectionProps> = ({ period = 30 }) => {
+  const windowDays = period;
 
   // Customer Metrics Query
   const { data: customerMetrics, isLoading: loadingMetrics } = useQuery({
@@ -148,54 +153,78 @@ export const CrmReportsSection: React.FC = () => {
     return { level: 'Muito Baixo', color: 'text-green-400' };
   };
 
-  const customerColumns = [
+  const customerColumns: TableColumn[] = [
     {
-      accessorKey: 'customer_name',
-      header: 'Cliente',
-      cell: ({ row }: any) => (
-        <span className="text-white font-medium">{row.getValue('customer_name')}</span>
+      key: 'customer_name',
+      label: 'Cliente',
+      width: 'w-[200px]',
+      render: (value) => (
+        <span className="text-white font-medium">{value}</span>
       ),
     },
     {
-      accessorKey: 'total_spent',
-      header: 'LTV Total',
-      cell: ({ row }: any) => (
+      key: 'total_spent',
+      label: 'LTV Total',
+      width: 'w-[150px]',
+      render: (value) => (
         <span className="text-green-400 font-medium">
-          {formatCurrency(row.getValue('total_spent'))}
+          {formatCurrency(value)}
+        </span>
+      ),
+    },
+    {
+      key: 'total_orders',
+      label: 'Pedidos',
+      width: 'w-[100px]',
+      render: (value) => (
+        <span className="text-blue-400">{value || 0}</span>
+      ),
+    },
+    {
+      key: 'avg_order_value',
+      label: 'Ticket Médio',
+      width: 'w-[150px]',
+      render: (value) => (
+        <span className="text-yellow-400">
+          {formatCurrency(value || 0)}
         </span>
       ),
     },
   ];
 
-  const segmentColumns = [
+  const segmentColumns: TableColumn[] = [
     {
-      accessorKey: 'segment',
-      header: 'Segmento',
-      cell: ({ row }: any) => (
-        <span className="text-white font-medium">{row.getValue('segment')}</span>
+      key: 'segment',
+      label: 'Segmento',
+      width: 'w-[200px]',
+      render: (value) => (
+        <span className="text-white font-medium">{value}</span>
       ),
     },
     {
-      accessorKey: 'count',
-      header: 'Clientes',
-      cell: ({ row }: any) => (
-        <span className="text-blue-400 font-medium">{row.getValue('count')}</span>
+      key: 'count',
+      label: 'Clientes',
+      width: 'w-[120px]',
+      render: (value) => (
+        <span className="text-blue-400 font-medium">{value}</span>
       ),
     },
     {
-      accessorKey: 'avg_ltv',
-      header: 'LTV Médio',
-      cell: ({ row }: any) => (
+      key: 'avg_ltv',
+      label: 'LTV Médio',
+      width: 'w-[180px]',
+      render: (value) => (
         <span className="text-green-400">
-          {formatCurrency(row.getValue('avg_ltv'))}
+          {formatCurrency(value)}
         </span>
       ),
     },
     {
-      accessorKey: 'retention_rate',
-      header: 'Taxa Retenção',
-      cell: ({ row }: any) => {
-        const rate = row.getValue('retention_rate') as number;
+      key: 'retention_rate',
+      label: 'Taxa Retenção',
+      width: 'w-[160px]',
+      render: (value) => {
+        const rate = value as number;
         const color = rate > 50 ? 'text-green-400' : rate > 25 ? 'text-yellow-400' : 'text-red-400';
         return (
           <span className={color}>
@@ -204,78 +233,80 @@ export const CrmReportsSection: React.FC = () => {
         );
       },
     },
+    {
+      key: 'recent_active',
+      label: 'Ativos (30d)',
+      width: 'w-[140px]',
+      render: (value) => (
+        <span className="text-purple-400">{value || 0}</span>
+      ),
+    },
   ];
 
-  // Calculate churn risk analysis
-  const churnAnalysis = {
-    alto: 0,
-    medio: 0,
-    baixo: 0,
-    muito_baixo: 0
-  };
+  // Calculate churn risk analysis from real customer data
+  const churnAnalysis = React.useMemo(() => {
+    if (!segments) return { alto: 0, medio: 0, baixo: 0, muito_baixo: 0 };
+    
+    // Get all customers with purchase data for churn analysis
+    const analysis = { alto: 0, medio: 0, baixo: 0, muito_baixo: 0 };
+    
+    // Count customers in high-risk segments
+    segments.forEach(segment => {
+      if (segment.segment === 'Em Risco' || segment.segment === 'Inativo') {
+        analysis.alto += segment.count;
+      } else if (segment.segment === 'Regular' && segment.retention_rate < 25) {
+        analysis.medio += Math.floor(segment.count * 0.3); // Estimate 30% medium risk from regular
+      } else if (segment.segment === 'Regular' && segment.retention_rate < 50) {
+        analysis.baixo += Math.floor(segment.count * 0.4); // Estimate 40% low risk from regular
+      } else {
+        analysis.muito_baixo += segment.count;
+      }
+    });
+    
+    return analysis;
+  }, [segments]);
 
   return (
     <div className="space-y-6">
-      {/* Period Selector */}
-      <Card className="border-white/10 bg-black/40 backdrop-blur-xl">
-        <CardHeader>
-          <CardTitle className="text-white">Período de Análise</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-2">
-            {[30, 60, 90, 180].map((days) => (
-              <Button
-                key={days}
-                variant={windowDays === days ? "default" : "outline"}
-                onClick={() => setWindowDays(days)}
-                className={windowDays === days ? "bg-amber-600" : ""}
-              >
-                {days} dias
-              </Button>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Customer Metrics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="border-white/10 bg-black/40 backdrop-blur-xl">
+        <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/10 hover:border-blue-400/30 hover:bg-gray-700/40">
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
-              <Users className="h-8 w-8 text-blue-400" />
+              <Users className="h-8 w-8 text-blue-400 transition-all duration-300" />
               <div>
                 <p className="text-sm text-gray-400">Total de Clientes</p>
-                <p className="text-2xl font-bold text-white">
-                  {loadingMetrics ? '...' : (customerMetrics?.total_customers || 0)}
-                </p>
+                <div className="text-2xl font-bold text-white">
+                  {loadingMetrics ? <LoadingSpinner size="sm" variant="blue" /> : (customerMetrics?.total_customers || 0)}
+                </div>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-white/10 bg-black/40 backdrop-blur-xl">
+        <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-green-500/10 hover:border-green-400/30 hover:bg-gray-700/40">
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
-              <TrendingUp className="h-8 w-8 text-green-400" />
+              <TrendingUp className="h-8 w-8 text-green-400 transition-all duration-300" />
               <div>
                 <p className="text-sm text-gray-400">Novos Clientes</p>
-                <p className="text-2xl font-bold text-white">
-                  {loadingMetrics ? '...' : (customerMetrics?.new_customers || 0)}
-                </p>
+                <div className="text-2xl font-bold text-white">
+                  {loadingMetrics ? <LoadingSpinner size="sm" variant="green" /> : (customerMetrics?.new_customers || 0)}
+                </div>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-white/10 bg-black/40 backdrop-blur-xl">
+        <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 hover:bg-gray-700/40">
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
-              <Heart className="h-8 w-8 text-purple-400" />
+              <Heart className="h-8 w-8 text-purple-400 transition-all duration-300" />
               <div>
                 <p className="text-sm text-gray-400">Clientes Ativos</p>
-                <p className="text-2xl font-bold text-white">
-                  {loadingMetrics ? '...' : (customerMetrics?.active_customers || 0)}
-                </p>
+                <div className="text-2xl font-bold text-white">
+                  {loadingMetrics ? <LoadingSpinner size="sm" variant="purple" /> : (customerMetrics?.active_customers || 0)}
+                </div>
               </div>
             </div>
           </CardContent>
@@ -285,12 +316,9 @@ export const CrmReportsSection: React.FC = () => {
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Customer Segments */}
-        <Card className="border-white/10 bg-black/40 backdrop-blur-xl">
-          <CardHeader className="flex flex-row items-center justify-between">
+        <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 hover:bg-gray-700/40">
+          <CardHeader>
             <CardTitle className="text-white">Segmentação de Clientes</CardTitle>
-            <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
-              <Download className="h-4 w-4" />
-            </Button>
           </CardHeader>
           <CardContent>
             <div className="h-80">
@@ -315,12 +343,9 @@ export const CrmReportsSection: React.FC = () => {
         </Card>
 
         {/* Customer Retention Trend */}
-        <Card className="border-white/10 bg-black/40 backdrop-blur-xl">
-          <CardHeader className="flex flex-row items-center justify-between">
+        <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-green-500/10 hover:border-green-400/30 hover:bg-gray-700/40">
+          <CardHeader>
             <CardTitle className="text-white">Tendência de Retenção</CardTitle>
-            <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
-              <Download className="h-4 w-4" />
-            </Button>
           </CardHeader>
           <CardContent>
             <div className="h-80">
@@ -359,41 +384,63 @@ export const CrmReportsSection: React.FC = () => {
       </div>
 
       {/* Data Tables */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Top Customers (substituída pela nova tabela 21st.dev para testes) */}
-        <Card className="border-white/10 bg-black/40 backdrop-blur-xl">
-          <CardHeader className="flex flex-row items-center justify-between">
+      <div className="space-y-6">
+        {/* Top Customers */}
+        <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-green-500/10 hover:border-green-400/30 hover:bg-gray-700/40">
+          <CardHeader>
             <CardTitle className="text-white">Top Clientes por LTV</CardTitle>
-            <Button className="bg-green-600 hover:bg-green-700">
-              <Download className="h-4 w-4 mr-2" />
-              Exportar CSV
-            </Button>
           </CardHeader>
-          <CardContent>
-            <ContributorsTable />
+          <CardContent className="h-80">
+            {loadingCustomers ? (
+              <div className="flex items-center justify-center py-8">
+                <LoadingSpinner size="lg" variant="green" />
+              </div>
+            ) : (
+              <StandardReportsTable
+                data={topCustomers || []}
+                columns={customerColumns}
+                title="Top Clientes"
+                searchFields={['customer_name']}
+                initialSortField="total_spent"
+                initialSortDirection="desc"
+                height="h-full"
+                maxRows={20}
+              />
+            )}
           </CardContent>
         </Card>
 
-        {/* Segment Analysis (substituída pela nova tabela 21st.dev para testes) */}
-        <Card className="border-white/10 bg-black/40 backdrop-blur-xl">
-          <CardHeader className="flex flex-row items-center justify-between">
+        {/* Segment Analysis */}
+        <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 hover:bg-gray-700/40">
+          <CardHeader>
             <CardTitle className="text-white">Análise por Segmento</CardTitle>
-            <Button className="bg-purple-600 hover:bg-purple-700">
-              <Download className="h-4 w-4 mr-2" />
-              Exportar CSV
-            </Button>
           </CardHeader>
-          <CardContent>
-            <ContributorsTable />
+          <CardContent className="h-80">
+            {loadingSegments ? (
+              <div className="flex items-center justify-center py-8">
+                <LoadingSpinner size="lg" variant="purple" />
+              </div>
+            ) : (
+              <StandardReportsTable
+                data={segments || []}
+                columns={segmentColumns}
+                title="Segmentos"
+                searchFields={['segment']}
+                initialSortField="avg_ltv"
+                initialSortDirection="desc"
+                height="h-full"
+                maxRows={15}
+              />
+            )}
           </CardContent>
         </Card>
       </div>
 
       {/* Churn Risk Analysis */}
-      <Card className="border-white/10 bg-black/40 backdrop-blur-xl">
+      <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-orange-500/10 hover:border-orange-400/30 hover:bg-gray-700/40">
         <CardHeader>
           <CardTitle className="text-white flex items-center gap-2">
-            <AlertCircle className="h-5 w-5 text-orange-400" />
+            <AlertCircle className="h-5 w-5 text-orange-400 transition-all duration-300" />
             Análise de Risco de Churn
           </CardTitle>
         </CardHeader>

@@ -127,7 +127,7 @@ export const MovementsPresentation: React.FC<MovementsPresentationProps> = ({
 
       {/* Container principal com glassmorphism */}
       <section 
-        className="flex-1 min-h-0 bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-4 flex flex-col hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300 overflow-hidden"
+        className="flex-1 min-h-0 h-[600px] bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-4 flex flex-col hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300 overflow-hidden"
         onMouseMove={(e) => {
           const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
           const x = ((e.clientX - rect.left) / rect.width) * 100;
@@ -148,6 +148,7 @@ export const MovementsPresentation: React.FC<MovementsPresentationProps> = ({
               usersMap={usersMap}
               typeInfo={typeInfo}
               customers={customers}
+              maxRows={50}
             />
           )}
         </div>

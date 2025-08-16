@@ -7,6 +7,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/primitives/card';
 import { Button } from '@/shared/ui/primitives/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/primitives/select';
+import { LoadingSpinner } from '@/shared/ui/composite/loading-spinner';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
@@ -14,14 +15,16 @@ import { TrendingUp, Package, CreditCard, Download, Filter } from 'lucide-react'
 import { cn } from '@/core/config/utils';
 
 interface SalesFilters {
-  period: string;
   category: string;
   paymentMethod: string;
 }
 
-export const SalesReportsSection: React.FC = () => {
+interface SalesReportsSectionProps {
+  period?: number;
+}
+
+export const SalesReportsSection: React.FC<SalesReportsSectionProps> = ({ period = 90 }) => {
   const [filters, setFilters] = useState<SalesFilters>({
-    period: '30',
     category: 'all',
     paymentMethod: 'all'
   });
@@ -30,11 +33,11 @@ export const SalesReportsSection: React.FC = () => {
 
   // Sales Metrics Query
   const { data: salesMetrics, isLoading: loadingMetrics } = useQuery({
-    queryKey: ['sales-metrics', filters.period],
+    queryKey: ['sales-metrics', period],
     queryFn: async () => {
       const endDate = new Date();
       const startDate = new Date();
-      startDate.setDate(endDate.getDate() - parseInt(filters.period));
+      startDate.setDate(endDate.getDate() - period);
 
       const { data, error } = await supabase
         .rpc('get_sales_metrics', {
@@ -50,11 +53,11 @@ export const SalesReportsSection: React.FC = () => {
 
   // Top Products Query
   const { data: topProducts, isLoading: loadingProducts } = useQuery({
-    queryKey: ['top-products', filters.period],
+    queryKey: ['top-products', period],
     queryFn: async () => {
       const endDate = new Date();
       const startDate = new Date();
-      startDate.setDate(endDate.getDate() - parseInt(filters.period));
+      startDate.setDate(endDate.getDate() - period);
 
       const { data, error } = await supabase
         .rpc('get_top_products', {
@@ -72,11 +75,11 @@ export const SalesReportsSection: React.FC = () => {
 
   // Sales by Category Query
   const { data: categoryData, isLoading: loadingCategories } = useQuery({
-    queryKey: ['sales-by-category', filters.period],
+    queryKey: ['sales-by-category', period],
     queryFn: async () => {
       const endDate = new Date();
       const startDate = new Date();
-      startDate.setDate(endDate.getDate() - parseInt(filters.period));
+      startDate.setDate(endDate.getDate() - period);
 
       const { data, error } = await supabase
         .rpc('get_sales_by_category', {
@@ -95,11 +98,11 @@ export const SalesReportsSection: React.FC = () => {
 
   // Sales by Payment Method Query
   const { data: paymentData, isLoading: loadingPayments } = useQuery({
-    queryKey: ['sales-by-payment', filters.period],
+    queryKey: ['sales-by-payment', period],
     queryFn: async () => {
       const endDate = new Date();
       const startDate = new Date();
-      startDate.setDate(endDate.getDate() - parseInt(filters.period));
+      startDate.setDate(endDate.getDate() - period);
 
       const { data, error } = await supabase
         .rpc('get_sales_by_payment_method', {
@@ -110,7 +113,9 @@ export const SalesReportsSection: React.FC = () => {
       if (error) throw error;
       return (data || []).map((item: any) => ({
         method: item.payment_method,
-        count: Number(item.total_sales || 0)
+        count: Number(item.total_sales || 0),
+        revenue: Number(item.total_revenue || 0),
+        avg_ticket: Number(item.avg_ticket || 0)
       }));
     },
     staleTime: 5 * 60 * 1000,
@@ -127,133 +132,70 @@ export const SalesReportsSection: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Filter Section */}
-      <Card className="border-white/10 bg-black/40 backdrop-blur-xl">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-white flex items-center gap-2">
-              <Filter className="h-5 w-5 text-blue-400" />
-              Filtros de Vendas
-            </CardTitle>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowFilters(!showFilters)}
-              className="text-gray-400 hover:text-white"
-            >
-              {showFilters ? 'Ocultar' : 'Mostrar'} Filtros
-            </Button>
-          </div>
-        </CardHeader>
-        
-        {showFilters && (
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm text-gray-300">Período</label>
-                <Select value={filters.period} onValueChange={(value) => setFilters(prev => ({ ...prev, period: value }))}>
-                  <SelectTrigger className="bg-black/50 border-white/20">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="7">Últimos 7 dias</SelectItem>
-                    <SelectItem value="30">Últimos 30 dias</SelectItem>
-                    <SelectItem value="90">Últimos 90 dias</SelectItem>
-                    <SelectItem value="365">Último ano</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
 
-              <div className="space-y-2">
-                <label className="text-sm text-gray-300">Categoria</label>
-                <Select value={filters.category} onValueChange={(value) => setFilters(prev => ({ ...prev, category: value }))}>
-                  <SelectTrigger className="bg-black/50 border-white/20">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todas as categorias</SelectItem>
-                    <SelectItem value="vinho">Vinho</SelectItem>
-                    <SelectItem value="gin">Gin</SelectItem>
-                    <SelectItem value="whisky">Whisky</SelectItem>
-                    <SelectItem value="vodka">Vodka</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm text-gray-300">Método de Pagamento</label>
-                <Select value={filters.paymentMethod} onValueChange={(value) => setFilters(prev => ({ ...prev, paymentMethod: value }))}>
-                  <SelectTrigger className="bg-black/50 border-white/20">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos os métodos</SelectItem>
-                    <SelectItem value="dinheiro">Dinheiro</SelectItem>
-                    <SelectItem value="cartao">Cartão</SelectItem>
-                    <SelectItem value="pix">PIX</SelectItem>
-                    <SelectItem value="fiado">Fiado</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </CardContent>
-        )}
-      </Card>
-
-      {/* Sales Metrics Cards */}
+      {/* Sales Metrics Cards com glassmorphism padronizado */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="border-white/10 bg-black/40 backdrop-blur-xl">
-          <CardContent className="p-6">
+        <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/10 hover:border-blue-400/30 hover:bg-gray-700/40">
+          <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <TrendingUp className="h-8 w-8 text-blue-400" />
+              <TrendingUp className="h-8 w-8 text-blue-400 transition-all duration-300" />
               <div>
                 <p className="text-sm text-gray-400">Receita Total</p>
-                <p className="text-2xl font-bold text-white">
-                  {loadingMetrics ? '...' : formatCurrency(salesMetrics?.total_revenue || 0)}
-                </p>
+                <div className="text-2xl font-bold text-white">
+                  {loadingMetrics ? (
+                    <LoadingSpinner size="sm" color="yellow" />
+                  ) : (
+                    formatCurrency(salesMetrics?.total_revenue || 0)
+                  )}
+                </div>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-white/10 bg-black/40 backdrop-blur-xl">
-          <CardContent className="p-6">
+        <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-green-500/10 hover:border-green-400/30 hover:bg-gray-700/40">
+          <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <Package className="h-8 w-8 text-green-400" />
+              <Package className="h-8 w-8 text-green-400 transition-all duration-300" />
               <div>
                 <p className="text-sm text-gray-400">Total de Vendas</p>
-                <p className="text-2xl font-bold text-white">
-                  {loadingMetrics ? '...' : (salesMetrics?.total_sales || 0)}
-                </p>
+                <div className="text-2xl font-bold text-white">
+                  {loadingMetrics ? (
+                    <LoadingSpinner size="sm" color="yellow" />
+                  ) : (
+                    salesMetrics?.total_sales || 0
+                  )}
+                </div>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-white/10 bg-black/40 backdrop-blur-xl">
-          <CardContent className="p-6">
+        <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 hover:bg-gray-700/40">
+          <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <CreditCard className="h-8 w-8 text-purple-400" />
+              <CreditCard className="h-8 w-8 text-purple-400 transition-all duration-300" />
               <div>
                 <p className="text-sm text-gray-400">Ticket Médio</p>
-                <p className="text-2xl font-bold text-white">
-                  {loadingMetrics ? '...' : formatCurrency(salesMetrics?.average_ticket || 0)}
-                </p>
+                <div className="text-2xl font-bold text-white">
+                  {loadingMetrics ? (
+                    <LoadingSpinner size="sm" color="yellow" />
+                  ) : (
+                    formatCurrency(salesMetrics?.average_ticket || 0)
+                  )}
+                </div>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Charts Section */}
+      {/* Charts Section com glassmorphism */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Top Products Chart */}
-        <Card className="border-white/10 bg-black/40 backdrop-blur-xl">
-          <CardHeader className="flex flex-row items-center justify-between">
+        <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/10 hover:border-blue-400/30 hover:bg-gray-700/40">
+          <CardHeader>
             <CardTitle className="text-white">Top 10 Produtos (Receita)</CardTitle>
-            <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
-              <Download className="h-4 w-4" />
-            </Button>
           </CardHeader>
           <CardContent>
             <div className="h-80">
@@ -286,12 +228,9 @@ export const SalesReportsSection: React.FC = () => {
         </Card>
 
         {/* Sales by Category */}
-        <Card className="border-white/10 bg-black/40 backdrop-blur-xl">
-          <CardHeader className="flex flex-row items-center justify-between">
+        <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 hover:bg-gray-700/40">
+          <CardHeader>
             <CardTitle className="text-white">Vendas por Categoria</CardTitle>
-            <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
-              <Download className="h-4 w-4" />
-            </Button>
           </CardHeader>
           <CardContent>
             <div className="h-80">
@@ -326,31 +265,6 @@ export const SalesReportsSection: React.FC = () => {
         </Card>
       </div>
 
-      {/* Export Section */}
-      <Card className="border-white/10 bg-black/40 backdrop-blur-xl">
-        <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
-            <Download className="h-5 w-5 text-amber-400" />
-            Exportar Dados
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-4">
-            <Button className="bg-green-600 hover:bg-green-700">
-              <Download className="h-4 w-4 mr-2" />
-              Exportar CSV - Vendas
-            </Button>
-            <Button className="bg-blue-600 hover:bg-blue-700">
-              <Download className="h-4 w-4 mr-2" />
-              Exportar CSV - Produtos
-            </Button>
-            <Button className="bg-purple-600 hover:bg-purple-700">
-              <Download className="h-4 w-4 mr-2" />
-              Exportar CSV - Categorias
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 };

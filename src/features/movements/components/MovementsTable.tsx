@@ -17,6 +17,7 @@ interface MovementsTableProps {
   usersMap: Record<string, string>;
   typeInfo: Record<string, { label: string; color: string }>;
   customers: Customer[];
+  maxRows?: number;
 }
 
 type SortField = 'date' | 'type' | 'product' | 'quantity' | 'reason' | 'customer' | 'user' | null;
@@ -30,6 +31,7 @@ export const MovementsTable: React.FC<MovementsTableProps> = ({
   usersMap,
   typeInfo,
   customers,
+  maxRows = 100,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [visibleColumns, setVisibleColumns] = useState<string[]>([...ALL_COLUMNS]);
@@ -93,8 +95,9 @@ export const MovementsTable: React.FC<MovementsTableProps> = ({
         return sortDirection === 'asc' ? String(av).localeCompare(String(bv)) : String(bv).localeCompare(String(av));
       });
     }
-    return rows;
-  }, [movements, searchTerm, sortField, sortDirection, productsMap, usersMap, typeInfo, customers]);
+    // Apply row limit for performance
+    return rows.slice(0, maxRows);
+  }, [movements, searchTerm, sortField, sortDirection, productsMap, usersMap, typeInfo, customers, maxRows]);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
@@ -113,12 +116,14 @@ export const MovementsTable: React.FC<MovementsTableProps> = ({
 
   return (
     <div className="h-full flex flex-col space-y-4 p-4">
-      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between flex-shrink-0">
-        <div className="w-full sm:w-80">
-          <SearchBar21st placeholder="Buscar movimentações..." value={searchTerm} onChange={setSearchTerm} debounceMs={150} />
-        </div>
+      <div className="flex items-center justify-end flex-shrink-0">
         <div className="flex items-center gap-2 text-sm text-adega-platinum/70">
-          <span>{dataset.length} de {movements.length} registros</span>
+          <span>
+            {dataset.length} de {movements.length} registros
+            {dataset.length >= maxRows && (
+              <span className="text-yellow-400 ml-1">(limitado a {maxRows})</span>
+            )}
+          </span>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm">Colunas</Button>
@@ -138,10 +143,10 @@ export const MovementsTable: React.FC<MovementsTableProps> = ({
         </div>
       </div>
 
-      {/* Container com scroll para tabela - scroll ilimitado */}
+      {/* Container com scroll para tabela */}
       <div className="bg-black/40 rounded-lg border border-white/10 overflow-hidden flex-1 min-h-0">
-        <div className="h-full overflow-y-scroll scrollbar-thin scrollbar-track-gray-900 scrollbar-thumb-gray-600 hover:scrollbar-thumb-gray-500">
-          <table className="w-full border-collapse table-fixed">
+        <div className="h-full max-h-full overflow-auto scrollbar-thin scrollbar-track-gray-900 scrollbar-thumb-gray-600 hover:scrollbar-thumb-gray-500">
+          <table className="w-full border-collapse min-w-full">
             <thead className="sticky top-0 z-10">
               <tr className="border-b border-white/10 bg-black/60 backdrop-blur-sm">
                 {visibleColumns.includes('Data') && (
