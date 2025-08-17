@@ -177,7 +177,10 @@ export function FullCart({
           </div>
         ) : (
           <div className="space-y-2">
-            <CustomerSearch onCustomerSelect={setCustomer} />
+            <CustomerSearch 
+              selectedCustomer={selectedCustomer || null}
+              onSelect={(customer) => setCustomer(customer?.id || null)}
+            />
             <Dialog open={isCustomerModalOpen} onOpenChange={setIsCustomerModalOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline" size="sm" className="w-full border-yellow-400/30 text-yellow-400 hover:bg-yellow-400/10 hover:border-yellow-400/50 backdrop-blur-sm">

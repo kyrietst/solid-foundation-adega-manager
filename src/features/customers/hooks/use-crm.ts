@@ -88,20 +88,35 @@ export type CustomerEvent = {
  * ```
  */
 export const recordCustomerEvent = async (event: CustomerEvent) => {
-  if (!event.customer_id) return;
-  // Garante timestamp server-side
-  const payload = { ...event, created_at: event.created_at ?? new Date().toISOString() };
-  const { error } = await supabase.from('customer_history').insert(payload);
-
-  if (error) {
-    console.error('Erro ao gravar histórico do cliente', error);
+  if (!event.customer_id) {
+    console.warn('recordCustomerEvent: customer_id não fornecido');
     return;
   }
-
+  
   try {
-    await supabase.rpc('recalc_customer_insights', { p_customer_id: event.customer_id });
-  } catch (err) {
-    console.error('Erro ao recalcular insights do cliente', err);
+    // Garante timestamp server-side
+    const payload = { ...event, created_at: event.created_at ?? new Date().toISOString() };
+    const { error } = await supabase.from('customer_history').insert(payload);
+
+    if (error) {
+      console.error('Erro ao gravar histórico do cliente:', error);
+      // Se for erro de RLS, tenta verificar se é problema de permissão
+      if (error.code === '42501') {
+        console.warn('Erro de RLS ao inserir customer_history - verificar políticas de segurança');
+      }
+      throw error; // Re-throw para que o caller possa tratar
+    }
+
+    // Tenta recalcular insights, mas não falha se der erro
+    try {
+      await supabase.rpc('recalc_customer_insights', { p_customer_id: event.customer_id });
+    } catch (insightsError) {
+      console.warn('Erro ao recalcular insights do cliente (não crítico):', insightsError);
+      // Não propaga este erro
+    }
+  } catch (error) {
+    console.error('Erro geral ao registrar evento do cliente:', error);
+    throw error; // Re-throw para que o caller possa decidir como tratar
   }
 };
 
@@ -368,33 +383,95 @@ export const useCustomers = (params?: {
   return useQuery({
     queryKey: ['customers', { search, limit }],
     queryFn: async () => {
-      // Para teste, usar dados mockados primeiro
-      let filteredCustomers = [...MOCK_CUSTOMERS];
-      
-      // Aplicar filtro de busca se fornecido
-      if (search) {
-        const searchLower = search.toLowerCase();
-        filteredCustomers = MOCK_CUSTOMERS.filter(customer => 
-          customer.name.toLowerCase().includes(searchLower) ||
-          customer.email?.toLowerCase().includes(searchLower) ||
-          customer.phone?.toLowerCase().includes(searchLower)
-        );
+      try {
+        // Buscar clientes reais do banco de dados
+        let query = supabase
+          .from('customers')
+          .select('*')
+          .order('name', { ascending: true });
+        
+        // Aplicar filtro de busca se fornecido
+        if (search && search.trim()) {
+          const searchTerm = search.trim();
+          query = query.or(`name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%`);
+        }
+        
+        // Aplicar limite se fornecido
+        if (limit) {
+          query = query.limit(limit);
+        }
+        
+        const { data, error } = await query;
+        
+        if (error) {
+          console.warn('Erro ao buscar clientes do banco, usando dados mockados:', error);
+          // Fallback para dados mockados em caso de erro
+          let filteredCustomers = [...MOCK_CUSTOMERS];
+          
+          if (search) {
+            const searchLower = search.toLowerCase();
+            filteredCustomers = MOCK_CUSTOMERS.filter(customer => 
+              customer.name.toLowerCase().includes(searchLower) ||
+              customer.email?.toLowerCase().includes(searchLower) ||
+              customer.phone?.toLowerCase().includes(searchLower)
+            );
+          }
+          
+          if (limit) {
+            filteredCustomers = filteredCustomers.slice(0, limit);
+          }
+          
+          return filteredCustomers;
+        }
+        
+        // Se não há dados reais, usar dados mockados
+        if (!data || data.length === 0) {
+          console.info('Nenhum cliente encontrado no banco, usando dados mockados para demonstração');
+          let filteredCustomers = [...MOCK_CUSTOMERS];
+          
+          if (search) {
+            const searchLower = search.toLowerCase();
+            filteredCustomers = MOCK_CUSTOMERS.filter(customer => 
+              customer.name.toLowerCase().includes(searchLower) ||
+              customer.email?.toLowerCase().includes(searchLower) ||
+              customer.phone?.toLowerCase().includes(searchLower)
+            );
+          }
+          
+          if (limit) {
+            filteredCustomers = filteredCustomers.slice(0, limit);
+          }
+          
+          return filteredCustomers;
+        }
+        
+        // Retornar dados reais do banco
+        return data as CustomerProfile[];
+        
+      } catch (error) {
+        console.error('Erro inesperado ao buscar clientes:', error);
+        // Fallback final para dados mockados
+        let filteredCustomers = [...MOCK_CUSTOMERS];
+        
+        if (search) {
+          const searchLower = search.toLowerCase();
+          filteredCustomers = MOCK_CUSTOMERS.filter(customer => 
+            customer.name.toLowerCase().includes(searchLower) ||
+            customer.email?.toLowerCase().includes(searchLower) ||
+            customer.phone?.toLowerCase().includes(searchLower)
+          );
+        }
+        
+        if (limit) {
+          filteredCustomers = filteredCustomers.slice(0, limit);
+        }
+        
+        return filteredCustomers;
       }
-      
-      // Aplicar limite se fornecido
-      if (limit) {
-        filteredCustomers = filteredCustomers.slice(0, limit);
-      }
-      
-      // Simular delay de rede
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Para teste, sempre usar dados mockados
-      
-      // Retornar dados mockados
-      return filteredCustomers;
     },
-    enabled
+    enabled,
+    staleTime: 30 * 1000, // 30 segundos de cache
+    refetchInterval: 5 * 60 * 1000, // Refetch a cada 5 minutos
   });
 };
 

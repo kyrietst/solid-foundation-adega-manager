@@ -125,7 +125,7 @@ export function TopProductsCard({ className, period = 30, limit = 5, useCurrentM
             Top {limit} Produtos {useCurrentMonth ? '(Mês Atual)' : `(${period}d)`}
           </CardTitle>
           <a 
-            href="/reports?tab=sales&view=top-products" 
+            href="/reports?tab=sales&period=30" 
             className="text-gray-300 hover:text-amber-400 transition-colors"
           >
             <ExternalLink className="h-4 w-4" />

@@ -168,7 +168,7 @@ export function CategoryMixDonut({ className, period = 30, showTotal = false }: 
             )}
           </CardTitle>
           <a 
-            href="/reports?tab=categories" 
+            href="/reports?tab=inventory&period=30" 
             className="text-gray-300 hover:text-amber-300 transition-colors"
           >
             <ExternalLink className="h-4 w-4" />

@@ -17,6 +17,7 @@ import { SectionHeader } from '@/shared/ui/layout/SectionHeader';
 import { text, shadows } from '@/core/config/theme';
 import { KpiCards } from './KpiCards';
 import { AlertsPanel } from './AlertsPanel';
+import { AlertsCarousel } from './AlertsCarousel';
 import { SalesChartSection } from './SalesChartSection';
 import { useSalesKpis, useCustomerKpis, useInventoryKpis } from '../hooks/useDashboardKpis';
 import { SalesInsightsTabs } from './SalesInsightsTabs';
@@ -66,10 +67,15 @@ export const DashboardPresentation: React.FC<DashboardPresentationProps> = ({
 
           {/* Linha: Tendência de Vendas (8) + Alertas (4) como antes */}
           <div className="lg:col-span-8">
-            <SalesChartSection className="h-full" contentHeight={440} cardHeight={520} />
+            <SalesChartSection className="h-full" contentHeight={500} cardHeight={580} />
           </div>
           <div className="lg:col-span-4">
-            <AlertsPanel maxItems={6} previewActivities={recentActivities} cardHeight={520} />
+            <AlertsCarousel 
+              cardHeight={580} 
+              autoRotateInterval={6000} 
+              showControls={true} 
+              previewActivities={recentActivities}
+            />
           </div>
 
           {/* Insights em abas ocupando largura total */}

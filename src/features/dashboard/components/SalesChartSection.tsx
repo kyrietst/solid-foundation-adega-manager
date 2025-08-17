@@ -183,7 +183,7 @@ export function SalesChartSection({ className, contentHeight = 360, cardHeight }
         </div>
       </CardHeader>
 
-      <CardContent className="text-sm text-gray-200">
+      <CardContent className="text-sm text-gray-200 pb-0">
         {isLoading ? (
           <div style={{ height: computedContentHeight }} className="flex items-center justify-center">
             <div className="w-8 h-8 border-2 border-amber-300/30 border-t-amber-300 rounded-full animate-spin" />

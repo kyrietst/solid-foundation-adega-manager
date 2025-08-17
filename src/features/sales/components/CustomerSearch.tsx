@@ -43,8 +43,8 @@ export function CustomerSearch({
 
   const { data: customers = [], isLoading, refetch } = useCustomers({
     search: debouncedSearchTerm,
-    limit: 1000,
-    enabled: open,
+    limit: 50, // Limitar para performance
+    enabled: true, // Sempre habilitado para busca em tempo real
   });
 
   // Estabilizar refetch para evitar re-execuções desnecessárias
@@ -52,7 +52,7 @@ export function CustomerSearch({
     refetch();
   }, [refetch]);
 
-  // When the popover opens, fetch all customers initially
+  // When the popover opens, ensure fresh data
   useEffect(() => {
     if (open) {
       stableRefetch();
@@ -87,43 +87,63 @@ export function CustomerSearch({
             variant="outline"
             role="combobox"
             aria-expanded={open}
-            className="w-full justify-between font-normal bg-black/50 backdrop-blur-sm border-yellow-400/30 text-gray-200 hover:bg-yellow-400/10 hover:border-yellow-400/50"
+            className="w-full justify-between font-normal bg-black/50 backdrop-blur-sm border-amber-400/30 text-gray-200 hover:bg-amber-400/10 hover:border-amber-400/50 transition-all duration-200"
           >
             {selectedCustomer
-              ? <span className={cn(text.h4, shadows.medium)}>{selectedCustomer.name}</span>
-              : <span className={cn(text.h6, shadows.subtle)}>Buscar cliente...</span>}
-            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 text-yellow-400/70" />
+              ? <span className="text-white font-medium">{selectedCustomer.name}</span>
+              : <span className="text-gray-400">Buscar cliente...</span>}
+            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 text-amber-400/70" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[--radix-popover-trigger-width] p-0 bg-black/90 backdrop-blur-xl border border-yellow-400/30">
-          <Command className="bg-transparent">
+        <PopoverContent className="w-[--radix-popover-trigger-width] p-0 bg-black/95 backdrop-blur-xl border border-amber-400/30 shadow-2xl shadow-amber-400/10">
+          <Command className="bg-transparent text-white">
             <CommandInput
               placeholder="Buscar por nome, email ou telefone..."
               value={searchTerm}
               onValueChange={setSearchTerm}
-              className={cn(text.h5, shadows.subtle, "placeholder:text-gray-400")}
+              className={cn(
+                "text-white placeholder:text-gray-400 border-amber-400/20 focus:border-amber-400/40",
+                "bg-transparent h-12 px-3"
+              )}
             />
-            <CommandList>
-              <CommandEmpty className={cn(text.h6, shadows.subtle)}>
-                {isLoading ? 'Buscando...' : 'Nenhum cliente encontrado.'}
+            <CommandList className="bg-transparent text-white max-h-[280px]">
+              <CommandEmpty className="py-6 text-center text-sm text-gray-300">
+                {isLoading ? 'Buscando clientes...' : 'Nenhum cliente encontrado.'}
               </CommandEmpty>
-              <CommandGroup>
+              <CommandGroup className="bg-transparent">
                 {customers?.map((customer) => (
                   <CommandItem
                     key={customer.id}
-                    value={`${customer.name} ${customer.email}`}
+                    value={`${customer.name} ${customer.email} ${customer.phone || ''}`}
                     onSelect={() => handleSelect(customer)}
-                    className="hover:bg-yellow-400/10 aria-selected:bg-yellow-400/20"
+                    className={cn(
+                      "bg-transparent text-white cursor-pointer transition-all duration-200",
+                      "hover:bg-amber-400/15 hover:shadow-md hover:shadow-amber-400/20",
+                      "data-[selected=true]:bg-amber-400/20 data-[selected=true]:text-white",
+                      "border-l-2 border-transparent hover:border-amber-400/50",
+                      "px-3 py-3 mx-1 rounded-lg my-1"
+                    )}
                   >
                     <Check
                       className={cn(
-                        'mr-2 h-4 w-4 text-yellow-400',
+                        'mr-3 h-4 w-4 text-amber-400 transition-opacity duration-200',
                         selectedCustomer?.id === customer.id ? 'opacity-100' : 'opacity-0'
                       )}
                     />
-                    <div>
-                      <p className={cn(text.h4, shadows.medium, "font-medium")}>{customer.name}</p>
-                      <p className={cn(text.h6, shadows.subtle, "text-sm")}>{customer.email || customer.phone}</p>
+                    <div 
+                      className="flex-1 min-w-0" 
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleSelect(customer);
+                      }}
+                    >
+                      <p className="font-semibold text-white text-sm leading-tight truncate">
+                        {customer.name}
+                      </p>
+                      <p className="text-gray-300 text-xs mt-1 truncate">
+                        {customer.email || customer.phone}
+                      </p>
                     </div>
                   </CommandItem>
                 ))}
@@ -138,7 +158,7 @@ export function CustomerSearch({
           variant="outline" 
           onClick={onAddNew} 
           aria-label="Adicionar novo cliente"
-          className="border-primary-yellow/30 text-primary-yellow hover:bg-primary-yellow/10 hover:border-primary-yellow"
+          className="border-amber-400/30 text-amber-400 hover:bg-amber-400/10 hover:border-amber-400/50 transition-all duration-200 bg-black/50 backdrop-blur-sm"
         >
           <UserPlus className="h-4 w-4" />
         </Button>

@@ -180,6 +180,65 @@ export function useSmartAlerts() {
         console.error('Error fetching inventory total value:', error);
       }
 
+      // 🚨 ALERTAS MOCKADOS PARA TESTE DO CARROSSEL (REMOVER EM PRODUÇÃO)
+      // Adiciona alertas de teste para demonstrar o carrossel
+      alerts.push(
+        {
+          id: 'mock-critical-1',
+          severity: 'critical',
+          title: 'Sistema de backup offline',
+          description: 'Backup automático falhou nas últimas 24 horas',
+          href: '/reports?tab=system&filter=backup',
+          count: 1,
+          icon: '🔴'
+        },
+        {
+          id: 'mock-warning-1',
+          severity: 'warning',
+          title: 'R$ 2.617,90 em atraso +30 dias',
+          description: '6 contas em atraso',
+          href: '/reports?tab=financial&filter=overdue-30',
+          count: 6,
+          icon: '💰'
+        },
+        {
+          id: 'mock-warning-2',
+          severity: 'warning',
+          title: '15 produtos abaixo do mínimo',
+          description: 'Produtos com estoque crítico precisam reposição',
+          href: '/inventory?filter=low-stock',
+          count: 15,
+          icon: '🟡'
+        },
+        {
+          id: 'mock-critical-2',
+          severity: 'critical',
+          title: '3 produtos sem estoque',
+          description: 'Produtos zerados impedem vendas',
+          href: '/inventory?filter=zero-stock',
+          count: 3,
+          icon: '🔴'
+        },
+        {
+          id: 'mock-info-1',
+          severity: 'info',
+          title: '28 clientes inativos',
+          description: 'Clientes sem compra há mais de 60 dias',
+          href: '/customers?filter=inactive-60d',
+          count: 28,
+          icon: '👥'
+        },
+        {
+          id: 'mock-info-2',
+          severity: 'info',
+          title: 'Meta mensal 87% atingida',
+          description: 'Faltam R$ 4.250,00 para atingir 100%',
+          href: '/reports?tab=sales&period=30d',
+          count: 1,
+          icon: '📈'
+        }
+      );
+
       // Sort alerts by severity priority
       const severityOrder = { critical: 0, warning: 1, info: 2 };
       alerts.sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity]);

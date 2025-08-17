@@ -408,15 +408,29 @@ export const useUpsertSale = () => {
         // Não falha a venda por causa de um erro de auditoria
       }
 
-      // 10. Atualiza histórico do cliente e insights
+      // 10. Atualiza histórico do cliente e insights (opcional)
       if (saleData.customer_id) {
-        await recordCustomerEvent({
-          customer_id: saleData.customer_id,
-          type: 'sale',
-          origin_id: sale.id,
-          value: saleData.total_amount,
-          description: 'Venda registrada'
-        });
+        try {
+          await recordCustomerEvent({
+            customer_id: saleData.customer_id,
+            type: 'sale',
+            origin_id: sale.id,
+            value: saleData.total_amount,
+            description: 'Venda registrada'
+          });
+          console.log('Evento do cliente registrado com sucesso');
+        } catch (customerEventError: any) {
+          console.warn('Erro ao registrar evento do cliente (não crítico):', customerEventError);
+          
+          // Log específico para erros de RLS
+          if (customerEventError?.code === '42501') {
+            console.warn('Políticas RLS impedem inserção em customer_history/customer_events');
+            console.warn('A venda será processada normalmente, mas sem tracking CRM');
+          }
+          
+          // Não bloqueia a venda - evento do cliente é opcional para funcionalidade básica
+          // A venda deve funcionar mesmo sem o sistema CRM completo
+        }
       }
 
       return sale;
