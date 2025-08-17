@@ -115,7 +115,7 @@ function KpiSection() {
       icon: DollarSign,
       valueType: 'positive' as const,
       isLoading: l1,
-      href: '/reports?tab=sales&period=30d',
+      href: '/reports?tab=financial&period=30d',
       subLabel: 'Últimos 30 dias'
     },
     { 

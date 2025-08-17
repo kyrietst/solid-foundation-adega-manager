@@ -3,7 +3,8 @@
  * Comprehensive reporting system with multiple modules
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/primitives/card';
 import { Button } from '@/shared/ui/primitives/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/primitives/tabs';
@@ -17,8 +18,29 @@ import { CrmReportsSection } from './CrmReportsSection';
 import { FinancialReportsSection } from './FinancialReportsSection';
 
 export const AdvancedReports: React.FC = () => {
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState('sales');
   const [globalPeriod, setGlobalPeriod] = useState(90);
+
+  // Lê parâmetros da URL para navegação do dashboard
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const urlTab = searchParams.get('tab');
+    const urlPeriod = searchParams.get('period');
+
+    // Define a aba baseada no parâmetro 'tab'
+    if (urlTab && ['sales', 'inventory', 'crm', 'financial'].includes(urlTab)) {
+      setActiveTab(urlTab);
+    }
+
+    // Define o período baseado no parâmetro 'period'
+    if (urlPeriod) {
+      const period = parseInt(urlPeriod);
+      if ([7, 30, 90, 180].includes(period)) {
+        setGlobalPeriod(period);
+      }
+    }
+  }, [location.search]);
 
   // Função para exportar dados para CSV
   const exportToCSV = async (reportType: string) => {
