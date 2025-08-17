@@ -3,7 +3,8 @@
  * Financial analysis with aging, DSO, and payment methods
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/primitives/card';
 import { Button } from '@/shared/ui/primitives/button';
 import { useQuery } from '@tanstack/react-query';
@@ -29,7 +30,19 @@ interface FinancialReportsSectionProps {
 }
 
 export const FinancialReportsSection: React.FC<FinancialReportsSectionProps> = ({ period = 90 }) => {
+  const location = useLocation();
+  const [activeFilter, setActiveFilter] = useState<string>('all');
   const windowDays = period;
+
+  // Lê filtros da URL para navegação de alertas
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const filterParam = searchParams.get('filter');
+    
+    if (filterParam && ['overdue-30', 'overdue', 'all'].includes(filterParam)) {
+      setActiveFilter(filterParam);
+    }
+  }, [location.search]);
 
   // Dashboard financial metrics (restaurado)
   const { financials, isLoadingFinancials } = useDashboardData();
@@ -55,11 +68,11 @@ export const FinancialReportsSection: React.FC<FinancialReportsSectionProps> = (
     staleTime: 5 * 60 * 1000,
   });
 
-  // Accounts Receivable Query (restaurado)
+  // Accounts Receivable Query com filtros baseados na URL
   const { data: accountsReceivable, isLoading: loadingAR } = useQuery({
-    queryKey: ['accounts-receivable'],
+    queryKey: ['accounts-receivable', activeFilter],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('accounts_receivable')
         .select(`
           *,
@@ -68,8 +81,15 @@ export const FinancialReportsSection: React.FC<FinancialReportsSectionProps> = (
         .eq('status', 'open')
         .order('due_date', { ascending: true });
 
+      // Aplicar filtros baseados no activeFilter
+      if (activeFilter === 'overdue' || activeFilter === 'overdue-30') {
+        query = query.lt('due_date', new Date().toISOString());
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
-      return (data || []).map((ar: any) => ({
+
+      const processedData = (data || []).map((ar: any) => ({
         ...ar,
         customer_name: ar.customers?.name,
         payment_method: 'Não informado', // Como não há sale_id associado
@@ -78,6 +98,13 @@ export const FinancialReportsSection: React.FC<FinancialReportsSectionProps> = (
           (new Date().getTime() - new Date(ar.due_date).getTime()) / (1000 * 60 * 60 * 24)
         ))
       }));
+
+      // Filtro adicional para overdue-30 (mais de 30 dias)
+      if (activeFilter === 'overdue-30') {
+        return processedData.filter(item => item.days_overdue > 30);
+      }
+
+      return processedData;
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -448,7 +475,27 @@ export const FinancialReportsSection: React.FC<FinancialReportsSectionProps> = (
         {/* Accounts Receivable */}
         <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-red-500/10 hover:border-red-400/30 hover:bg-gray-700/40">
           <CardHeader>
-            <CardTitle className="text-white">Contas a Receber</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-white flex items-center gap-2">
+                Contas a Receber
+                {activeFilter !== 'all' && (
+                  <span className="text-xs bg-red-500/20 text-red-300 px-2 py-1 rounded-full border border-red-500/30">
+                    {activeFilter === 'overdue-30' ? 'Atraso +30 dias' : 
+                     activeFilter === 'overdue' ? 'Em atraso' : 'Filtrado'}
+                  </span>
+                )}
+              </CardTitle>
+              {activeFilter !== 'all' && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setActiveFilter('all')}
+                  className="text-xs h-7 border-gray-500/50 text-gray-300 hover:bg-gray-600/50"
+                >
+                  Limpar Filtro
+                </Button>
+              )}
+            </div>
           </CardHeader>
           <CardContent className="h-80">
             {loadingAR ? (

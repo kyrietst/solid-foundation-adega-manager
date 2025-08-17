@@ -126,7 +126,7 @@ function KpiSection() {
       icon: ShoppingCart,
       valueType: 'positive' as const,
       isLoading: l1,
-      href: '/sales',
+      href: '/reports?tab=sales&period=30d',
       subLabel: 'Últimos 30 dias'
     },
     { 
@@ -137,7 +137,7 @@ function KpiSection() {
       icon: TrendingUp,
       valueType: 'neutral' as const,
       isLoading: l1,
-      href: '/reports?tab=sales&metric=avg-ticket',
+      href: '/reports?tab=sales&period=30d',
       subLabel: 'Por venda'
     },
     {
@@ -147,7 +147,7 @@ function KpiSection() {
       icon: Users,
       valueType: 'positive' as const,
       isLoading: l2,
-      href: '/customers?filter=active-30d',
+      href: '/reports?tab=crm&period=30d',
       subLabel: 'Últimos 30 dias'
     }
   ];
