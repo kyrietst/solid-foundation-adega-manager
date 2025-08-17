@@ -45,8 +45,11 @@ export const InventoryGrid: React.FC<InventoryGridProps> = ({
           key={product.id}
           className="transform transition-all duration-300"
           style={{
-            animationDelay: `${index * 50}ms`,
-            animation: 'fadeInUp 0.6s ease-out forwards'
+            animationName: 'fadeInUp',
+            animationDuration: '0.6s',
+            animationTimingFunction: 'ease-out',
+            animationFillMode: 'forwards',
+            animationDelay: `${index * 50}ms`
           }}
         >
           <InventoryCard 

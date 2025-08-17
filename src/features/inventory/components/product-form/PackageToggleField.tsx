@@ -94,7 +94,7 @@ export const PackageToggleField: React.FC<PackageToggleFieldProps> = ({
               <Input
                 id="units_per_package"
                 type="number"
-                value={formData.units_per_package || ''}
+                value={formData.units_per_package ?? ''}
                 onChange={(e) => onInputChange('units_per_package', Number(e.target.value))}
                 placeholder="Ex: 6, 12, 24"
                 min="2"

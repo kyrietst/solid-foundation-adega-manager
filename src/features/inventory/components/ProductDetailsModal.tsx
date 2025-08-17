@@ -4,7 +4,7 @@
  */
 
 import React, { useMemo } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shared/ui/primitives/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/shared/ui/primitives/dialog';
 import { Button } from '@/shared/ui/primitives/button';
 import { Badge } from '@/shared/ui/primitives/badge';
 import { 
@@ -25,6 +25,8 @@ import {
 } from 'lucide-react';
 import { cn } from '@/core/config/utils';
 import { formatCurrency } from '@/core/config/utils';
+import { useFormatBrazilianDate } from '@/shared/hooks/common/use-brasil-timezone';
+import { useProductAnalytics } from '@/features/inventory/hooks/useProductAnalytics';
 import type { Product } from '@/types/inventory.types';
 
 interface ProductDetailsModalProps {
@@ -44,31 +46,28 @@ const getStockStatus = (currentStock: number, minStock: number = 10) => {
   return { status: 'available', label: 'Disponível', color: 'bg-green-500/20 text-green-400 border-green-400/30' };
 };
 
-// Função para análise de giro (simulada)
-const getTurnoverAnalysis = (productId: string) => {
-  const hash = productId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  const remainder = hash % 3;
-  
-  if (remainder === 0) return { 
+// Função para análise de giro baseada em dados reais
+const getTurnoverAnalysis = (turnoverRate: string, salesPerMonth: number) => {
+  if (turnoverRate === 'alto') return { 
     rate: 'Alto', 
     icon: TrendingUp, 
     color: 'text-green-400',
     description: 'Produto com alta rotatividade',
-    salesPerMonth: 45
+    salesPerMonth: salesPerMonth
   };
-  if (remainder === 1) return { 
+  if (turnoverRate === 'medio') return { 
     rate: 'Médio', 
     icon: Minus, 
     color: 'text-yellow-400',
     description: 'Produto com rotatividade moderada',
-    salesPerMonth: 22
+    salesPerMonth: salesPerMonth
   };
   return { 
     rate: 'Baixo', 
     icon: TrendingDown, 
     color: 'text-red-400',
     description: 'Produto com baixa rotatividade',
-    salesPerMonth: 8
+    salesPerMonth: salesPerMonth
   };
 };
 
@@ -80,33 +79,30 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
   onAdjustStock,
   onViewHistory,
 }) => {
-  if (!product) return null;
-
-  const stockStatus = getStockStatus(product.stock_quantity, product.minimum_stock || 10);
-  const turnoverAnalysis = getTurnoverAnalysis(product.id);
-  const TurnoverIcon = turnoverAnalysis.icon;
-
-  // Simular localização física (estável por produto)
+  const { formatCompact, formatRelative } = useFormatBrazilianDate();
+  
+  // Buscar dados analíticos reais do produto
+  const { analytics, isLoading: analyticsLoading } = useProductAnalytics(product?.id || null);
+  
+  // Simular localização física (estável por produto) - TODO: Implementar campo real no banco
   const location = useMemo(() => {
-    // Usar ID do produto para seed consistente
+    if (!product) return 'N/A';
     const seed = product.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
     const aisle = (seed % 5) + 1;
     const shelf = (Math.floor(seed / 5) % 10) + 1;
     return `A${aisle}-B${shelf}`;
-  }, [product.id]);
+  }, [product?.id]);
+
+  if (!product) return null;
+
+  const stockStatus = getStockStatus(product.stock_quantity, product.minimum_stock || 10);
   
-  // Simular datas (estáveis por produto)
-  const { lastEntry, lastExit } = useMemo(() => {
-    // Usar ID do produto para seed consistente
-    const seed = product.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    const entryDaysAgo = (seed % 30) + 1; // 1-30 dias atrás
-    const exitDaysAgo = (seed % 7) + 1;   // 1-7 dias atrás
+  // Usar dados reais ou fallback para análise de giro
+  const turnoverAnalysis = analytics 
+    ? getTurnoverAnalysis(analytics.turnoverRate, analytics.salesPerMonth)
+    : getTurnoverAnalysis('baixo', 0); // Fallback enquanto carrega
     
-    return {
-      lastEntry: new Date(Date.now() - entryDaysAgo * 24 * 60 * 60 * 1000),
-      lastExit: new Date(Date.now() - exitDaysAgo * 24 * 60 * 60 * 1000)
-    };
-  }, [product.id]);
+  const TurnoverIcon = turnoverAnalysis.icon;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -116,6 +112,9 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
             <DialogTitle className="text-xl font-bold text-adega-platinum">
               DETALHES DO PRODUTO
             </DialogTitle>
+            <DialogDescription className="text-gray-400 mt-2">
+              Visualização completa das informações do produto selecionado.
+            </DialogDescription>
             <Button
               onClick={onClose}
               variant="ghost"
@@ -207,7 +206,7 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
                 
                 <div>
                   <label className="text-sm text-gray-400">Fornecedor</label>
-                  <p className="text-gray-100 font-medium">{product.supplier || 'N/A'}</p>
+                  <p className="text-gray-100 font-medium">{product.supplier ? String(product.supplier).trim() : 'N/A'}</p>
                 </div>
               </div>
             </div>
@@ -247,7 +246,15 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
                     <Calendar className="h-4 w-4 mr-1" />
                     Última Entrada
                   </label>
-                  <p className="text-gray-100">{lastEntry.toLocaleDateString('pt-BR')}</p>
+                  <p className="text-gray-100">
+                    {analyticsLoading ? (
+                      'Carregando...'
+                    ) : analytics?.lastEntry ? (
+                      formatCompact(analytics.lastEntry)
+                    ) : (
+                      'Nenhuma entrada registrada'
+                    )}
+                  </p>
                 </div>
                 
                 <div>
@@ -255,7 +262,15 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
                     <Calendar className="h-4 w-4 mr-1" />
                     Última Saída
                   </label>
-                  <p className="text-gray-100">{lastExit.toLocaleDateString('pt-BR')}</p>
+                  <p className="text-gray-100">
+                    {analyticsLoading ? (
+                      'Carregando...'
+                    ) : analytics?.lastExit ? (
+                      formatCompact(analytics.lastExit)
+                    ) : (
+                      'Nenhuma saída registrada'
+                    )}
+                  </p>
                 </div>
               </div>
             </div>
@@ -277,9 +292,16 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
                 </div>
                 
                 <div className="bg-gray-800/40 rounded-lg p-3">
-                  <label className="text-sm text-gray-400">Vendas/Mês</label>
-                  <p className="text-xl font-bold text-gray-100">{turnoverAnalysis.salesPerMonth}</p>
+                  <label className="text-sm text-gray-400">Vendas/Mês (Média)</label>
+                  <p className="text-xl font-bold text-gray-100">
+                    {analyticsLoading ? '...' : turnoverAnalysis.salesPerMonth}
+                  </p>
                   <span className="text-sm text-gray-400">unidades</span>
+                  {analytics && analytics.salesLast30Days > 0 && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      {analytics.salesLast30Days} vendas últimos 30 dias
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -309,7 +331,7 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
                 <div>
                   <label className="text-sm text-gray-400">Margem</label>
                   <p className="text-lg font-bold text-yellow-400">
-                    {product.margin_percent ? `${product.margin_percent}%` : 'N/A'}
+                    {product.margin_percent ? `${String(product.margin_percent).trim()}%` : 'N/A'}
                   </p>
                 </div>
               </div>
@@ -325,25 +347,32 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm text-gray-400">Volume</label>
-                  <p className="text-gray-100">{product.volume || 'N/A'}</p>
+                  <p className="text-gray-100">
+                    {product.volume_ml ? `${product.volume_ml} ml` : 
+                     product.volume ? String(product.volume).trim() : 'N/A'}
+                  </p>
                 </div>
                 
                 <div>
                   <label className="text-sm text-gray-400">Teor Alcoólico</label>
-                  <p className="text-gray-100">{product.alcohol_content ? `${product.alcohol_content}%` : 'N/A'}</p>
+                  <p className="text-gray-100">
+                    {product.alcohol_content ? `${String(product.alcohol_content).trim()}%` : 'N/A'}
+                  </p>
                 </div>
                 
                 <div>
                   <label className="text-sm text-gray-400">País de Origem</label>
                   <p className="text-gray-100 flex items-center">
                     <Globe className="h-4 w-4 mr-1" />
-                    {product.country || 'N/A'}
+                    {product.country ? String(product.country).trim() : 'N/A'}
                   </p>
                 </div>
                 
                 <div>
                   <label className="text-sm text-gray-400">Região</label>
-                  <p className="text-gray-100">{product.region || 'N/A'}</p>
+                  <p className="text-gray-100">
+                    {product.region ? String(product.region).trim() : 'N/A'}
+                  </p>
                 </div>
                 
                 {product.vintage && (

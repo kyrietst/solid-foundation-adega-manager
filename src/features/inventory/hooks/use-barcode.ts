@@ -64,11 +64,11 @@ export const useBarcode = () => {
     // Remove espaços e caracteres não numéricos
     const cleanCode = barcode.replace(/\D/g, '');
     
-    // Valida comprimento (EAN-8, EAN-13, UPC)
-    if (![8, 12, 13, 14].includes(cleanCode.length)) {
+    // Valida comprimento (8-14 dígitos conforme constraint do banco)
+    if (cleanCode.length < 8 || cleanCode.length > 14) {
       return {
         isValid: false,
-        error: 'Código deve ter 8, 12, 13 ou 14 dígitos'
+        error: 'Código deve ter entre 8 e 14 dígitos numéricos'
       };
     }
 
@@ -79,6 +79,11 @@ export const useBarcode = () => {
       case 8:
         format = 'EAN-8';
         break;
+      case 9:
+      case 10:
+      case 11:
+        format = 'CUSTOM';
+        break;
       case 12:
         format = 'UPC-A';
         break;
@@ -87,6 +92,9 @@ export const useBarcode = () => {
         break;
       case 14:
         format = 'CODE-128';
+        break;
+      default:
+        format = 'CUSTOM';
         break;
     }
 

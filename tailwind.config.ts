@@ -206,6 +206,36 @@ export default {
 	},
 	plugins: [
 		// eslint-disable-next-line @typescript-eslint/no-require-imports
-		require("tailwindcss-animate")
+		require("tailwindcss-animate"),
+		// Plugin para scrollbar customizada
+		function({ addUtilities }: any) {
+			const scrollbarUtilities = {
+				'.scrollbar-thin': {
+					'scrollbar-width': 'thin',
+				},
+				'.scrollbar-none': {
+					'scrollbar-width': 'none',
+					'-ms-overflow-style': 'none',
+				},
+				'.scrollbar-none::-webkit-scrollbar': {
+					'display': 'none',
+				},
+				'.scrollbar-thumb-amber-400\\/30::-webkit-scrollbar-thumb': {
+					'background-color': 'rgb(251 191 36 / 0.3)',
+					'border-radius': '0.25rem',
+				},
+				'.scrollbar-thumb-amber-400\\/50::-webkit-scrollbar-thumb': {
+					'background-color': 'rgb(251 191 36 / 0.5)',
+					'border-radius': '0.25rem',
+				},
+				'.scrollbar-track-transparent::-webkit-scrollbar-track': {
+					'background-color': 'transparent',
+				},
+				'.hover\\:scrollbar-thumb-amber-400\\/50:hover::-webkit-scrollbar-thumb': {
+					'background-color': 'rgb(251 191 36 / 0.5)',
+				},
+			};
+			addUtilities(scrollbarUtilities);
+		}
 	],
 } satisfies Config;

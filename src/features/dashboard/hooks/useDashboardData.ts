@@ -48,18 +48,25 @@ export const useDashboardData = () => {
   const { data: counts, isLoading: isLoadingCounts, error: countsError, refetch: refetchCounts } = useQuery({
     queryKey: ['dashboard', 'counts'],
     queryFn: errorHandler.withErrorHandling('counts', async (): Promise<DashboardCounts> => {
-      // MOCK DATA para teste - substituir por dados reais depois
-      console.log('🧪 Dashboard - Usando dados mockados para teste');
-      
-      // Simular delay de rede
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      return {
-        totalCustomers: 247,
-        vipCustomers: 18,
-        productsInStock: 156,
-        pendingDeliveries: 12,
-      };
+      try {
+        // Buscar contadores reais do banco
+        const [customersResult, vipCustomersResult, productsResult, deliveriesResult] = await Promise.all([
+          supabase.from('customers').select('id', { count: 'exact', head: true }),
+          supabase.from('customers').select('id', { count: 'exact', head: true }).eq('customer_category', 'premium'),
+          supabase.from('products').select('id', { count: 'exact', head: true }).gt('stock_quantity', 0),
+          supabase.from('sales').select('id', { count: 'exact', head: true }).eq('delivery_status', 'pending')
+        ]);
+
+        return {
+          totalCustomers: customersResult.count || 0,
+          vipCustomers: vipCustomersResult.count || 0,
+          productsInStock: productsResult.count || 0,
+          pendingDeliveries: deliveriesResult.count || 0,
+        };
+      } catch (error) {
+        console.error('Erro ao buscar contadores:', error);
+        throw error;
+      }
     }, 'contadores do dashboard'),
     staleTime: 5 * 60 * 1000, // 5 minutos
     retry: false, // Error handler já faz retry

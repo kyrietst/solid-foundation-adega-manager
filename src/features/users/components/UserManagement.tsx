@@ -6,13 +6,15 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/shared/ui/primitives/button';
-import { Plus, Users } from 'lucide-react';
+import { Plus, Users, FolderTree, Settings } from 'lucide-react';
 import { BlurIn } from '@/components/ui/blur-in';
+import { cn } from '@/core/config/utils';
 
 // Componentes refatorados
 import { FirstAdminSetup } from './FirstAdminSetup';
 import { UserList } from './UserList';
 import { UserCreateDialog } from './UserCreateDialog';
+import { CategoryManagement } from '@/features/admin/components/CategoryManagement';
 
 // Hooks customizados
 import { useFirstAdminSetup } from '@/features/users/hooks/useFirstAdminSetup';
@@ -20,9 +22,12 @@ import { useUserManagement } from '@/features/users/hooks/useUserManagement';
 import { useUserCreation } from '@/features/users/hooks/useUserCreation';
 import { useUserPermissions } from '@/features/users/hooks/useUserPermissions';
 
+type ActiveTab = 'users' | 'categories';
+
 export const UserManagement = () => {
-  // Estados locais apenas para dialogs
+  // Estados locais para dialogs e abas
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<ActiveTab>('users');
 
   // Hooks customizados
   const { showFirstAdminSetup, isSettingUp } = useFirstAdminSetup();
@@ -82,7 +87,7 @@ export const UserManagement = () => {
         <div className="relative text-center sm:text-left">
           {/* Título animado */}
           <BlurIn
-            word="GERENCIAMENTO DE USUÁRIOS"
+            word="ADMINISTRAÇÃO DO SISTEMA"
             duration={1.2}
             variant={{
               hidden: { filter: "blur(15px)", opacity: 0 },
@@ -101,10 +106,38 @@ export const UserManagement = () => {
             <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FFDA04]/80 to-transparent h-[3px] w-3/4 blur-sm mx-auto" />
             <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FFDA04] to-transparent h-px w-3/4 mx-auto" />
           </div>
+
+          {/* Abas de navegação */}
+          <div className="flex items-center gap-1 mt-4 bg-black/40 backdrop-blur-sm rounded-lg p-1 border border-white/10">
+            <button
+              onClick={() => setActiveTab('users')}
+              className={cn(
+                "flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200",
+                activeTab === 'users'
+                  ? "bg-[#FFD700]/20 text-[#FFD700] border border-[#FFD700]/30"
+                  : "text-gray-400 hover:text-gray-200 hover:bg-white/5"
+              )}
+            >
+              <Users className="h-4 w-4" />
+              Usuários
+            </button>
+            <button
+              onClick={() => setActiveTab('categories')}
+              className={cn(
+                "flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200",
+                activeTab === 'categories'
+                  ? "bg-[#FFD700]/20 text-[#FFD700] border border-[#FFD700]/30"
+                  : "text-gray-400 hover:text-gray-200 hover:bg-white/5"
+              )}
+            >
+              <FolderTree className="h-4 w-4" />
+              Categorias
+            </button>
+          </div>
         </div>
         
         {/* Controles */}
-        {canCreateUsers && (
+        {canCreateUsers && activeTab === 'users' && (
           <div className="flex items-center gap-4">
             <Button 
               onClick={() => setIsCreateDialogOpen(true)}
@@ -131,21 +164,29 @@ export const UserManagement = () => {
         }}
       >
 
-        {/* Lista de usuários */}
-        <UserList
-          users={users}
-          onRefresh={handleRefreshUsers}
-          canManageUsers={canCreateUsers}
-          isLoading={isLoading}
-        />
+        {/* Conteúdo baseado na aba ativa */}
+        {activeTab === 'users' ? (
+          <>
+            {/* Lista de usuários */}
+            <UserList
+              users={users}
+              onRefresh={handleRefreshUsers}
+              canManageUsers={canCreateUsers}
+              isLoading={isLoading}
+            />
 
-        {/* Dialog de criação de usuário */}
-        <UserCreateDialog
-          isOpen={isCreateDialogOpen}
-          onClose={() => setIsCreateDialogOpen(false)}
-          onUserCreated={handleCreateUser}
-          isSubmitting={isCreating}
-        />
+            {/* Dialog de criação de usuário */}
+            <UserCreateDialog
+              isOpen={isCreateDialogOpen}
+              onClose={() => setIsCreateDialogOpen(false)}
+              onUserCreated={handleCreateUser}
+              isSubmitting={isCreating}
+            />
+          </>
+        ) : (
+          /* Gerenciamento de categorias */
+          <CategoryManagement />
+        )}
       </section>
     </div>
   );

@@ -8,7 +8,6 @@ import type {
   NonNegativeInteger 
 } from './branded.types';
 import type { 
-  WineCategory, 
   ProducingCountry, 
   WineRegion 
 } from './enums.types';
@@ -22,7 +21,7 @@ export interface Product {
   description?: string;
   price: Price;
   stock_quantity: StockQuantity;
-  category: WineCategory;
+  category: string; // Categoria dinâmica do banco de dados
   vintage?: Year;
   producer?: string;
   country?: ProducingCountry;
@@ -57,7 +56,7 @@ export interface Product {
 export interface ProductFormData {
   name: string;
   description?: string;
-  category: WineCategory;
+  category: string; // Categoria dinâmica do banco de dados
   price: Price;
   cost_price?: Price;
   margin_percent?: Percentage;
@@ -77,6 +76,7 @@ export interface ProductFormData {
   package_size: NonNegativeInteger;
   package_price?: Price;
   package_margin?: Percentage;
+  turnover_rate?: TurnoverRate;
   barcode?: string;
   
   // Campos adicionados na história 1.1 - Schema e Políticas de Segurança
@@ -173,7 +173,7 @@ export interface BarcodeOperation {
 
 export interface BarcodeValidation {
   isValid: boolean;
-  format?: 'EAN-8' | 'EAN-13' | 'UPC-A' | 'UPC-E' | 'CODE-128' | 'UNKNOWN';
+  format?: 'EAN-8' | 'EAN-13' | 'UPC-A' | 'UPC-E' | 'CODE-128' | 'CUSTOM' | 'UNKNOWN';
   error?: string;
 }
 

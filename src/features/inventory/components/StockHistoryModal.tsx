@@ -4,7 +4,7 @@
  */
 
 import React, { useMemo, useEffect, useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shared/ui/primitives/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/shared/ui/primitives/dialog';
 import { Button } from '@/shared/ui/primitives/button';
 import { Badge } from '@/shared/ui/primitives/badge';
 import { 
@@ -23,6 +23,7 @@ import {
 import { cn } from '@/core/config/utils';
 import { formatCurrency } from '@/core/config/utils';
 import { supabase } from '@/core/api/supabase/client';
+import { useFormatBrazilianDate } from '@/shared/hooks/common/use-brasil-timezone';
 import type { Product } from '@/types/inventory.types';
 
 interface StockHistoryModalProps {
@@ -46,20 +47,10 @@ interface StockMovement {
 // Buscar histórico real de movimentações do banco de dados
 const fetchRealStockHistory = async (productId: string): Promise<StockMovement[]> => {
   try {
-    // Primeiro, buscar o product ID real pelo nome
-    const { data: productData } = await supabase
-      .from('products')
-      .select('id')
-      .eq('name', productId)
-      .single();
+    console.log('Buscando movimentações para produto ID:', productId);
 
-    if (!productData) {
-      console.warn('Produto não encontrado:', productId);
-      return [];
-    }
-
-    // Agora buscar as movimentações usando o ID correto
-    const { data, error } = await supabase
+    // Buscar as movimentações primeiro
+    const { data: movements, error: movementsError } = await supabase
       .from('inventory_movements')
       .select(`
         id,
@@ -70,28 +61,83 @@ const fetchRealStockHistory = async (productId: string): Promise<StockMovement[]
         reference_number,
         previous_stock,
         new_stock,
-        user_id,
-        profiles!inner(name)
+        user_id
       `)
-      .eq('product_id', productData.id)
+      .eq('product_id', productId)
       .order('date', { ascending: false });
 
-    if (error) {
-      console.error('Erro ao buscar histórico:', error);
+    if (movementsError) {
+      console.error('Erro ao buscar movimentações:', movementsError);
       return [];
     }
 
-    return (data || []).map(movement => ({
-      id: movement.id,
-      date: new Date(movement.date),
-      type: movement.type as StockMovement['type'],
-      quantity: movement.quantity,
-      reason: movement.reason || 'Sem motivo especificado',
-      user: movement.profiles?.name || 'Usuário desconhecido',
-      balanceAfter: movement.new_stock || 0,
-      reference: movement.reference_number || undefined,
-      stockChange: movement.type === 'entrada' ? movement.quantity : -movement.quantity
-    }));
+    if (!movements || movements.length === 0) {
+      console.log('Nenhuma movimentação encontrada para o produto');
+      return [];
+    }
+
+    console.log('Movimentações encontradas:', movements.length);
+    console.log('Primeira movimentação:', movements[0]);
+
+    // Buscar nomes dos usuários para os user_ids únicos
+    const userIds = [...new Set(movements.map(m => m.user_id).filter(Boolean))];
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, name')
+      .in('id', userIds);
+
+    // Criar um mapa de user_id para nome
+    const userMap = new Map();
+    if (profiles) {
+      profiles.forEach(profile => {
+        userMap.set(profile.id, profile.name);
+      });
+    }
+
+    return movements.map(movement => {
+      // Mapear tipos corretamente baseado nos dados reais
+      let mappedType: StockMovement['type'];
+      switch (movement.type) {
+        case 'out':
+        case 'saida':
+          mappedType = 'saida';
+          break;
+        case 'in':
+        case 'entrada':
+          mappedType = 'entrada';
+          break;
+        case 'ajuste':
+        case 'correction':
+          mappedType = 'ajuste';
+          break;
+        case 'sale':
+          mappedType = 'venda';
+          break;
+        default:
+          mappedType = movement.type as StockMovement['type'];
+      }
+
+      // Calcular mudança de estoque baseado no tipo
+      let stockChange: number;
+      if (movement.previous_stock !== null && movement.new_stock !== null) {
+        stockChange = movement.new_stock - movement.previous_stock;
+      } else {
+        // Fallback baseado no tipo e quantidade
+        stockChange = mappedType === 'entrada' ? movement.quantity : -movement.quantity;
+      }
+
+      return {
+        id: movement.id,
+        date: new Date(movement.date),
+        type: mappedType,
+        quantity: Math.abs(movement.quantity), // Sempre positivo para display
+        reason: movement.reason || 'Sem motivo especificado',
+        user: userMap.get(movement.user_id) || 'Usuário desconhecido',
+        balanceAfter: movement.new_stock || movement.previous_stock || 0,
+        reference: movement.reference_number || undefined,
+        stockChange: stockChange
+      };
+    });
   } catch (error) {
     console.error('Erro ao buscar movimentações:', error);
     return [];
@@ -150,11 +196,12 @@ export const StockHistoryModal: React.FC<StockHistoryModalProps> = ({
 }) => {
   const [movements, setMovements] = useState<StockMovement[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const { formatCompact } = useFormatBrazilianDate();
 
   useEffect(() => {
     if (product && isOpen) {
       setIsLoading(true);
-      fetchRealStockHistory(product.name) // Usando name como ID temporariamente
+      fetchRealStockHistory(product.id) // Usando o UUID correto do produto
         .then(setMovements)
         .catch(error => {
           console.error('Erro ao carregar movimentações:', error);
@@ -174,6 +221,9 @@ export const StockHistoryModal: React.FC<StockHistoryModalProps> = ({
             <Package className="h-5 w-5 mr-2 text-yellow-400" />
             Histórico de Movimentações
           </DialogTitle>
+          <DialogDescription className="text-gray-400 mt-2">
+            Visualize todas as movimentações de estoque deste produto, incluindo entradas, saídas e ajustes.
+          </DialogDescription>
           
           {/* Informações do produto */}
           <div className="bg-black/30 rounded-lg p-3 mt-4">
@@ -203,7 +253,6 @@ export const StockHistoryModal: React.FC<StockHistoryModalProps> = ({
             movements.map((movement) => {
               const MovementIcon = getMovementIcon(movement.type);
               const colorClasses = getMovementColor(movement.type);
-              const isPositive = movement.type === 'entrada';
               
               return (
                 <div
@@ -236,7 +285,7 @@ export const StockHistoryModal: React.FC<StockHistoryModalProps> = ({
                         <div className="flex items-center space-x-4 text-xs text-gray-400">
                           <span className="flex items-center">
                             <Calendar className="h-3 w-3 mr-1" />
-                            {movement.date.toLocaleDateString('pt-BR')} às {movement.date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                            {formatCompact(movement.date)}
                           </span>
                           <span className="flex items-center">
                             <User className="h-3 w-3 mr-1" />
@@ -251,9 +300,9 @@ export const StockHistoryModal: React.FC<StockHistoryModalProps> = ({
                       <div className="flex items-center space-x-2">
                         <span className={cn(
                           "text-lg font-bold",
-                          isPositive ? "text-green-400" : "text-red-400"
+                          movement.stockChange > 0 ? "text-green-400" : "text-red-400"
                         )}>
-                          {isPositive ? '+' : '-'}{movement.quantity}
+                          {movement.stockChange > 0 ? '+' : ''}{movement.stockChange}
                         </span>
                         <span className="text-xs text-gray-400">un</span>
                       </div>

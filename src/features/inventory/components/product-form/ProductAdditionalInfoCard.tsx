@@ -77,7 +77,7 @@ export const ProductAdditionalInfoCard: React.FC<ProductAdditionalInfoCardProps>
             <Input
               id="vintage"
               type="number"
-              value={formData.vintage || ''}
+              value={formData.vintage ?? ''}
               onChange={(e) => onInputChange('vintage', Number(e.target.value))}
               placeholder="2023"
               min="1900"
@@ -99,7 +99,7 @@ export const ProductAdditionalInfoCard: React.FC<ProductAdditionalInfoCardProps>
               id="alcohol_content"
               type="number"
               step="0.1"
-              value={formData.alcohol_content || ''}
+              value={formData.alcohol_content ?? ''}
               onChange={(e) => onInputChange('alcohol_content', Number(e.target.value))}
               placeholder="13.5"
               min="0"

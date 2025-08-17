@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shared/ui/primitives/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/shared/ui/primitives/dialog';
 import { Button } from '@/shared/ui/primitives/button';
 import { Input } from '@/shared/ui/primitives/input';
 import { Textarea } from '@/shared/ui/primitives/textarea';
@@ -142,6 +142,9 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
             <Package className="h-5 w-5 mr-2 text-yellow-400" />
             Ajustar Estoque
           </DialogTitle>
+          <DialogDescription className="text-gray-400 mt-2">
+            Registre movimentações de entrada, saída ou correções de estoque para este produto.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6 mt-4">

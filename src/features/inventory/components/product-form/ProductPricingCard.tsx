@@ -63,7 +63,7 @@ export const ProductPricingCard: React.FC<ProductPricingCardProps> = ({
               id="cost_price"
               type="number"
               step="0.01"
-              value={formData.cost_price || ''}
+              value={formData.cost_price ?? ''}
               onChange={(e) => {
                 const value = Number(e.target.value);
                 // História 1.4: Usar handler especializado se disponível, senão fallback para onInputChange
@@ -92,7 +92,7 @@ export const ProductPricingCard: React.FC<ProductPricingCardProps> = ({
               id="price"
               type="number"
               step="0.01"
-              value={formData.price || ''}
+              value={formData.price ?? ''}
               onChange={(e) => {
                 const value = Number(e.target.value);
                 // História 1.4: Usar handler especializado se disponível, senão fallback para onInputChange
@@ -120,7 +120,7 @@ export const ProductPricingCard: React.FC<ProductPricingCardProps> = ({
               id="margin_percent"
               type="number"
               step="0.01"
-              value={formData.margin_percent || ''}
+              value={formData.margin_percent ?? ''}
               onChange={(e) => onMarginChange(Number(e.target.value))}
               placeholder="0.00"
               className={cn(
@@ -172,7 +172,7 @@ export const ProductPricingCard: React.FC<ProductPricingCardProps> = ({
               id="package_price"
               type="number"
               step="0.01"
-              value={formData.package_price || ''}
+              value={formData.package_price ?? ''}
               onChange={(e) => onInputChange('package_price', Number(e.target.value))}
               placeholder={`${calculations.pricePerPackage?.toFixed(2) || '0.00'} (automático)`}
             />

@@ -6,7 +6,7 @@
 import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
-import { useNotifications } from '@/shared/hooks/common/useNotifications';
+import { useToast } from '@/shared/hooks/common/use-toast';
 import { useMouseTracker } from '@/hooks/ui/useMouseTracker';
 import { ProductsGridContainer } from './ProductsGridContainer';
 import { ProductsTitle, ProductsHeader } from './ProductsHeader';
@@ -15,7 +15,7 @@ import { ProductForm } from './ProductForm';
 import { ProductDetailsModal } from './ProductDetailsModal';
 import { StockAdjustmentModal, type StockAdjustment } from './StockAdjustmentModal';
 import { StockHistoryModal } from './StockHistoryModal';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shared/ui/primitives/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/shared/ui/primitives/dialog';
 import type { ProductFormData } from '@/core/types/inventory.types';
 import type { Product } from '@/types/inventory.types';
 
@@ -41,39 +41,55 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
   const [isStockAdjustmentOpen, setIsStockAdjustmentOpen] = useState(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const queryClient = useQueryClient();
-  const { showSuccess, showError } = useNotifications();
+  const { toast } = useToast();
   const { handleMouseMove } = useMouseTracker();
 
   // Mutation para adicionar produto
   const addProductMutation = useMutation({
     mutationFn: async (productData: ProductFormData) => {
+      // Validar código de barras se fornecido
+      if (productData.barcode && productData.barcode.trim()) {
+        const barcodePattern = /^[0-9]{8,14}$/;
+        if (!barcodePattern.test(productData.barcode.trim())) {
+          throw new Error('Código de barras deve conter apenas números e ter entre 8 e 14 dígitos');
+        }
+      }
+
+      // Preparar dados para inserção, incluindo colunas faltantes
+      const insertData = {
+        name: productData.name,
+        description: productData.description || null,
+        price: productData.price,
+        stock_quantity: productData.stock_quantity || 0,
+        category: productData.category,
+        vintage: productData.vintage || null,
+        producer: productData.producer || null,
+        country: productData.country || null,
+        region: productData.region || null,
+        alcohol_content: productData.alcohol_content || null,
+        volume: null, // Campo legacy - mantido como null
+        volume_ml: productData.volume_ml || null,
+        image_url: productData.image_url || null,
+        supplier: productData.supplier || null,
+        minimum_stock: productData.minimum_stock || 5,
+        cost_price: productData.cost_price || null,
+        margin_percent: productData.margin_percent || null,
+        unit_type: productData.unit_type || 'un',
+        package_size: productData.package_size || 1,
+        package_price: productData.package_price || null,
+        package_margin: productData.package_margin || null,
+        turnover_rate: productData.turnover_rate || 'medium',
+        barcode: (productData.barcode && productData.barcode.trim()) ? productData.barcode.trim() : null,
+        // Colunas faltantes com valores padrão
+        measurement_type: null,
+        measurement_value: null,
+        is_package: false,
+        units_per_package: 1
+      };
+
       const { data, error } = await supabase
         .from('products')
-        .insert([{
-          name: productData.name,
-          description: productData.description,
-          price: productData.price,
-          stock_quantity: productData.stock_quantity,
-          category: productData.category,
-          vintage: productData.vintage,
-          producer: productData.producer,
-          country: productData.country,
-          region: productData.region,
-          alcohol_content: productData.alcohol_content,
-          volume: productData.volume,
-          volume_ml: productData.volume_ml,
-          image_url: productData.image_url,
-          supplier: productData.supplier,
-          minimum_stock: productData.minimum_stock,
-          cost_price: productData.cost_price,
-          margin_percent: productData.margin_percent,
-          unit_type: productData.unit_type,
-          package_size: productData.package_size,
-          package_price: productData.package_price,
-          package_margin: productData.package_margin,
-          turnover_rate: productData.turnover_rate,
-          barcode: productData.barcode,
-        }])
+        .insert([insertData])
         .select()
         .single();
 
@@ -88,11 +104,19 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
       setIsAddProductOpen(false);
       
       // Mostra mensagem de sucesso
-      showSuccess(`Produto "${data.name}" adicionado com sucesso!`);
+      toast({
+        title: 'Produto adicionado',
+        description: `Produto "${data.name}" adicionado com sucesso!`,
+        variant: 'default',
+      });
     },
     onError: (error: any) => {
       console.error('Erro ao adicionar produto:', error);
-      showError('Erro ao adicionar produto. Tente novamente.');
+      toast({
+        title: 'Erro ao adicionar produto',
+        description: 'Erro ao adicionar produto. Tente novamente.',
+        variant: 'destructive',
+      });
     },
   });
 
@@ -178,11 +202,19 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
       
       const typeText = variables.type === 'entrada' ? 'Entrada' : 
                       variables.type === 'saida' ? 'Saída' : 'Correção';
-      showSuccess(`${typeText} de estoque realizada com sucesso!`);
+      toast({
+        title: 'Estoque atualizado',
+        description: `${typeText} de estoque realizada com sucesso!`,
+        variant: 'default',
+      });
     },
     onError: (error: any) => {
       console.error('Erro ao ajustar estoque:', error);
-      showError('Erro ao ajustar estoque. Tente novamente.');
+      toast({
+        title: 'Erro ao ajustar estoque',
+        description: 'Erro ao ajustar estoque. Tente novamente.',
+        variant: 'destructive',
+      });
     },
   });
 
@@ -195,33 +227,45 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
     mutationFn: async (productData: ProductFormData) => {
       if (!selectedProduct) throw new Error('Nenhum produto selecionado');
 
+      // Validar código de barras se fornecido
+      if (productData.barcode && productData.barcode.trim()) {
+        const barcodePattern = /^[0-9]{8,14}$/;
+        if (!barcodePattern.test(productData.barcode.trim())) {
+          throw new Error('Código de barras deve conter apenas números e ter entre 8 e 14 dígitos');
+        }
+      }
+
+      // Preparar dados para atualização
+      const updateData = {
+        name: productData.name,
+        description: productData.description || null,
+        price: productData.price,
+        stock_quantity: productData.stock_quantity || 0,
+        category: productData.category,
+        vintage: productData.vintage || null,
+        producer: productData.producer || null,
+        country: productData.country || null,
+        region: productData.region || null,
+        alcohol_content: productData.alcohol_content || null,
+        volume: null, // Campo legacy - mantido como null
+        volume_ml: productData.volume_ml || null,
+        image_url: productData.image_url || null,
+        supplier: productData.supplier || null,
+        minimum_stock: productData.minimum_stock || 5,
+        cost_price: productData.cost_price || null,
+        margin_percent: productData.margin_percent || null,
+        unit_type: productData.unit_type || 'un',
+        package_size: productData.package_size || 1,
+        package_price: productData.package_price || null,
+        package_margin: productData.package_margin || null,
+        turnover_rate: productData.turnover_rate || 'medium',
+        barcode: (productData.barcode && productData.barcode.trim()) ? productData.barcode.trim() : null,
+        updated_at: new Date().toISOString()
+      };
+
       const { data, error } = await supabase
         .from('products')
-        .update({
-          name: productData.name,
-          description: productData.description,
-          price: productData.price,
-          stock_quantity: productData.stock_quantity,
-          category: productData.category,
-          vintage: productData.vintage,
-          producer: productData.producer,
-          country: productData.country,
-          region: productData.region,
-          alcohol_content: productData.alcohol_content,
-          volume: productData.volume,
-          volume_ml: productData.volume_ml,
-          image_url: productData.image_url,
-          supplier: productData.supplier,
-          minimum_stock: productData.minimum_stock,
-          cost_price: productData.cost_price,
-          margin_percent: productData.margin_percent,
-          unit_type: productData.unit_type,
-          package_size: productData.package_size,
-          package_price: productData.package_price,
-          package_margin: productData.package_margin,
-          turnover_rate: productData.turnover_rate,
-          barcode: productData.barcode,
-        })
+        .update(updateData)
         .eq('id', selectedProduct.id)
         .select()
         .single();
@@ -233,11 +277,19 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
       queryClient.invalidateQueries({ queryKey: ['products'] });
       setIsEditProductOpen(false);
       setSelectedProduct(null);
-      showSuccess(`Produto "${data.name}" atualizado com sucesso!`);
+      toast({
+        title: 'Produto atualizado',
+        description: `Produto "${data.name}" atualizado com sucesso!`,
+        variant: 'default',
+      });
     },
     onError: (error: any) => {
       console.error('Erro ao editar produto:', error);
-      showError('Erro ao editar produto. Tente novamente.');
+      toast({
+        title: 'Erro ao editar produto',
+        description: 'Erro ao editar produto. Tente novamente.',
+        variant: 'destructive',
+      });
     },
   });
 
@@ -286,6 +338,9 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>ADICIONAR NOVO PRODUTO</DialogTitle>
+            <DialogDescription>
+              Preencha as informações abaixo para adicionar um novo produto ao seu inventário.
+            </DialogDescription>
           </DialogHeader>
           
           <ProductForm
@@ -327,6 +382,9 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>EDITAR PRODUTO</DialogTitle>
+            <DialogDescription>
+              Modifique as informações do produto. Apenas os campos alterados serão atualizados.
+            </DialogDescription>
           </DialogHeader>
           
           <ProductForm
@@ -337,27 +395,31 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
             initialData={selectedProduct ? {
               name: selectedProduct.name,
               description: selectedProduct.description || '',
-              price: selectedProduct.price,
-              stock_quantity: selectedProduct.stock_quantity,
-              category: selectedProduct.category,
-              vintage: selectedProduct.vintage || '',
+              price: Number(selectedProduct.price) || 0,
+              stock_quantity: selectedProduct.stock_quantity || 0,
+              category: selectedProduct.category || '',
+              vintage: selectedProduct.vintage ? Number(selectedProduct.vintage) : undefined,
               producer: selectedProduct.producer || '',
               country: selectedProduct.country || '',
               region: selectedProduct.region || '',
-              alcohol_content: selectedProduct.alcohol_content || 0,
-              volume: selectedProduct.volume || '',
-              volume_ml: selectedProduct.volume_ml || 0,
+              alcohol_content: selectedProduct.alcohol_content ? Number(selectedProduct.alcohol_content) : undefined,
+              volume_ml: selectedProduct.volume_ml ? Number(selectedProduct.volume_ml) : undefined,
               image_url: selectedProduct.image_url || '',
               supplier: selectedProduct.supplier || '',
-              minimum_stock: selectedProduct.minimum_stock || 0,
-              cost_price: selectedProduct.cost_price || 0,
-              margin_percent: selectedProduct.margin_percent || 0,
-              unit_type: selectedProduct.unit_type || '',
-              package_size: selectedProduct.package_size || 0,
-              package_price: selectedProduct.package_price || 0,
-              package_margin: selectedProduct.package_margin || 0,
-              turnover_rate: selectedProduct.turnover_rate || '',
+              minimum_stock: selectedProduct.minimum_stock || 5,
+              cost_price: Number(selectedProduct.cost_price) || 0,
+              margin_percent: Number(selectedProduct.margin_percent) || 0,
+              unit_type: selectedProduct.unit_type || 'un',
+              package_size: selectedProduct.package_size ? Number(selectedProduct.package_size) : 1,
+              package_price: selectedProduct.package_price ? Number(selectedProduct.package_price) : undefined,
+              package_margin: selectedProduct.package_margin ? Number(selectedProduct.package_margin) : undefined,
+              turnover_rate: selectedProduct.turnover_rate || 'medium',
               barcode: selectedProduct.barcode || '',
+              // Incluir campos adicionais se existirem
+              measurement_type: selectedProduct.measurement_type || undefined,
+              measurement_value: selectedProduct.measurement_value || undefined,
+              is_package: selectedProduct.is_package || false,
+              units_per_package: selectedProduct.units_per_package ? Number(selectedProduct.units_per_package) : 1,
             } : undefined}
           />
         </DialogContent>

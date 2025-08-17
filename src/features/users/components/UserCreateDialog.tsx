@@ -9,6 +9,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/shared/ui/primitives/dialog';
 import { UserCreateDialogProps, NewUserData } from './types';
 import { UserForm } from './UserForm';
@@ -64,6 +65,9 @@ export const UserCreateDialog: React.FC<UserCreateDialogProps> = ({
           <DialogTitle className="text-2xl font-bold text-white text-center mb-2">
             Criar Novo Usuário
           </DialogTitle>
+          <DialogDescription className="text-gray-400 text-center mb-2">
+            Preencha as informações abaixo para criar um novo usuário no sistema.
+          </DialogDescription>
           <div className="w-16 h-1 bg-gradient-to-r from-[#FFD700] to-[#FFA500] mx-auto rounded-full"></div>
         </DialogHeader>
         

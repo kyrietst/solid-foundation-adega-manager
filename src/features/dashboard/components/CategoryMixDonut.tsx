@@ -32,23 +32,44 @@ export function CategoryMixDonut({ className, period = 30, showTotal = false }: 
   const { data: categoryData, isLoading, error } = useQuery({
     queryKey: ['category-mix', period],
     queryFn: async (): Promise<CategoryMix[]> => {
-      // MOCK DATA para teste - substituir por dados reais depois
-      console.log('🥧 Category Mix - Usando dados mockados para teste');
-      
-      // Simular delay de rede
-      await new Promise(resolve => setTimeout(resolve, 400));
-      
-      // Mix de categorias simulado com percentuais realistas
-      const mockCategoryData: CategoryMix[] = [
-        { category: 'Vinhos', revenue: 8750.30 },
-        { category: 'Destilados', revenue: 6420.80 },
-        { category: 'Cervejas', revenue: 4680.50 },
-        { category: 'Espumantes', revenue: 3920.40 },
-        { category: 'Licor', revenue: 2890.70 },
-        { category: 'Refrigerante', revenue: 1650.90 }
-      ];
-      
-      return mockCategoryData;
+      try {
+        // Buscar vendas por categoria dos últimos X dias
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - period);
+
+        const { data: salesData, error: salesError } = await supabase
+          .from('sales')
+          .select(`
+            sale_items(
+              quantity,
+              unit_price,
+              products(category)
+            )
+          `)
+          .gte('created_at', startDate.toISOString())
+          .lte('created_at', endDate.toISOString());
+
+        if (salesError) throw salesError;
+
+        // Calcular receita por categoria
+        const categoryRevenue: { [key: string]: number } = {};
+        
+        salesData?.forEach(sale => {
+          sale.sale_items?.forEach((item: any) => {
+            const category = item.products?.category || 'Sem Categoria';
+            const revenue = (item.quantity || 0) * (item.unit_price || 0);
+            categoryRevenue[category] = (categoryRevenue[category] || 0) + revenue;
+          });
+        });
+
+        return Object.entries(categoryRevenue)
+          .map(([category, revenue]) => ({ category, revenue }))
+          .sort((a, b) => b.revenue - a.revenue);
+      } catch (error) {
+        console.error('Erro ao buscar mix de categorias:', error);
+        return [];
+      }
     },
     staleTime: 5 * 60 * 1000,
     refetchInterval: 5 * 60 * 1000,

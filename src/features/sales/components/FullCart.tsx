@@ -81,15 +81,14 @@ export function FullCart({
     try {
       const saleData = {
         customer_id: customerId,
-        total: total,
-        discount: allowDiscounts ? discount : 0,
+        total_amount: total,
         payment_method_id: paymentMethodId,
         items: items.map(item => ({
           product_id: item.id,
           quantity: item.quantity,
-          unit_price: item.price,
-          total_price: item.price * item.quantity
-        }))
+          unit_price: item.price
+        })),
+        notes: `Desconto aplicado: R$ ${allowDiscounts ? discount.toFixed(2) : '0.00'}`
       };
 
       const result = await upsertSale.mutateAsync(saleData);

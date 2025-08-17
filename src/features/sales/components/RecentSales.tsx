@@ -3,12 +3,13 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Skeleton } from "@/shared/ui/composite/skeleton";
 import { Button } from "@/shared/ui/primitives/button";
-import { FileText, Download, CalendarDays, CreditCard, ChevronRight, User, Truck, Trash2 } from "lucide-react";
+import { FileText, Download, CalendarDays, CreditCard, ChevronRight, User, Truck, Trash2, Eye, Package } from "lucide-react";
 import { useAuth } from "@/app/providers/AuthContext";
 import { useState } from "react";
 import { useToast } from "@/shared/hooks/common/use-toast";
 import { text, shadows } from "@/core/config/theme";
 import { cn } from "@/core/config/utils";
+import { useNavigate } from "react-router-dom";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -65,13 +66,14 @@ interface Sale {
 }
 
 export function RecentSales() {
-  const { data: sales, isLoading } = useSales({ limit: 5 });
+  const { data: sales, isLoading } = useSales({ limit: 20 });
   const { mutate: deleteSale, isPending: isDeleting } = useDeleteSale();
   const { user, userRole } = useAuth();
   const [saleToDelete, setSaleToDelete] = useState<{id: string, number: string} | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [expandedSaleId, setExpandedSaleId] = useState<string | null>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
   
   // Alterna a exibição dos detalhes da venda
   const toggleSaleDetails = (saleId: string) => {
@@ -86,21 +88,30 @@ export function RecentSales() {
   const handleConfirmDelete = () => {
     if (!saleToDelete) return;
     
-    deleteSale(saleToDelete.id);
+    console.log('Iniciando exclusão da venda:', saleToDelete);
     
-    // Mostra mensagem de sucesso (o hook useDeleteSale já mostra a mensagem)
-    toast({
-      title: "Sucesso",
-      description: `Venda #${saleToDelete.number} excluída com sucesso.`,
+    // Executa a mutação de exclusão
+    deleteSale(saleToDelete.id, {
+      onSuccess: () => {
+        console.log('Exclusão bem-sucedida, fechando modal');
+        setIsDeleteDialogOpen(false);
+        setSaleToDelete(null);
+      },
+      onError: (error) => {
+        console.error('Erro na exclusão, mantendo modal aberto:', error);
+        // Modal permanece aberto para o usuário tentar novamente
+      }
     });
-    
-    setIsDeleteDialogOpen(false);
-    setSaleToDelete(null);
   };
 
   const handleCancelDelete = () => {
     setIsDeleteDialogOpen(false);
     setSaleToDelete(null);
+  };
+
+  const handleViewFullHistory = () => {
+    // Navega para relatórios, aba de vendas, sub-aba de histórico
+    navigate('/reports?tab=sales&subtab=history');
   };
 
   if (isLoading) {
@@ -169,41 +180,54 @@ export function RecentSales() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h2 className={cn(text.h2, shadows.medium, "text-2xl font-bold tracking-tight")}>
-            Vendas Recentes
-          </h2>
-          <p className={cn(text.h6, shadows.subtle, "text-sm")}>
-            Visualize as últimas transações realizadas
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="gap-2">
-            <Download className="h-4 w-4" />
-            <span className="hidden sm:inline">Exportar</span>
-          </Button>
-          <Button size="sm" className="gap-2">
-            <span className="hidden sm:inline">Nova Venda</span>
-            <span className="sm:hidden">+</span>
-          </Button>
+    <div className="flex flex-col h-full">
+      {/* Header fixo */}
+      <div className="flex-shrink-0 mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h2 className={cn(text.h2, shadows.medium, "text-2xl font-bold tracking-tight")}>
+              Vendas Recentes
+            </h2>
+            <p className={cn(text.h6, shadows.subtle, "text-sm")}>
+              Visualize as últimas transações realizadas ({sales?.length || 0} vendas)
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" className="gap-2">
+              <Download className="h-4 w-4" />
+              <span className="hidden sm:inline">Exportar</span>
+            </Button>
+            <Button size="sm" className="gap-2">
+              <span className="hidden sm:inline">Nova Venda</span>
+              <span className="sm:hidden">+</span>
+            </Button>
+          </div>
         </div>
       </div>
       
-      {sales?.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 bg-black/30 border border-white/20 backdrop-blur-xl rounded-lg">
-          <FileText className="h-12 w-12 text-gray-400 mb-4" />
-          <h3 className={cn(text.h4, shadows.medium, "text-lg font-medium")}>
-            Nenhuma venda encontrada
-          </h3>
-          <p className={cn(text.h6, shadows.subtle, "text-sm text-center max-w-md mt-1")}>
-            Quando você realizar vendas, elas aparecerão aqui.
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {sales?.map((sale) => (
+      {/* Área scrollável */}
+      <div className="flex-1 min-h-0">
+        {sales?.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 bg-black/30 border border-white/20 backdrop-blur-xl rounded-lg">
+            <FileText className="h-12 w-12 text-gray-400 mb-4" />
+            <h3 className={cn(text.h4, shadows.medium, "text-lg font-medium")}>
+              Nenhuma venda encontrada
+            </h3>
+            <p className={cn(text.h6, shadows.subtle, "text-sm text-center max-w-md mt-1")}>
+              Quando você realizar vendas, elas aparecerão aqui.
+            </p>
+          </div>
+        ) : (
+          <div className="h-full overflow-y-auto pr-2 space-y-3 scrollbar-thin scrollbar-thumb-amber-400/30 scrollbar-track-transparent hover:scrollbar-thumb-amber-400/50 scroll-smooth">
+            {/* Indicador de scroll (aparece quando há scroll) */}
+            <div className="sticky top-0 z-10 mb-2 opacity-50 hover:opacity-100 transition-opacity">
+              <div className="bg-gradient-to-r from-transparent via-amber-400/20 to-transparent h-px w-full" />
+              <div className="text-center text-xs text-amber-400/60 mt-1">
+                {sales && sales.length > 10 ? '⬇ Role para ver mais vendas ⬇' : ''}
+              </div>
+            </div>
+            
+            {sales?.map((sale) => (
             <div 
               key={sale.id} 
               className="bg-black/70 backdrop-blur-xl border border-white/20 shadow-lg rounded-lg p-4 hover:shadow-xl transition-all duration-200 hero-spotlight"
@@ -278,22 +302,23 @@ export function RecentSales() {
                   </p>
                   <div className="flex gap-2">
                     <Button 
-                      variant="ghost" 
+                      variant="outline" 
                       size="sm" 
-                      className="h-8 text-primary hover:text-primary/90"
+                      className="h-8 bg-black/50 border-blue-400/30 text-blue-400 hover:bg-blue-400/10 hover:border-blue-400/50 hover:text-blue-300 transition-all duration-200 backdrop-blur-sm"
                       onClick={() => toggleSaleDetails(sale.id)}
                     >
-                      {expandedSaleId === sale.id ? 'Ocultar detalhes' : 'Ver detalhes'}
+                      <Eye className="h-3 w-3 mr-1" />
+                      {expandedSaleId === sale.id ? 'Ocultar' : 'Detalhes'}
                     </Button>
                     {userRole === 'admin' && (
                       <Button 
-                        variant="ghost" 
+                        variant="outline" 
                         size="sm" 
-                        className="h-8 text-destructive hover:text-destructive/90"
+                        className="h-8 w-8 p-0 bg-black/50 border-red-400/30 text-red-400 hover:bg-red-400/10 hover:border-red-400/50 hover:text-red-300 transition-all duration-200 backdrop-blur-sm disabled:opacity-50"
                         onClick={() => handleDeleteClick(sale.id, sale.id.slice(0, 8).toUpperCase())}
                         disabled={isDeleting}
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-3 w-3" />
                         <span className="sr-only">Excluir</span>
                       </Button>
                     )}
@@ -303,23 +328,34 @@ export function RecentSales() {
               
               {/* Detalhes expandidos da venda */}
               {expandedSaleId === sale.id && (
-                <div className="mt-4 pt-4 border-t border-white/20">
-                  <h4 className={cn(text.h4, shadows.medium, "font-medium mb-2")}>
-                    Itens da venda:
-                  </h4>
+                <div className="mt-4 pt-4 border-t border-white/20 bg-white/5 backdrop-blur-sm rounded-lg p-4 animate-in slide-in-from-top-2 duration-300">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Package className="h-4 w-4 text-emerald-400" />
+                    <h4 className={cn(text.h4, shadows.medium, "font-medium text-emerald-400")}>
+                      Itens da venda ({sale.items?.length || 0})
+                    </h4>
+                  </div>
                   {sale.items && sale.items.length > 0 ? (
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       {sale.items.map((item) => (
-                        <div key={item.id} className="flex justify-between text-sm">
-                          <div>
-                            <span className={cn(text.h5, shadows.light, "font-medium")}>
-                              {item.quantity}x
-                            </span>{" "}
-                            <span className={cn(text.h6, shadows.subtle)}>
-                              {item.product?.name || 'Produto não encontrado'}
-                            </span>
+                        <div key={item.id} className="flex justify-between items-center text-sm bg-black/30 rounded-lg p-3 border border-white/10">
+                          <div className="flex items-center gap-3">
+                            <div className="bg-blue-500/20 text-blue-400 rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold">
+                              {item.quantity}
+                            </div>
+                            <div>
+                              <span className={cn(text.h5, shadows.light, "font-medium text-white")}>
+                                {item.product?.name || 'Produto não encontrado'}
+                              </span>
+                              <div className="text-xs text-gray-400">
+                                {new Intl.NumberFormat("pt-BR", {
+                                  style: "currency",
+                                  currency: "BRL"
+                                }).format(Number(item.unit_price || 0))} por unidade
+                              </div>
+                            </div>
                           </div>
-                          <div className={cn(text.h4, shadows.light)}>
+                          <div className={cn(text.h4, shadows.light, "font-bold text-emerald-400")}>
                             {new Intl.NumberFormat("pt-BR", {
                               style: "currency",
                               currency: "BRL"
@@ -329,33 +365,51 @@ export function RecentSales() {
                       ))}
                     </div>
                   ) : (
-                    <p className={cn(text.h6, shadows.subtle, "text-sm")}>
-                      Nenhum item encontrado nesta venda.
-                    </p>
+                    <div className="text-center py-6 bg-amber-500/10 rounded-lg border border-amber-400/30">
+                      <Package className="h-8 w-8 text-amber-400 mx-auto mb-2" />
+                      <p className={cn(text.h6, shadows.subtle, "text-sm text-amber-300 font-medium")}>
+                        Venda sem itens registrados
+                      </p>
+                      <p className={cn(text.h6, shadows.subtle, "text-xs text-amber-400/70 mt-1")}>
+                        Esta venda pode ter sido criada antes da implementação do sistema de itens ou teve seus itens removidos.
+                      </p>
+                    </div>
                   )}
                   
                   {sale.notes && (
-                    <div className="mt-3 pt-3 border-t border-white/20">
-                      <h4 className={cn(text.h5, shadows.medium, "font-medium mb-1")}>
-                        Observações:
-                      </h4>
-                      <p className={cn(text.h6, shadows.subtle, "text-sm")}>
-                        {sale.notes}
-                      </p>
+                    <div className="mt-4 pt-4 border-t border-white/20">
+                      <div className="flex items-center gap-2 mb-2">
+                        <FileText className="h-4 w-4 text-amber-400" />
+                        <h4 className={cn(text.h5, shadows.medium, "font-medium text-amber-400")}>
+                          Observações:
+                        </h4>
+                      </div>
+                      <div className="bg-black/30 rounded-lg p-3 border border-white/10">
+                        <p className={cn(text.h6, shadows.subtle, "text-sm text-gray-300")}>
+                          {sale.notes}
+                        </p>
+                      </div>
                     </div>
                   )}
                 </div>
               )}
             </div>
-          ))}
-        </div>
-      )}
-      
-      <div className="flex justify-center pt-2">
-        <Button variant="outline" size="sm" className="gap-2">
-          Ver histórico completo
-          <ChevronRight className="h-4 w-4" />
-        </Button>
+            ))}
+            
+            {/* Botão Ver histórico dentro da área scrollável */}
+            <div className="flex justify-center pt-6 pb-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="gap-2 bg-black/50 border-amber-400/30 text-amber-400 hover:bg-amber-400/10 hover:border-amber-400/50 transition-all duration-300"
+                onClick={handleViewFullHistory}
+              >
+                Ver histórico completo
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Diálogo de confirmação de exclusão */}
@@ -364,19 +418,37 @@ export function RecentSales() {
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir venda</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir a venda #{saleToDelete?.number}? Esta ação não pode ser desfeita.
+              Tem certeza que deseja excluir a venda #{saleToDelete?.number}? 
+              <br /><br />
+              <strong>Esta ação irá:</strong>
+              <br />• Remover a venda do sistema
+              <br />• Restaurar o estoque dos produtos
+              <br />• Registrar a operação no log de auditoria
+              <br /><br />
+              <span className="text-amber-400">Esta ação não pode ser desfeita.</span>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleCancelDelete} disabled={isDeleting}>
+            <AlertDialogCancel 
+              onClick={handleCancelDelete} 
+              disabled={isDeleting}
+              className="bg-black/50 border-white/20 text-white hover:bg-white/10 hover:border-white/40 transition-all duration-200"
+            >
               Cancelar
             </AlertDialogCancel>
             <AlertDialogAction 
               onClick={handleConfirmDelete} 
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-red-600 text-white hover:bg-red-700 border-red-500/50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={isDeleting}
             >
-              {isDeleting ? 'Excluindo...' : 'Excluir'}
+              {isDeleting ? (
+                <div className="flex items-center gap-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white"></div>
+                  Excluindo...
+                </div>
+              ) : (
+                'Excluir'
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

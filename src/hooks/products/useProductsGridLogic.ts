@@ -44,7 +44,7 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
     queryFn: async (): Promise<Product[]> => {
       const { data, error } = await supabase
         .from('products')
-        .select('id, name, price, stock_quantity, image_url, barcode, category')
+        .select('*')
         .order('name', { ascending: true });
         
       if (error) {

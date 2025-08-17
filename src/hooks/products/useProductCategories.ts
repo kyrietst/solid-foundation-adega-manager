@@ -1,17 +1,21 @@
 /**
  * Hook para gerenciar categorias de produtos
  * Centraliza lógica de categorias e suas operações
+ * Agora integrado com categorias dinâmicas do banco de dados
  */
 
 import { useMemo } from 'react';
 import type { Product } from '@/types/inventory.types';
+import { useCategories } from '@/shared/hooks/common/use-categories';
 
 export const useProductCategories = (products: Product[]) => {
-  // Extrair categorias únicas dos produtos
+  // Buscar categorias do banco de dados
+  const { data: dbCategories = [] } = useCategories();
+  
+  // Usar categorias do banco como fonte principal
   const categories = useMemo(() => {
-    const uniqueCategories = [...new Set(products.map(p => p.category).filter(Boolean))];
-    return uniqueCategories.sort();
-  }, [products]);
+    return dbCategories.map(cat => cat.name).sort();
+  }, [dbCategories]);
 
   // Contar produtos por categoria
   const categoryCounts = useMemo(() => {

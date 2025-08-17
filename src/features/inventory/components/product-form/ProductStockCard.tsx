@@ -45,7 +45,7 @@ export const ProductStockCard: React.FC<ProductStockCardProps> = ({
             <Input
               id="stock_quantity"
               type="number"
-              value={formData.stock_quantity || ''}
+              value={formData.stock_quantity ?? ''}
               onChange={(e) => onInputChange('stock_quantity', Number(e.target.value))}
               min="0"
               required
@@ -65,7 +65,7 @@ export const ProductStockCard: React.FC<ProductStockCardProps> = ({
             <Input
               id="minimum_stock"
               type="number"
-              value={formData.minimum_stock || ''}
+              value={formData.minimum_stock ?? ''}
               onChange={(e) => onInputChange('minimum_stock', Number(e.target.value))}
               min="0"
               required

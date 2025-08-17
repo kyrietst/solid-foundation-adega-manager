@@ -99,140 +99,107 @@ export const useSales = (params?: {
   return useQuery({
     queryKey: ["sales", params],
     queryFn: async () => {
-      // Primeiro, buscamos as vendas básicas
-      let query = supabase
+      // Query otimizada com join direto para buscar vendas e itens
+      let baseQuery = supabase
         .from('sales')
-        .select('*')
+        .select(`
+          *,
+          sale_items (
+            id,
+            product_id,
+            quantity,
+            unit_price,
+            products (
+              id,
+              name,
+              barcode
+            )
+          ),
+          customers (
+            id,
+            name,
+            email,
+            phone
+          )
+        `)
         .order('created_at', { ascending: false });
 
       if (params?.startDate) {
-        query = query.gte("created_at", params.startDate.toISOString());
+        baseQuery = baseQuery.gte("created_at", params.startDate.toISOString());
       }
       
       if (params?.endDate) {
         const nextDay = new Date(params.endDate);
         nextDay.setDate(nextDay.getDate() + 1);
-        query = query.lt("created_at", nextDay.toISOString());
+        baseQuery = baseQuery.lt("created_at", nextDay.toISOString());
       }
       
       if (params?.status) {
-        query = query.eq("status", params.status);
+        baseQuery = baseQuery.eq("status", params.status);
       }
       
       if (params?.limit) {
-        query = query.limit(params.limit);
+        baseQuery = baseQuery.limit(params.limit);
       }
 
-      const { data: sales, error: salesError } = await query;
+      const { data: salesWithItems, error: salesError } = await baseQuery;
 
       if (salesError) {
         throw new Error(salesError.message);
       }
 
-      if (!sales || sales.length === 0) {
+      if (!salesWithItems || salesWithItems.length === 0) {
         return [];
       }
 
-      // Buscamos informações adicionais dos vendedores e clientes em paralelo
-      const userIds = [...new Set(sales.map(sale => sale.user_id))];
-      const customerIds = [...new Set(sales.map(sale => sale.customer_id).filter(Boolean))];
-
-      // 1. Busca os perfis dos vendedores da tabela profiles
-      let filteredUsers: { id: string; name: string | null; email: string | null }[] = [];
+      // Buscar informações dos vendedores separadamente
+      const userIds = [...new Set(salesWithItems.map((sale: any) => sale.user_id || sale.seller_id).filter(Boolean))];
+      let sellers: { id: string; name: string | null; email: string | null }[] = [];
       
       if (userIds.length > 0) {
-        const { data: usersData, error: usersError } = await supabase
+        const { data: sellersData } = await supabase
           .from('profiles')
           .select('id, name, email')
           .in('id', userIds);
-        
-        if (usersError) {
-          console.error('Erro ao buscar vendedores:', usersError);
-          console.warn('Continuando sem informações detalhadas dos vendedores');
-        } else {
-          filteredUsers = usersData || [];
-        }
-      }
-
-      // Busca informações dos clientes (se houver)
-      let customers: Array<{
-        id: string;
-        name: string | null;
-        email: string | null;
-        phone: string | null;
-      }> = [];
-      
-      if (customerIds.length > 0) {
-        try {
-          const { data: customersData, error: customersError } = await supabase
-            .from('customers')
-            .select('id, name, email, phone')
-            .in('id', customerIds);
-
-          if (customersError) throw customersError;
-          
-          customers = customersData || [];
-        } catch (error) {
-          console.error('Erro ao buscar clientes:', error);
-          // Não interrompemos o fluxo, apenas registramos o erro
-        }
-      }
-
-      // Busca itens das vendas
-      const saleIds = sales.map(s => s.id);
-      const itemsBySale: Record<string, Sale["items"]> = {};
-      if (saleIds.length > 0) {
-        const { data: itemsData, error: itemsError } = await supabase
-          .from('sale_items')
-          .select('id, sale_id, product_id, quantity, unit_price')
-          .in('sale_id', saleIds);
-        // Mapeia nomes dos produtos
-        const productMap: Record<string,string> = {};
-        if(!itemsError && itemsData && itemsData.length){
-          const productIds = [...new Set(itemsData.map((it: RawSaleItem) => it.product_id))];
-          if(productIds.length){
-            const { data: prodData } = await supabase
-              .from('products')
-              .select('id,name')
-              .in('id', productIds);
-            prodData?.forEach((p: RawProduct) => { productMap[p.id] = p.name; });
-          }
-        }
-        if (!itemsError && itemsData) {
-          itemsData.forEach((it: RawSaleItem) => {
-            if (!itemsBySale[it.sale_id]) itemsBySale[it.sale_id] = [];
-            itemsBySale[it.sale_id].push({
-              id: it.id,
-              sale_id: it.sale_id,
-              product_id: it.product_id,
-              quantity: it.quantity,
-              unit_price: it.unit_price,
-              subtotal: it.quantity * it.unit_price,
-              product: { name: productMap[it.product_id] ?? 'Produto não encontrado' },
-              
-            });
-          });
-        }
+        sellers = sellersData || [];
       }
 
       // Mapeia os dados para o formato esperado
-      const mappedData = sales.map(sale => {
-        const user = filteredUsers.find(u => u.id === sale.user_id);
-        const customer = customers.find(c => c.id === sale.customer_id);
-        
+      const mappedData = salesWithItems.map((sale: any) => {
+        // Mapeia os itens da venda
+        const items = (sale.sale_items || []).map((item: any) => ({
+          id: item.id,
+          sale_id: sale.id,
+          product_id: item.product_id,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          subtotal: item.quantity * item.unit_price,
+          product: {
+            name: item.products?.name || 'Produto não encontrado',
+            barcode: item.products?.barcode || null
+          }
+        }));
+
+        // Buscar seller pelos dados carregados
+        const sellerId = sale.seller_id || sale.user_id;
+        const seller = sellers.find(s => s.id === sellerId);
+
         return {
           ...sale,
-          customer: customer ? {
-            id: customer.id,
-            name: customer.name || customer.email?.split('@')[0] || 'Cliente',
-            email: customer.email,
-            phone: customer.phone
+          customer: sale.customers ? {
+            id: sale.customers.id,
+            name: sale.customers.name || sale.customers.email?.split('@')[0] || 'Cliente',
+            email: sale.customers.email,
+            phone: sale.customers.phone
           } : null,
-          seller: user ? {
-            id: user.id,
-            name: user.name || user.email?.split('@')[0] || 'Usuário',
-            email: user.email || undefined
+          seller: seller ? {
+            id: seller.id,
+            name: seller.name || seller.email?.split('@')[0] || 'Usuário',
+            email: seller.email || undefined
           } : null,
+          // Remove as relações do objeto para evitar conflitos
+          sale_items: undefined,
+          customers: undefined,
           // Garante que os campos obrigatórios existam
           discount_amount: sale.discount_amount || 0,
           final_amount: sale.final_amount || sale.total_amount,
@@ -241,7 +208,7 @@ export const useSales = (params?: {
           notes: sale.notes || null,
           delivery: sale.delivery || false,
           delivery_address: sale.delivery_address || null,
-          items: itemsBySale[sale.id] ?? []
+          items: items
         } as Sale;
       });
 
@@ -460,12 +427,17 @@ export const useDeleteSale = () => {
 
   return useMutation({
     mutationFn: async (saleId: string) => {
-      // 1. Verifica se o usuário está autenticado e é administrador
+      console.log('Iniciando exclusão da venda:', saleId);
+      
+      // 1. Verifica se o usuário está autenticado
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       
       if (authError || !user) {
+        console.error('Erro de autenticação:', authError);
         throw new Error("Usuário não autenticado");
       }
+
+      console.log('Usuário autenticado:', user.id);
 
       // 2. Verifica se o usuário tem permissão de administrador
       const { data: profile, error: profileError } = await supabase
@@ -474,62 +446,61 @@ export const useDeleteSale = () => {
         .eq('id', user.id)
         .single();
 
-      if (profileError || !profile || profile.role !== 'admin') {
+      if (profileError || !profile) {
+        console.error('Erro ao buscar perfil:', profileError);
+        throw new Error("Perfil de usuário não encontrado");
+      }
+
+      if (profile.role !== 'admin') {
+        console.error('Usuário não é admin:', profile.role);
         throw new Error("Apenas administradores podem excluir vendas");
       }
 
-      // 3. Busca os itens da venda para restaurar o estoque
-      const { data: saleItems, error: itemsError } = await supabase
-        .from('sale_items')
-        .select('product_id, quantity')
-        .eq('sale_id', saleId);
+      console.log('Permissões validadas. Executando exclusão...');
 
-      if (itemsError) {
-        console.error('Erro ao buscar itens da venda:', itemsError);
-        throw new Error("Falha ao buscar itens da venda");
-      }
-
-      // 4. Inicia uma transação para garantir a integridade dos dados
-      const { error: deleteError } = await supabase.rpc('delete_sale_with_items', {
+      // 3. Executa a função de exclusão melhorada
+      const { data: result, error: deleteError } = await supabase.rpc('delete_sale_with_items', {
         p_sale_id: saleId
       });
 
       if (deleteError) {
-        console.error('Erro ao excluir venda:', deleteError);
-        throw new Error(`Falha ao excluir venda: ${deleteError.message}`);
+        console.error('Erro na função de exclusão:', deleteError);
+        
+        // Tratamento específico de erros conhecidos
+        if (deleteError.code === '42501') {
+          throw new Error("Acesso negado. Apenas administradores podem excluir vendas.");
+        } else if (deleteError.code === '02000') {
+          throw new Error("Venda não encontrada ou já foi excluída.");
+        } else {
+          throw new Error(`Falha ao excluir venda: ${deleteError.message}`);
+        }
       }
 
-      // 5. Registra a auditoria
-      try {
-        await supabase
-          .from('audit_logs')
-          .insert({
-            user_id: user.id,
-            action: 'delete_sale',
-            table_name: 'sales',
-            record_id: saleId,
-            old_data: { sale_id: saleId },
-            new_data: null,
-            ip_address: null,
-            user_agent: null
-          });
-      } catch (auditError) {
-        console.error('Erro ao registrar auditoria:', auditError);
-        // Não falha a operação por causa de um erro de auditoria
-      }
-
-      return { success: true };
+      console.log('Venda excluída com sucesso:', result);
+      return result || { success: true };
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('Exclusão concluída, invalidando queries...');
+      
+      // Invalida todas as queries relacionadas
       queryClient.invalidateQueries({ queryKey: ["sales"] });
       queryClient.invalidateQueries({ queryKey: ["products"] });
       queryClient.invalidateQueries({ queryKey: ["reports"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      
+      const message = data?.message || "A venda foi removida do sistema.";
+      const details = data?.items_deleted ? 
+        `${data.items_deleted} itens removidos, ${data.products_restored} produtos com estoque restaurado.` :
+        "Estoque dos produtos foi restaurado.";
+      
       toast({
         title: "Venda excluída com sucesso!",
-        description: "A venda foi removida do sistema.",
+        description: `${message} ${details}`,
       });
     },
     onError: (error: Error) => {
+      console.error('Erro final na exclusão:', error);
+      
       toast({
         title: "Erro ao excluir venda",
         description: error.message,

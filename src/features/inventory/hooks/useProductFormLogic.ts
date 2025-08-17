@@ -4,14 +4,11 @@
  */
 
 import { ProductFormData } from '@/core/types/inventory.types';
-import { WINE_CATEGORIES } from '@/core/types/enums.types';
+import { useCategories, categoriesToOptions } from '@/shared/hooks/common/use-categories';
 import { useBarcode } from '@/features/inventory/hooks/use-barcode';
 import { useProductForm } from './useProductForm';
 import { useProductCalculations } from './useProductCalculations';
 import { useProductValidation } from './useProductValidation';
-
-// Utilizar as categorias do enum para garantir consistência
-export const CATEGORIES = [...WINE_CATEGORIES];
 
 interface UseProductFormLogicProps {
   initialData?: Partial<ProductFormData>;
@@ -24,6 +21,9 @@ export const useProductFormLogic = ({
   onSubmit,
   onCancel
 }: UseProductFormLogicProps) => {
+  // Buscar categorias do banco de dados
+  const { data: dbCategories = [] } = useCategories();
+  
   // Estado do formulário
   const { formData, handleInputChange, resetForm, updateFormData } = useProductForm(initialData);
 
@@ -71,7 +71,8 @@ export const useProductFormLogic = ({
     formData,
     calculations,
     validation: currentValidation,
-    categories: CATEGORIES,
+    categories: dbCategories.map(cat => cat.name), // Nomes das categorias do banco
+    categoriesWithOptions: categoriesToOptions(dbCategories), // Com cores e ícones
 
     // Handlers
     handleInputChange,
