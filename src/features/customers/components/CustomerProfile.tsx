@@ -56,7 +56,10 @@ import {
   Plus
 } from 'lucide-react';
 import { formatCurrency } from '@/core/config/utils';
+import { StatCard } from '@/shared/ui/composite/stat-card';
 import { useCustomer, useCustomerPurchases } from '@/features/customers/hooks/use-crm';
+import { useCustomerRealMetrics } from '@/features/customers/hooks/useCustomerRealMetrics';
+import { EditCustomerModal } from './EditCustomerModal';
 
 interface CustomerProfileProps {
   className?: string;
@@ -69,6 +72,9 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
   // Estados para filtros da aba Compras
   const [searchTerm, setSearchTerm] = useState('');
   const [periodFilter, setPeriodFilter] = useState('all');
+  
+  // Estado para modal de edição
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   // Função para enviar WhatsApp
   const handleWhatsApp = () => {
@@ -107,6 +113,13 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
     isLoading, 
     error 
   } = useCustomer(id || '');
+
+  // Buscar métricas reais calculadas em tempo real
+  const {
+    data: realMetrics,
+    isLoading: isLoadingMetrics,
+    error: metricsError
+  } = useCustomerRealMetrics(id || '');
 
   // Buscar histórico de compras do cliente
   const { 
@@ -229,7 +242,7 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
   }
 
   // Loading state
-  if (isLoading) {
+  if (isLoading || isLoadingMetrics) {
     return <LoadingScreen text="Carregando perfil do cliente..." />;
   }
 
@@ -276,7 +289,7 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
             variant="outline" 
             size="sm" 
             className="flex items-center gap-2"
-            onClick={() => alert('Funcionalidade de edição será implementada em breve')}
+            onClick={() => setIsEditModalOpen(true)}
           >
             <Edit className="h-4 w-4" />
             Editar
@@ -376,29 +389,37 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
               </div>
             </div>
             
-            {/* Key Metrics */}
-            <div className="grid grid-cols-3 gap-6 text-center">
-              <div>
-                <div className="text-2xl font-bold text-green-400">
-                  {formatCurrency(customer.lifetime_value || 0)}
-                </div>
-                <div className="text-xs text-gray-400">Valor Total</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-blue-400">
-                  {customer.purchase_frequency || 0}
-                </div>
-                <div className="text-xs text-gray-400">Compras</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-purple-400">
-                  {customer.last_purchase_date 
-                    ? Math.floor((new Date().getTime() - new Date(customer.last_purchase_date).getTime()) / (1000 * 3600 * 24))
-                    : '-'
-                  }
-                </div>
-                <div className="text-xs text-gray-400">Dias Atrás</div>
-              </div>
+            {/* Key Metrics - Padronizados com StatCard - DADOS REAIS */}
+            <div className="grid grid-cols-3 gap-4">
+              <StatCard
+                layout="crm"
+                variant="success"
+                title="Valor Total"
+                value={formatCurrency(realMetrics?.lifetime_value_calculated || customer.lifetime_value || 0)}
+                description={`💰 LTV ${realMetrics?.data_sync_status.ltv_synced ? '✅' : '⚠️'}`}
+                icon={DollarSign}
+                className="h-24"
+              />
+              
+              <StatCard
+                layout="crm"
+                variant="default"
+                title="Compras"
+                value={realMetrics?.total_purchases || 0}
+                description="🛒 Total Real"
+                icon={ShoppingBag}
+                className="h-24"
+              />
+              
+              <StatCard
+                layout="crm"
+                variant="warning"
+                title="Dias Atrás"
+                value={realMetrics?.days_since_last_purchase || '-'}
+                description="⏱️ Última compra"
+                icon={Calendar}
+                className="h-24"
+              />
             </div>
           </div>
         </CardContent>
@@ -461,7 +482,18 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
         <div className="mt-6">
           {/* Overview Tab */}
           <TabsContent value="overview">
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+            {/* Container principal com glassmorphism */}
+            <section 
+              className="bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-6 hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300 space-y-6"
+              onMouseMove={(e) => {
+                const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                const x = ((e.clientX - rect.left) / rect.width) * 100;
+                const y = ((e.clientY - rect.top) / rect.height) * 100;
+                (e.currentTarget as HTMLElement).style.setProperty("--x", `${x}%`);
+                (e.currentTarget as HTMLElement).style.setProperty("--y", `${y}%`);
+              }}
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
               {/* Card Resumo Financeiro Expandido */}
               <Card className="bg-gradient-to-br from-green-900/20 to-green-800/20 border-green-700/40">
                 <CardHeader>
@@ -476,19 +508,20 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
                       <span className="text-gray-300">Valor Total (LTV):</span>
                       <div className="text-right">
                         <div className="text-lg font-bold text-green-400">
-                          {formatCurrency(customer.lifetime_value || 0)}
+                          {formatCurrency(realMetrics?.lifetime_value_calculated || customer.lifetime_value || 0)}
+                          {realMetrics && !realMetrics.data_sync_status.ltv_synced && (
+                            <span className="text-xs text-yellow-400 ml-1">⚠️</span>
+                          )}
                         </div>
                         <div className="text-xs text-gray-500">
-                          {customer.purchase_frequency ? `${customer.purchase_frequency} compras` : 'Sem compras'}
+                          {realMetrics?.total_purchases ? `${realMetrics.total_purchases} compras reais` : 'Sem compras'}
                         </div>
                       </div>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-gray-300">Ticket Médio:</span>
                       <div className="text-lg font-semibold text-purple-400">
-                        {formatCurrency(
-                          (customer.lifetime_value || 0) / Math.max(customer.purchase_frequency || 1, 1)
-                        )}
+                        {formatCurrency(realMetrics?.avg_purchase_value || 0)}
                       </div>
                     </div>
                     <div className="pt-2 border-t border-gray-700/30">
@@ -514,13 +547,20 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
                       <span className="text-gray-300">Última Compra:</span>
                       <div className="text-right">
                         <div className="text-sm font-medium text-blue-400">
-                          {customer.last_purchase_date 
+                          {realMetrics?.last_purchase_real 
+                            ? new Date(realMetrics.last_purchase_real).toLocaleDateString('pt-BR')
+                            : customer.last_purchase_date 
                             ? new Date(customer.last_purchase_date).toLocaleDateString('pt-BR')
                             : 'Nunca'
                           }
+                          {realMetrics && !realMetrics.data_sync_status.dates_synced && (
+                            <span className="text-xs text-yellow-400 ml-1">⚠️</span>
+                          )}
                         </div>
                         <div className="text-xs text-gray-500">
-                          {customer.last_purchase_date 
+                          {realMetrics?.days_since_last_purchase !== undefined
+                            ? `${realMetrics.days_since_last_purchase} dias atrás (real)`
+                            : customer.last_purchase_date 
                             ? `${Math.floor((new Date().getTime() - new Date(customer.last_purchase_date).getTime()) / (1000 * 3600 * 24))} dias atrás`
                             : 'Primeira compra pendente'
                           }
@@ -575,15 +615,26 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
                       <div className="flex justify-between">
                         <span className="text-gray-300 text-sm">Categoria Favorita:</span>
                         <span className="text-purple-400 text-sm font-medium">
-                          {customer.favorite_category || 'Não definida'}
+                          {realMetrics?.calculated_favorite_category || customer.favorite_category || 'Não definida'}
+                          {realMetrics && !realMetrics.data_sync_status.preferences_synced && (
+                            <span className="text-xs text-yellow-400 ml-1">⚠️</span>
+                          )}
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-300 text-sm">Produto Favorito:</span>
                         <span className="text-purple-400 text-sm font-medium">
-                          {customer.favorite_product || 'Não definido'}
+                          {realMetrics?.calculated_favorite_product || 'Calculando...'}
                         </span>
                       </div>
+                      {realMetrics && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-300 text-sm">Insights AI:</span>
+                          <span className="text-blue-400 text-sm font-medium">
+                            {realMetrics.insights_count} insights ({Math.round(realMetrics.insights_confidence * 100)}% confiança)
+                          </span>
+                        </div>
+                      )}
                     </div>
                     <div className="flex justify-between items-center pt-2 border-t border-gray-700/30">
                       <span className="text-gray-300">Segmento:</span>
@@ -667,71 +718,59 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
                   </div>
                 </CardContent>
               </Card>
-            </div>
+              </div>
 
-            {/* Seção de Métricas Avançadas */}
-            <div className="mt-8">
+              {/* Seção de Métricas Avançadas - Padronizadas com StatCard */}
+              <div>
               <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                 <BarChart3 className="h-5 w-5 text-blue-400" />
                 Métricas Avançadas
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card className="bg-gray-800/20 border-gray-700/30">
-                  <CardContent className="p-4">
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-cyan-400">
-                        {purchases && purchases.length > 0 
-                          ? Math.round(purchases.reduce((sum, p) => sum + p.items.reduce((itemSum, item) => itemSum + item.quantity, 0), 0) / purchases.length)
-                          : 0
-                        }
-                      </div>
-                      <div className="text-xs text-gray-400">Itens por Compra</div>
-                      <div className="text-xs text-gray-500 mt-1">
-                        {purchases ? `${purchases.reduce((sum, p) => sum + p.items.reduce((itemSum, item) => itemSum + item.quantity, 0), 0)} itens total` : 'Sem compras'}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                <StatCard
+                  layout="crm"
+                  variant="default"
+                  title="Itens por Compra"
+                  value={realMetrics?.avg_items_per_purchase ? Math.round(realMetrics.avg_items_per_purchase) : 0}
+                  description={`📦 ${realMetrics?.total_products_bought || 0} total itens`}
+                  icon={Package}
+                />
 
-                <Card className="bg-gray-800/20 border-gray-700/30">
-                  <CardContent className="p-4">
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-emerald-400">
-                        {customer.purchase_frequency && customer.first_purchase_date && customer.last_purchase_date 
-                          ? Math.round((new Date(customer.last_purchase_date).getTime() - new Date(customer.first_purchase_date).getTime()) / (1000 * 60 * 60 * 24) / customer.purchase_frequency)
-                          : 0
-                        }
-                      </div>
-                      <div className="text-xs text-gray-400">Dias Entre Compras</div>
-                      <div className="text-xs text-gray-500 mt-1">Frequência média</div>
-                    </div>
-                  </CardContent>
-                </Card>
+                <StatCard
+                  layout="crm"
+                  variant="success"
+                  title="Ticket Médio"
+                  value={formatCurrency(realMetrics?.avg_purchase_value || 0)}
+                  description="💵 Por compra real"
+                  icon={DollarSign}
+                />
 
-                <Card className="bg-gray-800/20 border-gray-700/30">
-                  <CardContent className="p-4">
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-violet-400">
-                        {customer.lifetime_value && customer.purchase_frequency 
-                          ? Math.round((customer.lifetime_value * 12) / Math.max(
-                              Math.floor((new Date().getTime() - new Date(customer.created_at || '').getTime()) / (1000 * 60 * 60 * 24 * 30)), 
-                              1
-                            ))
-                          : 0
-                        }
-                      </div>
-                      <div className="text-xs text-gray-400">Valor Mensal Projetado</div>
-                      <div className="text-xs text-gray-500 mt-1">Estimativa baseada no histórico</div>
-                    </div>
-                  </CardContent>
-                </Card>
+                <StatCard
+                  layout="crm"
+                  variant="purple"
+                  title="Categoria Favorita"
+                  value={realMetrics?.calculated_favorite_category || customer.favorite_category || 'N/A'}
+                  description={`📊 ${realMetrics?.data_sync_status.preferences_synced ? 'Sincronizado' : 'Desatualizado'}`}
+                  icon={TrendingUp}
+                />
               </div>
-            </div>
+              </div>
+            </section>
           </TabsContent>
 
           {/* Placeholders for other tabs */}
           <TabsContent value="purchases">
-            <div className="space-y-6">
+            {/* Container principal com glassmorphism */}
+            <section 
+              className="bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-6 hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300 space-y-6"
+              onMouseMove={(e) => {
+                const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                const x = ((e.clientX - rect.left) / rect.width) * 100;
+                const y = ((e.clientY - rect.top) / rect.height) * 100;
+                (e.currentTarget as HTMLElement).style.setProperty("--x", `${x}%`);
+                (e.currentTarget as HTMLElement).style.setProperty("--y", `${y}%`);
+              }}
+            >
               {/* Header com filtros */}
               <Card className="bg-gray-800/30 border-gray-700/40">
                 <CardHeader>
@@ -773,28 +812,39 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
                   </div>
                 </CardHeader>
                 
-                {/* Resumo das compras filtradas */}
+                {/* Resumo das compras filtradas - Padronizado com StatCard */}
                 {filteredPurchases.length > 0 && (
                   <CardContent className="pt-0">
-                    <div className="grid grid-cols-3 gap-4 text-center">
-                      <div>
-                        <div className="text-2xl font-bold text-green-400">
-                          {formatCurrency(filteredPurchases.reduce((sum, p) => sum + p.total, 0))}
-                        </div>
-                        <div className="text-xs text-gray-400">Total Gasto</div>
-                      </div>
-                      <div>
-                        <div className="text-2xl font-bold text-blue-400">
-                          {filteredPurchases.reduce((sum, p) => sum + p.items.reduce((itemSum, item) => itemSum + item.quantity, 0), 0)}
-                        </div>
-                        <div className="text-xs text-gray-400">Itens Comprados</div>
-                      </div>
-                      <div>
-                        <div className="text-2xl font-bold text-purple-400">
-                          {formatCurrency(filteredPurchases.reduce((sum, p) => sum + p.total, 0) / Math.max(filteredPurchases.length, 1))}
-                        </div>
-                        <div className="text-xs text-gray-400">Ticket Médio</div>
-                      </div>
+                    <div className="grid grid-cols-3 gap-4">
+                      <StatCard
+                        layout="crm"
+                        variant="success"
+                        title="Total Gasto"
+                        value={formatCurrency(filteredPurchases.reduce((sum, p) => sum + p.total, 0))}
+                        description="💰 Valor total"
+                        icon={DollarSign}
+                        className="h-20"
+                      />
+                      
+                      <StatCard
+                        layout="crm"
+                        variant="default"
+                        title="Itens Comprados"
+                        value={filteredPurchases.reduce((sum, p) => sum + p.items.reduce((itemSum, item) => itemSum + item.quantity, 0), 0)}
+                        description="📦 Quantidade"
+                        icon={Package}
+                        className="h-20"
+                      />
+                      
+                      <StatCard
+                        layout="crm"
+                        variant="purple"
+                        title="Ticket Médio"
+                        value={formatCurrency(filteredPurchases.reduce((sum, p) => sum + p.total, 0) / Math.max(filteredPurchases.length, 1))}
+                        description="🎟️ Média por compra"
+                        icon={BarChart3}
+                        className="h-20"
+                      />
                     </div>
                   </CardContent>
                 )}
@@ -888,11 +938,21 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
                   ))
                 )}
               </div>
-            </div>
+            </section>
           </TabsContent>
 
           <TabsContent value="analytics">
-            <div className="space-y-6">
+            {/* Container principal com glassmorphism */}
+            <section 
+              className="bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-6 hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300 space-y-6"
+              onMouseMove={(e) => {
+                const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                const x = ((e.clientX - rect.left) / rect.width) * 100;
+                const y = ((e.clientY - rect.top) / rect.height) * 100;
+                (e.currentTarget as HTMLElement).style.setProperty("--x", `${x}%`);
+                (e.currentTarget as HTMLElement).style.setProperty("--y", `${y}%`);
+              }}
+            >
               {/* Header da Analytics */}
               <Card className="bg-gray-800/30 border-gray-700/40">
                 <CardHeader>
@@ -1046,7 +1106,7 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
                     </Card>
                   )}
 
-                  {/* Resumo Estatístico */}
+                  {/* Resumo Estatístico - Padronizado com StatCard */}
                   <Card className="bg-gray-800/30 border-gray-700/40 lg:col-span-2">
                     <CardHeader>
                       <CardTitle className="text-white text-base flex items-center gap-2">
@@ -1056,30 +1116,45 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
                     </CardHeader>
                     <CardContent>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div className="text-center">
-                          <div className="text-2xl font-bold text-green-400">
-                            {formatCurrency(purchases.reduce((sum, p) => sum + p.total, 0))}
-                          </div>
-                          <div className="text-xs text-gray-400">Total Gasto</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-2xl font-bold text-blue-400">
-                            {formatCurrency(purchases.reduce((sum, p) => sum + p.total, 0) / purchases.length)}
-                          </div>
-                          <div className="text-xs text-gray-400">Ticket Médio</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-2xl font-bold text-purple-400">
-                            {purchases.reduce((sum, p) => sum + p.items.length, 0)}
-                          </div>
-                          <div className="text-xs text-gray-400">Itens Comprados</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-2xl font-bold text-orange-400">
-                            {customer.purchase_frequency || 0}
-                          </div>
-                          <div className="text-xs text-gray-400">Frequência</div>
-                        </div>
+                        <StatCard
+                          layout="crm"
+                          variant="success"
+                          title="Total Gasto"
+                          value={formatCurrency(purchases.reduce((sum, p) => sum + p.total, 0))}
+                          description="💰 Soma total"
+                          icon={DollarSign}
+                          className="h-20"
+                        />
+                        
+                        <StatCard
+                          layout="crm"
+                          variant="default"
+                          title="Ticket Médio"
+                          value={formatCurrency(purchases.reduce((sum, p) => sum + p.total, 0) / purchases.length)}
+                          description="🎟️ Média"
+                          icon={BarChart3}
+                          className="h-20"
+                        />
+                        
+                        <StatCard
+                          layout="crm"
+                          variant="purple"
+                          title="Itens Comprados"
+                          value={purchases.reduce((sum, p) => sum + p.items.length, 0)}
+                          description="📦 Total"
+                          icon={Package}
+                          className="h-20"
+                        />
+                        
+                        <StatCard
+                          layout="crm"
+                          variant="warning"
+                          title="Frequência"
+                          value={customer.purchase_frequency || 0}
+                          description="🔁 Compras"
+                          icon={TrendingUp}
+                          className="h-20"
+                        />
                       </div>
                     </CardContent>
                   </Card>
@@ -1095,85 +1170,152 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
                   </CardContent>
                 </Card>
               )}
-            </div>
+            </section>
           </TabsContent>
 
           <TabsContent value="communication">
-            <Card className="bg-gray-800/30 border-gray-700/40">
-              <CardHeader>
-                <CardTitle className="text-white">Centro de Comunicação</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8 text-gray-400">
-                  <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>📱 Centro de comunicação será implementado na Fase 4</p>
-                  <p className="text-sm mt-2">WhatsApp, Email, SMS e templates</p>
-                </div>
-              </CardContent>
-            </Card>
+            {/* Container principal com glassmorphism */}
+            <section 
+              className="bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-6 hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300"
+              onMouseMove={(e) => {
+                const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                const x = ((e.clientX - rect.left) / rect.width) * 100;
+                const y = ((e.clientY - rect.top) / rect.height) * 100;
+                (e.currentTarget as HTMLElement).style.setProperty("--x", `${x}%`);
+                (e.currentTarget as HTMLElement).style.setProperty("--y", `${y}%`);
+              }}
+            >
+              <Card className="bg-gray-800/30 border-gray-700/40">
+                <CardHeader>
+                  <CardTitle className="text-white">Centro de Comunicação</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center py-8 text-gray-400">
+                    <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>📱 Centro de comunicação será implementado na Fase 4</p>
+                    <p className="text-sm mt-2">WhatsApp, Email, SMS e templates</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </section>
           </TabsContent>
 
           <TabsContent value="financial">
-            <Card className="bg-gray-800/30 border-gray-700/40">
-              <CardHeader>
-                <CardTitle className="text-white">Perfil Financeiro</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8 text-gray-400">
-                  <CreditCard className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>💳 Perfil financeiro será implementado na Fase 6</p>
-                  <p className="text-sm mt-2">Credit scoring, contas a receber, análises</p>
-                </div>
-              </CardContent>
-            </Card>
+            {/* Container principal com glassmorphism */}
+            <section 
+              className="bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-6 hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300"
+              onMouseMove={(e) => {
+                const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                const x = ((e.clientX - rect.left) / rect.width) * 100;
+                const y = ((e.clientY - rect.top) / rect.height) * 100;
+                (e.currentTarget as HTMLElement).style.setProperty("--x", `${x}%`);
+                (e.currentTarget as HTMLElement).style.setProperty("--y", `${y}%`);
+              }}
+            >
+              <Card className="bg-gray-800/30 border-gray-700/40">
+                <CardHeader>
+                  <CardTitle className="text-white">Perfil Financeiro</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center py-8 text-gray-400">
+                    <CreditCard className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>💳 Perfil financeiro será implementado na Fase 6</p>
+                    <p className="text-sm mt-2">Credit scoring, contas a receber, análises</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </section>
           </TabsContent>
 
           <TabsContent value="insights">
-            <Card className="bg-gray-800/30 border-gray-700/40">
-              <CardHeader>
-                <CardTitle className="text-white">Insights IA & N8N</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8 text-gray-400">
-                  <Lightbulb className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>🤖 Insights IA serão implementados na Fase 5</p>
-                  <p className="text-sm mt-2">Machine Learning, recomendações e automações N8N</p>
-                </div>
-              </CardContent>
-            </Card>
+            {/* Container principal com glassmorphism */}
+            <section 
+              className="bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-6 hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300"
+              onMouseMove={(e) => {
+                const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                const x = ((e.clientX - rect.left) / rect.width) * 100;
+                const y = ((e.clientY - rect.top) / rect.height) * 100;
+                (e.currentTarget as HTMLElement).style.setProperty("--x", `${x}%`);
+                (e.currentTarget as HTMLElement).style.setProperty("--y", `${y}%`);
+              }}
+            >
+              <Card className="bg-gray-800/30 border-gray-700/40">
+                <CardHeader>
+                  <CardTitle className="text-white">Insights IA & N8N</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center py-8 text-gray-400">
+                    <Lightbulb className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>🤖 Insights IA serão implementados na Fase 5</p>
+                    <p className="text-sm mt-2">Machine Learning, recomendações e automações N8N</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </section>
           </TabsContent>
 
           <TabsContent value="documents">
-            <Card className="bg-gray-800/30 border-gray-700/40">
-              <CardHeader>
-                <CardTitle className="text-white">Documentos & Anexos</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8 text-gray-400">
-                  <Settings className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>📄 Sistema de documentos será implementado em fase futura</p>
-                  <p className="text-sm mt-2">Contratos, anexos e arquivos</p>
-                </div>
-              </CardContent>
-            </Card>
+            {/* Container principal com glassmorphism */}
+            <section 
+              className="bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-6 hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300"
+              onMouseMove={(e) => {
+                const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                const x = ((e.clientX - rect.left) / rect.width) * 100;
+                const y = ((e.clientY - rect.top) / rect.height) * 100;
+                (e.currentTarget as HTMLElement).style.setProperty("--x", `${x}%`);
+                (e.currentTarget as HTMLElement).style.setProperty("--y", `${y}%`);
+              }}
+            >
+              <Card className="bg-gray-800/30 border-gray-700/40">
+                <CardHeader>
+                  <CardTitle className="text-white">Documentos & Anexos</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center py-8 text-gray-400">
+                    <Settings className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>📄 Sistema de documentos será implementado em fase futura</p>
+                    <p className="text-sm mt-2">Contratos, anexos e arquivos</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </section>
           </TabsContent>
 
           <TabsContent value="timeline">
-            <Card className="bg-gray-800/30 border-gray-700/40">
-              <CardHeader>
-                <CardTitle className="text-white">Timeline de Atividades</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8 text-gray-400">
-                  <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>📅 Timeline completa será implementada em fase futura</p>
-                  <p className="text-sm mt-2">Histórico completo de todas as atividades</p>
-                </div>
-              </CardContent>
-            </Card>
+            {/* Container principal com glassmorphism */}
+            <section 
+              className="bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-6 hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300"
+              onMouseMove={(e) => {
+                const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                const x = ((e.clientX - rect.left) / rect.width) * 100;
+                const y = ((e.clientY - rect.top) / rect.height) * 100;
+                (e.currentTarget as HTMLElement).style.setProperty("--x", `${x}%`);
+                (e.currentTarget as HTMLElement).style.setProperty("--y", `${y}%`);
+              }}
+            >
+              <Card className="bg-gray-800/30 border-gray-700/40">
+                <CardHeader>
+                  <CardTitle className="text-white">Timeline de Atividades</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center py-8 text-gray-400">
+                    <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>📅 Timeline completa será implementada em fase futura</p>
+                    <p className="text-sm mt-2">Histórico completo de todas as atividades</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </section>
           </TabsContent>
         </div>
       </Tabs>
+
+      {/* Modal de Edição */}
+      <EditCustomerModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        customer={customer}
+      />
     </div>
   );
 };

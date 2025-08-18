@@ -360,7 +360,6 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
           setIsDetailsModalOpen(false);
           setSelectedProduct(null);
         }}
-        onEdit={handleEditProduct}
         onAdjustStock={handleAdjustStock}
         onViewHistory={handleViewHistory}
       />

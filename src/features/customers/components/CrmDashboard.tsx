@@ -24,6 +24,7 @@ import {
 } from '@/shared/ui/primitives/dropdown-menu';
 import { cn } from '@/core/config/utils';
 import { formatCurrency } from '@/core/config/utils';
+import { StatCard } from '@/shared/ui/composite/stat-card';
 import {
   Users,
   TrendingUp,
@@ -518,79 +519,43 @@ export const CrmDashboard: React.FC = () => {
         }}
       >
 
-        {/* Métricas Principais */}
+        {/* Métricas Principais - Padronizadas com StatCard v2.0.0 */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm shadow-lg hover:shadow-2xl hover:shadow-blue-500/10 hover:border-blue-400/30 transition-all duration-300">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3">
-                <Users className="h-8 w-8 text-blue-400 transition-all duration-300" />
-                <div>
-                  <p className="text-sm text-gray-400">Total de Clientes</p>
-                  <div className="text-2xl font-bold text-white">
-                    {metrics.totalCustomers}
-                  </div>
-                  <div className="flex items-center text-xs text-blue-300 mt-1">
-                    <TrendingUp className="h-3 w-3 mr-1" />
-                    +{metrics.newCustomersThisMonth} este mês
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <StatCard
+            layout="crm"
+            variant="default"
+            title="Total de Clientes"
+            value={metrics.totalCustomers}
+            description={`📈 +${metrics.newCustomersThisMonth} este mês`}
+            icon={Users}
+          />
 
-          <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm shadow-lg hover:shadow-2xl hover:shadow-green-500/10 hover:border-green-400/30 transition-all duration-300">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3">
-                <DollarSign className="h-8 w-8 text-green-400 transition-all duration-300" />
-                <div>
-                  <p className="text-sm text-gray-400">LTV Total</p>
-                  <div className="text-2xl font-bold text-white">
-                    {formatCurrency(metrics.totalLTV)}
-                  </div>
-                  <div className="flex items-center text-xs text-green-300 mt-1">
-                    <BarChart3 className="h-3 w-3 mr-1" />
-                    Média: {formatCurrency(metrics.averageLTV)}
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <StatCard
+            layout="crm"
+            variant="success"
+            title="LTV Total"
+            value={formatCurrency(metrics.totalLTV)}
+            description={`💰 Média: ${formatCurrency(metrics.averageLTV)}`}
+            icon={DollarSign}
+          />
 
-          <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm shadow-lg hover:shadow-2xl hover:shadow-yellow-500/10 hover:border-yellow-400/30 transition-all duration-300">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3">
-                <Gift className="h-8 w-8 text-yellow-400 transition-all duration-300" />
-                <div>
-                  <p className="text-sm text-gray-400">Aniversários</p>
-                  <div className="text-2xl font-bold text-white">
-                    {metrics.upcomingBirthdays}
-                  </div>
-                  <div className="flex items-center text-xs text-yellow-300 mt-1">
-                    <Calendar className="h-3 w-3 mr-1" />
-                    Próximos 30 dias
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <StatCard
+            layout="crm"
+            variant="warning"
+            title="Aniversários"
+            value={metrics.upcomingBirthdays}
+            description="🎂 Próximos 30 dias"
+            icon={Gift}
+          />
 
-          <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm shadow-lg hover:shadow-2xl hover:shadow-red-500/10 hover:border-red-400/30 transition-all duration-300">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3">
-                <AlertTriangle className="h-8 w-8 text-red-400 transition-all duration-300" />
-                <div>
-                  <p className="text-sm text-gray-400">Em Risco</p>
-                  <div className="text-2xl font-bold text-white">
-                    {metrics.atRiskCustomers}
-                  </div>
-                  <div className="flex items-center text-xs text-red-300 mt-1">
-                    <Target className="h-3 w-3 mr-1" />
-                    {metrics.churnRate.toFixed(1)}% churn rate
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <StatCard
+            layout="crm"
+            variant="error"
+            title="Em Risco"
+            value={metrics.atRiskCustomers}
+            description={`⚠️ ${metrics.churnRate.toFixed(1)}% churn rate`}
+            icon={AlertTriangle}
+          />
         </div>
 
         {/* Tabs para diferentes visões */}

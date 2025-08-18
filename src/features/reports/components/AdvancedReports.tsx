@@ -40,7 +40,27 @@ export const AdvancedReports: React.FC = () => {
         setGlobalPeriod(period);
       }
     }
-  }, [location.search]);
+
+    // Scroll automático para elemento específico se houver hash na URL
+    const hash = location.hash.substring(1); // Remove o #
+    if (hash) {
+      setTimeout(() => {
+        const element = document.getElementById(hash);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // Adicionar efeito de destaque
+          element.style.animation = 'pulse 3s ease-in-out';
+          element.style.boxShadow = '0 0 20px rgba(59, 130, 246, 0.5)';
+          
+          // Remover o efeito após 3 segundos
+          setTimeout(() => {
+            element.style.animation = '';
+            element.style.boxShadow = '';
+          }, 3000);
+        }
+      }, 500); // Delay para garantir que o componente foi renderizado
+    }
+  }, [location.search, location.hash]);
 
   // Função para exportar dados para CSV
   const exportToCSV = async (reportType: string) => {

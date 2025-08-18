@@ -33,7 +33,6 @@ interface ProductDetailsModalProps {
   product: Product | null;
   isOpen: boolean;
   onClose: () => void;
-  onEdit: (product: Product) => void;
   onAdjustStock: (product: Product) => void;
   onViewHistory: (product: Product) => void;
 }
@@ -75,7 +74,6 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
   product,
   isOpen,
   onClose,
-  onEdit,
   onAdjustStock,
   onViewHistory,
 }) => {
@@ -151,15 +149,6 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
 
             {/* Ações rápidas */}
             <div className="space-y-2">
-              <Button
-                onClick={() => onEdit(product)}
-                className="w-full bg-yellow-400/10 border border-yellow-400/30 text-yellow-400 hover:bg-yellow-400/20"
-                variant="outline"
-              >
-                <Edit className="h-4 w-4 mr-2" />
-                Editar Produto
-              </Button>
-              
               <Button
                 onClick={() => onAdjustStock(product)}
                 className="w-full bg-blue-400/10 border border-blue-400/30 text-blue-400 hover:bg-blue-400/20"

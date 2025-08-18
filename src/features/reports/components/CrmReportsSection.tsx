@@ -270,7 +270,7 @@ export const CrmReportsSection: React.FC<CrmReportsSectionProps> = ({ period = 3
     <div className="space-y-6">
       {/* Customer Metrics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/10 hover:border-blue-400/30 hover:bg-gray-700/40">
+        <Card id="total-clientes-kpi" className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/10 hover:border-blue-400/30 hover:bg-gray-700/40">
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
               <Users className="h-8 w-8 text-blue-400 transition-all duration-300" />
@@ -284,7 +284,7 @@ export const CrmReportsSection: React.FC<CrmReportsSectionProps> = ({ period = 3
           </CardContent>
         </Card>
 
-        <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-green-500/10 hover:border-green-400/30 hover:bg-gray-700/40">
+        <Card id="novos-clientes-kpi" className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-green-500/10 hover:border-green-400/30 hover:bg-gray-700/40">
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
               <TrendingUp className="h-8 w-8 text-green-400 transition-all duration-300" />
@@ -298,7 +298,7 @@ export const CrmReportsSection: React.FC<CrmReportsSectionProps> = ({ period = 3
           </CardContent>
         </Card>
 
-        <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 hover:bg-gray-700/40">
+        <Card id="clientes-ativos-kpi" className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 hover:bg-gray-700/40">
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
               <Heart className="h-8 w-8 text-purple-400 transition-all duration-300" />

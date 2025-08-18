@@ -1,17 +1,23 @@
 import React, { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/primitives/card';
 import { Button } from '@/shared/ui/primitives/button';
 import { LoadingScreen } from '@/shared/ui/composite/loading-spinner';
 import { useCustomers } from '@/features/customers/hooks/use-crm';
 import { SearchBar21st } from '@/shared/ui/thirdparty/search-bar-21st';
-import { getGlassCardClasses } from '@/core/config/theme-utils';
+import { getGlassCardClasses, getGlassButtonClasses, getHoverTransformClasses } from '@/core/config/theme-utils';
 import { BlurIn } from '@/components/ui/blur-in';
+import { StatCard } from '@/shared/ui/composite/stat-card';
+import { Users, TrendingUp, UserPlus, Download } from 'lucide-react';
 import CustomerDataTable from './CustomerDataTable';
+import { NewCustomerModal } from './NewCustomerModal';
 
 const CustomersLite = () => {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [newClientsCount] = useState(() => Math.floor(Math.random() * 10));
+  const [isNewCustomerModalOpen, setIsNewCustomerModalOpen] = useState(false);
   
   // Usar hook básico de customers
   const { data: customers, isLoading, error } = useCustomers({ search });
@@ -22,6 +28,54 @@ const CustomersLite = () => {
     if (!customers) return 0;
     return customers.filter((c) => c.segment !== 'Inativo').length;
   }, [customers]);
+
+  // Função para navegar para relatórios CRM - Total de Clientes
+  const handleNavigateToCustomerReports = () => {
+    // Navegar para a página de relatórios na aba CRM
+    navigate('/reports?tab=crm#total-clientes-kpi');
+    
+    // Após um pequeno delay, fazer scroll para o elemento específico
+    setTimeout(() => {
+      const element = document.getElementById('total-clientes-kpi');
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Adicionar um destaque temporário no elemento
+        element.style.animation = 'pulse 2s ease-in-out';
+      }
+    }, 300);
+  };
+
+  // Função para navegar para relatórios CRM - Clientes Ativos
+  const handleNavigateToActiveCustomersReports = () => {
+    // Navegar para a página de relatórios na aba CRM
+    navigate('/reports?tab=crm#clientes-ativos-kpi');
+    
+    // Após um pequeno delay, fazer scroll para o elemento específico
+    setTimeout(() => {
+      const element = document.getElementById('clientes-ativos-kpi');
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Adicionar um destaque temporário no elemento
+        element.style.animation = 'pulse 2s ease-in-out';
+      }
+    }, 300);
+  };
+
+  // Função para navegar para relatórios CRM - Novos Clientes (Últimos 30 dias)
+  const handleNavigateToNewCustomersReports = () => {
+    // Navegar para a página de relatórios na aba CRM
+    navigate('/reports?tab=crm#novos-clientes-kpi');
+    
+    // Após um pequeno delay, fazer scroll para o elemento específico
+    setTimeout(() => {
+      const element = document.getElementById('novos-clientes-kpi');
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Adicionar um destaque temporário no elemento
+        element.style.animation = 'pulse 2s ease-in-out';
+      }
+    }, 300);
+  };
 
   if (isLoading) {
     return <LoadingScreen text="Carregando clientes..." />;
@@ -75,46 +129,26 @@ const CustomersLite = () => {
         
         {/* Botões de ação */}
         <div className="flex gap-2">
-          <Button variant="outline" className="border-white/20 text-gray-200 bg-gray-800/60 hover:bg-gray-700/80" onClick={() => { /* TODO: export */ }}>
+          <Button 
+            className={`${getGlassButtonClasses('outline', 'md')} ${getHoverTransformClasses('lift')}`}
+            onClick={() => { /* TODO: export */ }}
+          >
+            <Download className="h-4 w-4 mr-2" />
             Exportar
           </Button>
-          <Button className="bg-yellow-400/20 border border-yellow-400/30 text-yellow-400 hover:bg-yellow-400/30" onClick={() => setLoading(true)}>
+          <Button 
+            className={`${getGlassButtonClasses('primary', 'md')} ${getHoverTransformClasses('scale')} shadow-lg hover:shadow-yellow-400/30 font-semibold`}
+            onClick={() => setIsNewCustomerModalOpen(true)}
+          >
+            <UserPlus className="h-4 w-4 mr-2" />
             NOVO CLIENTE
           </Button>
         </div>
       </div>
 
-      {/* KPIs Resumo */}
-      <div className="flex-shrink-0 grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-        <Card className="bg-black/60 border-white/10 backdrop-blur-xl">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-gray-400">Total de Clientes</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold text-white">{customers?.length || 0}</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-black/60 border-white/10 backdrop-blur-xl">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-gray-400">Clientes Ativos</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold text-primary-yellow">{activeCount}</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-black/60 border-white/10 backdrop-blur-xl">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-gray-400">Últimos 30 dias</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold text-accent-green">+{newClientsCount}</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Tabela de Clientes */}
+      {/* Container principal com glassmorphism - KPIs + Tabela */}
       <section 
-        className="flex-1 min-h-0 bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg hero-spotlight p-4 flex flex-col hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300 overflow-hidden"
+        className="flex-1 min-h-0 bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg hero-spotlight p-4 flex flex-col hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300 overflow-hidden space-y-6"
         onMouseMove={(e) => {
           const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
           const x = ((e.clientX - rect.left) / rect.width) * 100;
@@ -123,11 +157,53 @@ const CustomersLite = () => {
           (e.currentTarget as HTMLElement).style.setProperty("--y", `${y}%`);
         }}
       >
+        {/* KPIs Resumo - Padronizados com StatCard v2.0.0 */}
+        <div className="flex-shrink-0 grid grid-cols-1 md:grid-cols-3 gap-4">
+          <StatCard
+            layout="crm"
+            variant="default"
+            title="Total de Clientes"
+            value={customers?.length || 0}
+            description="📊 Base completa • Clique para ver relatórios"
+            icon={Users}
+            onClick={handleNavigateToCustomerReports}
+            className="cursor-pointer transform hover:scale-105 transition-all duration-200 hover:shadow-xl hover:shadow-blue-500/20"
+          />
+          
+          <StatCard
+            layout="crm"
+            variant="warning"
+            title="Clientes Ativos"
+            value={activeCount}
+            description="⚡ Segmento ativo • Clique para ver relatórios"
+            icon={TrendingUp}
+            onClick={handleNavigateToActiveCustomersReports}
+            className="cursor-pointer transform hover:scale-105 transition-all duration-200 hover:shadow-xl hover:shadow-purple-500/20"
+          />
+          
+          <StatCard
+            layout="crm"
+            variant="success"
+            title="Últimos 30 dias"
+            value={`+${newClientsCount}`}
+            description="🚀 Novos cadastros • Clique para ver relatórios"
+            icon={UserPlus}
+            onClick={handleNavigateToNewCustomersReports}
+            className="cursor-pointer transform hover:scale-105 transition-all duration-200 hover:shadow-xl hover:shadow-green-500/20"
+          />
+        </div>
+
+        {/* Tabela de Clientes */}
         <CardContent className="p-0 flex-1 min-h-0 overflow-hidden">
           <CustomerDataTable />
         </CardContent>
       </section>
 
+      {/* Modal Novo Cliente */}
+      <NewCustomerModal
+        isOpen={isNewCustomerModalOpen}
+        onClose={() => setIsNewCustomerModalOpen(false)}
+      />
 
       {loading && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">

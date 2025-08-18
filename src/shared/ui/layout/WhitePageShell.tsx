@@ -24,11 +24,11 @@ const paddingClasses: Record<NonNullable<WhitePageShellProps['padding']>, string
 };
 
 /**
- * WhitePageShell
+ * WhitePageShell (agora com Glassmorphism)
  *
- * A white, rounded container with a subtle shadow and border that sits above
- * the animated black/white background and next to the transparent sidebar.
- * Keeps margins so the background remains visible around it.
+ * Container com efeito glassmorphism que segue o padrão estabelecido no sistema.
+ * Fundo translúcido preto com blur, bordas elegantes e hover effects interativos.
+ * Mantém margens para que o background permaneça visível ao redor.
  */
 export function WhitePageShell({
   children,
@@ -46,13 +46,20 @@ export function WhitePageShell({
       >
         <div
           className={cn(
-            // White surface with subtle separation from dark bg
-            'bg-white text-gray-900 rounded-2xl border border-black/5 shadow-[0_8px_28px_rgba(0,0,0,0.12)]',
+            // Glassmorphism pattern - padrão estabelecido no sistema
+            'bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg text-white hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300',
             // Ensure the edges and background are visible around container
             'min-h-[60vh]',
             paddingClasses[padding],
             className,
           )}
+          onMouseMove={(e) => {
+            const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+            const x = ((e.clientX - rect.left) / rect.width) * 100;
+            const y = ((e.clientY - rect.top) / rect.height) * 100;
+            (e.currentTarget as HTMLElement).style.setProperty("--x", `${x}%`);
+            (e.currentTarget as HTMLElement).style.setProperty("--y", `${y}%`);
+          }}
         >
           {children}
         </div>

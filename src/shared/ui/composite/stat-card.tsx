@@ -11,6 +11,7 @@ export interface StatCardProps {
   variant?: 'default' | 'success' | 'warning' | 'error' | 'purple' | 'premium';
   className?: string;
   layout?: 'default' | 'crm'; // Novo: layout CRM ou padrão tradicional
+  onClick?: () => void; // Novo: suporte para clique/navegação
 }
 
 const variantStyles = {
@@ -66,14 +67,23 @@ export const StatCard: React.FC<StatCardProps> = ({
   emoji,
   variant = 'default',
   layout = 'default',
-  className
+  className,
+  onClick
 }) => {
   const styles = variantStyles[variant];
 
   // Layout CRM: ícone + título + valor + descrição (padrão exato do CRM Dashboard)
   if (layout === 'crm') {
     return (
-      <Card className={cn(styles.card, 'h-[120px] hover:transform hover:-translate-y-1 transition-all duration-200', className)}>
+      <Card 
+        className={cn(
+          styles.card, 
+          'h-[120px] hover:transform hover:-translate-y-1 transition-all duration-200',
+          onClick && 'cursor-pointer select-none',
+          className
+        )}
+        onClick={onClick}
+      >
         <CardContent className="p-6 h-full flex items-center">
           <div className="flex items-center gap-3 w-full">
             {/* Ícone Lucide (não emoji) */}
