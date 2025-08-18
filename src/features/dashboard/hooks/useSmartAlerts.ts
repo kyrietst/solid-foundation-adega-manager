@@ -118,9 +118,8 @@ export function useSmartAlerts() {
 
         const { data: inactiveCustomersData, error: inactiveError } = await supabase
           .from('customers')
-          .select('id, name, last_purchase')
-          .or(`last_purchase.lt.${sixtyDaysAgo.toISOString()},last_purchase.is.null`)
-          .eq('is_active', true)
+          .select('id, name, last_purchase_date')
+          .or(`last_purchase_date.lt.${sixtyDaysAgo.toISOString()},last_purchase_date.is.null`)
           .limit(100);
 
         if (!inactiveError && inactiveCustomersData && inactiveCustomersData.length > 0) {
@@ -146,11 +145,11 @@ export function useSmartAlerts() {
         const { data: deadStockData, error: deadStockError } = await supabase
           .from('products')
           .select(`
-            id, name, price, stock,
+            id, name, price, stock_quantity,
             sale_items!left(quantity, sales!inner(created_at))
           `)
           .gt('price', 50) // High value products
-          .gt('stock', 0) // With stock
+          .gt('stock_quantity', 0) // With stock
           .is('sale_items.sales.created_at', null); // No sales in period
 
         if (!deadStockError && deadStockData && deadStockData.length > 5) {

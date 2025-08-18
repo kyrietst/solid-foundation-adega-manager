@@ -406,7 +406,7 @@ export function AlertsCarousel({
       </CardContent>
 
       {/* CSS para animação da progress bar */}
-      <style jsx>{`
+      <style>{`
         @keyframes progressBar {
           from { width: 0%; }
           to { width: 100%; }

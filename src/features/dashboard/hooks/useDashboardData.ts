@@ -52,9 +52,9 @@ export const useDashboardData = () => {
         // Buscar contadores reais do banco
         const [customersResult, vipCustomersResult, productsResult, deliveriesResult] = await Promise.all([
           supabase.from('customers').select('id', { count: 'exact', head: true }),
-          supabase.from('customers').select('id', { count: 'exact', head: true }).eq('customer_category', 'premium'),
+          supabase.from('customers').select('id', { count: 'exact', head: true }).eq('segment', 'High Value'),
           supabase.from('products').select('id', { count: 'exact', head: true }).gt('stock_quantity', 0),
-          supabase.from('sales').select('id', { count: 'exact', head: true }).eq('delivery_status', 'pending')
+          supabase.from('sales').select('id', { count: 'exact', head: true }).eq('status', 'pending').eq('delivery', true)
         ]);
 
         return {
@@ -209,13 +209,13 @@ export const useDashboardData = () => {
           .from('inventory_movements')
           .select(`
             id,
-            movement_type,
+            type,
             quantity,
-            created_at,
+            date,
             products (name)
           `)
-          .in('movement_type', ['IN'])
-          .order('created_at', { ascending: false })
+          .eq('type', 'entrada')
+          .order('date', { ascending: false })
           .limit(2);
 
         if (!movementsError && recentMovements) {
@@ -225,7 +225,7 @@ export const useDashboardData = () => {
               type: 'stock',
               description: 'Estoque atualizado',
               details: `${movement.products?.name || 'Produto'} - ${movement.quantity > 0 ? '+' : ''}${movement.quantity} unidades`,
-              timestamp: movement.created_at,
+              timestamp: movement.date,
               icon: 'Package'
             });
           });
