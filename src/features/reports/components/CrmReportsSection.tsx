@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/primitives
 import { Button } from '@/shared/ui/primitives/button';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
-import { Users, TrendingUp, AlertCircle, Heart, DollarSign, Download } from 'lucide-react';
+import { Users, TrendingUp, AlertCircle, Heart, DollarSign, Download, Calendar } from 'lucide-react';
 import { LoadingSpinner } from '@/shared/ui/composite/loading-spinner';
 import { StandardReportsTable, TableColumn } from './StandardReportsTable';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
@@ -23,8 +23,32 @@ interface CrmReportsSectionProps {
   period?: number;
 }
 
+// Interface para adicionar suporte aos dados de clientes
+interface Customer {
+  id: string;
+  name: string;
+  birthday?: string;
+  segment?: string;
+  lifetime_value: string;
+  last_purchase_date?: string;
+}
+
 export const CrmReportsSection: React.FC<CrmReportsSectionProps> = ({ period = 30 }) => {
   const windowDays = period;
+
+  // Buscar dados de clientes para análise de aniversários
+  const { data: customers, isLoading: loadingCustomers } = useQuery({
+    queryKey: ['customers-data'],
+    queryFn: async (): Promise<Customer[]> => {
+      const { data, error } = await supabase
+        .from('customers')
+        .select('id, name, birthday, segment, lifetime_value, last_purchase_date');
+      
+      if (error) throw error;
+      return data || [];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
 
   // Customer Metrics Query
   const { data: customerMetrics, isLoading: loadingMetrics } = useQuery({
@@ -47,7 +71,7 @@ export const CrmReportsSection: React.FC<CrmReportsSectionProps> = ({ period = 3
   });
 
   // Top Customers Query
-  const { data: topCustomers, isLoading: loadingCustomers } = useQuery({
+  const { data: topCustomers, isLoading: loadingTopCustomers } = useQuery({
     queryKey: ['top-customers', windowDays],
     queryFn: async () => {
       const endDate = new Date();
@@ -269,8 +293,8 @@ export const CrmReportsSection: React.FC<CrmReportsSectionProps> = ({ period = 3
   return (
     <div className="space-y-6">
       {/* Customer Metrics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card id="total-clientes-kpi" className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/10 hover:border-blue-400/30 hover:bg-gray-700/40">
+      <div id="total-clientes" className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/10 hover:border-blue-400/30 hover:bg-gray-700/40">
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
               <Users className="h-8 w-8 text-blue-400 transition-all duration-300" />
@@ -284,7 +308,7 @@ export const CrmReportsSection: React.FC<CrmReportsSectionProps> = ({ period = 3
           </CardContent>
         </Card>
 
-        <Card id="novos-clientes-kpi" className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-green-500/10 hover:border-green-400/30 hover:bg-gray-700/40">
+        <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-green-500/10 hover:border-green-400/30 hover:bg-gray-700/40">
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
               <TrendingUp className="h-8 w-8 text-green-400 transition-all duration-300" />
@@ -298,7 +322,7 @@ export const CrmReportsSection: React.FC<CrmReportsSectionProps> = ({ period = 3
           </CardContent>
         </Card>
 
-        <Card id="clientes-ativos-kpi" className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 hover:bg-gray-700/40">
+        <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 hover:bg-gray-700/40">
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
               <Heart className="h-8 w-8 text-purple-400 transition-all duration-300" />
@@ -386,12 +410,15 @@ export const CrmReportsSection: React.FC<CrmReportsSectionProps> = ({ period = 3
       {/* Data Tables */}
       <div className="space-y-6">
         {/* Top Customers */}
-        <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-green-500/10 hover:border-green-400/30 hover:bg-gray-700/40">
+        <Card id="ltv" className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-green-500/10 hover:border-green-400/30 hover:bg-gray-700/40">
           <CardHeader>
-            <CardTitle className="text-white">Top Clientes por LTV</CardTitle>
+            <CardTitle className="text-white flex items-center gap-2">
+              <DollarSign className="h-5 w-5 text-green-400" />
+              Top Clientes por LTV
+            </CardTitle>
           </CardHeader>
           <CardContent className="h-80">
-            {loadingCustomers ? (
+            {loadingTopCustomers ? (
               <div className="flex items-center justify-center py-8">
                 <LoadingSpinner size="lg" variant="green" />
               </div>
@@ -434,10 +461,84 @@ export const CrmReportsSection: React.FC<CrmReportsSectionProps> = ({ period = 3
             )}
           </CardContent>
         </Card>
+
+        {/* Birthday Analytics */}
+        <Card id="aniversarios" className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-yellow-500/10 hover:border-yellow-400/30 hover:bg-gray-700/40">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-yellow-400" />
+              Aniversários dos Clientes
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="text-center p-6 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+                <div className="text-3xl font-bold text-yellow-400 mb-2">
+                  🎂 Análise de Aniversários
+                </div>
+                <p className="text-sm text-gray-400">
+                  Esta seção mostra dados detalhados sobre aniversários de clientes,
+                  permitindo campanhas direcionadas e oportunidades de marketing.
+                </p>
+              </div>
+              
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="text-center p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                  <p className="text-2xl font-bold text-blue-400">{customers?.filter(c => c.birthday).length || 0}</p>
+                  <p className="text-sm text-blue-400">Com Aniversário</p>
+                  <p className="text-xs text-gray-400">Cadastrado</p>
+                </div>
+                <div className="text-center p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
+                  <p className="text-2xl font-bold text-green-400">{customers?.filter(c => {
+                    if (!c.birthday) return false;
+                    const birthDate = new Date(c.birthday);
+                    const today = new Date();
+                    const thisYear = today.getFullYear();
+                    const nextBirthday = new Date(thisYear, birthDate.getMonth(), birthDate.getDate());
+                    if (nextBirthday < today) {
+                      nextBirthday.setFullYear(thisYear + 1);
+                    }
+                    const daysUntil = Math.ceil((nextBirthday.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                    return daysUntil <= 30;
+                  }).length || 0}</p>
+                  <p className="text-sm text-green-400">Próximos 30 dias</p>
+                  <p className="text-xs text-gray-400">Oportunidades</p>
+                </div>
+                <div className="text-center p-4 bg-purple-500/10 border border-purple-500/20 rounded-lg">
+                  <p className="text-2xl font-bold text-purple-400">{customers?.filter(c => {
+                    if (!c.birthday) return false;
+                    const birthDate = new Date(c.birthday);
+                    const today = new Date();
+                    return birthDate.getMonth() === today.getMonth();
+                  }).length || 0}</p>
+                  <p className="text-sm text-purple-400">Este Mês</p>
+                  <p className="text-xs text-gray-400">Aniversários</p>
+                </div>
+                <div className="text-center p-4 bg-orange-500/10 border border-orange-500/20 rounded-lg">
+                  <p className="text-2xl font-bold text-orange-400">{customers?.filter(c => {
+                    if (!c.birthday) return false;
+                    const birthDate = new Date(c.birthday);
+                    const today = new Date();
+                    const daysUntil = Math.ceil((new Date(today.getFullYear(), birthDate.getMonth(), birthDate.getDate()).getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                    return Math.abs(daysUntil) <= 7;
+                  }).length || 0}</p>
+                  <p className="text-sm text-orange-400">Esta Semana</p>
+                  <p className="text-xs text-gray-400">Urgência</p>
+                </div>
+              </div>
+              
+              <div className="text-sm text-gray-400 space-y-1">
+                <p><span className="font-semibold">Campanhas:</span> Use aniversários para ofertas especiais e fidelização</p>
+                <p><span className="font-semibold">Automação:</span> Configure lembretes automáticos para equipe de vendas</p>
+                <p><span className="font-semibold">ROI:</span> Clientes em aniversários tendem a ter maior conversão</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Churn Risk Analysis */}
-      <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-orange-500/10 hover:border-orange-400/30 hover:bg-gray-700/40">
+      <Card id="clientes-risco" className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-orange-500/10 hover:border-orange-400/30 hover:bg-gray-700/40">
         <CardHeader>
           <CardTitle className="text-white flex items-center gap-2">
             <AlertCircle className="h-5 w-5 text-orange-400 transition-all duration-300" />

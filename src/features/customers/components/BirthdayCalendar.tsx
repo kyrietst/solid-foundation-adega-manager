@@ -49,20 +49,26 @@ export const BirthdayCalendar = ({ className, showActions = true }: BirthdayCale
         // Aniversário deste ano
         const birthdayThisYear = new Date(currentYear, birthday.getMonth(), birthday.getDate());
         
+        // Resetar horas para comparação precisa
+        const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        const birthdayThisYearMidnight = new Date(currentYear, birthday.getMonth(), birthday.getDate());
+        
         // Se já passou este ano, considerar próximo ano
-        let nextBirthday = birthdayThisYear;
-        if (birthdayThisYear < today) {
+        let nextBirthday = birthdayThisYearMidnight;
+        if (birthdayThisYearMidnight < todayMidnight) {
           nextBirthday = new Date(currentYear + 1, birthday.getMonth(), birthday.getDate());
         }
 
-        const timeDiff = nextBirthday.getTime() - today.getTime();
+        const timeDiff = nextBirthday.getTime() - todayMidnight.getTime();
         const daysUntil = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
         const isToday = daysUntil === 0;
-        const isPassed = birthdayThisYear < today;
+        const isPassed = birthdayThisYearMidnight < todayMidnight;
+        
+        // Debug removido - cálculo de aniversário corrigido
 
         return {
           ...customer,
-          birthdayThisYear,
+          birthdayThisYear: birthdayThisYearMidnight,
           daysUntil,
           isToday,
           isPassed
@@ -93,7 +99,7 @@ export const BirthdayCalendar = ({ className, showActions = true }: BirthdayCale
   // Próximos aniversários (próximos 30 dias)
   const upcomingBirthdays = useMemo(() => {
     return birthdayCustomers
-      .filter(customer => customer.daysUntil <= 30)
+      .filter(customer => customer.daysUntil <= 30 && customer.daysUntil >= 0)
       .slice(0, 10);
   }, [birthdayCustomers]);
 

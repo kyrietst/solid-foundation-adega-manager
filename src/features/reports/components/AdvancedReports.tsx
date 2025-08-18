@@ -27,6 +27,7 @@ export const AdvancedReports: React.FC = () => {
     const searchParams = new URLSearchParams(location.search);
     const urlTab = searchParams.get('tab');
     const urlPeriod = searchParams.get('period');
+    const urlSection = searchParams.get('section');
 
     // Define a aba baseada no parâmetro 'tab'
     if (urlTab && ['sales', 'inventory', 'crm', 'financial'].includes(urlTab)) {
@@ -41,11 +42,11 @@ export const AdvancedReports: React.FC = () => {
       }
     }
 
-    // Scroll automático para elemento específico se houver hash na URL
-    const hash = location.hash.substring(1); // Remove o #
-    if (hash) {
+    // Scroll automático para seção específica baseado no parâmetro 'section'
+    const targetId = urlSection || location.hash.substring(1); // Usa section ou hash
+    if (targetId) {
       setTimeout(() => {
-        const element = document.getElementById(hash);
+        const element = document.getElementById(targetId);
         if (element) {
           element.scrollIntoView({ behavior: 'smooth', block: 'center' });
           // Adicionar efeito de destaque

@@ -9,6 +9,7 @@ import { Badge } from '@/shared/ui/primitives/badge';
 import { Button } from '@/shared/ui/primitives/button';
 import { Input } from '@/shared/ui/primitives/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/primitives/tabs';
+import { useNavigate } from 'react-router-dom';
 import {
   Select,
   SelectContent,
@@ -66,22 +67,13 @@ import {
   AreaChart
 } from 'recharts';
 import { useCustomers } from '@/features/customers/hooks/use-crm';
+import { useCrmTrends } from '@/features/customers/hooks/useCrmTrends';
+import { useCrmMetrics } from '@/features/customers/hooks/useCrmMetrics';
 import { BirthdayCalendar } from './BirthdayCalendar';
 import { supabase } from '@/core/api/supabase/client';
 
 // Cores para gráficos
 const COLORS = ['#F59E0B', '#10B981', '#3B82F6', '#8B5CF6', '#F97316', '#06B6D4', '#84CC16'];
-
-interface CrmMetrics {
-  totalCustomers: number;
-  activeCustomers: number;
-  totalLTV: number;
-  averageLTV: number;
-  churnRate: number;
-  newCustomersThisMonth: number;
-  upcomingBirthdays: number;
-  atRiskCustomers: number;
-}
 
 interface SegmentData {
   segment: string;
@@ -91,16 +83,8 @@ interface SegmentData {
   color: string;
 }
 
-interface CustomerAtRisk {
-  id: string;
-  name: string;
-  segment: string;
-  daysSinceLastPurchase: number;
-  ltv: number;
-  risk_level: 'alto' | 'medio' | 'baixo';
-}
-
 export const CrmDashboard: React.FC = () => {
+  const navigate = useNavigate();
   const [selectedPeriod, setSelectedPeriod] = useState(30);
   const [selectedSegment, setSelectedSegment] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
@@ -108,11 +92,34 @@ export const CrmDashboard: React.FC = () => {
 
   // Buscar dados de clientes
   const { data: customers = [], isLoading } = useCustomers();
+  
+  // Buscar métricas dinâmicas baseadas no período selecionado
+  const { metrics, customersAtRisk, isLoading: isLoadingMetrics } = useCrmMetrics(selectedPeriod);
+  
+  // Buscar dados reais de tendências com período dinâmico
+  const { data: trendsData = [], isLoading: isLoadingTrends, error: trendsError } = useCrmTrends(selectedPeriod);
+
+  // Funções de navegação para os KPIs
+  const handleTotalCustomersClick = () => {
+    navigate('/reports?tab=crm&section=total-clientes&period=' + selectedPeriod);
+  };
+
+  const handleLtvClick = () => {
+    navigate('/reports?tab=crm&section=ltv&period=' + selectedPeriod);
+  };
+
+  const handleBirthdaysClick = () => {
+    navigate('/reports?tab=crm&section=aniversarios&period=30'); // Aniversários sempre próximos 30 dias
+  };
+
+  const handleRiskClick = () => {
+    navigate('/reports?tab=crm&section=clientes-risco&period=' + selectedPeriod);
+  };
 
   // Função de exportação CSV
   const exportToCSV = async (type: string) => {
     try {
-      let data: any[] = [];
+      let data: Record<string, unknown>[] = [];
       let filename = '';
 
       switch (type) {
@@ -121,21 +128,23 @@ export const CrmDashboard: React.FC = () => {
           filename = 'clientes-crm.csv';
           break;
 
-        case 'insights':
+        case 'insights': {
           const { data: insightsData } = await supabase
             .from('customer_insights')
             .select('*');
           data = insightsData || [];
           filename = 'insights-clientes.csv';
           break;
+        }
 
-        case 'interacoes':
+        case 'interacoes': {
           const { data: interactionsData } = await supabase
             .from('customer_interactions')
             .select('*');
           data = interactionsData || [];
           filename = 'interacoes-clientes.csv';
           break;
+        }
 
         case 'vendas':
           const { data: salesData } = await supabase
@@ -189,67 +198,7 @@ export const CrmDashboard: React.FC = () => {
     }
   };
   
-  // Debug para verificar se os dados chegam
-  console.log('🎂 CRM Dashboard - Total customers loaded:', customers.length);
-  console.log('🎂 CRM Dashboard - Customers with birthdays:', customers.filter(c => c.birthday).length);
-  console.log('🎂 CRM Dashboard - Sample customer:', customers[0]);
-
-  // Calcular métricas
-  const metrics = useMemo((): CrmMetrics => {
-    const now = new Date();
-    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-    
-    const totalCustomers = customers.length;
-    const activeCustomers = customers.filter(c => {
-      const lastPurchase = c.last_purchase_date ? new Date(c.last_purchase_date) : null;
-      return lastPurchase && lastPurchase > thirtyDaysAgo;
-    }).length;
-    
-    const totalLTV = customers.reduce((sum, c) => sum + (c.lifetime_value || 0), 0);
-    const averageLTV = totalCustomers > 0 ? totalLTV / totalCustomers : 0;
-    
-    const newCustomersThisMonth = customers.filter(c => {
-      const createdAt = new Date(c.created_at);
-      return createdAt > thirtyDaysAgo;
-    }).length;
-
-    // Calcular aniversários próximos (próximos 30 dias)
-    const upcomingBirthdays = customers.filter(c => {
-      if (!c.birthday) return false;
-      const birthDate = new Date(c.birthday);
-      const thisYear = now.getFullYear();
-      const nextBirthday = new Date(thisYear, birthDate.getMonth(), birthDate.getDate());
-      if (nextBirthday < now) {
-        nextBirthday.setFullYear(thisYear + 1);
-      }
-      const daysUntil = Math.ceil((nextBirthday.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-      
-      console.log(`🎂 CRM Dashboard - ${c.name}: birthday=${c.birthday}, daysUntil=${daysUntil}`);
-      
-      return daysUntil <= 30;
-    }).length;
-
-    // Clientes em risco (sem comprar há mais de 90 dias)
-    const atRiskCustomers = customers.filter(c => {
-      const lastPurchase = c.last_purchase_date ? new Date(c.last_purchase_date) : null;
-      if (!lastPurchase) return true;
-      const daysSince = Math.floor((now.getTime() - lastPurchase.getTime()) / (1000 * 60 * 60 * 24));
-      return daysSince > 90;
-    }).length;
-
-    const churnRate = totalCustomers > 0 ? (atRiskCustomers / totalCustomers) * 100 : 0;
-
-    return {
-      totalCustomers,
-      activeCustomers,
-      totalLTV,
-      averageLTV,
-      churnRate,
-      newCustomersThisMonth,
-      upcomingBirthdays,
-      atRiskCustomers
-    };
-  }, [customers]);
+  // Métricas são calculadas dinamicamente pelo hook useCrmMetrics baseado no período
 
   // Dados por segmento
   const segmentData = useMemo((): SegmentData[] => {
@@ -274,45 +223,9 @@ export const CrmDashboard: React.FC = () => {
     })).sort((a, b) => b.count - a.count);
   }, [customers]);
 
-  // Clientes em risco detalhados
-  const customersAtRisk = useMemo((): CustomerAtRisk[] => {
-    const now = new Date();
-    return customers
-      .map(customer => {
-        const lastPurchase = customer.last_purchase_date ? new Date(customer.last_purchase_date) : null;
-        const daysSinceLastPurchase = lastPurchase 
-          ? Math.floor((now.getTime() - lastPurchase.getTime()) / (1000 * 60 * 60 * 24))
-          : 365;
+  // Clientes em risco são calculados dinamicamente pelo hook useCrmMetrics
 
-        let risk_level: 'alto' | 'medio' | 'baixo';
-        if (daysSinceLastPurchase > 180) risk_level = 'alto';
-        else if (daysSinceLastPurchase > 90) risk_level = 'medio';
-        else risk_level = 'baixo';
-
-        return {
-          id: customer.id,
-          name: customer.name || '',
-          segment: customer.segment || 'Novo',
-          daysSinceLastPurchase,
-          ltv: customer.lifetime_value || 0,
-          risk_level
-        };
-      })
-      .filter(c => c.risk_level !== 'baixo')
-      .sort((a, b) => b.daysSinceLastPurchase - a.daysSinceLastPurchase)
-      .slice(0, 10);
-  }, [customers]);
-
-  // Dados para gráfico de tendências (simulados)
-  const trendsData = useMemo(() => {
-    const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun'];
-    return months.map((month, index) => ({
-      month,
-      novos: Math.floor(Math.random() * 20) + 5,
-      ativos: Math.floor(Math.random() * 50) + 30,
-      ltv: Math.floor(Math.random() * 500) + 300
-    }));
-  }, []);
+  // DADOS REAIS: tendências são buscadas via useCrmTrends() hook
 
   // Próximos aniversários
   const upcomingBirthdaysList = useMemo(() => {
@@ -373,13 +286,18 @@ export const CrmDashboard: React.FC = () => {
     </Card>
   );
 
-  if (isLoading) {
+  if (isLoading || isLoadingTrends || isLoadingMetrics) {
     return (
       <div className="w-full h-full flex flex-col p-4">
         <div className="flex items-center justify-center py-12">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-500 mx-auto mb-4"></div>
             <p className="text-gray-400">Carregando dashboard CRM...</p>
+            <p className="text-gray-500 text-sm mt-2">
+              {isLoading && "Carregando clientes..."}
+              {isLoadingTrends && "Carregando tendências..."}
+              {isLoadingMetrics && "Calculando métricas..."}
+            </p>
           </div>
         </div>
       </div>
@@ -519,43 +437,63 @@ export const CrmDashboard: React.FC = () => {
         }}
       >
 
-        {/* Métricas Principais - Padronizadas com StatCard v2.0.0 */}
+        {/* Métricas Principais - Padronizadas com StatCard v2.0.0 - Clicáveis */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard
-            layout="crm"
-            variant="default"
-            title="Total de Clientes"
-            value={metrics.totalCustomers}
-            description={`📈 +${metrics.newCustomersThisMonth} este mês`}
-            icon={Users}
-          />
+          <div 
+            className="cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/20" 
+            onClick={handleTotalCustomersClick}
+          >
+            <StatCard
+              layout="crm"
+              variant="default"
+              title="Total de Clientes"
+              value={metrics.totalCustomers}
+              description={`📈 +${metrics.newCustomersThisPeriod} nos últimos ${selectedPeriod}d`}
+              icon={Users}
+            />
+          </div>
 
-          <StatCard
-            layout="crm"
-            variant="success"
-            title="LTV Total"
-            value={formatCurrency(metrics.totalLTV)}
-            description={`💰 Média: ${formatCurrency(metrics.averageLTV)}`}
-            icon={DollarSign}
-          />
+          <div 
+            className="cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-green-500/20" 
+            onClick={handleLtvClick}
+          >
+            <StatCard
+              layout="crm"
+              variant="success"
+              title="LTV Total"
+              value={formatCurrency(metrics.totalLTV)}
+              description={`💰 Média: ${formatCurrency(metrics.averageLTV)}`}
+              icon={DollarSign}
+            />
+          </div>
 
-          <StatCard
-            layout="crm"
-            variant="warning"
-            title="Aniversários"
-            value={metrics.upcomingBirthdays}
-            description="🎂 Próximos 30 dias"
-            icon={Gift}
-          />
+          <div 
+            className="cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-yellow-500/20" 
+            onClick={handleBirthdaysClick}
+          >
+            <StatCard
+              layout="crm"
+              variant="warning"
+              title="Aniversários"
+              value={metrics.upcomingBirthdays}
+              description={`🎂 Próximos ${Math.max(selectedPeriod, 30)} dias`}
+              icon={Gift}
+            />
+          </div>
 
-          <StatCard
-            layout="crm"
-            variant="error"
-            title="Em Risco"
-            value={metrics.atRiskCustomers}
-            description={`⚠️ ${metrics.churnRate.toFixed(1)}% churn rate`}
-            icon={AlertTriangle}
-          />
+          <div 
+            className="cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-red-500/20" 
+            onClick={handleRiskClick}
+          >
+            <StatCard
+              layout="crm"
+              variant="error"
+              title="Em Risco"
+              value={metrics.atRiskCustomers}
+              description={`⚠️ ${metrics.churnRate.toFixed(1)}% churn rate`}
+              icon={AlertTriangle}
+            />
+          </div>
         </div>
 
         {/* Tabs para diferentes visões */}
@@ -590,46 +528,77 @@ export const CrmDashboard: React.FC = () => {
           {/* Tab: Overview */}
           <TabsContent value="overview" className="mt-6 space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Gráfico de Tendências */}
+              {/* Gráfico de Tendências - DADOS REAIS */}
               <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm shadow-lg hover:shadow-2xl hover:shadow-green-500/10 hover:border-green-400/30 transition-all duration-300 col-span-2">
                 <CardHeader>
                   <CardTitle className="text-white flex items-center gap-2">
                     <TrendingUp className="h-5 w-5 text-green-500" />
                     Tendências de Clientes
+                    {isLoadingTrends && (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-500 ml-2"></div>
+                    )}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="h-80">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={trendsData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                        <XAxis dataKey="month" tick={{ fill: '#9CA3AF' }} stroke="#6B7280" />
-                        <YAxis tick={{ fill: '#9CA3AF' }} stroke="#6B7280" />
-                        <Tooltip 
-                          contentStyle={{ 
-                            backgroundColor: '#1F2937', 
-                            border: '1px solid #374151',
-                            borderRadius: '8px',
-                            color: '#F3F4F6'
-                          }}
-                        />
-                        <Line 
-                          type="monotone" 
-                          dataKey="novos" 
-                          stroke="#3B82F6" 
-                          strokeWidth={3}
-                          name="Novos Clientes"
-                        />
-                        <Line 
-                          type="monotone" 
-                          dataKey="ativos" 
-                          stroke="#10B981" 
-                          strokeWidth={3}
-                          name="Clientes Ativos"
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
+                  {trendsError ? (
+                    <div className="h-80 flex flex-col items-center justify-center">
+                      <AlertTriangle className="h-12 w-12 text-red-400 mb-4" />
+                      <p className="text-red-400 font-medium mb-2">Erro ao carregar tendências</p>
+                      <p className="text-gray-400 text-sm text-center">
+                        Dados usando fallback baseado em estatísticas reais
+                      </p>
+                    </div>
+                  ) : isLoadingTrends ? (
+                    <div className="h-80 flex items-center justify-center">
+                      <div className="text-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500 mx-auto mb-4"></div>
+                        <p className="text-gray-400">Carregando dados reais...</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="h-80">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={trendsData}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                          <XAxis dataKey="month" tick={{ fill: '#9CA3AF' }} stroke="#6B7280" />
+                          <YAxis tick={{ fill: '#9CA3AF' }} stroke="#6B7280" />
+                          <Tooltip 
+                            contentStyle={{ 
+                              backgroundColor: '#1F2937', 
+                              border: '1px solid #374151',
+                              borderRadius: '8px',
+                              color: '#F3F4F6'
+                            }}
+                            formatter={(value, name) => [
+                              `${value}${name === 'LTV Médio' ? '' : ' clientes'}`,
+                              name
+                            ]}
+                          />
+                          <Line 
+                            type="monotone" 
+                            dataKey="novos" 
+                            stroke="#3B82F6" 
+                            strokeWidth={3}
+                            name="Novos Clientes"
+                          />
+                          <Line 
+                            type="monotone" 
+                            dataKey="ativos" 
+                            stroke="#10B981" 
+                            strokeWidth={3}
+                            name="Clientes Ativos"
+                          />
+                          <Line 
+                            type="monotone" 
+                            dataKey="ltv" 
+                            stroke="#F59E0B" 
+                            strokeWidth={3}
+                            name="LTV Médio"
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
@@ -645,18 +614,32 @@ export const CrmDashboard: React.FC = () => {
                   <div className="space-y-3 max-h-96 overflow-y-auto">
                     {customersAtRisk.map((customer) => (
                       <div key={customer.id} className="flex items-center justify-between p-3 rounded-lg bg-black/20 border border-white/10 hover:bg-white/5 transition-colors duration-200">
-                        <div>
-                          <p className="font-medium text-white">{customer.name}</p>
-                          <p className="text-sm text-gray-400">
-                            {customer.daysSinceLastPurchase} dias sem comprar
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <p className="font-medium text-white">{customer.name}</p>
+                            <Badge 
+                              variant={customer.risk_level === 'alto' ? 'destructive' : customer.risk_level === 'medio' ? 'secondary' : 'default'}
+                              className="text-xs"
+                            >
+                              {customer.risk_level}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-gray-400 mb-1">
+                            {customer.daysSinceLastPurchase !== null 
+                              ? `${customer.daysSinceLastPurchase} dias sem comprar`
+                              : 'Nunca realizou compra'
+                            }
+                          </p>
+                          <p className="text-xs text-orange-300 opacity-90">
+                            📋 {customer.riskReason}
                           </p>
                         </div>
-                        <div className="text-right">
-                          <Badge variant={customer.risk_level === 'alto' ? 'destructive' : 'secondary'}>
-                            {customer.risk_level}
-                          </Badge>
-                          <p className="text-sm text-green-400 mt-1">
+                        <div className="text-right ml-4">
+                          <p className="text-sm text-green-400 font-medium">
                             {formatCurrency(customer.ltv)}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {customer.segment}
                           </p>
                         </div>
                       </div>
@@ -843,8 +826,8 @@ export const CrmDashboard: React.FC = () => {
                     </div>
                     <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/30 hover:bg-green-500/20 transition-colors duration-200">
                       <h4 className="font-medium text-green-300 mb-2">Crescimento</h4>
-                      <p className="text-2xl font-bold text-white mb-1">+{metrics.newCustomersThisMonth}</p>
-                      <p className="text-sm text-green-200">Novos clientes este mês</p>
+                      <p className="text-2xl font-bold text-white mb-1">+{metrics.newCustomersThisPeriod}</p>
+                      <p className="text-sm text-green-200">Novos nos últimos {selectedPeriod}d</p>
                     </div>
                     <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/30 hover:bg-blue-500/20 transition-colors duration-200">
                       <h4 className="font-medium text-blue-300 mb-2">Oportunidades</h4>

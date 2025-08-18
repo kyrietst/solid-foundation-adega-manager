@@ -16,7 +16,6 @@ const CustomersLite = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
-  const [newClientsCount] = useState(() => Math.floor(Math.random() * 10));
   const [isNewCustomerModalOpen, setIsNewCustomerModalOpen] = useState(false);
   
   // Usar hook básico de customers
@@ -27,6 +26,20 @@ const CustomersLite = () => {
   const activeCount = useMemo(() => {
     if (!customers) return 0;
     return customers.filter((c) => c.segment !== 'Inativo').length;
+  }, [customers]);
+
+  // Calcular novos clientes nos últimos 30 dias usando dados reais
+  const newClientsCount = useMemo(() => {
+    if (!customers) return 0;
+    
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    return customers.filter(customer => {
+      if (!customer.created_at) return false;
+      const createdDate = new Date(customer.created_at);
+      return createdDate >= thirtyDaysAgo;
+    }).length;
   }, [customers]);
 
   // Função para navegar para relatórios CRM - Total de Clientes

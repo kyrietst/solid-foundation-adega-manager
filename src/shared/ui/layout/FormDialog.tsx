@@ -15,6 +15,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from '@/shared/ui/primitives/dialog';
 import { Button } from '@/shared/ui/primitives/button';
 import { LoadingSpinner } from '@/shared/ui/composite/loading-spinner';
@@ -51,6 +52,9 @@ export interface FormDialogProps {
   closeOnClickOutside?: boolean;
   showCloseButton?: boolean;
   preventClose?: boolean;
+  
+  // Trigger
+  trigger?: React.ReactNode;
 }
 
 const sizeClasses = {
@@ -81,7 +85,8 @@ export const FormDialog: React.FC<FormDialogProps> = ({
   glassEffect = true,
   closeOnClickOutside = true,
   showCloseButton = true,
-  preventClose = false
+  preventClose = false,
+  trigger
 }) => {
   const handleOpenChange = (newOpen: boolean) => {
     if (preventClose && !newOpen) return;
@@ -104,7 +109,7 @@ export const FormDialog: React.FC<FormDialogProps> = ({
   const glassClasses = glassEffect ? getGlassCardClasses(variant) : '';
   const dialogClasses = cn(
     sizeClasses[size], 
-    glassEffect && 'backdrop-blur-xl bg-gray-900/90 border border-primary-yellow/30 shadow-2xl',
+    glassEffect && 'backdrop-blur-xl bg-gray-900/90 shadow-2xl',
     className
   );
 
@@ -148,16 +153,20 @@ export const FormDialog: React.FC<FormDialogProps> = ({
       onOpenChange={handleOpenChange}
       modal={closeOnClickOutside}
     >
+      {trigger && (
+        <DialogTrigger asChild>
+          {trigger}
+        </DialogTrigger>
+      )}
       <AnimatePresence mode="wait">
         {open && (
           <DialogContent 
-            className={dialogClasses}
+            className="bg-black/95 backdrop-blur-sm border border-white/10"
             onInteractOutside={(e) => {
               if (!closeOnClickOutside || (preventClose && loading)) {
                 e.preventDefault();
               }
             }}
-            asChild
           >
             <motion.div
               variants={modalVariants}
@@ -169,54 +178,23 @@ export const FormDialog: React.FC<FormDialogProps> = ({
         <DialogHeader>
           <div className="flex items-center justify-between">
             <div className="flex-1 pr-4">
-              <DialogTitle className={cn(
-                "text-lg font-semibold",
-                glassEffect ? "text-white" : "text-gray-900"
-              )}>
+              <DialogTitle className="text-xl font-bold text-white">
                 {title}
               </DialogTitle>
               {description && (
-                <DialogDescription className={cn(
-                  "mt-1",
-                  glassEffect ? "text-gray-300" : "text-gray-600"
-                )}>
+                <DialogDescription className="text-gray-400">
                   {description}
                 </DialogDescription>
               )}
             </div>
             
-            {showCloseButton && !preventClose && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className={cn(
-                  "h-8 w-8 p-0 transition-colors",
-                  glassEffect 
-                    ? "text-gray-300 hover:text-primary-yellow hover:bg-gray-800/60" 
-                    : "text-gray-600 hover:text-gray-900"
-                )}
-                onClick={() => onOpenChange(false)}
-                disabled={loading}
-              >
-                <X className="h-4 w-4" />
-                <span className="sr-only">Fechar</span>
-              </Button>
-            )}
           </div>
         </DialogHeader>
 
         {/* Error Message */}
         {errorMessage && (
-          <div className={cn(
-            "rounded-md p-3 border",
-            glassEffect 
-              ? "bg-red-500/10 border-red-500/30 backdrop-blur-sm" 
-              : "bg-destructive/10 border-destructive/20"
-          )}>
-            <p className={cn(
-              "text-sm font-medium",
-              glassEffect ? "text-red-400" : "text-destructive"
-            )}>
+          <div className="rounded-md p-3 border bg-red-500/10 border-red-500/30 backdrop-blur-sm">
+            <p className="text-sm font-medium text-red-400">
               {errorMessage}
             </p>
           </div>
@@ -229,19 +207,13 @@ export const FormDialog: React.FC<FormDialogProps> = ({
           </div>
 
           {/* Footer Actions */}
-          <DialogFooter className={cn(
-            "flex-col sm:flex-row gap-2",
-            glassEffect && "border-t border-gray-700/30 pt-4"
-          )}>
+          <DialogFooter className="flex-col sm:flex-row gap-2 border-t border-gray-700/30 pt-4">
             <Button
               type="button"
               variant="outline"
               onClick={handleCancel}
               disabled={loading && preventClose}
-              className={cn(
-                "order-2 sm:order-1",
-                glassEffect && "border-gray-600/50 text-gray-300 hover:text-white hover:border-gray-500"
-              )}
+              className="order-2 sm:order-1 border-gray-600/50 text-gray-300 hover:text-white hover:border-gray-500"
             >
               {cancelLabel}
             </Button>
@@ -249,10 +221,7 @@ export const FormDialog: React.FC<FormDialogProps> = ({
             <Button
               type="submit"
               disabled={disabled || loading || hasErrors}
-              className={cn(
-                "order-1 sm:order-2",
-                glassEffect && "bg-primary-yellow text-gray-900 hover:bg-primary-yellow/90 font-medium"
-              )}
+              className="order-1 sm:order-2 bg-yellow-500 hover:bg-yellow-600 text-black font-medium"
             >
               {loading && <LoadingSpinner size="sm" className="mr-2" />}
               {submitLabel}

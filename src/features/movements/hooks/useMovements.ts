@@ -523,15 +523,7 @@ const mockMovements: InventoryMovement[] = [
 ];
 
 export const useMovements = () => {
-  // Retornar dados mock temporariamente para teste de layout
-  return {
-    movements: mockMovements,
-    isLoadingMovements: false,
-    movementsError: null,
-  };
-
-  // Query principal - movimentações (comentado temporariamente)
-  /*
+  // Query principal - movimentações (dados reais ativados)
   const {
     data: movements = [],
     isLoading: isLoadingMovements,
@@ -553,7 +545,6 @@ export const useMovements = () => {
     isLoadingMovements,
     movementsError,
   };
-  */
 };
 
 // Mock data para produtos - catálogo completo expandido
@@ -626,21 +617,7 @@ const mockUsers: UserProfile[] = [
 ];
 
 export const useMovementSupportData = () => {
-  // Retornar dados mock temporariamente para teste de layout
-  return {
-    products: mockProducts,
-    customers: mockCustomers,
-    salesList: mockSales,
-    users: mockUsers,
-    isLoadingProducts: false,
-    isLoadingCustomers: false,
-    isLoadingSales: false,
-    isLoadingUsers: false,
-    isLoading: false
-  };
-
-  // Queries originais comentadas temporariamente
-  /*
+  // Queries ativadas para dados reais do Supabase
   // Query para produtos
   const {
     data: products = [],
@@ -716,5 +693,4 @@ export const useMovementSupportData = () => {
     isLoadingUsers,
     isLoading: isLoadingProducts || isLoadingCustomers || isLoadingSales || isLoadingUsers
   };
-  */
 };

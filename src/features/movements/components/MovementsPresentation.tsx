@@ -6,10 +6,10 @@
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/shared/ui/primitives/card';
 import { Button } from '@/shared/ui/primitives/button';
-import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle } from '@/shared/ui/primitives/dialog';
 import { Plus } from 'lucide-react';
 import { LoadingSpinner } from '@/shared/ui/composite/loading-spinner';
 import { BlurIn } from '@/components/ui/blur-in';
+import { FormDialog } from '@/shared/ui/layout/FormDialog';
 import { MovementsTable } from './MovementsTable';
 import { MovementDialog } from './MovementDialog';
 import { InventoryMovement } from '@/types/inventory.types';
@@ -116,45 +116,37 @@ export const MovementsPresentation: React.FC<MovementsPresentationProps> = ({
           </div>
           
           {canCreateMovement && (
-            <Dialog open={isDialogOpen} onOpenChange={onDialogOpenChange}>
-              <DialogTrigger asChild>
+            <FormDialog
+              open={isDialogOpen}
+              onOpenChange={onDialogOpenChange}
+              title="REGISTRAR MOVIMENTAÇÃO"
+              description="Adicione uma nova movimentação de estoque ao sistema"
+              onSubmit={onFormSubmit}
+              submitLabel="Salvar Movimentação"
+              cancelLabel="Cancelar"
+              loading={isCreating}
+              size="lg"
+              variant="premium"
+              glassEffect={true}
+              trigger={
                 <Button 
-                  className="bg-black/80 border border-yellow-400/30 text-yellow-400 hover:bg-yellow-400/20 hover:shadow-xl hover:shadow-yellow-400/30 hover:border-yellow-400/80 hover:scale-105 backdrop-blur-sm transition-all duration-300 relative overflow-hidden group"
-                  onMouseMove={(e) => {
-                    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                    const x = ((e.clientX - rect.left) / rect.width) * 100;
-                    const y = ((e.clientY - rect.top) / rect.height) * 100;
-                    (e.currentTarget as HTMLElement).style.setProperty("--x", `${x}%`);
-                    (e.currentTarget as HTMLElement).style.setProperty("--y", `${y}%`);
-                  }}
+                  className="bg-gradient-to-r from-primary-yellow to-yellow-500 text-black hover:from-yellow-300 hover:to-yellow-400 font-semibold shadow-lg hover:shadow-yellow-400/30 transition-all duration-200 hover:scale-105"
                 >
-                  <div className="absolute inset-0 bg-gradient-to-r from-yellow-400/5 via-yellow-400/10 to-yellow-400/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  <Plus className="h-4 w-4 mr-2 relative z-10" /> 
-                  <span className="relative z-10">NOVA MOVIMENTAÇÃO</span>
-                  {/* Purple glow effect */}
-                  <div 
-                    className="absolute inset-0 rounded-md bg-gradient-to-br from-purple-500/20 via-transparent to-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-                    style={{
-                      background: `radial-gradient(300px circle at var(--x, 50%) var(--y, 50%), rgba(147, 51, 234, 0.15), transparent 40%)`
-                    }}
-                  />
+                  <Plus className="h-4 w-4 mr-2" /> 
+                  NOVA MOVIMENTAÇÃO
                 </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>REGISTRAR MOVIMENTAÇÃO</DialogTitle>
-                </DialogHeader>
-                <MovementDialog
-                  formData={formData}
-                  products={products}
-                  customers={customers}
-                  salesList={salesList}
-                  isCreating={isCreating}
-                  onFormDataChange={onFormDataChange}
-                  onSubmit={onFormSubmit}
-                />
-              </DialogContent>
-            </Dialog>
+              }
+            >
+              <MovementDialog
+                formData={formData}
+                products={products}
+                customers={customers}
+                salesList={salesList}
+                isCreating={false}
+                onFormDataChange={onFormDataChange}
+                onSubmit={() => {}}
+              />
+            </FormDialog>
           )}
         </div>
       </div>
