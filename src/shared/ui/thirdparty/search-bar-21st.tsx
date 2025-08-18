@@ -193,7 +193,11 @@ export const SearchBar21st = ({ placeholder = "Search...", onSearch, onChange, d
             scale: Math.random() * 0.8 + 0.2,
             opacity: [1, 0],
           }}
-          transition={{ duration: 3, ease: "easeOut" }}
+          transition={{ 
+            duration: 5.5, 
+            ease: [0.25, 0.46, 0.45, 0.94],  // Fade out ultra suave
+            delay: Math.random() * 0.5  // Variação aleatória no delay
+          }}
           className="absolute w-3 h-3 rounded-full"
           style={{
             background: `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 200) + 55}, ${Math.floor(Math.random() * 255)}, 0.8)`,
@@ -216,15 +220,25 @@ export const SearchBar21st = ({ placeholder = "Search...", onSearch, onChange, d
       >
         <motion.div
           className={cn(
-            "flex items-center w-full rounded-full border relative overflow-hidden backdrop-blur-md",
+            "flex items-center w-full rounded-full border relative overflow-hidden backdrop-blur-md transition-all",
             isFocused ? "border-transparent shadow-xl" : "border-gray-200 dark:border-gray-700 bg-white/30 dark:bg-gray-800/50"
           )}
+          style={{
+            transitionDuration: isFocused ? '1200ms' : '2800ms',
+            transitionTimingFunction: isFocused ? 'cubic-bezier(0.25, 0.46, 0.45, 0.94)' : 'cubic-bezier(0.07, 0.95, 0.15, 0.99)',
+            transitionDelay: isFocused ? '0ms' : '200ms'
+          }}
           animate={{
             boxShadow: isClicked
               ? "0 0 40px rgba(139, 92, 246, 0.5), 0 0 15px rgba(236, 72, 153, 0.7) inset"
               : isFocused
               ? "0 15px 35px rgba(0, 0, 0, 0.2)"
               : "0 0 0 rgba(0, 0, 0, 0)",
+          }}
+          transition={{
+            duration: isClicked ? 3.5 : (isFocused ? 1.2 : 2.5),
+            ease: isClicked ? [0.16, 1, 0.3, 1] : (isFocused ? "easeOut" : [0.23, 1, 0.32, 1]),
+            delay: isClicked ? 0 : (isFocused ? 0 : 0.2)
           }}
           onClick={handleClick}
           onMouseMove={handleMouseMove}
@@ -237,7 +251,11 @@ export const SearchBar21st = ({ placeholder = "Search...", onSearch, onChange, d
                 opacity: 0.15,
                 background: "linear-gradient(90deg, #a1c4fd 0%, #c2e9fb 100%)",
               }}
-              transition={{ duration: 3, ease: "easeOut" }}
+              transition={{ 
+                duration: isFocused ? 2.2 : 6.0, // Aumentado: entrada 2.2s, saída 6s
+                ease: isFocused ? [0.25, 0.46, 0.45, 0.94] : [0.07, 0.95, 0.15, 0.99], // Ambos muito suaves
+                delay: isFocused ? 0.1 : 0.5 // Delay maior na saída
+              }}
             />
           )}
 
@@ -261,13 +279,21 @@ export const SearchBar21st = ({ placeholder = "Search...", onSearch, onChange, d
                 className="absolute inset-0 -z-5 rounded-full bg-purple-400/10"
                 initial={{ scale: 0, opacity: 0.7 }}
                 animate={{ scale: 2, opacity: 0 }}
-              transition={{ duration: 3, ease: "easeOut" }}
+                transition={{ 
+                  duration: 4.8, 
+                  ease: [0.12, 0, 0.39, 0],  // Saída muito gradual
+                  delay: 0.2
+                }}
               />
               <motion.div
                 className="absolute inset-0 -z-5 rounded-full bg-white dark:bg-white/20"
                 initial={{ opacity: 0.5 }}
                 animate={{ opacity: 0 }}
-                transition={{ duration: 3, ease: "easeOut" }}
+                transition={{ 
+                  duration: 5.2, 
+                  ease: [0.19, 1, 0.22, 1],  // Transição muito suave
+                  delay: 0.1
+                }}
               />
             </>
           )}
@@ -279,9 +305,13 @@ export const SearchBar21st = ({ placeholder = "Search...", onSearch, onChange, d
               size={20}
               strokeWidth={isFocused ? 2.5 : 2}
               className={cn(
-                "transition-all duration-300",
+                "transition-all",
                 isAnimating ? "text-purple-500" : isFocused ? "text-purple-600" : "text-gray-500 dark:text-gray-300",
               )}
+              style={{
+                transitionDuration: isFocused ? '800ms' : '2200ms',
+                transitionTimingFunction: isFocused ? 'ease-out' : 'cubic-bezier(0.25, 1, 0.5, 1)',
+              }}
             />
           </motion.div>
 
@@ -292,11 +322,15 @@ export const SearchBar21st = ({ placeholder = "Search...", onSearch, onChange, d
             value={searchQuery}
             onChange={handleSearch}
             onFocus={() => setIsFocused(true)}
-            onBlur={() => setTimeout(() => setIsFocused(false), 200)}
+            onBlur={() => setTimeout(() => setIsFocused(false), 400)}
             className={cn(
-              "w-full py-3 bg-transparent outline-none placeholder:text-gray-400 dark:placeholder:text-gray-500 font-medium text-base relative z-10",
+              "w-full py-3 bg-transparent outline-none placeholder:text-gray-400 dark:placeholder:text-gray-500 font-medium text-base relative z-10 transition-all",
               isFocused ? "text-gray-800 dark:text-white tracking-wide" : "text-gray-600 dark:text-gray-300"
             )}
+            style={{
+              transitionDuration: isFocused ? '600ms' : '1800ms',
+              transitionTimingFunction: isFocused ? 'ease-out' : 'cubic-bezier(0.23, 1, 0.32, 1)',
+            }}
           />
 
           <AnimatePresence>
@@ -312,7 +346,10 @@ export const SearchBar21st = ({ placeholder = "Search...", onSearch, onChange, d
                   boxShadow: "0 10px 25px -5px rgba(139, 92, 246, 0.5)",
                 }}
                 whileTap={{ scale: 0.95 }}
-                className="px-5 py-2 mr-2 text-sm font-medium rounded-full bg-gradient-to-r from-purple-500 to-pink-500 text-white backdrop-blur-sm transition-all shadow-lg"
+                className="px-5 py-2 mr-2 text-sm font-medium rounded-full bg-gradient-to-r from-purple-500 to-pink-500 text-white backdrop-blur-sm shadow-lg"
+                style={{
+                  transition: 'all 1200ms cubic-bezier(0.23, 1, 0.32, 1)'
+                }}
               >
                 Search
               </motion.button>
@@ -324,10 +361,15 @@ export const SearchBar21st = ({ placeholder = "Search...", onSearch, onChange, d
               className="absolute inset-0 rounded-full"
               initial={{ opacity: 0 }}
               animate={{
-                opacity: [0, 0.1, 0.2, 0.1, 0],
+                opacity: [0, 0.05, 0.12, 0.08, 0.02, 0], // Sequência mais suave e longa
                 background: "radial-gradient(circle at 50% 0%, rgba(255,255,255,0.8) 0%, transparent 70%)",
               }}
-              transition={{ duration: 3, repeat: 0, ease: "easeOut" }}
+              transition={{ 
+                duration: 5.5, // Era 3s, agora 5.5s
+                repeat: 0, 
+                ease: [0.23, 1, 0.32, 1], // Cubic bezier muito suave
+                delay: 0.3 // Pequeno delay para sincronizar
+              }}
             />
           )}
         </motion.div>
@@ -339,7 +381,10 @@ export const SearchBar21st = ({ placeholder = "Search...", onSearch, onChange, d
             initial={{ opacity: 0, y: 10, height: 0 }}
             animate={{ opacity: 1, y: 0, height: "auto" }}
             exit={{ opacity: 0, y: 10, height: 0 }}
-            transition={{ duration: 0.2 }}
+            transition={{ 
+              duration: 0.8, 
+              ease: [0.16, 1, 0.3, 1] // Cubic bezier muito suave
+            }}
             className="absolute z-10 w-full mt-2 overflow-hidden bg-white/90 dark:bg-gray-900/90 backdrop-blur-md rounded-lg shadow-xl border border-gray-100 dark:border-gray-700"
             style={{
               maxHeight: "300px",
@@ -361,13 +406,18 @@ export const SearchBar21st = ({ placeholder = "Search...", onSearch, onChange, d
                     if (onSearch) onSearch(suggestion);
                     setIsFocused(false);
                   }}
-                  className="flex items-center gap-2 px-4 py-2 cursor-pointer rounded-md hover:bg-purple-50 dark:hover:bg-purple-900/20 group"
+                  className="flex items-center gap-2 px-4 py-2 cursor-pointer rounded-md hover:bg-purple-50 dark:hover:bg-purple-900/20 group transition-all duration-700"
+                  style={{
+                    transitionTimingFunction: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+                  }}
                 >
                   <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} transition={{ delay: index * 0.06 }}>
-                    <CircleDot size={16} className="text-purple-400 group-hover:text-purple-600" />
+                    <CircleDot size={16} className="text-purple-400 group-hover:text-purple-600 transition-all duration-500" 
+                      style={{ transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)' }} />
                   </motion.div>
                   <motion.span
-                    className="text-gray-700 dark:text-gray-100 group-hover:text-purple-700 dark:group-hover:text-purple-400"
+                    className="text-gray-700 dark:text-gray-100 group-hover:text-purple-700 dark:group-hover:text-purple-400 transition-all duration-600"
+                    style={{ transitionTimingFunction: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)' }}
                     initial={{ x: -5, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
                     transition={{ delay: index * 0.08 }}

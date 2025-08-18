@@ -130,6 +130,7 @@ export const ProductsGridPresentation: React.FC<ProductsGridPresentationProps> =
                   onChange={onSearchChange}
                   placeholder="Buscar produtos..."
                   debounceMs={150}
+                  disableResizeAnimation={true}
                 />
               </div>
             )}
@@ -144,6 +145,7 @@ export const ProductsGridPresentation: React.FC<ProductsGridPresentationProps> =
                 onChange={onSearchChange}
                 placeholder="Buscar produtos..."
                 debounceMs={150}
+                disableResizeAnimation={true}
               />
             </div>
           </div>
