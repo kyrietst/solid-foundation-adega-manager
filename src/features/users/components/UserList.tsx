@@ -6,7 +6,8 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/primitives/card';
 import { Button } from '@/shared/ui/primitives/button';
-import { Crown, Plus, RefreshCw } from 'lucide-react';
+import { Crown, Plus, RefreshCw, Users, FolderTree } from 'lucide-react';
+import { cn } from '@/core/config/utils';
 import { LoadingScreen } from '@/shared/ui/composite/loading-spinner';
 import { UserListProps } from './types';
 import { UserRoleBadge } from './UserRoleBadge';
@@ -22,6 +23,8 @@ export const UserList: React.FC<UserListProps> = ({
   onRefresh,
   canManageUsers,
   isLoading = false,
+  activeTab = 'users',
+  onTabChange,
 }) => {
   const { isSupremeAdmin } = useRoleUtilities();
   const { toast } = useToast();
@@ -114,7 +117,44 @@ export const UserList: React.FC<UserListProps> = ({
       <CardHeader className="space-y-3 pb-2 relative z-10">
         <div className="flex flex-row items-center justify-between">
           <CardTitle className="text-2xl font-bold text-white">Lista de Usuários</CardTitle>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            {/* Abas de navegação na linha dos controles - tamanho reduzido */}
+            <div className="flex items-center gap-1 bg-gray-900/95 backdrop-blur-sm rounded-lg p-1.5 border border-white/20 shadow-xl">
+              <button
+                onClick={() => onTabChange?.('users')}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-300 relative group",
+                  activeTab === 'users'
+                    ? "bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/20 text-[#FFD700] border border-[#FFD700]/40 shadow-md shadow-[#FFD700]/20"
+                    : "text-gray-300 hover:text-white hover:bg-white/10 hover:border-white/20 border border-transparent"
+                )}
+              >
+                <Users className={cn("h-3 w-3 transition-all duration-300", 
+                  activeTab === 'users' ? "text-[#FFD700]" : "text-gray-400 group-hover:text-white")} />
+                <span className="relative z-10">Usuários</span>
+                {activeTab === 'users' && (
+                  <div className="absolute inset-0 rounded-md bg-gradient-to-r from-[#FFD700]/10 via-[#FFD700]/20 to-[#FFD700]/10 opacity-50 animate-pulse" />
+                )}
+              </button>
+              <button
+                onClick={() => onTabChange?.('categories')}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-300 relative group",
+                  activeTab === 'categories'
+                    ? "bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/20 text-[#FFD700] border border-[#FFD700]/40 shadow-md shadow-[#FFD700]/20"
+                    : "text-gray-300 hover:text-white hover:bg-white/10 hover:border-white/20 border border-transparent"
+                )}
+              >
+                <FolderTree className={cn("h-3 w-3 transition-all duration-300", 
+                  activeTab === 'categories' ? "text-[#FFD700]" : "text-gray-400 group-hover:text-white")} />
+                <span className="relative z-10">Categorias</span>
+                {activeTab === 'categories' && (
+                  <div className="absolute inset-0 rounded-md bg-gradient-to-r from-[#FFD700]/10 via-[#FFD700]/20 to-[#FFD700]/10 opacity-50 animate-pulse" />
+                )}
+              </button>
+            </div>
+
+            {/* Botão Atualizar */}
             <Button 
               variant="outline" 
               size="sm" 

@@ -32,6 +32,8 @@ export interface UserListProps {
   onRefresh: () => void;
   canManageUsers: boolean;
   isLoading?: boolean;
+  activeTab?: 'users' | 'categories';
+  onTabChange?: (tab: 'users' | 'categories') => void;
 }
 
 export interface UserCreateDialogProps {

@@ -106,37 +106,9 @@ export const UserManagement = () => {
             <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FFDA04]/80 to-transparent h-[3px] w-3/4 blur-sm mx-auto" />
             <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FFDA04] to-transparent h-px w-3/4 mx-auto" />
           </div>
-
-          {/* Abas de navegação */}
-          <div className="flex items-center gap-1 mt-4 bg-black/40 backdrop-blur-sm rounded-lg p-1 border border-white/10">
-            <button
-              onClick={() => setActiveTab('users')}
-              className={cn(
-                "flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200",
-                activeTab === 'users'
-                  ? "bg-[#FFD700]/20 text-[#FFD700] border border-[#FFD700]/30"
-                  : "text-gray-400 hover:text-gray-200 hover:bg-white/5"
-              )}
-            >
-              <Users className="h-4 w-4" />
-              Usuários
-            </button>
-            <button
-              onClick={() => setActiveTab('categories')}
-              className={cn(
-                "flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200",
-                activeTab === 'categories'
-                  ? "bg-[#FFD700]/20 text-[#FFD700] border border-[#FFD700]/30"
-                  : "text-gray-400 hover:text-gray-200 hover:bg-white/5"
-              )}
-            >
-              <FolderTree className="h-4 w-4" />
-              Categorias
-            </button>
-          </div>
         </div>
         
-        {/* Controles */}
+        {/* Controles - apenas novo usuário aqui */}
         {canCreateUsers && activeTab === 'users' && (
           <div className="flex items-center gap-4">
             <Button 
@@ -173,6 +145,8 @@ export const UserManagement = () => {
               onRefresh={handleRefreshUsers}
               canManageUsers={canCreateUsers}
               isLoading={isLoading}
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
             />
 
             {/* Dialog de criação de usuário */}

@@ -145,12 +145,12 @@ export const SalesHistoryTable: React.FC<SalesHistoryTableProps> = ({ onViewSale
           <SelectTrigger className="bg-black/50 border-white/20 text-white">
             <SelectValue placeholder="Status da venda" />
           </SelectTrigger>
-          <SelectContent className="bg-black/95 border-white/20">
-            <SelectItem value="all">Todos os status</SelectItem>
-            <SelectItem value="completed">Concluído</SelectItem>
-            <SelectItem value="pending">Pendente</SelectItem>
-            <SelectItem value="cancelled">Cancelado</SelectItem>
-            <SelectItem value="returned">Devolvido</SelectItem>
+          <SelectContent className="bg-gray-900/95 backdrop-blur-sm border border-white/20 shadow-2xl">
+            <SelectItem value="all" className="text-white hover:bg-white/10 focus:bg-white/10 focus:text-white cursor-pointer">Todos os status</SelectItem>
+            <SelectItem value="completed" className="text-white hover:bg-green-500/20 focus:bg-green-500/20 focus:text-green-300 cursor-pointer">Concluído</SelectItem>
+            <SelectItem value="pending" className="text-white hover:bg-amber-500/20 focus:bg-amber-500/20 focus:text-amber-300 cursor-pointer">Pendente</SelectItem>
+            <SelectItem value="cancelled" className="text-white hover:bg-red-500/20 focus:bg-red-500/20 focus:text-red-300 cursor-pointer">Cancelado</SelectItem>
+            <SelectItem value="returned" className="text-white hover:bg-purple-500/20 focus:bg-purple-500/20 focus:text-purple-300 cursor-pointer">Devolvido</SelectItem>
           </SelectContent>
         </Select>
 
@@ -158,12 +158,12 @@ export const SalesHistoryTable: React.FC<SalesHistoryTableProps> = ({ onViewSale
           <SelectTrigger className="bg-black/50 border-white/20 text-white">
             <SelectValue placeholder="Método de pagamento" />
           </SelectTrigger>
-          <SelectContent className="bg-black/95 border-white/20">
-            <SelectItem value="all">Todos os métodos</SelectItem>
-            <SelectItem value="PIX">PIX</SelectItem>
-            <SelectItem value="card">Cartão</SelectItem>
-            <SelectItem value="cash">Dinheiro</SelectItem>
-            <SelectItem value="bank_transfer">Transferência</SelectItem>
+          <SelectContent className="bg-gray-900/95 backdrop-blur-sm border border-white/20 shadow-2xl">
+            <SelectItem value="all" className="text-white hover:bg-white/10 focus:bg-white/10 focus:text-white cursor-pointer">Todos os métodos</SelectItem>
+            <SelectItem value="PIX" className="text-white hover:bg-blue-500/20 focus:bg-blue-500/20 focus:text-blue-300 cursor-pointer">PIX</SelectItem>
+            <SelectItem value="card" className="text-white hover:bg-purple-500/20 focus:bg-purple-500/20 focus:text-purple-300 cursor-pointer">Cartão</SelectItem>
+            <SelectItem value="cash" className="text-white hover:bg-green-500/20 focus:bg-green-500/20 focus:text-green-300 cursor-pointer">Dinheiro</SelectItem>
+            <SelectItem value="bank_transfer" className="text-white hover:bg-cyan-500/20 focus:bg-cyan-500/20 focus:text-cyan-300 cursor-pointer">Transferência</SelectItem>
           </SelectContent>
         </Select>
 
@@ -171,11 +171,11 @@ export const SalesHistoryTable: React.FC<SalesHistoryTableProps> = ({ onViewSale
           <SelectTrigger className="bg-black/50 border-white/20 text-white">
             <SelectValue placeholder="Quantidade" />
           </SelectTrigger>
-          <SelectContent className="bg-black/95 border-white/20">
-            <SelectItem value="25">25 vendas</SelectItem>
-            <SelectItem value="50">50 vendas</SelectItem>
-            <SelectItem value="100">100 vendas</SelectItem>
-            <SelectItem value="200">200 vendas</SelectItem>
+          <SelectContent className="bg-gray-900/95 backdrop-blur-sm border border-white/20 shadow-2xl">
+            <SelectItem value="25" className="text-white hover:bg-white/10 focus:bg-white/10 focus:text-white cursor-pointer">25 vendas</SelectItem>
+            <SelectItem value="50" className="text-white hover:bg-white/10 focus:bg-white/10 focus:text-white cursor-pointer">50 vendas</SelectItem>
+            <SelectItem value="100" className="text-white hover:bg-white/10 focus:bg-white/10 focus:text-white cursor-pointer">100 vendas</SelectItem>
+            <SelectItem value="200" className="text-white hover:bg-white/10 focus:bg-white/10 focus:text-white cursor-pointer">200 vendas</SelectItem>
           </SelectContent>
         </Select>
 
