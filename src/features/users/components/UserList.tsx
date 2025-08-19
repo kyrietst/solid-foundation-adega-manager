@@ -170,7 +170,7 @@ export const UserList: React.FC<UserListProps> = ({
         </div>
         <div className="flex flex-col sm:flex-row gap-3 sm:items-center justify-between">
           <div className="w-full sm:w-80">
-            <SearchBar21st placeholder="Buscar usuários..." value={searchTerm} onChange={setSearchTerm} debounceMs={150} />
+            <SearchBar21st placeholder="Buscar usuários..." value={searchTerm} onChange={setSearchTerm} debounceMs={150} disableResizeAnimation={true} />
           </div>
           <div className="flex items-center gap-2 text-sm text-white/70">
             <span className="font-medium">{dataset.length} de {users.length} usuários</span>

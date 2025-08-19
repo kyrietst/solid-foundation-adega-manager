@@ -36,6 +36,7 @@ export const InventoryFilters: React.FC<InventoryFiltersProps> = ({
             onChange={onSearchChange}
             placeholder="Buscar por nome, categoria, código de barras ou fornecedor..."
             debounceMs={200}
+            disableResizeAnimation={true}
           />
         </div>
         

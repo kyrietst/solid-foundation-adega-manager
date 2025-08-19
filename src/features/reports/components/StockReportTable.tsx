@@ -95,7 +95,7 @@ export const StockReportTable: React.FC<StockReportTableProps> = ({
         <div className="space-y-4 p-2">
           <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
             <div className="w-full sm:w-80">
-              <SearchBar21st placeholder="Buscar categoria..." value={searchTerm} onChange={setSearchTerm} debounceMs={150} />
+              <SearchBar21st placeholder="Buscar categoria..." value={searchTerm} onChange={setSearchTerm} debounceMs={150} disableResizeAnimation={true} />
             </div>
             <div className="flex items-center gap-2 text-sm text-adega-platinum/70">
               <span>{dataset.length} de {categories.length} categorias</span>

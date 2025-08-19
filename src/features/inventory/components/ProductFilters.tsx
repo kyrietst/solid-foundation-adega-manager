@@ -48,6 +48,7 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
             onChange={onSearchChange}
             placeholder="Buscar produtos..."
             debounceMs={150}
+            disableResizeAnimation={true}
           />
         </div>
       )}

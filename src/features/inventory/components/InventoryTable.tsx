@@ -111,6 +111,7 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({
                 value={searchTerm}
                 onChange={setSearchTerm}
                 debounceMs={150}
+                disableResizeAnimation={true}
               />
             </div>
             <div className="flex items-center gap-2 text-sm text-adega-platinum/70">

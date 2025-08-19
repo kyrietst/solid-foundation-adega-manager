@@ -198,6 +198,7 @@ export function DataTable<T = Record<string, unknown>>({
                 onChange={onSearchChange}
                 placeholder={searchPlaceholder}
                 debounceMs={150}
+                disableResizeAnimation={true}
               />
             </div>
           )}

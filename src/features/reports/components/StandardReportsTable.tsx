@@ -118,6 +118,7 @@ export const StandardReportsTable: React.FC<StandardReportsTableProps> = ({
                 value={searchTerm} 
                 onChange={setSearchTerm} 
                 debounceMs={300} 
+                disableResizeAnimation={true}
               />
             </div>
           )}

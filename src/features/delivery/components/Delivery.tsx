@@ -230,7 +230,8 @@ export const Delivery = () => {
                     placeholder="Buscar entregas..." 
                     value={searchTerm} 
                     onChange={setSearchTerm} 
-                    debounceMs={150} 
+                    debounceMs={150}
+                    disableResizeAnimation={true}
                   />
                 </div>
                 <div className="flex items-center gap-2 text-sm text-white/70">

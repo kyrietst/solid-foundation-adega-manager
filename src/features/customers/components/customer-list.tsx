@@ -127,6 +127,7 @@ export function CustomerList({ customers, onSelectCustomer }: CustomerListProps)
             value={searchTerm}
             onChange={setSearchTerm}
             debounceMs={150}
+            disableResizeAnimation={true}
           />
         </div>
         <div className="flex items-center gap-3">

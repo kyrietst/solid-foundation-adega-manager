@@ -35,6 +35,7 @@ export const CustomerFilters: React.FC<CustomerFiltersProps> = ({
                   onChange={onSearchChange}
                   placeholder="Buscar clientes..."
                   debounceMs={150}
+                  disableResizeAnimation={true}
                 />
               </div>
               
