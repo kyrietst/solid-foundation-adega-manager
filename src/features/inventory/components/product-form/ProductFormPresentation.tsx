@@ -9,7 +9,7 @@ import { ProductValidationResult } from '@/features/inventory/hooks/useProductVa
 import { cn } from '@/core/config/utils';
 import { getGlassCardClasses } from '@/core/config/theme-utils';
 import { ProductBasicInfoCard } from './ProductBasicInfoCard';
-import { PackageToggleField } from './PackageToggleField';
+import { BarcodeHierarchySection } from './BarcodeHierarchySection';
 import { ProductPricingCard } from './ProductPricingCard';
 import { ProductStockCard } from './ProductStockCard';
 import { ProductAdditionalInfoCard } from './ProductAdditionalInfoCard';
@@ -67,13 +67,12 @@ export const ProductFormPresentation: React.FC<ProductFormPresentationProps> = (
           categories={categories}
           fieldErrors={validation.fieldErrors}
           onInputChange={onInputChange}
-          onBarcodeScanned={onBarcodeScanned}
           variant={variant}
           glassEffect={glassEffect}
         />
 
-        {/* Controle de Pacote vs Unidade - História 1.3 */}
-        <PackageToggleField
+        {/* Controle de Códigos Hierárquicos - Sistema de Validade */}
+        <BarcodeHierarchySection
           formData={formData}
           fieldErrors={validation.fieldErrors}
           onInputChange={onInputChange}

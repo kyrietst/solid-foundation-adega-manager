@@ -8,9 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/primitives
 import { Input } from '@/shared/ui/primitives/input';
 import { Label } from '@/shared/ui/primitives/label';
 import { Textarea } from '@/shared/ui/primitives/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/primitives/select';
 import { Package } from 'lucide-react';
-import { BarcodeInput } from '@/features/inventory/components/BarcodeInput';
 import { ProductFormData, UnitType } from '@/core/types/inventory.types';
 import { DynamicMeasurementField } from './DynamicMeasurementField';
 import { cn } from '@/core/config/utils';
@@ -21,17 +19,15 @@ interface ProductBasicInfoCardProps {
   categories: string[];
   fieldErrors: Record<string, string>;
   onInputChange: (field: keyof ProductFormData, value: string | number | UnitType) => void;
-  onBarcodeScanned: (barcode: string) => void;
   variant?: 'default' | 'premium' | 'success' | 'warning' | 'error';
   glassEffect?: boolean;
 }
 
-export const ProductBasicInfoCard: React.FC<ProductBasicInfoCardProps> = ({
+export const ProductBasicInfoCard: React.FC<ProductBasicInfoCardProps> = React.memo(({
   formData,
   categories,
   fieldErrors,
   onInputChange,
-  onBarcodeScanned,
   variant = 'default',
   glassEffect = true,
 }) => {
@@ -66,27 +62,19 @@ export const ProductBasicInfoCard: React.FC<ProductBasicInfoCardProps> = ({
             )}
           </div>
 
-          {/* Categoria */}
+          {/* Categoria - TESTE COM INPUT SIMPLES */}
           <div>
             <Label htmlFor="category" className="text-gray-200">Categoria *</Label>
-            <Select 
-              value={formData.category || ''} 
-              onValueChange={(value) => onInputChange('category', value)}
-            >
-              <SelectTrigger className={cn(
-                'bg-gray-800/50 border-primary-yellow/30 text-gray-200',
+            <Input
+              id="category"
+              value={formData.category || ''}
+              onChange={(e) => onInputChange('category', e.target.value)}
+              placeholder="Digite a categoria"
+              className={cn(
+                'bg-gray-800/50 border-primary-yellow/30 text-gray-200 focus:border-primary-yellow placeholder:text-gray-400',
                 fieldErrors.category && 'border-accent-red'
-              )}>
-                <SelectValue placeholder="Selecione uma categoria" className="text-gray-400" />
-              </SelectTrigger>
-              <SelectContent className="bg-gray-800 border-primary-yellow/30">
-                {categories.map(category => (
-                  <SelectItem key={category} value={category} className="text-gray-200 hover:bg-primary-yellow/10">
-                    {category}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              )}
+            />
             {fieldErrors.category && (
               <p className="text-accent-red text-sm mt-1">{fieldErrors.category}</p>
             )}
@@ -101,48 +89,17 @@ export const ProductBasicInfoCard: React.FC<ProductBasicInfoCardProps> = ({
             glassEffect={glassEffect}
           />
 
-          {/* Código de Barras */}
-          <div>
-            <Label className="text-gray-200">Código de Barras</Label>
-            <BarcodeInput
-              onScan={onBarcodeScanned}
-              placeholder="Escaneie ou digite o código de barras"
-              autoFocus={false}
-              variant={variant}
-              glassEffect={glassEffect}
-            />
-            {formData.barcode && (
-              <Input
-                value={formData.barcode}
-                onChange={(e) => onInputChange('barcode', e.target.value.replace(/\D/g, ''))}
-                placeholder="Código de barras"
-                maxLength={14}
-                className={cn(
-                  'mt-2 font-mono bg-gray-800/50 border-primary-yellow/30 text-gray-200 focus:border-primary-yellow placeholder:text-gray-400',
-                  fieldErrors.barcode && 'border-accent-red'
-                )}
-              />
-            )}
-            {fieldErrors.barcode && (
-              <p className="text-accent-red text-sm mt-1">{fieldErrors.barcode}</p>
-            )}
-          </div>
 
-          {/* Tipo de Unidade */}
+          {/* Tipo de Unidade - TESTE COM INPUT SIMPLES */}
           <div>
             <Label htmlFor="unit_type" className="text-gray-200">Venda em</Label>
-            <Select 
-              value={formData.unit_type || 'un'} 
-              onValueChange={(value: UnitType) => onInputChange('unit_type', value)}
-            >
-              <SelectTrigger className="bg-gray-800/50 border-primary-yellow/30 text-gray-200">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-gray-800 border-primary-yellow/30">
-                <SelectItem value="un" className="text-gray-200 hover:bg-primary-yellow/10">Unidade</SelectItem>
-                <SelectItem value="pct" className="text-gray-200 hover:bg-primary-yellow/10">Pacote</SelectItem>
-              </SelectContent>
-            </Select>
+            <Input
+              id="unit_type"
+              value={formData.unit_type || 'un'}
+              onChange={(e) => onInputChange('unit_type', e.target.value as UnitType)}
+              placeholder="un ou pct"
+              className="bg-gray-800/50 border-primary-yellow/30 text-gray-200 focus:border-primary-yellow placeholder:text-gray-400"
+            />
           </div>
         </div>
 
@@ -161,4 +118,4 @@ export const ProductBasicInfoCard: React.FC<ProductBasicInfoCardProps> = ({
       </CardContent>
     </Card>
   );
-};
+});

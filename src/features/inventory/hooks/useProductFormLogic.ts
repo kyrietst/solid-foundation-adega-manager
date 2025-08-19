@@ -3,6 +3,7 @@
  * Combina todos os hooks especializados em uma interface única
  */
 
+import { useMemo } from 'react';
 import { ProductFormData } from '@/core/types/inventory.types';
 import { useCategories, categoriesToOptions } from '@/shared/hooks/common/use-categories';
 import { useBarcode } from '@/features/inventory/hooks/use-barcode';
@@ -21,8 +22,8 @@ export const useProductFormLogic = ({
   onSubmit,
   onCancel
 }: UseProductFormLogicProps) => {
-  // Buscar categorias do banco de dados
-  const { data: dbCategories = [] } = useCategories();
+  // TESTE: Categorias fixas para isolar problema
+  const staticCategories = useMemo(() => ['Vinhos Tintos', 'Vinhos Brancos', 'Espumantes', 'Rosés'], []);
   
   // Estado do formulário
   const { formData, handleInputChange, resetForm, updateFormData } = useProductForm(initialData);
@@ -71,8 +72,8 @@ export const useProductFormLogic = ({
     formData,
     calculations,
     validation: currentValidation,
-    categories: dbCategories.map(cat => cat.name), // Nomes das categorias do banco
-    categoriesWithOptions: categoriesToOptions(dbCategories), // Com cores e ícones
+    categories: staticCategories, // TESTE: Categorias fixas
+    categoriesWithOptions: [], // TESTE: Array vazio
 
     // Handlers
     handleInputChange,
