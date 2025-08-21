@@ -6,8 +6,10 @@
 import React from 'react';
 import { Button } from '@/shared/ui/primitives/button';
 import { Plus, Grid3X3, List } from 'lucide-react';
+import { BlurIn } from '@/components/ui/blur-in';
 import { InventoryStats } from './InventoryStats';
 import { InventoryHeaderProps } from './types';
+import { getHeaderTextClasses } from '@/core/config/theme-utils';
 
 export const InventoryHeader: React.FC<InventoryHeaderProps> = ({
   totalProducts,
@@ -24,7 +26,18 @@ export const InventoryHeader: React.FC<InventoryHeaderProps> = ({
       {/* Título e Ações */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-adega-yellow">Gestão de Estoque</h1>
+          <BlurIn
+            word="GESTÃO DE ESTOQUE"
+            duration={1.2}
+            variant={{
+              hidden: { filter: "blur(15px)", opacity: 0 },
+              visible: { filter: "blur(0px)", opacity: 1 }
+            }}
+            className={`${getHeaderTextClasses('main')} text-transparent bg-clip-text bg-gradient-to-r from-[#FF2400] via-[#FFDA04] to-[#FF2400] drop-shadow-lg`}
+            style={{
+              textShadow: '0 2px 4px rgba(0,0,0,0.3), 0 0 20px rgba(255, 218, 4, 0.2)'
+            }}
+          />
           <p className="text-adega-platinum/70 mt-1">
             Controle completo do seu inventário com análise de giro
           </p>

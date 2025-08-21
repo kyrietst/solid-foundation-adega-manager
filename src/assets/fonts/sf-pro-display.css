@@ -1,0 +1,257 @@
+/**
+ * SF Pro Display Font Family - Sistema Completo
+ * Configuração de todas as variantes para hierarquia tipográfica
+ */
+
+/* ============================================================================ */
+/* SF PRO DISPLAY - REGULAR WEIGHTS */
+/* ============================================================================ */
+
+@font-face {
+  font-family: 'SF Pro Display';
+  src: url('./SFPRODISPLAYREGULAR.OTF') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'SF Pro Display';
+  src: url('./SFPRODISPLAYMEDIUM.OTF') format('opentype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'SF Pro Display';
+  src: url('./SFPRODISPLAYBOLD.OTF') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ============================================================================ */
+/* SF PRO DISPLAY - EXTREME WEIGHTS */
+/* ============================================================================ */
+
+@font-face {
+  font-family: 'SF Pro Display';
+  src: url('./SFPRODISPLAYBLACKITALIC.OTF') format('opentype');
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'SF Pro Display';
+  src: url('./SFPRODISPLAYHEAVYITALIC.OTF') format('opentype');
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* ============================================================================ */
+/* SF PRO DISPLAY - LIGHT WEIGHTS */
+/* ============================================================================ */
+
+@font-face {
+  font-family: 'SF Pro Display';
+  src: url('./SFPRODISPLAYLIGHTITALIC.OTF') format('opentype');
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'SF Pro Display';
+  src: url('./SFPRODISPLAYTHINITALIC.OTF') format('opentype');
+  font-weight: 100;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'SF Pro Display';
+  src: url('./SFPRODISPLAYULTRALIGHTITALIC.OTF') format('opentype');
+  font-weight: 200;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'SF Pro Display';
+  src: url('./SFPRODISPLAYSEMIBOLDITALIC.OTF') format('opentype');
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* ============================================================================ */
+/* CSS CUSTOM PROPERTIES - Typography Scale */
+/* ============================================================================ */
+
+:root {
+  /* SF Pro Display Typography Scale */
+  --font-sf-pro: 'SF Pro Display', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  
+  /* Font Weights Mapping */
+  --font-weight-thin: 100;
+  --font-weight-ultralight: 200;
+  --font-weight-light: 300;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-heavy: 800;
+  --font-weight-black: 900;
+  
+  /* Typography Hierarchy Sizes */
+  --text-h1: 2.25rem;    /* 36px - Títulos principais */
+  --text-h2: 1.875rem;   /* 30px - Subtítulos importantes */
+  --text-h3: 1.5rem;     /* 24px - Títulos de seção */
+  --text-h4: 1.25rem;    /* 20px - Labels importantes */
+  --text-body: 1rem;     /* 16px - Texto padrão */
+  --text-caption: 0.875rem; /* 14px - Metadados */
+  --text-small: 0.75rem; /* 12px - Informações auxiliares */
+  
+  /* Line Heights */
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.75;
+}
+
+/* ============================================================================ */
+/* UTILITY CLASSES - SF Pro Display */
+/* ============================================================================ */
+
+/* Primary Typography Classes */
+.font-sf-pro {
+  font-family: var(--font-sf-pro);
+}
+
+/* Weight Classes */
+.font-sf-thin { font-family: var(--font-sf-pro); font-weight: var(--font-weight-thin); }
+.font-sf-ultralight { font-family: var(--font-sf-pro); font-weight: var(--font-weight-ultralight); }
+.font-sf-light { font-family: var(--font-sf-pro); font-weight: var(--font-weight-light); }
+.font-sf-regular { font-family: var(--font-sf-pro); font-weight: var(--font-weight-regular); }
+.font-sf-medium { font-family: var(--font-sf-pro); font-weight: var(--font-weight-medium); }
+.font-sf-semibold { font-family: var(--font-sf-pro); font-weight: var(--font-weight-semibold); }
+.font-sf-bold { font-family: var(--font-sf-pro); font-weight: var(--font-weight-bold); }
+.font-sf-heavy { font-family: var(--font-sf-pro); font-weight: var(--font-weight-heavy); }
+.font-sf-black { font-family: var(--font-sf-pro); font-weight: var(--font-weight-black); }
+
+/* Hierarchy Classes */
+.text-h1-sf { 
+  font-family: var(--font-sf-pro); 
+  font-size: var(--text-h1); 
+  font-weight: var(--font-weight-black);
+  line-height: var(--leading-tight);
+}
+
+.text-h2-sf { 
+  font-family: var(--font-sf-pro); 
+  font-size: var(--text-h2); 
+  font-weight: var(--font-weight-bold);
+  line-height: var(--leading-tight);
+}
+
+.text-h3-sf { 
+  font-family: var(--font-sf-pro); 
+  font-size: var(--text-h3); 
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--leading-normal);
+}
+
+.text-h4-sf { 
+  font-family: var(--font-sf-pro); 
+  font-size: var(--text-h4); 
+  font-weight: var(--font-weight-medium);
+  line-height: var(--leading-normal);
+}
+
+.text-body-sf { 
+  font-family: var(--font-sf-pro); 
+  font-size: var(--text-body); 
+  font-weight: var(--font-weight-regular);
+  line-height: var(--leading-normal);
+}
+
+.text-caption-sf { 
+  font-family: var(--font-sf-pro); 
+  font-size: var(--text-caption); 
+  font-weight: var(--font-weight-medium);
+  line-height: var(--leading-normal);
+}
+
+.text-small-sf { 
+  font-family: var(--font-sf-pro); 
+  font-size: var(--text-small); 
+  font-weight: var(--font-weight-regular);
+  line-height: var(--leading-normal);
+}
+
+/* ============================================================================ */
+/* SEMANTIC TYPOGRAPHY CLASSES */
+/* ============================================================================ */
+
+/* Valores Numéricos (KPIs, Métricas) */
+.text-value-sf {
+  font-family: var(--font-sf-pro);
+  font-weight: var(--font-weight-bold);
+  font-feature-settings: 'tnum' 1; /* Tabular numbers para alinhamento */
+}
+
+/* Labels de Interface */
+.text-label-sf {
+  font-family: var(--font-sf-pro);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: 0.025em; /* Leve tracking para legibilidade */
+}
+
+/* Texto de Ação (Botões, Links) */
+.text-action-sf {
+  font-family: var(--font-sf-pro);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.025em;
+}
+
+/* Status e Badges */
+.text-status-sf {
+  font-family: var(--font-sf-pro);
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ============================================================================ */
+/* RESPONSIVE TYPOGRAPHY */
+/* ============================================================================ */
+
+/* Mobile First Approach */
+@media (max-width: 640px) {
+  .text-h1-sf { font-size: 1.875rem; } /* 30px */
+  .text-h2-sf { font-size: 1.5rem; }   /* 24px */
+  .text-h3-sf { font-size: 1.25rem; }  /* 20px */
+}
+
+/* Tablet */
+@media (min-width: 768px) {
+  .text-h1-sf { font-size: 2.25rem; }  /* 36px */
+  .text-h2-sf { font-size: 1.875rem; } /* 30px */
+  .text-h3-sf { font-size: 1.5rem; }   /* 24px */
+}
+
+/* Desktop */
+@media (min-width: 1024px) {
+  .text-h1-sf { font-size: 3rem; }     /* 48px */
+  .text-h2-sf { font-size: 2.25rem; }  /* 36px */
+  .text-h3-sf { font-size: 1.875rem; } /* 30px */
+}
+
+/* 4K/Large Displays */
+@media (min-width: 1920px) {
+  .text-h1-sf { font-size: 3.75rem; }  /* 60px */
+  .text-h2-sf { font-size: 3rem; }     /* 48px */
+  .text-h3-sf { font-size: 2.25rem; }  /* 36px */
+}

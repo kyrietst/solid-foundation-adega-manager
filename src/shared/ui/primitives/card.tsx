@@ -1,6 +1,7 @@
 import * as React from "react"
 
 import { cn } from "@/core/config/utils"
+import { getSFProTextClasses } from "@/core/config/theme-utils"
 
 const Card = React.forwardRef<
   HTMLDivElement,
@@ -44,7 +45,8 @@ const CardTitle = React.forwardRef<
   <h3
     ref={ref}
     className={cn(
-      "text-2xl font-semibold leading-none tracking-tight",
+      getSFProTextClasses('h3', 'neutral'),
+      "leading-none tracking-tight",
       className
     )}
     {...props}
@@ -58,7 +60,7 @@ const CardDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <p
     ref={ref}
-    className={cn("text-sm text-muted-foreground", className)}
+    className={cn(getSFProTextClasses('caption', 'secondary'), "text-muted-foreground", className)}
     {...props}
   />
 ))

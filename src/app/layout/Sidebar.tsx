@@ -18,6 +18,7 @@ import {
 import { motion } from "motion/react";
 import { cn } from "@/core/config/utils";
 import { useAuth } from "@/app/providers/AuthContext";
+import { getSFProTextClasses } from "@/core/config/theme-utils";
 
 export function AppSidebar() {
   const navigate = useNavigate();
@@ -29,7 +30,7 @@ export function AppSidebar() {
   const allLinks = [
     {
       id: "dashboard",
-      label: "DASHBOARD",
+      label: "Dashboard",
       href: "dashboard",
       icon: (
         <IconChartBar className="h-5 w-5 shrink-0 text-primary-yellow" />
@@ -38,7 +39,7 @@ export function AppSidebar() {
     },
     {
       id: "sales",
-      label: "VENDAS",
+      label: "Vendas",
       href: "sales",
       icon: (
         <IconShoppingCart className="h-5 w-5 shrink-0 text-primary-yellow" />
@@ -47,7 +48,7 @@ export function AppSidebar() {
     },
     {
       id: "inventory",
-      label: "ESTOQUE",
+      label: "Estoque",
       href: "inventory",
       icon: (
         <IconPackage className="h-5 w-5 shrink-0 text-primary-yellow" />
@@ -56,7 +57,7 @@ export function AppSidebar() {
     },
     {
       id: "customers",
-      label: "CLIENTES",
+      label: "Clientes",
       href: "customers",
       icon: (
         <IconUsers className="h-5 w-5 shrink-0 text-primary-yellow" />
@@ -65,7 +66,7 @@ export function AppSidebar() {
     },
     {
       id: "crm",
-      label: "CRM DASHBOARD",
+      label: "CRM Dashboard",
       href: "crm",
       icon: (
         <IconChartPie className="h-5 w-5 shrink-0 text-primary-yellow" />
@@ -74,7 +75,7 @@ export function AppSidebar() {
     },
     {
       id: "delivery",
-      label: "DELIVERY",
+      label: "Delivery",
       href: "delivery",
       icon: (
         <IconTruck className="h-5 w-5 shrink-0 text-primary-yellow" />
@@ -83,7 +84,7 @@ export function AppSidebar() {
     },
     {
       id: "movements",
-      label: "MOVIMENTAÇÕES",
+      label: "Movimentações",
       href: "movements",
       icon: (
         <IconRefresh className="h-5 w-5 shrink-0 text-primary-yellow" />
@@ -92,7 +93,7 @@ export function AppSidebar() {
     },
     {
       id: "automations",
-      label: "AUTOMAÇÕES",
+      label: "Automações",
       href: "automations",
       icon: (
         <IconRobot className="h-5 w-5 shrink-0 text-primary-yellow" />
@@ -101,7 +102,7 @@ export function AppSidebar() {
     },
     {
       id: "reports",
-      label: "RELATÓRIOS",
+      label: "Relatórios",
       href: "reports",
       icon: (
         <IconReportAnalytics className="h-5 w-5 shrink-0 text-primary-yellow" />
@@ -110,7 +111,7 @@ export function AppSidebar() {
     },
     {
       id: "users",
-      label: "USUÁRIOS",
+      label: "Usuários",
       href: "users",
       icon: (
         <IconSettings className="h-5 w-5 shrink-0 text-primary-yellow" />
@@ -199,7 +200,7 @@ export function AppSidebar() {
             {/* Logout */}
             <SidebarLink
               link={{
-                label: "SAIR",
+                label: "Sair",
                 href: "#",
                 icon: (
                   <IconLogout className="h-5 w-5 shrink-0 text-accent-red" />
@@ -225,10 +226,10 @@ export const Logo = () => {
         transition={{ duration: 0.3, ease: "easeOut" }}
         className="flex flex-col"
       >
-        <span className="font-bold text-white text-xl leading-tight">
+        <span className={cn(getSFProTextClasses('h3', 'neutral'), "text-white leading-tight")}>
           Adega Anita's
         </span>
-        <span className="text-primary-yellow text-xs font-medium">
+        <span className={cn(getSFProTextClasses('caption', 'primary'), "text-primary-yellow")}>
           SISTEMA DE GERENCIAMENTO
         </span>
       </motion.div>

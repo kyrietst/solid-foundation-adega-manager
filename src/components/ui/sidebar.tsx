@@ -4,6 +4,7 @@ import { cn } from "@/core/config/utils";
 import React, { useState, createContext, useContext } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Menu, X } from "lucide-react";
+import { getSFProTextClasses } from "@/core/config/theme-utils";
 
 interface Links {
   label: string;
@@ -196,7 +197,10 @@ export const SidebarLink = ({
           display: animate ? (open ? "inline-block" : "none") : "inline-block",
           opacity: animate ? (open ? 1 : 0) : 1,
         }}
-        className="text-gray-100 text-sm group-hover/sidebar:translate-x-1 transition duration-150 whitespace-pre inline-block !p-0 !m-0"
+        className={cn(
+          getSFProTextClasses('label', 'neutral'),
+          "text-gray-100 group-hover/sidebar:translate-x-1 transition duration-150 whitespace-pre inline-block !p-0 !m-0"
+        )}
       >
         {link.label}
       </motion.span>

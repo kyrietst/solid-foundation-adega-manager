@@ -248,13 +248,13 @@ export const measurePerformance = async <T>(
     iterations?: number;
   } = {}
 ): Promise<{
-  result: T
-  averageTime: number
-  minTime: number
-  maxTime: number
-  allTimes: number[]
+  result: T;
+  averageTime: number;
+  minTime: number;
+  maxTime: number;
+  allTimes: number[];
 }> => {
-  const { name = 'operation', threshold = 1000, iterations = 1 } = options
+  const { name = 'operation', threshold = 1000, iterations = 1 } = options;
   const times: number[] = []
   let result: T
 

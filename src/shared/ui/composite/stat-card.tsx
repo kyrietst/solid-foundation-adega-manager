@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/primitives/card';
 import { LucideIcon } from 'lucide-react';
-import { cn, getValueClasses, getGlassCardClasses, getIconClasses } from '@/core/config/theme-utils';
+import { cn, getValueClasses, getGlassCardClasses, getIconClasses, getKPITextClasses } from '@/core/config/theme-utils';
 
 export interface StatCardProps {
   title: string;
@@ -91,18 +91,18 @@ export const StatCard: React.FC<StatCardProps> = ({
             
             <div className="flex-1">
               {/* Título */}
-              <p className={cn('text-sm text-gray-400 font-medium', styles.title)}>
+              <p className={cn(getKPITextClasses('title'), styles.title)}>
                 {title}
               </p>
               
               {/* Valor Principal */}
-              <div className={cn('text-2xl font-bold text-white mt-1', styles.value)}>
+              <div className={cn(getKPITextClasses('value'), 'mt-1', styles.value)}>
                 {typeof value === 'number' ? value.toLocaleString('pt-BR') : value}
               </div>
               
               {/* Descrição/Subtítulo */}
               {description && (
-                <div className={cn('text-xs mt-1 flex items-center', styles.description)}>
+                <div className={cn(getKPITextClasses('subtitle'), 'mt-1 flex items-center', styles.description)}>
                   {description}
                 </div>
               )}
@@ -117,17 +117,17 @@ export const StatCard: React.FC<StatCardProps> = ({
   return (
     <Card className={cn(styles.card, 'hover:transform hover:-translate-y-1 transition-all duration-200', className)}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className={cn('text-sm font-medium', styles.title)}>
+        <CardTitle className={cn(getKPITextClasses('title'), styles.title)}>
           {title}
         </CardTitle>
         {Icon && <Icon className={getIconClasses('md', styles.icon)} />}
       </CardHeader>
       <CardContent>
-        <div className={cn('text-2xl font-bold', styles.value)}>
+        <div className={cn(getKPITextClasses('value'), styles.value)}>
           {typeof value === 'number' ? value.toLocaleString('pt-BR') : value}
         </div>
         {description && (
-          <p className={cn('text-xs mt-1', styles.description)}>
+          <p className={cn(getKPITextClasses('subtitle'), 'mt-1', styles.description)}>
             {description}
           </p>
         )}

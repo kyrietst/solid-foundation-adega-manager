@@ -338,7 +338,7 @@ export const CrmDashboard: React.FC = () => {
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
           {/* Filtro de Período */}
           <div 
-            className="relative flex gap-2 p-3 bg-black/80 rounded-xl border border-white/10 backdrop-blur-sm hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300 group"
+            className="relative flex items-center gap-2 h-10 px-3 py-2 bg-black/80 rounded-lg border border-white/10 backdrop-blur-sm hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300 group"
             onMouseMove={(e) => {
               const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
               const x = ((e.clientX - rect.left) / rect.width) * 100;
@@ -347,7 +347,7 @@ export const CrmDashboard: React.FC = () => {
               (e.currentTarget as HTMLElement).style.setProperty("--y", `${y}%`);
             }}
           >
-            <span className="text-xs text-white/70 self-center mr-2 font-medium">Período:</span>
+            <span className="text-sm text-white/70 font-medium">Período:</span>
             {[7, 30, 90, 180].map((days) => (
               <Button
                 key={days}
@@ -366,7 +366,7 @@ export const CrmDashboard: React.FC = () => {
             ))}
             {/* Purple glow effect */}
             <div 
-              className="absolute inset-0 rounded-xl bg-gradient-to-br from-purple-500/20 via-transparent to-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+              className="absolute inset-0 rounded-lg bg-gradient-to-br from-purple-500/20 via-transparent to-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
               style={{
                 background: `radial-gradient(600px circle at var(--x, 50%) var(--y, 50%), rgba(147, 51, 234, 0.15), transparent 40%)`
               }}

@@ -10,8 +10,8 @@ import { useCart, useCartItemCount } from "@/features/sales/hooks/use-cart";
 import { cn } from '@/core/config/utils';
 import { getGlassCardClasses } from '@/core/config/theme-utils';
 import { text, shadows } from "@/core/config/theme";
-import { GradientText } from "@/components/ui/gradient-text";
 import { BlurIn } from "@/components/ui/blur-in";
+import { getHeaderTextClasses } from '@/core/config/theme-utils';
 
 export type SaleType = 'presencial' | 'delivery' | 'pickup';
 
@@ -41,14 +41,18 @@ function SalesPage({
           <div className="w-full sm:w-auto flex-shrink-0">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                              <div className="relative w-full text-center">
-                 <GradientText
-                   colors={["#FF2400", "#FFDA04", "#FF2400", "#FFDA04", "#FF2400"]}
-                   animationSpeed={6}
-                   showBorder={false}
-                   className="text-xl lg:text-2xl font-bold"
-                 >
-                   PONTO DE VENDA
-                 </GradientText>
+                 <BlurIn
+                   word="PONTO DE VENDA"
+                   duration={1.2}
+                   variant={{
+                     hidden: { filter: "blur(15px)", opacity: 0 },
+                     visible: { filter: "blur(0px)", opacity: 1 }
+                   }}
+                   className={`${getHeaderTextClasses('main')} text-transparent bg-clip-text bg-gradient-to-r from-[#FF2400] via-[#FFDA04] to-[#FF2400] drop-shadow-lg`}
+                   style={{
+                     textShadow: '0 2px 4px rgba(0,0,0,0.3), 0 0 20px rgba(255, 218, 4, 0.2)'
+                   }}
+                 />
                 
                 {/* Efeito de sublinhado elegante */}
                 <div className="w-full h-6 relative mt-2">

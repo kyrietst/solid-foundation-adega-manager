@@ -356,3 +356,116 @@ export function getHoverTransformClasses(type: 'lift' | 'scale' | 'glow' = 'lift
   
   return transformClasses[type];
 }
+
+// ============================================================================
+// SF PRO DISPLAY TYPOGRAPHY SYSTEM
+// ============================================================================
+
+/**
+ * SF Pro Display Typography Hierarchy
+ * Baseado nas 9 variantes disponíveis na pasta assets/fonts
+ */
+export function getSFProTextClasses(
+  hierarchy: 'h1' | 'h2' | 'h3' | 'h4' | 'body' | 'caption' | 'small' | 'value' | 'label' | 'action' | 'status' = 'body',
+  variant?: 'primary' | 'secondary' | 'accent' | 'success' | 'warning' | 'error' | 'purple' | 'neutral'
+) {
+  const hierarchyClasses = {
+    h1: 'font-sf-black text-3xl lg:text-4xl xl:text-5xl leading-tight',        // Títulos principais - SF Pro Black
+    h2: 'font-sf-bold text-xl lg:text-2xl xl:text-3xl leading-tight',          // Subtítulos importantes - SF Pro Bold  
+    h3: 'font-sf-semibold text-lg lg:text-xl xl:text-2xl leading-normal',      // Títulos de seção - SF Pro SemiBold
+    h4: 'font-sf-medium text-base lg:text-lg xl:text-xl leading-normal',       // Labels importantes - SF Pro Medium
+    body: 'font-sf-regular text-sm lg:text-base leading-normal',               // Texto padrão - SF Pro Regular
+    caption: 'font-sf-medium text-xs lg:text-sm leading-normal',               // Metadados - SF Pro Medium
+    small: 'font-sf-regular text-xs leading-normal',                           // Informações auxiliares - SF Pro Regular
+    value: 'font-sf-bold text-xl lg:text-2xl xl:text-3xl leading-tight',       // Valores numéricos - SF Pro Bold
+    label: 'font-sf-medium text-sm lg:text-base leading-normal',               // Labels de interface - SF Pro Medium
+    action: 'font-sf-semibold text-sm lg:text-base leading-normal',            // Texto de ação - SF Pro SemiBold
+    status: 'font-sf-medium text-xs lg:text-sm leading-normal uppercase tracking-wide' // Status/badges - SF Pro Medium
+  };
+
+  const variantClasses = {
+    primary: 'text-primary-yellow',
+    secondary: 'text-gray-300', 
+    accent: 'text-primary-yellow',
+    success: 'text-accent-green',
+    warning: 'text-primary-yellow',
+    error: 'text-accent-red',
+    purple: 'text-accent-purple',
+    neutral: 'text-gray-100'
+  };
+
+  const baseClass = hierarchyClasses[hierarchy];
+  const colorClass = variant ? variantClasses[variant] : 'text-gray-100';
+  
+  return cn(baseClass, colorClass);
+}
+
+/**
+ * SF Pro Display Weight Classes
+ * Mapeamento direto das variantes disponíveis
+ */
+export function getSFProWeightClasses(weight: 'thin' | 'ultralight' | 'light' | 'regular' | 'medium' | 'semibold' | 'bold' | 'heavy' | 'black' = 'regular') {
+  const weightClasses = {
+    thin: 'font-sf-thin',           // 100 - Ultra leve (decorativo)
+    ultralight: 'font-sf-ultralight', // 200 - Muito leve (decorativo)
+    light: 'font-sf-light',        // 300 - Leve (texto auxiliar)
+    regular: 'font-sf-regular',    // 400 - Normal (texto padrão)
+    medium: 'font-sf-medium',      // 500 - Médio (labels, captions)
+    semibold: 'font-sf-semibold',  // 600 - Semi-negrito (ações, títulos menores)
+    bold: 'font-sf-bold',          // 700 - Negrito (valores, títulos importantes)
+    heavy: 'font-sf-heavy',        // 800 - Pesado (títulos grandes)
+    black: 'font-sf-black'         // 900 - Ultra pesado (títulos principais)
+  };
+  
+  return weightClasses[weight];
+}
+
+/**
+ * Typography para KPIs e Métricas
+ * Otimizado para valores numéricos com SF Pro Display
+ */
+export function getKPITextClasses(element: 'title' | 'value' | 'delta' | 'subtitle' = 'value') {
+  const kpiClasses = {
+    title: 'font-sf-medium text-sm text-gray-400 leading-normal',                    // Labels dos KPIs
+    value: 'font-sf-bold text-2xl text-white leading-tight font-feature-settings-["tnum"]', // Valores principais
+    delta: 'font-sf-medium text-xs leading-normal',                                 // Variações percentuais
+    subtitle: 'font-sf-regular text-xs text-gray-400 leading-normal'               // Informações adicionais
+  };
+  
+  return kpiClasses[element];
+}
+
+/**
+ * Typography para Headers de Páginas
+ * Hierarquia específica para headers principais
+ */
+export function getHeaderTextClasses(level: 'main' | 'section' | 'subsection' = 'main') {
+  const headerClasses = {
+    main: 'font-sf-black text-2xl lg:text-3xl xl:text-4xl leading-tight',      // DASHBOARD, RELATÓRIOS
+    section: 'font-sf-bold text-xl lg:text-2xl leading-tight',                 // Canais de Venda, seções
+    subsection: 'font-sf-semibold text-lg lg:text-xl leading-normal'           // Subseções
+  };
+  
+  return headerClasses[level];
+}
+
+/**
+ * Typography para Estados e Status
+ * Maiúscula/minúscula baseado no contexto
+ */
+export function getStatusTextClasses(type: 'badge' | 'alert' | 'notification' | 'label' = 'badge', casing: 'upper' | 'title' | 'sentence' = 'upper') {
+  const typeClasses = {
+    badge: 'font-sf-medium text-xs leading-normal',
+    alert: 'font-sf-semibold text-sm leading-normal', 
+    notification: 'font-sf-medium text-sm leading-normal',
+    label: 'font-sf-medium text-sm leading-normal'
+  };
+
+  const casingClasses = {
+    upper: 'uppercase tracking-wide',
+    title: 'capitalize',
+    sentence: 'normal-case'
+  };
+  
+  return cn(typeClasses[type], casingClasses[casing]);
+}
