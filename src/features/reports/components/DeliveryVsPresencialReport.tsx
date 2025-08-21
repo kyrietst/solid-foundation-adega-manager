@@ -202,7 +202,7 @@ export const DeliveryVsPresencialReport = ({ className }: DeliveryVsPresencialRe
       </div>
 
       {/* KPIs principais */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div id="delivery-overview" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -218,7 +218,7 @@ export const DeliveryVsPresencialReport = ({ className }: DeliveryVsPresencialRe
           </CardContent>
         </Card>
 
-        <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm">
+        <Card id="revenue-analysis" className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -236,7 +236,7 @@ export const DeliveryVsPresencialReport = ({ className }: DeliveryVsPresencialRe
           </CardContent>
         </Card>
 
-        <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm">
+        <Card id="ticket-analysis" className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -263,7 +263,7 @@ export const DeliveryVsPresencialReport = ({ className }: DeliveryVsPresencialRe
           </CardContent>
         </Card>
 
-        <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm">
+        <Card id="instore-overview" className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
