@@ -10,7 +10,7 @@ import { Label } from '@/shared/ui/primitives/label';
 import { Button } from '@/shared/ui/primitives/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/primitives/select';
 import { Badge } from '@/shared/ui/primitives/badge';
-import { Switch } from '@/shared/ui/primitives/switch';
+import { SwitchAnimated } from '@/shared/ui/primitives/switch-animated';
 import { 
   Package, 
   ShoppingCart, 
@@ -76,11 +76,11 @@ export const BarcodeHierarchySection: React.FC<BarcodeHierarchySectionProps> = (
               <Package className="h-4 w-4" />
               Rastrear por Fardo
             </Label>
-            <Switch
-              id="package_tracking"
+            <SwitchAnimated
               checked={formData.has_package_tracking || false}
               onCheckedChange={(checked) => handleFieldChange('has_package_tracking', checked)}
-              className="data-[state=checked]:bg-primary-yellow"
+              variant="yellow"
+              size="md"
             />
           </div>
           
@@ -89,11 +89,11 @@ export const BarcodeHierarchySection: React.FC<BarcodeHierarchySectionProps> = (
               <ShoppingCart className="h-4 w-4" />
               Rastrear por Unidade
             </Label>
-            <Switch
-              id="unit_tracking"
+            <SwitchAnimated
               checked={formData.has_unit_tracking || false}
               onCheckedChange={(checked) => handleFieldChange('has_unit_tracking', checked)}
-              className="data-[state=checked]:bg-primary-yellow"
+              variant="yellow"
+              size="md"
             />
           </div>
         </div>

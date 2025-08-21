@@ -20,7 +20,7 @@ import { Button } from '@/shared/ui/primitives/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/shared/ui/primitives/dialog';
 import { Input } from '@/shared/ui/primitives/input';
 import { Textarea } from '@/shared/ui/primitives/textarea';
-import { Switch } from '@/shared/ui/primitives/switch';
+import { SwitchAnimated } from '@/shared/ui/primitives/switch-animated';
 import { Skeleton } from '@/shared/ui/composite/skeleton';
 import { 
   Plus, 
@@ -259,10 +259,12 @@ export const CategoryManagement: React.FC = () => {
                   </div>
 
                   {/* Toggle status */}
-                  <Switch
+                  <SwitchAnimated
                     checked={category.is_active}
                     onCheckedChange={() => handleToggleStatus(category)}
                     disabled={isToggling}
+                    variant="yellow"
+                    size="md"
                   />
 
                   {/* Edit button */}

@@ -16,7 +16,7 @@ import { Label } from '@/shared/ui/primitives/label';
 import { Button } from '@/shared/ui/primitives/button';
 import { Textarea } from '@/shared/ui/primitives/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/primitives/select';
-import { Switch } from '@/shared/ui/primitives/switch';
+import { SwitchAnimated } from '@/shared/ui/primitives/switch-animated';
 import { Alert, AlertDescription } from '@/shared/ui/primitives/alert';
 import { Badge } from '@/shared/ui/primitives/badge';
 import { LoadingSpinner } from '@/shared/ui/composite/loading-spinner';
@@ -367,11 +367,11 @@ export const CreateBatchModal: React.FC<CreateBatchModalProps> = ({
                   Gerar códigos individuais para rastreamento FEFO granular
                 </p>
               </div>
-              <Switch
-                id="create_units"
+              <SwitchAnimated
                 checked={formData.create_units}
                 onCheckedChange={(checked) => handleFieldChange('create_units', checked)}
-                className="data-[state=checked]:bg-primary-yellow"
+                variant="yellow"
+                size="md"
               />
             </div>
           )}

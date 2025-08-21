@@ -25,6 +25,7 @@ export { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 export { Separator } from './separator';
 export { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetOverlay, SheetPortal, SheetTitle, SheetTrigger } from './sheet';
 export { Switch } from './switch';
+export { SwitchAnimated } from './switch-animated';
 export { Table, TableBody, TableCaption, TableCell, TableFooter, TableHead, TableHeader, TableRow } from './table';
 export { Tabs, TabsContent, TabsList, TabsTrigger } from './tabs';
 export { Textarea } from './textarea';

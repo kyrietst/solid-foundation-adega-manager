@@ -12,7 +12,7 @@ import { AlertTriangle } from 'lucide-react';
 import { useSpecificPermissions } from '@/shared/hooks/auth/usePermissions';
 import { Product, ProductFormData, InventoryFilters } from '@/types/inventory.types';
 import { LoadingScreen } from '@/shared/ui/composite/loading-spinner';
-import { usePagination } from '@/hooks/use-pagination';
+import { usePagination } from '@/shared/hooks/common/use-pagination';
 
 // Componentes refatorados
 import { InventoryHeader } from './inventory/InventoryHeader';

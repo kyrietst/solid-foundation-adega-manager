@@ -167,7 +167,50 @@ export function useSmartAlerts() {
         console.error('Error fetching dead stock alerts:', error);
       }
 
-      // 5. Total de valor em estoque (para mostrar no card)
+      // 5. Alertas de vencimento (CRITICAL, WARNING, INFO)
+      try {
+        const { data: expiryAlertsData, error: expiryError } = await supabase
+          .rpc('get_expiry_alerts_30_days', { limit_count: 20 });
+
+        console.log('📊 Expiry Alerts Debug:', { expiryAlertsData, expiryError });
+
+        if (!expiryError && expiryAlertsData && expiryAlertsData.length > 0) {
+          // 🚨 TODOS OS ALERTAS DE VENCIMENTO SÃO CRÍTICOS (VERMELHOS)
+          // Independente de quantos dias faltam - vencimento é sempre urgente
+          
+          const totalLotes = expiryAlertsData.length;
+          const totalUnits = expiryAlertsData.reduce((sum: number, item: any) => sum + (item.affected_units || 0), 0);
+          const totalValue = expiryAlertsData.reduce((sum: number, item: any) => sum + (Number(item.estimated_loss_value) || 0), 0);
+          
+          // Determinar o menor prazo para mostrar na mensagem
+          const minDays = Math.min(...expiryAlertsData.map((item: any) => item.days_until_expiry));
+          const maxDays = Math.max(...expiryAlertsData.map((item: any) => item.days_until_expiry));
+          
+          let timeDescription = '';
+          if (minDays === maxDays) {
+            timeDescription = `${minDays} dias`;
+          } else {
+            timeDescription = `${minDays}-${maxDays} dias`;
+          }
+          
+          const expiryAlert = {
+            id: 'critical-expiry-all',
+            severity: 'critical' as const,
+            title: `${totalLotes} lote${totalLotes > 1 ? 's' : ''} com vencimento próximo`,
+            description: `${totalUnits} unidades (R$ ${totalValue.toFixed(2)}) - vencimento em ${timeDescription}`,
+            href: '/reports?tab=expiry',
+            count: totalLotes,
+            icon: '🚨'
+          };
+          
+          console.log('🚨 Adding CRITICAL Expiry Alert (All):', expiryAlert);
+          alerts.push(expiryAlert);
+        }
+      } catch (error) {
+        console.error('Error fetching expiry alerts:', error);
+      }
+
+      // 6. Total de valor em estoque (para mostrar no card)
       try {
         const { data: stockValueData, error: stockValueError } = await supabase
           .rpc('get_inventory_total_value');
@@ -179,8 +222,9 @@ export function useSmartAlerts() {
         console.error('Error fetching inventory total value:', error);
       }
 
-      // 🚨 ALERTAS MOCKADOS PARA TESTE DO CARROSSEL (REMOVER EM PRODUÇÃO)
-      // Adiciona alertas de teste para demonstrar o carrossel
+      // 🚨 ALERTAS MOCKADOS PARA TESTE DO CARROSSEL (TEMPORARIAMENTE DESABILITADOS)
+      // Comentados para priorizar alertas reais de vencimento
+      /*
       alerts.push(
         {
           id: 'mock-critical-1',
@@ -237,6 +281,7 @@ export function useSmartAlerts() {
           icon: '📈'
         }
       );
+      */
 
       // Sort alerts by severity priority
       const severityOrder = { critical: 0, warning: 1, info: 2 };
@@ -246,13 +291,17 @@ export function useSmartAlerts() {
       const warningCount = alerts.filter(a => a.severity === 'warning').length;
       const infoCount = alerts.filter(a => a.severity === 'info').length;
 
-      return {
+      const result = {
         alerts: alerts.slice(0, 10), // Limit to top 10 alerts
         criticalCount,
         warningCount,
         infoCount,
         inventoryTotalValue
       };
+
+      console.log('🎯 Final Smart Alerts Result:', result);
+      
+      return result;
     },
     staleTime: 5 * 60 * 1000, // 5 minutes cache
     refetchInterval: 5 * 60 * 1000, // Auto refresh every 5 minutes
@@ -280,5 +329,12 @@ export function useCustomerAlerts() {
   const { data } = useSmartAlerts();
   return data?.alerts.filter(alert => 
     alert.id === 'inactive-customers'
+  ) || [];
+}
+
+export function useExpiryAlerts() {
+  const { data } = useSmartAlerts();
+  return data?.alerts.filter(alert => 
+    alert.id === 'critical-expiry-all' || alert.id === 'critical-expiry' || alert.id === 'warning-expiry' || alert.id === 'info-expiry'
   ) || [];
 }

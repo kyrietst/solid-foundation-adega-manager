@@ -20,6 +20,7 @@ export interface PaginationResult<T> {
   
   // Funções de controle
   setCurrentPage: (page: number) => void;
+  goToPage: (page: number) => void;
   setItemsPerPage: (items: number) => void;
   nextPage: () => void;
   prevPage: () => void;
@@ -76,6 +77,9 @@ export function usePagination<T>(
     setCurrentPageState(validPage);
   }, [totalPages]);
 
+  // Alias para setCurrentPage (compatibilidade)
+  const goToPage = setCurrentPage;
+
   const setItemsPerPage = useCallback((items: number) => {
     setItemsPerPageState(items);
     setCurrentPageState(1); // Reset para primeira página
@@ -111,6 +115,7 @@ export function usePagination<T>(
     
     // Funções de controle
     setCurrentPage,
+    goToPage,
     setItemsPerPage,
     nextPage,
     prevPage,

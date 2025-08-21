@@ -225,11 +225,11 @@ export const Logo = () => {
         transition={{ duration: 0.3, ease: "easeOut" }}
         className="flex flex-col"
       >
-        <span className="font-bold text-white text-lg leading-tight">
-          Adega
+        <span className="font-bold text-white text-xl leading-tight">
+          Adega Anita's
         </span>
         <span className="text-primary-yellow text-xs font-medium">
-          Manager
+          SISTEMA DE GERENCIAMENTO
         </span>
       </motion.div>
     </div>

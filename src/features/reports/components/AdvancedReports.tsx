@@ -9,13 +9,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/primitives
 import { Button } from '@/shared/ui/primitives/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/primitives/tabs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/shared/ui/primitives/dropdown-menu';
-import { CalendarIcon, FileSpreadsheet, BarChart3, Users, Package, DollarSign, ChevronDown } from 'lucide-react';
+import { CalendarIcon, FileSpreadsheet, BarChart3, Users, Package, DollarSign, ChevronDown, Calendar } from 'lucide-react';
 import { BlurIn } from '@/components/ui/blur-in';
 import { supabase } from '@/core/api/supabase/client';
 import { SalesReportsSection } from './SalesReportsSection';
 import { InventoryReportsSection } from './InventoryReportsSection';
 import { CrmReportsSection } from './CrmReportsSection';
 import { FinancialReportsSection } from './FinancialReportsSection';
+import { ExpiryReportsSection } from './ExpiryReportsSection';
 
 export const AdvancedReports: React.FC = () => {
   const location = useLocation();
@@ -30,7 +31,7 @@ export const AdvancedReports: React.FC = () => {
     const urlSection = searchParams.get('section');
 
     // Define a aba baseada no parâmetro 'tab'
-    if (urlTab && ['sales', 'inventory', 'crm', 'financial'].includes(urlTab)) {
+    if (urlTab && ['sales', 'inventory', 'crm', 'financial', 'expiry'].includes(urlTab)) {
       setActiveTab(urlTab);
     }
 
@@ -316,6 +317,13 @@ export const AdvancedReports: React.FC = () => {
               <DollarSign className="h-4 w-4 mr-2" />
               Financeiro & Fluxo
             </TabsTrigger>
+            <TabsTrigger 
+              value="expiry"
+              className="data-[state=active]:bg-red-500/20 data-[state=active]:text-red-300 data-[state=active]:border data-[state=active]:border-red-400/30 transition-all duration-300"
+            >
+              <Calendar className="h-4 w-4 mr-2" />
+              Vencimento & Validade
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="sales" className="space-y-6 mt-6">
@@ -332,6 +340,10 @@ export const AdvancedReports: React.FC = () => {
 
           <TabsContent value="financial" className="space-y-6 mt-6">
             <FinancialReportsSection period={globalPeriod} />
+          </TabsContent>
+
+          <TabsContent value="expiry" className="space-y-6 mt-6">
+            <ExpiryReportsSection />
           </TabsContent>
         </Tabs>
       </section>

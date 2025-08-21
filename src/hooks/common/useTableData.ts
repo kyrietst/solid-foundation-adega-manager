@@ -4,7 +4,7 @@
  */
 
 import { useState, useMemo } from 'react';
-import { usePagination } from '@/hooks/use-pagination';
+import { usePagination } from '@/shared/hooks/common/use-pagination';
 
 export interface TableColumn<T> {
   key: keyof T;

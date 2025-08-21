@@ -36,7 +36,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/shared/ui/primitives/select';
-import { Switch } from '@/shared/ui/primitives/switch';
+import { SwitchAnimated } from '@/shared/ui/primitives/switch-animated';
 import { Label } from '@/shared/ui/primitives/label';
 import { useUpsertCustomer } from '@/features/customers/hooks/use-crm';
 import { useToast } from '@/shared/hooks/common/use-toast';
@@ -365,9 +365,11 @@ export const NewCustomerModal: React.FC<NewCustomerModalProps> = ({
                         </FormDescription>
                       </div>
                       <FormControl>
-                        <Switch
+                        <SwitchAnimated
                           checked={field.value}
                           onCheckedChange={field.onChange}
+                          variant="yellow"
+                          size="md"
                         />
                       </FormControl>
                     </FormItem>

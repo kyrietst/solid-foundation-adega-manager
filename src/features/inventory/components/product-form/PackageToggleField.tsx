@@ -7,7 +7,7 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/primitives/card';
 import { Input } from '@/shared/ui/primitives/input';
 import { Label } from '@/shared/ui/primitives/label';
-import { Switch } from '@/shared/ui/primitives/switch';
+import { SwitchAnimated } from '@/shared/ui/primitives/switch-animated';
 import { Package, Box } from 'lucide-react';
 import { ProductFormData } from '@/core/types/inventory.types';
 import { cn } from '@/core/config/utils';
@@ -71,9 +71,11 @@ export const PackageToggleField: React.FC<PackageToggleFieldProps> = ({
               }
             </p>
           </div>
-          <Switch
+          <SwitchAnimated
             checked={isPackage}
             onCheckedChange={handlePackageToggle}
+            variant="yellow"
+            size="md"
           />
         </div>
 
