@@ -3,105 +3,148 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/primitives/card';
 import { Button } from '@/shared/ui/primitives/button';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '@/shared/ui/primitives/dropdown-menu';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/primitives/tabs';
 import { SearchBar21st } from '@/shared/ui/thirdparty/search-bar-21st';
-import { ArrowUpDown, ArrowUp, ArrowDown, RefreshCw, MapPin } from 'lucide-react';
+import { ArrowUpDown, ArrowUp, ArrowDown, RefreshCw, MapPin, BarChart3 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/primitives/select';
-import { Truck, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import { Truck, Clock, CheckCircle, AlertCircle, User, DollarSign } from 'lucide-react';
 import { useToast } from '@/shared/hooks/common/use-toast';
 import { BlurIn } from '@/components/ui/blur-in';
+import { useDeliveryOrders, useDeliveryMetrics, useUpdateDeliveryStatus } from '@/features/delivery/hooks/useDeliveryOrders';
+import { DeliveryOrderCard } from './DeliveryOrderCard';
+import { NotificationCenter } from './NotificationCenter';
+import { DeliveryAnalytics } from './DeliveryAnalytics';
 
 export const Delivery = () => {
-  const [deliveries, setDeliveries] = useState([
-    { id: 1, saleId: 1001, customer: 'João Silva', address: 'Rua das Flores, 123', status: 'pendente', deliveryPerson: '', estimatedTime: '14:30' },
-    { id: 2, saleId: 1002, customer: 'Maria Santos', address: 'Av. Paulista, 456', status: 'em_transito', deliveryPerson: 'Carlos', estimatedTime: '15:00' },
-    { id: 3, saleId: 1003, customer: 'Pedro Costa', address: 'Rua São João, 789', status: 'entregue', deliveryPerson: 'Ana', estimatedTime: '13:30' },
-  ]);
-
   const { toast } = useToast();
+  
+  // Hooks para dados reais
+  const { data: deliveries = [], isLoading: isLoadingDeliveries, refetch } = useDeliveryOrders();
+  const { data: metrics, isLoading: isLoadingMetrics } = useDeliveryMetrics(7);
+  const updateDeliveryStatus = useUpdateDeliveryStatus();
 
-  const ALL_COLUMNS = ['Pedido', 'Cliente', 'Endereço', 'Entregador', 'Horário', 'Status', 'Ações'] as const;
+  const [activeTab, setActiveTab] = useState('deliveries');
   const [searchTerm, setSearchTerm] = useState('');
-  const [visibleColumns, setVisibleColumns] = useState<string[]>([...ALL_COLUMNS]);
-  const [sortField, setSortField] = useState<'saleId' | 'customer' | 'address' | 'deliveryPerson' | 'estimatedTime' | 'status' | null>('status');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [sortField, setSortField] = useState<'created_at' | 'customer' | 'final_amount' | 'delivery_status'>('created_at');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
   const dataset = React.useMemo(() => {
+    if (isLoadingDeliveries) return [];
+    
     const term = searchTerm.trim().toLowerCase();
-    let rows = term
-      ? deliveries.filter(d =>
-          d.customer.toLowerCase().includes(term) ||
-          d.address.toLowerCase().includes(term) ||
-          (d.deliveryPerson || '').toLowerCase().includes(term) ||
-          String(d.saleId).includes(term)
-        )
-      : deliveries;
+    let rows = deliveries;
+
+    // Filtro por busca
+    if (term) {
+      rows = rows.filter(d =>
+        d.customer?.name.toLowerCase().includes(term) ||
+        (d.delivery_address?.street || '').toLowerCase().includes(term) ||
+        (d.delivery_person?.name || '').toLowerCase().includes(term) ||
+        String(d.id.slice(-8)).includes(term)
+      );
+    }
+
+    // Filtro por status
+    if (statusFilter && statusFilter !== 'all') {
+      rows = rows.filter(d => d.delivery_status === statusFilter);
+    }
+      
+    // Ordenação
     if (sortField) {
       rows = [...rows].sort((a, b) => {
-        const av: any = (a as any)[sortField!];
-        const bv: any = (b as any)[sortField!];
-        if (typeof av === 'number' && typeof bv === 'number') return sortDirection === 'asc' ? av - bv : bv - av;
+        let av: any, bv: any;
+        
+        switch (sortField) {
+          case 'created_at':
+            av = new Date(a.created_at).getTime();
+            bv = new Date(b.created_at).getTime();
+            break;
+          case 'customer':
+            av = a.customer?.name || '';
+            bv = b.customer?.name || '';
+            break;
+          case 'final_amount':
+            av = a.final_amount || 0;
+            bv = b.final_amount || 0;
+            break;
+          case 'delivery_status':
+            av = a.delivery_status;
+            bv = b.delivery_status;
+            break;
+          default:
+            av = '';
+            bv = '';
+        }
+        
+        if (typeof av === 'number' && typeof bv === 'number') {
+          return sortDirection === 'asc' ? av - bv : bv - av;
+        }
         return sortDirection === 'asc' ? String(av).localeCompare(String(bv)) : String(bv).localeCompare(String(av));
       });
     }
     return rows;
-  }, [deliveries, searchTerm, sortField, sortDirection]);
+  }, [deliveries, searchTerm, statusFilter, sortField, sortDirection, isLoadingDeliveries]);
 
   const handleSort = (field: typeof sortField) => {
     if (sortField === field) setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
     else { setSortField(field); setSortDirection('asc'); }
   };
-  const icon = (field: typeof sortField) => sortField !== field ? <ArrowUpDown className="w-4 h-4" /> : (sortDirection === 'asc' ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />);
 
-  const updateDeliveryStatus = (deliveryId, newStatus, deliveryPerson = '') => {
-    setDeliveries(deliveries.map(delivery => 
-      delivery.id === deliveryId 
-        ? { ...delivery, status: newStatus, deliveryPerson }
-        : delivery
-    ));
-
-    toast({
-      title: "Status atualizado!",
-      description: `Entrega ${deliveryId} foi atualizada para ${newStatus}`,
-    });
+  const getStatusText = (status: string) => {
+    const statusMap: Record<string, string> = {
+      'pending': 'Pendente',
+      'preparing': 'Preparando',
+      'out_for_delivery': 'Em Trânsito',
+      'delivered': 'Entregue',
+      'cancelled': 'Cancelado'
+    };
+    return statusMap[status] || status;
   };
 
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'pendente': return <Clock className="h-4 w-4 text-yellow-600" />;
-      case 'em_transito': return <Truck className="h-4 w-4 text-blue-600" />;
-      case 'entregue': return <CheckCircle className="h-4 w-4 text-green-600" />;
-      case 'cancelado': return <AlertCircle className="h-4 w-4 text-red-600" />;
-      default: return <Clock className="h-4 w-4 text-gray-600" />;
+  const handleUpdateStatus = async (saleId: string, newStatus: string, deliveryPersonId?: string) => {
+    try {
+      await updateDeliveryStatus.mutateAsync({
+        saleId,
+        newStatus,
+        notes: `Status alterado para ${getStatusText(newStatus)}`,
+        deliveryPersonId
+      });
+      
+      // Atualizar dados
+      refetch();
+    } catch (error) {
+      console.error('Erro ao atualizar status:', error);
     }
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'pendente': return 'bg-yellow-100 text-yellow-700';
-      case 'em_transito': return 'bg-blue-100 text-blue-700';
-      case 'entregue': return 'bg-green-100 text-green-700';
-      case 'cancelado': return 'bg-red-100 text-red-700';
-      default: return 'bg-gray-100 text-gray-700';
-    }
-  };
-
-  const getStatusText = (status) => {
-    switch (status) {
-      case 'pendente': return 'Pendente';
-      case 'em_transito': return 'Em Trânsito';
-      case 'entregue': return 'Entregue';
-      case 'cancelado': return 'Cancelado';
-      default: return status;
-    }
-  };
 
   const getDeliveryStats = () => {
-    const total = deliveries.length;
-    const pendentes = deliveries.filter(d => d.status === 'pendente').length;
-    const emTransito = deliveries.filter(d => d.status === 'em_transito').length;
-    const entregues = deliveries.filter(d => d.status === 'entregue').length;
+    if (isLoadingMetrics || !metrics) {
+      return { 
+        total: 0, 
+        pendentes: 0, 
+        emTransito: 0, 
+        entregues: 0,
+        receita: 0,
+        ticketMedio: 0,
+        taxasEntrega: 0,
+        crescimento: 0,
+        topZona: null
+      };
+    }
     
-    return { total, pendentes, emTransito, entregues };
+    return {
+      total: metrics.totalOrders,
+      pendentes: metrics.pendingOrders,
+      emTransito: metrics.inTransitOrders,
+      entregues: metrics.deliveredOrders,
+      receita: metrics.totalRevenue,
+      ticketMedio: metrics.avgOrderValue,
+      taxasEntrega: metrics.deliveryFeeRevenue,
+      crescimento: metrics.revenueGrowthRate,
+      topZona: metrics.topZoneRevenue
+    };
   };
 
   const stats = getDeliveryStats();
@@ -137,9 +180,11 @@ export const Delivery = () => {
         
         {/* Controles */}
         <div className="flex items-center gap-4">
+          <NotificationCenter />
           <Button 
-            onClick={() => window.location.reload()}
-            className="bg-black/80 border-[#FFD700]/40 text-[#FFD700] hover:bg-[#FFD700]/20 hover:shadow-xl hover:shadow-[#FFD700]/30 hover:border-[#FFD700]/80 hover:scale-105 backdrop-blur-sm transition-all duration-300 relative overflow-hidden group"
+            onClick={() => refetch()}
+            disabled={isLoadingDeliveries}
+            className="bg-black/80 border-[#FFD700]/40 text-[#FFD700] hover:bg-[#FFD700]/20 hover:shadow-xl hover:shadow-[#FFD700]/30 hover:border-[#FFD700]/80 hover:scale-105 backdrop-blur-sm transition-all duration-300 relative overflow-hidden group disabled:opacity-50"
           >
             <div className="absolute inset-0 bg-gradient-to-r from-[#FFD700]/5 via-[#FFD700]/10 to-[#FFD700]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             <RefreshCw className="h-4 w-4 mr-2 relative z-10 group-hover:rotate-180 transition-transform duration-300" />
@@ -160,7 +205,7 @@ export const Delivery = () => {
           (e.currentTarget as HTMLElement).style.setProperty("--y", `${y}%`);
         }}
       >
-        {/* Resumo de Entregas */}
+        {/* Resumo de Entregas - Status */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm shadow-lg hover:shadow-2xl hover:shadow-blue-500/10 hover:border-blue-400/30 transition-all duration-300">
             <CardContent className="p-6">
@@ -219,11 +264,134 @@ export const Delivery = () => {
           </Card>
         </div>
 
-        {/* Lista de Entregas */}
-        <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm shadow-lg hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300">
+        {/* Métricas Financeiras */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm shadow-lg hover:shadow-2xl hover:shadow-green-500/10 hover:border-green-400/30 transition-all duration-300">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3">
+                <DollarSign className="h-8 w-8 text-green-400 transition-all duration-300" />
+                <div>
+                  <p className="text-sm text-gray-400">Receita Total</p>
+                  <div className="text-2xl font-bold text-white">
+                    R$ {stats.receita.toFixed(2)}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm shadow-lg hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3">
+                <DollarSign className="h-8 w-8 text-purple-400 transition-all duration-300" />
+                <div>
+                  <p className="text-sm text-gray-400">Ticket Médio</p>
+                  <div className="text-2xl font-bold text-white">
+                    R$ {stats.ticketMedio.toFixed(2)}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm shadow-lg hover:shadow-2xl hover:shadow-orange-500/10 hover:border-orange-400/30 transition-all duration-300">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3">
+                <Truck className="h-8 w-8 text-orange-400 transition-all duration-300" />
+                <div>
+                  <p className="text-sm text-gray-400">Taxas de Entrega</p>
+                  <div className="text-2xl font-bold text-white">
+                    R$ {stats.taxasEntrega.toFixed(2)}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm shadow-lg hover:shadow-2xl hover:shadow-cyan-500/10 hover:border-cyan-400/30 transition-all duration-300">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3">
+                <ArrowUp className={cn(
+                  "h-8 w-8 transition-all duration-300",
+                  stats.crescimento >= 0 ? "text-cyan-400" : "text-red-400"
+                )} />
+                <div>
+                  <p className="text-sm text-gray-400">Crescimento</p>
+                  <div className={cn(
+                    "text-2xl font-bold",
+                    stats.crescimento >= 0 ? "text-white" : "text-red-400"
+                  )}>
+                    {stats.crescimento >= 0 ? '+' : ''}{stats.crescimento.toFixed(1)}%
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Top Zona de Entrega */}
+        {stats.topZona && (
+          <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm shadow-lg hover:shadow-2xl hover:shadow-yellow-500/10 hover:border-yellow-400/30 transition-all duration-300">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg font-bold text-white flex items-center gap-2">
+                <MapPin className="h-6 w-6 text-yellow-400" />
+                Zona Mais Rentável
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <p className="text-sm text-gray-400">Nome da Zona</p>
+                  <p className="text-lg font-semibold text-white">{stats.topZona.zoneName}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-400">Receita</p>
+                  <p className="text-lg font-semibold text-green-400">R$ {stats.topZona.revenue.toFixed(2)}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-400">Pedidos</p>
+                  <p className="text-lg font-semibold text-blue-400">{stats.topZona.orderCount}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Tabs para Entregas e Analytics */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-3 bg-gray-800/30">
+            <TabsTrigger 
+              value="deliveries" 
+              className="data-[state=active]:bg-blue-600 flex items-center gap-2"
+            >
+              <Truck className="h-4 w-4" />
+              Entregas
+            </TabsTrigger>
+            <TabsTrigger 
+              value="analytics" 
+              className="data-[state=active]:bg-purple-600 flex items-center gap-2"
+            >
+              <BarChart3 className="h-4 w-4" />
+              Analytics
+            </TabsTrigger>
+            <TabsTrigger 
+              value="map" 
+              className="data-[state=active]:bg-green-600 flex items-center gap-2"
+            >
+              <MapPin className="h-4 w-4" />
+              Mapa
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="deliveries" className="mt-6">
+
+            {/* Lista de Entregas - Cards */}
+            <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm shadow-lg hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300">
           <CardHeader>
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <CardTitle className="text-lg font-bold text-white">Lista de Entregas</CardTitle>
+              
+              {/* Controles de Filtro e Busca */}
               <div className="flex flex-col sm:flex-row gap-3 sm:items-center w-full sm:w-auto">
                 <div className="w-full sm:w-80">
                   <SearchBar21st 
@@ -234,172 +402,119 @@ export const Delivery = () => {
                     disableResizeAnimation={true}
                   />
                 </div>
-                <div className="flex items-center gap-2 text-sm text-white/70">
-                  <span>{dataset.length} de {deliveries.length} entregas</span>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        className="bg-black/40 border-white/30 text-white hover:bg-white/10 hover:border-white/50 transition-all duration-200"
-                      >
-                        Colunas
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-56 bg-gray-900/95 border-white/20 backdrop-blur-xl">
-                      {ALL_COLUMNS.map(col => (
-                        <DropdownMenuCheckboxItem
-                          key={col}
-                          checked={visibleColumns.includes(col)}
-                          onCheckedChange={() => setVisibleColumns(prev => prev.includes(col) ? prev.filter(c => c !== col) : [...prev, col])}
-                          className="text-white hover:bg-white/10 focus:bg-white/10"
-                        >
-                          {col}
-                        </DropdownMenuCheckboxItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
+                
+                {/* Filtro por Status */}
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-full sm:w-40 bg-black/40 border-white/30 text-white">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-900/95 border-white/20 backdrop-blur-xl">
+                    <SelectItem value="all" className="text-white hover:bg-white/10">Todos</SelectItem>
+                    <SelectItem value="pending" className="text-white hover:bg-white/10">Pendente</SelectItem>
+                    <SelectItem value="preparing" className="text-white hover:bg-white/10">Preparando</SelectItem>
+                    <SelectItem value="out_for_delivery" className="text-white hover:bg-white/10">Em Trânsito</SelectItem>
+                    <SelectItem value="delivered" className="text-white hover:bg-white/10">Entregue</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                {/* Ordenação */}
+                <Select value={sortField} onValueChange={(value: any) => setSortField(value)}>
+                  <SelectTrigger className="w-full sm:w-40 bg-black/40 border-white/30 text-white">
+                    <SelectValue placeholder="Ordenar" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-900/95 border-white/20 backdrop-blur-xl">
+                    <SelectItem value="created_at" className="text-white hover:bg-white/10">Data</SelectItem>
+                    <SelectItem value="customer" className="text-white hover:bg-white/10">Cliente</SelectItem>
+                    <SelectItem value="final_amount" className="text-white hover:bg-white/10">Valor</SelectItem>
+                    <SelectItem value="delivery_status" className="text-white hover:bg-white/10">Status</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')}
+                  className="bg-black/40 border-white/30 text-white hover:bg-white/10"
+                >
+                  {sortDirection === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
+                </Button>
               </div>
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="border-b border-white/20">
-                    {visibleColumns.includes('Pedido') && (
-                      <th className="text-left p-3">
-                        <button 
-                          className="inline-flex items-center gap-2 text-white/90 hover:text-white font-medium transition-colors"
-                          onClick={() => handleSort('saleId')}
-                        >
-                          Pedido {icon('saleId')}
-                        </button>
-                      </th>
-                    )}
-                    {visibleColumns.includes('Cliente') && (
-                      <th className="text-left p-3">
-                        <button 
-                          className="inline-flex items-center gap-2 text-white/90 hover:text-white font-medium transition-colors"
-                          onClick={() => handleSort('customer')}
-                        >
-                          Cliente {icon('customer')}
-                        </button>
-                      </th>
-                    )}
-                    {visibleColumns.includes('Endereço') && (
-                      <th className="text-left p-3">
-                        <button 
-                          className="inline-flex items-center gap-2 text-white/90 hover:text-white font-medium transition-colors"
-                          onClick={() => handleSort('address')}
-                        >
-                          Endereço {icon('address')}
-                        </button>
-                      </th>
-                    )}
-                    {visibleColumns.includes('Entregador') && (
-                      <th className="text-left p-3">
-                        <button 
-                          className="inline-flex items-center gap-2 text-white/90 hover:text-white font-medium transition-colors"
-                          onClick={() => handleSort('deliveryPerson')}
-                        >
-                          Entregador {icon('deliveryPerson')}
-                        </button>
-                      </th>
-                    )}
-                    {visibleColumns.includes('Horário') && (
-                      <th className="text-left p-3">
-                        <button 
-                          className="inline-flex items-center gap-2 text-white/90 hover:text-white font-medium transition-colors"
-                          onClick={() => handleSort('estimatedTime')}
-                        >
-                          Horário {icon('estimatedTime')}
-                        </button>
-                      </th>
-                    )}
-                    {visibleColumns.includes('Status') && (
-                      <th className="text-left p-3">
-                        <button 
-                          className="inline-flex items-center gap-2 text-white/90 hover:text-white font-medium transition-colors"
-                          onClick={() => handleSort('status')}
-                        >
-                          Status {icon('status')}
-                        </button>
-                      </th>
-                    )}
-                    {visibleColumns.includes('Ações') && (
-                      <th className="text-left p-3 text-white/90 font-medium">Ações</th>
-                    )}
-                  </tr>
-                </thead>
-                <tbody>
-                  {dataset.map((delivery) => (
-                    <tr 
-                      key={delivery.id} 
-                      className="border-b border-white/10 hover:bg-white/5 transition-colors duration-200"
-                    >
-                      {visibleColumns.includes('Pedido') && (
-                        <td className="p-3 font-medium text-white">#{delivery.saleId}</td>
-                      )}
-                      {visibleColumns.includes('Cliente') && (
-                        <td className="p-3 text-white/90">{delivery.customer}</td>
-                      )}
-                      {visibleColumns.includes('Endereço') && (
-                        <td className="p-3 text-white/90">{delivery.address}</td>
-                      )}
-                      {visibleColumns.includes('Entregador') && (
-                        <td className="p-3 text-white/90">{delivery.deliveryPerson || '-'}</td>
-                      )}
-                      {visibleColumns.includes('Horário') && (
-                        <td className="p-3 text-white/90">{delivery.estimatedTime}</td>
-                      )}
-                      {visibleColumns.includes('Status') && (
-                        <td className="p-3">
-                          <div className="flex items-center space-x-2">
-                            {getStatusIcon(delivery.status)}
-                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(delivery.status)}`}>
-                              {getStatusText(delivery.status)}
-                            </span>
-                          </div>
-                        </td>
-                      )}
-                      {visibleColumns.includes('Ações') && (
-                        <td className="p-3">
-                          {delivery.status === 'pendente' && (
-                            <Button 
-                              size="sm"
-                              onClick={() => updateDeliveryStatus(delivery.id, 'em_transito', 'Carlos')}
-                              className="bg-blue-600 hover:bg-blue-700 text-white transition-colors duration-200"
-                            >
-                              Iniciar Entrega
-                            </Button>
-                          )}
-                          {delivery.status === 'em_transito' && (
-                            <Button 
-                              size="sm"
-                              variant="outline"
-                              onClick={() => updateDeliveryStatus(delivery.id, 'entregue')}
-                              className="border-green-400 text-green-400 hover:bg-green-400/10 transition-colors duration-200"
-                            >
-                              Marcar Entregue
-                            </Button>
-                          )}
-                          {delivery.status === 'entregue' && (
-                            <span className="text-green-400 text-sm font-medium">Concluída</span>
-                          )}
-                        </td>
-                      )}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            
+            {/* Contador de resultados */}
+            <div className="flex items-center gap-2 text-sm text-white/70">
+              <span>{dataset.length} de {deliveries.length} entregas</span>
+              {statusFilter !== 'all' && (
+                <span className="text-blue-400">• Filtrado por status</span>
+              )}
             </div>
+          </CardHeader>
+          
+          <CardContent className="space-y-4">
+            {isLoadingDeliveries ? (
+              // Loading skeleton para cards
+              <div className="space-y-4">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="bg-gray-700/30 rounded-lg p-6 animate-pulse">
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="space-y-2">
+                        <div className="h-5 bg-white/10 rounded w-32"></div>
+                        <div className="h-4 bg-white/10 rounded w-24"></div>
+                      </div>
+                      <div className="h-6 bg-white/10 rounded w-20"></div>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="h-4 bg-white/10 rounded w-full"></div>
+                      <div className="h-4 bg-white/10 rounded w-3/4"></div>
+                      <div className="h-4 bg-white/10 rounded w-1/2"></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : dataset.length === 0 ? (
+              // Estado vazio
+              <div className="py-12 text-center">
+                <div className="flex flex-col items-center gap-4">
+                  <div className="p-3 rounded-full bg-gray-700/30">
+                    <Truck className="h-12 w-12 text-gray-500" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-medium text-white mb-2">
+                      {searchTerm || statusFilter !== 'all' ? 'Nenhuma entrega encontrada' : 'Nenhuma entrega ainda'}
+                    </h3>
+                    <p className="text-gray-400 text-sm">
+                      {searchTerm || statusFilter !== 'all' 
+                        ? 'Tente ajustar os filtros de busca'
+                        : 'As entregas aparecerão aqui quando forem criadas no POS'
+                      }
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              // Grid de cards das entregas
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {dataset.map((delivery) => (
+                  <DeliveryOrderCard
+                    key={delivery.id}
+                    delivery={delivery}
+                    onUpdateStatus={handleUpdateStatus}
+                    isUpdating={updateDeliveryStatus.isPending}
+                  />
+                ))}
+              </div>
+            )}
           </CardContent>
-        </Card>
+            </Card>
+          </TabsContent>
 
-        {/* Mapa de Entregas (Placeholder) */}
-        <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm shadow-lg hover:shadow-2xl hover:shadow-green-500/10 hover:border-green-400/30 transition-all duration-300">
+          <TabsContent value="analytics" className="mt-6">
+            <DeliveryAnalytics />
+          </TabsContent>
+
+          <TabsContent value="map" className="mt-6">
+            {/* Mapa de Entregas (Placeholder) */}
+            <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm shadow-lg hover:shadow-2xl hover:shadow-green-500/10 hover:border-green-400/30 transition-all duration-300">
           <CardHeader>
             <CardTitle className="text-lg font-bold text-white flex items-center gap-2">
               <MapPin className="h-6 w-6 text-green-400" />
@@ -427,7 +542,9 @@ export const Delivery = () => {
               <div className="absolute bottom-6 left-8 w-1.5 h-1.5 bg-yellow-400/60 rounded-full animate-pulse delay-700"></div>
             </div>
           </CardContent>
-        </Card>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </section>
     </div>
   );

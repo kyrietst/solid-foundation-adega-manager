@@ -3,6 +3,8 @@ import { recordCustomerEvent } from "@/features/customers/hooks/use-crm";
 import { supabase } from "@/core/api/supabase/client";
 import { useToast } from "@/shared/hooks/use-toast";
 import { DeliveryAddress } from "@/core/types/sales.types";
+import type { SaleType } from "@/features/sales/components/SalesPage";
+import type { DeliveryData } from "@/features/sales/components/DeliveryOptionsModal";
 
 // Interfaces para dados de query
 interface RawSaleItem {
@@ -80,6 +82,9 @@ type UpsertSaleInput = {
     unit_price: number 
   }[];
   notes?: string;
+  // Novos campos para delivery
+  saleType: SaleType;
+  deliveryData?: DeliveryData;
 };
 
 type PaymentMethod = {
@@ -259,26 +264,43 @@ export const useUpsertSale = () => {
         // Continua com um valor padrão em vez de falhar
       }
 
-      // 4. Cria a venda principal
+      // 4. Prepara dados de delivery
+      const isDeliveryOrder = saleData.saleType === 'delivery';
+      const totalWithDeliveryFee = isDeliveryOrder && saleData.deliveryData 
+        ? saleData.total_amount + saleData.deliveryData.deliveryFee
+        : saleData.total_amount;
+
+      // 5. Cria a venda principal
+      const saleInsertData: any = {
+        customer_id: saleData.customer_id,
+        user_id: user.id,
+        seller_id: user.id,
+        total_amount: saleData.total_amount,
+        discount_amount: 0,
+        final_amount: totalWithDeliveryFee,
+        payment_method: paymentMethod?.name || 'Outro',
+        payment_status: 'paid',
+        status: isDeliveryOrder ? 'pending' : 'completed',
+        delivery: isDeliveryOrder,
+        delivery_address: isDeliveryOrder && saleData.deliveryData ? saleData.deliveryData.address : null,
+        delivery_user_id: null,
+        notes: saleData.notes || null,
+        // Novos campos de delivery
+        delivery_type: saleData.saleType,
+        delivery_fee: isDeliveryOrder && saleData.deliveryData ? saleData.deliveryData.deliveryFee : 0,
+        delivery_status: isDeliveryOrder ? 'pending' : null,
+        delivery_zone_id: isDeliveryOrder && saleData.deliveryData ? saleData.deliveryData.zoneId : null,
+        delivery_instructions: isDeliveryOrder && saleData.deliveryData ? saleData.deliveryData.instructions : null,
+        estimated_delivery_time: isDeliveryOrder && saleData.deliveryData 
+          ? new Date(Date.now() + saleData.deliveryData.estimatedTime * 60 * 1000).toISOString()
+          : null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
       const { data: sale, error: saleError } = await supabase
         .from('sales')
-        .insert({
-          customer_id: saleData.customer_id,
-          user_id: user.id,
-          seller_id: user.id, // Define o vendedor como o usuário logado
-          total_amount: saleData.total_amount,
-          discount_amount: 0, // Valor padrão
-          final_amount: saleData.total_amount, // Inicialmente igual ao total
-          payment_method: paymentMethod?.name || 'Outro',
-          payment_status: 'paid', // Status de pagamento padrão
-          status: 'completed', // Status da venda
-          delivery: false, // Entrega desativada por padrão
-          delivery_address: null, // Sem endereço de entrega
-          delivery_user_id: null, // Sem usuário de entrega
-          notes: saleData.notes || null,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
+        .insert(saleInsertData)
         .select('*')
         .single();
 
@@ -375,15 +397,32 @@ export const useUpsertSale = () => {
         // Não falha a venda por causa de um erro de auditoria
       }
 
-      // 10. Atualiza histórico do cliente e insights (opcional)
+      // 10. Registra tracking inicial para delivery
+      if (isDeliveryOrder) {
+        try {
+          await supabase
+            .from('delivery_tracking')
+            .insert({
+              sale_id: sale.id,
+              status: 'pending',
+              notes: 'Pedido criado - aguardando preparação',
+              created_by: user.id
+            });
+          console.log('Tracking de delivery criado com sucesso');
+        } catch (trackingError) {
+          console.warn('Erro ao criar tracking de delivery (não crítico):', trackingError);
+        }
+      }
+
+      // 11. Atualiza histórico do cliente e insights (opcional)
       if (saleData.customer_id) {
         try {
           await recordCustomerEvent({
             customer_id: saleData.customer_id,
             type: 'sale',
             origin_id: sale.id,
-            value: saleData.total_amount,
-            description: 'Venda registrada'
+            value: totalWithDeliveryFee,
+            description: isDeliveryOrder ? 'Venda delivery registrada' : 'Venda registrada'
           });
           console.log('Evento do cliente registrado com sucesso');
         } catch (customerEventError: any) {

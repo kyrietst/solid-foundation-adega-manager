@@ -22,6 +22,7 @@ import { SalesChartSection } from './SalesChartSection';
 import { useSalesKpis, useCustomerKpis, useInventoryKpis } from '../hooks/useDashboardKpis';
 import { SalesInsightsTabs } from './SalesInsightsTabs';
 import { DashboardHeader } from './DashboardHeader';
+import { DeliveryVsInstoreComparison } from './DeliveryVsInstoreComparison';
 import { DollarSign, ShoppingCart, TrendingUp, Users, AlertTriangle } from 'lucide-react';
 
 export interface DashboardPresentationProps {
@@ -59,11 +60,15 @@ export const DashboardPresentation: React.FC<DashboardPresentationProps> = ({
 
       <div className="flex-1 px-4 pb-4 lg:px-8 lg:pb-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* KPIs no topo, largura total */}
+          {/* Canais de Venda no topo */}
+          <div className="lg:col-span-12">
+            <DeliveryVsInstoreComparison />
+          </div>
+
+          {/* KPIs após canais de venda */}
           <div className="lg:col-span-12">
             <KpiSection />
           </div>
-
 
           {/* Linha: Tendência de Vendas (8) + Alertas (4) como antes */}
           <div className="lg:col-span-8">

@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/primitives
 import { Button } from '@/shared/ui/primitives/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/primitives/tabs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/shared/ui/primitives/dropdown-menu';
-import { CalendarIcon, FileSpreadsheet, BarChart3, Users, Package, DollarSign, ChevronDown, Calendar } from 'lucide-react';
+import { CalendarIcon, FileSpreadsheet, BarChart3, Users, Package, DollarSign, ChevronDown, Calendar, Truck } from 'lucide-react';
 import { BlurIn } from '@/components/ui/blur-in';
 import { supabase } from '@/core/api/supabase/client';
 import { SalesReportsSection } from './SalesReportsSection';
@@ -17,6 +17,7 @@ import { InventoryReportsSection } from './InventoryReportsSection';
 import { CrmReportsSection } from './CrmReportsSection';
 import { FinancialReportsSection } from './FinancialReportsSection';
 import { ExpiryReportsSection } from './ExpiryReportsSection';
+import { DeliveryVsPresencialReport } from './DeliveryVsPresencialReport';
 
 export const AdvancedReports: React.FC = () => {
   const location = useLocation();
@@ -31,7 +32,7 @@ export const AdvancedReports: React.FC = () => {
     const urlSection = searchParams.get('section');
 
     // Define a aba baseada no parâmetro 'tab'
-    if (urlTab && ['sales', 'inventory', 'crm', 'financial', 'expiry'].includes(urlTab)) {
+    if (urlTab && ['sales', 'inventory', 'crm', 'financial', 'expiry', 'delivery'].includes(urlTab)) {
       setActiveTab(urlTab);
     }
 
@@ -297,6 +298,13 @@ export const AdvancedReports: React.FC = () => {
               Vendas & Performance
             </TabsTrigger>
             <TabsTrigger 
+              value="delivery"
+              className="data-[state=active]:bg-orange-500/20 data-[state=active]:text-orange-300 data-[state=active]:border data-[state=active]:border-orange-400/30 transition-all duration-300"
+            >
+              <Truck className="h-4 w-4 mr-2" />
+              Delivery vs Presencial
+            </TabsTrigger>
+            <TabsTrigger 
               value="inventory"
               className="data-[state=active]:bg-green-500/20 data-[state=active]:text-green-300 data-[state=active]:border data-[state=active]:border-green-400/30 transition-all duration-300"
             >
@@ -328,6 +336,10 @@ export const AdvancedReports: React.FC = () => {
 
           <TabsContent value="sales" className="space-y-6 mt-6">
             <SalesReportsSection period={globalPeriod} />
+          </TabsContent>
+
+          <TabsContent value="delivery" className="space-y-6 mt-6">
+            <DeliveryVsPresencialReport />
           </TabsContent>
 
           <TabsContent value="inventory" className="space-y-6 mt-6">

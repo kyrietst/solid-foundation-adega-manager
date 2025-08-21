@@ -5,13 +5,15 @@ import { ProductsGrid } from "./ProductsGrid";
 import { Cart } from "./Cart";
 import { RecentSales } from "./RecentSales";
 import { useState } from "react";
-import { ShoppingCart } from "lucide-react";
+import { ShoppingCart, Store, Truck, Package } from "lucide-react";
 import { useCart, useCartItemCount } from "@/features/sales/hooks/use-cart";
 import { cn } from '@/core/config/utils';
 import { getGlassCardClasses } from '@/core/config/theme-utils';
 import { text, shadows } from "@/core/config/theme";
 import { GradientText } from "@/components/ui/gradient-text";
 import { BlurIn } from "@/components/ui/blur-in";
+
+export type SaleType = 'presencial' | 'delivery' | 'pickup';
 
 interface SalesPageProps {
   variant?: 'default' | 'premium' | 'subtle' | 'strong' | 'yellow';
@@ -24,6 +26,7 @@ function SalesPage({
 }: SalesPageProps = {}) {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('new-sale');
+  const [saleType, setSaleType] = useState<SaleType>('presencial');
   const { items } = useCart();
   const totalQuantity = useCartItemCount();
   
@@ -80,7 +83,7 @@ function SalesPage({
                       </SheetTitle>
                     </SheetHeader>
                     <div className="h-full">
-                      <Cart variant={variant} glassEffect={glassEffect} />
+                      <Cart variant={variant} glassEffect={glassEffect} saleType={saleType} />
                     </div>
                   </SheetContent>
                 </Sheet>
@@ -111,6 +114,50 @@ function SalesPage({
               )}
             >
               VENDAS RECENTES
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Seletor de Tipo de Venda */}
+      <div className="flex-shrink-0 mb-4">
+        <div className="flex justify-center">
+          <div className="inline-flex items-center bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl p-1 shadow-lg">
+            <button
+              onClick={() => setSaleType('presencial')}
+              className={cn(
+                "inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+                saleType === 'presencial'
+                  ? "bg-blue-500/20 text-blue-300 border border-blue-400/30 shadow-lg shadow-blue-500/20"
+                  : "text-gray-400 hover:text-white hover:bg-white/5"
+              )}
+            >
+              <Store className="h-4 w-4" />
+              Presencial
+            </button>
+            <button
+              onClick={() => setSaleType('delivery')}
+              className={cn(
+                "inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+                saleType === 'delivery'
+                  ? "bg-green-500/20 text-green-300 border border-green-400/30 shadow-lg shadow-green-500/20"
+                  : "text-gray-400 hover:text-white hover:bg-white/5"
+              )}
+            >
+              <Truck className="h-4 w-4" />
+              Delivery
+            </button>
+            <button
+              onClick={() => setSaleType('pickup')}
+              className={cn(
+                "inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+                saleType === 'pickup'
+                  ? "bg-purple-500/20 text-purple-300 border border-purple-400/30 shadow-lg shadow-purple-500/20"
+                  : "text-gray-400 hover:text-white hover:bg-white/5"
+              )}
+            >
+              <Package className="h-4 w-4" />
+              Retirada
             </button>
           </div>
         </div>
@@ -149,7 +196,7 @@ function SalesPage({
               
               {/* Cart - altura total */}
               <div className="border-l border-white/20 pl-4 flex flex-col min-h-0">
-                <Cart variant={variant} glassEffect={glassEffect} />
+                <Cart variant={variant} glassEffect={glassEffect} saleType={saleType} />
               </div>
             </div>
             
