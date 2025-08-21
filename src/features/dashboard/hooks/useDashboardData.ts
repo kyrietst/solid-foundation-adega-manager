@@ -37,14 +37,14 @@ export interface RecentActivity {
   icon: string;
 }
 
-export const useDashboardData = () => {
+export const useDashboardData = (periodDays: number = 30) => {
   const errorHandler = useDashboardErrorHandling({
     showToastOnError: true,
     retryAttempts: 2,
     retryDelay: 1000
   });
 
-  // Query para contadores públicos com dados mockados para teste
+  // Query para contadores públicos com dados reais
   const { data: counts, isLoading: isLoadingCounts, error: countsError, refetch: refetchCounts } = useQuery({
     queryKey: ['dashboard', 'counts'],
     queryFn: errorHandler.withErrorHandling('counts', async (): Promise<DashboardCounts> => {
@@ -72,20 +72,63 @@ export const useDashboardData = () => {
     retry: false, // Error handler já faz retry
   });
 
-  // Query para dados financeiros com dados mockados para teste
+  // Query para dados financeiros REAIS baseados nas vendas
   const { data: financials, isLoading: isLoadingFinancials, error: financialsError, refetch: refetchFinancials } = useQuery({
-    queryKey: ['dashboard', 'financials'],
+    queryKey: ['dashboard', 'financials', periodDays],
     queryFn: errorHandler.withErrorHandling('sales', async (): Promise<DashboardFinancials> => {
-      // MOCK DATA para teste - substituir por dados reais depois
-      console.log('💰 Dashboard - Usando dados financeiros mockados para teste');
+      console.log(`💰 Dashboard - Calculando métricas financeiras reais para ${periodDays} dias`);
       
-      // Simular delay de rede
-      await new Promise(resolve => setTimeout(resolve, 600));
+      // Calcular data de início baseada no período
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setDate(endDate.getDate() - periodDays);
       
-      const totalRevenue = 45780.50;
-      const operationalCosts = totalRevenue * 0.38; // 38% dos custos
-      const netProfit = totalRevenue - operationalCosts;
-      const profitMargin = (netProfit / totalRevenue) * 100;
+      // Buscar vendas completadas no período especificado
+      const { data: sales, error: salesError } = await supabase
+        .from('sales')
+        .select('final_amount, created_at')
+        .eq('status', 'completed')
+        .gte('created_at', startDate.toISOString())
+        .lte('created_at', endDate.toISOString())
+        .not('final_amount', 'is', null);
+
+      if (salesError) {
+        console.error('❌ Erro ao buscar vendas:', salesError);
+        throw salesError;
+      }
+
+      // Buscar dados de produtos para calcular custos
+      const { data: products, error: productsError } = await supabase
+        .from('products')
+        .select('cost_price, price, stock_quantity');
+
+      if (productsError) {
+        console.error('❌ Erro ao buscar produtos:', productsError);
+        throw productsError;
+      }
+
+      // Calcular receita total real
+      const totalRevenue = (sales || []).reduce((sum, sale) => {
+        return sum + (Number(sale.final_amount) || 0);
+      }, 0);
+
+      // Calcular custos operacionais estimados baseados nos produtos
+      const totalProductValue = (products || []).reduce((sum, product) => {
+        const costPrice = Number(product.cost_price) || 0;
+        const stockQty = Number(product.stock_quantity) || 0;
+        return sum + (costPrice * stockQty);
+      }, 0);
+
+      // Estimar custos operacionais (30% da receita + valor do estoque)
+      const operationalCosts = (totalRevenue * 0.30) + totalProductValue;
+      
+      // Calcular lucro líquido
+      const netProfit = Math.max(0, totalRevenue - operationalCosts);
+      
+      // Calcular margem de lucro
+      const profitMargin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
+
+      console.log(`📊 Métricas calculadas - Receita: R$ ${totalRevenue.toFixed(2)}, Lucro: R$ ${netProfit.toFixed(2)}, Margem: ${profitMargin.toFixed(1)}%`);
 
       return {
         totalRevenue,
@@ -94,39 +137,77 @@ export const useDashboardData = () => {
         operationalCosts,
       };
     }, 'dados financeiros'),
-    staleTime: 10 * 60 * 1000, // 10 minutos
+    staleTime: 5 * 60 * 1000, // 5 minutos para dados mais atualizados
     retry: false, // Error handler já faz retry
   });
 
-  // Query para dados de vendas por mês com dados mockados para teste
+  // Query para dados de vendas por mês REAIS
   const { data: salesData, isLoading: isLoadingSales } = useQuery({
-    queryKey: ['dashboard', 'sales-data'],
+    queryKey: ['dashboard', 'sales-data', periodDays],
     queryFn: async (): Promise<SalesDataPoint[]> => {
-      // MOCK DATA para teste - substituir por dados reais depois
-      console.log('📊 Dashboard - Usando dados de vendas mockados para teste');
+      console.log(`📊 Dashboard - Calculando vendas por período de ${periodDays} dias`);
       
-      // Simular delay de rede
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Buscar vendas no período especificado
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setDate(endDate.getDate() - periodDays);
       
+      const { data: sales, error } = await supabase
+        .from('sales')
+        .select('final_amount, created_at')
+        .eq('status', 'completed')
+        .gte('created_at', startDate.toISOString())
+        .lte('created_at', endDate.toISOString())
+        .not('final_amount', 'is', null);
+
+      if (error) {
+        console.error('❌ Erro ao buscar vendas mensais:', error);
+        throw error;
+      }
+
+      // Agrupar vendas por mês
+      const monthlyData = new Map<string, number>();
       const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
       
-      // Dados de vendas simulados com tendência crescente
-      const salesValues = [
-        12450.30, 15600.80, 18200.50, 22100.75, 19800.40,
-        24300.90, 27650.25, 31200.60, 28900.15, 26700.85,
-        29400.70, 33150.45
-      ];
+      // Inicializar todos os meses com 0
+      for (let i = 0; i < 12; i++) {
+        const date = new Date();
+        date.setMonth(date.getMonth() - (11 - i));
+        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        monthlyData.set(monthKey, 0);
+      }
 
-      return months.map((month, index) => ({
-        month,
-        vendas: salesValues[index],
-        formatted: new Intl.NumberFormat('pt-BR', {
-          style: 'currency',
-          currency: 'BRL'
-        }).format(salesValues[index])
-      }));
+      // Somar vendas por mês
+      (sales || []).forEach(sale => {
+        const saleDate = new Date(sale.created_at);
+        const monthKey = `${saleDate.getFullYear()}-${String(saleDate.getMonth() + 1).padStart(2, '0')}`;
+        const currentValue = monthlyData.get(monthKey) || 0;
+        monthlyData.set(monthKey, currentValue + (Number(sale.final_amount) || 0));
+      });
+
+      // Converter para formato esperado
+      const result: SalesDataPoint[] = [];
+      const sortedEntries = Array.from(monthlyData.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+      
+      sortedEntries.forEach(([monthKey, value]) => {
+        const [year, month] = monthKey.split('-');
+        const monthIndex = parseInt(month) - 1;
+        const monthName = months[monthIndex];
+        
+        result.push({
+          month: monthName,
+          vendas: value,
+          formatted: new Intl.NumberFormat('pt-BR', {
+            style: 'currency',
+            currency: 'BRL'
+          }).format(value)
+        });
+      });
+
+      console.log(`📊 Vendas mensais calculadas: ${result.length} meses`);
+      return result;
     },
-    staleTime: 15 * 60 * 1000, // 15 minutos
+    staleTime: 10 * 60 * 1000, // 10 minutos
   });
 
   // Query para atividades recentes - Vendas, Clientes e Produtos

@@ -15,6 +15,8 @@ import { StandardReportsTable, TableColumn } from './StandardReportsTable';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { useDashboardMetrics } from '@/features/dashboard/hooks/useDashboardMetrics';
 import { useDashboardData } from '@/features/dashboard/hooks/useDashboardData';
+import { usePermissions } from '@/shared/hooks/auth/usePermissions';
+import { SensitiveData } from '@/shared/ui/composite';
 
 interface FinancialMetrics {
   current_amount: number;
@@ -33,6 +35,7 @@ export const FinancialReportsSection: React.FC<FinancialReportsSectionProps> = (
   const location = useLocation();
   const [activeFilter, setActiveFilter] = useState<string>('all');
   const windowDays = period;
+  const { canViewFinancialData } = usePermissions();
 
   // Lê filtros da URL para navegação de alertas
   useEffect(() => {
@@ -44,8 +47,8 @@ export const FinancialReportsSection: React.FC<FinancialReportsSectionProps> = (
     }
   }, [location.search]);
 
-  // Dashboard financial metrics (restaurado)
-  const { financials, isLoadingFinancials } = useDashboardData();
+  // Dashboard financial metrics (restaurado) - agora com período dinâmico
+  const { financials, isLoadingFinancials } = useDashboardData(windowDays);
   const { sensitiveMetrics } = useDashboardMetrics(undefined, financials);
 
   // Financial Metrics Query (restaurado)
@@ -279,6 +282,15 @@ export const FinancialReportsSection: React.FC<FinancialReportsSectionProps> = (
                         (financialMetrics?.d90_plus || 0);
 
   const overduePercentage = totalReceivable > 0 ? (overdueAmount / totalReceivable) * 100 : 0;
+
+  // Verificar permissões financeiras
+  if (!canViewFinancialData) {
+    return (
+      <SensitiveData type="financial">
+        <div></div>
+      </SensitiveData>
+    );
+  }
 
   return (
     <div className="space-y-6">

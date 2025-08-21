@@ -10,3 +10,4 @@ export { OptimizedImage, ProductImage, CustomerAvatar } from './optimized-image'
 export { MaintenancePlaceholder } from './maintenance-placeholder';
 export { GlowingEffect } from './glowing-effect';
 export { SimpleGlow } from './simple-glow';
+export { SensitiveData, useSensitiveValue } from './sensitive-data';

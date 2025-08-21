@@ -27,26 +27,60 @@ export function useSalesKpis(windowDays: number = 30) {
   return useQuery({
     queryKey: ['kpis-sales', windowDays],
     queryFn: async (): Promise<SalesKpis> => {
-      // MOCK DATA para teste - substituir por dados reais depois
-      console.log('📊 Sales KPIs - Usando dados mockados para teste');
+      console.log(`📊 Sales KPIs - Calculando dados reais para ${windowDays} dias`);
       
-      // Simular delay de rede
-      await new Promise(resolve => setTimeout(resolve, 400));
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setDate(endDate.getDate() - windowDays);
       
-      // Dados simulados de vendas
-      const revenue = 28450.75;
-      const orders = 47;
-      const avgTicket = revenue / orders;
+      // Período anterior para comparação
+      const prevStartDate = new Date();
+      prevStartDate.setDate(startDate.getDate() - windowDays);
       
-      // Dados do período anterior (simulando crescimento)
-      const revenuePrev = 24300.50;
-      const ordersPrev = 39;
-      const avgTicketPrev = revenuePrev / ordersPrev;
-      
+      // Buscar vendas do período atual
+      const { data: currentSales, error: currentError } = await supabase
+        .from('sales')
+        .select('final_amount')
+        .eq('status', 'completed')
+        .gte('created_at', startDate.toISOString())
+        .lte('created_at', endDate.toISOString())
+        .not('final_amount', 'is', null);
+
+      if (currentError) {
+        console.error('❌ Erro ao buscar vendas atuais:', currentError);
+        throw currentError;
+      }
+
+      // Buscar vendas do período anterior
+      const { data: prevSales, error: prevError } = await supabase
+        .from('sales')
+        .select('final_amount')
+        .eq('status', 'completed')
+        .gte('created_at', prevStartDate.toISOString())
+        .lt('created_at', startDate.toISOString())
+        .not('final_amount', 'is', null);
+
+      if (prevError) {
+        console.error('❌ Erro ao buscar vendas anteriores:', prevError);
+        // Não falhar se não houver dados anteriores
+      }
+
+      // Calcular KPIs atuais
+      const revenue = (currentSales || []).reduce((sum, sale) => sum + (Number(sale.final_amount) || 0), 0);
+      const orders = (currentSales || []).length;
+      const avgTicket = orders > 0 ? revenue / orders : 0;
+
+      // Calcular KPIs anteriores
+      const revenuePrev = (prevSales || []).reduce((sum, sale) => sum + (Number(sale.final_amount) || 0), 0);
+      const ordersPrev = (prevSales || []).length;
+      const avgTicketPrev = ordersPrev > 0 ? revenuePrev / ordersPrev : 0;
+
       // Calcular deltas
-      const revenueDelta = ((revenue - revenuePrev) / revenuePrev) * 100;
-      const ordersDelta = ((orders - ordersPrev) / ordersPrev) * 100;
-      const avgTicketDelta = ((avgTicket - avgTicketPrev) / avgTicketPrev) * 100;
+      const revenueDelta = revenuePrev > 0 ? ((revenue - revenuePrev) / revenuePrev) * 100 : 0;
+      const ordersDelta = ordersPrev > 0 ? ((orders - ordersPrev) / ordersPrev) * 100 : 0;
+      const avgTicketDelta = avgTicketPrev > 0 ? ((avgTicket - avgTicketPrev) / avgTicketPrev) * 100 : 0;
+
+      console.log(`📊 Sales KPIs calculados - Receita: R$ ${revenue.toFixed(2)}, Pedidos: ${orders}, Ticket Médio: R$ ${avgTicket.toFixed(2)}`);
 
       return { 
         revenue, 
@@ -67,16 +101,58 @@ export function useCustomerKpis(windowDays: number = 30) {
   return useQuery({
     queryKey: ['kpis-customers', windowDays],
     queryFn: async (): Promise<CustomerKpis> => {
-      // MOCK DATA para teste - substituir por dados reais depois
-      console.log('👥 Customer KPIs - Usando dados mockados para teste');
+      console.log(`👥 Customer KPIs - Calculando dados reais para ${windowDays} dias`);
       
-      // Simular delay de rede
-      await new Promise(resolve => setTimeout(resolve, 300));
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setDate(endDate.getDate() - windowDays);
       
+      // Buscar total de clientes
+      const { data: allCustomers, error: totalError } = await supabase
+        .from('customers')
+        .select('id', { count: 'exact', head: true });
+
+      if (totalError) {
+        console.error('❌ Erro ao buscar total de clientes:', totalError);
+        throw totalError;
+      }
+
+      // Buscar novos clientes no período
+      const { data: newCustomersData, error: newError } = await supabase
+        .from('customers')
+        .select('id', { count: 'exact', head: true })
+        .gte('created_at', startDate.toISOString())
+        .lte('created_at', endDate.toISOString());
+
+      if (newError) {
+        console.error('❌ Erro ao buscar novos clientes:', newError);
+        throw newError;
+      }
+
+      // Buscar clientes ativos (que fizeram compras no período)
+      const { data: activeCustomersData, error: activeError } = await supabase
+        .from('sales')
+        .select('customer_id', { count: 'exact', head: true })
+        .eq('status', 'completed')
+        .gte('created_at', startDate.toISOString())
+        .lte('created_at', endDate.toISOString())
+        .not('customer_id', 'is', null);
+
+      if (activeError) {
+        console.error('❌ Erro ao buscar clientes ativos:', activeError);
+        // Não falhar se não conseguir buscar clientes ativos
+      }
+
+      const totalCustomers = allCustomers?.count || 0;
+      const newCustomers = newCustomersData?.count || 0;
+      const activeCustomers = activeCustomersData?.count || 0;
+
+      console.log(`👥 Customer KPIs calculados - Total: ${totalCustomers}, Novos: ${newCustomers}, Ativos: ${activeCustomers}`);
+
       return {
-        totalCustomers: 247,
-        newCustomers: 18,
-        activeCustomers: 89
+        totalCustomers,
+        newCustomers,
+        activeCustomers
       };
     },
     staleTime: 5 * 60 * 1000,
@@ -88,16 +164,40 @@ export function useInventoryKpis() {
   return useQuery({
     queryKey: ['kpis-inventory'],
     queryFn: async (): Promise<InventoryKpis> => {
-      // MOCK DATA para teste - substituir por dados reais depois
-      console.log('📦 Inventory KPIs - Usando dados mockados para teste');
+      console.log('📦 Inventory KPIs - Calculando dados reais do estoque');
       
-      // Simular delay de rede
-      await new Promise(resolve => setTimeout(resolve, 250));
+      // Buscar produtos
+      const { data: products, error: productsError } = await supabase
+        .from('products')
+        .select('stock_quantity, price, min_stock');
+
+      if (productsError) {
+        console.error('❌ Erro ao buscar produtos:', productsError);
+        throw productsError;
+      }
+
+      const totalProducts = (products || []).length;
       
+      // Calcular valor total do estoque
+      const totalValue = (products || []).reduce((sum, product) => {
+        const stock = Number(product.stock_quantity) || 0;
+        const price = Number(product.price) || 0;
+        return sum + (stock * price);
+      }, 0);
+
+      // Contar produtos com estoque baixo
+      const lowStockCount = (products || []).filter(product => {
+        const currentStock = Number(product.stock_quantity) || 0;
+        const minStock = Number(product.min_stock) || 0;
+        return currentStock <= minStock && minStock > 0;
+      }).length;
+
+      console.log(`📦 Inventory KPIs calculados - Produtos: ${totalProducts}, Valor: R$ ${totalValue.toFixed(2)}, Estoque Baixo: ${lowStockCount}`);
+
       return {
-        totalProducts: 156,
-        totalValue: 87450.30,
-        lowStockCount: 7 // Alguns produtos com estoque baixo para mostrar alerta
+        totalProducts,
+        totalValue,
+        lowStockCount
       };
     },
     staleTime: 5 * 60 * 1000,
@@ -109,24 +209,39 @@ export function useLowStockProducts(limit: number = 10) {
   return useQuery({
     queryKey: ['low-stock-products', limit],
     queryFn: async () => {
-      // MOCK DATA para teste - substituir por dados reais depois
-      console.log('⚠️ Low Stock Products - Usando dados mockados para teste');
+      console.log(`⚠️ Low Stock Products - Buscando ${limit} produtos com estoque baixo`);
       
-      // Simular delay de rede
-      await new Promise(resolve => setTimeout(resolve, 200));
-      
-      // Produtos com estoque baixo simulados
-      const mockLowStockProducts = [
-        { id: 1, name: 'Vinho Tinto Reserva 2019', current_stock: 2, min_stock: 10, price: 89.90 },
-        { id: 2, name: 'Champagne Brut Premium', current_stock: 1, min_stock: 5, price: 159.90 },
-        { id: 3, name: 'Whisky Single Malt 18 Anos', current_stock: 3, min_stock: 8, price: 299.90 },
-        { id: 4, name: 'Vodka Premium Import', current_stock: 4, min_stock: 12, price: 79.90 },
-        { id: 5, name: 'Gin Artesanal 750ml', current_stock: 1, min_stock: 6, price: 119.90 },
-        { id: 6, name: 'Cerveja Artesanal IPA', current_stock: 5, min_stock: 20, price: 12.90 },
-        { id: 7, name: 'Rum Envelhecido 12 Anos', current_stock: 2, min_stock: 8, price: 189.90 }
-      ];
-      
-      return mockLowStockProducts.slice(0, limit);
+      // Buscar produtos com estoque baixo
+      const { data: products, error } = await supabase
+        .from('products')
+        .select('id, name, stock_quantity, min_stock, price')
+        .gt('min_stock', 0)
+        .order('stock_quantity', { ascending: true });
+
+      if (error) {
+        console.error('❌ Erro ao buscar produtos com estoque baixo:', error);
+        throw error;
+      }
+
+      // Filtrar produtos onde estoque atual <= estoque mínimo
+      const lowStockProducts = (products || [])
+        .filter(product => {
+          const currentStock = Number(product.stock_quantity) || 0;
+          const minStock = Number(product.min_stock) || 0;
+          return currentStock <= minStock;
+        })
+        .map(product => ({
+          id: product.id,
+          name: product.name,
+          current_stock: Number(product.stock_quantity) || 0,
+          min_stock: Number(product.min_stock) || 0,
+          price: Number(product.price) || 0
+        }))
+        .slice(0, limit);
+
+      console.log(`⚠️ Encontrados ${lowStockProducts.length} produtos com estoque baixo`);
+
+      return lowStockProducts;
     },
     staleTime: 5 * 60 * 1000,
     refetchInterval: 5 * 60 * 1000,

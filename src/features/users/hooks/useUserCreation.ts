@@ -51,7 +51,7 @@ export const useUserCreation = (): UserCreationOperations => {
           .insert({
             id: authData.user.id,
             email: authData.user.email,
-            name: userData.name,
+            full_name: userData.name,
             role: userData.role
           });
 
@@ -124,6 +124,22 @@ export const useUserCreation = (): UserCreationOperations => {
       }
 
       if (authData.user) {
+        // Insert into users table
+        const { error: userError } = await supabase
+          .from('users')
+          .insert({
+            id: authData.user.id,
+            email: authData.user.email,
+            full_name: 'Administrador Supremo',
+            role: 'admin'
+          });
+
+        if (userError) {
+          console.error('Error creating admin user:', userError);
+          throw new Error('Database error saving new user');
+        }
+
+        // Insert into profiles table
         const { error: profileError } = await supabase
           .from('profiles')
           .insert({

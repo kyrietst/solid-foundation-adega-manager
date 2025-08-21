@@ -25,52 +25,75 @@ export function TopProductsCard({ className, period = 30, limit = 5, useCurrentM
   const { data: topProducts, isLoading, error } = useQuery({
     queryKey: ['top-products', period, limit, useCurrentMonth],
     queryFn: async (): Promise<TopProduct[]> => {
-      // MOCK DATA para teste - substituir por dados reais depois
-      console.log('🏆 Top Products - Usando dados mockados para teste');
+      console.log(`🏆 Top Products - Calculando top ${limit} produtos reais para ${useCurrentMonth ? 'mês atual' : period + ' dias'}`);
       
-      // Simular delay de rede
-      await new Promise(resolve => setTimeout(resolve, 500));
+      let startDate: Date;
+      const endDate = new Date();
       
-      // Produtos top simulados com dados realistas
-      const mockTopProducts: TopProduct[] = [
-        {
-          product_id: '1',
-          name: 'Vinho Tinto Reserva Especial 2019',
-          category: 'Vinhos Tintos',
-          qty: 35,
-          revenue: 4287.50
-        },
-        {
-          product_id: '2',
-          name: 'Champagne Brut Premium Importado',
-          category: 'Espumantes',
-          qty: 18,
-          revenue: 3420.00
-        },
-        {
-          product_id: '3',
-          name: 'Whisky Single Malt 18 Anos',
-          category: 'Destilados',
-          qty: 12,
-          revenue: 3150.80
-        },
-        {
-          product_id: '4',
-          name: 'Vinho Branco Sauvignon Blanc',
-          category: 'Vinhos Brancos',
-          qty: 28,
-          revenue: 2890.40
-        },
-        {
-          product_id: '5',
-          name: 'Gin Artesanal Premium 750ml',
-          category: 'Destilados',
-          qty: 22,
-          revenue: 2640.75
+      if (useCurrentMonth) {
+        // Primeiro dia do mês atual
+        startDate = new Date(endDate.getFullYear(), endDate.getMonth(), 1);
+      } else {
+        // Últimos N dias
+        startDate = new Date();
+        startDate.setDate(endDate.getDate() - period);
+      }
+
+      // Buscar top produtos baseado nas vendas
+      const { data: salesData, error: salesError } = await supabase
+        .from('sale_items')
+        .select(`
+          product_id,
+          quantity,
+          price,
+          products!inner(name, category)
+        `)
+        .gte('created_at', startDate.toISOString())
+        .lte('created_at', endDate.toISOString());
+
+      if (salesError) {
+        console.error('❌ Erro ao buscar vendas para top produtos:', salesError);
+        throw salesError;
+      }
+
+      // Agrupar por produto e calcular totais
+      const productMap = new Map<string, {
+        product_id: string;
+        name: string;
+        category: string;
+        qty: number;
+        revenue: number;
+      }>();
+
+      (salesData || []).forEach(item => {
+        const productId = item.product_id;
+        const quantity = Number(item.quantity) || 0;
+        const price = Number(item.price) || 0;
+        const revenue = quantity * price;
+
+        if (productMap.has(productId)) {
+          const existing = productMap.get(productId)!;
+          existing.qty += quantity;
+          existing.revenue += revenue;
+        } else {
+          productMap.set(productId, {
+            product_id: productId,
+            name: (item.products as any)?.name || 'Produto sem nome',
+            category: (item.products as any)?.category || 'Sem categoria',
+            qty: quantity,
+            revenue: revenue
+          });
         }
-      ];
-      
-      return mockTopProducts.slice(0, limit);
+      });
+
+      // Converter para array e ordenar por receita
+      const topProducts = Array.from(productMap.values())
+        .sort((a, b) => b.revenue - a.revenue)
+        .slice(0, limit);
+
+      console.log(`🏆 Top ${topProducts.length} produtos calculados - Total receita: R$ ${topProducts.reduce((sum, p) => sum + p.revenue, 0).toFixed(2)}`);
+
+      return topProducts;
     },
     staleTime: 5 * 60 * 1000,
     refetchInterval: 5 * 60 * 1000,

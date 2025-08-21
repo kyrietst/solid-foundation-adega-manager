@@ -50,6 +50,12 @@ export interface UserPermissions {
   canAccessAdmin: boolean;
   canViewFinancialData: boolean;
   canManageSystem: boolean;
+  
+  // Permissões específicas de dados sensíveis
+  canViewCostPrices: boolean;
+  canViewProfitMargins: boolean;
+  canAccessFullReports: boolean;
+  canManageRoles: boolean;
 }
 
 export const usePermissions = (): UserPermissions => {
@@ -67,9 +73,9 @@ export const usePermissions = (): UserPermissions => {
       
       // Permissões de produtos/inventário
       canViewProducts: hasPermission(['admin', 'employee']),
-      canCreateProducts: isAdmin,
-      canEditProducts: isAdmin,
-      canDeleteProducts: isAdmin,
+      canCreateProducts: hasPermission(['admin', 'employee']), // Funcionários podem criar produtos
+      canEditProducts: hasPermission(['admin', 'employee']), // Funcionários podem editar produtos  
+      canDeleteProducts: isAdmin, // Apenas admin pode deletar
       canManageInventory: hasPermission(['admin', 'employee']),
       
       // Permissões de clientes/CRM
@@ -104,6 +110,12 @@ export const usePermissions = (): UserPermissions => {
       canAccessAdmin: isAdmin,
       canViewFinancialData: isAdmin,
       canManageSystem: isAdmin,
+      
+      // Permissões específicas de dados sensíveis
+      canViewCostPrices: isAdmin, // Apenas admin vê preços de custo
+      canViewProfitMargins: isAdmin, // Apenas admin vê margens de lucro
+      canAccessFullReports: isAdmin, // Apenas admin acessa relatórios completos
+      canManageRoles: isAdmin, // Apenas admin gerencia roles
     };
   }, [userRole, hasPermission]);
 };

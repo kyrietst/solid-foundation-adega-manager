@@ -38,33 +38,62 @@ export function SalesChartSection({ className, contentHeight = 360, cardHeight }
   const { data: salesData, isLoading, error } = useQuery({
     queryKey: ['sales-trends', selectedPeriod],
     queryFn: async (): Promise<SalesChartData[]> => {
-      // MOCK DATA para teste - substituir por dados reais depois
-      console.log('📈 Sales Trends Chart - Usando dados mockados para teste');
+      console.log(`📈 Sales Trends Chart - Calculando dados reais para ${selectedPeriod} dias`);
       
-      // Simular delay de rede
-      await new Promise(resolve => setTimeout(resolve, 600));
-      
-      // Gerar dados mockados baseados no período selecionado
       const endDate = new Date();
-      const mockData: SalesChartData[] = [];
-      
-      for (let i = selectedPeriod - 1; i >= 0; i--) {
-        const date = new Date();
-        date.setDate(endDate.getDate() - i);
-        
-        // Gerar valores aleatórios mas realistas
-        const baseRevenue = 800 + Math.random() * 1200; // Entre R$ 800 e R$ 2000
-        const orders = Math.floor(2 + Math.random() * 8); // Entre 2 e 10 vendas por dia
-        
-        mockData.push({
-          period: date.toISOString().split('T')[0],
-          period_label: date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
-          revenue: Math.round(baseRevenue * 100) / 100,
-          orders: orders
-        });
+      const startDate = new Date();
+      startDate.setDate(endDate.getDate() - selectedPeriod);
+
+      // Buscar vendas do período
+      const { data: salesData, error } = await supabase
+        .from('sales')
+        .select('final_amount, created_at')
+        .eq('status', 'completed')
+        .gte('created_at', startDate.toISOString())
+        .lte('created_at', endDate.toISOString())
+        .not('final_amount', 'is', null)
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.error('❌ Erro ao buscar dados de vendas para gráfico:', error);
+        throw error;
       }
-      
-      return mockData;
+
+      // Agrupar vendas por dia
+      const dailyData = new Map<string, { revenue: number; orders: number }>();
+
+      // Inicializar todos os dias do período com valores zerados
+      for (let i = 0; i < selectedPeriod; i++) {
+        const date = new Date();
+        date.setDate(endDate.getDate() - (selectedPeriod - 1 - i));
+        const dateKey = date.toISOString().split('T')[0];
+        dailyData.set(dateKey, { revenue: 0, orders: 0 });
+      }
+
+      // Processar vendas reais
+      (salesData || []).forEach(sale => {
+        const saleDate = new Date(sale.created_at);
+        const dateKey = saleDate.toISOString().split('T')[0];
+        const revenue = Number(sale.final_amount) || 0;
+
+        if (dailyData.has(dateKey)) {
+          const existing = dailyData.get(dateKey)!;
+          existing.revenue += revenue;
+          existing.orders += 1;
+        }
+      });
+
+      // Converter para formato do gráfico
+      const chartData: SalesChartData[] = Array.from(dailyData.entries()).map(([dateKey, data]) => ({
+        period: dateKey,
+        period_label: new Date(dateKey).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+        revenue: Math.round(data.revenue * 100) / 100,
+        orders: data.orders
+      }));
+
+      console.log(`📈 Gráfico calculado - ${chartData.length} dias, Total receita: R$ ${chartData.reduce((sum, d) => sum + d.revenue, 0).toFixed(2)}`);
+
+      return chartData;
     },
     staleTime: 5 * 60 * 1000,
     refetchInterval: 5 * 60 * 1000,

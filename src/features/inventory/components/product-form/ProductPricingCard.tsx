@@ -13,6 +13,7 @@ import { Calculator, DollarSign } from 'lucide-react';
 import { ProductFormData, ProductCalculations } from '@/types/inventory.types';
 import { cn } from '@/core/config/utils';
 import { getGlassCardClasses } from '@/core/config/theme-utils';
+import { SensitiveData, useSensitiveValue } from '@/shared/ui/composite';
 
 interface ProductPricingCardProps {
   formData: Partial<ProductFormData>;
@@ -39,6 +40,7 @@ export const ProductPricingCard: React.FC<ProductPricingCardProps> = ({
   glassEffect = true,
 }) => {
   const glassClasses = glassEffect ? getGlassCardClasses(variant) : '';
+  const { canViewCosts, canViewProfits } = useSensitiveValue();
 
   return (
     <Card className={cn(glassClasses, 'shadow-xl')}>
@@ -55,34 +57,36 @@ export const ProductPricingCard: React.FC<ProductPricingCardProps> = ({
       <CardContent className="space-y-4">
         {/* Preços por Unidade */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <Label htmlFor="cost_price" className="text-gray-200">
-              {formData.is_package ? 'Preço de Custo do Pacote' : 'Preço de Custo (un.)'}
-            </Label>
-            <Input
-              id="cost_price"
-              type="number"
-              step="0.01"
-              value={formData.cost_price ?? ''}
-              onChange={(e) => {
-                const value = Number(e.target.value);
-                // História 1.4: Usar handler especializado se disponível, senão fallback para onInputChange
-                if (onCostPriceChange) {
-                  onCostPriceChange(value);
-                } else {
-                  onInputChange('cost_price', value);
-                }
-              }}
-              placeholder="0.00"
-              className={cn(
-                'bg-gray-800/50 border-primary-yellow/30 text-gray-200 focus:border-primary-yellow placeholder:text-gray-400',
-                fieldErrors.cost_price && 'border-accent-red'
+          <SensitiveData type="cost">
+            <div>
+              <Label htmlFor="cost_price" className="text-gray-200">
+                {formData.is_package ? 'Preço de Custo do Pacote' : 'Preço de Custo (un.)'}
+              </Label>
+              <Input
+                id="cost_price"
+                type="number"
+                step="0.01"
+                value={formData.cost_price ?? ''}
+                onChange={(e) => {
+                  const value = Number(e.target.value);
+                  // História 1.4: Usar handler especializado se disponível, senão fallback para onInputChange
+                  if (onCostPriceChange) {
+                    onCostPriceChange(value);
+                  } else {
+                    onInputChange('cost_price', value);
+                  }
+                }}
+                placeholder="0.00"
+                className={cn(
+                  'bg-gray-800/50 border-primary-yellow/30 text-gray-200 focus:border-primary-yellow placeholder:text-gray-400',
+                  fieldErrors.cost_price && 'border-accent-red'
+                )}
+              />
+              {fieldErrors.cost_price && (
+                <p className="text-accent-red text-sm mt-1">{fieldErrors.cost_price}</p>
               )}
-            />
-            {fieldErrors.cost_price && (
-              <p className="text-accent-red text-sm mt-1">{fieldErrors.cost_price}</p>
-            )}
-          </div>
+            </div>
+          </SensitiveData>
 
           <div>
             <Label htmlFor="price" className="text-gray-200">
@@ -178,40 +182,44 @@ export const ProductPricingCard: React.FC<ProductPricingCardProps> = ({
             />
           </div>
 
-          <div>
-            <Label className="text-gray-200">Margem (pct)</Label>
-            <div className="flex items-center h-10 px-3 rounded-md border bg-muted">
-              <Badge variant="secondary">
-                {calculations.packageMargin?.toFixed(2) || '0.00'}%
-              </Badge>
+          <SensitiveData type="profit">
+            <div>
+              <Label className="text-gray-200">Margem (pct)</Label>
+              <div className="flex items-center h-10 px-3 rounded-md border bg-muted">
+                <Badge variant="secondary">
+                  {calculations.packageMargin?.toFixed(2) || '0.00'}%
+                </Badge>
+              </div>
             </div>
-            </div>
+          </SensitiveData>
           </div>
         </>
         )}
 
         {/* Cálculos Automáticos */}
         {(calculations.unitMargin !== undefined || calculations.packageMargin !== undefined) && (
-          <div className="glass-subtle p-4 rounded-lg border border-primary-yellow/20">
-            <div className="flex items-center gap-2 mb-2">
-              <Calculator className="h-4 w-4 text-primary-yellow" />
-              <span className="font-medium text-gray-100">Cálculos Automáticos</span>
-            </div>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <span className="text-gray-300">Lucro por unidade:</span>
-                <span className="ml-2 font-medium text-primary-yellow">
-                  R$ {calculations.unitProfitAmount?.toFixed(2) || '0.00'}
-                </span>
+          <SensitiveData type="profit">
+            <div className="glass-subtle p-4 rounded-lg border border-primary-yellow/20">
+              <div className="flex items-center gap-2 mb-2">
+                <Calculator className="h-4 w-4 text-primary-yellow" />
+                <span className="font-medium text-gray-100">Cálculos Automáticos</span>
               </div>
-              <div>
-                <span className="text-gray-300">Lucro por pacote:</span>
-                <span className="ml-2 font-medium text-primary-yellow">
-                  R$ {calculations.packageProfitAmount?.toFixed(2) || '0.00'}
-                </span>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-gray-300">Lucro por unidade:</span>
+                  <span className="ml-2 font-medium text-primary-yellow">
+                    R$ {calculations.unitProfitAmount?.toFixed(2) || '0.00'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-gray-300">Lucro por pacote:</span>
+                  <span className="ml-2 font-medium text-primary-yellow">
+                    R$ {calculations.packageProfitAmount?.toFixed(2) || '0.00'}
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
+          </SensitiveData>
         )}
       </CardContent>
     </Card>
