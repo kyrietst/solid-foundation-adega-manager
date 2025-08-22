@@ -2,6 +2,8 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/primitives/card';
 import { Button } from '@/shared/ui/primitives/button';
+import { cn } from '@/core/config/utils';
+import { getSFProTextClasses } from '@/core/config/theme-utils';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '@/shared/ui/primitives/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/primitives/tabs';
 import { SearchBar21st } from '@/shared/ui/thirdparty/search-bar-21st';
@@ -163,7 +165,10 @@ export const Delivery = () => {
               hidden: { filter: "blur(15px)", opacity: 0 },
               visible: { filter: "blur(0px)", opacity: 1 }
             }}
-            className="text-xl lg:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#FF2400] via-[#FFDA04] to-[#FF2400] drop-shadow-lg"
+            className={cn(
+              getSFProTextClasses('h1', 'accent'),
+              "text-transparent bg-clip-text bg-gradient-to-r from-[#FF2400] via-[#FFDA04] to-[#FF2400] drop-shadow-lg"
+            )}
             style={{
               textShadow: '0 2px 4px rgba(0,0,0,0.3), 0 0 20px rgba(255, 218, 4, 0.2)'
             }}
@@ -212,8 +217,8 @@ export const Delivery = () => {
               <div className="flex items-center gap-3">
                 <Truck className="h-8 w-8 text-blue-400 transition-all duration-300" />
                 <div>
-                  <p className="text-sm text-gray-400">Total de Entregas</p>
-                  <div className="text-2xl font-bold text-white">
+                  <p className={getSFProTextClasses('caption', 'secondary')}>Total de Entregas</p>
+                  <div className={getSFProTextClasses('value', 'primary')}>
                     {stats.total}
                   </div>
                 </div>
@@ -226,8 +231,8 @@ export const Delivery = () => {
               <div className="flex items-center gap-3">
                 <Clock className="h-8 w-8 text-yellow-400 transition-all duration-300" />
                 <div>
-                  <p className="text-sm text-gray-400">Pendentes</p>
-                  <div className="text-2xl font-bold text-white">
+                  <p className={getSFProTextClasses('caption', 'secondary')}>Pendentes</p>
+                  <div className={getSFProTextClasses('value', 'primary')}>
                     {stats.pendentes}
                   </div>
                 </div>
@@ -240,8 +245,8 @@ export const Delivery = () => {
               <div className="flex items-center gap-3">
                 <Truck className="h-8 w-8 text-blue-400 transition-all duration-300" />
                 <div>
-                  <p className="text-sm text-gray-400">Em Trânsito</p>
-                  <div className="text-2xl font-bold text-white">
+                  <p className={getSFProTextClasses('caption', 'secondary')}>Em Trânsito</p>
+                  <div className={getSFProTextClasses('value', 'primary')}>
                     {stats.emTransito}
                   </div>
                 </div>
@@ -254,8 +259,8 @@ export const Delivery = () => {
               <div className="flex items-center gap-3">
                 <CheckCircle className="h-8 w-8 text-green-400 transition-all duration-300" />
                 <div>
-                  <p className="text-sm text-gray-400">Entregues</p>
-                  <div className="text-2xl font-bold text-white">
+                  <p className={getSFProTextClasses('caption', 'secondary')}>Entregues</p>
+                  <div className={getSFProTextClasses('value', 'primary')}>
                     {stats.entregues}
                   </div>
                 </div>
@@ -271,8 +276,8 @@ export const Delivery = () => {
               <div className="flex items-center gap-3">
                 <DollarSign className="h-8 w-8 text-green-400 transition-all duration-300" />
                 <div>
-                  <p className="text-sm text-gray-400">Receita Total</p>
-                  <div className="text-2xl font-bold text-white">
+                  <p className={getSFProTextClasses('caption', 'secondary')}>Receita Total</p>
+                  <div className={getSFProTextClasses('value', 'success')}>
                     R$ {stats.receita.toFixed(2)}
                   </div>
                 </div>
@@ -285,8 +290,8 @@ export const Delivery = () => {
               <div className="flex items-center gap-3">
                 <DollarSign className="h-8 w-8 text-purple-400 transition-all duration-300" />
                 <div>
-                  <p className="text-sm text-gray-400">Ticket Médio</p>
-                  <div className="text-2xl font-bold text-white">
+                  <p className={getSFProTextClasses('caption', 'secondary')}>Ticket Médio</p>
+                  <div className={getSFProTextClasses('value', 'purple')}>
                     R$ {stats.ticketMedio.toFixed(2)}
                   </div>
                 </div>
@@ -299,8 +304,8 @@ export const Delivery = () => {
               <div className="flex items-center gap-3">
                 <Truck className="h-8 w-8 text-orange-400 transition-all duration-300" />
                 <div>
-                  <p className="text-sm text-gray-400">Taxas de Entrega</p>
-                  <div className="text-2xl font-bold text-white">
+                  <p className={getSFProTextClasses('caption', 'secondary')}>Taxas de Entrega</p>
+                  <div className={getSFProTextClasses('value', 'warning')}>
                     R$ {stats.taxasEntrega.toFixed(2)}
                   </div>
                 </div>
@@ -316,10 +321,9 @@ export const Delivery = () => {
                   stats.crescimento >= 0 ? "text-cyan-400" : "text-red-400"
                 )} />
                 <div>
-                  <p className="text-sm text-gray-400">Crescimento</p>
+                  <p className={getSFProTextClasses('caption', 'secondary')}>Crescimento</p>
                   <div className={cn(
-                    "text-2xl font-bold",
-                    stats.crescimento >= 0 ? "text-white" : "text-red-400"
+                    getSFProTextClasses('value', stats.crescimento >= 0 ? 'success' : 'error')
                   )}>
                     {stats.crescimento >= 0 ? '+' : ''}{stats.crescimento.toFixed(1)}%
                   </div>
@@ -333,7 +337,7 @@ export const Delivery = () => {
         {stats.topZona && (
           <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm shadow-lg hover:shadow-2xl hover:shadow-yellow-500/10 hover:border-yellow-400/30 transition-all duration-300">
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-bold text-white flex items-center gap-2">
+              <CardTitle className={cn(getSFProTextClasses('h3', 'primary'), "flex items-center gap-2")}>
                 <MapPin className="h-6 w-6 text-yellow-400" />
                 Zona Mais Rentável
               </CardTitle>
@@ -341,16 +345,16 @@ export const Delivery = () => {
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <p className="text-sm text-gray-400">Nome da Zona</p>
-                  <p className="text-lg font-semibold text-white">{stats.topZona.zoneName}</p>
+                  <p className={getSFProTextClasses('caption', 'secondary')}>Nome da Zona</p>
+                  <p className={getSFProTextClasses('label', 'primary')}>{stats.topZona.zoneName}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-400">Receita</p>
-                  <p className="text-lg font-semibold text-green-400">R$ {stats.topZona.revenue.toFixed(2)}</p>
+                  <p className={getSFProTextClasses('caption', 'secondary')}>Receita</p>
+                  <p className={getSFProTextClasses('label', 'success')}>R$ {stats.topZona.revenue.toFixed(2)}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-400">Pedidos</p>
-                  <p className="text-lg font-semibold text-blue-400">{stats.topZona.orderCount}</p>
+                  <p className={getSFProTextClasses('caption', 'secondary')}>Pedidos</p>
+                  <p className={getSFProTextClasses('label', 'accent')}>{stats.topZona.orderCount}</p>
                 </div>
               </div>
             </CardContent>
@@ -389,7 +393,7 @@ export const Delivery = () => {
             <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm shadow-lg hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300">
           <CardHeader>
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <CardTitle className="text-lg font-bold text-white">Lista de Entregas</CardTitle>
+              <CardTitle className={getSFProTextClasses('h3', 'primary')}>Lista de Entregas</CardTitle>
               
               {/* Controles de Filtro e Busca */}
               <div className="flex flex-col sm:flex-row gap-3 sm:items-center w-full sm:w-auto">

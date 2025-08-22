@@ -113,11 +113,11 @@ export const useDeliveryOrders = (params?: {
               name,
               phone
             ),
-            profiles:delivery_person_id (
+            delivery_person:profiles!delivery_person_id (
               id,
               name
             ),
-            delivery_zones:delivery_zone_id (
+            delivery_zone:delivery_zones!delivery_zone_id (
               id,
               name
             ),
@@ -197,13 +197,13 @@ export const useDeliveryOrders = (params?: {
           estimated_delivery_time: sale.estimated_delivery_time,
           delivery_started_at: sale.delivery_started_at,
           delivery_completed_at: sale.delivery_completed_at,
-          delivery_person: sale.profiles ? {
-            id: sale.profiles.id,
-            name: sale.profiles.name
+          delivery_person: sale.delivery_person ? {
+            id: sale.delivery_person.id,
+            name: sale.delivery_person.name
           } : null,
-          delivery_zone: sale.delivery_zones ? {
-            id: sale.delivery_zones.id,
-            name: sale.delivery_zones.name
+          delivery_zone: sale.delivery_zone ? {
+            id: sale.delivery_zone.id,
+            name: sale.delivery_zone.name
           } : null,
           items: (sale.sale_items || []).map((item: any) => ({
             id: item.id,
@@ -266,7 +266,7 @@ export const useDeliveryMetrics = (period: number = 7) => {
             .from('sales')
             .select(`
               *,
-              delivery_zones:delivery_zone_id (
+              delivery_zone:delivery_zones!delivery_zone_id (
                 name
               )
             `)
@@ -308,7 +308,7 @@ export const useDeliveryMetrics = (period: number = 7) => {
           // Top zona por receita
           const zoneRevenues = new Map();
           orders.forEach(order => {
-            const zoneName = order.delivery_zones?.name || 'Zona não identificada';
+            const zoneName = order.delivery_zone?.name || 'Zona não identificada';
             const current = zoneRevenues.get(zoneName) || { revenue: 0, orderCount: 0 };
             zoneRevenues.set(zoneName, {
               revenue: current.revenue + parseFloat(order.final_amount || 0),
@@ -419,26 +419,75 @@ export const useUpdateDeliveryStatus = () => {
           .eq('id', saleId);
       }
 
-      return data;
+      return { saleId, newStatus, data };
     },
-    onSuccess: () => {
-      // Invalidar queries relacionadas
-      queryClient.invalidateQueries({ queryKey: ['delivery-orders'] });
-      queryClient.invalidateQueries({ queryKey: ['delivery-metrics'] });
-      queryClient.invalidateQueries({ queryKey: ['sales'] });
+    onMutate: async ({ saleId, newStatus }) => {
+      // Cancelar queries pendentes para evitar conflitos
+      await queryClient.cancelQueries({ queryKey: ['delivery-orders'] });
+
+      // Snapshot do estado anterior
+      const previousDeliveries = queryClient.getQueryData(['delivery-orders']);
+
+      // Atualização otimista
+      queryClient.setQueryData(['delivery-orders'], (old: any) => {
+        if (!old) return old;
+        
+        return old.map((delivery: any) => 
+          delivery.id === saleId 
+            ? { 
+                ...delivery, 
+                delivery_status: newStatus,
+                updated_at: new Date().toISOString()
+              }
+            : delivery
+        );
+      });
+
+      // Retornar snapshot para rollback
+      return { previousDeliveries };
+    },
+    onSuccess: (data, variables) => {
+      console.log(`✅ Status atualizado com sucesso: ${variables.saleId} → ${variables.newStatus}`);
+      
+      // Invalidação específica para garantir dados frescos
+      queryClient.invalidateQueries({ 
+        queryKey: ['delivery-orders'], 
+        exact: false 
+      });
+      
+      queryClient.invalidateQueries({ 
+        queryKey: ['delivery-metrics'], 
+        exact: false 
+      });
+      
+      // Invalidar queries relacionadas apenas após 500ms para permitir UI atualizar
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['sales'] });
+        queryClient.invalidateQueries({ queryKey: ['delivery-analytics-kpis'] });
+      }, 500);
       
       toast({
         title: "Status atualizado!",
-        description: "O status da entrega foi atualizado com sucesso.",
+        description: `Status alterado para ${variables.newStatus} com sucesso.`,
       });
     },
-    onError: (error: any) => {
+    onError: (error: any, variables, context) => {
       console.error('❌ Erro ao atualizar status:', error);
+      
+      // Rollback em caso de erro
+      if (context?.previousDeliveries) {
+        queryClient.setQueryData(['delivery-orders'], context.previousDeliveries);
+      }
+      
       toast({
         title: "Erro ao atualizar status",
         description: error.message || "Ocorreu um erro inesperado.",
         variant: "destructive",
       });
+    },
+    onSettled: () => {
+      // Sempre refetch após mutação (success ou error)
+      queryClient.invalidateQueries({ queryKey: ['delivery-orders'] });
     },
   });
 };

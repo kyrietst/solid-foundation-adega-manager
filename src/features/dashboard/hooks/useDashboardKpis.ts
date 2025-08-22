@@ -169,7 +169,7 @@ export function useInventoryKpis() {
       // Buscar produtos
       const { data: products, error: productsError } = await supabase
         .from('products')
-        .select('stock_quantity, price, min_stock');
+        .select('stock_quantity, price, minimum_stock');
 
       if (productsError) {
         console.error('❌ Erro ao buscar produtos:', productsError);
@@ -188,7 +188,7 @@ export function useInventoryKpis() {
       // Contar produtos com estoque baixo
       const lowStockCount = (products || []).filter(product => {
         const currentStock = Number(product.stock_quantity) || 0;
-        const minStock = Number(product.min_stock) || 0;
+        const minStock = Number(product.minimum_stock) || 0;
         return currentStock <= minStock && minStock > 0;
       }).length;
 
@@ -214,8 +214,8 @@ export function useLowStockProducts(limit: number = 10) {
       // Buscar produtos com estoque baixo
       const { data: products, error } = await supabase
         .from('products')
-        .select('id, name, stock_quantity, min_stock, price')
-        .gt('min_stock', 0)
+        .select('id, name, stock_quantity, minimum_stock, price')
+        .gt('minimum_stock', 0)
         .order('stock_quantity', { ascending: true });
 
       if (error) {
@@ -227,14 +227,14 @@ export function useLowStockProducts(limit: number = 10) {
       const lowStockProducts = (products || [])
         .filter(product => {
           const currentStock = Number(product.stock_quantity) || 0;
-          const minStock = Number(product.min_stock) || 0;
+          const minStock = Number(product.minimum_stock) || 0;
           return currentStock <= minStock;
         })
         .map(product => ({
           id: product.id,
           name: product.name,
           current_stock: Number(product.stock_quantity) || 0,
-          min_stock: Number(product.min_stock) || 0,
+          min_stock: Number(product.minimum_stock) || 0,
           price: Number(product.price) || 0
         }))
         .slice(0, limit);

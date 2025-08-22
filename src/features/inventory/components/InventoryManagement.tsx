@@ -302,14 +302,20 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
     setSelectedProduct(null);
   };
 
+  // Hook para obter dados dos produtos usando o hook existente
+  const productsGridData = useProductsGridLogic({
+    showSearch: false,
+    showFilters: false
+  });
+
   return (
     <div className={`w-full h-full flex flex-col ${className || ''}`}>
       {/* Título e contador na mesma linha, fora do box background */}
-      <div className="flex-shrink-0 flex justify-between items-center">
+      <div className="flex-shrink-0 flex justify-between items-center mb-4">
         <ProductsTitle />
-        <div className="bg-black/50 backdrop-blur-sm border border-yellow-400/30 rounded-full px-4 py-2 shadow-lg">
-          <span className="text-sm font-bold text-gray-100">125</span>
-          <span className="text-xs ml-1 opacity-75 text-gray-300">produtos</span>
+        <div className="bg-black/50 backdrop-blur-sm border border-yellow-400/30 rounded-full px-6 py-3 shadow-lg">
+          <span className="text-base font-bold text-gray-100">{productsGridData.totalProducts}</span>
+          <span className="text-sm ml-2 opacity-75 text-gray-300">produtos</span>
         </div>
       </div>
 

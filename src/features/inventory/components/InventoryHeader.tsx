@@ -9,7 +9,8 @@ import { Plus, Grid3X3, List } from 'lucide-react';
 import { BlurIn } from '@/components/ui/blur-in';
 import { InventoryStats } from './InventoryStats';
 import { InventoryHeaderProps } from './types';
-import { getHeaderTextClasses } from '@/core/config/theme-utils';
+import { getHeaderTextClasses, getSFProTextClasses } from '@/core/config/theme-utils';
+import { cn } from '@/core/config/utils';
 
 export const InventoryHeader: React.FC<InventoryHeaderProps> = ({
   totalProducts,
@@ -33,12 +34,15 @@ export const InventoryHeader: React.FC<InventoryHeaderProps> = ({
               hidden: { filter: "blur(15px)", opacity: 0 },
               visible: { filter: "blur(0px)", opacity: 1 }
             }}
-            className={`${getHeaderTextClasses('main')} text-transparent bg-clip-text bg-gradient-to-r from-[#FF2400] via-[#FFDA04] to-[#FF2400] drop-shadow-lg`}
+            className={cn(
+              getSFProTextClasses('h1', 'accent'),
+              "text-transparent bg-clip-text bg-gradient-to-r from-[#FF2400] via-[#FFDA04] to-[#FF2400] drop-shadow-lg"
+            )}
             style={{
               textShadow: '0 2px 4px rgba(0,0,0,0.3), 0 0 20px rgba(255, 218, 4, 0.2)'
             }}
           />
-          <p className="text-adega-platinum/70 mt-1">
+          <p className={cn(getSFProTextClasses('body', 'secondary'), "mt-1")}>
             Controle completo do seu inventário com análise de giro
           </p>
         </div>

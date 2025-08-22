@@ -45,7 +45,7 @@ export function TopProductsCard({ className, period = 30, limit = 5, useCurrentM
         .select(`
           product_id,
           quantity,
-          price,
+          unit_price,
           products!inner(name, category)
         `)
         .gte('created_at', startDate.toISOString())
@@ -68,7 +68,7 @@ export function TopProductsCard({ className, period = 30, limit = 5, useCurrentM
       (salesData || []).forEach(item => {
         const productId = item.product_id;
         const quantity = Number(item.quantity) || 0;
-        const price = Number(item.price) || 0;
+        const price = Number(item.unit_price) || 0;
         const revenue = quantity * price;
 
         if (productMap.has(productId)) {

@@ -8,7 +8,7 @@ import { useState } from "react";
 import { ShoppingCart, Store, Truck, Package } from "lucide-react";
 import { useCart, useCartItemCount } from "@/features/sales/hooks/use-cart";
 import { cn } from '@/core/config/utils';
-import { getGlassCardClasses } from '@/core/config/theme-utils';
+import { getGlassCardClasses, getSFProTextClasses } from '@/core/config/theme-utils';
 import { text, shadows } from "@/core/config/theme";
 import { BlurIn } from "@/components/ui/blur-in";
 import { getHeaderTextClasses } from '@/core/config/theme-utils';
@@ -48,7 +48,10 @@ function SalesPage({
                      hidden: { filter: "blur(15px)", opacity: 0 },
                      visible: { filter: "blur(0px)", opacity: 1 }
                    }}
-                   className={`${getHeaderTextClasses('main')} text-transparent bg-clip-text bg-gradient-to-r from-[#FF2400] via-[#FFDA04] to-[#FF2400] drop-shadow-lg`}
+                   className={cn(
+                     getSFProTextClasses('h1', 'accent'),
+                     "text-transparent bg-clip-text bg-gradient-to-r from-[#FF2400] via-[#FFDA04] to-[#FF2400] drop-shadow-lg"
+                   )}
                    style={{
                      textShadow: '0 2px 4px rgba(0,0,0,0.3), 0 0 20px rgba(255, 218, 4, 0.2)'
                    }}
@@ -79,11 +82,11 @@ function SalesPage({
                   </SheetTrigger>
                   <SheetContent side="right" className="w-full sm:w-96 p-0 bg-black/90 backdrop-blur-xl border-white/20">
                     <SheetHeader className="p-6 border-b border-white/20">
-                      <SheetTitle className={cn("flex items-center gap-3", text.h2, shadows.medium)}>
+                      <SheetTitle className={cn("flex items-center gap-3", getSFProTextClasses('h2', 'primary'))}>
                         <div className="p-2 rounded-xl bg-yellow-400/20 border border-yellow-400/30">
                           <ShoppingCart className="h-6 w-6 text-yellow-400" />
                         </div>
-                        <span className="text-xl font-semibold">CARRINHO DE VENDAS</span>
+                        <span className={getSFProTextClasses('h3', 'accent')}>CARRINHO DE VENDAS</span>
                       </SheetTitle>
                     </SheetHeader>
                     <div className="h-full">
@@ -100,7 +103,8 @@ function SalesPage({
             <button
               onClick={() => setActiveTab('new-sale')}
               className={cn(
-                "inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium transition-all",
+                getSFProTextClasses('action', activeTab === 'new-sale' ? 'accent' : 'secondary'),
+                "inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 transition-all",
                 activeTab === 'new-sale' 
                   ? "bg-yellow-400/20 text-yellow-400 shadow-sm" 
                   : "text-gray-300 hover:text-yellow-300"
@@ -111,7 +115,8 @@ function SalesPage({
             <button
               onClick={() => setActiveTab('recent-sales')}
               className={cn(
-                "inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium transition-all",
+                getSFProTextClasses('action', activeTab === 'recent-sales' ? 'accent' : 'secondary'),
+                "inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 transition-all",
                 activeTab === 'recent-sales' 
                   ? "bg-yellow-400/20 text-yellow-400 shadow-sm" 
                   : "text-gray-300 hover:text-yellow-300"
@@ -130,7 +135,8 @@ function SalesPage({
             <button
               onClick={() => setSaleType('presencial')}
               className={cn(
-                "inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+                getSFProTextClasses('action', saleType === 'presencial' ? 'accent' : 'secondary'),
+                "inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200",
                 saleType === 'presencial'
                   ? "bg-blue-500/20 text-blue-300 border border-blue-400/30 shadow-lg shadow-blue-500/20"
                   : "text-gray-400 hover:text-white hover:bg-white/5"
@@ -142,7 +148,8 @@ function SalesPage({
             <button
               onClick={() => setSaleType('delivery')}
               className={cn(
-                "inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+                getSFProTextClasses('action', saleType === 'delivery' ? 'success' : 'secondary'),
+                "inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200",
                 saleType === 'delivery'
                   ? "bg-green-500/20 text-green-300 border border-green-400/30 shadow-lg shadow-green-500/20"
                   : "text-gray-400 hover:text-white hover:bg-white/5"
@@ -154,7 +161,8 @@ function SalesPage({
             <button
               onClick={() => setSaleType('pickup')}
               className={cn(
-                "inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+                getSFProTextClasses('action', saleType === 'pickup' ? 'purple' : 'secondary'),
+                "inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200",
                 saleType === 'pickup'
                   ? "bg-purple-500/20 text-purple-300 border border-purple-400/30 shadow-lg shadow-purple-500/20"
                   : "text-gray-400 hover:text-white hover:bg-white/5"

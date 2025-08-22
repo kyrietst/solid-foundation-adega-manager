@@ -89,6 +89,14 @@ const App = () => (
                         } 
                       />
                       <Route 
+                        path="suppliers" 
+                        element={
+                          <RouteErrorBoundary routeName="Fornecedores">
+                            <div />
+                          </RouteErrorBoundary>
+                        } 
+                      />
+                      <Route 
                         path="customers" 
                         element={
                           <RouteErrorBoundary routeName="Clientes">

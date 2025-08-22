@@ -14,6 +14,7 @@ import {
   IconReportAnalytics,
   IconChartPie,
   IconRobot,
+  IconBuilding,
 } from "@tabler/icons-react";
 import { motion } from "motion/react";
 import { cn } from "@/core/config/utils";
@@ -52,6 +53,15 @@ export function AppSidebar() {
       href: "inventory",
       icon: (
         <IconPackage className="h-5 w-5 shrink-0 text-primary-yellow" />
+      ),
+      roles: ["admin", "employee"],
+    },
+    {
+      id: "suppliers",
+      label: "Fornecedores",
+      href: "suppliers",
+      icon: (
+        <IconBuilding className="h-5 w-5 shrink-0 text-primary-yellow" />
       ),
       roles: ["admin", "employee"],
     },

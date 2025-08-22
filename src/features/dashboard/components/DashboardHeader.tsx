@@ -37,7 +37,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                     visible: { filter: "blur(0px)", opacity: 1 }
                   }}
                   className={cn(
-                    getHeaderTextClasses('main'),
+                    getSFProTextClasses('h1', 'accent'),
                     "text-transparent bg-clip-text bg-gradient-to-r from-[#FF2400] via-[#FFDA04] to-[#FF2400] drop-shadow-lg"
                   )}
                   style={{

@@ -9,6 +9,7 @@ import { WhitePageShell } from '@/shared/ui/layout/WhitePageShell';
 // Lazy loading dos componentes principais para code splitting
 const Dashboard = lazy(() => import('@/features/dashboard/components/Dashboard'));
 const Inventory = lazy(() => import('@/features/inventory/components/InventoryManagement'));
+const Suppliers = lazy(() => import('@/features/suppliers/components/SuppliersManagement'));
 const Customers = lazy(() => import('@/features/customers/components/CustomersLite'));
 const CrmDashboard = lazy(() => 
   import('@/features/customers/components/CrmDashboard').then(m => ({ default: m.CrmDashboard }))
@@ -106,6 +107,12 @@ const Index = () => {
               showSearch={true} 
               showFilters={true} 
             />
+          </Suspense>
+        ) : <AccessDenied />;
+      case 'suppliers':
+        return hasPermission(['admin', 'employee']) ? (
+          <Suspense fallback={<LoadingScreen text="Carregando fornecedores..." />}>
+            <Suppliers />
           </Suspense>
         ) : <AccessDenied />;
       case 'customers':

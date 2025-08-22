@@ -6,7 +6,7 @@
  * @version 1.0.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/primitives/card';
 import { Button } from '@/shared/ui/primitives/button';
 import { Badge } from '@/shared/ui/primitives/badge';
@@ -28,6 +28,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
 import { DeliveryPersonReport } from './DeliveryPersonReport';
 import { ZoneAnalysisReport } from './ZoneAnalysisReport';
+import { DeliveryPersonPerformance } from './DeliveryPersonPerformance';
 import { useDeliveryReportExport } from '../hooks/useDeliveryReports';
 
 interface DeliveryAnalyticsProps {
@@ -83,8 +84,15 @@ export const DeliveryAnalytics = ({ className }: DeliveryAnalyticsProps) => {
     queryFn: async (): Promise<DeliveryKPIs> => {
       console.log('📊 Carregando KPIs de delivery...');
       
+      const days = selectedPeriod === '7d' ? 7 : selectedPeriod === '30d' ? 30 : 90;
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - days);
+
       const { data, error } = await supabase.rpc('calculate_delivery_kpis', {
-        p_days: selectedPeriod === '7d' ? 7 : selectedPeriod === '30d' ? 30 : 90
+        p_start_date: startDate.toISOString(),
+        p_end_date: endDate.toISOString(),
+        p_delivery_person_id: null
       });
 
       if (error) {
@@ -182,16 +190,7 @@ export const DeliveryAnalytics = ({ className }: DeliveryAnalyticsProps) => {
     });
   };
 
-  // Dados para gráficos
-  const deliveryTrendData = Array.from({ length: 7 }, (_, i) => {
-    const date = subDays(new Date(), 6 - i);
-    return {
-      date: format(date, 'dd/MM', { locale: ptBR }),
-      deliveries: Math.floor(Math.random() * 20) + 10,
-      revenue: Math.floor(Math.random() * 2000) + 800,
-    };
-  });
-
+  // Dados para gráficos de zona (mantido para outros componentes)
   const zoneChartData = zoneStats.slice(0, 5).map(zone => ({
     name: zone.zone_name,
     revenue: zone.revenue,
@@ -199,12 +198,17 @@ export const DeliveryAnalytics = ({ className }: DeliveryAnalyticsProps) => {
     efficiency: zone.on_time_rate * 100,
   }));
 
-  const deliveryTimeData = [
-    { timeRange: '0-30min', count: 45, percentage: 35 },
-    { timeRange: '30-60min', count: 58, percentage: 45 },
-    { timeRange: '60-90min', count: 20, percentage: 15 },
-    { timeRange: '90min+', count: 6, percentage: 5 },
-  ];
+  // Dados de distribuição de tempo - será calculado com dados reais
+  const deliveryTimeData = React.useMemo(() => {
+    // TODO: Implementar cálculo baseado em dados reais
+    // Por enquanto retorna dados vazios até haver entregas reais
+    return [
+      { timeRange: '0-30min', count: 0, percentage: 0 },
+      { timeRange: '30-60min', count: 0, percentage: 0 },
+      { timeRange: '60-90min', count: 0, percentage: 0 },
+      { timeRange: '90min+', count: 0, percentage: 0 },
+    ];
+  }, []);
 
   return (
     <div className={cn("w-full space-y-6", className)}>
@@ -330,44 +334,11 @@ export const DeliveryAnalytics = ({ className }: DeliveryAnalyticsProps) => {
 
         <TabsContent value="overview" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Gráfico de tendência */}
-            <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-white flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5 text-blue-400" />
-                  Tendência de Entregas
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <AreaChart data={deliveryTrendData}>
-                    <defs>
-                      <linearGradient id="deliveryGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                    <XAxis dataKey="date" stroke="#9ca3af" />
-                    <YAxis stroke="#9ca3af" />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: '#1f2937', 
-                        border: '1px solid #374151',
-                        borderRadius: '8px'
-                      }}
-                    />
-                    <Area 
-                      type="monotone" 
-                      dataKey="deliveries" 
-                      stroke="#3b82f6" 
-                      fillOpacity={1} 
-                      fill="url(#deliveryGradient)"
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
+            {/* Performance de Entregadores */}
+            <DeliveryPersonPerformance 
+              selectedPeriod={selectedPeriod}
+              className="lg:col-span-1"
+            />
 
             {/* Distribuição de tempo de entrega */}
             <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm">

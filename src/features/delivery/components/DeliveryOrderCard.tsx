@@ -318,14 +318,29 @@ export const DeliveryOrderCard = ({
               onClick={() => {
                 const nextStatus = getNextStatus(delivery.delivery_status);
                 if (nextStatus) {
+                  console.log(`🔄 Iniciando atualização de status: ${delivery.delivery_status} → ${nextStatus}`);
                   onUpdateStatus(delivery.id, nextStatus);
                 }
               }}
               disabled={isUpdating}
-              className="bg-blue-600 hover:bg-blue-700 text-white transition-colors duration-200"
+              className={cn(
+                "transition-all duration-300 text-white font-medium",
+                isUpdating 
+                  ? "bg-gray-500 cursor-not-allowed opacity-75" 
+                  : "bg-blue-600 hover:bg-blue-700 hover:scale-105 shadow-lg hover:shadow-blue-500/25"
+              )}
             >
-              <ArrowRight className="h-3 w-3 mr-1" />
-              {getNextStatusText(delivery.delivery_status)}
+              {isUpdating ? (
+                <>
+                  <div className="h-3 w-3 mr-1 animate-spin rounded-full border border-white/30 border-t-white" />
+                  Atualizando...
+                </>
+              ) : (
+                <>
+                  <ArrowRight className="h-3 w-3 mr-1" />
+                  {getNextStatusText(delivery.delivery_status)}
+                </>
+              )}
             </Button>
           )}
 
