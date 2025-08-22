@@ -119,12 +119,21 @@ export function FullCart({
 
   if (items.length === 0) {
     return (
-      <div className={cn('bg-black/30 backdrop-blur-xl border border-white/20 rounded-lg p-6 text-center', className)}>
-        <ShoppingCart className="mx-auto h-12 w-12 text-yellow-400 mb-4" aria-hidden="true" />
-        <p className={cn(text.h4, shadows.medium)}>Seu carrinho está vazio</p>
-        <p className={cn(text.h6, shadows.subtle, "text-sm mt-2")}>
-          Adicione produtos para começar uma venda
-        </p>
+      <div className={cn('bg-black/70 backdrop-blur-xl border border-white/20 rounded-lg py-16 px-8 text-center', className)}>
+        <div className="space-y-8">
+          {/* Ícone principal */}
+          <div className="mx-auto w-24 h-24 bg-gray-800/50 rounded-full flex items-center justify-center border-2 border-gray-600/30 backdrop-blur-sm">
+            <ShoppingCart className="h-12 w-12 text-gray-400" aria-hidden="true" />
+          </div>
+          
+          {/* Conteúdo */}
+          <div className="space-y-3">
+            <h3 className="text-2xl font-bold text-white">Carrinho vazio</h3>
+            <p className="text-gray-400 text-lg leading-relaxed">
+              Adicione produtos para começar uma venda
+            </p>
+          </div>
+        </div>
       </div>
     );
   }

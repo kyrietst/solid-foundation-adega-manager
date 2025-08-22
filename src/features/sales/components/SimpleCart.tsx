@@ -43,9 +43,19 @@ export function SimpleCart({
 
   if (items.length === 0) {
     return (
-      <div className={cn(glassClasses, 'p-6 text-center', className)}>
-        <ShoppingCart className="mx-auto h-12 w-12 text-primary-yellow/70 mb-4" />
-        <p className="text-gray-300">Seu carrinho está vazio</p>
+      <div className={cn(glassClasses, 'py-12 px-6 text-center', className)}>
+        <div className="space-y-6">
+          {/* Ícone principal */}
+          <div className="mx-auto w-20 h-20 bg-gray-800/50 rounded-full flex items-center justify-center border-2 border-gray-600/30 backdrop-blur-sm">
+            <ShoppingCart className="h-10 w-10 text-gray-400" />
+          </div>
+          
+          {/* Conteúdo */}
+          <div className="space-y-2">
+            <h3 className="text-lg font-semibold text-white">Carrinho vazio</h3>
+            <p className="text-gray-400 text-sm">Adicione produtos para começar uma venda</p>
+          </div>
+        </div>
       </div>
     );
   }

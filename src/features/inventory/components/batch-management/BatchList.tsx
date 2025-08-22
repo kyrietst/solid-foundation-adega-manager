@@ -300,25 +300,38 @@ export const BatchList: React.FC<BatchListProps> = ({
 
       {/* Tabela de Lotes */}
       {filteredBatches.length === 0 ? (
-        <EmptyState
-          title="Nenhum lote encontrado"
-          description={
-            product 
-              ? "Este produto ainda não possui lotes cadastrados"
-              : "Nenhum lote corresponde aos filtros aplicados"
-          }
-          action={
-            showCreateButton ? (
-              <Button 
-                onClick={() => handleCreateBatch()}
-                className="bg-primary-yellow text-gray-900 hover:bg-primary-yellow/90"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Criar Primeiro Lote
-              </Button>
-            ) : undefined
-          }
-        />
+        <div className="flex flex-col items-center justify-center min-h-[400px] py-16 px-8">
+          <div className="max-w-md w-full text-center space-y-8">
+            {/* Ícone principal */}
+            <div className="mx-auto w-24 h-24 bg-gray-800/50 rounded-full flex items-center justify-center border-2 border-gray-600/30 backdrop-blur-sm">
+              <Package className="h-12 w-12 text-gray-400" />
+            </div>
+            
+            {/* Título */}
+            <div className="space-y-3">
+              <h3 className="text-2xl font-bold text-white">Nenhum lote encontrado</h3>
+              <p className="text-gray-400 text-lg leading-relaxed">
+                {product 
+                  ? "Este produto ainda não possui lotes cadastrados para controle de validade"
+                  : "Nenhum lote corresponde aos filtros aplicados"}
+              </p>
+            </div>
+            
+            {/* Botão de ação */}
+            {showCreateButton && (
+              <div className="pt-4">
+                <Button 
+                  onClick={() => handleCreateBatch()}
+                  size="lg"
+                  className="bg-gradient-to-r from-primary-yellow to-yellow-500 text-black hover:from-yellow-300 hover:to-yellow-400 font-semibold shadow-lg hover:shadow-yellow-400/30 transition-all duration-200 hover:scale-105 px-8 py-3"
+                >
+                  <Plus className="h-5 w-5 mr-3" />
+                  CRIAR PRIMEIRO LOTE
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
       ) : (
         <Card className="bg-gray-800/50 border-primary-yellow/30">
           <CardContent className="p-0">

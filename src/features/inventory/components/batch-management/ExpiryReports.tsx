@@ -407,11 +407,22 @@ export const ExpiryReports: React.FC = () => {
           </CardHeader>
           <CardContent>
             {reportData.batches.length === 0 ? (
-              <EmptyState
-                title="Nenhum lote encontrado"
-                description="Não há lotes no período selecionado"
-                icon={Package}
-              />
+              <div className="flex flex-col items-center justify-center min-h-[300px] py-12 px-8">
+                <div className="max-w-sm w-full text-center space-y-6">
+                  {/* Ícone principal */}
+                  <div className="mx-auto w-20 h-20 bg-gray-800/50 rounded-full flex items-center justify-center border-2 border-gray-600/30 backdrop-blur-sm">
+                    <Package className="h-10 w-10 text-gray-400" />
+                  </div>
+                  
+                  {/* Conteúdo */}
+                  <div className="space-y-2">
+                    <h3 className="text-lg font-semibold text-white">Nenhum lote encontrado</h3>
+                    <p className="text-gray-400 text-sm leading-relaxed">
+                      Não há lotes no período selecionado
+                    </p>
+                  </div>
+                </div>
+              </div>
             ) : (
               <div className="space-y-4">
                 

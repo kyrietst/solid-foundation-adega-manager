@@ -203,26 +203,39 @@ export const SuppliersManagement: React.FC<SuppliersManagementProps> = ({ classN
         {/* Lista de fornecedores com glass cards */}
         <div className="flex-1 min-h-0 overflow-y-auto pt-2">
         {currentSuppliers.length === 0 ? (
-          <div className="flex items-center justify-center min-h-[400px]">
-            <EmptyState
-              title={hasActiveFilters ? "Nenhum fornecedor encontrado" : "Nenhum fornecedor cadastrado"}
-              description={
-                hasActiveFilters
-                  ? "Tente ajustar os filtros de busca"
-                  : "Comece adicionando seu primeiro fornecedor"
-              }
-              action={
-                userRole === 'admin' && !hasActiveFilters ? (
+          <div className="flex flex-col items-center justify-center min-h-[500px] py-16 px-8">
+            <div className="max-w-md w-full text-center space-y-8">
+              {/* Ícone principal */}
+              <div className="mx-auto w-24 h-24 bg-gray-800/50 rounded-full flex items-center justify-center border-2 border-gray-600/30 backdrop-blur-sm">
+                <Building2 className="h-12 w-12 text-gray-400" />
+              </div>
+              
+              {/* Título */}
+              <div className="space-y-3">
+                <h3 className="text-2xl font-bold text-white">
+                  {hasActiveFilters ? "Nenhum fornecedor encontrado" : "Nenhum fornecedor cadastrado"}
+                </h3>
+                <p className="text-gray-400 text-lg leading-relaxed">
+                  {hasActiveFilters
+                    ? "Tente ajustar os filtros de busca para encontrar o que procura"
+                    : "Comece adicionando seu primeiro fornecedor para gerenciar sua rede de parceiros"}
+                </p>
+              </div>
+              
+              {/* Botão de ação */}
+              {userRole === 'admin' && !hasActiveFilters && (
+                <div className="pt-4">
                   <Button
                     onClick={() => setIsAddModalOpen(true)}
-                    className="bg-gradient-to-r from-primary-yellow to-yellow-500 text-black hover:from-yellow-300 hover:to-yellow-400 font-semibold shadow-lg hover:shadow-yellow-400/30 transition-all duration-200 hover:scale-105"
+                    size="lg"
+                    className="bg-gradient-to-r from-primary-yellow to-yellow-500 text-black hover:from-yellow-300 hover:to-yellow-400 font-semibold shadow-lg hover:shadow-yellow-400/30 transition-all duration-200 hover:scale-105 px-8 py-3"
                   >
-                    <Plus className="h-4 w-4 mr-2" />
-                    ADICIONAR FORNECEDOR
+                    <Plus className="h-5 w-5 mr-3" />
+                    ADICIONAR PRIMEIRO FORNECEDOR
                   </Button>
-                ) : undefined
-              }
-            />
+                </div>
+              )}
+            </div>
           </div>
         ) : (
           <>

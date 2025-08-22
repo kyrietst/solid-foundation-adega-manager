@@ -301,11 +301,22 @@ export const ExpiryDashboard: React.FC = () => {
               </AlertDescription>
             </Alert>
           ) : alerts.length === 0 ? (
-            <EmptyState
-              title="Nenhum alerta encontrado"
-              description="Não há alertas de vencimento com os filtros aplicados"
-              icon={CheckCircle2}
-            />
+            <div className="flex flex-col items-center justify-center min-h-[300px] py-12 px-8">
+              <div className="max-w-sm w-full text-center space-y-6">
+                {/* Ícone principal */}
+                <div className="mx-auto w-20 h-20 bg-green-800/50 rounded-full flex items-center justify-center border-2 border-green-600/30 backdrop-blur-sm">
+                  <CheckCircle2 className="h-10 w-10 text-green-400" />
+                </div>
+                
+                {/* Conteúdo */}
+                <div className="space-y-2">
+                  <h3 className="text-lg font-semibold text-white">Nenhum alerta encontrado</h3>
+                  <p className="text-gray-400 text-sm leading-relaxed">
+                    Não há alertas de vencimento com os filtros aplicados
+                  </p>
+                </div>
+              </div>
+            </div>
           ) : (
             <div className="space-y-4">
               
