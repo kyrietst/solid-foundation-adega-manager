@@ -81,7 +81,41 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
   // Buscar dados analíticos reais do produto
   const { analytics, isLoading: analyticsLoading } = useProductAnalytics(product?.id || null);
   
+  // Calcular completude dos dados (sempre executar o hook, independente do product)
+  const completeness = useMemo(() => {
+    if (!product) return { percentage: 0, missing: [] };
+    
+    const fields = [
+      { key: 'barcode', name: 'Código de Barras', critical: false, userInput: true },
+      { key: 'supplier', name: 'Fornecedor', critical: false, userInput: true },
+      { key: 'cost_price', name: 'Preço de Custo', critical: true, userInput: true },
+      { key: 'volume_ml', name: 'Volume', critical: false, userInput: true }
+      // margin_percent é calculado automaticamente, não conta para completude
+    ];
+    
+    const total = fields.length;
+    let filled = 0;
+    const missing = [];
+    
+    fields.forEach(field => {
+      const value = product[field.key];
+      const hasValue = value && value !== 0 && String(value).trim() !== '';
+      
+      if (hasValue) {
+        filled++;
+      } else {
+        missing.push(field);
+      }
+    });
+    
+    return {
+      percentage: Math.round((filled / total) * 100),
+      missing,
+      critical: missing.some(f => f.critical)
+    };
+  }, [product]);
 
+  // Early return após todos os hooks
   if (!product) return null;
 
   const stockStatus = getStockStatus(product.stock_quantity, product.minimum_stock || 10);
@@ -97,12 +131,49 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl h-[85vh] bg-adega-charcoal/95 border-adega-gold/30 backdrop-blur-xl flex flex-col">
         <DialogHeader className="border-b border-white/10 pb-4 flex-shrink-0">
-          <DialogTitle className="text-xl font-bold text-adega-platinum">
-            DETALHES DO PRODUTO
-          </DialogTitle>
-          <DialogDescription className="text-gray-400 mt-2">
-            Visualização completa das informações do produto selecionado.
-          </DialogDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <DialogTitle className="text-xl font-bold text-adega-platinum">
+                DETALHES DO PRODUTO
+              </DialogTitle>
+              <DialogDescription className="text-gray-400 mt-2">
+                Visualização completa das informações do produto selecionado.
+              </DialogDescription>
+            </div>
+            
+            {/* Indicador de completude */}
+            <div className="flex items-center gap-3">
+              <div className={cn(
+                "flex items-center gap-2 px-3 py-2 rounded-lg border",
+                completeness.critical 
+                  ? "bg-red-500/20 border-red-400/40 animate-pulse" 
+                  : completeness.percentage === 100 
+                    ? "bg-green-500/20 border-green-400/40"
+                    : "bg-yellow-500/20 border-yellow-400/40"
+              )}>
+                <div className={cn(
+                  "text-sm font-semibold",
+                  completeness.critical ? "text-red-400" : 
+                  completeness.percentage === 100 ? "text-green-400" : "text-yellow-400"
+                )}>
+                  {completeness.percentage}% completo
+                </div>
+                {completeness.percentage === 100 ? (
+                  <span className="text-green-400">✅</span>
+                ) : completeness.critical ? (
+                  <span className="text-red-400">⚠️</span>
+                ) : (
+                  <span className="text-yellow-400">📝</span>
+                )}
+              </div>
+              
+              {completeness.missing.length > 0 && (
+                <div className="text-xs text-gray-400">
+                  <span className="text-gray-300">{completeness.missing.length}</span> campo(s) pendente(s)
+                </div>
+              )}
+            </div>
+          </div>
         </DialogHeader>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mt-2 flex-1 overflow-hidden">
@@ -173,12 +244,30 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
                 
                 <div>
                   <label className="text-sm text-gray-400">Código de Barras</label>
-                  <p className="text-gray-100 font-medium">{product.barcode || 'N/A'}</p>
+                  {!product.barcode ? (
+                    <div className="flex items-center gap-2 animate-pulse">
+                      <p className="text-orange-400 font-medium">⚠️ Não informado</p>
+                      <span className="text-xs text-orange-300 bg-orange-500/20 px-2 py-1 rounded-full border border-orange-400/30">
+                        Pendente
+                      </span>
+                    </div>
+                  ) : (
+                    <p className="text-gray-100 font-medium">{product.barcode}</p>
+                  )}
                 </div>
                 
                 <div>
                   <label className="text-sm text-gray-400">Fornecedor</label>
-                  <p className="text-gray-100 font-medium">{product.supplier ? String(product.supplier).trim() : 'N/A'}</p>
+                  {!product.supplier || String(product.supplier).trim() === '' ? (
+                    <div className="flex items-center gap-2 animate-pulse">
+                      <p className="text-orange-400 font-medium">⚠️ Não informado</p>
+                      <span className="text-xs text-orange-300 bg-orange-500/20 px-2 py-1 rounded-full border border-orange-400/30">
+                        Pendente
+                      </span>
+                    </div>
+                  ) : (
+                    <p className="text-gray-100 font-medium">{String(product.supplier).trim()}</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -281,9 +370,18 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
               <div className="grid grid-cols-3 gap-2 text-sm">
                 <div>
                   <label className="text-sm text-gray-400">Preço de Custo</label>
-                  <p className="text-lg font-bold text-gray-100">
-                    {formatCurrency(product.cost_price || 0)}
-                  </p>
+                  {!product.cost_price || product.cost_price === 0 ? (
+                    <div className="flex items-center gap-2 animate-pulse">
+                      <p className="text-red-400 font-bold">⚠️ Não informado</p>
+                      <span className="text-xs text-red-300 bg-red-500/20 px-2 py-1 rounded-full border border-red-400/30">
+                        Crítico
+                      </span>
+                    </div>
+                  ) : (
+                    <p className="text-lg font-bold text-gray-100">
+                      {formatCurrency(product.cost_price)}
+                    </p>
+                  )}
                 </div>
                 
                 <div>
@@ -295,9 +393,18 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
                 
                 <div>
                   <label className="text-sm text-gray-400">Margem</label>
-                  <p className="text-lg font-bold text-yellow-400">
-                    {product.margin_percent ? `${String(product.margin_percent).trim()}%` : 'N/A'}
-                  </p>
+                  {!product.margin_percent ? (
+                    <div className="flex items-center gap-2">
+                      <p className="text-blue-400 font-bold">🔄 Auto-calculado</p>
+                      <span className="text-xs text-blue-300 bg-blue-500/20 px-2 py-1 rounded-full border border-blue-400/30">
+                        Sistema
+                      </span>
+                    </div>
+                  ) : (
+                    <p className="text-lg font-bold text-yellow-400">
+                      {String(product.margin_percent).trim()}%
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -312,30 +419,66 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <div>
                   <label className="text-sm text-gray-400">Fornecedor</label>
-                  <p className="text-gray-100 font-medium">
-                    {product.supplier ? String(product.supplier).trim() : 'N/A'}
-                  </p>
+                  {!product.supplier || String(product.supplier).trim() === '' ? (
+                    <div className="flex items-center gap-1 animate-pulse">
+                      <p className="text-orange-400 font-medium">⚠️ Não informado</p>
+                      <span className="text-xs text-orange-300 bg-orange-500/20 px-1 py-0.5 rounded border border-orange-400/30">
+                        Pendente
+                      </span>
+                    </div>
+                  ) : (
+                    <p className="text-gray-100 font-medium">
+                      {String(product.supplier).trim()}
+                    </p>
+                  )}
                 </div>
                 
                 <div>
                   <label className="text-sm text-gray-400">Volume</label>
-                  <p className="text-gray-100">
-                    {product.volume_ml ? `${product.volume_ml} ml` : 'N/A'}
-                  </p>
+                  {!product.volume_ml ? (
+                    <div className="flex items-center gap-1 animate-pulse">
+                      <p className="text-blue-400 font-medium">⚠️ Não informado</p>
+                      <span className="text-xs text-blue-300 bg-blue-500/20 px-1 py-0.5 rounded border border-blue-400/30">
+                        Importante
+                      </span>
+                    </div>
+                  ) : (
+                    <p className="text-gray-100">
+                      {product.volume_ml} ml
+                    </p>
+                  )}
                 </div>
                 
                 <div>
                   <label className="text-sm text-gray-400">Preço de Custo</label>
-                  <p className="text-gray-100">
-                    {product.cost_price ? formatCurrency(product.cost_price) : 'N/A'}
-                  </p>
+                  {!product.cost_price || product.cost_price === 0 ? (
+                    <div className="flex items-center gap-1 animate-pulse">
+                      <p className="text-red-400 font-medium">⚠️ Não informado</p>
+                      <span className="text-xs text-red-300 bg-red-500/20 px-1 py-0.5 rounded border border-red-400/30">
+                        Crítico
+                      </span>
+                    </div>
+                  ) : (
+                    <p className="text-gray-100">
+                      {formatCurrency(product.cost_price)}
+                    </p>
+                  )}
                 </div>
                 
                 <div>
                   <label className="text-sm text-gray-400">Margem de Lucro</label>
-                  <p className="text-gray-100">
-                    {product.margin_percent ? `${String(product.margin_percent).trim()}%` : 'N/A'}
-                  </p>
+                  {!product.margin_percent ? (
+                    <div className="flex items-center gap-1">
+                      <p className="text-blue-400 font-medium">🔄 Auto-calculado</p>
+                      <span className="text-xs text-blue-300 bg-blue-500/20 px-1 py-0.5 rounded border border-blue-400/30">
+                        Sistema
+                      </span>
+                    </div>
+                  ) : (
+                    <p className="text-gray-100">
+                      {String(product.margin_percent).trim()}%
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
