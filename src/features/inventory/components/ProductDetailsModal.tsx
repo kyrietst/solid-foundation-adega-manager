@@ -9,7 +9,6 @@ import { Button } from '@/shared/ui/primitives/button';
 import { Badge } from '@/shared/ui/primitives/badge';
 import { 
   Package, 
-  MapPin, 
   TrendingUp, 
   TrendingDown, 
   Minus,
@@ -82,14 +81,6 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
   // Buscar dados analíticos reais do produto
   const { analytics, isLoading: analyticsLoading } = useProductAnalytics(product?.id || null);
   
-  // Simular localização física (estável por produto) - TODO: Implementar campo real no banco
-  const location = useMemo(() => {
-    if (!product) return 'N/A';
-    const seed = product.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    const aisle = (seed % 5) + 1;
-    const shelf = (Math.floor(seed / 5) % 10) + 1;
-    return `A${aisle}-B${shelf}`;
-  }, [product?.id]);
 
   if (!product) return null;
 
@@ -199,7 +190,7 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
                 Controle de Estoque
               </h3>
               
-              <div className="grid grid-cols-3 gap-2 text-sm">
+              <div className="grid grid-cols-2 gap-2 text-sm">
                 <div className="bg-gray-800/40 rounded p-2">
                   <label className="text-xs text-gray-400">Estoque Atual</label>
                   <p className="text-lg font-bold text-gray-100">{product.stock_quantity}</p>
@@ -212,13 +203,6 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
                   <span className="text-xs text-gray-400">unidades</span>
                 </div>
                 
-                <div className="bg-gray-800/40 rounded p-2">
-                  <label className="text-xs text-gray-400">Localização</label>
-                  <p className="text-base font-bold text-blue-400 flex items-center">
-                    <MapPin className="h-3 w-3 mr-1" />
-                    {location}
-                  </p>
-                </div>
               </div>
               
               <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
