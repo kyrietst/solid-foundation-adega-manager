@@ -1017,27 +1017,27 @@ export default function CustomerDataTable() {
                   </TableCell>
                 )}
                 {visibleColumns.includes("Categoria Favorita") && (
-                  <TableCell className="whitespace-nowrap text-gray-100 py-4 px-3">
+                  <TableCell className="whitespace-nowrap text-gray-100 py-4 px-3 text-center">
                     {customer.categoriaFavorita || "Não definida"}
                   </TableCell>
                 )}
                 {visibleColumns.includes("Segmento") && (
-                  <TableCell className="whitespace-nowrap py-4 px-3">
+                  <TableCell className="whitespace-nowrap py-4 px-3 text-center">
                     <Badge variant="outline" className="bg-gray-700/50 text-gray-100 border-gray-600/50 text-sm font-medium px-3 py-1">{customer.segmento}</Badge>
                   </TableCell>
                 )}
                 {visibleColumns.includes("Método Preferido") && (
-                  <TableCell className="whitespace-nowrap text-gray-100 py-4 px-3">
+                  <TableCell className="whitespace-nowrap text-gray-100 py-4 px-3 text-center">
                     {formatPaymentMethod(customer.metodoPreferido)}
                   </TableCell>
                 )}
                 {visibleColumns.includes("Última Compra") && (
-                  <TableCell className="whitespace-nowrap text-gray-100 py-4 px-3">
+                  <TableCell className="whitespace-nowrap text-gray-100 py-4 px-3 text-center">
                     {formatLastPurchase(customer.ultimaCompra)}
                   </TableCell>
                 )}
                 {visibleColumns.includes("Insights de IA") && (
-                  <TableCell className="py-4 px-3">
+                  <TableCell className="py-4 px-3 text-center">
                     <InsightsBadge 
                       count={customer.insightsCount}
                       confidence={customer.insightsConfidence}
@@ -1045,7 +1045,7 @@ export default function CustomerDataTable() {
                   </TableCell>
                 )}
                 {visibleColumns.includes("Status") && (
-                  <TableCell className="whitespace-nowrap py-4 px-3">
+                  <TableCell className="whitespace-nowrap py-4 px-3 text-center">
                     <StatusBadge 
                       status={customer.status}
                       color={customer.statusColor}
@@ -1053,12 +1053,12 @@ export default function CustomerDataTable() {
                   </TableCell>
                 )}
                 {visibleColumns.includes("Cidade") && (
-                  <TableCell className="whitespace-nowrap text-gray-100 py-4 px-3">
+                  <TableCell className="whitespace-nowrap text-gray-100 py-4 px-3 text-center">
                     {customer.cidade || "Não informada"}
                   </TableCell>
                 )}
                 {visibleColumns.includes("Próximo Aniversário") && (
-                  <TableCell className="whitespace-nowrap py-4 px-3">
+                  <TableCell className="whitespace-nowrap py-4 px-3 text-center">
                     <div className={cn("flex items-center gap-1", 
                       customer.diasParaAniversario !== null && customer.diasParaAniversario <= 7 
                         ? "text-yellow-400 font-medium" 
@@ -1069,12 +1069,12 @@ export default function CustomerDataTable() {
                   </TableCell>
                 )}
                 {visibleColumns.includes("LGPD") && (
-                  <TableCell className="py-4 px-3">
+                  <TableCell className="py-4 px-3 text-center">
                     <LGPDBadge hasPermission={customer.contactPermission} />
                   </TableCell>
                 )}
                 {visibleColumns.includes("Completude") && (
-                  <TableCell className="py-4 px-3">
+                  <TableCell className="py-4 px-3 text-center">
                     <EnhancedProfileCompleteness 
                       row={customer} 
                       onEditClick={(customerId) => {
@@ -1085,7 +1085,7 @@ export default function CustomerDataTable() {
                   </TableCell>
                 )}
                 {visibleColumns.includes("Último Contato") && (
-                  <TableCell className="whitespace-nowrap py-4 px-3">
+                  <TableCell className="whitespace-nowrap py-4 px-3 text-center">
                     <LastContactBadge 
                       date={customer.ultimoContato}
                       daysAgo={customer.diasSemContato}
@@ -1093,7 +1093,7 @@ export default function CustomerDataTable() {
                   </TableCell>
                 )}
                 {visibleColumns.includes("Valor em Aberto") && (
-                  <TableCell className="whitespace-nowrap py-4 px-3">
+                  <TableCell className="whitespace-nowrap py-4 px-3 text-center">
                     <OutstandingAmountBadge amount={customer.valorEmAberto} />
                   </TableCell>
                 )}
