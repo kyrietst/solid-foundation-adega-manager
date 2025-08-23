@@ -37,7 +37,7 @@ const App = () => (
         <BrowserRouter>
           <AuthErrorBoundary>
             <AuthProvider>
-              <div className="min-h-screen w-full relative">
+              <div className="min-h-screen w-full relative overflow-x-hidden min-w-0">
                 {/* Background fluid blob */}
                 <div className="fixed inset-0 z-0">
                   <LavaLamp />

@@ -144,23 +144,65 @@ const ProfileCompleteness: React.FC<ProfileCompletenessProps> = ({
           <TooltipPortal>
             <TooltipContent 
               side="top" 
-              className="max-w-xs z-[50000] bg-gray-900 border-gray-700" 
+              className="max-w-sm z-[50000] bg-black/95 backdrop-blur-xl border border-primary-yellow/30 shadow-2xl shadow-primary-yellow/10" 
               sideOffset={8}
               avoidCollisions={true}
               collisionPadding={10}
             >
-            <div className="space-y-1">
-              <p className="font-medium">Completude do Perfil: {result.percentage}%</p>
+            <div className="space-y-3 p-1">
+              {/* Header com status */}
+              <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                <span className="font-semibold text-white">Completude do Perfil</span>
+                <div className="flex items-center gap-2">
+                  <span className={cn("font-bold text-sm", getCompletenessColor())}>
+                    {result.percentage}%
+                  </span>
+                  {result.level === 'excellent' && <CheckCircle2 className="h-4 w-4 text-primary-yellow" />}
+                  {result.level === 'poor' && <AlertTriangle className="h-4 w-4 text-accent-red animate-pulse" />}
+                </div>
+              </div>
+              
+              {/* Campos críticos para relatórios */}
               {result.criticalMissing.length > 0 && (
-                <p className="text-red-400 text-xs">
-                  ⚠️ {result.criticalMissing.length} campos críticos ausentes
-                </p>
+                <div className="bg-accent-red/10 border border-accent-red/20 rounded-lg p-2">
+                  <p className="text-accent-red font-medium text-xs flex items-center gap-1 mb-1">
+                    <AlertTriangle className="h-3 w-3" />
+                    {result.criticalMissing.length} campos críticos para relatórios
+                  </p>
+                  <div className="text-xs text-red-200 space-y-1">
+                    {result.criticalMissing.slice(0, 3).map((field, i) => (
+                      <div key={i} className="flex items-center gap-1">
+                        <span className="w-1 h-1 bg-accent-red rounded-full"></span>
+                        <span>{field.label}</span>
+                      </div>
+                    ))}
+                    {result.criticalMissing.length > 3 && (
+                      <p className="text-accent-red/70 italic">+{result.criticalMissing.length - 3} outros campos</p>
+                    )}
+                  </div>
+                </div>
               )}
+              
+              {/* Recomendação prioritária */}
               {result.recommendations.length > 0 && (
-                <p className="text-yellow-400 text-xs">
-                  💡 {result.recommendations[0]}
-                </p>
+                <div className="bg-primary-yellow/10 border border-primary-yellow/20 rounded-lg p-2">
+                  <p className="text-primary-yellow font-medium text-xs flex items-center gap-1 mb-1">
+                    <TrendingUp className="h-3 w-3" />
+                    Recomendação Prioritária
+                  </p>
+                  <p className="text-yellow-100 text-xs">
+                    {result.recommendations[0]}
+                  </p>
+                </div>
               )}
+              
+              {/* Status geral */}
+              <div className="text-center pt-1 border-t border-white/10">
+                <p className="text-xs text-gray-300">
+                  {result.presentFields.length} de {result.presentFields.length + result.missingFields.length} campos • 
+                  <span className="text-primary-yellow ml-1 font-medium">Clique para ver detalhes</span>
+                </p>
+              </div>
             </div>
             </TooltipContent>
           </TooltipPortal>

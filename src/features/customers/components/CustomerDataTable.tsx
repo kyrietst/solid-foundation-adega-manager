@@ -28,7 +28,7 @@ import { Button } from "@/shared/ui/primitives/button";
 import { Input } from "@/shared/ui/primitives/input";
 import { SearchBar21st } from "@/shared/ui/thirdparty/search-bar-21st";
 import { cn } from "@/core/config/utils";
-import { Brain, User, Calendar, CreditCard, ArrowUpDown, ArrowUp, ArrowDown, MapPin, Gift, Shield, BarChart3, CheckCircle2, XCircle, MessageCircle, DollarSign, AlertTriangle } from "lucide-react";
+import { Brain, User, Calendar, CreditCard, ArrowUpDown, ArrowUp, ArrowDown, MapPin, Gift, Shield, BarChart3, CheckCircle2, XCircle, MessageCircle, DollarSign, AlertTriangle, Eye, TrendingUp } from "lucide-react";
 import ProfileCompleteness from "@/shared/ui/composite/profile-completeness";
 import { useProfileCompleteness } from "../hooks/useDataQuality";
 import { calculateCompleteness } from "../utils/completeness-calculator";
@@ -61,7 +61,7 @@ const InsightsBadge = ({
 }) => {
   if (count === 0) {
     return (
-      <Badge variant="outline" className="flex items-center gap-1">
+      <Badge variant="outline" className="flex items-center gap-1 text-sm font-bold px-3 py-1 bg-gray-600/30 text-gray-100 border-gray-500/60">
         <Brain className="w-3 h-3" />
         Sem insights
       </Badge>
@@ -71,28 +71,89 @@ const InsightsBadge = ({
   const level = getInsightLevel(confidence);
   const color = getInsightColor(level);
   
+  // Sistema de cores Adega Wine Cellar v2.1 - Insights IA
   const badgeClass = {
-    green: "bg-green-500/20 text-green-400 border-green-400/30",
-    yellow: "bg-yellow-500/20 text-yellow-400 border-yellow-400/30", 
-    red: "bg-red-500/20 text-red-400 border-red-400/30"
+    green: "bg-green-500/30 text-green-100 border-green-400/60 shadow-lg shadow-green-400/20 backdrop-blur-sm font-bold",
+    yellow: "bg-yellow-500/30 text-yellow-100 border-yellow-400/60 shadow-lg shadow-yellow-400/20 backdrop-blur-sm font-bold",
+    red: "bg-red-500/30 text-red-100 border-red-400/60 shadow-lg shadow-red-400/20 backdrop-blur-sm animate-pulse font-bold"
   };
   
   return (
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Badge className={cn("flex items-center gap-1", badgeClass[color])}>
+          <Badge className={cn(
+            "flex items-center gap-1 transition-all duration-200 hover:scale-105 border cursor-pointer text-sm font-semibold px-3 py-1", 
+            badgeClass[color]
+          )}>
             <Brain className="w-3 h-3" />
-            {count} ({Math.round(confidence * 100)}%)
+            {count} insights ({Math.round(confidence * 100)}%)
           </Badge>
         </TooltipTrigger>
         <TooltipPortal>
-          <TooltipContent className="z-[50000] bg-gray-900 border-gray-700">
-            <p>
-              {count} insights de IA com {Math.round(confidence * 100)}% de confiança média
-            </p>
+          <TooltipContent className="z-[50000] bg-black/95 backdrop-blur-xl border border-primary-yellow/30 shadow-2xl">
+            <div className="space-y-2 p-1">
+              <div className="flex items-center gap-2 border-b border-white/10 pb-1">
+                <Brain className="h-3 w-3 text-primary-yellow" />
+                <span className="font-semibold text-white text-xs">Insights de IA</span>
+              </div>
+              
+              <div className="bg-accent-blue/10 border border-accent-blue/20 rounded-lg p-2">
+                <p className="text-blue-300 font-medium text-xs">
+                  {count} insights disponíveis
+                </p>
+                <p className="text-blue-200 text-[10px] mt-1">
+                  Confiança média: {Math.round(confidence * 100)}%
+                </p>
+              </div>
+              
+              <div className="text-center pt-1 border-t border-white/10">
+                <p className="text-xs text-gray-300">
+                  Análises automatizadas de comportamento
+                </p>
+              </div>
+            </div>
             </TooltipContent>
           </TooltipPortal>
+      </Tooltip>
+    </TooltipProvider>
+  );
+};
+
+// Indicadores visuais para campos críticos de relatórios
+const ReportFieldIndicator = ({ 
+  fieldName, 
+  value, 
+  isRequired = false 
+}: { 
+  fieldName: string; 
+  value: any; 
+  isRequired?: boolean; 
+}) => {
+  const isEmpty = !value || value === '' || value === 'Não informado' || value === 'N/A';
+  
+  if (!isEmpty) return null;
+  
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className={cn(
+            "inline-flex items-center justify-center w-2 h-2 rounded-full ml-1",
+            isRequired ? "bg-accent-red animate-pulse" : "bg-accent-orange"
+          )} />
+        </TooltipTrigger>
+        <TooltipPortal>
+          <TooltipContent className="z-[50000] bg-black/95 backdrop-blur-xl border border-primary-yellow/30">
+            <div className="space-y-1">
+              <p className="text-xs font-medium text-primary-yellow">Campo faltante para relatórios</p>
+              <p className="text-xs text-white">{fieldName}</p>
+              <p className="text-xs text-gray-300">
+                {isRequired ? "🔴 Crítico" : "🟡 Importante"}
+              </p>
+            </div>
+          </TooltipContent>
+        </TooltipPortal>
       </Tooltip>
     </TooltipProvider>
   );
@@ -105,19 +166,156 @@ const StatusBadge = ({
   status: CustomerTableRow['status']; 
   color: CustomerTableRow['statusColor']; 
 }) => {
+  // Sistema de cores Adega Wine Cellar v2.1 - Contraste otimizado
   const statusColors = {
-    gold: "bg-yellow-500 text-white",
-    green: "bg-green-500 text-white",
-    yellow: "bg-yellow-400 text-gray-800",
-    red: "bg-red-500 text-white",
-    gray: "bg-gray-400 text-white",
-    orange: "bg-orange-500 text-white"
+    gold: "bg-primary-yellow/20 text-primary-yellow border-primary-yellow/40 shadow-lg shadow-primary-yellow/10 font-semibold backdrop-blur-sm",
+    green: "bg-green-400/20 text-green-300 border-green-400/40 shadow-lg shadow-green-400/10 backdrop-blur-sm",
+    yellow: "bg-accent-orange/20 text-orange-300 border-accent-orange/40 shadow-lg shadow-accent-orange/10 backdrop-blur-sm",
+    red: "bg-accent-red/20 text-red-300 border-accent-red/40 shadow-lg shadow-accent-red/10 backdrop-blur-sm animate-pulse",
+    gray: "bg-gray-500/20 text-gray-300 border-gray-500/40 shadow-lg shadow-gray-500/10 backdrop-blur-sm",
+    orange: "bg-accent-orange/20 text-orange-300 border-accent-orange/40 shadow-lg shadow-accent-orange/10 backdrop-blur-sm"
   };
   
   return (
-    <Badge className={cn("whitespace-nowrap", statusColors[color])}>
+    <Badge className={cn(
+      "whitespace-nowrap transition-all duration-200 hover:scale-105 border text-sm font-semibold px-3 py-1", 
+      statusColors[color] || statusColors.gray
+    )}>
       {status}
     </Badge>
+  );
+};
+
+// Componente interativo para nome do cliente com indicadores visuais
+const CustomerNameWithIndicators = ({ 
+  customer 
+}: { 
+  customer: CustomerTableRow; 
+}) => {
+  const reportFields = [
+    { key: 'email', label: 'Email', value: customer.email, required: true },
+    { key: 'phone', label: 'Telefone', value: customer.telefone, required: true },
+    { key: 'birthday', label: 'Aniversário', value: customer.aniversario, required: false },
+    { key: 'address', label: 'Endereço', value: customer.cidade, required: false },
+    { key: 'category', label: 'Categoria Favorita', value: customer.categoriaFavorita, required: false }
+  ];
+  
+  const missingFields = reportFields.filter(field => 
+    !field.value || field.value === 'Não informado' || field.value === 'N/A'
+  );
+  
+  const criticalMissing = missingFields.filter(field => field.required);
+  const importantMissing = missingFields.filter(field => !field.required);
+  
+  const hasIssues = missingFields.length > 0;
+  
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className={cn(
+            "group flex items-center gap-2 cursor-pointer transition-all duration-200",
+            hasIssues && "hover:scale-105"
+          )}>
+            {/* Nome do cliente */}
+            <span className={cn(
+              "font-medium transition-colors duration-200",
+              hasIssues ? "text-white group-hover:text-primary-yellow" : "text-gray-100"
+            )}>
+              {customer.cliente}
+            </span>
+            
+            {/* Indicadores visuais */}
+            {criticalMissing.length > 0 && (
+              <div className="relative">
+                <AlertTriangle className="h-3 w-3 text-accent-red animate-pulse" />
+                <div className="absolute -top-1 -right-1 w-2 h-2 bg-accent-red rounded-full animate-ping" />
+              </div>
+            )}
+            
+            {importantMissing.length > 0 && criticalMissing.length === 0 && (
+              <div className="w-2 h-2 bg-accent-orange rounded-full animate-pulse" />
+            )}
+            
+            {!hasIssues && (
+              <CheckCircle2 className="h-3 w-3 text-green-400 opacity-60" />
+            )}
+          </div>
+        </TooltipTrigger>
+        <TooltipPortal>
+          <TooltipContent className="z-[50000] bg-black/95 backdrop-blur-xl border border-primary-yellow/30 shadow-2xl max-w-sm">
+            <div className="space-y-3 p-1">
+              {/* Header */}
+              <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                <span className="font-semibold text-white">Perfil para Relatórios</span>
+                <div className="flex items-center gap-1">
+                  <Eye className="h-3 w-3 text-primary-yellow" />
+                  <span className="text-primary-yellow text-xs font-medium">Clique para editar</span>
+                </div>
+              </div>
+              
+              {/* Campos críticos faltantes */}
+              {criticalMissing.length > 0 && (
+                <div className="bg-accent-red/10 border border-accent-red/20 rounded-lg p-2">
+                  <p className="text-accent-red font-medium text-xs flex items-center gap-1 mb-1">
+                    <AlertTriangle className="h-3 w-3 animate-pulse" />
+                    {criticalMissing.length} campos críticos ausentes
+                  </p>
+                  <div className="space-y-1">
+                    {criticalMissing.map((field, i) => (
+                      <div key={i} className="flex items-center gap-2 text-xs">
+                        <span className="w-1 h-1 bg-accent-red rounded-full animate-pulse"></span>
+                        <span className="text-red-200">{field.label}</span>
+                        <span className="text-accent-red/70 text-[10px]">OBRIGATÓRIO</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* Campos importantes faltantes */}
+              {importantMissing.length > 0 && (
+                <div className="bg-accent-orange/10 border border-accent-orange/20 rounded-lg p-2">
+                  <p className="text-accent-orange font-medium text-xs flex items-center gap-1 mb-1">
+                    <TrendingUp className="h-3 w-3" />
+                    {importantMissing.length} campos importantes ausentes
+                  </p>
+                  <div className="space-y-1">
+                    {importantMissing.map((field, i) => (
+                      <div key={i} className="flex items-center gap-2 text-xs">
+                        <span className="w-1 h-1 bg-accent-orange rounded-full"></span>
+                        <span className="text-orange-200">{field.label}</span>
+                        <span className="text-accent-orange/70 text-[10px]">RECOMENDADO</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* Status completo */}
+              {!hasIssues && (
+                <div className="bg-green-400/10 border border-green-400/20 rounded-lg p-2">
+                  <p className="text-green-400 font-medium text-xs flex items-center gap-1">
+                    <CheckCircle2 className="h-3 w-3" />
+                    Perfil completo para relatórios
+                  </p>
+                  <p className="text-green-200 text-xs mt-1">
+                    Todos os campos necessários estão preenchidos
+                  </p>
+                </div>
+              )}
+              
+              {/* Footer */}
+              <div className="text-center pt-1 border-t border-white/10">
+                <p className="text-xs text-gray-300">
+                  Campos completos melhoram a precisão dos relatórios
+                </p>
+              </div>
+            </div>
+          </TooltipContent>
+        </TooltipPortal>
+      </Tooltip>
+    </TooltipProvider>
   );
 };
 
@@ -127,25 +325,53 @@ const LGPDBadge = ({ hasPermission }: { hasPermission: boolean }) => {
       <Tooltip>
         <TooltipTrigger asChild>
           <Badge 
-            variant={hasPermission ? "default" : "destructive"} 
-            className={cn("flex items-center gap-1", 
+            className={cn(
+              "flex items-center gap-1 transition-all duration-200 hover:scale-105 border backdrop-blur-sm cursor-pointer text-sm font-semibold px-3 py-1", 
               hasPermission 
-                ? "bg-green-500/20 text-green-400 border-green-400/30" 
-                : "bg-red-500/20 text-red-400 border-red-400/30"
+                ? "bg-green-400/20 text-green-300 border-green-400/40 shadow-lg shadow-green-400/10" 
+                : "bg-accent-red/20 text-red-300 border-accent-red/40 shadow-lg shadow-accent-red/10 animate-pulse"
             )}
           >
-            {hasPermission ? <CheckCircle2 className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
-            {hasPermission ? "✓" : "✗"}
+            {hasPermission ? <CheckCircle2 className="w-3 h-3" /> : <XCircle className="w-3 h-3 animate-pulse" />}
+            {hasPermission ? "LGPD ✓" : "Pendente"}
           </Badge>
         </TooltipTrigger>
         <TooltipPortal>
-          <TooltipContent className="z-[50000] bg-gray-900 border-gray-700">
-          <p>
-            {hasPermission 
-              ? "Cliente autorizou contato (LGPD conforme)" 
-              : "Cliente não autorizou contato marketing"
-            }
-          </p>
+          <TooltipContent className="z-[50000] bg-black/95 backdrop-blur-xl border border-primary-yellow/30 shadow-2xl">
+            <div className="space-y-2 p-1">
+              <div className="flex items-center gap-2 border-b border-white/10 pb-1">
+                <Shield className="h-3 w-3 text-primary-yellow" />
+                <span className="font-semibold text-white text-xs">Status LGPD</span>
+              </div>
+              
+              {hasPermission ? (
+                <div className="bg-green-400/10 border border-green-400/20 rounded-lg p-2">
+                  <p className="text-green-300 font-medium text-xs flex items-center gap-1">
+                    <CheckCircle2 className="h-3 w-3" />
+                    Autorização Concedida
+                  </p>
+                  <p className="text-green-200 text-[10px] mt-1">
+                    Cliente pode receber comunicações de marketing
+                  </p>
+                </div>
+              ) : (
+                <div className="bg-accent-red/10 border border-accent-red/20 rounded-lg p-2">
+                  <p className="text-red-300 font-medium text-xs flex items-center gap-1">
+                    <AlertTriangle className="h-3 w-3 animate-pulse" />
+                    Autorização Pendente
+                  </p>
+                  <p className="text-red-200 text-[10px] mt-1">
+                    Necessário consentimento para marketing
+                  </p>
+                </div>
+              )}
+              
+              <div className="text-center pt-1 border-t border-white/10">
+                <p className="text-xs text-gray-300">
+                  Conforme Lei Geral de Proteção de Dados
+                </p>
+              </div>
+            </div>
             </TooltipContent>
           </TooltipPortal>
       </Tooltip>
@@ -484,7 +710,7 @@ export default function CustomerDataTable() {
   }
 
   return (
-    <div className="space-y-4 h-full flex flex-col overflow-visible relative z-[1]">
+    <div className="space-y-4 h-full flex flex-col overflow-visible relative z-[1] w-full min-w-0">
       <div className="flex flex-wrap gap-4 items-center justify-between flex-shrink-0 relative z-[200]">
         <div className="flex gap-2 flex-wrap items-center">
           <div className="w-64 md:w-80">
@@ -577,14 +803,14 @@ export default function CustomerDataTable() {
         </div>
       </div>
 
-      <div className="bg-black/40 rounded-lg border border-white/10 flex-1 min-h-0 overflow-visible relative">
-        <div className="h-full overflow-y-auto overflow-x-visible max-h-[60vh] scrollbar-thin scrollbar-track-gray-900 scrollbar-thumb-gray-600 hover:scrollbar-thumb-gray-500">
+      <div className="bg-black/40 rounded-lg border border-white/10 flex-1 min-h-0 overflow-visible relative w-full">
+        <div className="h-full overflow-y-auto overflow-x-visible max-h-[60vh] scrollbar-thin scrollbar-track-gray-900 scrollbar-thumb-gray-600 hover:scrollbar-thumb-gray-500 w-full">
           <Table className="w-full table-fixed">
-          <TableHeader className="sticky top-0 z-[50] bg-black/80 backdrop-blur-sm">
-            <TableRow className="border-b border-white/10 bg-black/20 hover:bg-black/30">
+          <TableHeader className="sticky top-0 z-[50] bg-black/90 backdrop-blur-xl border-b border-primary-yellow/20">
+            <TableRow className="border-b border-primary-yellow/30 bg-gradient-to-r from-black/40 via-black/60 to-black/40 hover:from-black/50 hover:via-black/70 hover:to-black/50 transition-all duration-200">
             {visibleColumns.includes("Cliente") && (
-              <TableHead className="w-[140px] text-gray-300 font-semibold text-center px-2">
-                <div className="flex justify-center">
+              <TableHead className="w-[200px] text-gray-100 font-bold text-left px-4 py-4 shadow-sm">
+                <div className="flex justify-start">
                   <Button
                     variant="ghost"
                     onClick={() => handleSort('cliente')}
@@ -597,7 +823,7 @@ export default function CustomerDataTable() {
               </TableHead>
             )}
             {visibleColumns.includes("Categoria Favorita") && (
-              <TableHead className="w-[110px] text-gray-300 font-semibold text-center px-2">
+              <TableHead className="w-[130px] text-gray-100 font-bold text-center px-3 py-4 shadow-sm">
                 <div className="flex justify-center">
                   <Button
                     variant="ghost"
@@ -609,11 +835,11 @@ export default function CustomerDataTable() {
               </TableHead>
             )}
             {visibleColumns.includes("Segmento") && (
-              <TableHead className="w-[90px] text-gray-300 font-semibold text-center px-2">
+              <TableHead className="w-[120px] text-gray-100 font-bold text-center px-3 py-4 shadow-sm">
                 <div className="flex justify-center">
                   <Button
                     variant="ghost"
-                    className="flex items-center justify-center gap-1 px-2 py-1 bg-black/20 border border-gray-700/50 hover:bg-gray-800/60 text-gray-300 hover:text-yellow-400 rounded-md transition-colors duration-200 cursor-default text-xs"
+                    className="flex items-center justify-center gap-1 px-3 py-2 bg-black/30 border border-gray-600/50 hover:bg-primary-yellow/10 text-gray-300 hover:text-primary-yellow rounded-lg transition-all duration-200 cursor-default text-sm font-medium"
                   >
                     Segmento
                   </Button>
@@ -621,11 +847,11 @@ export default function CustomerDataTable() {
               </TableHead>
             )}
             {visibleColumns.includes("Método Preferido") && (
-              <TableHead className="w-[100px] text-gray-300 font-semibold text-center px-2">
+              <TableHead className="w-[125px] text-gray-100 font-bold text-center px-3 py-4 shadow-sm">
                 <div className="flex justify-center">
                   <Button
                     variant="ghost"
-                    className="flex items-center justify-center gap-1 px-2 py-1 bg-black/20 border border-gray-700/50 hover:bg-gray-800/60 text-gray-300 hover:text-yellow-400 rounded-md transition-colors duration-200 cursor-default text-xs"
+                    className="flex items-center justify-center gap-1 px-3 py-2 bg-black/30 border border-gray-600/50 hover:bg-primary-yellow/10 text-gray-300 hover:text-primary-yellow rounded-lg transition-all duration-200 cursor-default text-sm font-medium"
                   >
                     Método
                   </Button>
@@ -633,12 +859,12 @@ export default function CustomerDataTable() {
               </TableHead>
             )}
             {visibleColumns.includes("Última Compra") && (
-              <TableHead className="w-[120px] text-gray-300 font-semibold text-center px-2">
+              <TableHead className="w-[140px] text-gray-100 font-bold text-center px-3 py-4 shadow-sm">
                 <div className="flex justify-center">
                   <Button
                     variant="ghost"
                     onClick={() => handleSort('ultimaCompra')}
-                    className="flex items-center justify-center gap-1 px-2 py-1 bg-black/20 border border-gray-700/50 hover:bg-gray-800/60 text-gray-300 hover:text-yellow-400 rounded-md transition-colors duration-200 text-xs"
+                    className="flex items-center justify-center gap-1 px-3 py-2 bg-black/30 border border-gray-600/50 hover:bg-primary-yellow/10 text-gray-300 hover:text-primary-yellow rounded-lg transition-all duration-200 text-sm font-medium"
                   >
                     Última Compra
                     {getSortIcon('ultimaCompra')}
@@ -647,12 +873,12 @@ export default function CustomerDataTable() {
               </TableHead>
             )}
             {visibleColumns.includes("Insights de IA") && (
-              <TableHead className="w-[110px] text-gray-300 font-semibold text-center px-2">
+              <TableHead className="w-[135px] text-gray-100 font-bold text-center px-3 py-4 shadow-sm">
                 <div className="flex justify-center">
                   <Button
                     variant="ghost"
                     onClick={() => handleSort('insightsCount')}
-                    className="flex items-center justify-center gap-1 px-2 py-1 bg-black/20 border border-gray-700/50 hover:bg-gray-800/60 text-gray-300 hover:text-yellow-400 rounded-md transition-colors duration-200 text-xs"
+                    className="flex items-center justify-center gap-1 px-3 py-2 bg-black/30 border border-gray-600/50 hover:bg-primary-yellow/10 text-gray-300 hover:text-primary-yellow rounded-lg transition-all duration-200 text-sm font-medium"
                   >
                     Insights
                     {getSortIcon('insightsCount')}
@@ -661,11 +887,11 @@ export default function CustomerDataTable() {
               </TableHead>
             )}
             {visibleColumns.includes("Status") && (
-              <TableHead className="w-[100px] text-gray-300 font-semibold text-center px-2">
+              <TableHead className="w-[110px] text-gray-100 font-bold text-center px-3 py-4 shadow-sm">
                 <div className="flex justify-center">
                   <Button
                     variant="ghost"
-                    className="flex items-center justify-center gap-1 px-2 py-1 bg-black/20 border border-gray-700/50 hover:bg-gray-800/60 text-gray-300 hover:text-yellow-400 rounded-md transition-colors duration-200 cursor-default text-xs"
+                    className="flex items-center justify-center gap-1 px-3 py-2 bg-black/30 border border-gray-600/50 hover:bg-primary-yellow/10 text-gray-300 hover:text-primary-yellow rounded-lg transition-all duration-200 cursor-default text-sm font-medium"
                   >
                     Status
                   </Button>
@@ -673,7 +899,7 @@ export default function CustomerDataTable() {
               </TableHead>
             )}
             {visibleColumns.includes("Cidade") && (
-              <TableHead className="w-[100px] text-gray-300 font-semibold text-center px-2">
+              <TableHead className="w-[115px] text-gray-100 font-bold text-center px-3 py-4 shadow-sm">
                 <div className="flex justify-center">
                   <Button
                     variant="ghost"
@@ -687,7 +913,7 @@ export default function CustomerDataTable() {
               </TableHead>
             )}
             {visibleColumns.includes("Próximo Aniversário") && (
-              <TableHead className="w-[130px] text-gray-300 font-semibold text-center px-2">
+              <TableHead className="w-[150px] text-gray-100 font-bold text-center px-3 py-4 shadow-sm">
                 <div className="flex justify-center">
                   <Button
                     variant="ghost"
@@ -701,7 +927,7 @@ export default function CustomerDataTable() {
               </TableHead>
             )}
             {visibleColumns.includes("LGPD") && (
-              <TableHead className="w-[70px] text-gray-300 font-semibold text-center px-2">
+              <TableHead className="w-[90px] text-gray-100 font-bold text-center px-3 py-4 shadow-sm">
                 <div className="flex justify-center">
                   <Button
                     variant="ghost"
@@ -713,7 +939,7 @@ export default function CustomerDataTable() {
               </TableHead>
             )}
             {visibleColumns.includes("Completude") && (
-              <TableHead className="w-[100px] text-gray-300 font-semibold text-center px-2">
+              <TableHead className="w-[120px] text-gray-100 font-bold text-center px-3 py-4 shadow-sm">
                 <div className="flex justify-center">
                   <Button
                     variant="ghost"
@@ -727,7 +953,7 @@ export default function CustomerDataTable() {
               </TableHead>
             )}
             {visibleColumns.includes("Último Contato") && (
-              <TableHead className="w-[120px] text-gray-300 font-semibold text-center px-2">
+              <TableHead className="w-[130px] text-gray-100 font-bold text-center px-3 py-4 shadow-sm">
                 <div className="flex justify-center">
                   <Button
                     variant="ghost"
@@ -741,7 +967,7 @@ export default function CustomerDataTable() {
               </TableHead>
             )}
             {visibleColumns.includes("Valor em Aberto") && (
-              <TableHead className="w-[120px] text-gray-300 font-semibold text-center px-2">
+              <TableHead className="w-[130px] text-gray-100 font-bold text-center px-3 py-4 shadow-sm">
                 <div className="flex justify-center">
                   <Button
                     variant="ghost"
@@ -760,51 +986,58 @@ export default function CustomerDataTable() {
           {filteredAndSortedData.length ? (
             filteredAndSortedData.map((customer, index) => (
               <TableRow 
-                key={customer.id} 
-                className={`border-b border-white/10 hover:bg-white/5 transition-colors ${
-                  index % 2 === 0 ? 'bg-black/10' : 'bg-black/20'
-                }`}
+                key={customer.id}
+                className={cn(
+                  "border-b border-primary-yellow/20 transition-all duration-300 group cursor-pointer relative",
+                  "hover:bg-gradient-to-r hover:from-primary-yellow/10 hover:via-primary-yellow/5 hover:to-primary-yellow/10",
+                  "hover:border-primary-yellow/40 hover:shadow-lg hover:shadow-primary-yellow/10",
+                  "hover:scale-[1.01] hover:z-10",
+                  index % 2 === 0 ? 'bg-black/30 backdrop-blur-sm' : 'bg-black/50 backdrop-blur-sm'
+                )}
               >
                 {visibleColumns.includes("Cliente") && (
-                  <TableCell className="font-medium whitespace-nowrap text-gray-100">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 bg-yellow-400/20 rounded-full flex items-center justify-center">
-                        <span className="text-sm font-semibold text-yellow-400">
+                  <TableCell className="font-medium whitespace-nowrap py-4 px-4">
+                    <div className="flex items-center gap-3">
+                      {/* Avatar com gradient Adega Wine Cellar */}
+                      <div className="w-8 h-8 bg-gradient-to-br from-primary-yellow/30 to-yellow-400/20 rounded-full flex items-center justify-center border border-primary-yellow/30 shadow-sm">
+                        <span className="text-sm font-bold text-primary-yellow">
                           {customer.cliente.charAt(0).toUpperCase()}
                         </span>
                       </div>
+                      
+                      {/* Link para perfil com indicadores visuais */}
                       <Link 
                         to={`/customer/${customer.id}`} 
-                        className="hover:underline hover:text-yellow-400 transition-colors text-gray-100"
+                        className="block hover:no-underline"
                         title={`Ver perfil completo de ${customer.cliente}`}
                       >
-                        {customer.cliente}
+                        <CustomerNameWithIndicators customer={customer} />
                       </Link>
                     </div>
                   </TableCell>
                 )}
                 {visibleColumns.includes("Categoria Favorita") && (
-                  <TableCell className="whitespace-nowrap text-gray-100">
+                  <TableCell className="whitespace-nowrap text-gray-100 py-4 px-3">
                     {customer.categoriaFavorita || "Não definida"}
                   </TableCell>
                 )}
                 {visibleColumns.includes("Segmento") && (
-                  <TableCell className="whitespace-nowrap">
-                    <Badge variant="outline" className="bg-gray-700/50 text-gray-100 border-gray-600/50">{customer.segmento}</Badge>
+                  <TableCell className="whitespace-nowrap py-4 px-3">
+                    <Badge variant="outline" className="bg-gray-700/50 text-gray-100 border-gray-600/50 text-sm font-medium px-3 py-1">{customer.segmento}</Badge>
                   </TableCell>
                 )}
                 {visibleColumns.includes("Método Preferido") && (
-                  <TableCell className="whitespace-nowrap text-gray-100">
+                  <TableCell className="whitespace-nowrap text-gray-100 py-4 px-3">
                     {formatPaymentMethod(customer.metodoPreferido)}
                   </TableCell>
                 )}
                 {visibleColumns.includes("Última Compra") && (
-                  <TableCell className="whitespace-nowrap text-gray-100">
+                  <TableCell className="whitespace-nowrap text-gray-100 py-4 px-3">
                     {formatLastPurchase(customer.ultimaCompra)}
                   </TableCell>
                 )}
                 {visibleColumns.includes("Insights de IA") && (
-                  <TableCell>
+                  <TableCell className="py-4 px-3">
                     <InsightsBadge 
                       count={customer.insightsCount}
                       confidence={customer.insightsConfidence}
@@ -812,7 +1045,7 @@ export default function CustomerDataTable() {
                   </TableCell>
                 )}
                 {visibleColumns.includes("Status") && (
-                  <TableCell className="whitespace-nowrap">
+                  <TableCell className="whitespace-nowrap py-4 px-3">
                     <StatusBadge 
                       status={customer.status}
                       color={customer.statusColor}
@@ -820,12 +1053,12 @@ export default function CustomerDataTable() {
                   </TableCell>
                 )}
                 {visibleColumns.includes("Cidade") && (
-                  <TableCell className="whitespace-nowrap text-gray-100">
+                  <TableCell className="whitespace-nowrap text-gray-100 py-4 px-3">
                     {customer.cidade || "Não informada"}
                   </TableCell>
                 )}
                 {visibleColumns.includes("Próximo Aniversário") && (
-                  <TableCell className="whitespace-nowrap">
+                  <TableCell className="whitespace-nowrap py-4 px-3">
                     <div className={cn("flex items-center gap-1", 
                       customer.diasParaAniversario !== null && customer.diasParaAniversario <= 7 
                         ? "text-yellow-400 font-medium" 
@@ -836,12 +1069,12 @@ export default function CustomerDataTable() {
                   </TableCell>
                 )}
                 {visibleColumns.includes("LGPD") && (
-                  <TableCell>
+                  <TableCell className="py-4 px-3">
                     <LGPDBadge hasPermission={customer.contactPermission} />
                   </TableCell>
                 )}
                 {visibleColumns.includes("Completude") && (
-                  <TableCell>
+                  <TableCell className="py-4 px-3">
                     <EnhancedProfileCompleteness 
                       row={customer} 
                       onEditClick={(customerId) => {
@@ -852,7 +1085,7 @@ export default function CustomerDataTable() {
                   </TableCell>
                 )}
                 {visibleColumns.includes("Último Contato") && (
-                  <TableCell className="whitespace-nowrap">
+                  <TableCell className="whitespace-nowrap py-4 px-3">
                     <LastContactBadge 
                       date={customer.ultimoContato}
                       daysAgo={customer.diasSemContato}
@@ -860,7 +1093,7 @@ export default function CustomerDataTable() {
                   </TableCell>
                 )}
                 {visibleColumns.includes("Valor em Aberto") && (
-                  <TableCell className="whitespace-nowrap">
+                  <TableCell className="whitespace-nowrap py-4 px-3">
                     <OutstandingAmountBadge amount={customer.valorEmAberto} />
                   </TableCell>
                 )}

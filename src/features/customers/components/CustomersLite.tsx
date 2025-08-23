@@ -139,7 +139,7 @@ const CustomersLite = () => {
   }
 
   return (
-    <div className="w-full h-full flex flex-col p-4">
+    <div className="w-full h-full flex flex-col p-4 overflow-x-hidden min-w-0">
       {/* Header */}
       <div className="flex-shrink-0 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
         {/* Header sem container */}
@@ -262,7 +262,7 @@ const CustomersLite = () => {
         )}
 
         {/* Tabela de Clientes */}
-        <CardContent className="p-0 flex-1 min-h-0 overflow-visible relative">
+        <CardContent className="p-0 flex-1 min-h-0 overflow-visible relative w-full">
           <CustomerDataTable />
         </CardContent>
       </section>
