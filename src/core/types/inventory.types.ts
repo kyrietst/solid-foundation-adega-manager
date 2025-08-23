@@ -51,6 +51,14 @@ export interface Product {
   measurement_value?: string; // Valor da medição para campos dinâmicos
   is_package?: boolean; // Se o produto é um pacote vs unidade individual
   units_per_package?: NonNegativeInteger; // Número de unidades por pacote
+  
+  // Campos do sistema hierárquico de códigos de barras
+  unit_barcode?: string; // Código de barras da unidade individual
+  package_barcode?: string; // Código de barras do pacote/fardo
+  package_units?: NonNegativeInteger; // Quantidade de unidades por pacote
+  has_unit_tracking?: boolean; // Se permite venda por unidade
+  has_package_tracking?: boolean; // Se permite venda por pacote
+  packaging_type?: string; // Tipo de embalagem (fardo, caixa, etc.)
 }
 
 export interface ProductFormData {
@@ -84,6 +92,14 @@ export interface ProductFormData {
   measurement_value?: string; // Valor da medição para campos dinâmicos
   is_package?: boolean; // Se é pacote vs unidade individual
   units_per_package?: NonNegativeInteger; // Unidades por pacote
+  
+  // Campos do sistema hierárquico de códigos de barras
+  unit_barcode?: string; // Código de barras da unidade individual
+  package_barcode?: string; // Código de barras do pacote/fardo
+  package_units?: NonNegativeInteger; // Quantidade de unidades por pacote
+  has_unit_tracking?: boolean; // Se permite venda por unidade
+  has_package_tracking?: boolean; // Se permite venda por pacote
+  packaging_type?: string; // Tipo de embalagem (fardo, caixa, etc.)
 }
 
 export interface ProductCalculations {

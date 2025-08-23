@@ -15,9 +15,9 @@ export { ProductsGridContainer } from './ProductsGridContainer';
 export { ProductsGridPresentation } from './ProductsGridPresentation';
 export { ProductsHeader } from './ProductsHeader';
 export { TurnoverAnalysis } from './TurnoverAnalysis';
+export { NewProductModal } from './NewProductModal';
 
 // Product Form Sub-components
-export { ProductAdditionalInfoCard } from './product-form/ProductAdditionalInfoCard';
 export { ProductBasicInfoCard } from './product-form/ProductBasicInfoCard';
 export { ProductFormActions } from './product-form/ProductFormActions';
 export { ProductFormContainer } from './product-form/ProductFormContainer';

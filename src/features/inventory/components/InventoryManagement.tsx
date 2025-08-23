@@ -11,19 +11,37 @@ import { useMouseTracker } from '@/hooks/ui/useMouseTracker';
 import { ProductsGridContainer } from './ProductsGridContainer';
 import { ProductsTitle, ProductsHeader } from './ProductsHeader';
 import { useProductsGridLogic } from '@/hooks/products/useProductsGridLogic';
-import { ProductForm } from './ProductForm';
+import { NewProductModal } from './NewProductModal';
 import { ProductDetailsModal } from './ProductDetailsModal';
+import { EditProductModal } from './EditProductModal';
 import { StockAdjustmentModal, type StockAdjustment } from './StockAdjustmentModal';
 import { StockHistoryModal } from './StockHistoryModal';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/shared/ui/primitives/dialog';
 import type { ProductFormData } from '@/core/types/inventory.types';
+
+interface EditProductFormData {
+  name: string;
+  category: string;
+  unit_barcode?: string;
+  has_unit_tracking?: boolean;
+  has_package_tracking?: boolean;
+  package_barcode?: string;
+  package_units?: number;
+  package_price?: number;
+  supplier?: string;
+  custom_supplier?: string;
+  cost_price?: number;
+  price: number;
+  volume_ml?: number;
+  stock_quantity: number;
+  minimum_stock?: number;
+}
 import type { Product } from '@/types/inventory.types';
 
 interface InventoryManagementProps {
   showAddButton?: boolean;
   showSearch?: boolean;
   showFilters?: boolean;
-  onProductSelect?: (product: any) => void;
+  onProductSelect?: (product: Product) => void;
   className?: string;
 }
 
@@ -44,93 +62,11 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
   const { toast } = useToast();
   const { handleMouseMove } = useMouseTracker();
 
-  // Mutation para adicionar produto
-  const addProductMutation = useMutation({
-    mutationFn: async (productData: ProductFormData) => {
-      // Validar código de barras se fornecido
-      if (productData.barcode && productData.barcode.trim()) {
-        const barcodePattern = /^[0-9]{8,14}$/;
-        if (!barcodePattern.test(productData.barcode.trim())) {
-          throw new Error('Código de barras deve conter apenas números e ter entre 8 e 14 dígitos');
-        }
-      }
-
-      // Preparar dados para inserção, incluindo colunas faltantes
-      const insertData = {
-        name: productData.name,
-        description: productData.description || null,
-        price: productData.price,
-        stock_quantity: productData.stock_quantity || 0,
-        category: productData.category,
-        vintage: productData.vintage || null,
-        producer: productData.producer || null,
-        country: productData.country || null,
-        region: productData.region || null,
-        alcohol_content: productData.alcohol_content || null,
-        volume: null, // Campo legacy - mantido como null
-        volume_ml: productData.volume_ml || null,
-        image_url: productData.image_url || null,
-        supplier: productData.supplier || null,
-        minimum_stock: productData.minimum_stock || 5,
-        cost_price: productData.cost_price || null,
-        margin_percent: productData.margin_percent || null,
-        unit_type: productData.unit_type || 'un',
-        package_size: productData.package_size || 1,
-        package_price: productData.package_price || null,
-        package_margin: productData.package_margin || null,
-        turnover_rate: productData.turnover_rate || 'medium',
-        barcode: (productData.barcode && productData.barcode.trim()) ? productData.barcode.trim() : null,
-        // Colunas faltantes com valores padrão
-        measurement_type: null,
-        measurement_value: null,
-        is_package: false,
-        units_per_package: 1
-      };
-
-      const { data, error } = await supabase
-        .from('products')
-        .insert([insertData])
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: (data) => {
-      // Invalida as queries para recarregar a lista
-      queryClient.invalidateQueries({ queryKey: ['products'] });
-      
-      // Fecha o modal
-      setIsAddProductOpen(false);
-      
-      // Mostra mensagem de sucesso
-      toast({
-        title: 'Produto adicionado',
-        description: `Produto "${data.name}" adicionado com sucesso!`,
-        variant: 'default',
-      });
-    },
-    onError: (error: any) => {
-      console.error('Erro ao adicionar produto:', error);
-      toast({
-        title: 'Erro ao adicionar produto',
-        description: 'Erro ao adicionar produto. Tente novamente.',
-        variant: 'destructive',
-      });
-    },
-  });
 
   const handleAddProduct = () => {
     setIsAddProductOpen(true);
   };
 
-  const handleSubmitProduct = (data: ProductFormData) => {
-    addProductMutation.mutate(data);
-  };
-
-  const handleCancel = () => {
-    setIsAddProductOpen(false);
-  };
 
   // Handlers para os modais de inventário
   const handleViewDetails = (product: Product) => {
@@ -208,7 +144,7 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
         variant: 'default',
       });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       console.error('Erro ao ajustar estoque:', error);
       toast({
         title: 'Erro ao ajustar estoque',
@@ -224,42 +160,56 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
 
   // Mutation para editar produto
   const editProductMutation = useMutation({
-    mutationFn: async (productData: ProductFormData) => {
+    mutationFn: async (productData: EditProductFormData) => {
       if (!selectedProduct) throw new Error('Nenhum produto selecionado');
 
-      // Validar código de barras se fornecido
-      if (productData.barcode && productData.barcode.trim()) {
+      // Preparar fornecedor final
+      const finalSupplier = productData.supplier === 'custom' ? productData.custom_supplier : productData.supplier;
+
+      // Validar códigos de barras se fornecidos
+      if (productData.unit_barcode && productData.unit_barcode.trim()) {
         const barcodePattern = /^[0-9]{8,14}$/;
-        if (!barcodePattern.test(productData.barcode.trim())) {
-          throw new Error('Código de barras deve conter apenas números e ter entre 8 e 14 dígitos');
+        if (!barcodePattern.test(productData.unit_barcode.trim())) {
+          throw new Error('Código de barras da unidade deve conter apenas números e ter entre 8 e 14 dígitos');
+        }
+      }
+      if (productData.package_barcode && productData.package_barcode.trim()) {
+        const barcodePattern = /^[0-9]{8,14}$/;
+        if (!barcodePattern.test(productData.package_barcode.trim())) {
+          throw new Error('Código de barras do pacote deve conter apenas números e ter entre 8 e 14 dígitos');
         }
       }
 
       // Preparar dados para atualização
       const updateData = {
         name: productData.name,
-        description: productData.description || null,
         price: productData.price,
         stock_quantity: productData.stock_quantity || 0,
         category: productData.category,
-        vintage: productData.vintage || null,
-        producer: productData.producer || null,
-        country: productData.country || null,
-        region: productData.region || null,
-        alcohol_content: productData.alcohol_content || null,
-        volume: null, // Campo legacy - mantido como null
         volume_ml: productData.volume_ml || null,
-        image_url: productData.image_url || null,
-        supplier: productData.supplier || null,
-        minimum_stock: productData.minimum_stock || 5,
+        supplier: finalSupplier || null,
+        minimum_stock: productData.minimum_stock || null,
         cost_price: productData.cost_price || null,
-        margin_percent: productData.margin_percent || null,
-        unit_type: productData.unit_type || 'un',
-        package_size: productData.package_size || 1,
+        // Sistema de códigos hierárquicos - mapeamento completo
+        barcode: productData.unit_barcode || null, // Código principal (unidade)
+        unit_barcode: productData.unit_barcode || null,
+        package_barcode: productData.package_barcode || null,
+        package_units: productData.package_units || null,
+        units_per_package: productData.package_units || 1, // Mantém compatibilidade
+        package_size: productData.package_units || 1, // Mantém compatibilidade
+        is_package: productData.has_package_tracking || false,
+        has_package_tracking: productData.has_package_tracking || false,
+        has_unit_tracking: productData.has_unit_tracking !== undefined ? productData.has_unit_tracking : true,
+        // Preços
         package_price: productData.package_price || null,
-        package_margin: productData.package_margin || null,
-        turnover_rate: productData.turnover_rate || 'medium',
-        barcode: (productData.barcode && productData.barcode.trim()) ? productData.barcode.trim() : null,
+        // Calcular margens se houver preço de custo
+        margin_percent: (productData.cost_price && productData.price) ? 
+          ((productData.price - productData.cost_price) / productData.cost_price * 100) : null,
+        // Calcular margem de pacote (se houver preço de pacote)
+        package_margin: (productData.package_price && productData.cost_price && productData.package_units) ? 
+          (((productData.package_price - (productData.cost_price * productData.package_units)) / (productData.cost_price * productData.package_units)) * 100) : null,
+        // Campos de compatibilidade
+        turnover_rate: 'medium',
         updated_at: new Date().toISOString()
       };
 
@@ -283,7 +233,7 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
         variant: 'default',
       });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       console.error('Erro ao editar produto:', error);
       toast({
         title: 'Erro ao editar produto',
@@ -293,8 +243,14 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
     },
   });
 
-  const handleSubmitEditProduct = (data: ProductFormData) => {
-    editProductMutation.mutate(data);
+  const handleSubmitEditProduct = (data: EditProductFormData) => {
+    // Preparar dados com o mesmo formato que o mutation espera
+    const formattedData = {
+      ...data,
+      // Preparar dados adicionais se necessário
+      barcode: data.unit_barcode || data.barcode,
+    };
+    editProductMutation.mutate(formattedData);
   };
 
   const handleCancelEdit = () => {
@@ -340,23 +296,14 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
       </div>
 
       {/* Modal para adicionar produto */}
-      <Dialog open={isAddProductOpen} onOpenChange={setIsAddProductOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>ADICIONAR NOVO PRODUTO</DialogTitle>
-            <DialogDescription>
-              Preencha as informações abaixo para adicionar um novo produto ao seu inventário.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <ProductForm
-            onSubmit={handleSubmitProduct}
-            onCancel={handleCancel}
-            isLoading={addProductMutation.isPending}
-            isEdit={false}
-          />
-        </DialogContent>
-      </Dialog>
+      <NewProductModal
+        isOpen={isAddProductOpen}
+        onClose={() => setIsAddProductOpen(false)}
+        onSuccess={() => {
+          // Invalidar queries para atualizar a lista de produtos
+          queryClient.invalidateQueries({ queryKey: ['products'] });
+        }}
+      />
 
       {/* Modal de detalhes do produto */}
       <ProductDetailsModal
@@ -383,52 +330,17 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
       />
 
       {/* Modal para editar produto */}
-      <Dialog open={isEditProductOpen} onOpenChange={setIsEditProductOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>EDITAR PRODUTO</DialogTitle>
-            <DialogDescription>
-              Modifique as informações do produto. Apenas os campos alterados serão atualizados.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <ProductForm
-            onSubmit={handleSubmitEditProduct}
-            onCancel={handleCancelEdit}
-            isLoading={editProductMutation.isPending}
-            isEdit={true}
-            initialData={selectedProduct ? {
-              name: selectedProduct.name,
-              description: selectedProduct.description || '',
-              price: Number(selectedProduct.price) || 0,
-              stock_quantity: selectedProduct.stock_quantity || 0,
-              category: selectedProduct.category || '',
-              vintage: selectedProduct.vintage ? Number(selectedProduct.vintage) : undefined,
-              producer: selectedProduct.producer || '',
-              country: selectedProduct.country || '',
-              region: selectedProduct.region || '',
-              alcohol_content: selectedProduct.alcohol_content ? Number(selectedProduct.alcohol_content) : undefined,
-              volume_ml: selectedProduct.volume_ml ? Number(selectedProduct.volume_ml) : undefined,
-              image_url: selectedProduct.image_url || '',
-              supplier: selectedProduct.supplier || '',
-              minimum_stock: selectedProduct.minimum_stock || 5,
-              cost_price: Number(selectedProduct.cost_price) || 0,
-              margin_percent: Number(selectedProduct.margin_percent) || 0,
-              unit_type: selectedProduct.unit_type || 'un',
-              package_size: selectedProduct.package_size ? Number(selectedProduct.package_size) : 1,
-              package_price: selectedProduct.package_price ? Number(selectedProduct.package_price) : undefined,
-              package_margin: selectedProduct.package_margin ? Number(selectedProduct.package_margin) : undefined,
-              turnover_rate: selectedProduct.turnover_rate || 'medium',
-              barcode: selectedProduct.barcode || '',
-              // Incluir campos adicionais se existirem
-              measurement_type: selectedProduct.measurement_type || undefined,
-              measurement_value: selectedProduct.measurement_value || undefined,
-              is_package: selectedProduct.is_package || false,
-              units_per_package: selectedProduct.units_per_package ? Number(selectedProduct.units_per_package) : 1,
-            } : undefined}
-          />
-        </DialogContent>
-      </Dialog>
+      <EditProductModal
+        isOpen={isEditProductOpen}
+        onClose={handleCancelEdit}
+        product={selectedProduct}
+        onSubmit={handleSubmitEditProduct}
+        isLoading={editProductMutation.isPending}
+        onSuccess={() => {
+          // Invalidar queries para atualizar a lista de produtos
+          queryClient.invalidateQueries({ queryKey: ['products'] });
+        }}
+      />
 
       {/* Modal de histórico de movimentações */}
       <StockHistoryModal

@@ -12,7 +12,6 @@ import { ProductBasicInfoCard } from './ProductBasicInfoCard';
 import { BarcodeHierarchySection } from './BarcodeHierarchySection';
 import { ProductPricingCard } from './ProductPricingCard';
 import { ProductStockCard } from './ProductStockCard';
-import { ProductAdditionalInfoCard } from './ProductAdditionalInfoCard';
 import { ProductFormActions } from './ProductFormActions';
 
 export interface ProductFormPresentationProps {
@@ -102,14 +101,6 @@ export const ProductFormPresentation: React.FC<ProductFormPresentationProps> = (
           glassEffect={glassEffect}
         />
 
-        {/* Informações Adicionais */}
-        <ProductAdditionalInfoCard
-          formData={formData}
-          fieldErrors={validation.fieldErrors}
-          onInputChange={onInputChange}
-          variant={variant}
-          glassEffect={glassEffect}
-        />
 
         {/* Ações do Formulário */}
         <ProductFormActions

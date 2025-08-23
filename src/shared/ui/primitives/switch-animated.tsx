@@ -79,6 +79,7 @@ const SwitchAnimated = ({
 
   return (
     <motion.button
+      type="button"
       role="switch"
       aria-checked={checked}
       onClick={handleToggle}
