@@ -104,31 +104,21 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-adega-charcoal/95 border-adega-gold/30 backdrop-blur-xl">
-        <DialogHeader className="border-b border-white/10 pb-4">
-          <div className="flex items-center justify-between">
-            <DialogTitle className="text-xl font-bold text-adega-platinum">
-              DETALHES DO PRODUTO
-            </DialogTitle>
-            <DialogDescription className="text-gray-400 mt-2">
-              Visualização completa das informações do produto selecionado.
-            </DialogDescription>
-            <Button
-              onClick={onClose}
-              variant="ghost"
-              size="sm"
-              className="text-gray-400 hover:text-gray-100"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
+      <DialogContent className="max-w-4xl h-[85vh] bg-adega-charcoal/95 border-adega-gold/30 backdrop-blur-xl flex flex-col">
+        <DialogHeader className="border-b border-white/10 pb-4 flex-shrink-0">
+          <DialogTitle className="text-xl font-bold text-adega-platinum">
+            DETALHES DO PRODUTO
+          </DialogTitle>
+          <DialogDescription className="text-gray-400 mt-2">
+            Visualização completa das informações do produto selecionado.
+          </DialogDescription>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mt-2 flex-1 overflow-hidden">
           {/* Coluna 1: Imagem e Status */}
-          <div className="space-y-4">
+          <div className="space-y-2">
             {/* Imagem do produto */}
-            <div className="relative aspect-square bg-gray-700/50 rounded-xl flex items-center justify-center overflow-hidden">
+            <div className="relative h-32 bg-gray-700/50 rounded-xl flex items-center justify-center overflow-hidden">
               {product.image_url ? (
                 <img 
                   src={product.image_url} 
@@ -148,36 +138,38 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
             </div>
 
             {/* Ações rápidas */}
-            <div className="space-y-2">
+            <div className="flex gap-2">
               <Button
                 onClick={() => onAdjustStock(product)}
-                className="w-full bg-blue-400/10 border border-blue-400/30 text-blue-400 hover:bg-blue-400/20"
+                size="sm"
+                className="flex-1 bg-blue-400/10 border border-blue-400/30 text-blue-400 hover:bg-blue-400/20"
                 variant="outline"
               >
-                <Package className="h-4 w-4 mr-2" />
-                Ajustar Estoque
+                <Package className="h-3 w-3 mr-1" />
+                Ajustar
               </Button>
               
               <Button
                 onClick={() => onViewHistory(product)}
-                className="w-full bg-gray-600/20 border border-gray-500/30 text-gray-300 hover:bg-gray-600/30"
+                size="sm"
+                className="flex-1 bg-gray-600/20 border border-gray-500/30 text-gray-300 hover:bg-gray-600/30"
                 variant="outline"
               >
-                <History className="h-4 w-4 mr-2" />
-                Ver Histórico
+                <History className="h-3 w-3 mr-1" />
+                Histórico
               </Button>
             </div>
           </div>
 
           {/* Coluna 2 e 3: Informações detalhadas */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-2 overflow-y-auto pr-2">
             {/* Informações básicas */}
-            <div className="bg-black/30 rounded-xl p-4">
-              <h3 className="text-lg font-semibold text-adega-platinum mb-3">
+            <div className="bg-black/30 rounded-lg p-2">
+              <h3 className="text-sm font-semibold text-adega-platinum mb-1">
                 Informações Básicas
               </h3>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-2 text-sm">
                 <div>
                   <label className="text-sm text-gray-400">Nome</label>
                   <p className="text-gray-100 font-medium">{product.name}</p>
@@ -201,35 +193,35 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
             </div>
 
             {/* Informações de estoque */}
-            <div className="bg-black/30 rounded-xl p-4">
-              <h3 className="text-lg font-semibold text-adega-platinum mb-3 flex items-center">
+            <div className="bg-black/30 rounded-lg p-2">
+              <h3 className="text-base font-semibold text-adega-platinum mb-2 flex items-center">
                 <Package className="h-5 w-5 mr-2 text-yellow-400" />
                 Controle de Estoque
               </h3>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-gray-800/40 rounded-lg p-3">
-                  <label className="text-sm text-gray-400">Estoque Atual</label>
-                  <p className="text-2xl font-bold text-gray-100">{product.stock_quantity}</p>
-                  <span className="text-sm text-gray-400">unidades</span>
+              <div className="grid grid-cols-3 gap-2 text-sm">
+                <div className="bg-gray-800/40 rounded p-2">
+                  <label className="text-xs text-gray-400">Estoque Atual</label>
+                  <p className="text-lg font-bold text-gray-100">{product.stock_quantity}</p>
+                  <span className="text-xs text-gray-400">unidades</span>
                 </div>
                 
-                <div className="bg-gray-800/40 rounded-lg p-3">
-                  <label className="text-sm text-gray-400">Estoque Mínimo</label>
-                  <p className="text-xl font-bold text-yellow-400">{product.minimum_stock || 10}</p>
-                  <span className="text-sm text-gray-400">unidades</span>
+                <div className="bg-gray-800/40 rounded p-2">
+                  <label className="text-xs text-gray-400">Estoque Mínimo</label>
+                  <p className="text-base font-bold text-yellow-400">{product.minimum_stock || 10}</p>
+                  <span className="text-xs text-gray-400">unidades</span>
                 </div>
                 
-                <div className="bg-gray-800/40 rounded-lg p-3">
-                  <label className="text-sm text-gray-400">Localização</label>
-                  <p className="text-xl font-bold text-blue-400 flex items-center">
-                    <MapPin className="h-4 w-4 mr-1" />
+                <div className="bg-gray-800/40 rounded p-2">
+                  <label className="text-xs text-gray-400">Localização</label>
+                  <p className="text-base font-bold text-blue-400 flex items-center">
+                    <MapPin className="h-3 w-3 mr-1" />
                     {location}
                   </p>
                 </div>
               </div>
               
-              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
                 <div>
                   <label className="text-sm text-gray-400 flex items-center">
                     <Calendar className="h-4 w-4 mr-1" />
@@ -265,30 +257,30 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
             </div>
 
             {/* Análise de giro */}
-            <div className="bg-black/30 rounded-xl p-4">
-              <h3 className="text-lg font-semibold text-adega-platinum mb-3 flex items-center">
+            <div className="bg-black/30 rounded-lg p-2">
+              <h3 className="text-base font-semibold text-adega-platinum mb-2 flex items-center">
                 <TurnoverIcon className={cn("h-5 w-5 mr-2", turnoverAnalysis.color)} />
                 Análise de Giro
               </h3>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-gray-800/40 rounded-lg p-3">
-                  <label className="text-sm text-gray-400">Classificação</label>
-                  <p className={cn("text-xl font-bold", turnoverAnalysis.color)}>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div className="bg-gray-800/40 rounded p-2">
+                  <label className="text-xs text-gray-400">Classificação</label>
+                  <p className={cn("text-base font-bold", turnoverAnalysis.color)}>
                     Giro {turnoverAnalysis.rate}
                   </p>
-                  <span className="text-sm text-gray-400">{turnoverAnalysis.description}</span>
+                  <span className="text-xs text-gray-400">{turnoverAnalysis.description}</span>
                 </div>
                 
-                <div className="bg-gray-800/40 rounded-lg p-3">
-                  <label className="text-sm text-gray-400">Vendas/Mês (Média)</label>
-                  <p className="text-xl font-bold text-gray-100">
+                <div className="bg-gray-800/40 rounded p-2">
+                  <label className="text-xs text-gray-400">Vendas/Mês</label>
+                  <p className="text-base font-bold text-gray-100">
                     {analyticsLoading ? '...' : turnoverAnalysis.salesPerMonth}
                   </p>
-                  <span className="text-sm text-gray-400">unidades</span>
+                  <span className="text-xs text-gray-400">unidades</span>
                   {analytics && analytics.salesLast30Days > 0 && (
                     <p className="text-xs text-gray-500 mt-1">
-                      {analytics.salesLast30Days} vendas últimos 30 dias
+                      {analytics.salesLast30Days} últimos 30d
                     </p>
                   )}
                 </div>
@@ -296,13 +288,13 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
             </div>
 
             {/* Dados comerciais */}
-            <div className="bg-black/30 rounded-xl p-4">
-              <h3 className="text-lg font-semibold text-adega-platinum mb-3 flex items-center">
+            <div className="bg-black/30 rounded-lg p-2">
+              <h3 className="text-base font-semibold text-adega-platinum mb-2 flex items-center">
                 <DollarSign className="h-5 w-5 mr-2 text-green-400" />
                 Dados Comerciais
               </h3>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-3 gap-2 text-sm">
                 <div>
                   <label className="text-sm text-gray-400">Preço de Custo</label>
                   <p className="text-lg font-bold text-gray-100">
@@ -326,54 +318,40 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
               </div>
             </div>
 
-            {/* Dados técnicos */}
-            <div className="bg-black/30 rounded-xl p-4">
-              <h3 className="text-lg font-semibold text-adega-platinum mb-3 flex items-center">
+            {/* Informações do fornecedor */}
+            <div className="bg-black/30 rounded-lg p-2">
+              <h3 className="text-base font-semibold text-adega-platinum mb-2 flex items-center">
                 <Factory className="h-5 w-5 mr-2 text-blue-400" />
-                Dados Técnicos
+                Informações do Fornecedor
               </h3>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div>
+                  <label className="text-sm text-gray-400">Fornecedor</label>
+                  <p className="text-gray-100 font-medium">
+                    {product.supplier ? String(product.supplier).trim() : 'N/A'}
+                  </p>
+                </div>
+                
                 <div>
                   <label className="text-sm text-gray-400">Volume</label>
                   <p className="text-gray-100">
-                    {product.volume_ml ? `${product.volume_ml} ml` : 
-                     product.volume ? String(product.volume).trim() : 'N/A'}
+                    {product.volume_ml ? `${product.volume_ml} ml` : 'N/A'}
                   </p>
                 </div>
                 
                 <div>
-                  <label className="text-sm text-gray-400">Teor Alcoólico</label>
+                  <label className="text-sm text-gray-400">Preço de Custo</label>
                   <p className="text-gray-100">
-                    {product.alcohol_content ? `${String(product.alcohol_content).trim()}%` : 'N/A'}
+                    {product.cost_price ? formatCurrency(product.cost_price) : 'N/A'}
                   </p>
                 </div>
                 
                 <div>
-                  <label className="text-sm text-gray-400">País de Origem</label>
-                  <p className="text-gray-100 flex items-center">
-                    <Globe className="h-4 w-4 mr-1" />
-                    {product.country ? String(product.country).trim() : 'N/A'}
-                  </p>
-                </div>
-                
-                <div>
-                  <label className="text-sm text-gray-400">Região</label>
+                  <label className="text-sm text-gray-400">Margem de Lucro</label>
                   <p className="text-gray-100">
-                    {product.region ? String(product.region).trim() : 'N/A'}
+                    {product.margin_percent ? `${String(product.margin_percent).trim()}%` : 'N/A'}
                   </p>
-                </div>
-                
-                {product.vintage && (
-                  <div>
-                    <label className="text-sm text-gray-400">Safra</label>
-                    <p className="text-gray-100">{product.vintage}</p>
-                  </div>
-                )}
-                
-                <div>
-                  <label className="text-sm text-gray-400">Produtor</label>
-                  <p className="text-gray-100">{product.producer || 'N/A'}</p>
                 </div>
               </div>
             </div>

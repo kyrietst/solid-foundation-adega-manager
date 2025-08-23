@@ -3,14 +3,16 @@
  * Extraído do InventoryNew.tsx para separar responsabilidades
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/shared/ui/primitives/button';
-import { Plus, Grid3X3, List } from 'lucide-react';
+import { Plus, Grid3X3, List, Upload } from 'lucide-react';
 import { BlurIn } from '@/components/ui/blur-in';
 import { InventoryStats } from './InventoryStats';
+import { CsvImportModal } from './CsvImportModal';
 import { InventoryHeaderProps } from './types';
 import { getHeaderTextClasses, getSFProTextClasses } from '@/core/config/theme-utils';
 import { cn } from '@/core/config/utils';
+import { useAuth } from '@/app/providers/AuthContext';
 
 export const InventoryHeader: React.FC<InventoryHeaderProps> = ({
   totalProducts,
@@ -22,6 +24,11 @@ export const InventoryHeader: React.FC<InventoryHeaderProps> = ({
   onCreateProduct,
   canCreateProduct,
 }) => {
+  const { userRole } = useAuth();
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  
+  // Apenas admins podem importar CSV
+  const canImportCsv = userRole === 'admin';
   return (
     <div className="space-y-6">
       {/* Título e Ações */}
@@ -68,6 +75,18 @@ export const InventoryHeader: React.FC<InventoryHeaderProps> = ({
             </Button>
           </div>
           
+          {/* Botão Importar CSV */}
+          {canImportCsv && (
+            <Button 
+              onClick={() => setIsImportModalOpen(true)}
+              variant="outline"
+              className="border-primary-yellow/50 text-primary-yellow hover:bg-primary-yellow/10"
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              Importar CSV
+            </Button>
+          )}
+          
           {/* Botão Criar Produto */}
           {canCreateProduct && (
             <Button 
@@ -87,6 +106,12 @@ export const InventoryHeader: React.FC<InventoryHeaderProps> = ({
         lowStockCount={lowStockCount}
         totalValue={totalValue}
         turnoverStats={turnoverStats}
+      />
+      
+      {/* Modal de Importação CSV */}
+      <CsvImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
       />
     </div>
   );

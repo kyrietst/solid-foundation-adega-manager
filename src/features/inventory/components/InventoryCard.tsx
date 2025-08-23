@@ -29,15 +29,17 @@ const getStockStatus = (currentStock: number, minStock: number = 10) => {
   return { status: 'available', label: 'Disponível', color: 'bg-green-500/20 text-green-400 border-green-400/30' };
 };
 
-// Função para determinar análise de giro (simulada por enquanto)
-const getTurnoverAnalysis = (productId: string) => {
-  // Simulação baseada no ID - em produção virá do banco de dados
-  const hash = productId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  const remainder = hash % 3;
-  
-  if (remainder === 0) return { rate: 'Alto', icon: TrendingUp, color: 'text-green-400' };
-  if (remainder === 1) return { rate: 'Médio', icon: Minus, color: 'text-yellow-400' };
-  return { rate: 'Baixo', icon: TrendingDown, color: 'text-red-400' };
+// Função para determinar análise de giro baseada nos dados reais
+const getTurnoverAnalysis = (turnoverRate: string) => {
+  switch (turnoverRate) {
+    case 'fast':
+      return { rate: 'Rápido', icon: TrendingUp, color: 'text-green-400' };
+    case 'slow':
+      return { rate: 'Devagar', icon: TrendingDown, color: 'text-red-400' };
+    case 'medium':
+    default:
+      return { rate: 'Médio', icon: Minus, color: 'text-yellow-400' };
+  }
 };
 
 export const InventoryCard: React.FC<InventoryCardProps> = ({
@@ -49,7 +51,7 @@ export const InventoryCard: React.FC<InventoryCardProps> = ({
   glassEffect = true,
 }) => {
   const stockStatus = getStockStatus(product.stock_quantity, product.minimum_stock || 10);
-  const turnoverAnalysis = getTurnoverAnalysis(product.id);
+  const turnoverAnalysis = getTurnoverAnalysis(product.turnover_rate || 'medium');
   const TurnoverIcon = turnoverAnalysis.icon;
   const { handleMouseMove } = useMouseTracker();
 
@@ -117,7 +119,7 @@ export const InventoryCard: React.FC<InventoryCardProps> = ({
           <div className="flex items-center gap-2 text-sm">
             <Package className="h-4 w-4 text-purple-400" />
             <span className="text-gray-300">
-              Volume: <span className="font-semibold text-gray-100">{product.volume || 'N/A'}</span>
+              Volume: <span className="font-semibold text-gray-100">{product.volume_ml ? `${product.volume_ml}ml` : 'N/A'}</span>
             </span>
           </div>
 
