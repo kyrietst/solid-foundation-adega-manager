@@ -82,6 +82,7 @@ export const SupplierCard: React.FC<SupplierCardProps> = ({ supplier, className 
         "group relative overflow-hidden transition-all duration-300",
         "hover:shadow-lg hover:shadow-purple-500/10",
         "bg-black/70 backdrop-blur-xl border border-purple-500/30",
+        "h-[380px] flex flex-col", // Altura otimizada sem scroll
         !supplier.is_active && "opacity-60",
         className
       )}>
@@ -135,59 +136,52 @@ export const SupplierCard: React.FC<SupplierCardProps> = ({ supplier, className 
           </div>
         </CardHeader>
         
-        <CardContent className="space-y-4">
-          {/* Informações de contato */}
+        <CardContent className="flex-1 flex flex-col space-y-3 overflow-hidden">
+          {/* Seção 1: Contato compacto */}
           {contacts.length > 0 && (
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium text-gray-300">Contatos</h4>
-              <div className="space-y-1">
-                {contacts.map((contact, index) => {
-                  const IconComponent = contact.icon;
-                  return (
-                    <div key={index} className="flex items-center gap-2 text-sm text-gray-400">
-                      <IconComponent className="h-3 w-3" />
-                      <span className="truncate">{contact.value}</span>
-                    </div>
-                  );
-                })}
+            <div className="flex items-center gap-2">
+              <div className="text-xs text-gray-400 flex items-center gap-1">
+                {contacts[0].icon && React.createElement(contacts[0].icon, { className: "h-3 w-3" })}
+                Contato:
               </div>
+              <span className="text-xs text-white truncate flex-1">{contacts[0].value}</span>
             </div>
           )}
           
-          {/* Produtos fornecidos */}
+          {/* Seção 2: Produtos (linha única) */}
           {supplier.products_supplied && supplier.products_supplied.length > 0 && (
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium text-gray-300 flex items-center gap-2">
+            <div className="space-y-1">
+              <div className="flex items-center gap-1 text-xs text-gray-400">
                 <Package className="h-3 w-3" />
                 Produtos
-              </h4>
+              </div>
               <div className="flex flex-wrap gap-1">
-                {supplier.products_supplied.slice(0, 3).map((product, index) => (
+                {supplier.products_supplied.slice(0, 2).map((product, index) => (
                   <Badge key={index} variant="secondary" className="text-xs bg-purple-500/20 border-purple-400/30 text-purple-200 hover:bg-purple-500/30">
                     {product}
                   </Badge>
                 ))}
-                {supplier.products_supplied.length > 3 && (
+                {supplier.products_supplied.length > 2 && (
                   <Badge variant="secondary" className="text-xs bg-purple-500/20 border-purple-400/30 text-purple-200 hover:bg-purple-500/30">
-                    +{supplier.products_supplied.length - 3} mais
+                    +{supplier.products_supplied.length - 2}
                   </Badge>
                 )}
               </div>
             </div>
           )}
           
-          {/* Informações comerciais */}
-          <div className="grid grid-cols-2 gap-4 pt-2 border-t border-white/10">
+          {/* Seção 3: Informações comerciais em grid compacto */}
+          <div className="grid grid-cols-2 gap-3 py-2 border-y border-white/10">
             {/* Prazo de entrega */}
-            {supplier.delivery_time && (
-              <div className="space-y-1">
-                <div className="flex items-center gap-1 text-xs text-gray-400">
-                  <Clock className="h-3 w-3" />
-                  Entrega
-                </div>
-                <p className="text-sm text-white">{supplier.delivery_time}</p>
+            <div className="space-y-1">
+              <div className="flex items-center gap-1 text-xs text-gray-400">
+                <Clock className="h-3 w-3" />
+                Entrega
               </div>
-            )}
+              <p className="text-xs text-white truncate">
+                {supplier.delivery_time || 'N/A'}
+              </p>
+            </div>
             
             {/* Valor mínimo */}
             <div className="space-y-1">
@@ -195,15 +189,15 @@ export const SupplierCard: React.FC<SupplierCardProps> = ({ supplier, className 
                 <DollarSign className="h-3 w-3" />
                 Mín. Pedido
               </div>
-              <p className="text-sm text-white">
+              <p className="text-xs text-white truncate">
                 {formatCurrency(supplier.minimum_order_value)}
               </p>
             </div>
           </div>
           
-          {/* Formas de pagamento */}
+          {/* Seção 4: Pagamentos compactos */}
           {supplier.payment_methods && supplier.payment_methods.length > 0 && (
-            <div className="space-y-2">
+            <div className="space-y-1">
               <div className="flex items-center gap-1 text-xs text-gray-400">
                 <CreditCard className="h-3 w-3" />
                 Pagamento
@@ -223,15 +217,19 @@ export const SupplierCard: React.FC<SupplierCardProps> = ({ supplier, className 
             </div>
           )}
           
-          {/* Observações */}
+          {/* Observações resumidas - apenas se houver espaço */}
           {supplier.notes && (
             <div className="space-y-1">
-              <h4 className="text-xs text-gray-400">Observações</h4>
-              <p className="text-sm text-gray-300 line-clamp-2">{supplier.notes}</p>
+              <p className="text-xs text-gray-300 truncate" title={supplier.notes}>
+                💡 {supplier.notes}
+              </p>
             </div>
           )}
           
-          {/* Ações de admin no rodapé */}
+          {/* Spacer flexível para empurrar ações para o final */}
+          <div className="flex-1"></div>
+          
+          {/* Ações de admin fixadas no rodapé */}
           {userRole === 'admin' && (
             <div className="flex justify-end pt-2 border-t border-white/10 opacity-0 group-hover:opacity-100 transition-opacity">
               <Button
@@ -239,7 +237,7 @@ export const SupplierCard: React.FC<SupplierCardProps> = ({ supplier, className 
                 size="sm"
                 onClick={handleDelete}
                 className={cn(
-                  "h-8 px-3 text-xs",
+                  "h-7 px-2 text-xs",
                   showDeleteConfirm 
                     ? "text-red-400 hover:text-red-300 hover:bg-red-500/10" 
                     : "text-gray-400 hover:text-gray-300 hover:bg-white/5"

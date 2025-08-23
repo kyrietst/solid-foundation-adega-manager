@@ -8,18 +8,45 @@ import { SearchBar21st } from '@/shared/ui/thirdparty/search-bar-21st';
 import { getGlassCardClasses, getGlassButtonClasses, getHoverTransformClasses } from '@/core/config/theme-utils';
 import { BlurIn } from '@/components/ui/blur-in';
 import { StatCard } from '@/shared/ui/composite/stat-card';
-import { Users, TrendingUp, UserPlus, Download } from 'lucide-react';
+import { Users, TrendingUp, UserPlus, Download, BarChart3 } from 'lucide-react';
 import CustomerDataTable from './CustomerDataTable';
 import { NewCustomerModal } from './NewCustomerModal';
+import DataQualityDashboard from './DataQualityDashboard';
+import { useDataQualityMetrics } from '../hooks/useDataQuality';
 
 const CustomersLite = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [isNewCustomerModalOpen, setIsNewCustomerModalOpen] = useState(false);
+  const [showQualityDashboard, setShowQualityDashboard] = useState(false);
   
   // Usar hook básico de customers
   const { data: customers, isLoading, error } = useCustomers({ search });
+
+  // Converter customers para formato compatível com sistema de qualidade
+  const customersData = React.useMemo(() => {
+    if (!customers) return [];
+    return customers.map(customer => ({
+      id: customer.id,
+      name: customer.name,
+      email: customer.email,
+      phone: customer.phone,
+      address: customer.address,
+      birthday: customer.birthday,
+      first_purchase_date: customer.first_purchase_date,
+      last_purchase_date: customer.last_purchase_date,
+      purchase_frequency: customer.purchase_frequency,
+      favorite_category: customer.favorite_category,
+      favorite_product: customer.favorite_product,
+      notes: customer.notes,
+      contact_permission: customer.contact_permission,
+      created_at: customer.created_at
+    }));
+  }, [customers]);
+
+  // Métricas de qualidade
+  const qualityMetrics = useDataQualityMetrics(customersData);
 
   // Removemos a tabela antiga e manteremos apenas a nova tabela 21st.dev
 
@@ -161,7 +188,7 @@ const CustomersLite = () => {
 
       {/* Container principal com glassmorphism - KPIs + Tabela */}
       <section 
-        className="flex-1 min-h-0 bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg hero-spotlight p-4 flex flex-col hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300 overflow-hidden space-y-6"
+        className="flex-1 min-h-0 bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg hero-spotlight p-4 flex flex-col hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300 overflow-visible space-y-6"
         onMouseMove={(e) => {
           const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
           const x = ((e.clientX - rect.left) / rect.width) * 100;
@@ -171,7 +198,7 @@ const CustomersLite = () => {
         }}
       >
         {/* KPIs Resumo - Padronizados com StatCard v2.0.0 */}
-        <div className="flex-shrink-0 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="flex-shrink-0 grid grid-cols-1 md:grid-cols-4 gap-4">
           <StatCard
             layout="crm"
             variant="default"
@@ -204,10 +231,38 @@ const CustomersLite = () => {
             onClick={handleNavigateToNewCustomersReports}
             className="cursor-pointer transform hover:scale-105 transition-all duration-200 hover:shadow-xl hover:shadow-green-500/20"
           />
+          
+          <StatCard
+            layout="crm"
+            variant={qualityMetrics.averageCompleteness >= 70 ? 'purple' : 'warning'}
+            title="Qualidade de Dados"
+            value={`${qualityMetrics.averageCompleteness}%`}
+            description="📊 Completude média • Clique para ver detalhes"
+            icon={BarChart3}
+            onClick={() => setShowQualityDashboard(!showQualityDashboard)}
+            className="cursor-pointer transform hover:scale-105 transition-all duration-200 hover:shadow-xl hover:shadow-purple-500/20"
+          />
         </div>
 
+        {/* Dashboard de Qualidade de Dados - Colapsável */}
+        {showQualityDashboard && (
+          <div className="flex-shrink-0 bg-black/30 backdrop-blur-sm border border-white/5 rounded-lg p-4">
+            <DataQualityDashboard 
+              customers={customersData}
+              onViewDetails={() => {
+                // TODO: Implementar navegação para detalhes
+                console.log('Ver detalhes de qualidade');
+              }}
+              onFixIssues={(fieldKey) => {
+                // TODO: Implementar ações de correção
+                console.log(`Corrigir campo: ${fieldKey}`);
+              }}
+            />
+          </div>
+        )}
+
         {/* Tabela de Clientes */}
-        <CardContent className="p-0 flex-1 min-h-0 overflow-hidden">
+        <CardContent className="p-0 flex-1 min-h-0 overflow-visible relative">
           <CustomerDataTable />
         </CardContent>
       </section>

@@ -385,7 +385,7 @@ export const SearchBar21st = ({ placeholder = "Search...", onSearch, onChange, d
               duration: 0.8, 
               ease: [0.16, 1, 0.3, 1] // Cubic bezier muito suave
             }}
-            className="absolute z-10 w-full mt-2 overflow-hidden bg-white/90 dark:bg-gray-900/90 backdrop-blur-md rounded-lg shadow-xl border border-gray-100 dark:border-gray-700"
+            className="absolute z-[300] w-full mt-2 overflow-hidden bg-white/90 dark:bg-gray-900/90 backdrop-blur-md rounded-lg shadow-xl border border-gray-100 dark:border-gray-700"
             style={{
               maxHeight: "300px",
               overflowY: "auto",

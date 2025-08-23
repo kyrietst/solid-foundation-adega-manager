@@ -77,7 +77,7 @@ export const SuppliersManagement: React.FC<SuppliersManagementProps> = ({ classN
   }
   
   return (
-    <div className="w-full h-full flex flex-col p-4">
+    <>
       {/* Header padronizado */}
       <div className="flex-shrink-0 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
         {/* Header sem container */}
@@ -276,7 +276,7 @@ export const SuppliersManagement: React.FC<SuppliersManagementProps> = ({ classN
         onClose={() => setIsAddModalOpen(false)}
         mode="create"
       />
-    </div>
+    </>
   );
 };
 
