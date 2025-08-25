@@ -75,7 +75,7 @@ const InsightsBadge = ({
   const badgeClass = {
     green: "bg-green-500/30 text-green-100 border-green-400/60 shadow-lg shadow-green-400/20 backdrop-blur-sm font-bold",
     yellow: "bg-yellow-500/30 text-yellow-100 border-yellow-400/60 shadow-lg shadow-yellow-400/20 backdrop-blur-sm font-bold",
-    red: "bg-red-500/30 text-red-100 border-red-400/60 shadow-lg shadow-red-400/20 backdrop-blur-sm animate-pulse font-bold"
+    red: "bg-red-500/30 text-red-100 border-red-400/60 shadow-lg shadow-red-400/20 backdrop-blur-sm lgpd-soft-pulse font-bold"
   };
   
   return (
@@ -171,7 +171,7 @@ const StatusBadge = ({
     gold: "bg-primary-yellow/20 text-primary-yellow border-primary-yellow/40 shadow-lg shadow-primary-yellow/10 font-semibold backdrop-blur-sm",
     green: "bg-green-400/20 text-green-300 border-green-400/40 shadow-lg shadow-green-400/10 backdrop-blur-sm",
     yellow: "bg-accent-orange/20 text-orange-300 border-accent-orange/40 shadow-lg shadow-accent-orange/10 backdrop-blur-sm",
-    red: "bg-accent-red/20 text-red-300 border-accent-red/40 shadow-lg shadow-accent-red/10 backdrop-blur-sm animate-pulse",
+    red: "bg-accent-red/20 text-red-300 border-accent-red/40 shadow-lg shadow-accent-red/10 backdrop-blur-sm lgpd-soft-pulse",
     gray: "bg-gray-500/20 text-gray-300 border-gray-500/40 shadow-lg shadow-gray-500/10 backdrop-blur-sm",
     orange: "bg-accent-orange/20 text-orange-300 border-accent-orange/40 shadow-lg shadow-accent-orange/10 backdrop-blur-sm"
   };
@@ -329,10 +329,10 @@ const LGPDBadge = ({ hasPermission }: { hasPermission: boolean }) => {
               "flex items-center gap-1 transition-all duration-200 hover:scale-105 border backdrop-blur-sm cursor-pointer text-sm font-semibold px-3 py-1", 
               hasPermission 
                 ? "bg-green-400/20 text-green-300 border-green-400/40 shadow-lg shadow-green-400/10" 
-                : "bg-accent-red/20 text-red-300 border-accent-red/40 shadow-lg shadow-accent-red/10 animate-pulse"
+                : "bg-accent-red/20 text-red-300 border-accent-red/40 shadow-lg shadow-accent-red/10 lgpd-soft-pulse"
             )}
           >
-            {hasPermission ? <CheckCircle2 className="w-3 h-3" /> : <XCircle className="w-3 h-3 animate-pulse" />}
+            {hasPermission ? <CheckCircle2 className="w-3 h-3" /> : <XCircle className="w-3 h-3 lgpd-soft-pulse" />}
             {hasPermission ? "LGPD ✓" : "Pendente"}
           </Badge>
         </TooltipTrigger>
@@ -357,7 +357,7 @@ const LGPDBadge = ({ hasPermission }: { hasPermission: boolean }) => {
               ) : (
                 <div className="bg-accent-red/10 border border-accent-red/20 rounded-lg p-2">
                   <p className="text-red-300 font-medium text-xs flex items-center gap-1">
-                    <AlertTriangle className="h-3 w-3 animate-pulse" />
+                    <AlertTriangle className="h-3 w-3 lgpd-soft-pulse" />
                     Autorização Pendente
                   </p>
                   <p className="text-red-200 text-[10px] mt-1">

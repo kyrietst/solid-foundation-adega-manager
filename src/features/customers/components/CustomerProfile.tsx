@@ -25,7 +25,7 @@ import {
   XAxis, 
   YAxis, 
   CartesianGrid, 
-  Tooltip, 
+  Tooltip as RechartsTooltip, 
   ResponsiveContainer, 
   BarChart, 
   Bar,
@@ -53,13 +53,22 @@ import {
   Search,
   Filter,
   Package,
-  Plus
+  Plus,
+  AlertTriangle,
+  Info
 } from 'lucide-react';
 import { formatCurrency } from '@/core/config/utils';
 import { StatCard } from '@/shared/ui/composite/stat-card';
 import { useCustomer, useCustomerPurchases } from '@/features/customers/hooks/use-crm';
 import { useCustomerRealMetrics } from '@/features/customers/hooks/useCustomerRealMetrics';
 import { EditCustomerModal } from './EditCustomerModal';
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+  TooltipPortal,
+} from '@/shared/ui/primitives/tooltip';
 
 interface CustomerProfileProps {
   className?: string;
@@ -68,6 +77,60 @@ interface CustomerProfileProps {
 export const CustomerProfile = ({ className }: CustomerProfileProps) => {
   const { id } = useParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState('overview');
+  
+  // Função para verificar campos em falta que impactam relatórios
+  const checkMissingReportFields = (customer: Record<string, any>) => {
+    const reportFields = [
+      { key: 'email', label: 'Email', value: customer?.email, required: true, icon: Mail, impact: 'Necessário para campanhas de email marketing e relatórios de comunicação.' },
+      { key: 'phone', label: 'Telefone', value: customer?.phone, required: true, icon: Phone, impact: 'Essencial para relatórios de WhatsApp e análises de contato.' },
+      { key: 'address', label: 'Endereço', value: customer?.address, required: false, icon: MapPin, impact: 'Importante para análises geográficas e relatórios de entrega.' },
+      { key: 'favorite_category', label: 'Categoria Favorita', value: customer?.favorite_category, required: false, icon: TrendingUp, impact: 'Fundamental para relatórios de preferências e recomendações.' },
+      { key: 'birthday', label: 'Aniversário', value: customer?.birthday, required: false, icon: Calendar, impact: 'Usado em campanhas sazonais e análises demográficas.' }
+    ];
+    
+    return reportFields.filter(field => !field.value || field.value === 'N/A' || field.value === 'Não definida');
+  };
+  
+  // Componente para ícone de alerta
+  const MissingFieldAlert = ({ field, variant = 'critical' }: { field: Record<string, any>, variant?: 'critical' | 'warning' }) => {
+    const IconComponent = field.icon || Info;
+    return (
+      <TooltipProvider delayDuration={100}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="inline-flex items-center">
+              {variant === 'critical' ? (
+                <AlertTriangle className="h-4 w-4 text-red-400 animate-pulse cursor-help" />
+              ) : (
+                <Info className="h-4 w-4 text-yellow-400 cursor-help" />
+              )}
+            </div>
+          </TooltipTrigger>
+          <TooltipPortal>
+            <TooltipContent 
+              side="top" 
+              className="max-w-sm z-[50000] bg-black/95 backdrop-blur-xl border border-red-400/30 shadow-2xl shadow-red-400/10" 
+              sideOffset={8}
+              avoidCollisions={true}
+              collisionPadding={10}
+            >
+              <div className="space-y-2 p-1">
+                <div className="flex items-center gap-2 border-b border-white/10 pb-2">
+                  <IconComponent className="h-4 w-4 text-red-400" />
+                  <span className="font-semibold text-red-400">{field.label} em Falta</span>
+                </div>
+                <p className="text-xs text-gray-300">{field.impact}</p>
+                <div className="flex items-center gap-1 pt-1 border-t border-white/10">
+                  <AlertTriangle className="h-3 w-3 text-red-400" />
+                  <span className="text-xs text-red-400 font-medium">Impacta relatórios</span>
+                </div>
+              </div>
+            </TooltipContent>
+          </TooltipPortal>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  };
   
   // Estados para filtros da aba Compras
   const [searchTerm, setSearchTerm] = useState('');
@@ -113,6 +176,11 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
     isLoading, 
     error 
   } = useCustomer(id || '');
+  
+  // Calcular campos em falta para relatórios
+  const missingReportFields = customer ? checkMissingReportFields(customer) : [];
+  const criticalMissingFields = missingReportFields.filter(field => field.required);
+  const importantMissingFields = missingReportFields.filter(field => !field.required);
 
   // Buscar métricas reais calculadas em tempo real
   const {
@@ -357,6 +425,71 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
                     <span className="text-gray-400 text-sm">
                       Cliente desde {new Date(customer.created_at || '').toLocaleDateString('pt-BR')}
                     </span>
+                    {/* Indicador de completude do perfil */}
+                    {(criticalMissingFields.length > 0 || importantMissingFields.length > 0) && (
+                      <TooltipProvider delayDuration={200}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Badge 
+                              variant="outline" 
+                              className={`${
+                                criticalMissingFields.length > 0 
+                                  ? 'border-red-400/50 text-red-400 bg-red-400/10' 
+                                  : 'border-yellow-400/50 text-yellow-400 bg-yellow-400/10'
+                              } cursor-help`}
+                            >
+                              {criticalMissingFields.length > 0 ? (
+                                <>
+                                  <AlertTriangle className="h-3 w-3 mr-1" />
+                                  Perfil Incompleto
+                                </>
+                              ) : (
+                                <>
+                                  <Info className="h-3 w-3 mr-1" />
+                                  Perfil Básico
+                                </>
+                              )}
+                            </Badge>
+                          </TooltipTrigger>
+                          <TooltipPortal>
+                            <TooltipContent 
+                              side="bottom" 
+                              className="max-w-sm z-[50000] bg-black/95 backdrop-blur-xl border border-red-400/30 shadow-2xl"
+                              sideOffset={8}
+                            >
+                              <div className="space-y-2 p-1">
+                                <div className="border-b border-white/10 pb-2">
+                                  <span className="font-semibold text-red-400">Status do Perfil</span>
+                                </div>
+                                {criticalMissingFields.length > 0 && (
+                                  <div>
+                                    <p className="text-xs text-red-400 font-medium">
+                                      ⚠️ {criticalMissingFields.length} campo(s) crítico(s) em falta:
+                                    </p>
+                                    <p className="text-xs text-gray-300">
+                                      {criticalMissingFields.map(f => f.label).join(', ')}
+                                    </p>
+                                  </div>
+                                )}
+                                {importantMissingFields.length > 0 && (
+                                  <div>
+                                    <p className="text-xs text-yellow-400 font-medium">
+                                      📋 {importantMissingFields.length} campo(s) importante(s) em falta:
+                                    </p>
+                                    <p className="text-xs text-gray-300">
+                                      {importantMissingFields.map(f => f.label).join(', ')}
+                                    </p>
+                                  </div>
+                                )}
+                                <div className="pt-1 border-t border-white/10">
+                                  <p className="text-xs text-gray-400">Campos em falta afetam a precisão dos relatórios</p>
+                                </div>
+                              </div>
+                            </TooltipContent>
+                          </TooltipPortal>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
                   </div>
                 </div>
                 
@@ -493,6 +626,43 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
                 (e.currentTarget as HTMLElement).style.setProperty("--y", `${y}%`);
               }}
             >
+              {/* Alert geral para campos críticos em falta */}
+              {criticalMissingFields.length > 0 && (
+                <Card className="bg-gradient-to-r from-red-900/30 to-red-800/20 border-red-500/40">
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-3">
+                      <AlertTriangle className="h-5 w-5 text-red-400 mt-0.5 animate-pulse" />
+                      <div className="flex-1">
+                        <h4 className="text-red-400 font-medium mb-1">Campos Críticos em Falta</h4>
+                        <p className="text-gray-300 text-sm mb-2">
+                          {criticalMissingFields.length} campo(s) essencial(is) para relatórios não preenchido(s):
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {criticalMissingFields.map((field, index) => (
+                            <Badge key={index} variant="outline" className="border-red-400/50 text-red-400">
+                              {field.label}
+                            </Badge>
+                          ))}
+                        </div>
+                        {importantMissingFields.length > 0 && (
+                          <p className="text-yellow-400 text-xs mt-2">
+                            + {importantMissingFields.length} campo(s) importante(s) também em falta
+                          </p>
+                        )}
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="border-red-400/50 text-red-400 hover:bg-red-400/10"
+                        onClick={() => setIsEditModalOpen(true)}
+                      >
+                        Editar Perfil
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
               {/* Card Resumo Financeiro Expandido */}
               <Card className="bg-gradient-to-br from-green-900/20 to-green-800/20 border-green-700/40">
@@ -614,12 +784,20 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
                     <div className="space-y-2">
                       <div className="flex justify-between">
                         <span className="text-gray-300 text-sm">Categoria Favorita:</span>
-                        <span className="text-purple-400 text-sm font-medium">
-                          {realMetrics?.calculated_favorite_category || customer.favorite_category || 'Não definida'}
-                          {realMetrics && !realMetrics.data_sync_status.preferences_synced && (
-                            <span className="text-xs text-yellow-400 ml-1">⚠️</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-purple-400 text-sm font-medium">
+                            {realMetrics?.calculated_favorite_category || customer.favorite_category || 'Não definida'}
+                            {realMetrics && !realMetrics.data_sync_status.preferences_synced && (
+                              <span className="text-xs text-yellow-400 ml-1">⚠️</span>
+                            )}
+                          </span>
+                          {(!customer.favorite_category || customer.favorite_category === 'Não definida') && (
+                            <MissingFieldAlert 
+                              field={missingReportFields.find(f => f.key === 'favorite_category')} 
+                              variant="warning" 
+                            />
                           )}
-                        </span>
+                        </div>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-300 text-sm">Produto Favorito:</span>
@@ -681,7 +859,13 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
                               </Button>
                             </>
                           ) : (
-                            <span className="text-red-400 text-xs">✗ Não cadastrado</span>
+                            <>
+                              <span className="text-red-400 text-xs">✗ Não cadastrado</span>
+                              <MissingFieldAlert 
+                                field={missingReportFields.find(f => f.key === 'phone')} 
+                                variant="critical" 
+                              />
+                            </>
                           )}
                         </div>
                       </div>
@@ -701,19 +885,33 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
                               </Button>
                             </>
                           ) : (
-                            <span className="text-red-400 text-xs">✗ Não cadastrado</span>
+                            <>
+                              <span className="text-red-400 text-xs">✗ Não cadastrado</span>
+                              <MissingFieldAlert 
+                                field={missingReportFields.find(f => f.key === 'email')} 
+                                variant="critical" 
+                              />
+                            </>
                           )}
                         </div>
                       </div>
                     </div>
                     <div className="flex justify-between items-center pt-2 border-t border-gray-700/30">
                       <span className="text-gray-300 text-sm">Localização:</span>
-                      <span className="text-orange-400 text-sm">
-                        {customer.address && typeof customer.address === 'object' 
-                          ? `${customer.address.city || ''}, ${customer.address.state || ''}`.replace(/^,\s*|,\s*$/g, '') || 'N/A'
-                          : customer.address || 'N/A'
-                        }
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-orange-400 text-sm">
+                          {customer.address && typeof customer.address === 'object' 
+                            ? `${customer.address.city || ''}, ${customer.address.state || ''}`.replace(/^,\s*|,\s*$/g, '') || 'N/A'
+                            : customer.address || 'N/A'
+                          }
+                        </span>
+                        {(!customer.address || customer.address === 'N/A') && (
+                          <MissingFieldAlert 
+                            field={missingReportFields.find(f => f.key === 'address')} 
+                            variant="warning" 
+                          />
+                        )}
+                      </div>
                     </div>
                   </div>
                 </CardContent>
@@ -991,7 +1189,7 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
                               fontSize={12}
                               tickFormatter={(value) => formatCurrency(value)}
                             />
-                            <Tooltip 
+                            <RechartsTooltip 
                               contentStyle={{ 
                                 backgroundColor: '#1F2937', 
                                 border: '1px solid #374151',
@@ -1040,7 +1238,7 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
                               fontSize={10}
                               width={120}
                             />
-                            <Tooltip 
+                            <RechartsTooltip 
                               contentStyle={{ 
                                 backgroundColor: '#1F2937', 
                                 border: '1px solid #374151',
@@ -1083,7 +1281,7 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
                                 fontSize={12}
                                 label={{ value: 'Dias', angle: -90, position: 'insideLeft' }}
                               />
-                              <Tooltip 
+                              <RechartsTooltip 
                                 contentStyle={{ 
                                   backgroundColor: '#1F2937', 
                                   border: '1px solid #374151',
