@@ -8,7 +8,8 @@ import { Plus, Package } from 'lucide-react';
 import { Button } from '@/shared/ui/primitives/button';
 import { cn } from '@/core/config/utils';
 import { text, shadows } from '@/core/config/theme';
-import { GradientText } from "@/components/ui/gradient-text";
+import { BlurIn } from "@/components/ui/blur-in";
+import { getSFProTextClasses } from '@/core/config/theme-utils';
 
 interface ProductsHeaderProps {
   filteredCount: number;
@@ -24,14 +25,21 @@ interface ProductsTitleProps {
 export const ProductsTitle: React.FC<ProductsTitleProps> = () => {
   return (
     <div className="relative w-full text-left">
-      <GradientText
-        colors={["#FF2400", "#FFDA04", "#FF2400", "#FFDA04", "#FF2400"]}
-        animationSpeed={6}
-        showBorder={false}
-        className="text-xl lg:text-2xl font-bold"
-      >
-        PRODUTOS DISPONÍVEIS
-      </GradientText>
+      <BlurIn
+        word="PRODUTOS DISPONÍVEIS"
+        duration={1.2}
+        variant={{
+          hidden: { filter: "blur(15px)", opacity: 0 },
+          visible: { filter: "blur(0px)", opacity: 1 }
+        }}
+        className={cn(
+          getSFProTextClasses('h1', 'accent'),
+          "text-transparent bg-clip-text bg-gradient-to-r from-[#FF2400] via-[#FFDA04] to-[#FF2400] drop-shadow-lg"
+        )}
+        style={{
+          textShadow: '0 2px 4px rgba(0,0,0,0.3), 0 0 20px rgba(255, 218, 4, 0.2)'
+        }}
+      />
       
       {/* Efeito de sublinhado elegante - tamanho proporcional ao texto */}
       <div className="w-80 h-6 relative mt-2">

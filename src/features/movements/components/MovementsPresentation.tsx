@@ -10,6 +10,8 @@ import { Plus } from 'lucide-react';
 import { LoadingSpinner } from '@/shared/ui/composite/loading-spinner';
 import { BlurIn } from '@/components/ui/blur-in';
 import { FormDialog } from '@/shared/ui/layout/FormDialog';
+import { cn } from '@/core/config/utils';
+import { getSFProTextClasses } from '@/core/config/theme-utils';
 import { MovementsTable } from './MovementsTable';
 import { MovementDialog } from './MovementDialog';
 import { InventoryMovement } from '@/types/inventory.types';
@@ -76,7 +78,10 @@ export const MovementsPresentation: React.FC<MovementsPresentationProps> = ({
               hidden: { filter: "blur(15px)", opacity: 0 },
               visible: { filter: "blur(0px)", opacity: 1 }
             }}
-            className="text-xl lg:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#FF2400] via-[#FFDA04] to-[#FF2400] drop-shadow-lg"
+            className={cn(
+              getSFProTextClasses('h1', 'accent'),
+              "text-transparent bg-clip-text bg-gradient-to-r from-[#FF2400] via-[#FFDA04] to-[#FF2400] drop-shadow-lg"
+            )}
             style={{
               textShadow: '0 2px 4px rgba(0,0,0,0.3), 0 0 20px rgba(255, 218, 4, 0.2)'
             }}

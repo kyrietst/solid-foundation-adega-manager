@@ -53,23 +53,23 @@ export const DeliveryOrderCard = ({
   
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'pending': return <Clock className="h-4 w-4 text-yellow-500" />;
-      case 'preparing': return <Package className="h-4 w-4 text-orange-500" />;
-      case 'out_for_delivery': return <Truck className="h-4 w-4 text-blue-500" />;
-      case 'delivered': return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case 'cancelled': return <AlertCircle className="h-4 w-4 text-red-500" />;
-      default: return <Clock className="h-4 w-4 text-gray-500" />;
+      case 'pending': return <Clock className="h-4 w-4 text-yellow-400" />;
+      case 'preparing': return <Package className="h-4 w-4 text-orange-400" />;
+      case 'out_for_delivery': return <Truck className="h-4 w-4 text-blue-400" />;
+      case 'delivered': return <CheckCircle className="h-4 w-4 text-green-400" />;
+      case 'cancelled': return <AlertCircle className="h-4 w-4 text-red-400" />;
+      default: return <Clock className="h-4 w-4 text-gray-400" />;
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pending': return 'bg-yellow-100 text-yellow-700 border-yellow-200';
-      case 'preparing': return 'bg-orange-100 text-orange-700 border-orange-200';
-      case 'out_for_delivery': return 'bg-blue-100 text-blue-700 border-blue-200';
-      case 'delivered': return 'bg-green-100 text-green-700 border-green-200';
-      case 'cancelled': return 'bg-red-100 text-red-700 border-red-200';
-      default: return 'bg-gray-100 text-gray-700 border-gray-200';
+      case 'pending': return 'bg-yellow-500/20 text-yellow-300 border-yellow-500/40';
+      case 'preparing': return 'bg-orange-500/20 text-orange-300 border-orange-500/40';
+      case 'out_for_delivery': return 'bg-blue-500/20 text-blue-300 border-blue-500/40';
+      case 'delivered': return 'bg-green-500/20 text-green-300 border-green-500/40';
+      case 'cancelled': return 'bg-red-500/20 text-red-300 border-red-500/40';
+      default: return 'bg-gray-500/20 text-gray-300 border-gray-500/40';
     }
   };
 
@@ -127,17 +127,21 @@ export const DeliveryOrderCard = ({
     }
   };
 
+  const formatCurrency = (value: number) => 
+    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+
   return (
     <Card className={cn(
-      "bg-gray-800/30 border-gray-700/40 backdrop-blur-sm shadow-lg transition-all duration-300",
-      "hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30",
+      "bg-black/60 border border-white/10 backdrop-blur-sm shadow-xl transition-all duration-300",
+      "hover:shadow-2xl hover:shadow-yellow-500/20 hover:border-yellow-400/40 hover:scale-[1.02]",
       className
     )}>
-      <CardHeader className="pb-4">
+      {/* Header do Card */}
+      <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-blue-500/20 border border-blue-400/30">
-              <Package className="h-5 w-5 text-blue-400" />
+            <div className="p-2 rounded-lg bg-gradient-to-br from-yellow-500/20 to-orange-500/20 border border-yellow-400/40">
+              <Truck className="h-5 w-5 text-yellow-400" />
             </div>
             <div>
               <CardTitle className="text-lg font-bold text-white">
@@ -249,7 +253,7 @@ export const DeliveryOrderCard = ({
                   {item.quantity}x {item.product_name}
                 </span>
                 <span className="text-gray-400">
-                  R$ {item.subtotal.toFixed(2)}
+                  {formatCurrency(item.subtotal)}
                 </span>
               </div>
             ))}
@@ -267,16 +271,16 @@ export const DeliveryOrderCard = ({
           <div className="ml-6 space-y-1">
             <div className="flex justify-between items-center text-sm">
               <span className="text-gray-400">Subtotal:</span>
-              <span className="text-gray-300">R$ {delivery.total_amount.toFixed(2)}</span>
+              <span className="text-gray-300">{formatCurrency(delivery.total_amount)}</span>
             </div>
             <div className="flex justify-between items-center text-sm">
               <span className="text-gray-400">Taxa de Entrega:</span>
-              <span className="text-gray-300">R$ {delivery.delivery_fee.toFixed(2)}</span>
+              <span className="text-gray-300">{formatCurrency(delivery.delivery_fee)}</span>
             </div>
             <Separator className="bg-gray-600/30 my-1" />
             <div className="flex justify-between items-center text-sm font-medium">
               <span className="text-white">Total:</span>
-              <span className="text-green-400 font-bold">R$ {delivery.final_amount.toFixed(2)}</span>
+              <span className="text-green-400 font-bold text-lg">{formatCurrency(delivery.final_amount)}</span>
             </div>
           </div>
         </div>
@@ -378,7 +382,7 @@ export const DeliveryOrderCard = ({
           {/* Valor em destaque */}
           <div className="ml-auto flex items-center gap-1 text-sm font-medium text-yellow-400">
             <DollarSign className="h-3 w-3" />
-            R$ {delivery.final_amount.toFixed(2)}
+            {formatCurrency(delivery.final_amount)}
           </div>
         </div>
       </CardContent>

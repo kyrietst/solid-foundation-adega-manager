@@ -68,7 +68,7 @@ export const SalesReportsSection: React.FC<SalesReportsSectionProps> = ({ period
     staleTime: 5 * 60 * 1000,
   });
 
-  // Top Products Query
+  // Top Products Query - com fallback manual para garantir nomes reais
   const { data: topProducts, isLoading: loadingProducts } = useQuery({
     queryKey: ['top-products', period],
     queryFn: async () => {
@@ -76,21 +76,101 @@ export const SalesReportsSection: React.FC<SalesReportsSectionProps> = ({ period
       const startDate = new Date();
       startDate.setDate(endDate.getDate() - period);
 
-      const { data, error } = await supabase
-        .rpc('get_top_products', {
-          start_date: startDate.toISOString(),
-          end_date: endDate.toISOString(),
-          limit_count: 10,
-          by: 'revenue'
+      console.log('🔍 Buscando top produtos...');
+
+      try {
+        // FORÇAR fallback manual para garantir que nomes reais sejam exibidos
+        console.log('🚀 Forçando cálculo manual para garantir nomes reais...');
+        throw new Error('Forçando fallback manual para debug');
+        
+        // Tentar usar RPC primeiro (comentado para forçar fallback)
+        // const { data, error } = await supabase
+        //   .rpc('get_top_products', {
+        //     start_date: startDate.toISOString(),
+        //     end_date: endDate.toISOString(),
+        //     limit_count: 10,
+        //     by: 'revenue'
+        //   });
+
+        // if (error) {
+        //   console.warn('⚠️ RPC get_top_products falhou, usando query manual:', error);
+        //   throw error;
+        // }
+
+        // console.log('✅ Top products from RPC:', data);
+        // return data || [];
+      } catch (error) {
+        console.log('📊 Executando cálculo manual de top produtos...');
+        
+        // Fallback manual: query direta com JOIN para garantir nomes reais
+        const { data: salesData, error: salesError } = await supabase
+          .from('sale_items')
+          .select(`
+            product_id,
+            quantity,
+            unit_price,
+            products!inner (
+              id,
+              name,
+              category
+            ),
+            sales!inner (
+              created_at,
+              status
+            )
+          `)
+          .gte('sales.created_at', startDate.toISOString())
+          .lte('sales.created_at', endDate.toISOString())
+          .eq('sales.status', 'completed');
+
+        if (salesError) {
+          console.error('❌ Erro na query manual de top produtos:', salesError);
+          throw salesError;
+        }
+
+        // Agrupar por produto e calcular receita
+        const productRevenues = new Map();
+        
+        (salesData || []).forEach((item: any) => {
+          const productId = item.product_id;
+          const productName = item.products?.name || `Produto ${productId.slice(-8)}`;
+          const revenue = item.quantity * parseFloat(item.unit_price || 0);
+          
+          if (productRevenues.has(productId)) {
+            const current = productRevenues.get(productId);
+            productRevenues.set(productId, {
+              ...current,
+              revenue: current.revenue + revenue,
+              quantity: current.quantity + item.quantity
+            });
+          } else {
+            productRevenues.set(productId, {
+              id: productId,
+              name: productName,
+              revenue: revenue,
+              quantity: item.quantity
+            });
+          }
         });
 
-      if (error) throw error;
-      return data || [];
+        // Ordenar por receita e pegar top 10
+        const topProductsArray = Array.from(productRevenues.values())
+          .sort((a, b) => b.revenue - a.revenue)
+          .slice(0, 10)
+          .map(product => ({
+            ...product,
+            name: truncateProductName(product.name, 15), // Truncar para legibilidade
+            fullName: product.name // Manter nome completo para tooltip
+          }));
+
+        console.log('✅ Top produtos calculados manualmente:', topProductsArray);
+        return topProductsArray;
+      }
     },
     staleTime: 5 * 60 * 1000,
   });
 
-  // Sales by Category Query
+  // Sales by Category Query - com fallback manual para categorias reais de produtos
   const { data: categoryData, isLoading: loadingCategories } = useQuery({
     queryKey: ['sales-by-category', period],
     queryFn: async () => {
@@ -98,17 +178,83 @@ export const SalesReportsSection: React.FC<SalesReportsSectionProps> = ({ period
       const startDate = new Date();
       startDate.setDate(endDate.getDate() - period);
 
-      const { data, error } = await supabase
-        .rpc('get_sales_by_category', {
-          start_date: startDate.toISOString(),
-          end_date: endDate.toISOString()
+      console.log('🔍 Buscando vendas por categoria...');
+
+      try {
+        // FORÇAR fallback manual para garantir categorias corretas de produtos
+        console.log('🚀 Forçando cálculo manual de categorias para garantir dados corretos...');
+        throw new Error('Forçando fallback manual para debug');
+        
+        // Tentar usar RPC primeiro (comentado para forçar fallback)
+        // const { data, error } = await supabase
+        //   .rpc('get_sales_by_category', {
+        //     start_date: startDate.toISOString(),
+        //     end_date: endDate.toISOString()
+        //   });
+
+        // if (error) {
+        //   console.warn('⚠️ RPC get_sales_by_category falhou, usando query manual:', error);
+        //   throw error;
+        // }
+
+        // const result = (data || []).map((item: any) => ({
+        //   category: item.category_name || item.category || 'Sem categoria',
+        //   revenue: Number(item.total_revenue || 0)
+        // }));
+
+        // console.log('✅ Categorias from RPC:', result);
+        // return result;
+      } catch (error) {
+        console.log('📊 Executando cálculo manual de vendas por categoria...');
+        
+        // Fallback manual: query direta por categorias de produtos (não payment_method)
+        const { data: salesData, error: salesError } = await supabase
+          .from('sale_items')
+          .select(`
+            quantity,
+            unit_price,
+            products!inner (
+              category
+            ),
+            sales!inner (
+              created_at,
+              status
+            )
+          `)
+          .gte('sales.created_at', startDate.toISOString())
+          .lte('sales.created_at', endDate.toISOString())
+          .eq('sales.status', 'completed');
+
+        if (salesError) {
+          console.error('❌ Erro na query manual de categorias:', salesError);
+          throw salesError;
+        }
+
+        // Agrupar por categoria de produto e calcular receita
+        const categoryRevenues = new Map();
+        
+        (salesData || []).forEach((item: any) => {
+          const category = item.products?.category || 'Sem categoria';
+          const revenue = item.quantity * parseFloat(item.unit_price || 0);
+          
+          if (categoryRevenues.has(category)) {
+            categoryRevenues.set(category, categoryRevenues.get(category) + revenue);
+          } else {
+            categoryRevenues.set(category, revenue);
+          }
         });
 
-      if (error) throw error;
-      return (data || []).map((item: any) => ({
-        category: item.category_name,
-        revenue: Number(item.total_revenue || 0)
-      }));
+        // Converter para array e traduzir categorias
+        const categoryArray = Array.from(categoryRevenues.entries())
+          .map(([category, revenue]) => ({
+            category: translateCategory(category),
+            revenue: revenue
+          }))
+          .sort((a, b) => b.revenue - a.revenue);
+
+        console.log('✅ Categorias calculadas manualmente:', categoryArray);
+        return categoryArray;
+      }
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -129,7 +275,7 @@ export const SalesReportsSection: React.FC<SalesReportsSectionProps> = ({ period
 
       if (error) throw error;
       return (data || []).map((item: any) => ({
-        method: item.payment_method,
+        method: translatePaymentMethod(item.payment_method),
         count: Number(item.total_sales || 0),
         revenue: Number(item.total_revenue || 0),
         avg_ticket: Number(item.avg_ticket || 0)
@@ -143,6 +289,43 @@ export const SalesReportsSection: React.FC<SalesReportsSectionProps> = ({ period
       style: 'currency',
       currency: 'BRL'
     }).format(value);
+  };
+
+  // Função para traduzir categorias de produtos
+  const translateCategory = (category: string): string => {
+    const translations: Record<string, string> = {
+      'beverages': 'Bebidas',
+      'snacks': 'Petiscos',
+      'cigarettes': 'Cigarros',
+      'beer': 'Cerveja',
+      'wine': 'Vinho',
+      'spirits': 'Destilados',
+      'non_alcoholic': 'Não Alcoólicos',
+      'food': 'Comida',
+      'accessories': 'Acessórios',
+      'others': 'Outros'
+    };
+    return translations[category?.toLowerCase()] || category || 'Sem categoria';
+  };
+
+  // Função para traduzir métodos de pagamento
+  const translatePaymentMethod = (method: string): string => {
+    const translations: Record<string, string> = {
+      'credit_card': 'Cartão de Crédito',
+      'debit_card': 'Cartão de Débito', 
+      'pix': 'PIX',
+      'cash': 'Dinheiro',
+      'money': 'Dinheiro',
+      'card': 'Cartão'
+    };
+    return translations[method?.toLowerCase()] || method || 'Não informado';
+  };
+
+  // Função para truncar nomes de produtos para o gráfico
+  const truncateProductName = (name: string, maxLength: number = 15): string => {
+    if (!name) return 'Produto';
+    if (name.length <= maxLength) return name;
+    return name.substring(0, maxLength) + '...';
   };
 
   const COLORS = ['#f59e0b', '#3b82f6', '#10b981', '#8b5cf6', '#f97316'];
@@ -240,10 +423,12 @@ export const SalesReportsSection: React.FC<SalesReportsSectionProps> = ({ period
                       <XAxis 
                         dataKey="name" 
                         stroke="#9ca3af"
-                        fontSize={12}
+                        fontSize={10}
                         angle={-45}
                         textAnchor="end"
-                        height={60}
+                        height={80}
+                        interval={0}
+                        tick={{ fontSize: 10 }}
                       />
                       <YAxis stroke="#9ca3af" fontSize={12} />
                       <Tooltip 
@@ -253,7 +438,16 @@ export const SalesReportsSection: React.FC<SalesReportsSectionProps> = ({ period
                           borderRadius: '8px',
                           color: '#ffffff'
                         }}
-                        formatter={(value) => [formatCurrency(Number(value)), 'Receita']}
+                        formatter={(value, name, props) => [
+                          formatCurrency(Number(value)), 
+                          'Receita'
+                        ]}
+                        labelFormatter={(label, payload) => {
+                          if (payload && payload[0] && payload[0].payload.fullName) {
+                            return payload[0].payload.fullName;
+                          }
+                          return label;
+                        }}
                       />
                       <Bar dataKey="revenue" fill="#3b82f6" />
                     </BarChart>
@@ -278,7 +472,11 @@ export const SalesReportsSection: React.FC<SalesReportsSectionProps> = ({ period
                         outerRadius={100}
                         fill="#8884d8"
                         dataKey="revenue"
-                        label={({ category, percent }) => `${category} (${(percent * 100).toFixed(0)}%)`}
+                        label={({ category, percent }) => {
+                          // Debug log para ver os dados
+                          console.log('🎯 Pie Chart Data:', { category, percent, data: categoryData });
+                          return `${category} (${(percent * 100).toFixed(0)}%)`;
+                        }}
                       >
                         {(categoryData || []).map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />

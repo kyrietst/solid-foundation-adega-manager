@@ -1,9 +1,9 @@
 // Delivery Components Export
-export * from './Delivery';
-export * from './DeliveryOrderCard';
-export * from './DeliveryTimeline';
-export * from './DeliveryAssignmentModal';
-export * from './NotificationCenter';
-export * from './DeliveryAnalytics';
-export * from './DeliveryPersonReport';
-export * from './ZoneAnalysisReport';
+export { default as Delivery } from './Delivery';
+export { default as DeliveryOrderCard } from './DeliveryOrderCard';
+export { default as DeliveryTimeline } from './DeliveryTimeline';
+export { default as DeliveryAssignmentModal } from './DeliveryAssignmentModal';
+export { default as NotificationCenter } from './NotificationCenter';
+export { default as DeliveryAnalytics } from './DeliveryAnalytics';
+export { default as DeliveryPersonReport } from './DeliveryPersonReport';
+export { default as ZoneAnalysisReport } from './ZoneAnalysisReport';

@@ -13,11 +13,11 @@ import { Truck, Clock, CheckCircle, AlertCircle, User, DollarSign } from 'lucide
 import { useToast } from '@/shared/hooks/common/use-toast';
 import { BlurIn } from '@/components/ui/blur-in';
 import { useDeliveryOrders, useDeliveryMetrics, useUpdateDeliveryStatus } from '@/features/delivery/hooks/useDeliveryOrders';
-import { DeliveryOrderCard } from './DeliveryOrderCard';
-import { NotificationCenter } from './NotificationCenter';
-import { DeliveryAnalytics } from './DeliveryAnalytics';
+import DeliveryOrderCard from './DeliveryOrderCard';
+import NotificationCenter from './NotificationCenter';
+import DeliveryAnalytics from './DeliveryAnalytics';
 
-export const Delivery = () => {
+const Delivery = () => {
   const { toast } = useToast();
   
   // Hooks para dados reais
@@ -122,30 +122,62 @@ export const Delivery = () => {
 
 
   const getDeliveryStats = () => {
-    if (isLoadingMetrics || !metrics) {
-      return { 
-        total: 0, 
-        pendentes: 0, 
-        emTransito: 0, 
-        entregues: 0,
-        receita: 0,
-        ticketMedio: 0,
-        taxasEntrega: 0,
-        crescimento: 0,
-        topZona: null
-      };
+    // Debug: Log dos dados para identificar problema
+    console.log('🔍 Debug - Delivery Stats:', {
+      isLoadingMetrics,
+      metrics,
+      deliveriesLength: deliveries.length,
+      sampleDelivery: deliveries[0] // Log da primeira entrega para ver estrutura
+    });
+
+    // SEMPRE usar dados reais dos deliveries para garantir precisão
+    const totalDeliveries = deliveries.length;
+    const pendingCount = deliveries.filter(d => d.delivery_status === 'pending').length;
+    const inTransitCount = deliveries.filter(d => d.delivery_status === 'out_for_delivery').length;
+    const deliveredCount = deliveries.filter(d => d.delivery_status === 'delivered').length;
+    
+    // Calcular receita total e taxas
+    const totalRevenue = deliveries.reduce((sum, d) => {
+      const finalAmount = parseFloat(String(d.final_amount || 0));
+      return sum + (isNaN(finalAmount) ? 0 : finalAmount);
+    }, 0);
+    
+    const totalDeliveryFees = deliveries.reduce((sum, d) => {
+      const deliveryFee = parseFloat(String(d.delivery_fee || 0));
+      return sum + (isNaN(deliveryFee) ? 0 : deliveryFee);
+    }, 0);
+    
+    const avgTicket = totalDeliveries > 0 ? totalRevenue / totalDeliveries : 0;
+    
+    // Calcular crescimento (comparar com métricas se disponível)
+    let growthRate = 0;
+    if (metrics && metrics.revenueGrowthRate) {
+      growthRate = metrics.revenueGrowthRate;
     }
     
+    // Top zona se disponível
+    let topZone = null;
+    if (metrics && metrics.topZoneRevenue) {
+      topZone = metrics.topZoneRevenue;
+    }
+    
+    console.log('📊 Calculated KPIs:', {
+      total: totalDeliveries,
+      receita: totalRevenue,
+      ticketMedio: avgTicket,
+      taxasEntrega: totalDeliveryFees
+    });
+    
     return {
-      total: metrics.totalOrders,
-      pendentes: metrics.pendingOrders,
-      emTransito: metrics.inTransitOrders,
-      entregues: metrics.deliveredOrders,
-      receita: metrics.totalRevenue,
-      ticketMedio: metrics.avgOrderValue,
-      taxasEntrega: metrics.deliveryFeeRevenue,
-      crescimento: metrics.revenueGrowthRate,
-      topZona: metrics.topZoneRevenue
+      total: totalDeliveries,
+      pendentes: pendingCount,
+      emTransito: inTransitCount,
+      entregues: deliveredCount,
+      receita: totalRevenue,
+      ticketMedio: avgTicket,
+      taxasEntrega: totalDeliveryFees,
+      crescimento: growthRate,
+      topZona: topZone
     };
   };
 

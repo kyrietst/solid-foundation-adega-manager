@@ -370,7 +370,7 @@ export function getSFProTextClasses(
   variant?: 'primary' | 'secondary' | 'accent' | 'success' | 'warning' | 'error' | 'purple' | 'neutral'
 ) {
   const hierarchyClasses = {
-    h1: 'font-sf-black text-3xl lg:text-4xl xl:text-5xl leading-tight',        // Títulos principais - SF Pro Black
+    h1: 'font-sf-black text-3xl leading-tight',                                // Títulos principais - SF Pro Black (30px fixo)
     h2: 'font-sf-bold text-xl lg:text-2xl xl:text-3xl leading-tight',          // Subtítulos importantes - SF Pro Bold  
     h3: 'font-sf-semibold text-lg lg:text-xl xl:text-2xl leading-normal',      // Títulos de seção - SF Pro SemiBold
     h4: 'font-sf-medium text-base lg:text-lg xl:text-xl leading-normal',       // Labels importantes - SF Pro Medium
@@ -441,7 +441,7 @@ export function getKPITextClasses(element: 'title' | 'value' | 'delta' | 'subtit
  */
 export function getHeaderTextClasses(level: 'main' | 'section' | 'subsection' = 'main') {
   const headerClasses = {
-    main: 'font-sf-black text-2xl lg:text-3xl xl:text-4xl leading-tight',      // DASHBOARD, RELATÓRIOS
+    main: 'font-sf-black text-3xl leading-tight',                              // DASHBOARD, RELATÓRIOS (30px fixo)
     section: 'font-sf-bold text-xl lg:text-2xl leading-tight',                 // Canais de Venda, seções
     subsection: 'font-sf-semibold text-lg lg:text-xl leading-normal'           // Subseções
   };

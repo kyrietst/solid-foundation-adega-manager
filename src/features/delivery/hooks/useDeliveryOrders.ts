@@ -251,122 +251,122 @@ export const useDeliveryMetrics = (period: number = 7) => {
         const startDate = new Date();
         startDate.setDate(startDate.getDate() - period);
 
-        // Usar stored procedure para métricas
-        const { data: metricsData, error: metricsError } = await supabase
-          .rpc('get_delivery_metrics', {
-            p_start_date: startDate.toISOString(),
-            p_end_date: new Date().toISOString()
+        console.log(`📅 Período de análise: ${startDate.toISOString()} até ${new Date().toISOString()}`);
+
+        // FORÇAR fallback manual para garantir que funcione
+        console.log('📊 Usando cálculo manual das métricas...');
+        
+        // Query manual com métricas avançadas
+        const { data: salesData, error: salesError } = await supabase
+          .from('sales')
+          .select(`
+            *,
+            delivery_zone:delivery_zones!delivery_zone_id (
+              name
+            )
+          `)
+          .eq('delivery_type', 'delivery')
+          .gte('created_at', startDate.toISOString());
+
+        if (salesError) {
+          console.error('❌ Erro na query de sales:', salesError);
+          throw salesError;
+        }
+
+        const orders = salesData || [];
+        console.log(`📊 Encontradas ${orders.length} entregas no período`);
+        
+        const totalOrders = orders.length;
+        const pendingOrders = orders.filter(o => o.delivery_status === 'pending').length;
+        const inTransitOrders = orders.filter(o => o.delivery_status === 'out_for_delivery').length;
+        const deliveredOrders = orders.filter(o => o.delivery_status === 'delivered').length;
+        const cancelledOrders = orders.filter(o => o.delivery_status === 'cancelled').length;
+        
+        console.log(`📊 Status breakdown: Pending: ${pendingOrders}, In Transit: ${inTransitOrders}, Delivered: ${deliveredOrders}, Cancelled: ${cancelledOrders}`);
+        
+        // Métricas financeiras básicas
+        const totalRevenue = orders.reduce((sum, o) => {
+          const amount = parseFloat(o.final_amount || 0);
+          return sum + (isNaN(amount) ? 0 : amount);
+        }, 0);
+        
+        const totalDeliveryFees = orders.reduce((sum, o) => {
+          const fee = parseFloat(o.delivery_fee || 0);
+          return sum + (isNaN(fee) ? 0 : fee);
+        }, 0);
+        
+        console.log(`💰 Financial metrics: Total Revenue: R$ ${totalRevenue.toFixed(2)}, Delivery Fees: R$ ${totalDeliveryFees.toFixed(2)}`);
+        
+        // Novas métricas financeiras avançadas
+        const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+        const avgTicketWithDelivery = totalOrders > 0 ? (totalRevenue + totalDeliveryFees) / totalOrders : 0;
+        const deliveryFeeRevenue = totalDeliveryFees;
+        
+        // Growth rate - compara com período anterior
+        const previousStartDate = new Date(startDate);
+        previousStartDate.setDate(previousStartDate.getDate() - period);
+        
+        const { data: previousSalesData } = await supabase
+          .from('sales')
+          .select('final_amount')
+          .eq('delivery_type', 'delivery')
+          .gte('created_at', previousStartDate.toISOString())
+          .lt('created_at', startDate.toISOString());
+        
+        const previousRevenue = (previousSalesData || []).reduce((sum, o) => {
+          const amount = parseFloat(o.final_amount || 0);
+          return sum + (isNaN(amount) ? 0 : amount);
+        }, 0);
+        const revenueGrowthRate = previousRevenue > 0 ? ((totalRevenue - previousRevenue) / previousRevenue) * 100 : 0;
+        
+        // Top zona por receita
+        const zoneRevenues = new Map();
+        orders.forEach(order => {
+          const zoneName = order.delivery_zone?.name || 'Zona não identificada';
+          const current = zoneRevenues.get(zoneName) || { revenue: 0, orderCount: 0 };
+          const orderRevenue = parseFloat(order.final_amount || 0);
+          zoneRevenues.set(zoneName, {
+            revenue: current.revenue + (isNaN(orderRevenue) ? 0 : orderRevenue),
+            orderCount: current.orderCount + 1
           });
-
-        if (metricsError) {
-          console.warn('⚠️ RPC get_delivery_metrics não disponível, calculando manualmente');
-          
-          // Fallback: query manual com métricas avançadas
-          const { data: salesData, error: salesError } = await supabase
-            .from('sales')
-            .select(`
-              *,
-              delivery_zone:delivery_zones!delivery_zone_id (
-                name
-              )
-            `)
-            .eq('delivery_type', 'delivery')
-            .gte('created_at', startDate.toISOString());
-
-          if (salesError) throw salesError;
-
-          const orders = salesData || [];
-          const totalOrders = orders.length;
-          const pendingOrders = orders.filter(o => o.delivery_status === 'pending').length;
-          const inTransitOrders = orders.filter(o => o.delivery_status === 'out_for_delivery').length;
-          const deliveredOrders = orders.filter(o => o.delivery_status === 'delivered').length;
-          const cancelledOrders = orders.filter(o => o.delivery_status === 'cancelled').length;
-          
-          // Métricas financeiras básicas
-          const totalRevenue = orders.reduce((sum, o) => sum + parseFloat(o.final_amount || 0), 0);
-          const totalDeliveryFees = orders.reduce((sum, o) => sum + parseFloat(o.delivery_fee || 0), 0);
-          
-          // Novas métricas financeiras avançadas
-          const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
-          const avgTicketWithDelivery = totalOrders > 0 ? (totalRevenue + totalDeliveryFees) / totalOrders : 0;
-          const deliveryFeeRevenue = totalDeliveryFees;
-          
-          // Growth rate - compara com período anterior
-          const previousStartDate = new Date(startDate);
-          previousStartDate.setDate(previousStartDate.getDate() - period);
-          
-          const { data: previousSalesData } = await supabase
-            .from('sales')
-            .select('final_amount')
-            .eq('delivery_type', 'delivery')
-            .gte('created_at', previousStartDate.toISOString())
-            .lt('created_at', startDate.toISOString());
-          
-          const previousRevenue = (previousSalesData || []).reduce((sum, o) => sum + parseFloat(o.final_amount || 0), 0);
-          const revenueGrowthRate = previousRevenue > 0 ? ((totalRevenue - previousRevenue) / previousRevenue) * 100 : 0;
-          
-          // Top zona por receita
-          const zoneRevenues = new Map();
-          orders.forEach(order => {
-            const zoneName = order.delivery_zone?.name || 'Zona não identificada';
-            const current = zoneRevenues.get(zoneName) || { revenue: 0, orderCount: 0 };
-            zoneRevenues.set(zoneName, {
-              revenue: current.revenue + parseFloat(order.final_amount || 0),
-              orderCount: current.orderCount + 1
-            });
-          });
-          
-          let topZoneRevenue = null;
-          if (zoneRevenues.size > 0) {
-            const topZone = Array.from(zoneRevenues.entries())
-              .sort((a, b) => b[1].revenue - a[1].revenue)[0];
-            topZoneRevenue = {
-              zoneName: topZone[0],
-              revenue: topZone[1].revenue,
-              orderCount: topZone[1].orderCount
-            };
-          }
-
-          return {
-            totalOrders,
-            pendingOrders,
-            inTransitOrders,
-            deliveredOrders,
-            cancelledOrders,
-            totalRevenue,
-            totalDeliveryFees,
-            avgDeliveryTime: 0,
-            onTimeRate: 0,
-            // Novas métricas
-            avgOrderValue,
-            avgTicketWithDelivery,
-            deliveryFeeRevenue,
-            revenueGrowthRate,
-            topZoneRevenue
+        });
+        
+        let topZoneRevenue = null;
+        if (zoneRevenues.size > 0) {
+          const topZone = Array.from(zoneRevenues.entries())
+            .sort((a, b) => b[1].revenue - a[1].revenue)[0];
+          topZoneRevenue = {
+            zoneName: topZone[0],
+            revenue: topZone[1].revenue,
+            orderCount: topZone[1].orderCount
           };
         }
 
-        const metrics = metricsData[0] || {};
-        const totalRevenue = parseFloat(metrics.total_delivery_revenue) || 0;
-        const totalOrders = parseInt(metrics.total_deliveries) || 0;
-        const totalDeliveryFees = parseFloat(metrics.total_delivery_fees) || 0;
-        
+        console.log(`✅ Métricas calculadas com sucesso:`, {
+          totalOrders,
+          totalRevenue,
+          avgOrderValue,
+          deliveryFeeRevenue,
+          revenueGrowthRate,
+          topZoneRevenue
+        });
+
         return {
           totalOrders,
-          pendingOrders: 0, // Calcular separadamente se necessário
-          inTransitOrders: 0,
-          deliveredOrders: totalOrders,
-          cancelledOrders: 0,
+          pendingOrders,
+          inTransitOrders,
+          deliveredOrders,
+          cancelledOrders,
           totalRevenue,
           totalDeliveryFees,
-          avgDeliveryTime: parseFloat(metrics.avg_delivery_time_minutes) || 0,
-          onTimeRate: parseFloat(metrics.on_time_rate) || 0,
-          // Novas métricas com valores padrão
-          avgOrderValue: totalOrders > 0 ? totalRevenue / totalOrders : 0,
-          avgTicketWithDelivery: totalOrders > 0 ? (totalRevenue + totalDeliveryFees) / totalOrders : 0,
-          deliveryFeeRevenue: totalDeliveryFees,
-          revenueGrowthRate: 0, // RPC pode não ter essa informação
-          topZoneRevenue: null // RPC pode não ter essa informação
+          avgDeliveryTime: 0, // Pode ser calculado depois se necessário
+          onTimeRate: 0, // Pode ser calculado depois se necessário
+          // Novas métricas
+          avgOrderValue,
+          avgTicketWithDelivery,
+          deliveryFeeRevenue,
+          revenueGrowthRate,
+          topZoneRevenue
         };
 
       } catch (error) {
