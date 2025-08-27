@@ -41,13 +41,25 @@ export const SalesHistoryTable: React.FC<SalesHistoryTableProps> = ({ onViewSale
 
   // Filtrar vendas baseado nos filtros aplicados
   const filteredSales = sales?.filter(sale => {
+    const searchLower = searchTerm.toLowerCase();
     const matchesSearch = !searchTerm || 
-      sale.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      sale.customer?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      sale.seller?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+      sale.id.toLowerCase().includes(searchLower) ||
+      sale.customer?.name?.toLowerCase().includes(searchLower) ||
+      sale.seller?.name?.toLowerCase().includes(searchLower) ||
+      // CORRIGIDO: Incluir busca por método de pagamento
+      sale.payment_method?.toLowerCase().includes(searchLower) ||
+      formatPaymentMethod(sale.payment_method).toLowerCase().includes(searchLower) ||
+      // CORRIGIDO: Incluir busca por status
+      sale.status?.toLowerCase().includes(searchLower) ||
+      // CORRIGIDO: Incluir busca por valor formatado
+      formatCurrency(Number(sale.final_amount || sale.total_amount || 0)).includes(searchTerm) ||
+      // CORRIGIDO: Incluir busca por data formatada
+      format(new Date(sale.created_at), "dd/MM/yyyy", { locale: ptBR }).includes(searchTerm);
     
     const matchesStatus = statusFilter === 'all' || sale.status === statusFilter;
-    const matchesPayment = paymentFilter === 'all' || sale.payment_method === paymentFilter;
+    // CORRIGIDO: Comparação case-insensitive para payment_method
+    const matchesPayment = paymentFilter === 'all' || 
+      sale.payment_method?.toLowerCase() === paymentFilter.toLowerCase();
     
     return matchesSearch && matchesStatus && matchesPayment;
   }) || [];
@@ -60,16 +72,12 @@ export const SalesHistoryTable: React.FC<SalesHistoryTableProps> = ({ onViewSale
   };
 
   const formatPaymentMethod = (method: string) => {
-    const methods: Record<string, string> = {
-      'PIX': 'PIX',
-      'card': 'Cartão',
-      'cash': 'Dinheiro',
-      'credit_card': 'Cartão de Crédito',
-      'debit_card': 'Cartão de Débito',
-      'bank_transfer': 'Transferência',
-      'other': 'Outro'
-    };
-    return methods[method] || method;
+    // Retorna o método de pagamento formatado para exibição
+    // Dados padronizados: "PIX", "Cartão de Crédito", "Débito", "Dinheiro"
+    if (!method) return 'Não informado';
+    
+    // Todos os métodos já estão no padrão correto após migração
+    return method;
   };
 
   const getStatusBadge = (status: string) => {
@@ -134,7 +142,7 @@ export const SalesHistoryTable: React.FC<SalesHistoryTableProps> = ({ onViewSale
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
-            placeholder="Buscar venda, cliente..."
+            placeholder="Buscar por ID, cliente, vendedor, PIX, cartão, valor..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10 bg-black/50 border-white/20 text-white placeholder:text-gray-400"
@@ -161,9 +169,9 @@ export const SalesHistoryTable: React.FC<SalesHistoryTableProps> = ({ onViewSale
           <SelectContent className="bg-gray-900/95 backdrop-blur-sm border border-white/20 shadow-2xl">
             <SelectItem value="all" className="text-white hover:bg-white/10 focus:bg-white/10 focus:text-white cursor-pointer">Todos os métodos</SelectItem>
             <SelectItem value="PIX" className="text-white hover:bg-blue-500/20 focus:bg-blue-500/20 focus:text-blue-300 cursor-pointer">PIX</SelectItem>
-            <SelectItem value="card" className="text-white hover:bg-purple-500/20 focus:bg-purple-500/20 focus:text-purple-300 cursor-pointer">Cartão</SelectItem>
-            <SelectItem value="cash" className="text-white hover:bg-green-500/20 focus:bg-green-500/20 focus:text-green-300 cursor-pointer">Dinheiro</SelectItem>
-            <SelectItem value="bank_transfer" className="text-white hover:bg-cyan-500/20 focus:bg-cyan-500/20 focus:text-cyan-300 cursor-pointer">Transferência</SelectItem>
+            <SelectItem value="Cartão de Crédito" className="text-white hover:bg-purple-500/20 focus:bg-purple-500/20 focus:text-purple-300 cursor-pointer">Cartão de Crédito</SelectItem>
+            <SelectItem value="Débito" className="text-white hover:bg-orange-500/20 focus:bg-orange-500/20 focus:text-orange-300 cursor-pointer">Débito</SelectItem>
+            <SelectItem value="Dinheiro" className="text-white hover:bg-green-500/20 focus:bg-green-500/20 focus:text-green-300 cursor-pointer">Dinheiro</SelectItem>
           </SelectContent>
         </Select>
 
