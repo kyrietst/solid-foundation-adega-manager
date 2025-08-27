@@ -328,7 +328,64 @@ export const SalesReportsSection: React.FC<SalesReportsSectionProps> = ({ period
     return name.substring(0, maxLength) + '...';
   };
 
-  const COLORS = ['#f59e0b', '#3b82f6', '#10b981', '#8b5cf6', '#f97316'];
+  const COLORS = [
+    '#f59e0b', // amber - Bebida Mista  
+    '#3b82f6', // blue - Cerveja
+    '#10b981', // emerald - Bebidas Quentes
+    '#8b5cf6', // purple - Refrigerante
+    '#f97316', // orange - Whisky
+    '#06b6d4', // cyan - Energético
+    '#84cc16', // lime - Vodka
+    '#f43f5e', // rose - Cigarro
+    '#6366f1', // indigo - Água
+    '#14b8a6', // teal - Vinho
+    '#a855f7', // violet - Licor
+    '#f59e0b', // amber-alt - Suco
+    '#ef4444', // red - Gin
+    '#22c55e', // green - Doces
+    '#eab308', // yellow - Isotônico
+    '#8b5cf6', // purple-alt - Tabacaria
+    '#f97316', // orange-alt - Gelo
+    '#06b6d4', // cyan-alt - Espumante
+    '#84cc16'  // lime-alt - Carvão
+  ];
+
+  // Process category data - show ALL categories for complete report view
+  const processedCategoryData = React.useMemo(() => {
+    if (!categoryData || categoryData.length === 0) return [];
+    
+    // Return all categories sorted by revenue (no grouping for reports)
+    return categoryData.sort((a, b) => b.revenue - a.revenue);
+  }, [categoryData]);
+
+  // Custom label renderer for pie chart
+  const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any, data: any) => {
+    if (percent < 0.02) return null; // Hide labels for slices smaller than 2% (to show more categories)
+    
+    const RADIAN = Math.PI / 180;
+    // Centralizar o texto no meio da fatia (position mais consistente)
+    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+    return (
+      <text 
+        x={x} 
+        y={y} 
+        fill="white" 
+        textAnchor="middle" 
+        dominantBaseline="central"
+        className="text-sm font-bold"
+        style={{
+          textShadow: '0 2px 4px rgba(0,0,0,0.9)',
+          fontSize: '13px',
+          fontWeight: '700'
+        }}
+      >
+        {`${(percent * 100).toFixed(0)}%`}
+      </text>
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -462,38 +519,76 @@ export const SalesReportsSection: React.FC<SalesReportsSectionProps> = ({ period
                 <CardTitle className="text-white">Vendas por Categoria</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="h-80">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={categoryData || []}
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={100}
-                        fill="#8884d8"
-                        dataKey="revenue"
-                        label={({ category, percent }) => {
-                          // Debug log para ver os dados
-                          console.log('🎯 Pie Chart Data:', { category, percent, data: categoryData });
-                          return `${category} (${(percent * 100).toFixed(0)}%)`;
-                        }}
-                      >
-                        {(categoryData || []).map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip 
-                        contentStyle={{
-                          backgroundColor: '#1f2937',
-                          border: '1px solid #374151',
-                          borderRadius: '8px',
-                          color: '#ffffff'
-                        }}
-                        formatter={(value) => [formatCurrency(Number(value)), 'Receita']}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
+                {(categoryData && categoryData.length > 0) ? (
+                  <div className="space-y-6">
+                    {/* Chart */}
+                    <div className="h-80">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={processedCategoryData || []}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            label={(props) => renderCustomLabel(props, processedCategoryData)}
+                            outerRadius={120}
+                            innerRadius={60}
+                            fill="#8884d8"
+                            dataKey="revenue"
+                          >
+                            {(processedCategoryData || []).map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip 
+                            content={({ active, payload }) => {
+                              if (active && payload && payload.length) {
+                                const data = payload[0];
+                                const totalRevenue = (processedCategoryData || []).reduce((sum, item) => sum + item.revenue, 0);
+                                const percentage = totalRevenue > 0 ? (data.value / totalRevenue) * 100 : 0;
+                                
+                                return (
+                                  <div className="bg-black/95 backdrop-blur-xl border border-white/30 rounded-xl p-3 shadow-2xl">
+                                    <p className="text-sm text-white font-semibold">{data.payload.category}</p>
+                                    <p className="text-xs text-amber-300 font-semibold">
+                                      {formatCurrency(Number(data.value))} ({percentage.toFixed(1)}%)
+                                    </p>
+                                  </div>
+                                );
+                              }
+                              return null;
+                            }}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+
+                    {/* Legend */}
+                    <div className="grid grid-cols-3 gap-2">
+                      {(processedCategoryData || []).map((entry, index) => (
+                        <div key={entry.category} className="flex items-center gap-2">
+                          <div 
+                            className="w-3 h-3 rounded-full flex-shrink-0" 
+                            style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="text-xs text-white truncate font-medium">
+                              {translateCategory(entry.category)}
+                            </div>
+                            <div className="text-xs text-gray-400 font-medium">
+                              {formatCurrency(entry.revenue)}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="h-80 flex flex-col items-center justify-center text-center">
+                    <div className="text-sm text-gray-400 mb-2">Nenhum dado disponível</div>
+                    <div className="text-xs text-gray-500">Sem vendas no período selecionado</div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
