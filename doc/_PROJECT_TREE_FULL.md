@@ -1,6 +1,14 @@
-# Project Tree — Full (Todos os módulos)
+# Project Tree — Full (Todos os módulos) - v2.6.0
 
 Estrutura completa do projeto em formato de árvore, com comentários por item. Útil para onboarding e navegação rápida.
+
+**Atualizações v2.6.0 (Agosto 2025):**
+- ✅ Sistema de pagamentos padronizado (PIX, Cartão de Crédito, Débito, Dinheiro)
+- ✅ Gráfico "Vendas por Categoria" aprimorado com labels centralizados
+- ✅ Legend externa em grid 3x3 para melhor UX
+- ✅ Filtros case-insensitive para histórico de vendas
+- ✅ Fallback manual para RPCs com cálculos automáticos
+- ✅ Paleta de cores expandida (19 cores) para suporte completo às categorias
 
 ```
 solid-foundation-adega-manager/
@@ -19,8 +27,8 @@ solid-foundation-adega-manager/
 ├── doc/                                    # Documentação
 │   ├── ANALYTICS_DASHBOARD_E_RELATORIOS.md # Plano analítico
 │   ├── BLUR-USAGE.md                       # Guia de blur/efeitos
-│   ├── DEVELOPMENT_GUIDE.md                # Guia de desenvolvimento
-│   ├── SYSTEM_OPERATIONS.md                # Operações do sistema
+│   ├── DEVELOPMENT_GUIDE.md                # Guia de desenvolvimento [ATUALIZADO v2.6.0 - Reports & Payment System]
+│   ├── SYSTEM_OPERATIONS.md                # Operações do sistema [ATUALIZADO v2.6.0 - Advanced Analytics]
 │   ├── prod/
 │   │   └── produtos.json                   # Dataset de produtos exemplo
 │   ├── tarefas/                            # Sprints e DB
@@ -279,7 +287,7 @@ solid-foundation-adega-manager/
 │   │   │   │   ├── useMovementsLogic.ts
 │   │   │   │   └── useMovementValidation.ts
 │   │   │   └── types/index.ts
-│   │   ├── reports/
+│   │   ├── reports/                          # [MÓDULO APRIMORADO v2.6.0]
 │   │   │   ├── components/
 │   │   │   │   ├── AdvancedReports.tsx
 │   │   │   │   ├── CrmReportsSection.tsx
@@ -287,7 +295,8 @@ solid-foundation-adega-manager/
 │   │   │   │   ├── index.ts
 │   │   │   │   ├── InventoryReportsSection.tsx
 │   │   │   │   ├── Reports.tsx
-│   │   │   │   ├── SalesReportsSection.tsx
+│   │   │   │   ├── SalesReportsSection.tsx      # [MODIFICADO - Gráfico aprimorado + filtros]
+│   │   │   │   ├── SalesHistoryTable.tsx        # [MODIFICADO - Filtros case-insensitive]
 │   │   │   │   ├── StockReportSummary.tsx
 │   │   │   │   └── StockReportTable.tsx
 │   │   │   ├── hooks/
@@ -575,3 +584,46 @@ solid-foundation-adega-manager/
 ├── vite.config.ts                        # Build Vite
 └── vitest.config.ts                      # Testes (Vitest)
 ```
+
+## Resumo das Modificações v2.6.0 (Agosto 2025)
+
+### 📊 **Módulo Reports (Relatórios Centrais)**
+- **SalesReportsSection.tsx**: Gráfico "Vendas por Categoria" completamente redesenhado
+  - Labels percentuais perfeitamente centralizados  
+  - Legend externa em grid 3x3 para melhor UX
+  - Paleta de cores expandida (19 cores) 
+  - Suporte completo a todas as 10 categorias reais
+  - Fallback manual para cálculos quando RPCs falham
+
+- **SalesHistoryTable.tsx**: Sistema de filtros aprimorado
+  - Busca case-insensitive para todos os campos
+  - Filtros de métodos de pagamento padronizados
+  - Busca expandida (ID, cliente, vendedor, valor, data, pagamento)
+
+### 💳 **Sistema de Pagamentos (Padronização Completa)**
+- **Tabela payment_methods**: Populada com 4 métodos padronizados
+  - PIX, Cartão de Crédito, Débito, Dinheiro
+- **Migração de dados históricos**: 57 vendas migradas de inglês para português
+- **Filtros atualizados**: Dropdown values sincronizados com banco de dados
+- **Remoção de "Transferência"**: Método obsoleto removido do sistema
+
+### 🎨 **Melhorias de UX**
+- **Chart Labels**: Centralizados com textAnchor="middle" e dominantBaseline="central"
+- **Donut Charts**: Inner radius para design moderno
+- **Responsive Layout**: Altura e espaçamento otimizados
+- **Color Management**: Sistema de cores sistemático com fallback
+
+### 📚 **Documentação Atualizada**
+- **DEVELOPMENT_GUIDE.md**: Novas seções sobre Reports & Payment System
+- **SYSTEM_OPERATIONS.md**: Seção expandida sobre Advanced Analytics  
+- **_PROJECT_TREE_FULL.md**: Comentários sobre arquivos modificados
+
+### 🔧 **Arquivos Técnicos Principais**
+```
+src/features/reports/components/SalesReportsSection.tsx  [CORE CHANGES]
+src/features/reports/components/SalesHistoryTable.tsx    [FILTER ENHANCEMENT]  
+doc/DEVELOPMENT_GUIDE.md                                [MAJOR UPDATE]
+doc/SYSTEM_OPERATIONS.md                                [EXPANSION]
+```
+
+**Status**: ✅ Todos os arquivos atualizados e sincronizados com v2.6.0

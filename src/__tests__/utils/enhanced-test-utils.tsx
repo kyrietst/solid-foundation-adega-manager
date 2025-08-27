@@ -255,19 +255,19 @@ export const measurePerformance = async <T>(
   allTimes: number[];
 }> => {
   const { name = 'operation', threshold = 1000, iterations = 1 } = options;
-  const times: number[] = []
-  let result: T
+  const times: number[] = [];
+  let result: T;
 
   for (let i = 0; i < iterations; i++) {
-    const startTime = performance.now()
-    result = await operation()
-    const endTime = performance.now()
-    times.push(endTime - startTime)
+    const startTime = performance.now();
+    result = await operation();
+    const endTime = performance.now();
+    times.push(endTime - startTime);
   }
 
-  const averageTime = times.reduce((sum, time) => sum + time, 0) / times.length
-  const minTime = Math.min(...times)
-  const maxTime = Math.max(...times)
+  const averageTime = times.reduce((sum, time) => sum + time, 0) / times.length;
+  const minTime = Math.min(...times);
+  const maxTime = Math.max(...times);
 
   // Log performance warning if threshold exceeded
   if (averageTime > threshold) {

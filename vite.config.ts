@@ -24,30 +24,52 @@ export default defineConfig(({ mode }) => ({
     force: true
   },
   build: {
+    target: 'es2020',
+    chunkSizeWarningLimit: 800,
     rollupOptions: {
       output: {
         manualChunks: {
-          // Vendor libraries - bibliotecas de terceiros
-          vendor: ['react', 'react-dom', 'react-router-dom'],
-          // Chart libraries - bibliotecas de gráficos
-          charts: ['recharts'],
-          // UI libraries - bibliotecas de interface
-          ui: [
-            'lucide-react', 
-            '@radix-ui/react-accordion',
-            '@radix-ui/react-avatar',
+          // Core essencial
+          'vendor': ['react', 'react-dom', 'react-router-dom'],
+          
+          // Charts heavy - PRECISA SER SEPARADO
+          'charts': ['recharts', '@tanstack/react-table'],
+          
+          // UI components - Radix UI separado
+          'ui': [
             '@radix-ui/react-dialog',
             '@radix-ui/react-dropdown-menu',
-            '@radix-ui/react-popover',
             '@radix-ui/react-select',
+            '@radix-ui/react-tabs',
+            '@radix-ui/react-accordion',
+            '@radix-ui/react-avatar',
+            '@radix-ui/react-popover',
             '@radix-ui/react-separator',
             '@radix-ui/react-switch',
-            '@radix-ui/react-toast'
+            '@radix-ui/react-toast',
+            'lucide-react'
           ],
-          // Supabase and data libraries - bibliotecas de dados
-          supabase: ['@supabase/supabase-js', '@tanstack/react-query'],
-          // Utils and helpers - utilitários
-          utils: ['date-fns', 'clsx', 'tailwind-merge']
+          
+          // Backend integration
+          'supabase': [
+            '@supabase/supabase-js',
+            '@tanstack/react-query'
+          ],
+          
+          // Utilities
+          'utils': [
+            'date-fns',
+            'clsx',
+            'tailwind-merge',
+            'zod',
+            'react-hook-form'
+          ],
+          
+          // Animations - Framer Motion é pesado
+          'animations': [
+            'framer-motion',
+            'motion'
+          ]
         }
       }
     }

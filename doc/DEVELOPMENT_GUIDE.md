@@ -2,7 +2,7 @@
 
 > **Enterprise Wine Cellar Management System - Technical Documentation**  
 > Complete development guide for contributors and maintainers  
-> Version: 2.5.0+ | Production System with 925+ Active Records | Complete UI Standardization
+> Version: 2.6.0+ | Production System with 925+ Active Records | Advanced Reports & Payment System
 
 ---
 
@@ -14,8 +14,10 @@
 4. [Code Standards & Patterns](#code-standards--patterns)
 5. [Testing Framework](#testing-framework)
 6. [Database Development](#database-development)
-7. [Performance & Build](#performance--build)
-8. [Troubleshooting](#troubleshooting)
+7. [Reports & Analytics System](#reports--analytics-system)
+8. [Payment System Development](#payment-system-development)
+9. [Performance & Build](#performance--build)
+10. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -1178,6 +1180,384 @@ export function useProcessSale() {
 
 ---
 
+## Reports & Analytics System (v2.6.0)
+
+### Advanced Chart Development with Recharts
+
+#### Modern Chart Implementation Patterns
+
+**Sales by Category - Donut Chart with External Legend**:
+```typescript
+// Location: src/features/reports/components/SalesReportsSection.tsx
+// Advanced donut chart with centralized labels and external legend
+
+// Key technical implementation:
+const processedCategoryData = React.useMemo(() => {
+  if (!categoryData || categoryData.length === 0) return [];
+  // Show ALL categories for complete report view (no grouping)
+  return categoryData.sort((a, b) => b.revenue - a.revenue);
+}, [categoryData]);
+
+// Custom label renderer with perfect centering
+const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
+  if (percent < 0.02) return null; // Hide labels smaller than 2%
+  
+  const RADIAN = Math.PI / 180;
+  const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+  const x = cx + radius * Math.cos(-midAngle * RADIAN);
+  const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+  return (
+    <text 
+      x={x} y={y} 
+      fill="white" 
+      textAnchor="middle"           // Perfect horizontal centering
+      dominantBaseline="central"    // Perfect vertical centering
+      className="text-sm font-bold"
+      style={{
+        textShadow: '0 2px 4px rgba(0,0,0,0.9)',
+        fontSize: '13px',
+        fontWeight: '700'
+      }}
+    >
+      {`${(percent * 100).toFixed(0)}%`}
+    </text>
+  );
+};
+
+// Enhanced chart with donut design
+<PieChart>
+  <Pie
+    data={processedCategoryData || []}
+    cx="50%" cy="50%"
+    labelLine={false}
+    label={(props) => renderCustomLabel(props, processedCategoryData)}
+    outerRadius={120}
+    innerRadius={60}              // Creates donut effect
+    fill="#8884d8"
+    dataKey="revenue"
+  >
+    {(processedCategoryData || []).map((entry, index) => (
+      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+    ))}
+  </Pie>
+</PieChart>
+```
+
+#### Chart Color System (19+ Colors)
+```typescript
+// Expanded color palette for comprehensive category support
+const COLORS = [
+  '#f59e0b', // amber - Bebida Mista  
+  '#3b82f6', // blue - Cerveja
+  '#10b981', // emerald - Bebidas Quentes
+  '#8b5cf6', // purple - Refrigerante
+  '#f97316', // orange - Whisky
+  '#06b6d4', // cyan - Energético
+  '#84cc16', // lime - Vodka
+  '#f43f5e', // rose - Cigarro
+  '#6366f1', // indigo - Água
+  '#14b8a6', // teal - Vinho
+  // ... additional colors for all possible categories
+];
+```
+
+#### External Legend Implementation
+```typescript
+// Grid-based legend for better category visibility
+<div className="grid grid-cols-3 gap-2">
+  {(processedCategoryData || []).map((entry, index) => (
+    <div key={entry.category} className="flex items-center gap-2">
+      <div 
+        className="w-3 h-3 rounded-full flex-shrink-0" 
+        style={{ backgroundColor: COLORS[index % COLORS.length] }}
+      />
+      <div className="flex-1 min-w-0">
+        <div className="text-xs text-white truncate font-medium">
+          {translateCategory(entry.category)}
+        </div>
+        <div className="text-xs text-gray-400 font-medium">
+          {formatCurrency(entry.revenue)}
+        </div>
+      </div>
+    </div>
+  ))}
+</div>
+```
+
+### Manual Fallback Calculations
+
+#### RPC Failure Handling Strategy
+```typescript
+// Robust fallback system when stored procedures fail
+try {
+  // Try RPC first for performance
+  const { data: rpcData, error: rpcError } = await supabase
+    .rpc('get_top_products', { days_back: period, product_limit: 10 });
+  
+  if (rpcError) throw new Error('RPC failed');
+  
+  return rpcData;
+} catch (rpcError) {
+  console.warn('RPC get_top_products failed, using manual calculation:', rpcError);
+  
+  // Manual calculation fallback
+  const { data: manualData, error: manualError } = await supabase
+    .from('sales')
+    .select(`
+      sale_items (
+        product_id,
+        quantity,
+        unit_price,
+        products (id, name)
+      )
+    `)
+    .gte('created_at', new Date(Date.now() - period * 24 * 60 * 60 * 1000).toISOString());
+  
+  if (manualError) throw manualError;
+  
+  // Aggregate and calculate manually
+  const productSales = new Map();
+  // ... manual aggregation logic
+  
+  return Array.from(productSales.values())
+    .sort((a, b) => b.revenue - a.revenue)
+    .slice(0, 10);
+}
+```
+
+#### Data Translation Functions
+```typescript
+// Consistent Portuguese translations for categories
+const translateCategory = (category: string): string => {
+  const translations: Record<string, string> = {
+    'beverages': 'Bebidas',
+    'beer': 'Cerveja', 
+    'wine': 'Vinho',
+    'whisky': 'Whisky',
+    'vodka': 'Vodka',
+    'gin': 'Gin',
+    'cigarettes': 'Cigarro',
+    'energy_drinks': 'Energético',
+    'soft_drinks': 'Refrigerante',
+    'hot_beverages': 'Bebidas Quentes',
+    'mixed_drinks': 'Bebida Mista',
+    'water': 'Água'
+  };
+  return translations[category?.toLowerCase()] || category || 'Sem categoria';
+};
+
+// Product name truncation for chart readability
+const truncateProductName = (name: string, maxLength = 15) => {
+  if (name.length <= maxLength) return name;
+  return name.substring(0, maxLength) + '...';
+};
+```
+
+### Chart Development Best Practices
+
+#### Performance Optimizations
+1. **React.useMemo**: Always wrap data processing in useMemo for expensive calculations
+2. **Conditional Rendering**: Hide labels for slices smaller than 2% to prevent overlap
+3. **Strategic Data Grouping**: Group small categories only when needed for dashboard views
+4. **Responsive Design**: Use responsive containers and adjust chart sizes per viewport
+
+#### UX Guidelines
+1. **Label Positioning**: Always use `textAnchor="middle"` and `dominantBaseline="central"` for perfect centering
+2. **Color Consistency**: Use systematic color assignments with fallback to index-based selection
+3. **Legend Placement**: External legends for detailed views, internal for overview dashboards
+4. **Tooltip Enhancement**: Rich tooltips with currency formatting and percentage calculations
+
+#### Chart Types and Use Cases
+```typescript
+// Donut Charts - For category distributions with detailed legends
+<Pie innerRadius={60} outerRadius={120} />
+
+// Bar Charts - For time series and comparative analysis  
+<BarChart>
+  <Bar dataKey="revenue" fill={COLORS[0]} />
+  <XAxis dataKey="name" angle={-45} textAnchor="end" />
+</BarChart>
+
+// Line Charts - For trend analysis over time
+<LineChart>
+  <Line type="monotone" dataKey="value" stroke={COLORS[0]} strokeWidth={2} />
+  <ResponsiveContainer width="100%" height={300} />
+</LineChart>
+```
+
+---
+
+## Payment System Development (v2.6.0)
+
+### Standardized Payment Methods Architecture
+
+#### Database Structure
+```sql
+-- Standardized payment_methods table (Production)
+CREATE TABLE payment_methods (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,                    -- 'PIX', 'Cartão de Crédito', 'Débito', 'Dinheiro'
+  description TEXT,
+  is_active BOOLEAN DEFAULT true,
+  type payment_method_enum,              -- 'pix', 'credit', 'debit', 'cash'
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Current production data (4 standardized methods)
+INSERT INTO payment_methods (name, description, type) VALUES 
+('PIX', 'Transferência instantânea via PIX', 'pix'),
+('Cartão de Crédito', 'Pagamento com cartão de crédito', 'credit'),
+('Débito', 'Pagamento com cartão de débito', 'debit'),
+('Dinheiro', 'Pagamento em espécie', 'cash');
+```
+
+#### Frontend Implementation
+```typescript
+// Payment method hook with standardized values
+export function usePaymentMethods() {
+  return useQuery({
+    queryKey: ['payment-methods'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('payment_methods')
+        .select('*')
+        .eq('is_active', true)
+        .order('name');
+      
+      if (error) throw error;
+      return data;
+    },
+    staleTime: 30 * 60 * 1000, // 30 minutes cache
+  });
+}
+
+// Sales form integration
+export function SalesCheckout() {
+  const { data: paymentMethods } = usePaymentMethods();
+  
+  return (
+    <Select onValueChange={(value) => setPaymentMethod(value)}>
+      <SelectContent>
+        {paymentMethods?.map(method => (
+          <SelectItem key={method.id} value={method.name}>
+            {method.name}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+```
+
+#### Data Migration Strategy
+```typescript
+// Historical data migration pattern (Applied in production)
+const migratePaymentMethods = async () => {
+  // Step 1: Update existing sales records
+  await supabase.rpc('migrate_payment_methods', {
+    mapping: {
+      'credit_card': 'Cartão de Crédito',
+      'pix': 'PIX', 
+      'cash': 'Dinheiro'
+    }
+  });
+  
+  // Step 2: Update filter dropdowns
+  // Step 3: Update report calculations
+  // Step 4: Validate data consistency
+};
+```
+
+### Filter System Enhancement
+
+#### Case-Insensitive Search Implementation
+```typescript
+// Advanced search with payment method filtering
+const filteredSales = React.useMemo(() => {
+  if (!sales) return [];
+  
+  return sales.filter(sale => {
+    // Expanded search criteria including payment methods
+    const searchLower = searchTerm.toLowerCase();
+    const matchesSearch = !searchTerm || 
+      sale.id.toLowerCase().includes(searchLower) ||
+      sale.customer?.name?.toLowerCase().includes(searchLower) ||
+      sale.seller?.name?.toLowerCase().includes(searchLower) ||
+      sale.payment_method?.toLowerCase().includes(searchLower) ||
+      formatPaymentMethod(sale.payment_method).toLowerCase().includes(searchLower) ||
+      sale.status?.toLowerCase().includes(searchLower) ||
+      formatCurrency(Number(sale.final_amount || sale.total_amount || 0)).includes(searchTerm) ||
+      format(new Date(sale.created_at), "dd/MM/yyyy", { locale: ptBR }).includes(searchTerm);
+    
+    // Case-insensitive payment method filtering
+    const matchesPayment = paymentFilter === 'all' || 
+      sale.payment_method?.toLowerCase() === paymentFilter.toLowerCase();
+    
+    return matchesSearch && matchesPayment;
+  });
+}, [sales, searchTerm, paymentFilter]);
+```
+
+#### Dropdown Standardization
+```typescript
+// Standardized payment method dropdown with database values
+<SelectContent className="bg-gray-900/95 backdrop-blur-sm border border-white/20 shadow-2xl">
+  <SelectItem value="all">Todos os métodos</SelectItem>
+  <SelectItem value="PIX">PIX</SelectItem>
+  <SelectItem value="Cartão de Crédito">Cartão de Crédito</SelectItem>
+  <SelectItem value="Débito">Débito</SelectItem>
+  <SelectItem value="Dinheiro">Dinheiro</SelectItem>
+</SelectContent>
+```
+
+### Payment System Testing
+
+#### Integration Tests
+```typescript
+describe('Payment System Integration', () => {
+  it('should handle all standardized payment methods', async () => {
+    const paymentMethods = ['PIX', 'Cartão de Crédito', 'Débito', 'Dinheiro'];
+    
+    for (const method of paymentMethods) {
+      const sale = await createTestSale({ payment_method: method });
+      expect(sale.payment_method).toBe(method);
+      
+      // Test filtering
+      const filtered = await filterSalesByPayment(method);
+      expect(filtered.some(s => s.id === sale.id)).toBe(true);
+    }
+  });
+  
+  it('should migrate legacy payment methods correctly', async () => {
+    // Test historical data migration
+    const legacyMethods = { 'credit_card': 'Cartão de Crédito', 'pix': 'PIX', 'cash': 'Dinheiro' };
+    
+    for (const [old, new_] of Object.entries(legacyMethods)) {
+      const result = await migrateSalePaymentMethod(old);
+      expect(result.payment_method).toBe(new_);
+    }
+  });
+});
+```
+
+### Development Guidelines for Payment Systems
+
+#### Code Standards
+1. **Always use database values**: Never hardcode payment method strings
+2. **Implement fallback handling**: Graceful degradation when payment methods are unavailable  
+3. **Maintain data consistency**: Ensure frontend and backend use same standardized values
+4. **Case-insensitive operations**: All comparisons must handle case variations
+5. **Audit trail**: Log all payment method changes and migrations
+
+#### Security Considerations
+1. **Input validation**: Validate payment methods against allowed values
+2. **RLS policies**: Ensure payment data respects user role permissions
+3. **Audit logging**: Track all payment-related operations for compliance
+4. **Data isolation**: Payment methods respect multi-tenant security patterns
+
+---
+
 ## Advanced UI Development
 
 ### Background System Development
@@ -1435,6 +1815,89 @@ export function QueryDebugger({ queryKey }: { queryKey: string[] }) {
 }
 ```
 
+#### Reports & Charts Issues (v2.6.0)
+
+**Chart Labels Not Centering:**
+```typescript
+// ❌ Wrong - causes misaligned labels
+<text textAnchor={x > cx ? 'start' : 'end'}>
+  {percentage}
+</text>
+
+// ✅ Correct - perfect centering
+<text 
+  textAnchor="middle"           // Horizontal center
+  dominantBaseline="central"    // Vertical center
+>
+  {percentage}
+</text>
+```
+
+**Category Data Not Showing All Categories:**
+```typescript
+// ❌ Wrong - groups small categories  
+const processedData = categoryData.filter(item => item.revenue >= threshold);
+
+// ✅ Correct - shows all categories for reports
+const processedData = categoryData.sort((a, b) => b.revenue - a.revenue);
+```
+
+**RPC Stored Procedure Failures:**
+```typescript
+// Implement robust fallback system
+try {
+  const { data: rpcData, error } = await supabase.rpc('get_top_products');
+  if (error) throw error;
+  return rpcData;
+} catch (rpcError) {
+  console.warn('RPC failed, using manual calculation:', rpcError);
+  
+  // Manual calculation fallback
+  const { data: manualData } = await supabase
+    .from('sales')
+    .select('sale_items(product_id, quantity, unit_price, products(name))');
+  
+  // Aggregate manually
+  return processManualData(manualData);
+}
+```
+
+#### Payment System Issues (v2.6.0)
+
+**Payment Method Filters Not Working:**
+```bash
+# Check database values
+SELECT DISTINCT payment_method FROM sales;
+
+# Verify filter dropdown matches database exactly
+PIX (not pix)
+Cartão de Crédito (not credit_card)
+Débito (not debit)
+Dinheiro (not cash)
+```
+
+**Case Sensitivity in Filters:**
+```typescript
+// ❌ Wrong - case sensitive matching
+const matches = sale.payment_method === paymentFilter;
+
+// ✅ Correct - case insensitive
+const matches = sale.payment_method?.toLowerCase() === paymentFilter.toLowerCase();
+```
+
+**Empty Payment Methods Dropdown:**
+```typescript
+// Check if payment_methods table is populated
+const { data: methods } = await supabase
+  .from('payment_methods')
+  .select('*')
+  .eq('is_active', true);
+
+if (!methods || methods.length === 0) {
+  console.error('Payment methods table is empty. Run setup:payment-methods');
+}
+```
+
 #### Performance Issues
 ```typescript
 // Identify expensive renders
@@ -1514,6 +1977,7 @@ export function setupRequestDebugging() {
 
 ---
 
-**Last Updated**: January 2025 | **Version**: 2.0.0  
+**Last Updated**: August 2025 | **Version**: 2.6.0  
 **Status**: Production System | **Records**: 925+ Active  
-**Coverage**: 80%+ Lines, 70%+ Branches, 85%+ Functions
+**Coverage**: 80%+ Lines, 70%+ Branches, 85%+ Functions  
+**New Features**: Advanced Chart System, Standardized Payment Methods, Enhanced Filters

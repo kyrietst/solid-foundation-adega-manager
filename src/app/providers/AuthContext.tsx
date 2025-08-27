@@ -161,7 +161,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
     return () => subscription.unsubscribe();
-  }, []); // Removido fetchUserRole da dependência
+  }, [fetchUserRole]);
 
   const hasPermission = useCallback((requiredRole: UserRole | UserRole[]) => {
 

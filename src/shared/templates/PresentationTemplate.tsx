@@ -71,22 +71,20 @@ export const YourPresentation: React.FC<YourPresentationProps> = ({
 /**
  * CHECKLIST PARA CRIAR UM NOVO COMPONENTE DE APRESENTAÇÃO:
  * 
- * □ 1. Defina props tipadas e readonly quando possível
- * □ 2. NÃO inclua lógica de negócio (sem useState de dados, sem useEffect, etc.)
- * □ 3. Apenas lógica de apresentação simples (isEmpty, hasErrors, etc.)
- * □ 4. Use sub-componentes para dividir responsabilidades
- * □ 5. Handlers sempre recebidos via props (prefixados com 'on')
- * □ 6. Focado apenas em renderização e user interface
- * □ 7. Fácil de testar isoladamente
+ * 1. Defina props tipadas e readonly quando possível
+ * 2. NÃO inclua lógica de negócio (sem useState de dados, sem useEffect, etc.)
+ * 3. Apenas lógica de apresentação simples (isEmpty, hasErrors, etc.)
+ * 4. Use sub-componentes para dividir responsabilidades
+ * 5. Handlers sempre recebidos via props (prefixados com 'on')
+ * 6. Focado apenas em renderização e user interface
+ * 7. Fácil de testar isoladamente
  * 
  * EXEMPLO DE ESTRUTURA:
  * 
  * return (
  *   <div className="container">
- *     {/* Header */}
  *     <YourHeader title="Title" />
  *     
- *     {/* Main content baseado no estado */}
  *     {isLoading ? (
  *       <LoadingState />
  *     ) : isEmpty ? (
@@ -98,7 +96,6 @@ export const YourPresentation: React.FC<YourPresentationProps> = ({
  *       />
  *     )}
  *     
- *     {/* Footer/Actions */}
  *     <YourActions 
  *       onSubmit={onSubmit}
  *       onCancel={onCancel}

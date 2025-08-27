@@ -2,7 +2,7 @@
 
 > **Enterprise Wine Cellar Management System - Operations & Features Guide**  
 > Complete system documentation for users, administrators, and operations teams  
-> Version: 2.0.0+ | Production System with 925+ Active Records | 16 Tables | 57 RLS Policies
+> Version: 2.6.0+ | Production System with 925+ Active Records | Advanced Analytics & Payment System
 
 ---
 
@@ -94,11 +94,14 @@
   - New customer creation during sale process
   - Customer history and preference display
   - Automatic loyalty program integration
-- **Multi-Payment Processing**:
-  - Cash, credit card, debit, and digital payment methods
-  - Split payment capabilities for large transactions
+- **Standardized Multi-Payment Processing** (v2.6.0):
+  - **PIX**: Transferência instantânea via PIX
+  - **Cartão de Crédito**: Pagamento com cartão de crédito  
+  - **Débito**: Pagamento com cartão de débito
+  - **Dinheiro**: Pagamento em espécie
+  - Automatic payment method validation and case-insensitive filtering
   - Receipt generation with detailed line items
-  - Payment validation and error handling
+  - Complete payment history tracking with searchable filters
 - **Real-time Stock Verification**:
   - Instant stock level checking before sale completion
   - Automatic inventory updates upon successful transaction
@@ -289,6 +292,90 @@
 - **Hooks**: `useUserManagement.ts`, `useUserPermissions.ts`, `useFirstAdminSetup.ts`
 - **Security**: 57 RLS policies enforcing role-based access
 - **Audit**: Complete logging of all user management actions
+
+### 8. Reports - Advanced Analytics System (v2.6.0)
+**Status**: ✅ Complete - Production Ready with Major UX Improvements  
+**Access**: Admin, Employee  
+**Purpose**: Comprehensive business intelligence with interactive visualizations
+
+#### Key Features Enhanced in v2.6.0
+
+- **Advanced "Vendas por Categoria" Chart**:
+  - **Perfect Label Centering**: Percentuais centralizados com `textAnchor="middle"` e `dominantBaseline="central"`
+  - **External Grid Legend**: Legend organizada em grid 3x3 para melhor legibilidade
+  - **Complete Category Display**: Todas as 10 categorias reais exibidas (sem agrupamento em "Outros")
+  - **Extended Color Palette**: 19 cores distintas para suportar todas as categorias possíveis
+  - **Donut Chart Design**: Inner radius para design moderno e melhor proporção visual
+  - **Responsive Layout**: Altura otimizada (320px) e espaçamento adequado entre gráfico e legenda
+
+- **Enhanced Data Processing**:
+  - **Manual Fallback Calculations**: Sistema robusto quando stored procedures falham
+  - **Data Translation Functions**: Conversão automática de categorias para português
+  - **Real-time Validation**: Verificação de integridade dos dados em tempo real
+  - **Performance Optimizations**: React.useMemo para cálculos otimizados
+
+- **Comprehensive Sales Analytics**:
+  - **Top 10 Products Report**: Ranking com nomes reais dos produtos (não mais IDs)
+  - **Category Revenue Analysis**: Receita por categoria com valores formatados em moeda
+  - **Payment Methods Distribution**: Análise detalhada dos métodos de pagamento padronizados
+  - **Time-based Filtering**: Relatórios configuráveis por período (7, 30, 90 dias)
+
+- **Advanced Filtering System**:
+  - **Payment Method Search**: Busca funciona com "PIX", "Cartão de Crédito", "Débito", "Dinheiro"
+  - **Case-Insensitive Operations**: Filtros funcionam independente de maiúsculas/minúsculas
+  - **Multi-criteria Search**: Busca por ID, cliente, vendedor, valor, data, método de pagamento
+  - **Real-time Results**: Filtragem instantânea com feedback visual
+
+#### Technical Implementation (v2.6.0)
+
+- **Components**: 
+  - `SalesReportsSection.tsx` - Sistema principal de relatórios com gráficos aprimorados
+  - `SalesHistoryTable.tsx` - Tabela de histórico com filtros avançados
+  - **Enhanced Chart Renderers**: Custom label functions com posicionamento preciso
+  
+- **Hooks**: 
+  - `useSalesReports.ts` - Data fetching com fallback automático
+  - `useReportsFiltering.ts` - Sistema de filtros case-insensitive
+  - **Optimized Data Processing**: useMemo para performance em datasets grandes
+  
+- **Data Processing**:
+  - **Smart Fallbacks**: RPC failures handled gracefully with manual calculations
+  - **Color Management**: Systematic color assignment with 19-color palette
+  - **Translation Layer**: Portuguese category names with fallback to original
+  
+- **Chart Configuration**:
+  ```typescript
+  // Perfect label centering implementation
+  textAnchor="middle"           // Horizontal centering
+  dominantBaseline="central"    // Vertical centering
+  
+  // External legend with grid layout
+  <div className="grid grid-cols-3 gap-2">
+    {categories.map(category => (
+      <CategoryLegendItem key={category.name} category={category} />
+    ))}
+  </div>
+  
+  // Donut chart with optimal dimensions
+  <Pie innerRadius={60} outerRadius={120} />
+  ```
+
+#### User Experience Improvements
+
+1. **Visual Consistency**: All charts follow the same design language with glassmorphism effects
+2. **Information Density**: Optimal balance between detail and readability 
+3. **Interactive Elements**: Hover effects and tooltips provide contextual information
+4. **Responsive Design**: Charts adapt seamlessly to different screen sizes
+5. **Loading States**: Professional loading indicators during data processing
+6. **Error Handling**: Graceful fallbacks when data sources are unavailable
+
+#### Business Intelligence Capabilities
+
+- **Revenue Analysis**: Complete breakdown of sales by category, product, and time period
+- **Performance Metrics**: KPIs with trend analysis and period comparisons  
+- **Customer Insights**: Integration with CRM data for comprehensive customer analysis
+- **Operational Reports**: Stock levels, movement tracking, and inventory optimization
+- **Financial Dashboards**: Payment method analysis, cash flow, and profitability metrics
 
 ---
 
@@ -1237,7 +1324,7 @@ export function useNetworkMonitor() {
 
 ---
 
-**Last Updated**: August 2025 | **Version**: 2.5.0  
+**Last Updated**: August 2025 | **Version**: 2.6.0  
 **Status**: Enterprise Production System | **Records**: 925+ Active  
 **Security**: 57 RLS Policies | **Uptime**: Production-Ready  
-**UI Standardization**: Complete glassmorphism implementation with BlurIn animations, purple glow effects, and responsive width management
+**New Features**: Advanced Chart Analytics, Standardized Payment System (PIX/Credit/Debit/Cash), Enhanced Filtering, Perfect Label Centering, Complete Category Display

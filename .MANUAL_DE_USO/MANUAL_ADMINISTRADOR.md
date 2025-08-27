@@ -1,8 +1,8 @@
 # 📖 Manual do Administrador - Adega Manager
 
-**Versão 2.1.0 | Sistema de Gestão de Adega Wine Cellar**
-**📅 Última atualização:** 10 de agosto de 2025
-**🆕 Novidades:** Analytics de Clientes Implementados
+**Versão 2.6.0 | Sistema de Gestão de Adega Wine Cellar**
+**📅 Última atualização:** 27 de agosto de 2025
+**🆕 Novidades:** Sistema de Pagamentos Padronizado + Gráficos Avançados
 
 ---
 
@@ -25,9 +25,9 @@ Bem-vindo ao **Adega Manager**, seu sistema completo de gestão de adega de vinh
 
 ---
 
-## 🚀 **NOVIDADES DA VERSÃO 2.1.0** ⭐
+## 🚀 **NOVIDADES DA VERSÃO 2.6.0** ⭐
 
-### **🆕 Principais Implementações (10 de agosto de 2025):**
+### **🆕 Principais Implementações (27 de agosto de 2025):**
 
 #### **📊 Analytics Avançados de Clientes**
 **Onde encontrar:** Clientes → Clique no nome de qualquer cliente → Aba "Analytics"

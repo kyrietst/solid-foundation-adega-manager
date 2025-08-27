@@ -77,33 +77,6 @@ export const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
   const { data: interactions = [], isLoading: isLoadingInteractions } = useCustomerInteractions(customer?.id || '');
   const { data: purchases = [], isLoading: isLoadingPurchases } = useCustomerPurchases(customer?.id || '');
 
-  if (!customer) return null;
-
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString('pt-BR');
-  };
-
-  const formatContactPreference = (preference: string | null) => {
-    const preferences = {
-      whatsapp: 'WhatsApp',
-      sms: 'SMS',
-      email: 'E-mail',
-      call: 'Telefone'
-    };
-    return preference ? preferences[preference as keyof typeof preferences] || preference : 'Não definido';
-  };
-
-  const formatPurchaseFrequency = (frequency: string | null) => {
-    const frequencies = {
-      weekly: 'Semanal',
-      biweekly: 'Quinzenal',
-      monthly: 'Mensal',
-      occasional: 'Ocasional'
-    };
-    return frequency ? frequencies[frequency as keyof typeof frequencies] || frequency : 'Não definido';
-  };
-
   // Cálculo do countdown de aniversário
   const birthdayCountdown = useMemo(() => {
     if (!customer?.birthday) return null;
@@ -178,6 +151,33 @@ export const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
     
     return filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
   }, [purchases, purchaseFilter, selectedPeriod]);
+
+  if (!customer) return null;
+
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleDateString('pt-BR');
+  };
+
+  const formatContactPreference = (preference: string | null) => {
+    const preferences = {
+      whatsapp: 'WhatsApp',
+      sms: 'SMS',
+      email: 'E-mail',
+      call: 'Telefone'
+    };
+    return preference ? preferences[preference as keyof typeof preferences] || preference : 'Não definido';
+  };
+
+  const formatPurchaseFrequency = (frequency: string | null) => {
+    const frequencies = {
+      weekly: 'Semanal',
+      biweekly: 'Quinzenal',
+      monthly: 'Mensal',
+      occasional: 'Ocasional'
+    };
+    return frequency ? frequencies[frequency as keyof typeof frequencies] || frequency : 'Não definido';
+  };
 
   const glassClasses = getGlassCardClasses('premium');
   
