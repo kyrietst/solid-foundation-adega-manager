@@ -14,7 +14,7 @@ import type {
 } from '@/core/types/inventory.types';
 
 export type ScanContext = 'product_registration' | 'batch_creation' | 'sales' | 'receiving' | 'inventory_check';
-export type BarcodeType = 'product_main' | 'product_package' | 'product_unit' | 'batch_instance' | 'unknown';
+export type BarcodeType = 'product_main' | 'product_package' | 'batch_instance' | 'unknown';
 
 export interface ContextualScanResult {
   isValid: boolean;
@@ -71,8 +71,7 @@ export const useContextualScanner = (context: ScanContext) => {
     // Buscar correspondências nos produtos
     const productMatches = {
       main: products.find(p => p.barcode === scannedCode),
-      package: products.find(p => p.package_barcode === scannedCode),
-      unit: products.find(p => p.unit_barcode === scannedCode)
+      package: products.find(p => p.package_barcode === scannedCode)
     };
 
     let result: ContextualScanResult;
@@ -82,8 +81,6 @@ export const useContextualScanner = (context: ScanContext) => {
       result = analyzeMainProductCode(productMatches.main, scannedCode, context);
     } else if (productMatches.package) {
       result = analyzePackageCode(productMatches.package, scannedCode, context);
-    } else if (productMatches.unit) {
-      result = analyzeUnitCode(productMatches.unit, scannedCode, context);
     } else {
       result = analyzeUnknownCode(scannedCode, context);
     }
@@ -141,7 +138,7 @@ export const useContextualScanner = (context: ScanContext) => {
       actions,
       hierarchy: {
         level: 'product',
-        childCodes: [product.package_barcode, product.unit_barcode].filter(Boolean) as string[]
+        childCodes: [product.package_barcode].filter(Boolean) as string[]
       }
     };
   };
@@ -187,46 +184,11 @@ export const useContextualScanner = (context: ScanContext) => {
       actions,
       hierarchy: {
         level: 'package',
-        parentCode: product.barcode,
-        childCodes: product.unit_barcode ? [product.unit_barcode] : undefined
+        parentCode: product.barcode
       }
     };
   };
 
-  // Análise de código de unidade
-  const analyzeUnitCode = (product: Product, code: string, context: ScanContext): ContextualScanResult => {
-    const actions: ContextualAction[] = [];
-    const suggestions = [`Código de unidade identificado para: ${product.name}`];
-
-    if (product.has_unit_tracking) {
-      suggestions.push(`Produto configurado para rastreamento individual`);
-    }
-
-    switch (context) {
-      case 'sales':
-        actions.push({
-          type: 'sell_product',
-          label: 'Vender Unidade',
-          priority: 'high',
-          enabled: product.stock_quantity >= 1,
-          data: { product, quantity: 1, type: 'unit' }
-        });
-        break;
-    }
-
-    return {
-      isValid: true,
-      barcodeType: 'product_unit',
-      product,
-      confidence: 85,
-      suggestions,
-      actions,
-      hierarchy: {
-        level: 'unit',
-        parentCode: product.package_barcode || product.barcode
-      }
-    };
-  };
 
   // Análise de código desconhecido
   const analyzeUnknownCode = (code: string, context: ScanContext): ContextualScanResult => {

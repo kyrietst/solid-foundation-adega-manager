@@ -49,7 +49,8 @@ import {
   X,
   Edit,
   ScanLine,
-  ShoppingCart
+  ShoppingCart,
+  Info
 } from 'lucide-react';
 import type { Product } from '@/types/inventory.types';
 
@@ -64,11 +65,12 @@ const editProductSchema = z.object({
     .string()
     .min(1, 'Categoria é obrigatória'),
   
-  // Código de barras da unidade
-  unit_barcode: z
+  // Código de barras principal do produto
+  barcode: z
     .string()
     .optional()
     .or(z.literal('')),
+  
   
   // Sistema de códigos hierárquicos
   has_unit_tracking: z.boolean().default(true),
@@ -146,14 +148,14 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
   const [categories, setCategories] = useState<string[]>([]);
   const [suppliers, setSuppliers] = useState<string[]>([]);
   const [showCustomSupplier, setShowCustomSupplier] = useState(false);
-  const [activeScanner, setActiveScanner] = useState<'package' | 'unit' | null>(null);
+  const [activeScanner, setActiveScanner] = useState<'main' | 'package' | null>(null);
 
   const form = useForm<EditProductFormData>({
     resolver: zodResolver(editProductSchema),
     defaultValues: {
       name: '',
       category: '',
-      unit_barcode: '',
+      barcode: '',
       has_unit_tracking: true,
       has_package_tracking: false,
       package_barcode: '',
@@ -176,7 +178,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
       form.reset({
         name: product.name || '',
         category: product.category || '',
-        unit_barcode: product.unit_barcode || product.barcode || '',
+        barcode: product.barcode || '',
         has_unit_tracking: product.has_unit_tracking !== undefined ? product.has_unit_tracking : true,
         has_package_tracking: product.has_package_tracking || false,
         package_barcode: product.package_barcode || '',
@@ -287,20 +289,55 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
     }
   };
 
-  // Handler para scanner de código de barras
-  const handleBarcodeScanned = async (code: string, type: 'package' | 'unit') => {
-    if (type === 'package') {
-      form.setValue('package_barcode', code);
-    } else {
-      form.setValue('unit_barcode', code);
+  // Handler para scanner de código de barras com validação avançada
+  const handleBarcodeScanned = async (code: string, type: 'main' | 'package') => {
+    try {
+      // Verificar se o código não está sendo usado em outro campo do mesmo produto
+      const currentValues = form.getValues();
+      const duplicateField = 
+        (type !== 'main' && currentValues.barcode === code) ? 'principal' :
+        (type !== 'package' && currentValues.package_barcode === code) ? 'pacote' : null;
+      
+      if (duplicateField) {
+        toast({
+          title: "⚠️ Código duplicado",
+          description: `Este código já está sendo usado no campo ${duplicateField} do mesmo produto`,
+          variant: "destructive",
+        });
+        setActiveScanner(null);
+        return;
+      }
+
+      // Definir valor no formulário
+      if (type === 'main') {
+        form.setValue('barcode', code);
+      } else if (type === 'package') {
+        form.setValue('package_barcode', code);
+      }
+      
+      setActiveScanner(null);
+      
+      const typeLabels = {
+        main: 'principal',
+        package: 'do pacote'
+      };
+      
+      toast({
+        title: "✅ Código escaneado!",
+        description: `Código ${typeLabels[type]} registrado: ${code}`,
+        variant: "default",
+      });
+
+    } catch (error) {
+      console.error('Erro ao processar código escaneado:', error);
+      setActiveScanner(null);
+      
+      toast({
+        title: "❌ Erro ao processar",
+        description: "Ocorreu um erro ao processar o código. Tente novamente.",
+        variant: "destructive",
+      });
     }
-    setActiveScanner(null);
-    
-    toast({
-      title: "✅ Código escaneado!",
-      description: `Código ${type === 'package' ? 'do pacote' : 'da unidade'} registrado: ${code}`,
-      variant: "default",
-    });
   };
 
   if (!product) return null;
@@ -405,6 +442,60 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
                   <Barcode className="h-5 w-5 text-yellow-400" />
                   Sistema de Códigos de Barras
                 </h3>
+
+                {/* Código de barras principal do produto */}
+                <div className="space-y-4 mb-6">
+                  <div className="flex items-center gap-2 pb-2 border-b border-gray-700/50">
+                    <Barcode className="h-4 w-4 text-yellow-400" />
+                    <FormLabel className="text-base text-gray-300 font-medium">Código de Barras Principal</FormLabel>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
+                    <div className="space-y-3">
+                      {activeScanner !== 'main' ? (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setActiveScanner('main')}
+                          className="w-full h-11 border-yellow-400/50 text-yellow-400 hover:bg-yellow-400/10 transition-all duration-200"
+                          disabled={isLoading}
+                        >
+                          <ScanLine className="h-4 w-4 mr-2" />
+                          Escanear Código Principal
+                        </Button>
+                      ) : (
+                        <BarcodeInput
+                          onScan={(code) => handleBarcodeScanned(code, 'main')}
+                          placeholder="Escaneie o código principal..."
+                          autoFocus={true}
+                          className="w-full"
+                        />
+                      )}
+                      
+                      <FormField
+                        control={form.control}
+                        name="barcode"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <Input
+                                placeholder="Ou digite manualmente (apenas números)"
+                                {...field}
+                                onChange={(e) => field.onChange(e.target.value.replace(/\D/g, ''))}
+                                maxLength={14}
+                                className="font-mono bg-gray-800/50 border-gray-600 text-white h-11"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    <div className="text-sm text-gray-400 mt-2">
+                      <p>💡 <strong>Código principal:</strong> Código da unidade do produto. Se houver fardo, pode ser o código geral.</p>
+                    </div>
+                  </div>
+                </div>
                 
                 {/* Toggles para tipos de venda */}
                 <div className="space-y-4 mb-6">
@@ -459,64 +550,20 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
                   </div>
                 </div>
 
-                {/* Código de barras da unidade - condicional */}
-                {form.watch('has_unit_tracking') && (
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 pb-2 border-b border-gray-700/50">
-                      <ShoppingCart className="h-4 w-4 text-yellow-400" />
-                      <FormLabel className="text-base text-gray-300 font-medium">Código da Unidade Individual</FormLabel>
-                    </div>
-                  
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
-                    <div className="space-y-3">
-                      {activeScanner !== 'unit' ? (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => setActiveScanner('unit')}
-                          className="w-full h-11 border-yellow-400/50 text-yellow-400 hover:bg-yellow-400/10 transition-all duration-200"
-                          disabled={isLoading}
-                        >
-                          <ScanLine className="h-4 w-4 mr-2" />
-                          Escanear Código da Unidade
-                        </Button>
-                      ) : (
-                        <BarcodeInput
-                          onScan={(code) => handleBarcodeScanned(code, 'unit')}
-                          placeholder="Escaneie o código da unidade..."
-                          autoFocus={true}
-                          className="w-full"
-                        />
-                      )}
-                      
-                      <FormField
-                        control={form.control}
-                        name="unit_barcode"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormControl>
-                              <Input
-                                placeholder="Ou digite manualmente (apenas números)"
-                                {...field}
-                                onChange={(e) => field.onChange(e.target.value.replace(/\D/g, ''))}
-                                maxLength={14}
-                                className="font-mono bg-gray-800/50 border-gray-600 text-white h-11"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                    <div className="hidden lg:flex items-start justify-center text-gray-500 pt-2">
-                      <div className="text-center">
-                        <Package className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                        <p className="text-sm">Código principal do produto</p>
-                      </div>
+                {/* Explicação da lógica de códigos */}
+                <div className="bg-blue-900/20 border border-blue-400/30 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <Info className="h-5 w-5 text-blue-400 mt-0.5" />
+                    <div className="text-sm text-gray-300">
+                      <p className="font-medium mb-1">🔍 Como funciona a detecção automática:</p>
+                      <ul className="text-xs text-gray-400 space-y-1">
+                        <li>• <strong>Código principal:</strong> Usado para busca e identificação geral</li>
+                        <li>• <strong>Código de pacote:</strong> Usado apenas se o produto tem rastreamento por fardo</li>
+                        <li>• <strong>Na venda:</strong> Sistema detecta automaticamente se é unidade ou fardo</li>
+                      </ul>
                     </div>
                   </div>
-                  </div>
-                )}
+                </div>
 
                 {/* Código de barras do pacote (condicional) */}
                 {form.watch('has_package_tracking') && (

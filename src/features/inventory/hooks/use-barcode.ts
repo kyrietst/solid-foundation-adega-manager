@@ -9,8 +9,8 @@ export const useBarcode = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Busca produto por código de barras
-  const searchByBarcode = useCallback(async (barcode: string): Promise<Product | null> => {
+  // Busca inteligente de produto por código de barras (principal ou pacote)
+  const searchByBarcode = useCallback(async (barcode: string): Promise<{ product: Product; type: 'main' | 'package' } | null> => {
     if (!barcode || barcode.length < 8) {
       toast({
         title: "Código inválido",
@@ -21,33 +21,57 @@ export const useBarcode = () => {
     }
 
     try {
-      const { data, error } = await supabase
+      // Buscar por código principal primeiro
+      const { data: mainProduct, error: mainError } = await supabase
         .from('products')
         .select('*')
         .eq('barcode', barcode)
         .single();
 
-      if (error) {
-        if (error.code === 'PGRST116') {
-          toast({
-            title: "Produto não encontrado",
-            description: `Nenhum produto encontrado com o código ${barcode}`,
-            variant: "destructive"
-          });
-          return null;
-        }
-        throw error;
+      if (mainProduct && !mainError) {
+        setLastScannedCode(barcode);
+        
+        const hasPackage = !!mainProduct.package_barcode;
+        const typeLabel = hasPackage 
+          ? 'código da unidade' 
+          : 'código principal';
+        
+        toast({
+          title: "✅ Produto encontrado",
+          description: `${mainProduct.name} - ${typeLabel}`,
+          variant: "default"
+        });
+
+        return { product: mainProduct, type: 'main' };
       }
 
-      setLastScannedCode(barcode);
-      
-      toast({
-        title: "Produto encontrado",
-        description: `${data.name} encontrado com sucesso`,
-        variant: "default"
-      });
+      // Se não encontrou por código principal, buscar por código de pacote
+      const { data: packageProduct, error: packageError } = await supabase
+        .from('products')
+        .select('*')
+        .eq('package_barcode', barcode)
+        .single();
 
-      return data;
+      if (packageProduct && !packageError) {
+        setLastScannedCode(barcode);
+        
+        toast({
+          title: "📦 Produto encontrado",
+          description: `${packageProduct.name} - código do fardo (${packageProduct.package_units || 1} unidades)`,
+          variant: "default"
+        });
+
+        return { product: packageProduct, type: 'package' };
+      }
+
+      // Não encontrado
+      toast({
+        title: "Produto não encontrado",
+        description: `Nenhum produto encontrado com o código ${barcode}`,
+        variant: "destructive"
+      });
+      return null;
+
     } catch (error) {
       console.error('Erro ao buscar produto por código de barras:', error);
       toast({
