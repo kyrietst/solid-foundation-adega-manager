@@ -32,6 +32,7 @@ const AdvancedReports = lazy(() =>
   import('@/features/reports/components/AdvancedReports').then((m) => ({ default: m.AdvancedReports }))
 );
 const ActivitiesPage = lazy(() => import('@/shared/components/ActivityLogsPage'));
+const ExpensesPage = lazy(() => import('@/features/expenses/components/ExpensesPage'));
 
 const Index = () => {
   const navigate = useNavigate();
@@ -172,6 +173,12 @@ const Index = () => {
             <WhitePageShell>
               <ActivitiesPage />
             </WhitePageShell>
+          </Suspense>
+        ) : <AccessDenied />;
+      case 'expenses':
+        return hasPermission(['admin']) ? (
+          <Suspense fallback={<LoadingScreen text="Carregando gestão de despesas..." />}>
+            <ExpensesPage />
           </Suspense>
         ) : <AccessDenied />;
       default:

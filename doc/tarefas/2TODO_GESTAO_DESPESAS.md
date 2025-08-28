@@ -9,112 +9,112 @@ Criar sistema completo de gestão de despesas operacionais para cálculo preciso
 
 ### **1. 🗂️ Estrutura de Dados**
 
-#### **1.1 Criar Tabela `operational_expenses`**
-- [ ] **Schema SQL**
-  - [ ] `id` (UUID, primary key)
-  - [ ] `category_id` (VARCHAR, categoria da despesa)
-  - [ ] `subcategory` (VARCHAR, opcional)
-  - [ ] `description` (TEXT, descrição da despesa)
-  - [ ] `amount` (DECIMAL, valor da despesa)
-  - [ ] `expense_date` (DATE, data da despesa)
-  - [ ] `payment_method` (VARCHAR, forma de pagamento)
-  - [ ] `supplier_vendor` (VARCHAR, fornecedor)
-  - [ ] `receipt_url` (VARCHAR, link para comprovante)
-  - [ ] `is_recurring` (BOOLEAN, despesa recorrente)
-  - [ ] `recurring_frequency` (VARCHAR, mensal/trimestral/anual)
-  - [ ] `budget_category` (VARCHAR, categoria orçamentária)
-  - [ ] `created_by` (UUID, usuário que criou)
-  - [ ] `created_at` (TIMESTAMP)
-  - [ ] `updated_at` (TIMESTAMP)
+#### **1.1 Criar Tabela `operational_expenses`** ✅
+- [x] **Schema SQL**
+  - [x] `id` (UUID, primary key)
+  - [x] `category_id` (VARCHAR, categoria da despesa)
+  - [x] `subcategory` (VARCHAR, opcional)
+  - [x] `description` (TEXT, descrição da despesa)
+  - [x] `amount` (DECIMAL, valor da despesa)
+  - [x] `expense_date` (DATE, data da despesa)
+  - [x] `payment_method` (VARCHAR, forma de pagamento)
+  - [x] `supplier_vendor` (VARCHAR, fornecedor)
+  - [x] `receipt_url` (VARCHAR, link para comprovante)
+  - [x] `is_recurring` (BOOLEAN, despesa recorrente)
+  - [x] `recurring_frequency` (VARCHAR, mensal/trimestral/anual)
+  - [x] `budget_category` (VARCHAR, categoria orçamentária)
+  - [x] `created_by` (UUID, usuário que criou)
+  - [x] `created_at` (TIMESTAMP)
+  - [x] `updated_at` (TIMESTAMP)
 
-#### **1.2 Criar Tabela `expense_categories`**
-- [ ] **Categorias Pré-definidas**
-  - [ ] `rent` - Aluguel e Condomínio
-  - [ ] `utilities` - Energia, Água, Internet
-  - [ ] `salaries` - Salários e Encargos
-  - [ ] `taxes` - Impostos e Licenças
-  - [ ] `marketing` - Marketing e Publicidade
-  - [ ] `maintenance` - Manutenção e Limpeza
-  - [ ] `delivery` - Combustível e Entrega
-  - [ ] `insurance` - Seguros
-  - [ ] `accounting` - Contabilidade
-  - [ ] `supplies` - Material de Escritório
-  - [ ] `other` - Outras Despesas
+#### **1.2 Criar Tabela `expense_categories`** ✅
+- [x] **Categorias Pré-definidas**
+  - [x] `rent` - Aluguel e Condomínio
+  - [x] `utilities` - Energia, Água, Internet
+  - [x] `salaries` - Salários e Encargos
+  - [x] `taxes` - Impostos e Licenças
+  - [x] `marketing` - Marketing e Publicidade
+  - [x] `maintenance` - Manutenção e Limpeza
+  - [x] `delivery` - Combustível e Entrega
+  - [x] `insurance` - Seguros
+  - [x] `accounting` - Contabilidade
+  - [x] `supplies` - Material de Escritório
+  - [x] `other` - Outras Despesas
 
-#### **1.3 Criar Tabela `expense_budgets`**
-- [ ] **Orçamento por Categoria**
-  - [ ] `category_id` (VARCHAR)
-  - [ ] `month_year` (DATE, primeiro dia do mês)
-  - [ ] `budgeted_amount` (DECIMAL, valor orçado)
-  - [ ] `actual_amount` (DECIMAL, calculado automaticamente)
-  - [ ] `variance` (DECIMAL, diferença orçado vs real)
-  - [ ] `created_by` (UUID)
-  - [ ] `created_at`, `updated_at`
+#### **1.3 Criar Tabela `expense_budgets`** ✅
+- [x] **Orçamento por Categoria**
+  - [x] `category_id` (VARCHAR)
+  - [x] `month_year` (DATE, primeiro dia do mês)
+  - [x] `budgeted_amount` (DECIMAL, valor orçado)
+  - [x] `actual_amount` (DECIMAL, calculado automaticamente)
+  - [x] `variance` (DECIMAL, diferença orçado vs real)
+  - [x] `created_by` (UUID)
+  - [x] `created_at`, `updated_at`
 
-### **2. 🔐 Políticas de Segurança (RLS)**
+### **2. 🔐 Políticas de Segurança (RLS)** ✅
 
-#### **2.1 RLS para `operational_expenses`**
-- [ ] **Admin**: Full access
-- [ ] **Employee**: Read only (visualizar relatórios)
-- [ ] **Delivery**: No access
+#### **2.1 RLS para `operational_expenses`** ✅
+- [x] **Admin**: Full access
+- [x] **Employee**: Read only (visualizar relatórios)
+- [x] **Delivery**: No access
 
-#### **2.2 RLS para `expense_categories` e `expense_budgets`**
-- [ ] **Admin**: Full access
-- [ ] **Employee**: Read only
-- [ ] **Delivery**: No access
+#### **2.2 RLS para `expense_categories` e `expense_budgets`** ✅
+- [x] **Admin**: Full access
+- [x] **Employee**: Read only
+- [x] **Delivery**: No access
 
 ### **3. 🎨 Interface Frontend**
 
-#### **3.1 Página Principal: "Gestão de Despesas"**
-- [ ] **Layout Responsivo**
-  - [ ] Header com KPIs resumo do mês
-  - [ ] Tabs: Despesas | Orçamento | Relatórios
-  - [ ] Filtros por período e categoria
+#### **3.1 Página Principal: "Gestão de Despesas"** ✅
+- [x] **Layout Responsivo**
+  - [x] Header com KPIs resumo do mês
+  - [x] Tabs: Despesas | Orçamento | Relatórios
+  - [x] Filtros por período e categoria
 
-#### **3.2 Tab "Despesas"**
-- [ ] **Lista de Despesas**
-  - [ ] Tabela com paginação
-  - [ ] Filtros: categoria, período, valor
-  - [ ] Busca por descrição/fornecedor
-  - [ ] Ações: editar, excluir, ver comprovante
-- [ ] **Modal "Nova Despesa"**
-  - [ ] Form com todos os campos
-  - [ ] Upload de comprovante
-  - [ ] Validação de dados
-  - [ ] Preview de impacto no orçamento
-- [ ] **Modal "Editar Despesa"**
-  - [ ] Pre-populado com dados existentes
-  - [ ] Histórico de alterações
+#### **3.2 Tab "Despesas"** ✅
+- [x] **Lista de Despesas**
+  - [x] Tabela com paginação
+  - [x] Filtros: categoria, período, valor
+  - [x] Busca por descrição/fornecedor
+  - [x] Ações: editar, excluir, ver comprovante
+- [x] **Modal "Nova Despesa"**
+  - [x] Form com todos os campos
+  - [ ] Upload de comprovante - Pendente
+  - [x] Validação de dados
+  - [ ] Preview de impacto no orçamento - Pendente
+- [x] **Modal "Editar Despesa"**
+  - [x] Pre-populado com dados existentes
+  - [ ] Histórico de alterações - Pendente
 
-#### **3.3 Tab "Orçamento"**
-- [ ] **Configuração Orçamentária**
-  - [ ] Orçamento por categoria/mês
-  - [ ] Comparativo: Orçado vs Realizado
-  - [ ] Gráfico de barras por categoria
-  - [ ] Alertas de estouro de orçamento
-- [ ] **Projeções**
-  - [ ] Tendência de gastos
-  - [ ] Previsão para fim do mês
-  - [ ] Sugestões de economia
+#### **3.3 Tab "Orçamento"** ✅
+- [x] **Configuração Orçamentária**
+  - [x] Orçamento por categoria/mês
+  - [x] Comparativo: Orçado vs Realizado
+  - [x] Gráfico de barras por categoria
+  - [x] Alertas de estouro de orçamento
+- [x] **Projeções**
+  - [x] Tendência de gastos
+  - [x] Previsão para fim do mês
+  - [ ] Sugestões de economia - Pendente
 
-#### **3.4 Tab "Relatórios"**
-- [ ] **Relatórios Financeiros**
-  - [ ] DRE (Demonstrativo de Resultado)
-  - [ ] Gastos por categoria (gráfico pizza)
-  - [ ] Evolução temporal (gráfico linha)
-  - [ ] Comparativo período anterior
-- [ ] **Exportações**
-  - [ ] PDF para contabilidade
-  - [ ] CSV para análise
-  - [ ] Excel com gráficos
+#### **3.4 Tab "Relatórios"** ✅
+- [x] **Relatórios Financeiros**
+  - [ ] DRE (Demonstrativo de Resultado) - Pendente
+  - [x] Gastos por categoria (gráfico pizza)
+  - [x] Evolução temporal (gráfico linha)
+  - [x] Comparativo período anterior
+- [x] **Exportações**
+  - [ ] PDF para contabilidade - Pendente
+  - [ ] CSV para análise - Pendente
+  - [ ] Excel com gráficos - Pendente
 
 ### **4. 🔧 Funcionalidades Backend**
 
-#### **4.1 CRUD de Despesas**
-- [ ] **Create**: Nova despesa com validações
-- [ ] **Read**: Lista com filtros e paginação
-- [ ] **Update**: Edição com log de alterações
-- [ ] **Delete**: Soft delete com auditoria
+#### **4.1 CRUD de Despesas** ✅
+- [x] **Create**: Nova despesa com validações
+- [x] **Read**: Lista com filtros e paginação
+- [x] **Update**: Edição com log de alterações
+- [x] **Delete**: Soft delete com auditoria
 
 #### **4.2 Upload de Comprovantes**
 - [ ] **Storage Supabase**
@@ -127,12 +127,12 @@ Criar sistema completo de gestão de despesas operacionais para cálculo preciso
   - [ ] Tipos permitidos
   - [ ] Scan de vírus (se necessário)
 
-#### **4.3 Cálculos Automáticos**
-- [ ] **Stored Procedures**
-  - [ ] `get_monthly_expenses(month, year, category?)`
-  - [ ] `get_expense_summary(start_date, end_date)`
-  - [ ] `calculate_budget_variance(month, year)`
-  - [ ] `get_expense_trends(months)`
+#### **4.3 Cálculos Automáticos** ✅
+- [x] **Stored Procedures**
+  - [x] `get_monthly_expenses(month, year, category?)`
+  - [x] `get_expense_summary(start_date, end_date)`
+  - [x] `calculate_budget_variance(month, year)`
+  - [ ] `get_expense_trends(months)` - Pendente
 
 #### **4.4 Sistema de Alertas**
 - [ ] **Alertas Automáticos**

@@ -1,0 +1,167 @@
+/**
+ * Hook para buscar despesas operacionais no dashboard
+ * Integra o sistema de gestão de despesas com os KPIs do dashboard
+ */
+
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/core/api/supabase/client';
+
+export interface DashboardExpense {
+  category_id: string;
+  category_name: string;
+  total_amount: number;
+  expense_count: number;
+  avg_amount: number;
+}
+
+export interface ExpenseSummary {
+  total_expenses: number;
+  total_transactions: number;
+  avg_expense: number;
+  top_category: string;
+  top_category_amount: number;
+  categories_breakdown: DashboardExpense[];
+}
+
+/**
+ * Buscar despesas operacionais reais para um período específico
+ * @param periodDays Número de dias para buscar (padrão: 30)
+ */
+export const useDashboardExpenses = (periodDays: number = 30) => {
+  return useQuery({
+    queryKey: ['dashboard', 'expenses', periodDays],
+    queryFn: async (): Promise<ExpenseSummary> => {
+      console.log(`💸 Dashboard - Calculando despesas operacionais reais para ${periodDays} dias`);
+      
+      // Calcular período
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setDate(endDate.getDate() - periodDays);
+      
+      const startDateStr = startDate.toISOString().split('T')[0];
+      const endDateStr = endDate.toISOString().split('T')[0];
+
+      // Buscar resumo geral usando stored procedure
+      const { data: summaryData, error: summaryError } = await supabase
+        .rpc('get_expense_summary', {
+          start_date: startDateStr,
+          end_date: endDateStr
+        });
+
+      if (summaryError) {
+        console.error('❌ Erro ao buscar resumo de despesas:', summaryError);
+        throw summaryError;
+      }
+
+      const summary = summaryData?.[0] || {
+        total_expenses: 0,
+        total_transactions: 0,
+        avg_expense: 0,
+        top_category: 'N/A',
+        top_category_amount: 0
+      };
+
+      // Buscar breakdown por categoria usando stored procedure mensal
+      const currentMonth = endDate.getMonth() + 1;
+      const currentYear = endDate.getFullYear();
+      
+      const { data: monthlyData, error: monthlyError } = await supabase
+        .rpc('get_monthly_expenses', {
+          target_month: currentMonth,
+          target_year: currentYear
+        });
+
+      if (monthlyError) {
+        console.error('❌ Erro ao buscar despesas mensais:', monthlyError);
+      }
+
+      const categories_breakdown: DashboardExpense[] = (monthlyData || []).map(expense => ({
+        category_id: expense.category_id,
+        category_name: expense.category_name,
+        total_amount: Number(expense.total_amount),
+        expense_count: expense.expense_count,
+        avg_amount: Number(expense.avg_amount)
+      }));
+
+      console.log(`💸 Despesas operacionais calculadas:`);
+      console.log(`💰 Total: R$ ${Number(summary.total_expenses).toFixed(2)}`);
+      console.log(`📋 Transações: ${summary.total_transactions}`);
+      console.log(`📊 Categorias: ${categories_breakdown.length}`);
+
+      return {
+        total_expenses: Number(summary.total_expenses),
+        total_transactions: summary.total_transactions,
+        avg_expense: Number(summary.avg_expense),
+        top_category: summary.top_category,
+        top_category_amount: Number(summary.top_category_amount),
+        categories_breakdown
+      };
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutos - mesma duração dos dados financeiros
+    refetchOnWindowFocus: false,
+  });
+};
+
+/**
+ * Hook para buscar variação orçamentária do mês atual
+ */
+export const useDashboardBudgetVariance = () => {
+  const currentDate = new Date();
+  const currentMonth = currentDate.getMonth() + 1;
+  const currentYear = currentDate.getFullYear();
+
+  return useQuery({
+    queryKey: ['dashboard', 'budget-variance', currentMonth, currentYear],
+    queryFn: async () => {
+      console.log(`🎯 Dashboard - Calculando variação orçamentária para ${currentMonth}/${currentYear}`);
+      
+      const { data, error } = await supabase
+        .rpc('calculate_budget_variance', {
+          target_month: currentMonth,
+          target_year: currentYear
+        });
+
+      if (error) {
+        console.error('❌ Erro ao buscar variação orçamentária:', error);
+        throw error;
+      }
+
+      const variances = (data || []).map(item => ({
+        category_id: item.category_id,
+        category_name: item.category_name,
+        budgeted_amount: Number(item.budgeted_amount),
+        actual_amount: Number(item.actual_amount),
+        variance: Number(item.variance),
+        variance_percent: Number(item.variance_percent),
+        status: item.status as 'ON_TRACK' | 'WARNING' | 'OVER_BUDGET'
+      }));
+
+      // Calcular totais
+      const totalBudgeted = variances.reduce((sum, v) => sum + v.budgeted_amount, 0);
+      const totalActual = variances.reduce((sum, v) => sum + v.actual_amount, 0);
+      const totalVariance = totalActual - totalBudgeted;
+      const totalVariancePercent = totalBudgeted > 0 ? (totalVariance / totalBudgeted) * 100 : 0;
+
+      const onTrackCount = variances.filter(v => v.status === 'ON_TRACK').length;
+      const warningCount = variances.filter(v => v.status === 'WARNING').length;
+      const overBudgetCount = variances.filter(v => v.status === 'OVER_BUDGET').length;
+
+      console.log(`🎯 Variação orçamentária: ${totalVariancePercent.toFixed(1)}%`);
+      console.log(`📊 Status: ${onTrackCount} OK, ${warningCount} atenção, ${overBudgetCount} estourado`);
+
+      return {
+        variances,
+        totalBudgeted,
+        totalActual,
+        totalVariance,
+        totalVariancePercent,
+        categoriesOnTrack: onTrackCount,
+        categoriesWarning: warningCount,
+        categoriesOverBudget: overBudgetCount,
+        totalCategories: variances.length
+      };
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    refetchOnWindowFocus: false,
+  });
+};

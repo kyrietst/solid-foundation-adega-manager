@@ -17,6 +17,7 @@ import { useDashboardMetrics } from '@/features/dashboard/hooks/useDashboardMetr
 import { useDashboardData } from '@/features/dashboard/hooks/useDashboardData';
 import { usePermissions } from '@/shared/hooks/auth/usePermissions';
 import { SensitiveData } from '@/shared/ui/composite';
+import { DREReport } from './DREReport';
 
 interface FinancialMetrics {
   current_amount: number;
@@ -347,6 +348,12 @@ export const FinancialReportsSection: React.FC<FinancialReportsSectionProps> = (
           </div>
         </div>
       )}
+
+      {/* DRE - Demonstrativo de Resultado */}
+      <div className="space-y-4">
+        <h3 className="text-xl font-bold text-white">Demonstrativo de Resultado (DRE)</h3>
+        <DREReport />
+      </div>
 
       {/* Receivables Analysis Cards */}
       <div className="space-y-4">

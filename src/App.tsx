@@ -168,6 +168,14 @@ const App = () => (
                           </RouteErrorBoundary>
                         } 
                       />
+                      <Route 
+                        path="expenses" 
+                        element={
+                          <RouteErrorBoundary routeName="Gestão de Despesas">
+                            <div />
+                          </RouteErrorBoundary>
+                        } 
+                      />
                     </Route>
                     <Route path="*" element={<NotFound />} />
                   </Routes>

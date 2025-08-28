@@ -4,6 +4,7 @@ import { Button } from "@/shared/ui/primitives/button";
 import { ProductsGrid } from "./ProductsGrid";
 import { Cart } from "./Cart";
 import { RecentSales } from "./RecentSales";
+import { ReceiptModal } from "./ReceiptModal";
 import { useState } from "react";
 import { ShoppingCart, Store, Truck, Package } from "lucide-react";
 import { useCart, useCartItemCount } from "@/features/sales/hooks/use-cart";
@@ -27,8 +28,16 @@ function SalesPage({
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('new-sale');
   const [saleType, setSaleType] = useState<SaleType>('presencial');
+  const [receiptModalOpen, setReceiptModalOpen] = useState(false);
+  const [completedSaleId, setCompletedSaleId] = useState<string | null>(null);
   const { items } = useCart();
   const totalQuantity = useCartItemCount();
+
+  // Handler para quando uma venda é completada
+  const handleSaleComplete = (saleId: string) => {
+    setCompletedSaleId(saleId);
+    setReceiptModalOpen(true);
+  };
   
   const glassClasses = glassEffect ? getGlassCardClasses(variant) : '';
   
@@ -208,7 +217,11 @@ function SalesPage({
               
               {/* Cart - altura total */}
               <div className="border-l border-white/20 pl-4 flex flex-col min-h-0">
-                <Cart variant={variant} glassEffect={glassEffect} saleType={saleType} />
+                <Cart 
+                  variant={variant} 
+                  glassEffect={glassEffect} 
+                  onSaleComplete={handleSaleComplete}
+                />
               </div>
             </div>
             
@@ -254,6 +267,17 @@ function SalesPage({
           </div>
         )}
       </div>
+
+      {/* Modal de impressão de cupom */}
+      <ReceiptModal
+        isOpen={receiptModalOpen}
+        onClose={() => {
+          setReceiptModalOpen(false);
+          setCompletedSaleId(null);
+        }}
+        saleId={completedSaleId}
+        autoClose={true}
+      />
     </div>
   );
 }

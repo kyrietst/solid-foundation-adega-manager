@@ -15,6 +15,7 @@ import {
   IconChartPie,
   IconRobot,
   IconBuilding,
+  IconReceipt,
 } from "@tabler/icons-react";
 import { motion } from "motion/react";
 import { cn } from "@/core/config/utils";
@@ -118,6 +119,15 @@ export function AppSidebar() {
         <IconReportAnalytics className="h-5 w-5 shrink-0 text-primary-yellow" />
       ),
       roles: ["admin", "employee"],
+    },
+    {
+      id: "expenses",
+      label: "Despesas",
+      href: "expenses",
+      icon: (
+        <IconReceipt className="h-5 w-5 shrink-0 text-primary-yellow" />
+      ),
+      roles: ["admin"],
     },
     {
       id: "users",

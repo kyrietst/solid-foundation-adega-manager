@@ -19,11 +19,12 @@ import { KpiCards } from './KpiCards';
 import { AlertsPanel } from './AlertsPanel';
 import { AlertsCarousel } from './AlertsCarousel';
 import { SalesChartSection } from './SalesChartSection';
-import { useSalesKpis, useCustomerKpis, useInventoryKpis } from '../hooks/useDashboardKpis';
+import { FinancialChartSection } from './FinancialChartSection';
+import { useSalesKpis, useCustomerKpis, useInventoryKpis, useExpenseKpis } from '../hooks/useDashboardKpis';
 import { SalesInsightsTabs } from './SalesInsightsTabs';
 import { DashboardHeader } from './DashboardHeader';
 import { DeliveryVsInstoreComparison } from './DeliveryVsInstoreComparison';
-import { DollarSign, ShoppingCart, TrendingUp, Users, AlertTriangle } from 'lucide-react';
+import { DollarSign, ShoppingCart, TrendingUp, Users, AlertTriangle, CreditCard, Target, Calculator } from 'lucide-react';
 
 export interface DashboardPresentationProps {
   // Dados processados
@@ -70,14 +71,19 @@ export const DashboardPresentation: React.FC<DashboardPresentationProps> = ({
             <KpiSection />
           </div>
 
-          {/* Linha: Tendência de Vendas (8) + Alertas (4) como antes */}
-          <div className="lg:col-span-8">
-            <SalesChartSection className="h-full" contentHeight={500} cardHeight={580} />
+          {/* Linha: Gráficos de Vendas + Financeiro */}
+          <div className="lg:col-span-6">
+            <SalesChartSection className="h-full" contentHeight={450} cardHeight={530} />
           </div>
-          <div className="lg:col-span-4">
+          <div className="lg:col-span-6">
+            <FinancialChartSection className="h-full" contentHeight={450} cardHeight={530} />
+          </div>
+          
+          {/* Linha: Alertas ocupando largura total */}
+          <div className="lg:col-span-12">
             <AlertsCarousel 
-              cardHeight={580} 
-              autoRotateInterval={6000} 
+              cardHeight={400} 
+              autoRotateInterval={8000} 
               showControls={true} 
               previewActivities={recentActivities}
             />
@@ -108,7 +114,8 @@ function KpiSection() {
   const { data: s, isLoading: l1 } = useSalesKpis(30);
   const { data: c, isLoading: l2 } = useCustomerKpis(30);
   const { data: i, isLoading: l3 } = useInventoryKpis();
-  const loading = l1 || l2 || l3;
+  const { data: e, isLoading: l4 } = useExpenseKpis(30);
+  const loading = l1 || l2 || l3 || l4;
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -160,6 +167,40 @@ function KpiSection() {
       isLoading: l2,
       href: '/reports?tab=crm&period=30d',
       subLabel: 'Últimos 30 dias'
+    },
+    {
+      id: 'expenses',
+      label: 'Despesas OpEx',
+      value: formatCurrency(e?.totalExpenses || 0),
+      delta: e?.expensesDelta,
+      icon: CreditCard,
+      valueType: 'negative' as const,
+      isLoading: l4,
+      href: '/expenses',
+      subLabel: 'Últimos 30 dias'
+    },
+    {
+      id: 'budget-variance',
+      label: 'Variação Orçamentária',
+      value: `${e?.budgetVariance ? (e.budgetVariance > 0 ? '+' : '') + e.budgetVariance.toFixed(1) : '0.0'}%`,
+      icon: Target,
+      valueType: e?.budgetStatus === 'OVER_BUDGET' ? 'negative' as const : 
+                 e?.budgetStatus === 'WARNING' ? 'warning' as const : 'positive' as const,
+      isLoading: l4,
+      href: '/expenses?tab=budget',
+      subLabel: e?.budgetStatus === 'OVER_BUDGET' ? 'Acima do orçamento' :
+                e?.budgetStatus === 'WARNING' ? 'Próximo do limite' : 'Dentro do orçamento'
+    },
+    {
+      id: 'net-margin',
+      label: 'Margem Líquida',
+      value: `${e?.netMargin ? e.netMargin.toFixed(1) : '0.0'}%`,
+      icon: Calculator,
+      valueType: (e?.netMargin || 0) > 10 ? 'positive' as const : 
+                 (e?.netMargin || 0) > 5 ? 'neutral' as const : 'negative' as const,
+      isLoading: l4,
+      href: '/reports?tab=financial&period=30d',
+      subLabel: 'Após despesas OpEx'
     }
   ];
 

@@ -7,6 +7,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
 import { useDashboardErrorHandling } from './useDashboardErrorHandling';
+import { useDashboardExpenses } from './useDashboardExpenses';
 
 export interface DashboardCounts {
   totalCustomers: number;
@@ -88,6 +89,9 @@ export const useDashboardData = (periodDays: number = 30) => {
     retryDelay: 1000
   });
 
+  // Buscar despesas operacionais reais
+  const { data: expensesData, isLoading: isLoadingExpenses } = useDashboardExpenses(periodDays);
+
   // Query para contadores públicos com dados reais
   const { data: counts, isLoading: isLoadingCounts, error: countsError, refetch: refetchCounts } = useQuery({
     queryKey: ['dashboard', 'counts'],
@@ -116,9 +120,9 @@ export const useDashboardData = (periodDays: number = 30) => {
     retry: false, // Error handler já faz retry
   });
 
-  // Query para dados financeiros REAIS baseados nas vendas
+  // Query para dados financeiros REAIS baseados nas vendas + despesas operacionais
   const { data: financials, isLoading: isLoadingFinancials, error: financialsError, refetch: refetchFinancials } = useQuery({
-    queryKey: ['dashboard', 'financials', periodDays],
+    queryKey: ['dashboard', 'financials', periodDays, expensesData?.total_expenses],
     queryFn: errorHandler.withErrorHandling('sales', async (): Promise<DashboardFinancials> => {
       console.log(`💰 Dashboard - Calculando métricas financeiras reais para ${periodDays} dias`);
       
@@ -154,19 +158,18 @@ export const useDashboardData = (periodDays: number = 30) => {
       const grossProfit = totalRevenue - cogs;
       const grossMargin = totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
       
-      // Estimar despesas operacionais (30% da receita como aproximação)
-      // TODO: Substituir por dados reais quando implementar gestão de despesas
-      const operationalExpenses = totalRevenue * 0.30;
+      // Usar despesas operacionais REAIS do sistema de gestão de despesas
+      const operationalExpenses = expensesData?.total_expenses || 0;
       
       // Calcular lucro líquido (lucro bruto - despesas operacionais)
       const netProfit = Math.max(0, grossProfit - operationalExpenses);
       const netMargin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
 
-      console.log(`📊 Métricas financeiras CORRIGIDAS:`);
+      console.log(`📊 Métricas financeiras com DESPESAS REAIS:`);
       console.log(`💰 Receita: R$ ${totalRevenue.toFixed(2)}`);
       console.log(`📦 COGS: R$ ${cogs.toFixed(2)}`);
       console.log(`📈 Lucro Bruto: R$ ${grossProfit.toFixed(2)} (${grossMargin.toFixed(1)}%)`);
-      console.log(`💸 Despesas OpEx: R$ ${operationalExpenses.toFixed(2)}`);
+      console.log(`💸 Despesas OpEx REAIS: R$ ${operationalExpenses.toFixed(2)} (${expensesData?.total_transactions || 0} transações)`);
       console.log(`💎 Lucro Líquido: R$ ${netProfit.toFixed(2)} (${netMargin.toFixed(1)}%)`);
 
       return {
@@ -184,6 +187,7 @@ export const useDashboardData = (periodDays: number = 30) => {
     }, 'dados financeiros'),
     staleTime: 5 * 60 * 1000, // 5 minutos para dados mais atualizados
     retry: false, // Error handler já faz retry
+    enabled: !isLoadingExpenses, // Aguarda os dados de despesas carregarem primeiro
   });
 
   // Query para dados de vendas por mês REAIS
@@ -397,13 +401,15 @@ export const useDashboardData = (periodDays: number = 30) => {
     financials,
     salesData,
     recentActivities,
+    expensesData, // Adicionar dados de despesas
 
     // Estados de loading
-    isLoading: isLoadingCounts || isLoadingFinancials || isLoadingSales || isLoadingActivities,
+    isLoading: isLoadingCounts || isLoadingFinancials || isLoadingSales || isLoadingActivities || isLoadingExpenses,
     isLoadingCounts,
     isLoadingFinancials,
     isLoadingSales,
     isLoadingActivities,
+    isLoadingExpenses, // Adicionar loading de despesas
 
     // Error handling
     errorState: errorHandler.errorState,

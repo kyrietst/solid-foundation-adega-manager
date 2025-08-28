@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
+import { useDashboardExpenses, useDashboardBudgetVariance } from './useDashboardExpenses';
 
 export interface SalesKpis {
   revenue: number;
@@ -21,6 +22,18 @@ export interface InventoryKpis {
   totalProducts: number;
   totalValue: number;
   lowStockCount: number;
+}
+
+export interface ExpenseKpis {
+  totalExpenses: number;
+  expensesDelta?: number; // Variação percentual vs período anterior
+  avgExpense: number;
+  budgetVariance: number; // Variação orçamentária em %
+  budgetStatus: 'ON_TRACK' | 'WARNING' | 'OVER_BUDGET';
+  topCategory: string;
+  topCategoryAmount: number;
+  categoriesOverBudget: number;
+  netMargin: number; // Margem líquida
 }
 
 export function useSalesKpis(windowDays: number = 30) {
@@ -251,6 +264,51 @@ export function useLowStockProducts(limit: number = 10) {
 // Legacy exports for backward compatibility
 export interface LowStockKpi { count: number }
 export interface ActiveCustomersKpi { count: number }
+
+export function useExpenseKpis(windowDays: number = 30) {
+  const { data: expenses, isLoading: isLoadingExpenses } = useDashboardExpenses(windowDays);
+  const { data: budgetVariance, isLoading: isLoadingBudget } = useDashboardBudgetVariance();
+  const { data: salesData, isLoading: isLoadingSales } = useSalesKpis(windowDays);
+  
+  return useQuery({
+    queryKey: ['kpis-expenses', windowDays],
+    queryFn: async (): Promise<ExpenseKpis> => {
+      console.log(`💸 Expense KPIs - Calculando dados para ${windowDays} dias`);
+      
+      const totalExpenses = expenses?.total_expenses || 0;
+      const avgExpense = expenses?.avg_expense || 0;
+      const topCategory = expenses?.top_category || 'N/A';
+      const topCategoryAmount = expenses?.top_category_amount || 0;
+      const categoriesOverBudget = budgetVariance?.categories_over_budget || 0;
+      const budgetStatus = budgetVariance?.status || 'ON_TRACK';
+      const budgetVariancePercent = budgetVariance?.variance_percentage || 0;
+      
+      // Calcular margem líquida
+      const revenue = salesData?.revenue || 0;
+      const netMargin = revenue > 0 ? ((revenue - totalExpenses) / revenue) * 100 : 0;
+      
+      // Calcular variação de despesas (para implementar depois com dados históricos)
+      const expensesDelta = 0; // Placeholder por enquanto
+      
+      console.log(`💸 Expense KPIs calculados - Total: R$ ${totalExpenses.toFixed(2)}, Categoria Top: ${topCategory}, Margem Líquida: ${netMargin.toFixed(1)}%`);
+      
+      return {
+        totalExpenses,
+        expensesDelta,
+        avgExpense,
+        budgetVariance: budgetVariancePercent,
+        budgetStatus: budgetStatus as 'ON_TRACK' | 'WARNING' | 'OVER_BUDGET',
+        topCategory,
+        topCategoryAmount,
+        categoriesOverBudget,
+        netMargin
+      };
+    },
+    staleTime: 5 * 60 * 1000,
+    refetchInterval: 5 * 60 * 1000,
+    enabled: !isLoadingExpenses && !isLoadingBudget && !isLoadingSales,
+  });
+}
 
 export function useLowStockKpi() {
   const { data, isLoading, error } = useInventoryKpis();
