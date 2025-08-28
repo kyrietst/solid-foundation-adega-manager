@@ -10,7 +10,7 @@ interface SwitchAnimatedProps {
   disabled?: boolean;
   className?: string;
   size?: 'sm' | 'md' | 'lg';
-  variant?: 'default' | 'yellow' | 'success' | 'warning' | 'error';
+  variant?: 'default' | 'yellow' | 'success' | 'warning' | 'error' | 'orange';
 }
 
 const SwitchAnimated = ({ 
@@ -71,11 +71,16 @@ const SwitchAnimated = ({
       background: checked ? "bg-red-800" : "bg-gray-200",
       thumb: checked ? "bg-red-300" : "bg-gray-900",
       glow: "bg-red-400"
+    },
+    orange: {
+      background: checked ? "bg-orange-800" : "bg-gray-200",
+      thumb: checked ? "bg-orange-300" : "bg-gray-900",
+      glow: "bg-orange-400"
     }
   };
 
   const currentSize = sizeConfig[size];
-  const currentVariant = variantConfig[variant];
+  const currentVariant = variantConfig[variant] || variantConfig.default;
 
   return (
     <motion.button

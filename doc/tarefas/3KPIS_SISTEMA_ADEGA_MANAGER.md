@@ -37,21 +37,31 @@ Este documento analisa todas as KPIs (Key Performance Indicators) implementadas 
   - **Importância**: ⭐⭐⭐⭐⭐ CRÍTICA
   - **Status**: ✅ Funcionando - dados reais das vendas
 
-- **Lucro Líquido** (`netProfit`)
-  - **Cálculo**: `totalRevenue - operationalCosts`
-  - **Operacional Costs**: `(totalRevenue * 0.30) + totalProductValue`
+- **COGS (Custo dos Produtos Vendidos)** (`cogs`)
+  - **Cálculo**: `SUM(sale_items.quantity * products.cost_price)` para produtos efetivamente vendidos
   - **Importância**: ⭐⭐⭐⭐⭐ CRÍTICA
-  - **Status**: ⚠️ REQUER VALIDAÇÃO - Fórmula simplificada
+  - **Status**: ✅ CORRIGIDO - Cálculo real baseado em vendas
 
-- **Margem de Lucro** (`profitMargin`)
+- **Lucro Bruto** (`grossProfit`)
+  - **Cálculo**: `totalRevenue - cogs`
+  - **Importância**: ⭐⭐⭐⭐⭐ CRÍTICA
+  - **Status**: ✅ FUNCIONANDO - Margem bruta real (92.24% validada)
+
+- **Lucro Líquido** (`netProfit`)
+  - **Cálculo**: `grossProfit - operationalExpenses`
+  - **Despesas OpEx**: `totalRevenue * 0.30` (estimativa até implementar gestão de despesas)
+  - **Importância**: ⭐⭐⭐⭐⭐ CRÍTICA
+  - **Status**: ✅ CORRIGIDO - Separação correta entre COGS e OpEx
+
+- **Margem Bruta** (`grossMargin`)
+  - **Cálculo**: `(grossProfit / totalRevenue) * 100`
+  - **Importância**: ⭐⭐⭐⭐⭐ CRÍTICA
+  - **Status**: ✅ FUNCIONANDO - 92.24% validada com dados reais
+
+- **Margem Líquida** (`netMargin`)
   - **Cálculo**: `(netProfit / totalRevenue) * 100`
   - **Importância**: ⭐⭐⭐⭐⭐ CRÍTICA
-  - **Status**: ⚠️ DEPENDENTE DA PRECISÃO DOS CUSTOS
-
-- **Custos Operacionais** (`operationalCosts`)
-  - **Cálculo**: `(totalRevenue * 0.30) + SUM(products.cost_price * products.stock_quantity)`
-  - **Importância**: ⭐⭐⭐⭐ ALTA
-  - **Status**: ⚠️ ESTIMATIVA - Precisa de refinamento
+  - **Status**: ✅ FUNCIONANDO - Baseada em COGS real
 
 ### **2. Relatórios de Vendas**
 
@@ -156,11 +166,11 @@ Este documento analisa todas as KPIs (Key Performance Indicators) implementadas 
 6. **Sistema de Permissões**: Métricas sensíveis protegidas
 
 ### **⚠️ Pontos de Atenção**
-1. **Cálculo de Custos**: Fórmula simplificada pode não refletir custos reais
-2. **Margem de Lucro**: Dependente da precisão dos custos operacionais
-3. **Sazonalidade**: Não considera variações sazonais
-4. **Benchmarking**: Falta comparação com períodos anteriores
-5. **Previsão**: Ausência de métricas preditivas
+1. **Despesas Operacionais**: Estimativa de 30% - implementar gestão real de despesas
+2. **Sazonalidade**: Não considera variações sazonais
+3. **Benchmarking**: Falta comparação com períodos anteriores
+4. **Previsão**: Ausência de métricas preditivas
+5. **Categorização**: Algumas categorias precisam padronização
 
 ---
 
@@ -249,17 +259,25 @@ O sistema Adega Manager possui uma **base sólida de KPIs** cobrindo as áreas e
 - ✅ **Vendas e Receita**: Muito bem implementado
 - ✅ **Estoque e Logística**: Completo e funcional
 - ✅ **CRM e Clientes**: Sistema sofisticado
-- ⚠️ **Financeiro**: Bom, mas precisa refinamento
+- ✅ **Financeiro**: CORRIGIDO - KPIs precisas com COGS real
 - ❌ **Preditivo**: Área para expansão futura
 
+### **Status Pós-Correção (Agosto 2025):**
+- **COGS Real**: Implementado e validado (R$ 101,28 vs R$ 1.305,96 receita)
+- **Margem Bruta**: 92,24% (anteriormente calculada incorretamente como negativa)
+- **Separação Contábil**: COGS vs Despesas Operacionais corretamente separadas
+- **Dados de Produção**: Validado com 925+ registros reais
+
 ### **Próximos Passos Recomendados:**
-1. **Auditoria dos cálculos financeiros** (próxima tarefa)
-2. **Implementação de métricas comparativas**
-3. **Expansão para métricas preditivas**
-4. **Sistema de alertas proativos**
+1. ✅ **Auditoria dos cálculos financeiros** (CONCLUÍDA)
+2. **Implementação do sistema de gestão de despesas** (TODO criado)
+3. **Implementação de métricas comparativas**
+4. **Expansão para métricas preditivas**
+5. **Sistema de alertas proativos**
 
 ---
 
-*Documento gerado em: $(date)*
-*Versão do Sistema: v2.0.0*
-*Status: Produção com 925+ registros reais*
+*Documento atualizado em: 27/08/2025*  
+*Versão do Sistema: v2.0.0*  
+*Status: Produção com 925+ registros reais*  
+*Última Auditoria: KPIs financeiras corrigidas e validadas*

@@ -74,31 +74,31 @@ export const useDashboardMetrics = (
         title: 'Faturamento Total',
         value: formatCurrency(financials.totalRevenue),
         icon: DollarSign,
-        description: `${formatCurrency(financials.totalRevenue)} este mês`,
+        description: `${formatCurrency(financials.totalRevenue)} em receitas`,
         variant: financials.totalRevenue > 0 ? 'success' : 'warning',
         accent: 'amber' as const
       },
       {
-        title: 'Lucro Líquido',
-        value: formatCurrency(financials.netProfit),
+        title: 'Lucro Bruto',
+        value: formatCurrency(financials.grossProfit || financials.netProfit),
         icon: TrendingUp,
-        description: `${formatCurrency(financials.netProfit)} de lucro`,
-        variant: financials.netProfit > 0 ? 'success' : 'error',
+        description: `${formatPercentage(financials.grossMargin || financials.profitMargin)} de margem bruta`,
+        variant: (financials.grossProfit || financials.netProfit) > 0 ? 'success' : 'error',
         accent: 'green' as const
       },
       {
-        title: 'Margem de Lucro',
-        value: formatPercentage(financials.profitMargin),
+        title: 'COGS',
+        value: formatCurrency(financials.cogs || 0),
         icon: Percent,
-        description: `${formatPercentage(financials.profitMargin)} de margem`,
-        variant: financials.profitMargin > 30 ? 'success' : financials.profitMargin > 15 ? 'warning' : 'error',
-        accent: 'purple' as const
+        description: `${formatCurrency(financials.cogs || 0)} em custos de produtos`,
+        variant: 'default',
+        accent: 'blue' as const
       },
       {
-        title: 'Custos Operacionais',
-        value: formatCurrency(financials.operationalCosts),
+        title: 'Despesas Operacionais',
+        value: formatCurrency(financials.operationalExpenses || financials.operationalCosts),
         icon: TrendingDown,
-        description: `${formatCurrency(financials.operationalCosts)} em custos`,
+        description: `${formatCurrency(financials.operationalExpenses || financials.operationalCosts)} em despesas`,
         variant: 'default',
         accent: 'red' as const
       }

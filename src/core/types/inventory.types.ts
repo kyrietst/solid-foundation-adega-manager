@@ -59,6 +59,10 @@ export interface Product {
   has_unit_tracking?: boolean; // Se permite venda por unidade
   has_package_tracking?: boolean; // Se permite venda por pacote
   packaging_type?: string; // Tipo de embalagem (fardo, caixa, etc.)
+  
+  // Campos de controle de validade
+  expiry_date?: string; // Data de validade do produto (ISO string)
+  has_expiry_tracking?: boolean; // Se este produto tem controle de validade
 }
 
 export interface ProductFormData {
@@ -100,6 +104,10 @@ export interface ProductFormData {
   has_unit_tracking?: boolean; // Se permite venda por unidade
   has_package_tracking?: boolean; // Se permite venda por pacote
   packaging_type?: string; // Tipo de embalagem (fardo, caixa, etc.)
+  
+  // Campos de controle de validade
+  expiry_date?: string; // Data de validade do produto (ISO string)
+  has_expiry_tracking?: boolean; // Se este produto tem controle de validade
 }
 
 export interface ProductCalculations {

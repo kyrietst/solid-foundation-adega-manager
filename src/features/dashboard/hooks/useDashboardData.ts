@@ -17,9 +17,15 @@ export interface DashboardCounts {
 
 export interface DashboardFinancials {
   totalRevenue: number;
+  cogs: number;
+  grossProfit: number;
+  grossMargin: number;
+  operationalExpenses: number;
   netProfit: number;
-  profitMargin: number;
-  operationalCosts: number;
+  netMargin: number;
+  // Manter compatibilidade com código existente
+  profitMargin: number; // = grossMargin para compatibilidade
+  operationalCosts: number; // = operationalExpenses para compatibilidade
 }
 
 export interface SalesDataPoint {
@@ -36,6 +42,44 @@ export interface RecentActivity {
   timestamp: string;
   icon: string;
 }
+
+/**
+ * Calcular COGS (Cost of Goods Sold) real baseado nas vendas
+ * COGS = Soma dos custos dos produtos efetivamente vendidos
+ */
+const calculateRealCOGS = async (salesIds: string[]): Promise<number> => {
+  if (!salesIds || salesIds.length === 0) {
+    return 0;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('sale_items')
+      .select(`
+        quantity,
+        products!inner(cost_price),
+        sales!inner(id)
+      `)
+      .in('sales.id', salesIds);
+
+    if (error) {
+      console.error('❌ Erro ao calcular COGS:', error);
+      return 0;
+    }
+
+    const cogs = (data || []).reduce((sum, item) => {
+      const quantity = Number(item.quantity) || 0;
+      const costPrice = Number(item.products?.cost_price) || 0;
+      return sum + (quantity * costPrice);
+    }, 0);
+
+    console.log(`💰 COGS calculado: R$ ${cogs.toFixed(2)} para ${salesIds.length} vendas`);
+    return cogs;
+  } catch (error) {
+    console.error('❌ Erro ao calcular COGS:', error);
+    return 0;
+  }
+};
 
 export const useDashboardData = (periodDays: number = 30) => {
   const errorHandler = useDashboardErrorHandling({
@@ -86,7 +130,7 @@ export const useDashboardData = (periodDays: number = 30) => {
       // Buscar vendas completadas no período especificado
       const { data: sales, error: salesError } = await supabase
         .from('sales')
-        .select('final_amount, created_at')
+        .select('id, final_amount, created_at')
         .eq('status', 'completed')
         .gte('created_at', startDate.toISOString())
         .lte('created_at', endDate.toISOString())
@@ -97,44 +141,45 @@ export const useDashboardData = (periodDays: number = 30) => {
         throw salesError;
       }
 
-      // Buscar dados de produtos para calcular custos
-      const { data: products, error: productsError } = await supabase
-        .from('products')
-        .select('cost_price, price, stock_quantity');
-
-      if (productsError) {
-        console.error('❌ Erro ao buscar produtos:', productsError);
-        throw productsError;
-      }
-
       // Calcular receita total real
       const totalRevenue = (sales || []).reduce((sum, sale) => {
         return sum + (Number(sale.final_amount) || 0);
       }, 0);
 
-      // Calcular custos operacionais estimados baseados nos produtos
-      const totalProductValue = (products || []).reduce((sum, product) => {
-        const costPrice = Number(product.cost_price) || 0;
-        const stockQty = Number(product.stock_quantity) || 0;
-        return sum + (costPrice * stockQty);
-      }, 0);
-
-      // Estimar custos operacionais (30% da receita + valor do estoque)
-      const operationalCosts = (totalRevenue * 0.30) + totalProductValue;
+      // Calcular COGS real baseado nas vendas efetivamente realizadas
+      const salesIds = (sales || []).map(sale => sale.id);
+      const cogs = await calculateRealCOGS(salesIds);
       
-      // Calcular lucro líquido
-      const netProfit = Math.max(0, totalRevenue - operationalCosts);
+      // Calcular lucro bruto (receita - custo dos produtos vendidos)
+      const grossProfit = totalRevenue - cogs;
+      const grossMargin = totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
       
-      // Calcular margem de lucro
-      const profitMargin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
+      // Estimar despesas operacionais (30% da receita como aproximação)
+      // TODO: Substituir por dados reais quando implementar gestão de despesas
+      const operationalExpenses = totalRevenue * 0.30;
+      
+      // Calcular lucro líquido (lucro bruto - despesas operacionais)
+      const netProfit = Math.max(0, grossProfit - operationalExpenses);
+      const netMargin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
 
-      console.log(`📊 Métricas calculadas - Receita: R$ ${totalRevenue.toFixed(2)}, Lucro: R$ ${netProfit.toFixed(2)}, Margem: ${profitMargin.toFixed(1)}%`);
+      console.log(`📊 Métricas financeiras CORRIGIDAS:`);
+      console.log(`💰 Receita: R$ ${totalRevenue.toFixed(2)}`);
+      console.log(`📦 COGS: R$ ${cogs.toFixed(2)}`);
+      console.log(`📈 Lucro Bruto: R$ ${grossProfit.toFixed(2)} (${grossMargin.toFixed(1)}%)`);
+      console.log(`💸 Despesas OpEx: R$ ${operationalExpenses.toFixed(2)}`);
+      console.log(`💎 Lucro Líquido: R$ ${netProfit.toFixed(2)} (${netMargin.toFixed(1)}%)`);
 
       return {
         totalRevenue,
+        cogs,
+        grossProfit,
+        grossMargin,
+        operationalExpenses,
         netProfit,
-        profitMargin,
-        operationalCosts,
+        netMargin,
+        // Compatibilidade com código existente
+        profitMargin: grossMargin, // Usar margem bruta como principal
+        operationalCosts: operationalExpenses,
       };
     }, 'dados financeiros'),
     staleTime: 5 * 60 * 1000, // 5 minutos para dados mais atualizados

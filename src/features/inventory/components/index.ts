@@ -16,6 +16,7 @@ export { ProductsGridPresentation } from './ProductsGridPresentation';
 export { ProductsHeader } from './ProductsHeader';
 export { TurnoverAnalysis } from './TurnoverAnalysis';
 export { NewProductModal } from './NewProductModal';
+export { ExpiryAlertsCard } from './ExpiryAlertsCard';
 
 // Product Form Sub-components
 export { ProductBasicInfoCard } from './product-form/ProductBasicInfoCard';

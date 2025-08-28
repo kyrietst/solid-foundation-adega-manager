@@ -50,7 +50,9 @@ import {
   Edit,
   ScanLine,
   ShoppingCart,
-  Info
+  Info,
+  Calendar,
+  AlertTriangle
 } from 'lucide-react';
 import type { Product } from '@/types/inventory.types';
 
@@ -122,6 +124,13 @@ const editProductSchema = z.object({
     .number({ invalid_type_error: 'Estoque mínimo deve ser um número' })
     .min(0, 'Estoque mínimo não pode ser negativo')
     .optional(),
+    
+  // Campos de controle de validade
+  has_expiry_tracking: z.boolean().default(false),
+  expiry_date: z
+    .string()
+    .optional()
+    .or(z.literal('')),
 });
 
 type EditProductFormData = z.infer<typeof editProductSchema>;
@@ -168,6 +177,8 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
       volume_ml: undefined,
       stock_quantity: 0,
       minimum_stock: undefined,
+      has_expiry_tracking: false,
+      expiry_date: '',
     },
   });
 
@@ -191,6 +202,8 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
         volume_ml: product.volume_ml ? Number(product.volume_ml) : undefined,
         stock_quantity: product.stock_quantity || 0,
         minimum_stock: product.minimum_stock || undefined,
+        has_expiry_tracking: product.has_expiry_tracking || false,
+        expiry_date: product.expiry_date || '',
       });
 
       fetchCategoriesAndSuppliers();
@@ -925,6 +938,102 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
                     </FormItem>
                   )}
                 />
+                </div>
+              </div>
+
+              {/* Controle de Validade */}
+              <div className="bg-gray-800/30 rounded-xl p-6 border border-gray-700/50 hero-spotlight hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300" onMouseMove={handleMouseMove}>
+                <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-5">
+                  <Calendar className="h-5 w-5 text-orange-400" />
+                  Controle de Validade
+                </h3>
+                
+                <div className="space-y-5">
+                  {/* Toggle para ativação do controle de validade */}
+                  <div className="flex items-center justify-between rounded-lg border border-orange-400/30 p-4 bg-orange-400/5">
+                    <div className="space-y-1">
+                      <FormLabel className="text-base text-gray-300 font-medium">
+                        Produto com Prazo de Validade
+                      </FormLabel>
+                      <FormDescription className="text-sm text-gray-500">
+                        Ative para produtos perecíveis que possuem data de vencimento
+                      </FormDescription>
+                    </div>
+                    <FormField
+                      control={form.control}
+                      name="has_expiry_tracking"
+                      render={({ field }) => (
+                        <FormControl>
+                          <SwitchAnimated
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            variant="orange"
+                            size="md"
+                          />
+                        </FormControl>
+                      )}
+                    />
+                  </div>
+
+                  {/* Campo de data de validade (condicional) */}
+                  {form.watch('has_expiry_tracking') && (
+                    <div className="space-y-3 border-t border-gray-700/50 pt-5">
+                      <FormField
+                        control={form.control}
+                        name="expiry_date"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-gray-300 flex items-center gap-2">
+                              <Calendar className="h-4 w-4 text-orange-400" />
+                              Data de Validade
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                type="date"
+                                {...field}
+                                className="bg-gray-800/50 border-gray-600 text-white h-11"
+                              />
+                            </FormControl>
+                            <FormDescription className="text-xs text-gray-500">
+                              Data de vencimento deste produto (aplicável a unidades ou pacotes conforme sua venda)
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      {/* Indicador visual se próximo ao vencimento */}
+                      {form.watch('expiry_date') && (
+                        <div className="bg-amber-900/20 border border-amber-400/30 rounded-lg p-3">
+                          <div className="flex items-start gap-3">
+                            <AlertTriangle className="h-4 w-4 text-amber-400 mt-0.5" />
+                            <div className="text-sm">
+                              <p className="font-medium text-amber-300">💡 Dica do Sistema</p>
+                              <p className="text-gray-300 text-xs mt-1">
+                                O sistema alertará automaticamente quando produtos estiverem próximos ao vencimento no dashboard.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Explicação quando controle está desabilitado */}
+                  {!form.watch('has_expiry_tracking') && (
+                    <div className="bg-gray-900/20 border border-gray-500/30 rounded-lg p-4">
+                      <div className="flex items-start gap-3">
+                        <Info className="h-5 w-5 text-gray-400 mt-0.5" />
+                        <div className="text-sm text-gray-400">
+                          <p className="font-medium mb-1">Controle de Validade Desabilitado</p>
+                          <p className="text-xs">
+                            Para produtos duráveis (bebidas alcoólicas, produtos em conserva, etc.) 
+                            que não possuem prazo de validade crítico.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
