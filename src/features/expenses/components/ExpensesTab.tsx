@@ -25,23 +25,21 @@ import { useExpenses, useDeleteExpense, type ExpenseFilters } from '../hooks';
 import { NewExpenseModal } from './NewExpenseModal';
 import { EditExpenseModal } from './EditExpenseModal';
 import { ExpenseFiltersModal } from './ExpenseFiltersModal';
+import { ExpensesEmptyState } from './ExpensesEmptyState';
 import { getGlassCardClasses, getGlassButtonClasses, getHoverTransformClasses } from '@/core/config/theme-utils';
 import { cn } from '@/core/config/utils';
-import { SearchBar21st } from '@/shared/ui/thirdparty/search-bar-21st';
 
 export const ExpensesTab: React.FC = () => {
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState<ExpenseFilters>({});
 
   const pagination = usePagination();
   
   const expenseFilters: ExpenseFilters = {
     ...filters,
-    search: searchTerm || undefined,
     page: pagination.currentPage,
     limit: pagination.pageSize
   };
@@ -125,16 +123,7 @@ export const ExpensesTab: React.FC = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col sm:flex-row gap-4 items-center">
-            <div className="flex-1">
-              <SearchBar21st
-                placeholder="Buscar por descrição ou fornecedor..."
-                value={searchTerm}
-                onChange={setSearchTerm}
-                className="w-full"
-                disableResizeAnimation={true}
-              />
-            </div>
+          <div className="flex justify-end">
             <Button
               variant="outline"
               onClick={() => setIsFiltersOpen(true)}
@@ -144,7 +133,7 @@ export const ExpensesTab: React.FC = () => {
               )}
             >
               <Filter className="h-4 w-4 mr-2" />
-              Filtros
+              Filtros Avançados
             </Button>
           </div>
         </CardContent>
@@ -152,10 +141,13 @@ export const ExpensesTab: React.FC = () => {
 
       {/* Lista de despesas */}
       {expenses.length === 0 ? (
-        <EmptyState
-          icon={FileText}
-          title="Nenhuma despesa encontrada"
-          description="Nenhuma despesa foi encontrada com os filtros aplicados."
+        <ExpensesEmptyState 
+          hasFilters={!!(filters.category_id || filters.start_date || filters.end_date || filters.payment_method)}
+          onClearFilters={() => {
+            setFilters({});
+            pagination.goToPage(1);
+          }}
+          onCreateExpense={() => setIsNewModalOpen(true)}
         />
       ) : (
         <Card className={cn(

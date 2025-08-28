@@ -4,6 +4,7 @@
 
 import React from 'react';
 import { useForm } from 'react-hook-form';
+import { Home, Zap, Users, Megaphone, Wrench, Truck, Shield, Calculator, Package, Tag, Droplets, Wifi, MoreHorizontal } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -16,6 +17,7 @@ import { Input } from '@/shared/ui/primitives/input';
 import { Label } from '@/shared/ui/primitives/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/primitives/select';
 import { useExpenseCategories, type ExpenseFilters } from '../hooks';
+import { cn } from '@/core/config/utils';
 
 interface ExpenseFiltersModalProps {
   isOpen: boolean;
@@ -35,6 +37,25 @@ export const ExpenseFiltersModal: React.FC<ExpenseFiltersModalProps> = ({
   const { register, handleSubmit, setValue, reset, watch } = useForm<ExpenseFilters>({
     defaultValues: filters
   });
+
+  const selectedCategoryId = watch('category_id');
+
+  // Mapeamento de ícones para categorias
+  const iconMap: { [key: string]: React.ElementType } = {
+    'Home': Home,
+    'Zap': Zap,
+    'Droplets': Droplets,
+    'Wifi': Wifi,
+    'Users': Users,
+    'FileText': Tag,
+    'Megaphone': Megaphone,
+    'Wrench': Wrench,
+    'Truck': Truck,
+    'Shield': Shield,
+    'Calculator': Calculator,
+    'Package': Package,
+    'MoreHorizontal': MoreHorizontal
+  };
 
   const onSubmit = (data: ExpenseFilters) => {
     // Remove campos vazios
@@ -79,15 +100,81 @@ export const ExpenseFiltersModal: React.FC<ExpenseFiltersModalProps> = ({
               value={watch('category_id') || undefined}
               onValueChange={(value) => setValue('category_id', value || undefined)}
             >
-              <SelectTrigger className="bg-gray-700 border-gray-600">
-                <SelectValue placeholder="Todas as categorias" />
+              <SelectTrigger className="bg-black/70 border-white/30 text-white">
+                <div className="flex items-center gap-2 flex-1">
+                  {selectedCategoryId && (() => {
+                    const selectedCategory = categories.find(cat => cat.id === selectedCategoryId);
+                    if (selectedCategory) {
+                      const IconComponent = iconMap[selectedCategory.icon] || Tag;
+                      return (
+                        <>
+                          <div 
+                            className="p-1 rounded-sm flex-shrink-0"
+                            style={{ 
+                              backgroundColor: `${selectedCategory.color}20`,
+                              border: `1px solid ${selectedCategory.color}40`
+                            }}
+                          >
+                            <IconComponent 
+                              className="h-3.5 w-3.5" 
+                              style={{ color: selectedCategory.color }}
+                            />
+                          </div>
+                          <span>{selectedCategory.name}</span>
+                        </>
+                      );
+                    }
+                    return null;
+                  })()}
+                  {!selectedCategoryId && (
+                    <span className="text-gray-400">Todas as categorias</span>
+                  )}
+                </div>
               </SelectTrigger>
-              <SelectContent className="bg-gray-800 border-gray-700">
-                {categories.map((category) => (
-                  <SelectItem key={category.id} value={category.id} className="text-white">
-                    {category.name}
-                  </SelectItem>
-                ))}
+              <SelectContent className="bg-gray-900/95 border-white/20 backdrop-blur-xl">
+                {categories.map((category) => {
+                  const IconComponent = iconMap[category.icon] || Tag;
+                  return (
+                    <SelectItem 
+                      key={category.id} 
+                      value={category.id} 
+                      className={cn(
+                        "group text-white hover:text-black cursor-pointer transition-all duration-200",
+                        "flex items-center gap-3 px-3 py-2.5",
+                        "hover:bg-gradient-to-r hover:from-gray-200/90 hover:to-gray-100/90",
+                        "focus:bg-gradient-to-r focus:from-purple-500/20 focus:to-purple-600/20",
+                        "border-l-2 border-transparent hover:border-purple-400/60",
+                        "data-[highlighted]:bg-gradient-to-r data-[highlighted]:from-purple-500/15 data-[highlighted]:to-purple-600/15"
+                      )}
+                    >
+                      <div className="flex items-center gap-3 w-full">
+                        <div 
+                          className="p-1.5 rounded-md flex-shrink-0"
+                          style={{ 
+                            backgroundColor: `${category.color}20`,
+                            border: `1px solid ${category.color}40`
+                          }}
+                        >
+                          <IconComponent 
+                            className="h-4 w-4" 
+                            style={{ color: category.color }}
+                          />
+                        </div>
+                        <div className="flex flex-col items-start min-w-0 flex-1">
+                          <span className="font-medium text-white group-hover:text-black truncate transition-colors duration-200">
+                            {category.name}
+                          </span>
+                          <span 
+                            className="text-xs truncate text-gray-400 group-hover:text-gray-600 leading-tight transition-colors duration-200"
+                            title={category.description}
+                          >
+                            {category.description}
+                          </span>
+                        </div>
+                      </div>
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
           </div>

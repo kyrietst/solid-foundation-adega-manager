@@ -1,15 +1,11 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/primitives/tabs';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/primitives/card';
 import { Button } from '@/shared/ui/primitives/button';
-import { Badge } from '@/shared/ui/primitives/badge';
-import { TrendingUp, TrendingDown, Calculator, Receipt, Target, PieChart, BarChart3, Download } from 'lucide-react';
+import { Calculator, Receipt, PieChart, BarChart3, Download } from 'lucide-react';
 import ExpensesTab from './ExpensesTab';
-import BudgetTab from './BudgetTab';
 import ExpenseReportsTab from './ExpenseReportsTab';
-import { useExpenseSummary, useBudgetSummary } from '../hooks';
+import { useExpenseSummary } from '../hooks';
 import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 import { BlurIn } from '@/components/ui/blur-in';
 import { StatCard } from '@/shared/ui/composite/stat-card';
 import { getGlassCardClasses, getGlassButtonClasses, getHoverTransformClasses, getSFProTextClasses } from '@/core/config/theme-utils';
@@ -27,7 +23,6 @@ const ExpensesPage: React.FC = () => {
   const monthEnd = format(new Date(currentYear, currentMonth, 0), 'yyyy-MM-dd');
 
   const { data: expenseSummary, isLoading: summaryLoading } = useExpenseSummary(monthStart, monthEnd);
-  const { data: budgetSummary, isLoading: budgetLoading } = useBudgetSummary(currentMonth, currentYear);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -36,29 +31,9 @@ const ExpensesPage: React.FC = () => {
     }).format(value);
   };
 
-  const getCurrentMonthName = () => {
-    return format(currentDate, 'MMMM', { locale: ptBR });
-  };
 
-  const getVarianceStatus = (variance: number) => {
-    if (variance > 10) return { color: 'destructive', icon: TrendingUp };
-    if (variance > 0) return { color: 'warning', icon: TrendingUp };
-    return { color: 'success', icon: TrendingDown };
-  };
 
-  const getBudgetStatusVariant = () => {
-    if (budgetSummary?.categoriesOverBudget > 0) return 'destructive';
-    if (budgetSummary?.categoriesWarning > 0) return 'default';
-    return 'secondary';
-  };
-
-  const getBudgetStatusText = () => {
-    if (budgetSummary?.categoriesOverBudget > 0) return 'Estourado';
-    if (budgetSummary?.categoriesWarning > 0) return 'Atenção';
-    return 'No Limite';
-  };
-
-  // Preparar dados para os KPIs usando StatCard
+  // Preparar dados para os KPIs usando StatCard - Versão Simplificada
   const kpiData = [
     {
       title: 'Total de Despesas',
@@ -77,26 +52,16 @@ const ExpensesPage: React.FC = () => {
       href: '#reports-tab'
     },
     {
-      title: 'Status Orçamento',
-      value: budgetLoading ? '...' : (budgetSummary?.variancePercent ? 
-        `${budgetSummary.variancePercent > 0 ? '+' : ''}${budgetSummary.variancePercent.toFixed(1)}%` : 
-        '0.0%'),
-      subtitle: getBudgetStatusText(),
-      icon: Target,
-      variant: budgetSummary?.categoriesOverBudget > 0 ? 'error' as const : 'success' as const,
-      href: '#budget-tab'
-    },
-    {
-      title: 'Categorias Ativas',
-      value: budgetLoading ? '...' : (budgetSummary?.totalCategories || 0).toString(),
-      subtitle: `${budgetSummary?.categoriesOverBudget || 0} acima do orçamento`,
+      title: 'Categoria Principal',
+      value: summaryLoading ? '...' : (expenseSummary?.top_category || 'N/A'),
+      subtitle: formatCurrency(expenseSummary?.top_category_amount || 0),
       icon: PieChart,
       variant: 'purple' as const,
-      href: '#budget-tab'
+      href: '#reports-tab'
     }
   ];
 
-  if (summaryLoading && budgetLoading) {
+  if (summaryLoading) {
     return <LoadingScreen text="Carregando dados de despesas..." />;
   }
 
@@ -179,7 +144,7 @@ const ExpensesPage: React.FC = () => {
         }}
       >
         {/* KPIs Resumo do Mês */}
-        <div className="flex-shrink-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="flex-shrink-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {kpiData.map((kpi, index) => (
             <StatCard
               key={index}
@@ -191,7 +156,6 @@ const ExpensesPage: React.FC = () => {
               )}
               onClick={() => {
                 if (kpi.href.includes('expenses')) setActiveTab('expenses');
-                if (kpi.href.includes('budget')) setActiveTab('budget');
                 if (kpi.href.includes('reports')) setActiveTab('reports');
               }}
             />
@@ -206,7 +170,7 @@ const ExpensesPage: React.FC = () => {
         >
         <TabsList className={cn(
           getGlassCardClasses(),
-          "grid w-full grid-cols-3 p-1"
+          "grid w-full grid-cols-2 p-1"
         )}>
           <TabsTrigger 
             value="expenses" 
@@ -218,17 +182,6 @@ const ExpensesPage: React.FC = () => {
           >
             <Receipt className="h-4 w-4 mr-2" />
             Despesas
-          </TabsTrigger>
-          <TabsTrigger 
-            value="budget"
-            className={cn(
-              "data-[state=active]:bg-purple-500/20 data-[state=active]:text-white",
-              "data-[state=active]:shadow-lg data-[state=active]:shadow-purple-500/25",
-              "transition-all duration-300 ease-out"
-            )}
-          >
-            <Target className="h-4 w-4 mr-2" />
-            Orçamento
           </TabsTrigger>
           <TabsTrigger 
             value="reports"
@@ -247,9 +200,6 @@ const ExpensesPage: React.FC = () => {
           <ExpensesTab />
         </TabsContent>
 
-        <TabsContent value="budget" className="space-y-6">
-          <BudgetTab currentMonth={currentMonth} currentYear={currentYear} />
-        </TabsContent>
 
         <TabsContent value="reports" className="space-y-6">
           <ExpenseReportsTab />
