@@ -57,8 +57,10 @@ export interface UserActionsProps {
   user: User;
   onEdit?: (user: User) => void;
   onDelete?: (userId: string) => void;
+  onResetPassword?: (userId: string) => void;
   canEdit?: boolean;
   canDelete?: boolean;
+  canResetPassword?: boolean;
 }
 
 export interface UserRowProps {

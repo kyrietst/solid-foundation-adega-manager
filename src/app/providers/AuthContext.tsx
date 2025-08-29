@@ -10,9 +10,11 @@ interface AuthContextType {
   user: User | null;
   userRole: UserRole | null;
   loading: boolean;
+  hasTemporaryPassword: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   hasPermission: (requiredRole: UserRole | UserRole[]) => boolean;
+  onTemporaryPasswordChanged: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -21,6 +23,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [loading, setLoading] = useState(true);
+  const [hasTemporaryPassword, setHasTemporaryPassword] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -93,18 +96,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, [toast, authErrorHandler]);
 
-  const fetchUserRole = useCallback(async (currentUser: User) => {
-    const fetchRoleOperation = async () => {
+  const fetchUserProfile = useCallback(async (currentUser: User) => {
+    const fetchProfileOperation = async () => {
       // Se é o admin principal, define o role diretamente
       if (currentUser.email === 'adm@adega.com') {
         setUserRole('admin');
+        setHasTemporaryPassword(false);
         return;
       }
 
       // First try to get from profiles table
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('role')
+        .select('role, is_temporary_password')
         .eq('id', currentUser.id)
         .single();
 
@@ -121,15 +125,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
 
         setUserRole(userData.role);
+        setHasTemporaryPassword(false); // Users table doesn't have temp password field
       } else {
         setUserRole(profileData.role);
+        setHasTemporaryPassword(profileData.is_temporary_password || false);
       }
     };
 
     // Usar o handler de erro de auth com retry
     const result = await authErrorHandler.retryWithAuth(
-      fetchRoleOperation, 
-      'busca de role do usuário',
+      fetchProfileOperation, 
+      'busca de perfil do usuário',
       1 // 1 tentativa de retry
     );
 
@@ -139,12 +145,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, [authErrorHandler, signOut]);
 
+  const onTemporaryPasswordChanged = useCallback(async () => {
+    if (!user) return;
+    
+    // Refresh user profile to update temporary password status
+    await fetchUserProfile(user);
+  }, [user, fetchUserProfile]);
+
   useEffect(() => {
     // Check active sessions and sets the user
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchUserRole(session.user);
+        fetchUserProfile(session.user);
       }
       setLoading(false);
     });
@@ -153,15 +166,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setUser(session?.user ?? null);
       if (session?.user) {
-        await fetchUserRole(session.user);
+        await fetchUserProfile(session.user);
       } else {
         setUserRole(null);
+        setHasTemporaryPassword(false);
       }
       setLoading(false);
     });
 
     return () => subscription.unsubscribe();
-  }, [fetchUserRole]);
+  }, [fetchUserProfile]);
 
   const hasPermission = useCallback((requiredRole: UserRole | UserRole[]) => {
 
@@ -261,10 +275,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     user,
     userRole,
     loading,
+    hasTemporaryPassword,
     signIn,
     signOut,
     hasPermission,
-  }), [user, userRole, loading, signIn, signOut, hasPermission]);
+    onTemporaryPasswordChanged,
+  }), [user, userRole, loading, hasTemporaryPassword, signIn, signOut, hasPermission, onTemporaryPasswordChanged]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

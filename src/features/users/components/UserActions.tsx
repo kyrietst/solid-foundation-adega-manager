@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { Button } from '@/shared/ui/primitives/button';
-import { Edit, Trash2, MoreHorizontal } from 'lucide-react';
+import { Edit, Trash2, MoreHorizontal, KeyRound } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,8 +19,10 @@ export const UserActions: React.FC<UserActionsProps> = ({
   user,
   onEdit,
   onDelete,
+  onResetPassword,
   canEdit = false,
   canDelete = false,
+  canResetPassword = false,
 }) => {
   const { isSupremeAdmin } = useRoleUtilities();
   const isSupreme = isSupremeAdmin(user.email);
@@ -28,8 +30,9 @@ export const UserActions: React.FC<UserActionsProps> = ({
   // Supreme admin cannot be deleted or edited (to prevent system lockout)
   const actualCanEdit = canEdit && !isSupreme;
   const actualCanDelete = canDelete && !isSupreme;
+  const actualCanResetPassword = canResetPassword && !isSupreme;
 
-  if (!actualCanEdit && !actualCanDelete) {
+  if (!actualCanEdit && !actualCanDelete && !actualCanResetPassword) {
     return null;
   }
 
@@ -48,6 +51,15 @@ export const UserActions: React.FC<UserActionsProps> = ({
     }
   };
 
+  const handleResetPassword = () => {
+    if (onResetPassword) {
+      // Confirm reset
+      if (confirm(`Tem certeza que deseja resetar a senha do usuário ${user.name}?`)) {
+        onResetPassword(user.id);
+      }
+    }
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -60,10 +72,19 @@ export const UserActions: React.FC<UserActionsProps> = ({
         {actualCanEdit && (
           <DropdownMenuItem 
             onClick={handleEdit}
-            className="cursor-pointer hover:bg-white/10"
+            className="cursor-pointer hover:bg-white/10 text-white"
           >
             <Edit className="mr-2 h-4 w-4" />
             Editar usuário
+          </DropdownMenuItem>
+        )}
+        {actualCanResetPassword && (
+          <DropdownMenuItem 
+            onClick={handleResetPassword}
+            className="cursor-pointer hover:bg-amber-500/10 text-amber-400"
+          >
+            <KeyRound className="mr-2 h-4 w-4" />
+            Resetar senha
           </DropdownMenuItem>
         )}
         {actualCanDelete && (

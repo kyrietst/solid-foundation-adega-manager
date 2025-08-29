@@ -8,6 +8,7 @@ import { ErrorBoundary } from "@/shared/components/ErrorBoundary";
 import { RouteErrorBoundary } from "@/shared/components/RouteErrorBoundary";
 import { AuthErrorBoundary } from "@/shared/components/AuthErrorBoundary";
 import { LavaLamp } from "@/components/ui/fluid-blob";
+import { TempPasswordHandler } from "@/shared/components/TempPasswordHandler";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
@@ -45,6 +46,7 @@ const App = () => (
                 <Toaster />
                 <Sonner />
                 <TailwindColorClasses />
+                <TempPasswordHandler />
                 <div className="relative z-10">
                   <Routes>
                     <Route 

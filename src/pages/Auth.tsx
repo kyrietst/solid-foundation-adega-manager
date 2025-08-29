@@ -118,6 +118,14 @@ const Auth = () => {
           </button>
         </form>
 
+        {/* Forgot Password */}
+        <div className="text-center mt-4">
+          <p className="text-sm text-gray-400 mb-1">Esqueceu sua senha?</p>
+          <p className="text-amber-300 text-sm">
+            Procure o administrador para resetar
+          </p>
+        </div>
+
         {/* Footer */}
         <div className="mt-8 text-center">
           <p className="text-xs text-gray-500 leading-relaxed">

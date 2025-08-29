@@ -7,7 +7,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/shared/ui/primitives/button';
 import { Plus, Users, FolderTree, Settings } from 'lucide-react';
-import { BlurIn } from '@/components/ui/blur-in';
+// import { BlurIn } from '@/components/ui/blur-in';
 import { cn } from '@/core/config/utils';
 // import { getSFProTextClasses } from '@/core/config/theme-utils';
 
@@ -15,7 +15,7 @@ import { cn } from '@/core/config/utils';
 import { FirstAdminSetup } from './FirstAdminSetup';
 import { UserList } from './UserList';
 import { UserCreateDialog } from './UserCreateDialog';
-import { CategoryManagement } from '@/features/admin/components/CategoryManagement';
+// import { CategoryManagement } from '@/features/admin/components/CategoryManagement';
 
 // Hooks customizados
 import { useFirstAdminSetup } from '@/features/users/hooks/useFirstAdminSetup';
@@ -86,22 +86,18 @@ const UserManagement = () => {
       <div className="flex-shrink-0 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
         {/* Header com BlurIn animation */}
         <div className="relative text-center sm:text-left">
-          {/* Título animado */}
-          <BlurIn
-            word="ADMINISTRAÇÃO DO SISTEMA"
-            duration={1.2}
-            variant={{
-              hidden: { filter: "blur(15px)", opacity: 0 },
-              visible: { filter: "blur(0px)", opacity: 1 }
-            }}
+          {/* Título */}
+          <h1
             className={cn(
-              "text-2xl font-bold", // getSFProTextClasses('h1', 'accent'),
+              "text-2xl font-bold",
               "text-transparent bg-clip-text bg-gradient-to-r from-[#FF2400] via-[#FFDA04] to-[#FF2400] drop-shadow-lg"
             )}
             style={{
               textShadow: '0 2px 4px rgba(0,0,0,0.3), 0 0 20px rgba(255, 218, 4, 0.2)'
             }}
-          />
+          >
+            ADMINISTRAÇÃO DO SISTEMA
+          </h1>
           
           {/* Sublinhado elegante */}
           <div className="w-full h-2 relative">
@@ -163,7 +159,10 @@ const UserManagement = () => {
           </>
         ) : (
           /* Gerenciamento de categorias */
-          <CategoryManagement />
+          <div className="p-4 text-center text-white">
+            <h2 className="text-xl font-bold mb-2">Categorias</h2>
+            <p className="text-gray-400">Funcionalidade de categorias temporariamente indisponível</p>
+          </div>
         )}
       </section>
     </div>

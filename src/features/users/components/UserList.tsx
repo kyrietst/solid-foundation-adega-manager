@@ -17,6 +17,15 @@ import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMe
 import { SearchBar21st } from '@/shared/ui/thirdparty/search-bar-21st';
 import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { useToast } from '@/shared/hooks/common/use-toast';
+import { supabase } from '@/core/api/supabase/client';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/shared/ui/primitives/dialog';
+import { Copy, CheckCircle } from 'lucide-react';
 
 export const UserList: React.FC<UserListProps> = ({
   users,
@@ -34,6 +43,18 @@ export const UserList: React.FC<UserListProps> = ({
   const [sortField, setSortField] = React.useState<'name' | 'email' | 'role' | 'created_at' | null>('created_at');
   const [sortDirection, setSortDirection] = React.useState<'asc' | 'desc'>('desc');
   const [isRefreshing, setIsRefreshing] = React.useState(false);
+  const [resetPasswordModal, setResetPasswordModal] = React.useState<{
+    isOpen: boolean;
+    userId: string;
+    userName: string;
+    tempPassword: string;
+  }>({
+    isOpen: false,
+    userId: '',
+    userName: '',
+    tempPassword: ''
+  });
+  const [passwordCopied, setPasswordCopied] = React.useState(false);
 
   const dataset = React.useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
@@ -89,6 +110,99 @@ export const UserList: React.FC<UserListProps> = ({
     } finally {
       setIsRefreshing(false);
     }
+  };
+
+  const generateTempPassword = (): string => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let result = '';
+    for (let i = 0; i < 8; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+  };
+
+  const handleResetPassword = async (userId: string) => {
+    const user = users.find(u => u.id === userId);
+    if (!user) return;
+
+    const tempPassword = generateTempPassword();
+
+    try {
+      // Reset password using custom stored procedure
+      const { data, error } = await supabase.rpc('admin_reset_user_password', {
+        target_user_id: userId,
+        new_password: tempPassword
+      });
+
+      if (error) {
+        toast({
+          title: "Erro ao resetar senha",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Check if the procedure returned an error
+      if (data && !data.success) {
+        toast({
+          title: "Erro ao resetar senha",
+          description: data.error || "Erro desconhecido",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Show modal with temporary password
+      setResetPasswordModal({
+        isOpen: true,
+        userId: userId,
+        userName: user.name,
+        tempPassword: tempPassword
+      });
+
+      toast({
+        title: "Senha resetada com sucesso!",
+        description: `Nova senha temporária gerada para ${user.name}`,
+        variant: "default",
+      });
+
+    } catch (error) {
+      toast({
+        title: "Erro ao resetar senha",
+        description: "Ocorreu um erro inesperado ao resetar a senha.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const copyPassword = async () => {
+    try {
+      await navigator.clipboard.writeText(resetPasswordModal.tempPassword);
+      setPasswordCopied(true);
+      toast({
+        title: "Senha copiada!",
+        description: "A senha temporária foi copiada para a área de transferência.",
+        variant: "default",
+      });
+      setTimeout(() => setPasswordCopied(false), 2000);
+    } catch (error) {
+      toast({
+        title: "Erro ao copiar",
+        description: "Não foi possível copiar a senha.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const closeResetModal = () => {
+    setResetPasswordModal({
+      isOpen: false,
+      userId: '',
+      userName: '',
+      tempPassword: ''
+    });
+    setPasswordCopied(false);
   };
 
   if (isLoading) {
@@ -306,8 +420,10 @@ export const UserList: React.FC<UserListProps> = ({
                           user={user}
                           onEdit={(user) => console.log('Edit user:', user.id)}
                           onDelete={(userId) => console.log('Delete user:', userId)}
+                          onResetPassword={handleResetPassword}
                           canEdit={canManageUsers}
                           canDelete={canManageUsers}
+                          canResetPassword={canManageUsers}
                         />
                       </td>
                     )}
@@ -318,6 +434,65 @@ export const UserList: React.FC<UserListProps> = ({
           </div>
         )}
       </CardContent>
+
+      {/* Modal de Reset de Senha */}
+      <Dialog open={resetPasswordModal.isOpen} onOpenChange={closeResetModal}>
+        <DialogContent className="bg-gray-800/95 border-gray-700/50 backdrop-blur-sm max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-white text-xl font-bold">
+              Senha Temporária Gerada
+            </DialogTitle>
+            <DialogDescription className="text-gray-300">
+              Nova senha temporária para {resetPasswordModal.userName}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="bg-gray-900/50 rounded-lg p-4 border border-gray-600/30">
+              <label className="block text-sm font-medium text-amber-300 mb-2">
+                Senha Temporária:
+              </label>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 text-lg font-mono text-white bg-black/50 px-3 py-2 rounded border">
+                  {resetPasswordModal.tempPassword}
+                </code>
+                <Button
+                  onClick={copyPassword}
+                  variant="outline"
+                  size="sm"
+                  className="bg-amber-500/20 border-amber-400/50 text-amber-300 hover:bg-amber-500/30 transition-all duration-200"
+                >
+                  {passwordCopied ? (
+                    <CheckCircle className="h-4 w-4" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            </div>
+            
+            <div className="bg-blue-500/10 border border-blue-400/30 rounded-lg p-3">
+              <p className="text-sm text-blue-300">
+                <strong>Instruções:</strong>
+              </p>
+              <ul className="text-xs text-blue-200 mt-1 space-y-1">
+                <li>• Forneça esta senha ao usuário</li>
+                <li>• O usuário deve alterar a senha no primeiro login</li>
+                <li>• Esta senha é temporária e deve ser usada imediatamente</li>
+              </ul>
+            </div>
+            
+            <div className="flex justify-end">
+              <Button
+                onClick={closeResetModal}
+                className="bg-gray-600 hover:bg-gray-700 text-white"
+              >
+                Fechar
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };
