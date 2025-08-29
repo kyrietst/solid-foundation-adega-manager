@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Label } from '@/shared/ui/primitives/label';
 import { Input } from '@/shared/ui/primitives/input';
-import { Wine } from 'lucide-react';
 import { useAuth } from '@/app/providers/AuthContext';
 import { Navigate } from 'react-router-dom';
 import { cn } from '@/core/config/utils';
@@ -59,19 +58,19 @@ const Auth = () => {
       waveOpacity={0.5}
     >
       {/* Login Form */}
-      <div className="max-w-md w-full mx-auto rounded-2xl p-8 shadow-2xl bg-slate-900/90 backdrop-blur-xl border border-slate-700/50">
+      <div className="max-w-md w-full mx-auto rounded-2xl p-8 shadow-2xl bg-slate-900/95 border border-slate-700/50">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="flex justify-center mb-6">
-            <div className="flex items-center space-x-3">
-              <div className="p-3 bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl">
-                <Wine className="h-8 w-8 text-white" />
-              </div>
-              <div className="text-left">
-                <h1 className="text-2xl font-bold text-white">Adega Manager</h1>
-                <p className="text-sm text-gray-400">Fundação Sólida</p>
-              </div>
-            </div>
+          <div className="flex justify-center mb-4">
+            <img 
+              src="/logo-adega-anitas.png" 
+              alt="Logo Adega Anita's" 
+              className="h-24 w-30 object-contain"
+            />
+          </div>
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-white">Sistema Adega Anita's</h1>
+            <p className="text-sm text-gray-400">Gestão Completa</p>
           </div>
           <h2 className="text-xl font-bold text-white mb-2">
             Bem-vindo de volta
@@ -84,7 +83,7 @@ const Auth = () => {
         {/* Form */}
         <form onSubmit={handleLogin} className="space-y-6">
           <LabelInputContainer>
-            <Label htmlFor="email" className="text-white">Email</Label>
+            <Label htmlFor="email" className="text-amber-300 font-semibold tracking-wide">Email</Label>
             <Input
               id="email"
               type="email"
@@ -92,12 +91,12 @@ const Auth = () => {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="seu.email@exemplo.com"
               required
-              className="bg-gray-900/50 border-gray-700 text-white placeholder:text-gray-500 focus:border-purple-500"
+              className="bg-gradient-to-br from-gray-900/80 to-gray-800/70 border-2 border-gray-600/50 text-white placeholder:text-gray-400 focus:border-amber-400/80 focus:ring-2 focus:ring-amber-400/30 focus:bg-gray-800/90 rounded-lg transition-all duration-300 hover:border-amber-500/40 shadow-lg shadow-orange-500/30"
             />
           </LabelInputContainer>
 
           <LabelInputContainer>
-            <Label htmlFor="password" className="text-white">Senha</Label>
+            <Label htmlFor="password" className="text-amber-300 font-semibold tracking-wide">Senha</Label>
             <Input
               id="password"
               type="password"
@@ -105,14 +104,14 @@ const Auth = () => {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
               required
-              className="bg-gray-900/50 border-gray-700 text-white placeholder:text-gray-500 focus:border-purple-500"
+              className="bg-gradient-to-br from-gray-900/80 to-gray-800/70 border-2 border-gray-600/50 text-white placeholder:text-gray-400 focus:border-amber-400/80 focus:ring-2 focus:ring-amber-400/30 focus:bg-gray-800/90 rounded-lg transition-all duration-300 hover:border-amber-500/40 shadow-lg shadow-orange-500/30"
             />
           </LabelInputContainer>
 
           <button
             type="submit"
             disabled={isLoading}
-            className="group/btn relative block h-12 w-full rounded-lg bg-gradient-to-br from-purple-600 via-purple-700 to-blue-600 font-medium text-white shadow-lg transition-all duration-200 hover:shadow-purple-500/25 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="group/btn relative block h-12 w-full rounded-lg bg-gradient-to-br from-amber-500 via-amber-600 to-yellow-600 font-semibold text-black shadow-xl transition-all duration-300 hover:shadow-amber-500/40 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? 'Entrando...' : 'Entrar no Sistema'}
             <BottomGradient />
@@ -134,8 +133,8 @@ const Auth = () => {
 const BottomGradient = () => {
   return (
     <>
-      <span className="absolute inset-x-0 -bottom-px block h-px w-full bg-gradient-to-r from-transparent via-purple-500 to-transparent opacity-0 transition duration-500 group-hover/btn:opacity-100" />
-      <span className="absolute inset-x-10 -bottom-px mx-auto block h-px w-1/2 bg-gradient-to-r from-transparent via-blue-500 to-transparent opacity-0 blur-sm transition duration-500 group-hover/btn:opacity-100" />
+      <span className="absolute inset-x-0 -bottom-px block h-px w-full bg-gradient-to-r from-transparent via-amber-400 to-transparent opacity-0 transition duration-500 group-hover/btn:opacity-100" />
+      <span className="absolute inset-x-10 -bottom-px mx-auto block h-px w-1/2 bg-gradient-to-r from-transparent via-yellow-400 to-transparent opacity-0 blur-sm transition duration-500 group-hover/btn:opacity-100" />
     </>
   );
 };

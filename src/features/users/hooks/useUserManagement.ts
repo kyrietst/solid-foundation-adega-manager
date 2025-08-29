@@ -6,7 +6,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/core/api/supabase/client';
 import { useQuery } from '@tanstack/react-query';
-import { User, UserManagementState } from '@/components/users/types';
+import { User, UserManagementState } from '@/features/users/components/types';
 
 export const useUserManagement = (): UserManagementState => {
   const [error, setError] = useState<string | null>(null);

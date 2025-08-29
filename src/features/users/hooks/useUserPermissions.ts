@@ -5,7 +5,7 @@
 
 import { useMemo } from 'react';
 import { useAuth } from '@/app/providers/AuthContext';
-import { UserPermissionsState, UserRole } from '@/components/users/types';
+import { UserPermissionsState, UserRole } from '@/features/users/components/types';
 
 export const useUserPermissions = (): UserPermissionsState => {
   const { userRole, hasPermission } = useAuth();

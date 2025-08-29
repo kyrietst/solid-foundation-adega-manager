@@ -6,7 +6,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/core/api/supabase/client';
 import { useAuth } from '@/app/providers/AuthContext';
-import { FirstAdminSetupState } from '@/components/users/types';
+import { FirstAdminSetupState } from '@/features/users/components/types';
 
 export const useFirstAdminSetup = (): FirstAdminSetupState => {
   const [showFirstAdminSetup, setShowFirstAdminSetup] = useState(false);

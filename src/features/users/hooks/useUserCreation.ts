@@ -6,7 +6,7 @@
 import { useState } from 'react';
 import { supabase } from '@/core/api/supabase/client';
 import { useToast } from '@/shared/hooks/common/use-toast';
-import { UserCreationData, UserCreationOperations } from '@/components/users/types';
+import { UserCreationData, UserCreationOperations } from '@/features/users/components/types';
 
 export const useUserCreation = (): UserCreationOperations => {
   const [isCreating, setIsCreating] = useState(false);

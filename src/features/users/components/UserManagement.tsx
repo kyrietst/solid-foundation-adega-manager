@@ -9,7 +9,7 @@ import { Button } from '@/shared/ui/primitives/button';
 import { Plus, Users, FolderTree, Settings } from 'lucide-react';
 import { BlurIn } from '@/components/ui/blur-in';
 import { cn } from '@/core/config/utils';
-import { getSFProTextClasses } from '@/core/config/theme-utils';
+// import { getSFProTextClasses } from '@/core/config/theme-utils';
 
 // Componentes refatorados
 import { FirstAdminSetup } from './FirstAdminSetup';
@@ -25,7 +25,7 @@ import { useUserPermissions } from '@/features/users/hooks/useUserPermissions';
 
 type ActiveTab = 'users' | 'categories';
 
-export const UserManagement = () => {
+const UserManagement = () => {
   // Estados locais para dialogs e abas
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<ActiveTab>('users');
@@ -95,7 +95,7 @@ export const UserManagement = () => {
               visible: { filter: "blur(0px)", opacity: 1 }
             }}
             className={cn(
-              getSFProTextClasses('h1', 'accent'),
+              "text-2xl font-bold", // getSFProTextClasses('h1', 'accent'),
               "text-transparent bg-clip-text bg-gradient-to-r from-[#FF2400] via-[#FFDA04] to-[#FF2400] drop-shadow-lg"
             )}
             style={{
@@ -170,4 +170,5 @@ export const UserManagement = () => {
   );
 };
 
+export { UserManagement };
 export default UserManagement;

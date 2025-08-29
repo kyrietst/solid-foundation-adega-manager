@@ -79,26 +79,30 @@ export const SalesReportsSection: React.FC<SalesReportsSectionProps> = ({ period
       console.log('🔍 Buscando top produtos...');
 
       try {
-        // FORÇAR fallback manual para garantir que nomes reais sejam exibidos
-        console.log('🚀 Forçando cálculo manual para garantir nomes reais...');
-        throw new Error('Forçando fallback manual para debug');
+        // Usar RPC corrigida first
+        console.log('🚀 Usando RPC get_top_products corrigida...');
         
-        // Tentar usar RPC primeiro (comentado para forçar fallback)
-        // const { data, error } = await supabase
-        //   .rpc('get_top_products', {
-        //     start_date: startDate.toISOString(),
-        //     end_date: endDate.toISOString(),
-        //     limit_count: 10,
-        //     by: 'revenue'
-        //   });
+        const { data, error } = await supabase
+          .rpc('get_top_products', {
+            start_date: startDate.toISOString(),
+            end_date: endDate.toISOString(),
+            limit_count: 10,
+            by: 'revenue'
+          });
 
-        // if (error) {
-        //   console.warn('⚠️ RPC get_top_products falhou, usando query manual:', error);
-        //   throw error;
-        // }
+        if (error) {
+          console.warn('⚠️ RPC get_top_products falhou, usando query manual:', error);
+          throw error;
+        }
 
-        // console.log('✅ Top products from RPC:', data);
-        // return data || [];
+        const topProductsArray = (data || []).map(product => ({
+          ...product,
+          name: truncateProductName(product.name, 15), // Truncar para legibilidade
+          fullName: product.name // Manter nome completo para tooltip
+        }));
+
+        console.log('✅ Top produtos from RPC corrigida:', topProductsArray);
+        return topProductsArray;
       } catch (error) {
         console.log('📊 Executando cálculo manual de top produtos...');
         
@@ -181,29 +185,27 @@ export const SalesReportsSection: React.FC<SalesReportsSectionProps> = ({ period
       console.log('🔍 Buscando vendas por categoria...');
 
       try {
-        // FORÇAR fallback manual para garantir categorias corretas de produtos
-        console.log('🚀 Forçando cálculo manual de categorias para garantir dados corretos...');
-        throw new Error('Forçando fallback manual para debug');
+        // Usar RPC corrigida para categorias de produtos
+        console.log('🚀 Usando RPC get_sales_by_category corrigida...');
         
-        // Tentar usar RPC primeiro (comentado para forçar fallback)
-        // const { data, error } = await supabase
-        //   .rpc('get_sales_by_category', {
-        //     start_date: startDate.toISOString(),
-        //     end_date: endDate.toISOString()
-        //   });
+        const { data, error } = await supabase
+          .rpc('get_sales_by_category', {
+            start_date: startDate.toISOString(),
+            end_date: endDate.toISOString()
+          });
 
-        // if (error) {
-        //   console.warn('⚠️ RPC get_sales_by_category falhou, usando query manual:', error);
-        //   throw error;
-        // }
+        if (error) {
+          console.warn('⚠️ RPC get_sales_by_category falhou, usando query manual:', error);
+          throw error;
+        }
 
-        // const result = (data || []).map((item: any) => ({
-        //   category: item.category_name || item.category || 'Sem categoria',
-        //   revenue: Number(item.total_revenue || 0)
-        // }));
+        const result = (data || []).map((item: any) => ({
+          category: item.category_name || item.category || 'Sem categoria',
+          revenue: Number(item.total_revenue || 0)
+        }));
 
-        // console.log('✅ Categorias from RPC:', result);
-        // return result;
+        console.log('✅ Categorias from RPC corrigida:', result);
+        return result;
       } catch (error) {
         console.log('📊 Executando cálculo manual de vendas por categoria...');
         
