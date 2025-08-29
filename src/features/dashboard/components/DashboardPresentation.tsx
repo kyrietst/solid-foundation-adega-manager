@@ -19,7 +19,6 @@ import { KpiCards } from './KpiCards';
 import { AlertsPanel } from './AlertsPanel';
 import { AlertsCarousel } from './AlertsCarousel';
 import { SalesChartSection } from './SalesChartSection';
-import { FinancialChartSection } from './FinancialChartSection';
 import { useSalesKpis, useCustomerKpis, useInventoryKpis, useExpenseKpis } from '../hooks/useDashboardKpis';
 import { SalesInsightsTabs } from './SalesInsightsTabs';
 import { DashboardHeader } from './DashboardHeader';
@@ -71,18 +70,13 @@ export const DashboardPresentation: React.FC<DashboardPresentationProps> = ({
             <KpiSection />
           </div>
 
-          {/* Linha: Gráficos de Vendas + Financeiro */}
+          {/* Linha: Gráfico de Vendas + Alertas */}
           <div className="lg:col-span-6">
             <SalesChartSection className="h-full" contentHeight={450} cardHeight={530} />
           </div>
           <div className="lg:col-span-6">
-            <FinancialChartSection className="h-full" contentHeight={450} cardHeight={530} />
-          </div>
-          
-          {/* Linha: Alertas ocupando largura total */}
-          <div className="lg:col-span-12">
             <AlertsCarousel 
-              cardHeight={400} 
+              cardHeight={530} 
               autoRotateInterval={8000} 
               showControls={true} 
               previewActivities={recentActivities}
