@@ -110,7 +110,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
   };
 
   const handlePrintAndClose = () => {
-    window.print();
+    // Usar apenas handlePrint() para evitar duplicação
     handlePrint();
   };
 
@@ -192,7 +192,13 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
                 </Button>
                 
                 <Button
-                  onClick={() => window.print()}
+                  onClick={() => {
+                    try {
+                      window.print();
+                    } catch (error) {
+                      console.warn('Standard print error:', error);
+                    }
+                  }}
                   variant="outline"
                   className="border-blue-300 text-blue-700 hover:bg-blue-50 flex items-center gap-1 text-xs px-2"
                 >

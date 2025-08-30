@@ -58,8 +58,21 @@ export const ReceiptPrint: React.FC<ReceiptPrintProps> = ({ data, onPrint }) => 
   };
 
   const handlePrint = () => {
-    window.print();
-    onPrint?.();
+    try {
+      window.print();
+      // Executar callback após pequeno delay para evitar conflito
+      if (onPrint) {
+        setTimeout(() => {
+          onPrint();
+        }, 100);
+      }
+    } catch (error) {
+      console.warn('Print callback error:', error);
+      // Executar callback mesmo com erro
+      if (onPrint) {
+        onPrint();
+      }
+    }
   };
 
   const subtotal = data.items.reduce((sum, item) => sum + item.total_item, 0);
