@@ -1,14 +1,23 @@
 # 🖨️ Guia de Correção - Sistema de Impressão Térmica
 
 **Data de Implementação**: 28/08/2025  
-**Status**: Aguardando teste com impressora térmica (20h)  
+**Status**: ✅ PRONTO PARA TESTE - Impressora Atomo MO-5812 (48mm) Configurada  
 **Empresa**: Adega Anita's
+
+---
+
+## 🖨️ IMPRESSORA CONFIGURADA
+
+**Modelo**: Atomo MO-5812  
+**Largura**: 48mm (384 dots)  
+**Resolução**: 203 DPI  
+**Status**: CSS otimizado para 48mm  
 
 ---
 
 ## 📋 Resumo da Implementação
 
-Sistema de impressão de cupom fiscal implementado para impressoras térmicas de 80mm. O cupom é gerado automaticamente após finalização de vendas no sistema.
+Sistema de impressão de cupom fiscal implementado para impressora térmica **Atomo MO-5812 (48mm)**. O cupom é gerado automaticamente após finalização de vendas no sistema.
 
 ### Arquivos Implementados:
 
@@ -17,11 +26,29 @@ src/features/sales/
 ├── components/
 │   ├── ReceiptPrint.tsx        # Componente principal do cupom
 │   ├── ReceiptModal.tsx        # Modal de visualização/impressão
-│   └── ReceiptTestDemo.tsx     # Componente para testes
+│   ├── ReceiptTestDemo.tsx     # Componente para testes
+│   └── AtomoPrinterSetup.tsx   # 🆕 Setup para Atomo MO-5812
 ├── hooks/
 │   └── useReceiptData.ts       # Hook para buscar dados da venda
 └── styles/
-    └── thermal-print.css       # CSS específico para impressão térmica
+    └── thermal-print.css       # CSS otimizado para 48mm (ATUALIZADO)
+```
+
+---
+
+## 🚀 SETUP ATOMO MO-5812 (NOVO!)
+
+### ⚡ Configuração Rápida da Impressora
+
+1. **Conectar USB** - Conecte a impressora no computador
+2. **Instalar Driver** - Baixar driver ESC/POS do site da Atomo
+3. **Definir Padrão** - Configurar como impressora padrão
+4. **Testar** - Usar componente AtomoPrinterSetup
+
+```bash
+# Acessar componente de configuração
+http://localhost:8080/sales
+# (Adicione o componente AtomoPrinterSetup à página)
 ```
 
 ---
@@ -62,15 +89,15 @@ http://localhost:8080/sales
 import './styles/thermal-print.css';
 ```
 
-### Problema 2: Largura incorreta na impressora
+### Problema 2: Largura incorreta na impressora Atomo MO-5812
 **Sintomas**: Texto cortado ou mal distribuído
 **Solução**: Ajustar no `thermal-print.css`
 ```css
-/* Linha 37-38 - Ajustar largura se necessário */
+/* Linha 38 - Ajustes para 48mm Atomo MO-5812 */
 .receipt-print {
-  width: 80mm !important;        /* Padrão */
-  width: 72mm !important;        /* Se estiver cortando */
-  width: 76mm !important;        /* Meio termo */
+  width: 48mm !important;        /* Atomo MO-5812 padrão */
+  width: 46mm !important;        /* Se estiver cortando */
+  width: 44mm !important;        /* Margem maior se necessário */
 }
 ```
 
@@ -150,12 +177,13 @@ const thermalStyles = {
 
 ## 📏 Especificações Técnicas da Impressora
 
-### Configurações Padrão (80mm)
-- **Largura**: 80mm (302px)
-- **Margem**: 2-4mm cada lado
-- **Área útil**: ~72mm (272px)
-- **Fonte recomendada**: Courier New, 12px
+### Configurações Atomo MO-5812 (48mm) ✅
+- **Largura**: 48mm (384 dots)
+- **Margem**: 1-2mm cada lado
+- **Área útil**: ~44-46mm (336-352 dots)
+- **Fonte recomendada**: Courier New, 10px
 - **Resolução**: 203 DPI
+- **Conectividade**: USB/Serial
 
 ### Comandos ESC/POS Comuns
 Se precisar de controle direto da impressora:

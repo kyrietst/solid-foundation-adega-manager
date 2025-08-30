@@ -7,9 +7,9 @@
 import React, { useState } from 'react';
 import { Button } from '@/shared/ui/primitives/button';
 import { Plus, Users, FolderTree, Settings } from 'lucide-react';
-// import { BlurIn } from '@/components/ui/blur-in';
+import { BlurIn } from '@/components/ui/blur-in';
 import { cn } from '@/core/config/utils';
-// import { getSFProTextClasses } from '@/core/config/theme-utils';
+import { getSFProTextClasses } from '@/core/config/theme-utils';
 
 // Componentes refatorados
 import { FirstAdminSetup } from './FirstAdminSetup';
@@ -81,29 +81,40 @@ const UserManagement = () => {
   }
 
   return (
-    <div className="w-full h-full flex flex-col p-4">
+    <div className="w-full h-full flex flex-col">
       {/* Header padronizado */}
-      <div className="flex-shrink-0 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-        {/* Header com BlurIn animation */}
+      <div className="flex-shrink-0 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        {/* Título Principal */}
         <div className="relative text-center sm:text-left">
-          {/* Título */}
-          <h1
+          {/* Título animado */}
+          <BlurIn
+            word="ADMINISTRAÇÃO DO SISTEMA"
+            duration={1.2}
+            variant={{
+              hidden: { filter: "blur(15px)", opacity: 0 },
+              visible: { filter: "blur(0px)", opacity: 1 }
+            }}
             className={cn(
-              "text-2xl font-bold",
+              getSFProTextClasses('h1', 'accent'),
               "text-transparent bg-clip-text bg-gradient-to-r from-[#FF2400] via-[#FFDA04] to-[#FF2400] drop-shadow-lg"
             )}
             style={{
               textShadow: '0 2px 4px rgba(0,0,0,0.3), 0 0 20px rgba(255, 218, 4, 0.2)'
             }}
-          >
-            ADMINISTRAÇÃO DO SISTEMA
-          </h1>
+          />
           
           {/* Sublinhado elegante */}
-          <div className="w-full h-2 relative">
+          <div className="w-full h-6 relative mt-2">
+            {/* Camada 1: Vermelho com blur */}
             <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FF2400]/80 to-transparent h-[2px] w-full blur-sm" />
+            
+            {/* Camada 2: Vermelho sólido */}
             <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FF2400] to-transparent h-px w-full" />
+            
+            {/* Camada 3: Amarelo com blur (menor largura) */}
             <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FFDA04]/80 to-transparent h-[3px] w-3/4 blur-sm mx-auto" />
+            
+            {/* Camada 4: Amarelo sólido (menor largura) */}
             <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FFDA04] to-transparent h-px w-3/4 mx-auto" />
           </div>
         </div>

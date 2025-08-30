@@ -5,8 +5,9 @@ import { ProductsGrid } from "./ProductsGrid";
 import { Cart } from "./Cart";
 import { RecentSales } from "./RecentSales";
 import { ReceiptModal } from "./ReceiptModal";
+import { ReceiptTestDemo } from "./ReceiptTestDemo";
 import { useState } from "react";
-import { ShoppingCart, Store, Truck, Package } from "lucide-react";
+import { ShoppingCart, Store, Truck, Package, Printer } from "lucide-react";
 import { useCart, useCartItemCount } from "@/features/sales/hooks/use-cart";
 import { cn } from '@/core/config/utils';
 import { getGlassCardClasses, getSFProTextClasses } from '@/core/config/theme-utils';
@@ -132,6 +133,19 @@ function SalesPage({
               )}
             >
               VENDAS RECENTES
+            </button>
+            <button
+              onClick={() => setActiveTab('print-test')}
+              className={cn(
+                getSFProTextClasses('action', activeTab === 'print-test' ? 'accent' : 'secondary'),
+                "inline-flex items-center gap-2 justify-center whitespace-nowrap rounded-sm px-3 py-1.5 transition-all",
+                activeTab === 'print-test' 
+                  ? "bg-yellow-400/20 text-yellow-400 shadow-sm" 
+                  : "text-gray-300 hover:text-yellow-300"
+              )}
+            >
+              <Printer className="h-3 w-3" />
+              TESTE IMPRESSÃO
             </button>
           </div>
         </div>
@@ -264,6 +278,26 @@ function SalesPage({
         {activeTab === 'recent-sales' && (
           <div className="h-full bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-4 flex flex-col min-h-0">
             <RecentSales />
+          </div>
+        )}
+
+        {activeTab === 'print-test' && (
+          <div className="h-full bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-6 flex flex-col min-h-0">
+            <div className="text-center mb-6">
+              <h2 className={cn(
+                getSFProTextClasses('h2', 'accent'),
+                "text-transparent bg-clip-text bg-gradient-to-r from-[#FF2400] via-[#FFDA04] to-[#FF2400]"
+              )}>
+                🖨️ TESTE DE IMPRESSÃO TÉRMICA
+              </h2>
+              <p className={cn(getSFProTextClasses('body', 'secondary'), "mt-2")}>
+                ZPrinter Paper (58x90mm) - ULTRA COMPACTO - Zero Desperdício
+              </p>
+            </div>
+            
+            <div className="flex-1 flex items-center justify-center min-h-0">
+              <ReceiptTestDemo />
+            </div>
           </div>
         )}
       </div>

@@ -66,9 +66,9 @@ const ExpensesPage: React.FC = () => {
   }
 
   return (
-    <div className="w-full h-full flex flex-col p-4 overflow-x-hidden min-w-0">
+    <div className="w-full h-full flex flex-col overflow-x-hidden min-w-0">
       {/* Header */}
-      <div className="flex-shrink-0 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+      <div className="flex-shrink-0 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         {/* Título Principal */}
         <div className="relative text-center sm:text-left">
           {/* Título animado */}

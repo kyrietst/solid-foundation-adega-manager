@@ -21,7 +21,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/sha
 import { Progress } from '@/shared/ui/primitives/progress';
 import { Alert, AlertDescription } from '@/shared/ui/primitives/alert';
 import { cn } from '@/core/config/utils';
-import { useNetworkStatus } from '@/hooks/useNetworkStatus';
+import { useNetworkStatusSimple } from '@/shared/hooks/useNetworkStatusSimple';
 
 interface NetworkIndicatorProps {
   className?: string;
@@ -34,7 +34,7 @@ export const NetworkIndicator: React.FC<NetworkIndicatorProps> = ({
   showDetails = false,
   size = 'md'
 }) => {
-  const networkStatus = useNetworkStatus();
+  const networkStatus = useNetworkStatusSimple();
 
   const getConnectionIcon = () => {
     if (!networkStatus.isOnline) {
@@ -46,45 +46,24 @@ export const NetworkIndicator: React.FC<NetworkIndicatorProps> = ({
       )} />;
     }
 
-    switch (networkStatus.connectionType) {
-      case 'cellular':
-        return <Smartphone className={cn(
-          'text-green-500',
-          size === 'sm' && 'w-3 h-3',
-          size === 'md' && 'w-4 h-4',
-          size === 'lg' && 'w-5 h-5'
-        )} />;
-      case 'ethernet':
-        return <Monitor className={cn(
-          'text-green-500',
-          size === 'sm' && 'w-3 h-3',
-          size === 'md' && 'w-4 h-4',
-          size === 'lg' && 'w-5 h-5'
-        )} />;
-      default:
-        return <Wifi className={cn(
-          'text-green-500',
-          size === 'sm' && 'w-3 h-3',
-          size === 'md' && 'w-4 h-4',
-          size === 'lg' && 'w-5 h-5'
-        )} />;
-    }
+    // Usar ícone de WiFi para conexões online
+    const color = networkStatus.isSlowConnection ? 'text-yellow-500' : 'text-green-500';
+    return <Wifi className={cn(
+      color,
+      size === 'sm' && 'w-3 h-3',
+      size === 'md' && 'w-4 h-4',
+      size === 'lg' && 'w-5 h-5'
+    )} />;
   };
 
   const getQualityColor = () => {
-    switch (networkStatus.connectionQuality) {
-      case 'excellent': return 'text-green-600';
-      case 'good': return 'text-blue-600';
-      case 'fair': return 'text-yellow-600';
-      case 'poor': return 'text-red-600';
-      default: return 'text-gray-600';
-    }
+    if (!networkStatus.isOnline) return 'text-red-600';
+    return networkStatus.isSlowConnection ? 'text-yellow-600' : 'text-green-600';
   };
 
   const getStatusText = () => {
     if (!networkStatus.isOnline) return 'Offline';
-    if (networkStatus.isProcessingQueue) return 'Sincronizando...';
-    if (networkStatus.queueSize > 0) return `${networkStatus.queueSize} em fila`;
+    if (networkStatus.isSlowConnection) return 'Conexão Lenta';
     return 'Online';
   };
 
@@ -102,16 +81,12 @@ export const NetworkIndicator: React.FC<NetworkIndicatorProps> = ({
           </span>
           
           {networkStatus.isOnline && (
-            <Badge variant="outline" className={getQualityColor()}>
-              {networkStatus.connectionQuality}
+            <Badge variant="outline" className={networkStatus.isSlowConnection ? 'text-yellow-600' : 'text-green-600'}>
+              {networkStatus.isSlowConnection ? 'Lenta' : 'Normal'}
             </Badge>
           )}
           
-          {networkStatus.queueSize > 0 && (
-            <Badge variant="secondary">
-              {networkStatus.queueSize}
-            </Badge>
-          )}
+          {/* Queue size not available in simplified hook */}
         </div>
       )}
     </div>
@@ -129,7 +104,7 @@ export const NetworkStatusCard: React.FC<NetworkStatusCardProps> = ({
   onForceSync,
   onClearQueue
 }) => {
-  const networkStatus = useNetworkStatus();
+  const networkStatus = useNetworkStatusSimple();
 
   const formatDuration = (ms: number): string => {
     const seconds = Math.floor(ms / 1000);
@@ -155,9 +130,7 @@ export const NetworkStatusCard: React.FC<NetworkStatusCardProps> = ({
             </div>
           </div>
           
-          {networkStatus.isProcessingQueue && (
-            <Loader2 className="w-5 h-5 animate-spin text-blue-500" />
-          )}
+          {/* Loader removed - isProcessingQueue not available in simple hook */}
         </div>
       </CardHeader>
 
@@ -175,102 +148,40 @@ export const NetworkStatusCard: React.FC<NetworkStatusCardProps> = ({
           </div>
         )}
 
-        {/* Detalhes da Conexão */}
+        {/* Detalhes da Conexão (Simplificado) */}
         {networkStatus.isOnline && (
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
-              <span className="font-medium">Tipo:</span>
-              <span className="ml-2 capitalize">{networkStatus.connectionType}</span>
+              <span className="font-medium">Status:</span>
+              <span className="ml-2 text-green-600">Conectado</span>
             </div>
             <div>
               <span className="font-medium">Velocidade:</span>
-              <span className="ml-2 capitalize">{networkStatus.effectiveType}</span>
-            </div>
-            <div>
-              <span className="font-medium">Qualidade:</span>
-              <span className={cn('ml-2 capitalize', getQualityColor())}>
-                {networkStatus.connectionQuality}
+              <span className={cn('ml-2', networkStatus.isSlowConnection ? 'text-yellow-600' : 'text-green-600')}>
+                {networkStatus.isSlowConnection ? 'Lenta' : 'Normal'}
               </span>
-            </div>
-            <div>
-              <span className="font-medium">RTT:</span>
-              <span className="ml-2">{networkStatus.rtt}ms</span>
             </div>
           </div>
         )}
 
-        {/* Informações de Tempo Offline */}
-        {!networkStatus.isOnline && networkStatus.offlineDuration > 0 && (
+        {/* Hook Simplificado - Funcionalidades avançadas removidas */}
+        {!networkStatus.isOnline && (
           <Alert>
             <Clock className="h-4 w-4" />
             <AlertDescription>
-              Offline há {formatDuration(networkStatus.offlineDuration)}
+              Sistema offline - algumas funcionalidades podem estar limitadas
             </AlertDescription>
           </Alert>
         )}
 
-        {/* Queue de Operações */}
-        {networkStatus.queueSize > 0 && (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="font-medium">Operações em Fila</span>
-              <Badge variant="secondary">{networkStatus.queueSize}</Badge>
-            </div>
-            
-            <div className="text-sm text-gray-600 dark:text-gray-400">
-              {networkStatus.isProcessingQueue 
-                ? 'Sincronizando operações...'
-                : 'Aguardando conexão para sincronizar'
-              }
-            </div>
-
-            {networkStatus.isProcessingQueue && (
-              <Progress value={undefined} className="w-full" />
-            )}
-
-            <div className="flex space-x-2">
-              {networkStatus.isOnline && !networkStatus.isProcessingQueue && (
-                <Button size="sm" onClick={onForceSync}>
-                  Sincronizar Agora
-                </Button>
-              )}
-              
-              <Button size="sm" variant="outline" onClick={onClearQueue}>
-                Limpar Fila
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* Modo de Economia de Dados */}
-        {networkStatus.saveData && (
-          <Alert>
-            <Signal className="h-4 w-4" />
-            <AlertDescription>
-              Modo de economia de dados ativo. Algumas funcionalidades podem estar limitadas.
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {/* Última Conexão */}
-        {networkStatus.lastOnlineTime && (
-          <div className="text-xs text-gray-500 border-t pt-2">
-            Última conexão: {networkStatus.lastOnlineTime.toLocaleString()}
-          </div>
-        )}
+        {/* Informações do Hook */}
+        <div className="text-xs text-gray-500 border-t pt-2">
+          Status: Hook de rede simplificado ativo
+        </div>
       </CardContent>
     </Card>
   );
 
-  function getQualityColor(): string {
-    switch (networkStatus.connectionQuality) {
-      case 'excellent': return 'text-green-600';
-      case 'good': return 'text-blue-600';
-      case 'fair': return 'text-yellow-600';
-      case 'poor': return 'text-red-600';
-      default: return 'text-gray-600';
-    }
-  }
 };
 
 // Componente compacto para barra de status
@@ -279,39 +190,20 @@ interface NetworkStatusBarProps {
 }
 
 export const NetworkStatusBar: React.FC<NetworkStatusBarProps> = ({ className }) => {
-  const networkStatus = useNetworkStatus();
+  const networkStatus = useNetworkStatusSimple();
 
-  if (networkStatus.isOnline && networkStatus.queueSize === 0) {
-    return null; // Não mostrar nada quando está tudo normal
+  if (networkStatus.isOnline) {
+    return null; // Não mostrar nada quando está online (hook simplificado sem queue)
   }
 
   return (
     <div className={cn(
-      'fixed top-0 left-0 right-0 z-50 bg-yellow-500 text-yellow-900 px-4 py-2 text-sm text-center',
-      !networkStatus.isOnline && 'bg-red-500 text-white',
-      networkStatus.isProcessingQueue && 'bg-blue-500 text-white',
+      'fixed top-0 left-0 right-0 z-50 bg-red-500 text-white px-4 py-2 text-sm text-center',
       className
     )}>
       <div className="flex items-center justify-center space-x-2">
         <NetworkIndicator size="sm" />
-        <span>
-          {!networkStatus.isOnline && 'Você está offline'}
-          {networkStatus.isOnline && networkStatus.isProcessingQueue && 'Sincronizando operações...'}
-          {networkStatus.isOnline && !networkStatus.isProcessingQueue && networkStatus.queueSize > 0 && 
-            `${networkStatus.queueSize} operação(ões) aguardando sincronização`
-          }
-        </span>
-        
-        {networkStatus.isOnline && networkStatus.queueSize > 0 && !networkStatus.isProcessingQueue && (
-          <Button 
-            size="sm" 
-            variant="ghost" 
-            className="text-xs h-6 px-2"
-            onClick={() => networkStatus.processQueue()}
-          >
-            Sincronizar
-          </Button>
-        )}
+        <span>Você está offline</span>
       </div>
     </div>
   );

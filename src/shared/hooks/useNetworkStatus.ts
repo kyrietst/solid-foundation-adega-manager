@@ -40,7 +40,8 @@ export interface NetworkConfig {
 
 const STORAGE_KEY = 'network_queue';
 
-export const useNetworkStatus = (config: NetworkConfig = {}) => {
+// Temporariamente desabilitado - causando problemas de listener
+export const useNetworkStatusOLD = (config: NetworkConfig = {}) => {
   const {
     enableQueue = true,
     maxQueueSize = 100,
