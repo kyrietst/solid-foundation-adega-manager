@@ -87,7 +87,7 @@ export const ReceiptPrint: React.FC<ReceiptPrintProps> = ({ data, onPrint }) => 
         <div className="no-print mb-4 text-center">
           <button
             onClick={handlePrint}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+            className="bg-primary-yellow hover:bg-yellow-500 text-black hover:transform hover:-translate-y-1 px-6 py-2 rounded-lg font-semibold transition-all duration-200 shadow-lg"
           >
             🖨️ Imprimir Cupom
           </button>

@@ -79,47 +79,27 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
     }, 1000);
     
     toast({
-      title: "✅ BOLD UNIVERSAL + LEGÍVEL",
-      description: "Todos textos em BOLD + Otimizado para 'Print as Image' + Topo garantido",
+      title: "🖨️ Impressão Iniciada",
+      description: "Cupom fiscal sendo processado...",
       variant: "default",
+      duration: 2000,
     });
 
+    // FECHAMENTO AUTOMÁTICO APENAS SE FOR autoClose (venda finalizada)
     if (autoClose) {
       setTimeout(() => {
         onClose();
-      }, 2000);
+      }, 1500);
     }
   };
 
-  const handleCustomPrint = () => {
-    toast({
-      title: "💡 SOLUÇÃO MANUAL",
-      description: "1. Ctrl+P 2. Mais definições 3. Tamanho papel: Personalizado 4. Largura: 58mm 5. Altura: 100mm",
-      variant: "default",
-      duration: 10000
-    });
-  };
-
-  const openPrintSettings = () => {
-    toast({
-      title: "💡 Configuração ZPrinter Paper (58x210mm)",
-      description: "1. Selecione 'ZPrinter Paper (58x210mm)' 2. Margens: Padrão 3. Escala: 100% 4. Qualidade: Rascunho",
-      variant: "default",
-      duration: 8000
-    });
-  };
-
-  const handlePrintAndClose = () => {
-    // Usar apenas handlePrint() para evitar duplicação
-    handlePrint();
-  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-md bg-white text-black">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-black">
-            <Receipt className="h-5 w-5 text-blue-600" />
+          <DialogTitle className="flex items-center gap-2 text-primary-yellow font-semibold">
+            <Receipt className="h-5 w-5 text-primary-yellow" />
             Cupom Fiscal - Adega Anita's
           </DialogTitle>
           <DialogDescription className="text-gray-600">
@@ -160,76 +140,17 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
                 onPrint={handlePrint}
               />
               
-              {/* Alertas de configuração - BOLD UNIVERSAL V3 */}
-              <Alert className="mb-4 bg-green-50 border-green-200">
-                <Settings className="h-4 w-4 text-green-600" />
-                <AlertDescription className="text-green-800">
-                  <strong>✅ BOLD UNIVERSAL V3 - Print as Image</strong><br/>
-                  • DESCOBERTA: Apenas negritos ficam legíveis no modo "Print as Image"<br/>
-                  • SOLUÇÃO: Todos os textos convertidos para BOLD<br/>
-                  • HIERARQUIA: Mantida através de tamanhos diferentes<br/>
-                  • COMPATIBILIDADE: 100% otimizado para sua impressora Atomo
-                </AlertDescription>
-              </Alert>
-
-              {/* Botões de ação - COM SOLUÇÃO MANUAL */}
-              <div className="flex justify-center gap-2 mt-4 pt-4 border-t border-gray-200">
-                <Button
-                  onClick={handleCustomPrint}
-                  variant="outline"
-                  className="border-amber-400 text-amber-700 hover:bg-amber-50 flex items-center gap-1 text-xs px-2"
-                >
-                  <Settings className="h-3 w-3" />
-                  Manual
-                </Button>
-
-                <Button
-                  onClick={handlePrint}
-                  className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
-                >
-                  <Printer className="h-4 w-4" />
-                  Bold Universal V3
-                </Button>
-                
-                <Button
-                  onClick={() => {
-                    try {
-                      window.print();
-                    } catch (error) {
-                      console.warn('Standard print error:', error);
-                    }
-                  }}
-                  variant="outline"
-                  className="border-blue-300 text-blue-700 hover:bg-blue-50 flex items-center gap-1 text-xs px-2"
-                >
-                  Ctrl+P
-                </Button>
-                
+              {/* AÇÃO RÁPIDA - FECHAR APENAS */}
+              <div className="flex justify-center mt-4">
                 <Button
                   onClick={onClose}
                   variant="outline"
-                  className="border-gray-300 text-gray-700"
+                  size="lg"
+                  className="px-8 py-3"
                 >
-                  <X className="h-4 w-4 mr-1" />
-                  Fechar
+                  <X className="h-4 w-4 mr-2" />
+                  FECHAR
                 </Button>
-              </div>
-
-              {/* Instruções BOLD UNIVERSAL V3 */}
-              <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                <div className="flex items-start gap-2">
-                  <Printer className="h-4 w-4 text-amber-600 mt-0.5" />
-                  <div className="text-xs text-amber-800">
-                    <p className="font-medium">🖨️ BOLD UNIVERSAL V3 - LEGIBILIDADE 100%:</p>
-                    <ul className="mt-1 space-y-1">
-                      <li>• <strong>Análise:</strong> Negritos legíveis vs textos normais tracejados</li>
-                      <li>• <strong>Estratégia:</strong> font-weight: bold em TODOS os elementos</li>
-                      <li>• <strong>Hierarquia:</strong> Diferenciação por tamanhos (12px-20px)</li>
-                      <li>• <strong>Configuração:</strong> Driver "Print as Image" + Bold Universal</li>
-                      <li>• <strong>Resultado:</strong> 100% legibilidade como elementos que já funcionavam</li>
-                    </ul>
-                  </div>
-                </div>
               </div>
             </>
           )}
