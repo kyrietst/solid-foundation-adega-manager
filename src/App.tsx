@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/shared/components/sonner";
 import { TooltipProvider } from "@/shared/ui/primitives/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { lazy, Suspense } from "react";
 import { AuthProvider } from "@/app/providers/AuthContext";
 import { ErrorBoundary } from "@/shared/components/ErrorBoundary";
 import { RouteErrorBoundary } from "@/shared/components/RouteErrorBoundary";
@@ -12,6 +13,11 @@ import { TempPasswordHandler } from "@/shared/components/TempPasswordHandler";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+
+// Lazy load AdvancedReports component
+const AdvancedReports = lazy(() =>
+  import('@/features/reports/components/AdvancedReports').then((m) => ({ default: m.AdvancedReports }))
+);
 
 const queryClient = new QueryClient();
 
@@ -137,7 +143,9 @@ const App = () => {
                         path="reports" 
                         element={
                           <RouteErrorBoundary routeName="Relatórios">
-                            <div />
+                            <Suspense fallback={<div className="flex items-center justify-center min-h-screen bg-black"><div className="text-yellow-400">Carregando relatórios...</div></div>}>
+                              <AdvancedReports />
+                            </Suspense>
                           </RouteErrorBoundary>
                         } 
                       />
