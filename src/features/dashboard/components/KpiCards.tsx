@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { StatCard } from '@/shared/ui/composite/stat-card';
 import { cn } from '@/core/config/utils';
 import { TrendingUp, TrendingDown, Minus, DollarSign, Users, Package, ShoppingCart } from 'lucide-react';
@@ -53,14 +54,20 @@ function formatDescription(delta?: number, subLabel?: string): string {
 }
 
 export function KpiCards({ items, className, showAnimation = true }: KpiCardsProps) {
+  const navigate = useNavigate();
+
+  const handleKpiClick = (href?: string) => {
+    if (href) {
+      console.log('🔗 KpiCards - Navegando para:', href);
+      navigate(href);
+    }
+  };
+
   return (
     <div className={cn('grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4', className)}>
       {items.map((kpi, index) => {
-        const CardComponent = kpi.href ? 'a' : 'div';
-        const cardProps = kpi.href ? { href: kpi.href } : {};
-        
         return (
-          <CardComponent key={kpi.id} {...cardProps} className={kpi.href ? 'block' : ''}>
+          <div key={kpi.id} className={kpi.href ? 'cursor-pointer' : ''}>
             <StatCard
               title={kpi.label}
               value={kpi.value}
@@ -69,8 +76,9 @@ export function KpiCards({ items, className, showAnimation = true }: KpiCardsPro
               variant={getVariant(kpi.valueType)}
               layout="crm"
               className={kpi.isLoading ? 'animate-pulse' : ''}
+              onClick={kpi.href ? () => handleKpiClick(kpi.href) : undefined}
             />
-          </CardComponent>
+          </div>
         );
       })}
     </div>
