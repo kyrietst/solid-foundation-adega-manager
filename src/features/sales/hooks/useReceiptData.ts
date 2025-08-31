@@ -4,9 +4,12 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
+import { useAuth } from '@/app/providers/AuthContext';
 import type { ReceiptData, ReceiptItem } from '../components/ReceiptPrint';
 
 export const useReceiptData = (saleId: string | null) => {
+  const { user } = useAuth();
+  
   return useQuery({
     queryKey: ['receipt-data', saleId],
     queryFn: async (): Promise<ReceiptData | null> => {
@@ -73,6 +76,18 @@ export const useReceiptData = (saleId: string | null) => {
         category: item.products?.category
       }));
 
+      // Buscar nome do usuário logado atual se não houver vendedor na venda
+      let currentUserName = null;
+      if (!saleData.profiles?.name && user) {
+        const { data: currentUserProfile } = await supabase
+          .from('profiles')
+          .select('name')
+          .eq('id', user.id)
+          .single();
+        
+        currentUserName = currentUserProfile?.name;
+      }
+
       const receiptData: ReceiptData = {
         id: saleData.id,
         created_at: saleData.created_at,
@@ -82,7 +97,7 @@ export const useReceiptData = (saleId: string | null) => {
         delivery: saleData.delivery || false,
         customer_name: saleData.customers?.name,
         customer_phone: saleData.customers?.phone,
-        seller_name: saleData.profiles?.name,
+        seller_name: saleData.profiles?.name || currentUserName,
         items,
         delivery_fee: saleData.delivery_fee ? Number(saleData.delivery_fee) : undefined
       };

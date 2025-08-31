@@ -233,7 +233,7 @@
   @media print {
     body {
       height: auto !important; /* MUDANÇA: auto para se ajustar ao conteúdo */
-      min-height: 120mm !important; /* Mínimo para fontes grandes */
+      min-height: 0 !important; /* ZERO: sem altura mínima forçada */
       overflow: visible !important; /* MUDANÇA: visible para mostrar conteúdo */
       
       /* Layout simples sem posicionamento absoluto */

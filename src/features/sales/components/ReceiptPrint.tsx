@@ -31,10 +31,9 @@ export interface ReceiptData {
 
 interface ReceiptPrintProps {
   data: ReceiptData;
-  onPrint?: () => void;
 }
 
-export const ReceiptPrint: React.FC<ReceiptPrintProps> = ({ data, onPrint }) => {
+export const ReceiptPrint: React.FC<ReceiptPrintProps> = ({ data }) => {
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -57,23 +56,6 @@ export const ReceiptPrint: React.FC<ReceiptPrintProps> = ({ data, onPrint }) => 
     return translations[method?.toLowerCase()] || method || 'Não informado';
   };
 
-  const handlePrint = () => {
-    try {
-      window.print();
-      // Executar callback após pequeno delay para evitar conflito
-      if (onPrint) {
-        setTimeout(() => {
-          onPrint();
-        }, 100);
-      }
-    } catch (error) {
-      console.warn('Print callback error:', error);
-      // Executar callback mesmo com erro
-      if (onPrint) {
-        onPrint();
-      }
-    }
-  };
 
   const subtotal = data.items.reduce((sum, item) => sum + item.total_item, 0);
 
@@ -83,15 +65,6 @@ export const ReceiptPrint: React.FC<ReceiptPrintProps> = ({ data, onPrint }) => 
       <link rel="stylesheet" href="/src/features/sales/styles/thermal-print.css" media="print" />
 
       <div className="max-w-sm mx-auto bg-white text-black p-4">
-        {/* Botão de impressão (não aparece na impressão) */}
-        <div className="no-print mb-4 text-center">
-          <button
-            onClick={handlePrint}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
-          >
-            🖨️ Imprimir Cupom
-          </button>
-        </div>
 
         {/* Cupom fiscal */}
         <div className="receipt-print font-mono text-xs">
@@ -113,34 +86,23 @@ export const ReceiptPrint: React.FC<ReceiptPrintProps> = ({ data, onPrint }) => 
               <span>Cupom:</span>
               <span>#{data.id.slice(-8).toUpperCase()}</span>
             </div>
-            {data.seller_name && (
-              <div className="receipt-info-line">
-                <span>Vendedor:</span>
-                <span>{data.seller_name}</span>
-              </div>
-            )}
-          </div>
-
-          {/* Cliente */}
-          {data.customer_name && (
-            <div className="receipt-info">
-              <div className="receipt-line"></div>
-              <div className="receipt-info-line">
-                <span>Cliente:</span>
-                <span>{data.customer_name}</span>
-              </div>
-              {data.customer_phone && (
-                <div className="receipt-info-line">
-                  <span>Tel:</span>
-                  <span>{data.customer_phone}</span>
-                </div>
-              )}
-              <div className="receipt-info-line">
-                <span>Tipo:</span>
-                <span>{data.delivery ? 'Entrega' : 'Presencial'}</span>
-              </div>
+            <div className="receipt-info-line">
+              <span>Vendedor:</span>
+              <span>{data.seller_name || ''}</span>
             </div>
-          )}
+            <div className="receipt-info-line">
+              <span>Cliente:</span>
+              <span>{data.customer_name || ''}</span>
+            </div>
+            <div className="receipt-info-line">
+              <span>Tel:</span>
+              <span>{data.customer_phone || ''}</span>
+            </div>
+            <div className="receipt-info-line">
+              <span>Tipo:</span>
+              <span>{data.delivery ? 'Entrega' : 'Presencial'}</span>
+            </div>
+          </div>
 
           {/* Itens */}
           <div className="receipt-items">
