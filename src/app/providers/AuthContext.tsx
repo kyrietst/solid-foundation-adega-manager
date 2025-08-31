@@ -20,6 +20,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+  console.log('🔐 AuthProvider - Inicializando provider');
   const [user, setUser] = useState<User | null>(null);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [loading, setLoading] = useState(true);
@@ -153,25 +154,46 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, [user, fetchUserProfile]);
 
   useEffect(() => {
+    console.log('🔍 AuthProvider - useEffect iniciado, buscando sessão...');
+    
+    // Timeout de segurança para evitar loading infinito
+    const timeoutId = setTimeout(() => {
+      console.warn('⏰ AuthProvider - Timeout de 10s atingido, forçando loading=false');
+      setLoading(false);
+    }, 10000);
+    
     // Check active sessions and sets the user
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('📡 AuthProvider - Resposta getSession:', !!session, session?.user?.email || 'sem usuário');
+      clearTimeout(timeoutId);
       setUser(session?.user ?? null);
       if (session?.user) {
+        console.log('👤 AuthProvider - Usuário encontrado, buscando perfil...');
         fetchUserProfile(session.user);
+      } else {
+        console.log('❌ AuthProvider - Nenhuma sessão ativa, definindo loading=false');
+        setLoading(false);
       }
+    }).catch((error) => {
+      console.error('💥 AuthProvider - Erro ao buscar sessão:', error);
+      clearTimeout(timeoutId);
       setLoading(false);
     });
 
     // Listen for changes on auth state (sign in, sign out, etc.)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      console.log('🔄 AuthProvider - onAuthStateChange:', _event, !!session);
       setUser(session?.user ?? null);
       if (session?.user) {
+        console.log('👤 AuthProvider - onAuthStateChange: buscando perfil do usuário...');
         await fetchUserProfile(session.user);
       } else {
+        console.log('❌ AuthProvider - onAuthStateChange: sem sessão, limpando dados');
         setUserRole(null);
         setHasTemporaryPassword(false);
       }
       setLoading(false);
+      console.log('✅ AuthProvider - onAuthStateChange: loading=false definido');
     });
 
     return () => subscription.unsubscribe();

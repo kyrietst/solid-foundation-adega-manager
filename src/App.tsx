@@ -31,40 +31,43 @@ const TailwindColorClasses = () => (
   </div>
 );
 
-const App = () => (
-  <ErrorBoundary>
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <BrowserRouter>
-          <AuthErrorBoundary>
-            <AuthProvider>
-              <div className="min-h-screen w-full relative overflow-x-hidden min-w-0">
-                {/* Background fluid blob */}
-                <div className="fixed inset-0 z-0">
-                  <LavaLamp />
-                </div>
-                <Toaster />
-                <Sonner />
-                <TailwindColorClasses />
-                <TempPasswordHandler />
-                <div className="relative z-10">
-                  <Routes>
-                    <Route 
-                      path="/auth" 
-                      element={
-                        <RouteErrorBoundary routeName="Autenticação">
-                          <Auth />
-                        </RouteErrorBoundary>
-                      } 
-                    />
-                    <Route 
-                      path="/" 
-                      element={
-                        <RouteErrorBoundary routeName="Aplicação Principal">
-                          <Index />
-                        </RouteErrorBoundary>
-                      }
-                    >
+const App = () => {
+  console.log('🚀 App.tsx - Iniciando aplicação');
+  
+  return (
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <BrowserRouter>
+            <AuthErrorBoundary>
+              <AuthProvider>
+                <div className="min-h-screen w-full relative overflow-x-hidden min-w-0">
+                  {/* Background fluid blob */}
+                  <div className="fixed inset-0 z-0">
+                    <LavaLamp />
+                  </div>
+                  <Toaster />
+                  <Sonner />
+                  <TailwindColorClasses />
+                  <TempPasswordHandler />
+                  <div className="relative z-10">
+                    <Routes>
+                      <Route 
+                        path="/auth" 
+                        element={
+                          <RouteErrorBoundary routeName="Autenticação">
+                            <Auth />
+                          </RouteErrorBoundary>
+                        } 
+                      />
+                      <Route 
+                        path="/" 
+                        element={
+                          <RouteErrorBoundary routeName="Aplicação Principal">
+                            <Index />
+                          </RouteErrorBoundary>
+                        }
+                      >
                       <Route index element={<div />} />
                       <Route 
                         path="dashboard" 
@@ -189,6 +192,7 @@ const App = () => (
       </TooltipProvider>
     </QueryClientProvider>
   </ErrorBoundary>
-);
+  );
+};
 
 export default App;

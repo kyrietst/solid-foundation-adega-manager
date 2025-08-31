@@ -5,9 +5,16 @@ import { Database } from '@/core/types/supabase';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+console.log('🔧 Supabase Client - Verificando variáveis de ambiente...');
+console.log('🔧 VITE_SUPABASE_URL:', supabaseUrl ? '✅ Definida' : '❌ Undefined');
+console.log('🔧 VITE_SUPABASE_ANON_KEY:', supabaseAnonKey ? '✅ Definida' : '❌ Undefined');
+
 if (!supabaseUrl || !supabaseAnonKey) {
+  console.error('💥 Supabase Client - Variáveis de ambiente faltando!');
   throw new Error('Missing Supabase environment variables');
 }
+
+console.log('✅ Supabase Client - Variáveis OK, criando cliente...');
 
 // Import the supabase client like this:
 // import { supabase } from "@/core/api/supabase/client";

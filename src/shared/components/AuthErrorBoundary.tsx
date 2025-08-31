@@ -42,7 +42,9 @@ export class AuthErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('AuthErrorBoundary capturou erro:', error, errorInfo);
+    console.error('💥 AuthErrorBoundary capturou erro:', error, errorInfo);
+    console.error('💥 Auth erro detalhado:', error.message, error.stack);
+    console.error('💥 Auth Component Stack:', errorInfo.componentStack);
     
     // Callback específico para erros de auth
     if (this.state.isAuthError) {

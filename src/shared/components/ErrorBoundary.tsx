@@ -30,7 +30,9 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('ErrorBoundary capturou um erro:', error, errorInfo);
+    console.error('💥 ErrorBoundary capturou um erro:', error, errorInfo);
+    console.error('💥 Erro detalhado:', error.message, error.stack);
+    console.error('💥 Component Stack:', errorInfo.componentStack);
     
     // Salvar no state para debugging
     this.setState({
