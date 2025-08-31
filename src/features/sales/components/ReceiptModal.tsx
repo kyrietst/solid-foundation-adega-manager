@@ -2,7 +2,7 @@
  * ReceiptModal.tsx - Modal para visualizar e imprimir cupom fiscal
  */
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -34,30 +34,41 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
 }) => {
   const { toast } = useToast();
   const { data: receiptData, isLoading, error } = useReceiptData(saleId);
+  const hasPrinted = useRef(false);
 
   // Iniciar impressão automaticamente quando o modal abrir e os dados estiverem prontos
   useEffect(() => {
-    if (isOpen && receiptData && !isLoading && !error) {
+    if (isOpen && receiptData && !isLoading && !error && !hasPrinted.current) {
+      hasPrinted.current = true;
+      
       // Aguardar um momento para garantir que o modal esteja renderizado
       const timer = setTimeout(() => {
-        try {
-          window.print();
-          toast({
-            title: "🖨️ Impressão iniciada automaticamente",
-            description: "Cupom sendo impresso - Use o botão se necessário",
-            variant: "default",
-          });
-        } catch (error) {
-          console.warn('Auto-print error:', error);
-          toast({
-            title: "⚠️ Use o botão para imprimir",
-            description: "Impressão automática falhou - Clique no botão abaixo",
-            variant: "destructive",
-          });
+        // Verificar se modal ainda está aberto antes de imprimir
+        if (isOpen) {
+          try {
+            window.print();
+            toast({
+              title: "🖨️ Impressão iniciada automaticamente",
+              description: "Cupom sendo impresso - Use o botão se necessário",
+              variant: "default",
+            });
+          } catch (error) {
+            console.warn('Auto-print error:', error);
+            toast({
+              title: "⚠️ Use o botão para imprimir",
+              description: "Impressão automática falhou - Clique no botão abaixo",
+              variant: "destructive",
+            });
+          }
         }
       }, 500);
 
       return () => clearTimeout(timer);
+    }
+    
+    // Reset flag quando modal fecha
+    if (!isOpen) {
+      hasPrinted.current = false;
     }
   }, [isOpen, receiptData, isLoading, error, toast]);
 
@@ -101,11 +112,6 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
       variant: "default",
       duration: 8000
     });
-  };
-
-  const handlePrintAndClose = () => {
-    // Usar apenas handlePrint() para evitar duplicação
-    handlePrint();
   };
 
   return (
@@ -165,13 +171,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
               {/* Botão de ação único - UX MELHORADA */}
               <div className="flex justify-center mt-6">
                 <Button
-                  onClick={() => {
-                    try {
-                      window.print();
-                    } catch (error) {
-                      console.warn('Print handled:', error);
-                    }
-                  }}
+                  onClick={handlePrint}
                   size="lg"
                   className="bg-primary-yellow hover:bg-yellow-500 text-black px-8 py-3 font-semibold shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
                 >
