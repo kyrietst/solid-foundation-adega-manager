@@ -107,13 +107,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
 
       // First try to get from profiles table
+      console.log('🔍 AuthProvider - Tentando buscar perfil para usuário ID:', currentUser.id);
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('role, is_temporary_password')
         .eq('id', currentUser.id)
         .single();
 
+      console.log('📊 AuthProvider - Resultado profiles:', { profileData, profileError });
+
       if (profileError) {
+        console.log('⚠️ AuthProvider - Erro na tabela profiles, tentando users table:', profileError);
         // If not found in profiles table, try users table
         const { data: userData, error: userError } = await supabase
           .from('users')
@@ -121,8 +125,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           .eq('id', currentUser.id)
           .single();
 
+        console.log('📊 AuthProvider - Resultado users:', { userData, userError });
+
         if (userError) {
-          throw new Error('Could not fetch user role from any table');
+          console.error('💥 AuthProvider - Falha em ambas as tabelas:', { profileError, userError });
+          throw new Error(`Could not fetch user role from any table. Profiles error: ${profileError.message}, Users error: ${userError.message}`);
         }
 
         setUserRole(userData.role);
@@ -159,19 +166,36 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Timeout de segurança para evitar loading infinito
     const timeoutId = setTimeout(() => {
       console.warn('⏰ AuthProvider - Timeout de 10s atingido, forçando loading=false');
+      console.log('🔧 AuthProvider - Tentando limpeza de estado e redirecionamento...');
+      setUser(null);
+      setUserRole(null);
       setLoading(false);
+      // If we timeout and there's no user, redirect to auth page
+      if (!user) {
+        console.log('🚪 AuthProvider - Redirecionando para /auth devido ao timeout');
+        window.location.href = '/auth';
+      }
     }, 10000);
     
     // Check active sessions and sets the user
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('📡 AuthProvider - Resposta getSession:', !!session, session?.user?.email || 'sem usuário');
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      console.log('📡 AuthProvider - Resposta getSession:', { 
+        hasSession: !!session, 
+        email: session?.user?.email || 'sem usuário',
+        userId: session?.user?.id || 'sem ID',
+        error: error
+      });
       clearTimeout(timeoutId);
       setUser(session?.user ?? null);
       if (session?.user) {
         console.log('👤 AuthProvider - Usuário encontrado, buscando perfil...');
         fetchUserProfile(session.user);
       } else {
-        console.log('❌ AuthProvider - Nenhuma sessão ativa, definindo loading=false');
+        console.log('❌ AuthProvider - Nenhuma sessão ativa');
+        // Try to clear any corrupted session data
+        localStorage.removeItem('supabase.auth.token');
+        sessionStorage.clear();
+        console.log('🧹 AuthProvider - Limpou storage, definindo loading=false');
         setLoading(false);
       }
     }).catch((error) => {
