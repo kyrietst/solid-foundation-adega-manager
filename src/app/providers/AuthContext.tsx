@@ -98,6 +98,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, [toast, authErrorHandler]);
 
   const fetchUserProfile = useCallback(async (currentUser: User) => {
+    // Evitar chamadas desnecessárias se o usuário é o mesmo
+    if (user && user.id === currentUser.id && userRole) {
+      console.log('🔄 AuthProvider - Perfil já carregado, pulando busca');
+      return;
+    }
+
     const fetchProfileOperation = async () => {
       // Se é o admin principal, define o role diretamente
       if (currentUser.email === 'adm@adega.com') {
@@ -140,18 +146,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     };
 
-    // Usar o handler de erro de auth com retry
-    const result = await authErrorHandler.retryWithAuth(
-      fetchProfileOperation, 
-      'busca de perfil do usuário',
-      1 // 1 tentativa de retry
-    );
-
-    // Se não conseguiu buscar o role após retry, fazer logout limpo
-    if (result === null) {
-      await signOut();
+    try {
+      await fetchProfileOperation();
+    } catch (error) {
+      console.error('💥 AuthProvider - Erro ao buscar perfil:', error);
+      // Em vez de fazer logout, apenas definir loading como false
+      setLoading(false);
     }
-  }, [authErrorHandler, signOut]);
+  }, [user, userRole]); // Dependências mais específicas
 
   const onTemporaryPasswordChanged = useCallback(async () => {
     if (!user) return;
@@ -220,7 +222,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
     return () => subscription.unsubscribe();
-  }, [fetchUserProfile]);
+  }, []); // Remove fetchUserProfile dependency to prevent infinite loop
 
   const hasPermission = useCallback((requiredRole: UserRole | UserRole[]) => {
 
