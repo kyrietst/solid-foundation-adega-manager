@@ -59,6 +59,7 @@ const App = () => {
                   <TempPasswordHandler />
                   <div className="relative z-10">
                     <Routes>
+                      {/* Rotas independentes PRIMEIRO para evitar conflitos */}
                       <Route 
                         path="/auth" 
                         element={
@@ -75,6 +76,8 @@ const App = () => {
                           </RouteErrorBoundary>
                         } 
                       />
+                      
+                      {/* Rota principal com nested routes */}
                       <Route 
                         path="/" 
                         element={
