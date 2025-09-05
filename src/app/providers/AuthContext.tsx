@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
 import { User } from '@supabase/supabase-js';
-import { supabase } from '@/core/api/supabase/client';
+import { supabase, clearChromeAuthData } from '@/core/api/supabase/client';
 import { useToast } from '@/shared/hooks/common/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { useAuthErrorHandler } from '@/shared/hooks/auth/useAuthErrorHandler';
@@ -192,10 +192,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         fetchUserProfile(session.user);
       } else {
         console.log('❌ AuthProvider - Nenhuma sessão ativa');
-        // Try to clear any corrupted session data
-        localStorage.removeItem('supabase.auth.token');
-        sessionStorage.clear();
-        console.log('🧹 AuthProvider - Limpou storage, definindo loading=false');
+        // Chrome-specific cleanup for corrupted session data
+        const clearedKeys = clearChromeAuthData();
+        console.log(`🧹 AuthProvider - Limpou ${clearedKeys} chaves específicas do Chrome`);
         setLoading(false);
       }
     }).catch((error) => {

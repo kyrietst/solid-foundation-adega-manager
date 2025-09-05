@@ -13,6 +13,7 @@ import { TempPasswordHandler } from "@/shared/components/TempPasswordHandler";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import ChromeDiagnostics from "./pages/ChromeDiagnostics";
 
 // Lazy load AdvancedReports component
 const AdvancedReports = lazy(() =>
@@ -63,6 +64,14 @@ const App = () => {
                         element={
                           <RouteErrorBoundary routeName="Autenticação">
                             <Auth />
+                          </RouteErrorBoundary>
+                        } 
+                      />
+                      <Route 
+                        path="/chrome-diagnostics" 
+                        element={
+                          <RouteErrorBoundary routeName="Diagnósticos Chrome">
+                            <ChromeDiagnostics />
                           </RouteErrorBoundary>
                         } 
                       />

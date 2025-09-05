@@ -5,9 +5,47 @@ import { Database } from '@/core/types/supabase';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+// Browser detection for Chrome-specific issues
+const getBrowserInfo = () => {
+  const userAgent = navigator.userAgent;
+  const isChrome = /Chrome/.test(userAgent) && /Google Inc/.test(navigator.vendor);
+  const isOperaGX = /OPR|Opera GX/.test(userAgent);
+  const chromeVersion = isChrome ? userAgent.match(/Chrome\/(\d+)/)?.[1] : null;
+  
+  return {
+    userAgent,
+    isChrome,
+    isOperaGX,
+    chromeVersion,
+    cookiesEnabled: navigator.cookieEnabled,
+    storageQuota: 'storage' in navigator ? 'available' : 'not available'
+  };
+};
+
+const browserInfo = getBrowserInfo();
+console.log('🌐 Browser Detection:', browserInfo);
+
 console.log('🔧 Supabase Client - Verificando variáveis de ambiente...');
 console.log('🔧 VITE_SUPABASE_URL:', supabaseUrl ? '✅ Definida' : '❌ Undefined');
 console.log('🔧 VITE_SUPABASE_ANON_KEY:', supabaseAnonKey ? '✅ Definida' : '❌ Undefined');
+
+// Chrome-specific diagnostics
+if (browserInfo.isChrome) {
+  console.log('🔍 Chrome Diagnostics:');
+  console.log('  - Version:', browserInfo.chromeVersion);
+  console.log('  - Cookies enabled:', browserInfo.cookiesEnabled);
+  console.log('  - Local storage available:', typeof localStorage !== 'undefined');
+  console.log('  - Session storage available:', typeof sessionStorage !== 'undefined');
+  
+  // Check for potential storage issues
+  try {
+    localStorage.setItem('__supabase_test__', 'test');
+    localStorage.removeItem('__supabase_test__');
+    console.log('  - localStorage test: ✅ OK');
+  } catch (e) {
+    console.error('  - localStorage test: ❌ FAILED', e);
+  }
+}
 
 if (!supabaseUrl || !supabaseAnonKey) {
   console.error('💥 Supabase Client - Variáveis de ambiente faltando!');
@@ -16,13 +54,80 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 console.log('✅ Supabase Client - Variáveis OK, criando cliente...');
 
-// Import the supabase client like this:
-// import { supabase } from "@/core/api/supabase/client";
+// Chrome-specific storage cleanup utility
+export const clearChromeAuthData = () => {
+  if (browserInfo.isChrome) {
+    console.log('🧹 Iniciando limpeza específica para Chrome...');
+    
+    // Clear Supabase-specific localStorage keys
+    const keysToRemove = Object.keys(localStorage).filter(key => 
+      key.startsWith('supabase.auth') || 
+      key.startsWith('sb-') ||
+      key.includes('supabase')
+    );
+    
+    keysToRemove.forEach(key => {
+      localStorage.removeItem(key);
+      console.log(`  - Removido: ${key}`);
+    });
+    
+    // Clear sessionStorage as well
+    sessionStorage.clear();
+    console.log('  - Session storage limpo');
+    
+    return keysToRemove.length;
+  }
+  return 0;
+};
 
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+// Enhanced Supabase client configuration for Chrome compatibility
+const supabaseConfig = {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: true
+    detectSessionInUrl: true,
+    // Chrome-specific settings
+    ...(browserInfo.isChrome && {
+      storageKey: 'sb-auth-token',
+      storage: {
+        getItem: (key: string) => {
+          try {
+            return localStorage.getItem(key);
+          } catch (e) {
+            console.warn('Chrome storage getItem failed:', e);
+            return null;
+          }
+        },
+        setItem: (key: string, value: string) => {
+          try {
+            localStorage.setItem(key, value);
+          } catch (e) {
+            console.warn('Chrome storage setItem failed:', e);
+          }
+        },
+        removeItem: (key: string) => {
+          try {
+            localStorage.removeItem(key);
+          } catch (e) {
+            console.warn('Chrome storage removeItem failed:', e);
+          }
+        }
+      }
+    })
   }
-});
+};
+
+// Import the supabase client like this:
+// import { supabase } from "@/core/api/supabase/client";
+
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, supabaseConfig);
+
+// Initialize Chrome diagnostics for manual testing
+if (browserInfo.isChrome) {
+  console.log('🔍 Chrome detectado - Diagnósticos disponíveis:');
+  console.log('  - Digite "chromeDiagnostics()" no console para diagnóstico completo');
+  console.log('  - Digite "clearChromeAuthData()" no console para limpar dados de auth');
+  
+  // Auto-import diagnostics utility
+  import('@/core/utils/chrome-diagnostics');
+}
