@@ -60,20 +60,9 @@ export const useUserCreation = (): UserCreationOperations => {
           hasError = true;
         }
 
-        // 3. Insert into profiles table
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert({
-            id: authData.user.id,
-            email: authData.user.email,
-            name: userData.name,
-            role: userData.role
-          });
-
-        if (profileError) {
-          console.error('Error creating user profile:', profileError);
-          hasError = true;
-        }
+        // 3. O trigger handle_new_user_simple agora cuida da criação do profile
+        // Não precisamos mais inserir manualmente na tabela profiles
+        console.log('Profile creation handled by trigger handle_new_user_simple');
 
         // 4. Restore admin session
         if (currentSession.data.session) {
@@ -139,20 +128,8 @@ export const useUserCreation = (): UserCreationOperations => {
           throw new Error('Database error saving new user');
         }
 
-        // Insert into profiles table
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert({
-            id: authData.user.id,
-            email: authData.user.email,
-            name: 'Administrador Supremo',
-            role: 'admin'
-          });
-
-        if (profileError) {
-          console.error('Error creating admin profile:', profileError);
-          throw new Error(profileError.message);
-        }
+        // O trigger handle_new_user_simple cuida da criação do profile
+        console.log('Admin profile creation handled by trigger handle_new_user_simple');
       }
 
       toast({
