@@ -13,6 +13,7 @@ import { UserListProps } from './types';
 import { UserRoleBadge } from './UserRoleBadge';
 import { UserActions } from './UserActions';
 import { useRoleUtilities } from '@/features/users/hooks/useUserPermissions';
+import { useUserDeletion } from '@/features/users/hooks/useUserDeletion';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '@/shared/ui/primitives/dropdown-menu';
 import { SearchBar21st } from '@/shared/ui/thirdparty/search-bar-21st';
 import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
@@ -37,6 +38,7 @@ export const UserList: React.FC<UserListProps> = ({
 }) => {
   const { isSupremeAdmin } = useRoleUtilities();
   const { toast } = useToast();
+  const { deleteUser, isDeleting } = useUserDeletion();
   const ALL_COLUMNS = ['Nome', 'Email', 'Função', 'Criado em', 'Ações'] as const;
   const [visibleColumns, setVisibleColumns] = React.useState<string[]>([...ALL_COLUMNS]);
   const [searchTerm, setSearchTerm] = React.useState('');
@@ -173,6 +175,27 @@ export const UserList: React.FC<UserListProps> = ({
         description: "Ocorreu um erro inesperado ao resetar a senha.",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    const user = users.find(u => u.id === userId);
+    if (!user) return;
+
+    // Confirmação antes da exclusão
+    const confirmed = window.confirm(
+      `Tem certeza que deseja excluir o usuário "${user.name || user.email}"?\n\n` +
+      'Esta ação não pode ser desfeita e removerá todos os dados do usuário do sistema.'
+    );
+
+    if (!confirmed) return;
+
+    // Executar exclusão
+    const success = await deleteUser(userId);
+    
+    if (success) {
+      // Atualizar lista após exclusão bem-sucedida
+      onRefresh();
     }
   };
 
@@ -419,7 +442,7 @@ export const UserList: React.FC<UserListProps> = ({
                         <UserActions
                           user={user}
                           onEdit={(user) => console.log('Edit user:', user.id)}
-                          onDelete={(userId) => console.log('Delete user:', userId)}
+                          onDelete={handleDeleteUser}
                           onResetPassword={handleResetPassword}
                           canEdit={canManageUsers}
                           canDelete={canManageUsers}
