@@ -167,10 +167,10 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
       const finalSupplier = productData.supplier === 'custom' ? productData.custom_supplier : productData.supplier;
 
       // Validar códigos de barras se fornecidos
-      if (productData.unit_barcode && productData.unit_barcode.trim()) {
+      if (productData.barcode && productData.barcode.trim()) {
         const barcodePattern = /^[0-9]{8,14}$/;
-        if (!barcodePattern.test(productData.unit_barcode.trim())) {
-          throw new Error('Código de barras da unidade deve conter apenas números e ter entre 8 e 14 dígitos');
+        if (!barcodePattern.test(productData.barcode.trim())) {
+          throw new Error('Código de barras deve conter apenas números e ter entre 8 e 14 dígitos');
         }
       }
       if (productData.package_barcode && productData.package_barcode.trim()) {
@@ -190,14 +190,11 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
         supplier: finalSupplier || null,
         minimum_stock: productData.minimum_stock || null,
         cost_price: productData.cost_price || null,
-        // Sistema de códigos hierárquicos - mapeamento completo
-        barcode: productData.unit_barcode || null, // Código principal (unidade)
-        unit_barcode: productData.unit_barcode || null,
+        // Sistema de códigos de barras - mapeamento correto
+        barcode: productData.barcode || null, // Código principal (corrigido)
         package_barcode: productData.package_barcode || null,
         package_units: productData.package_units || null,
         units_per_package: productData.package_units || 1, // Mantém compatibilidade
-        package_size: productData.package_units || 1, // Mantém compatibilidade
-        is_package: productData.has_package_tracking || false,
         has_package_tracking: productData.has_package_tracking || false,
         has_unit_tracking: productData.has_unit_tracking !== undefined ? productData.has_unit_tracking : true,
         // Preços
@@ -208,6 +205,9 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
         // Calcular margem de pacote (se houver preço de pacote)
         package_margin: (productData.package_price && productData.cost_price && productData.package_units) ? 
           (((productData.package_price - (productData.cost_price * productData.package_units)) / (productData.cost_price * productData.package_units)) * 100) : null,
+        // Controle de validade
+        has_expiry_tracking: productData.has_expiry_tracking || false,
+        expiry_date: productData.expiry_date || null,
         // Campos de compatibilidade
         turnover_rate: 'medium',
         updated_at: new Date().toISOString()
