@@ -98,15 +98,15 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
 
   // Handler para código de barras escaneado
   const handleBarcodeScanned = async (barcode: string) => {
-    const product = await searchByBarcode(barcode);
-    if (product && product.stock_quantity > 0) {
+    const result = await searchByBarcode(barcode);
+    if (result && result.product.stock_quantity > 0) {
       addItem({
-        id: product.id,
-        name: product.name,
-        price: product.price,
-        maxQuantity: product.stock_quantity
+        id: result.product.id,
+        name: result.product.name,
+        price: result.product.price,
+        maxQuantity: result.product.stock_quantity
       });
-      onProductSelect?.(product);
+      onProductSelect?.(result.product);
     }
   };
 
