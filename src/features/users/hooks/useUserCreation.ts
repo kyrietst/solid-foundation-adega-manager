@@ -45,26 +45,37 @@ export const useUserCreation = (): UserCreationOperations => {
       if (authData.user) {
         let hasError = false;
 
-        // 2. Insert into users table
-        const { error: userError } = await supabase
+        // 2. O trigger automático handle_new_user_simple cria registros em users e profiles
+        console.log('User and profile creation handled by trigger handle_new_user_simple');
+        
+        // 3. Aguardar mais tempo para o trigger processar completamente
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // 4. Atualizar dados do usuário (sempre, não só se role != employee)
+        const { error: updateUserError } = await supabase
           .from('users')
-          .insert({
-            id: authData.user.id,
-            email: authData.user.email,
+          .update({ 
             full_name: userData.name,
-            role: userData.role
-          });
+            role: userData.role 
+          })
+          .eq('id', authData.user.id);
 
-        if (userError) {
-          console.error('Error creating user record:', userError);
-          hasError = true;
+        const { error: updateProfileError } = await supabase
+          .from('profiles')
+          .update({ 
+            name: userData.name,
+            email: userData.email,
+            role: userData.role 
+          })
+          .eq('id', authData.user.id);
+
+        if (updateUserError || updateProfileError) {
+          console.error('Error updating user data:', { updateUserError, updateProfileError });
+          // Não marcar como erro crítico, pois o usuário foi criado
+          console.warn('User created but role update failed - may need manual correction');
         }
 
-        // 3. O trigger handle_new_user_simple agora cuida da criação do profile
-        // Não precisamos mais inserir manualmente na tabela profiles
-        console.log('Profile creation handled by trigger handle_new_user_simple');
-
-        // 4. Restore admin session
+        // 5. Restore admin session
         if (currentSession.data.session) {
           const { error: signInError } = await supabase.auth.setSession(currentSession.data.session);
           if (signInError) {
