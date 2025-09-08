@@ -81,11 +81,25 @@ export function SimpleCart({
       <ScrollArea className="flex-1 p-4">
         <div className="space-y-3">
           {items.map((item) => (
-            <div key={item.id} className="flex items-center justify-between p-3 glass-subtle rounded-lg hover:bg-primary-yellow/5 transition-colors">
+            <div key={`${item.id}-${item.type}`} className="flex items-center justify-between p-3 glass-subtle rounded-lg hover:bg-primary-yellow/5 transition-colors">
               <div className="flex-1">
-                <h4 className="font-medium text-sm text-gray-100">{item.name}</h4>
+                <div className="flex items-center gap-2 mb-1">
+                  <h4 className="font-medium text-sm text-gray-100">{item.name}</h4>
+                  <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
+                    item.type === 'package' 
+                      ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' 
+                      : 'bg-green-500/20 text-green-300 border border-green-500/30'
+                  }`}>
+                    {item.type === 'package' ? `Pacote ${item.packageUnits}x` : 'Unidade'}
+                  </span>
+                </div>
                 <p className="text-xs text-gray-400">
                   {formatCurrency(item.price)} × {item.quantity}
+                  {item.type === 'package' && item.packageUnits && (
+                    <span className="ml-1 text-blue-300">
+                      ({item.quantity * item.packageUnits} unid. total)
+                    </span>
+                  )}
                 </p>
               </div>
               
@@ -94,7 +108,7 @@ export function SimpleCart({
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => updateItemQuantity(item.id, Math.max(0, item.quantity - 1))}
+                    onClick={() => updateItemQuantity(item.id, item.type, Math.max(0, item.quantity - 1))}
                     className="h-6 w-6 p-0 text-gray-300 hover:text-primary-yellow hover:bg-primary-yellow/10"
                   >
                     -
@@ -103,7 +117,7 @@ export function SimpleCart({
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => updateItemQuantity(item.id, item.quantity + 1)}
+                    onClick={() => updateItemQuantity(item.id, item.type, item.quantity + 1)}
                     className="h-6 w-6 p-0 text-gray-300 hover:text-primary-yellow hover:bg-primary-yellow/10"
                     disabled={item.quantity >= maxItems}
                   >
@@ -114,7 +128,7 @@ export function SimpleCart({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => removeItem(item.id)}
+                  onClick={() => removeItem(item.id, item.type)}
                   className="h-6 w-6 p-0 text-accent-red hover:text-accent-red/80 hover:bg-accent-red/10"
                 >
                   <Trash2 className="h-3 w-3" />

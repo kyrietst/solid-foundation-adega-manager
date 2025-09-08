@@ -82,9 +82,12 @@ const newProductSchema = z.object({
     .optional()
     .default(1),
   package_price: z
-    .number({ invalid_type_error: 'Preço do pacote deve ser um número' })
-    .min(0.01, 'Preço do pacote deve ser maior que 0')
-    .optional(),
+    .union([
+      z.string().transform(val => val === '' ? undefined : Number(val)),
+      z.number()
+    ])
+    .optional()
+    .refine(val => val === undefined || val >= 0.01, 'Preço do pacote deve ser maior que 0'),
   
   supplier: z
     .string()
@@ -97,18 +100,24 @@ const newProductSchema = z.object({
     .or(z.literal('')),
   
   cost_price: z
-    .number({ invalid_type_error: 'Preço de custo deve ser um número' })
-    .min(0, 'Preço de custo deve ser maior que 0')
-    .optional(),
+    .union([
+      z.string().transform(val => val === '' ? undefined : Number(val)),
+      z.number()
+    ])
+    .optional()
+    .refine(val => val === undefined || val >= 0, 'Preço de custo deve ser maior ou igual a 0'),
   
   price: z
     .number({ invalid_type_error: 'Preço de venda deve ser um número' })
     .min(0.01, 'Preço de venda deve ser maior que 0'),
   
   volume_ml: z
-    .number({ invalid_type_error: 'Volume deve ser um número' })
-    .min(1, 'Volume deve ser maior que 0')
-    .optional(),
+    .union([
+      z.string().transform(val => val === '' ? undefined : Number(val)),
+      z.number()
+    ])
+    .optional()
+    .refine(val => val === undefined || val >= 1, 'Volume deve ser maior que 0'),
   
   stock_quantity: z
     .number({ invalid_type_error: 'Quantidade deve ser um número' })
@@ -118,7 +127,7 @@ const newProductSchema = z.object({
   minimum_stock: z
     .number({ invalid_type_error: 'Estoque mínimo deve ser um número' })
     .min(0, 'Estoque mínimo não pode ser negativo')
-    .optional(),
+    .default(5),
 });
 
 type NewProductFormData = z.infer<typeof newProductSchema>;
@@ -152,14 +161,14 @@ export const NewProductModal: React.FC<NewProductModalProps> = ({
       has_package_tracking: false,
       package_barcode: '',
       package_units: 1,
-      package_price: undefined,
+      package_price: '',
       supplier: '',
       custom_supplier: '',
-      cost_price: undefined,
+      cost_price: '',
       price: 0,
-      volume_ml: undefined,
+      volume_ml: '',
       stock_quantity: 0,
-      minimum_stock: undefined,
+      minimum_stock: 5,
     },
   });
 
@@ -264,7 +273,7 @@ export const NewProductModal: React.FC<NewProductModalProps> = ({
         supplier: finalSupplier || null,
         volume_ml: data.volume_ml || null,
         stock_quantity: data.stock_quantity,
-        minimum_stock: data.minimum_stock || null,
+        minimum_stock: data.minimum_stock || 5,
         // Valores padrão
         turnover_rate: 'medium',
         created_at: new Date().toISOString(),

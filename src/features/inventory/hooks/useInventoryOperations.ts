@@ -28,7 +28,12 @@ export const useInventoryOperations = (): InventoryOperations => {
       return data;
     },
     onSuccess: (data) => {
+      // Invalidar múltiplas query keys para garantir sincronização
       queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['products', 'available'] });
+      queryClient.invalidateQueries({ queryKey: ['product'] });
+      console.log('[DEBUG] useInventoryOperations - Cache invalidado após criar produto:', data.name);
+      
       toast({
         title: "Produto criado!",
         description: `${data.name} foi adicionado ao estoque`,
@@ -59,7 +64,12 @@ export const useInventoryOperations = (): InventoryOperations => {
       return data;
     },
     onSuccess: (data) => {
+      // Invalidar múltiplas query keys para garantir sincronização
       queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['products', 'available'] });
+      queryClient.invalidateQueries({ queryKey: ['product'] });
+      console.log('[DEBUG] useInventoryOperations - Cache invalidado após atualizar produto:', data.name);
+      
       toast({
         title: "Produto atualizado!",
         description: `${data.name} foi atualizado com sucesso`,

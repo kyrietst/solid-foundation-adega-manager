@@ -20,13 +20,23 @@ export const useBarcode = () => {
       return null;
     }
 
+    console.log('[DEBUG] useBarcode - Iniciando busca por código:', barcode);
+
     try {
       // Buscar por código principal primeiro
-      const { data: mainProduct, error: mainError } = await supabase
+      const { data: mainProducts, error: mainError } = await supabase
         .from('products')
         .select('*')
-        .eq('barcode', barcode)
-        .single();
+        .eq('barcode', barcode);
+      
+      const mainProduct = mainProducts?.[0] || null;
+
+      console.log('[DEBUG] useBarcode - Busca por barcode principal:', {
+        found: !!mainProduct,
+        error: mainError,
+        productName: mainProduct?.name,
+        stockQuantity: mainProduct?.stock_quantity
+      });
 
       if (mainProduct && !mainError) {
         setLastScannedCode(barcode);
@@ -35,6 +45,14 @@ export const useBarcode = () => {
         const typeLabel = hasPackage 
           ? 'código da unidade' 
           : 'código principal';
+        
+        console.log('[DEBUG] useBarcode - Produto encontrado por barcode principal, retornando:', {
+          productId: mainProduct.id,
+          productName: mainProduct.name,
+          stockQuantity: mainProduct.stock_quantity,
+          hasPackage: hasPackage,
+          type: 'main'
+        });
         
         toast({
           title: "✅ Produto encontrado",
@@ -46,14 +64,30 @@ export const useBarcode = () => {
       }
 
       // Se não encontrou por código principal, buscar por código de pacote
-      const { data: packageProduct, error: packageError } = await supabase
+      const { data: packageProducts, error: packageError } = await supabase
         .from('products')
         .select('*')
-        .eq('package_barcode', barcode)
-        .single();
+        .eq('package_barcode', barcode);
+      
+      const packageProduct = packageProducts?.[0] || null;
+
+      console.log('[DEBUG] useBarcode - Busca por package_barcode:', {
+        found: !!packageProduct,
+        error: packageError,
+        productName: packageProduct?.name,
+        stockQuantity: packageProduct?.stock_quantity
+      });
 
       if (packageProduct && !packageError) {
         setLastScannedCode(barcode);
+        
+        console.log('[DEBUG] useBarcode - Produto encontrado por package_barcode, retornando:', {
+          productId: packageProduct.id,
+          productName: packageProduct.name,
+          stockQuantity: packageProduct.stock_quantity,
+          packageUnits: packageProduct.package_units,
+          type: 'package'
+        });
         
         toast({
           title: "📦 Produto encontrado",
@@ -65,6 +99,7 @@ export const useBarcode = () => {
       }
 
       // Não encontrado
+      console.log('[DEBUG] useBarcode - Nenhum produto encontrado com código:', barcode);
       toast({
         title: "Produto não encontrado",
         description: `Nenhum produto encontrado com o código ${barcode}`,
@@ -73,7 +108,7 @@ export const useBarcode = () => {
       return null;
 
     } catch (error) {
-      console.error('Erro ao buscar produto por código de barras:', error);
+      console.error('[DEBUG] useBarcode - Erro ao buscar produto por código de barras:', error);
       toast({
         title: "Erro na busca",
         description: "Ocorreu um erro ao buscar o produto. Tente novamente.",
@@ -151,14 +186,18 @@ export const useBarcode = () => {
         .from('products')
         .update({ barcode })
         .eq('id', productId)
-        .select()
-        .single();
+        .select();
 
       if (error) throw error;
-      return data;
+      return data?.[0];
     },
     onSuccess: (data) => {
+      // Invalidar múltiplas query keys para garantir sincronização
       queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['products', 'available'] });
+      queryClient.invalidateQueries({ queryKey: ['product'] });
+      console.log('[DEBUG] useBarcode - Cache invalidado após atualizar código do produto:', data.name);
+      
       toast({
         title: "Código atualizado",
         description: `Código de barras do produto ${data.name} atualizado com sucesso`,

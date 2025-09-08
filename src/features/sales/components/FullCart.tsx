@@ -4,7 +4,7 @@
  * Modernizado com glass morphism e nova paleta preto/dourado
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useCart, useCartTotal } from '@/features/sales/hooks/use-cart';
 import { useCustomer } from '@/features/customers/hooks/use-crm';
 import { usePaymentMethods, useUpsertSale } from '@/features/sales/hooks/use-sales';
@@ -47,6 +47,8 @@ export function FullCart({
   const [paymentMethodId, setPaymentMethodId] = useState<string>('');
   const [discount, setDiscount] = useState(0);
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
+  const [cashReceived, setCashReceived] = useState<number>(0);
+  const [showCashInput, setShowCashInput] = useState(false);
   
   const { toast } = useToast();
   const subtotal = useCartTotal();
@@ -56,6 +58,23 @@ export function FullCart({
     const calculatedTotal = subtotal - (allowDiscounts ? discount : 0);
     return calculatedTotal > 0 ? calculatedTotal : 0;
   }, [subtotal, discount, allowDiscounts]);
+
+  // Lógica para detectar pagamento em dinheiro
+  const selectedPaymentMethod = paymentMethods.find(m => m.id === paymentMethodId);
+  const isCashPayment = selectedPaymentMethod?.type === 'cash' || selectedPaymentMethod?.name === 'Dinheiro';
+
+  // Cálculo do troco
+  const change = useMemo(() => {
+    return isCashPayment && cashReceived > 0 ? Math.max(0, cashReceived - total) : 0;
+  }, [isCashPayment, cashReceived, total]);
+
+  // Effect para mostrar/ocultar campo de dinheiro
+  useEffect(() => {
+    setShowCashInput(isCashPayment);
+    if (!isCashPayment) {
+      setCashReceived(0);
+    }
+  }, [isCashPayment]);
 
   const glassClasses = glassEffect ? getGlassCardClasses(variant) : '';
 
@@ -73,6 +92,16 @@ export function FullCart({
       toast({
         title: "Erro", 
         description: "Adicione produtos ao carrinho",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validação específica para pagamento em dinheiro
+    if (isCashPayment && cashReceived < total) {
+      toast({
+        title: "Valor insuficiente",
+        description: "O valor recebido deve ser maior ou igual ao total da venda",
         variant: "destructive",
       });
       return;
@@ -102,6 +131,8 @@ export function FullCart({
         clearCart();
         setPaymentMethodId('');
         setDiscount(0);
+        setCashReceived(0);
+        setShowCashInput(false);
         
         if (onSaleComplete) {
           onSaleComplete(result.id);
@@ -213,11 +244,25 @@ export function FullCart({
       <ScrollArea className="flex-1 p-4">
         <div className="space-y-3">
           {items.map((item) => (
-            <div key={item.id} className="flex items-center justify-between p-3 glass-subtle rounded-lg hover:bg-primary-yellow/5 transition-colors">
+            <div key={`${item.id}-${item.type}`} className="flex items-center justify-between p-3 glass-subtle rounded-lg hover:bg-primary-yellow/5 transition-colors">
               <div className="flex-1">
-                <h4 className="font-medium text-sm text-gray-100">{item.name}</h4>
+                <div className="flex items-center gap-2 mb-1">
+                  <h4 className="font-medium text-sm text-gray-100">{item.name}</h4>
+                  <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
+                    item.type === 'package' 
+                      ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' 
+                      : 'bg-green-500/20 text-green-300 border border-green-500/30'
+                  }`}>
+                    {item.type === 'package' ? `Pacote ${item.packageUnits}x` : 'Unidade'}
+                  </span>
+                </div>
                 <p className="text-xs text-gray-400">
                   {formatCurrency(item.price)} × {item.quantity}
+                  {item.type === 'package' && item.packageUnits && (
+                    <span className="ml-1 text-blue-300">
+                      ({item.quantity * item.packageUnits} unid. total)
+                    </span>
+                  )}
                 </p>
               </div>
               
@@ -226,9 +271,9 @@ export function FullCart({
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => updateItemQuantity(item.id, Math.max(0, item.quantity - 1))}
+                    onClick={() => updateItemQuantity(item.id, item.type, Math.max(0, item.quantity - 1))}
                     className="h-6 w-6 p-0 text-gray-300 hover:text-primary-yellow hover:bg-primary-yellow/10"
-                    aria-label={`Diminuir quantidade de ${item.name}`}
+                    aria-label={`Diminuir quantidade de ${item.name} ${item.type === 'package' ? 'Pacote' : 'Unidade'}`}
                   >
                     -
                   </Button>
@@ -236,10 +281,10 @@ export function FullCart({
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => updateItemQuantity(item.id, item.quantity + 1)}
+                    onClick={() => updateItemQuantity(item.id, item.type, item.quantity + 1)}
                     className="h-6 w-6 p-0 text-gray-300 hover:text-primary-yellow hover:bg-primary-yellow/10"
                     disabled={item.quantity >= maxItems}
-                    aria-label={`Aumentar quantidade de ${item.name}`}
+                    aria-label={`Aumentar quantidade de ${item.name} ${item.type === 'package' ? 'Pacote' : 'Unidade'}`}
                   >
                     +
                   </Button>
@@ -248,9 +293,9 @@ export function FullCart({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => removeItem(item.id)}
+                  onClick={() => removeItem(item.id, item.type)}
                   className="h-6 w-6 p-0 text-accent-red hover:text-accent-red/80 hover:bg-accent-red/10"
-                  aria-label={`Remover ${item.name} do carrinho`}
+                  aria-label={`Remover ${item.name} ${item.type === 'package' ? 'Pacote' : 'Unidade'} do carrinho`}
                 >
                   <Trash2 className="h-3 w-3" aria-hidden="true" />
                 </Button>
@@ -293,6 +338,22 @@ export function FullCart({
           </Select>
         </div>
 
+        {/* Campo Valor Recebido - só aparece se for dinheiro */}
+        {showCashInput && (
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-200">Valor Recebido</label>
+            <Input
+              type="number"
+              placeholder="0,00"
+              value={cashReceived || ''}
+              onChange={(e) => setCashReceived(Math.max(0, Number(e.target.value)))}
+              className="text-sm bg-gray-800/50 border-primary-yellow/30 text-gray-200 focus:border-primary-yellow"
+              step="0.01"
+              min="0"
+            />
+          </div>
+        )}
+
         {/* Totals */}
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
@@ -309,6 +370,20 @@ export function FullCart({
             <span className="text-gray-100">Total:</span>
             <span className="text-primary-yellow">{formatCurrency(total)}</span>
           </div>
+          
+          {/* Troco - só aparece se for dinheiro e houver valor recebido */}
+          {isCashPayment && cashReceived > 0 && (
+            <>
+              <div className="flex justify-between text-sm pt-2 border-t border-gray-600/20">
+                <span className="text-gray-300">Valor Recebido:</span>
+                <span className="text-gray-200">{formatCurrency(cashReceived)}</span>
+              </div>
+              <div className="flex justify-between text-sm text-green-400 font-semibold">
+                <span>Troco:</span>
+                <span>{formatCurrency(change)}</span>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Finish Sale Button */}

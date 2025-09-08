@@ -7,6 +7,9 @@ interface CartItem {
   price: number;
   quantity: number;
   maxQuantity: number;
+  type: 'unit' | 'package'; // Novo campo para diferenciar
+  packageUnits?: number; // Quantas unidades tem no pacote
+  displayName?: string; // Nome customizado para exibição
 }
 
 interface CartState {
@@ -14,9 +17,9 @@ interface CartState {
   customerId: string | null;
   
   // Actions
-  addItem: (item: Omit<CartItem, 'quantity'>) => void;
-  updateItemQuantity: (productId: string, quantity: number) => void;
-  removeItem: (productId: string) => void;
+  addItem: (item: Omit<CartItem, 'quantity' | 'displayName'>) => void;
+  updateItemQuantity: (productId: string, type: 'unit' | 'package', quantity: number) => void;
+  removeItem: (productId: string, type: 'unit' | 'package') => void;
   setCustomer: (customerId: string | null) => void;
   clearCart: () => void;
   
@@ -63,7 +66,11 @@ export const useCart = create<CartState>()(
       
         addItem: (item) => {
           set((state) => {
-            const existingItem = state.items.find((i) => i.id === item.id);
+            // Gerar ID único baseado no produto e tipo
+            const uniqueId = `${item.id}-${item.type}`;
+            const existingItem = state.items.find((i) => 
+              i.id === item.id && i.type === item.type
+            );
             
             let newItems: CartItem[];
             if (existingItem) {
@@ -74,28 +81,35 @@ export const useCart = create<CartState>()(
               );
               
               newItems = state.items.map((i) =>
-                i.id === item.id
+                i.id === item.id && i.type === item.type
                   ? { ...i, quantity: newQuantity }
                   : i
               );
             } else {
-              // Adiciona um novo item ao carrinho
-              newItems = [...state.items, { ...item, quantity: 1 }];
+              // Adiciona um novo item ao carrinho com ID único
+              const newItem = { 
+                ...item, 
+                quantity: 1,
+                displayName: item.displayName || `${item.name} ${item.type === 'package' ? `(Pacote ${item.packageUnits || 1}x)` : '(Unidade)'}`
+              };
+              newItems = [...state.items, newItem];
             }
             
             return updateState(newItems);
           });
         },
       
-        updateItemQuantity: (productId, quantity) => {
+        updateItemQuantity: (productId, type, quantity) => {
           set((state) => {
             let newItems: CartItem[];
             
             if (quantity <= 0) {
-              newItems = state.items.filter((item) => item.id !== productId);
+              newItems = state.items.filter((item) => 
+                !(item.id === productId && item.type === type)
+              );
             } else {
               newItems = state.items.map((item) =>
-                item.id === productId
+                item.id === productId && item.type === type
                   ? { ...item, quantity: Math.min(quantity, item.maxQuantity) }
                   : item
               );
@@ -105,9 +119,11 @@ export const useCart = create<CartState>()(
           });
         },
       
-        removeItem: (productId) => {
+        removeItem: (productId, type) => {
           set((state) => {
-            const newItems = state.items.filter((item) => item.id !== productId);
+            const newItems = state.items.filter((item) => 
+              !(item.id === productId && item.type === type)
+            );
             return updateState(newItems);
           });
         },

@@ -98,25 +98,88 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
 
   // Handler para código de barras escaneado
   const handleBarcodeScanned = async (barcode: string) => {
+    console.log('[DEBUG] useProductsGridLogic - handleBarcodeScanned iniciado para:', barcode);
+    
     const result = await searchByBarcode(barcode);
-    if (result && result.product.stock_quantity > 0) {
-      addItem({
-        id: result.product.id,
-        name: result.product.name,
-        price: result.product.price,
-        maxQuantity: result.product.stock_quantity
+    
+    console.log('[DEBUG] useProductsGridLogic - Resultado searchByBarcode:', {
+      hasResult: !!result,
+      productId: result?.product?.id,
+      productName: result?.product?.name,
+      stockQuantity: result?.product?.stock_quantity,
+      price: result?.product?.price,
+      type: result?.type
+    });
+    
+    if (result) {
+      // Verificações de validação melhoradas
+      const product = result.product;
+      const hasValidStock = product.stock_quantity > 0;
+      const hasValidPrice = product.price && product.price > 0;
+      
+      console.log('[DEBUG] useProductsGridLogic - Validações:', {
+        hasValidStock,
+        hasValidPrice,
+        stockQuantity: product.stock_quantity,
+        price: product.price
       });
-      onProductSelect?.(result.product);
+      
+      if (hasValidStock && hasValidPrice) {
+        // Determinar tipo, preço e quantidade baseado no resultado da busca
+        const isPackageType = result.type === 'package';
+        const itemPrice = isPackageType && product.package_price 
+          ? product.package_price 
+          : product.price;
+        const packageUnits = product.package_units || 1;
+        
+        console.log('[DEBUG] useProductsGridLogic - Adicionando produto ao carrinho:', {
+          id: product.id,
+          name: product.name,
+          type: result.type,
+          price: itemPrice,
+          packageUnits: packageUnits,
+          maxQuantity: product.stock_quantity
+        });
+        
+        addItem({
+          id: product.id,
+          name: product.name,
+          price: itemPrice,
+          maxQuantity: product.stock_quantity,
+          type: result.type,
+          packageUnits: isPackageType ? packageUnits : undefined
+        });
+        
+        onProductSelect?.(product);
+        console.log('[DEBUG] useProductsGridLogic - Produto adicionado com sucesso ao carrinho');
+      } else {
+        console.warn('[DEBUG] useProductsGridLogic - Produto não adicionado ao carrinho - validação falhou:', {
+          hasValidStock,
+          hasValidPrice,
+          stockQuantity: product.stock_quantity,
+          price: product.price
+        });
+      }
+    } else {
+      console.log('[DEBUG] useProductsGridLogic - Nenhum resultado retornado pelo searchByBarcode');
     }
   };
 
-  // Handler para adicionar produto ao carrinho
+  // Handler para adicionar produto ao carrinho (clique manual - sempre unidade)
   const handleAddToCart = (product: Product) => {
-    addItem({
+    console.log('[DEBUG] useProductsGridLogic - Adicionando produto via clique manual (unidade):', {
       id: product.id,
       name: product.name,
       price: product.price,
       maxQuantity: product.stock_quantity
+    });
+    
+    addItem({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      maxQuantity: product.stock_quantity,
+      type: 'unit' // Clique manual sempre adiciona como unidade
     });
     onProductSelect?.(product);
   };
