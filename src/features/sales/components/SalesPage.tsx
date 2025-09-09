@@ -90,16 +90,16 @@ function SalesPage({
                       )}
                     </Button>
                   </SheetTrigger>
-                  <SheetContent side="right" className="w-full sm:w-96 p-0 bg-black/90 backdrop-blur-xl border-white/20">
-                    <SheetHeader className="p-6 border-b border-white/20">
+                  <SheetContent side="right" className="w-full sm:w-[420px] p-0 bg-black/95 backdrop-blur-xl border-white/20 max-h-[100vh] overflow-hidden">
+                    <SheetHeader className="flex-shrink-0 p-4 border-b border-white/20">
                       <SheetTitle className={cn("flex items-center gap-3", getSFProTextClasses('h2', 'primary'))}>
                         <div className="p-2 rounded-xl bg-yellow-400/20 border border-yellow-400/30">
-                          <ShoppingCart className="h-6 w-6 text-yellow-400" />
+                          <ShoppingCart className="h-5 w-5 text-yellow-400" />
                         </div>
-                        <span className={getSFProTextClasses('h3', 'accent')}>CARRINHO DE VENDAS</span>
+                        <span className={getSFProTextClasses('h4', 'accent')}>CARRINHO DE VENDAS</span>
                       </SheetTitle>
                     </SheetHeader>
-                    <div className="h-full">
+                    <div className="flex-1 min-h-0 overflow-hidden h-[calc(100vh-80px)]">
                       <Cart variant={variant} glassEffect={glassEffect} saleType={saleType} />
                     </div>
                   </SheetContent>
@@ -204,7 +204,7 @@ function SalesPage({
           <>
             {/* Layout para desktop */}
             <div 
-              className="hidden lg:grid lg:grid-cols-4 gap-4 h-full bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg hero-spotlight p-4"
+              className="hidden lg:grid lg:grid-cols-[1fr_420px] gap-6 h-full max-h-[calc(100vh-280px)] bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg hero-spotlight p-4"
               onMouseMove={(e) => {
                 const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
                 const x = ((e.clientX - rect.left) / rect.width) * 100;
@@ -213,7 +213,7 @@ function SalesPage({
                 (e.currentTarget as HTMLElement).style.setProperty("--y", `${y}%`);
               }}
             >
-              <div className="lg:col-span-3 flex flex-col min-h-0">
+              <div className="flex flex-col min-h-0 overflow-hidden">
                 {/* Products Grid - ocupa todo o espaço */}
                 <div className="flex-1 min-h-0 overflow-hidden">
                   <ProductsGrid 
@@ -229,8 +229,8 @@ function SalesPage({
                 </div>
               </div>
               
-              {/* Cart - altura total */}
-              <div className="border-l border-white/20 pl-4 flex flex-col min-h-0">
+              {/* Cart - largura fixa otimizada */}
+              <div className="border-l border-white/20 pl-4 flex flex-col min-h-0 overflow-hidden">
                 <Cart 
                   variant={variant} 
                   glassEffect={glassEffect} 

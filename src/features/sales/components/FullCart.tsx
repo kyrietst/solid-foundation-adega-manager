@@ -188,7 +188,7 @@ export function FullCart({
 
   return (
     <div 
-      className={cn('bg-black/70 backdrop-blur-xl border border-white/20 shadow-lg rounded-lg flex flex-col h-full hero-spotlight', className)}
+      className={cn('bg-black/70 backdrop-blur-xl border border-white/20 shadow-lg rounded-lg flex flex-col h-full max-h-[calc(100vh-200px)] hero-spotlight', className)}
       onMouseMove={(e) => {
         const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
         const x = ((e.clientX - rect.left) / rect.width) * 100;
@@ -214,7 +214,7 @@ export function FullCart({
       </div>
 
       {/* Customer Search */}
-      <div className="p-4 border-b border-white/20 space-y-3">
+      <div className="flex-shrink-0 p-4 border-b border-white/20 space-y-3">
         {selectedCustomer ? (
           <div className="flex items-center justify-between p-3 bg-emerald-500/20 border border-emerald-500/30 backdrop-blur-sm rounded-lg">
             <div>
@@ -244,22 +244,27 @@ export function FullCart({
                   Cadastrar Cliente
                 </Button>
               </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle className={cn(text.h2, shadows.medium)}>Novo Cliente</DialogTitle>
+              <DialogContent className="w-[95vw] sm:w-[90vw] md:w-[600px] max-w-[600px] h-[85vh] max-h-[85vh] overflow-hidden bg-black/95 backdrop-blur-sm border border-white/10 flex flex-col">
+                <DialogHeader className="flex-shrink-0 pb-4 border-b border-white/20">
+                  <DialogTitle className="text-lg font-bold text-white flex items-center gap-2">
+                    <UserPlus className="h-4 w-4 text-yellow-400" />
+                    Novo Cliente
+                  </DialogTitle>
                 </DialogHeader>
-                <CustomerForm 
-                  onSuccess={() => setIsCustomerModalOpen(false)}
-                />
+                <div className="flex-1 min-h-0 overflow-y-auto px-2 py-1">
+                  <CustomerForm 
+                    onSuccess={() => setIsCustomerModalOpen(false)}
+                  />
+                </div>
               </DialogContent>
             </Dialog>
           </div>
         )}
       </div>
 
-      {/* Items */}
-      <ScrollArea className="flex-1 p-4">
-        <div className="space-y-3">
+      {/* Items - Área scrollável otimizada */}
+      <ScrollArea className="flex-1 min-h-0 overflow-hidden">
+        <div className="p-4 space-y-3">
           {items.map((item) => (
             <div key={`${item.id}-${item.type}`} className="flex items-center justify-between p-3 glass-subtle rounded-lg hover:bg-primary-yellow/5 transition-colors">
               <div className="flex-1">
@@ -322,8 +327,8 @@ export function FullCart({
         </div>
       </ScrollArea>
 
-      {/* Footer */}
-      <div className="border-t border-primary-yellow/20 p-4 space-y-4">
+      {/* Footer - Sempre visível */}
+      <div className="flex-shrink-0 border-t border-primary-yellow/20 p-4 space-y-4">
         {/* Discount */}
         {allowDiscounts && (
           <div className="space-y-2">

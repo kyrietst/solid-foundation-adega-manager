@@ -184,9 +184,9 @@ export const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className={cn(
-        "max-w-6xl max-h-[90vh] overflow-y-auto backdrop-blur-xl shadow-2xl",
+        "w-[95vw] max-w-6xl h-[90vh] max-h-[90vh] overflow-hidden backdrop-blur-xl shadow-2xl",
         glassClasses,
-        "bg-gray-900/90 border border-primary-yellow/30"
+        "bg-gray-900/90 border border-primary-yellow/30 flex flex-col"
       )}>
         <DialogHeader>
           <div className="flex items-center justify-between">

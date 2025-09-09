@@ -357,7 +357,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl h-[90vh] bg-black/95 backdrop-blur-sm border border-white/10 flex flex-col hero-spotlight hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300" onMouseMove={handleMouseMove}>
+      <DialogContent className="w-[95vw] max-w-4xl h-[90vh] max-h-[90vh] bg-black/95 backdrop-blur-sm border border-white/10 flex flex-col hero-spotlight hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300 overflow-hidden" onMouseMove={handleMouseMove}>
         <DialogHeader>
           <DialogTitle className="text-xl font-bold text-white flex items-center gap-2">
             <Edit className="h-5 w-5 text-yellow-400" />
