@@ -24,7 +24,6 @@ import { useFormWithToast } from '@/shared/hooks/common/use-form-with-toast';
 import { CustomerTagManager } from './CustomerTagManager';
 import { Loader2, MapPin, Calendar, Phone, MessageSquare, Shield, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/core/config/utils';
-import { getGlassCardClasses } from '@/core/config/theme-utils';
 
 const addressSchema = z.object({
   street: z.string().min(2, 'Rua é obrigatória'),
@@ -83,14 +82,10 @@ const calculateProfileCompleteness = (values: CustomerFormValues): number => {
 
 interface CustomerFormProps {
   onSuccess: () => void;
-  variant?: 'default' | 'premium' | 'success' | 'warning' | 'error';
-  glassEffect?: boolean;
 }
 
 export function CustomerForm({ 
-  onSuccess,
-  variant = 'default',
-  glassEffect = true
+  onSuccess
 }: CustomerFormProps) {
   const upsertCustomer = useUpsertCustomer();
   const [currentTags, setCurrentTags] = useState<string[]>([]);
@@ -122,8 +117,6 @@ export function CustomerForm({
     onSuccess,
   });
 
-  const glassClasses = glassEffect ? getGlassCardClasses(variant) : '';
-  
   // Calcular completude em tempo real
   const currentValues = form.watch();
   const completeness = calculateProfileCompleteness(currentValues);
@@ -142,11 +135,10 @@ export function CustomerForm({
 
   return (
     <Form {...form}>
-      <fieldset className={cn('space-y-4 p-6 rounded-lg', glassClasses)}>
-        <legend className="sr-only">Informações do Cliente</legend>
+      <form onSubmit={form.handleSubmit(upsertCustomer)} className="space-y-6">
         
-        {/* Indicador de Completude do Perfil */}
-        <div className="bg-gray-800/30 rounded-lg p-4 border border-gray-600/30">
+        {/* Indicador de Completude do Perfil - Compacto */}
+        <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-600/30">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-primary-yellow" />
@@ -174,66 +166,97 @@ export function CustomerForm({
           </p>
         </div>
         
-        <form onSubmit={form.handleSubmit(upsertCustomer)} className="space-y-4">
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="text-gray-200">Nome *</FormLabel>
-              <FormControl>
-                <Input 
-                  placeholder="Nome completo do cliente" 
-                  aria-required="true"
-                  className="bg-gray-800/50 border-primary-yellow/30 text-gray-200 focus:border-primary-yellow placeholder:text-gray-400"
-                  {...field} 
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="email"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="text-gray-200">Email</FormLabel>
-              <FormControl>
-                <Input 
-                  placeholder="email@exemplo.com" 
-                  type="email"
-                  aria-required="false"
-                  className="bg-gray-800/50 border-primary-yellow/30 text-gray-200 focus:border-primary-yellow placeholder:text-gray-400"
-                  {...field} 
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="phone"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="text-gray-200">Telefone</FormLabel>
-              <FormControl>
-                <Input 
-                  placeholder="(99) 99999-9999" 
-                  type="tel"
-                  aria-required="false"
-                  className="bg-gray-800/50 border-primary-yellow/30 text-gray-200 focus:border-primary-yellow placeholder:text-gray-400"
-                  {...field} 
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        {/* Informações Básicas - Grid Responsivo */}
+        <div className="space-y-3">
+          <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+            <CheckCircle2 className="h-3 w-3 text-primary-yellow" />
+            Informações Básicas
+          </h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-gray-200 text-sm">Nome *</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="Nome completo do cliente" 
+                      aria-required="true"
+                      className="bg-gray-800/50 border-primary-yellow/30 text-gray-200 focus:border-primary-yellow placeholder:text-gray-400 h-9"
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="phone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-gray-200 text-sm">Telefone</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="(99) 99999-9999" 
+                      type="tel"
+                      aria-required="false"
+                      className="bg-gray-800/50 border-primary-yellow/30 text-gray-200 focus:border-primary-yellow placeholder:text-gray-400 h-9"
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-gray-200 text-sm">Email</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="email@exemplo.com" 
+                      type="email"
+                      aria-required="false"
+                      className="bg-gray-800/50 border-primary-yellow/30 text-gray-200 focus:border-primary-yellow placeholder:text-gray-400 h-9"
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="birthday"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-gray-200 text-sm">Data de Nascimento</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="date"
+                      className="bg-gray-800/50 border-primary-yellow/30 text-gray-200 focus:border-primary-yellow h-9"
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        </div>
 
-        {/* Endereço */}
-        <div className="space-y-4 border border-gray-600/30 rounded-lg p-4">
+        {/* Endereço - Compacto */}
+        <div className="space-y-3 border border-gray-600/30 rounded-lg p-3">
           <div className="flex items-center gap-2 text-gray-200">
             <MapPin className="w-4 h-4" />
             <h3 className="font-medium">Endereço para Delivery</h3>
@@ -400,10 +423,10 @@ export function CustomerForm({
         </div>
 
         {/* Preferências de Contato */}
-        <div className="space-y-4 border border-gray-600/30 rounded-lg p-4">
+        <div className="space-y-3 border border-gray-600/30 rounded-lg p-3">
           <div className="flex items-center gap-2 text-gray-200">
-            <MessageSquare className="w-4 h-4" />
-            <h3 className="font-medium">Preferências de Comunicação</h3>
+            <MessageSquare className="w-3 w-3" />
+            <h3 className="text-sm font-semibold">Preferências de Comunicação</h3>
           </div>
           
           <FormField
@@ -411,10 +434,10 @@ export function CustomerForm({
             name="contact_preference"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-gray-200">Forma Preferida de Contato</FormLabel>
+                <FormLabel className="text-gray-200 text-sm">Forma Preferida de Contato</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
-                    <SelectTrigger className="bg-gray-800/50 border-primary-yellow/30 text-gray-200 focus:border-primary-yellow">
+                    <SelectTrigger className="bg-gray-800/50 border-primary-yellow/30 text-gray-200 focus:border-primary-yellow h-9">
                       <SelectValue placeholder="Selecione como prefere ser contatado" />
                     </SelectTrigger>
                   </FormControl>
@@ -434,7 +457,7 @@ export function CustomerForm({
             control={form.control}
             name="contact_permission"
             render={({ field }) => (
-              <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border border-primary-yellow/30 p-4">
+              <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border border-primary-yellow/30 p-3">
                 <FormControl>
                   <Checkbox
                     checked={field.value}
@@ -442,8 +465,8 @@ export function CustomerForm({
                   />
                 </FormControl>
                 <div className="space-y-1 leading-none">
-                  <FormLabel className="text-gray-200 flex items-center gap-2">
-                    <Shield className="w-4 h-4" />
+                  <FormLabel className="text-gray-200 text-sm flex items-center gap-2">
+                    <Shield className="w-3 h-3" />
                     Autorização LGPD *
                   </FormLabel>
                   <p className="text-xs text-gray-400">
@@ -458,12 +481,17 @@ export function CustomerForm({
         </div>
 
         {/* Observações da Equipe */}
-        <FormField
-          control={form.control}
-          name="notes"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="text-gray-200">Observações da Equipe</FormLabel>
+        <div className="space-y-3">
+          <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+            <MessageSquare className="h-3 w-3 text-primary-yellow" />
+            Observações da Equipe
+          </h3>
+          
+          <FormField
+            control={form.control}
+            name="notes"
+            render={({ field }) => (
+              <FormItem>
               <FormControl>
                 <Textarea 
                   placeholder="Anotações internas sobre o cliente (preferências, observações, etc.)"
@@ -475,6 +503,7 @@ export function CustomerForm({
             </FormItem>
           )}
         />
+        </div>
 
         {/* Sistema de Tags Personalizáveis */}
         <FormField
@@ -498,6 +527,8 @@ export function CustomerForm({
           )}
         />
 
+        {/* Botão de Ação */}
+        <div className="pt-4 border-t border-gray-700">
           <Button 
             type="submit" 
             disabled={form.isSubmitting} 
@@ -506,8 +537,8 @@ export function CustomerForm({
             {form.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin text-black" aria-hidden="true" />}
             Salvar Cliente
           </Button>
-        </form>
-      </fieldset>
+        </div>
+      </form>
     </Form>
   );
 }
