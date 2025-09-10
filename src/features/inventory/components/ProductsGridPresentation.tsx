@@ -62,6 +62,7 @@ export interface ProductsGridPresentationProps {
   onItemsPerPageChange: (value: string) => void;
   onBarcodeScanned: (barcode: string) => void;
   onAddToCart: (product: Product) => void;
+  onOpenSelection?: (product: Product) => void;
   onAddProduct?: () => void;
   onViewDetails?: (product: Product) => void;
   onEdit?: (product: Product) => void;
@@ -101,6 +102,7 @@ export const ProductsGridPresentation: React.FC<ProductsGridPresentationProps> =
   onItemsPerPageChange,
   onBarcodeScanned,
   onAddToCart,
+  onOpenSelection,
   onAddProduct,
   onViewDetails,
   onEdit,
@@ -218,6 +220,7 @@ export const ProductsGridPresentation: React.FC<ProductsGridPresentationProps> =
                   products={currentProducts}
                   gridColumns={gridColumns}
                   onAddToCart={onAddToCart}
+                  onOpenSelection={onOpenSelection}
                   variant={variant}
                   glassEffect={glassEffect}
                 />

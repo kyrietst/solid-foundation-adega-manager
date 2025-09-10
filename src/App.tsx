@@ -20,6 +20,11 @@ const AdvancedReports = lazy(() =>
   import('@/features/reports/components/AdvancedReports').then((m) => ({ default: m.AdvancedReports }))
 );
 
+// Lazy load Design System page
+const DesignSystemPage = lazy(() =>
+  import('./pages/DesignSystemPage').then((m) => ({ default: m.default }))
+);
+
 const queryClient = new QueryClient();
 
 // Componente de workaround para garantir que o Tailwind inclua todas as classes de cor dinâmicas.
@@ -73,6 +78,16 @@ const App = () => {
                         element={
                           <RouteErrorBoundary routeName="Diagnósticos Chrome">
                             <ChromeDiagnostics />
+                          </RouteErrorBoundary>
+                        } 
+                      />
+                      <Route 
+                        path="/designsystem" 
+                        element={
+                          <RouteErrorBoundary routeName="Design System">
+                            <Suspense fallback={<div className="flex items-center justify-center min-h-screen bg-black"><div className="text-yellow-400">Carregando Design System...</div></div>}>
+                              <DesignSystemPage />
+                            </Suspense>
                           </RouteErrorBoundary>
                         } 
                       />

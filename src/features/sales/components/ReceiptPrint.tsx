@@ -18,6 +18,7 @@ export interface ReceiptItem {
 export interface ReceiptData {
   id: string;
   created_at: string;
+  total_amount: number;
   final_amount: number;
   discount_amount: number;
   payment_method: string;
@@ -57,7 +58,7 @@ export const ReceiptPrint: React.FC<ReceiptPrintProps> = ({ data }) => {
   };
 
 
-  const subtotal = data.items.reduce((sum, item) => sum + item.total_item, 0);
+  const subtotal = data.total_amount; // Usar total_amount do banco (subtotal antes do desconto)
 
   return (
     <>

@@ -10,7 +10,9 @@ import { useBarcode } from '@/features/inventory/hooks/use-barcode';
 import { usePagination } from '@/shared/hooks/common/use-pagination';
 import { useProductFilters } from './useProductFilters';
 import { useProductCategories } from './useProductCategories';
+import { useProductSelection, convertSelectionToCartItem } from '@/features/sales/hooks/useProductSelection';
 import type { Product } from '@/types/inventory.types';
+import type { ProductSelectionData } from '@/features/sales/components/ProductSelectionModal';
 
 export interface ProductsGridConfig {
   showSearch?: boolean;
@@ -37,6 +39,15 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
 
   const { addItem } = useCart();
   const { searchByBarcode } = useBarcode();
+  
+  // Hook de seleção de produtos (unidade vs pacote)
+  const {
+    isModalOpen,
+    selectedProduct,
+    openProductSelection,
+    closeProductSelection,
+    shouldShowSelection
+  } = useProductSelection();
 
   // Query para buscar produtos
   const { data: products = [], isLoading } = useQuery({
@@ -165,23 +176,60 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
     }
   };
 
-  // Handler para adicionar produto ao carrinho (clique manual - sempre unidade)
+  // Handler para adicionar produto ao carrinho (clique manual)
   const handleAddToCart = (product: Product) => {
-    console.log('[DEBUG] useProductsGridLogic - Adicionando produto via clique manual (unidade):', {
+    console.log('[DEBUG] useProductsGridLogic - handleAddToCart iniciado para:', {
       id: product.id,
       name: product.name,
-      price: product.price,
-      maxQuantity: product.stock_quantity
+      hasPackageTracking: product.has_package_tracking,
+      packageUnits: product.package_units
     });
     
-    addItem({
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      maxQuantity: product.stock_quantity,
-      type: 'unit' // Clique manual sempre adiciona como unidade
+    // Se o produto requer seleção (tem rastreamento de pacote), abrir modal
+    if (shouldShowSelection(product)) {
+      console.log('[DEBUG] useProductsGridLogic - Abrindo modal de seleção para produto:', product.name);
+      openProductSelection(product);
+    } else {
+      // Senão, adicionar direto como unidade
+      console.log('[DEBUG] useProductsGridLogic - Adicionando produto direto como unidade:', product.name);
+      addItem({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        maxQuantity: product.stock_quantity,
+        type: 'unit'
+      });
+      onProductSelect?.(product);
+    }
+  };
+
+  // Handler para confirmação da seleção no modal
+  const handleProductSelectionConfirm = (selection: ProductSelectionData) => {
+    if (!selectedProduct) {
+      console.warn('[DEBUG] useProductsGridLogic - Nenhum produto selecionado para confirmação');
+      return;
+    }
+
+    console.log('[DEBUG] useProductsGridLogic - Confirmando seleção:', {
+      productName: selectedProduct.name,
+      type: selection.type,
+      quantity: selection.quantity,
+      price: selection.price,
+      totalPrice: selection.totalPrice
     });
-    onProductSelect?.(product);
+
+    // Converter seleção para item do carrinho
+    const cartItem = convertSelectionToCartItem(selectedProduct, selection);
+    
+    console.log('[DEBUG] useProductsGridLogic - Adicionando item convertido ao carrinho:', cartItem);
+    
+    // Adicionar ao carrinho
+    addItem(cartItem);
+    
+    // Chamar callback se fornecido
+    onProductSelect?.(selectedProduct);
+    
+    console.log('[DEBUG] useProductsGridLogic - Produto adicionado com sucesso via modal de seleção');
   };
 
   return {
@@ -198,6 +246,10 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
     isFiltersOpen,
     hasActiveFilters,
     filterDescription,
+
+    // Estados do modal de seleção
+    isModalOpen,
+    selectedProduct,
 
     // Configuração
     showSearch,
@@ -222,6 +274,11 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
     setItemsPerPage,
     handleBarcodeScanned,
     handleAddToCart,
+
+    // Ações do modal de seleção
+    openProductSelection,
+    closeProductSelection,
+    handleProductSelectionConfirm,
 
     // Utilities
     getProductsByCategory,

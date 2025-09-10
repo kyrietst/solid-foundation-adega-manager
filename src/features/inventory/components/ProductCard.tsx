@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { Button } from '@/shared/ui/primitives/button';
-import { Plus } from 'lucide-react';
+import { Plus, Package } from 'lucide-react';
 import type { Product } from '@/types/inventory.types';
 import { formatCurrency, cn } from '@/core/config/utils';
 import { getGlassCardClasses, getHoverTransformClasses } from '@/core/config/theme-utils';
@@ -15,6 +15,7 @@ import { ProductImage } from '@/shared/ui/composite/optimized-image';
 interface ProductCardProps {
   product: Product;
   onAddToCart: (product: Product) => void;
+  onOpenSelection?: (product: Product) => void; // Nova prop para abrir modal de seleção
   variant?: 'default' | 'premium' | 'success' | 'warning' | 'error';
   glassEffect?: boolean;
 }
@@ -22,12 +23,32 @@ interface ProductCardProps {
 export const ProductCard = React.memo<ProductCardProps>(({
   product,
   onAddToCart,
+  onOpenSelection,
   variant = 'default',
   glassEffect = true,
 }) => {
   const isOutOfStock = product.stock_quantity === 0;
-  const stockColor = isOutOfStock ? 'bg-accent-red/90' : 'bg-gray-800/90';
   const glassClasses = glassEffect ? getGlassCardClasses(variant) : '';
+  
+  // Verificar se produto tem rastreamento de pacote
+  const hasPackageTracking = product.has_package_tracking && 
+    product.package_units && 
+    product.package_units > 1;
+  
+  // Calcular se pode vender como pacote
+  const canSellAsPackage = hasPackageTracking && 
+    Math.floor(product.stock_quantity / (product.package_units || 1)) > 0;
+
+  // Decidir como adicionar ao carrinho
+  const handleAddClick = () => {
+    // Se tem rastreamento de pacote e pode vender como pacote, abrir modal
+    if (hasPackageTracking && onOpenSelection) {
+      onOpenSelection(product);
+    } else {
+      // Senão, adicionar direto como unidade
+      onAddToCart(product);
+    }
+  };
 
   return (
     <div 
@@ -80,10 +101,28 @@ export const ProductCard = React.memo<ProductCardProps>(({
           
           {/* Preço com cores padronizadas */}
           <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <span className="text-2xl font-bold block text-primary-yellow">
-                {formatCurrency(product.price)}
-              </span>
+            <div className="space-y-1 flex-1">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl font-bold text-primary-yellow">
+                  {formatCurrency(product.price)}
+                </span>
+                {hasPackageTracking && (
+                  <div className="flex items-center gap-1 px-2 py-1 bg-green-500/20 border border-green-500/30 rounded-full">
+                    <Package className="h-3 w-3 text-green-400" />
+                    <span className="text-xs text-green-400 font-medium">
+                      {product.package_units}un
+                    </span>
+                  </div>
+                )}
+              </div>
+              
+              {/* Mostrar preço do pacote se disponível */}
+              {hasPackageTracking && product.package_price && (
+                <div className="text-sm text-gray-400">
+                  Fardo: {formatCurrency(product.package_price)}
+                </div>
+              )}
+              
               {product.category && (
                 <span className="text-xs text-gray-400">
                   {product.category}
@@ -96,19 +135,41 @@ export const ProductCard = React.memo<ProductCardProps>(({
         {/* Botão com cores padronizadas do sistema */}
         <Button 
           size="sm" 
-          onClick={() => onAddToCart(product)}
+          onClick={handleAddClick}
           disabled={isOutOfStock}
           className={cn(
             'w-full h-10 font-semibold transition-all duration-200',
             getHoverTransformClasses('scale'),
             isOutOfStock 
               ? 'bg-gray-600/30 text-gray-400 border border-gray-500/40 cursor-not-allowed backdrop-blur-sm'
+              : hasPackageTracking
+              ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-400 hover:to-emerald-400 border border-green-500/50 shadow-lg hover:shadow-green-400/30'
               : 'bg-gradient-to-r from-primary-yellow to-yellow-500 text-black hover:from-yellow-300 hover:to-yellow-400 border border-primary-yellow/50 shadow-lg hover:shadow-yellow-400/30'
           )}
-          aria-label={isOutOfStock ? `Produto ${product.name} indisponível` : `Adicionar ${product.name} ao carrinho`}
+          aria-label={
+            isOutOfStock 
+              ? `Produto ${product.name} indisponível` 
+              : hasPackageTracking 
+              ? `Selecionar tipo de venda para ${product.name}`
+              : `Adicionar ${product.name} ao carrinho`
+          }
         >
-          <Plus className="h-4 w-4 mr-2" aria-hidden="true" />
-          {isOutOfStock ? '❌ Indisponível' : '🛒 Adicionar'}
+          {isOutOfStock ? (
+            <>
+              <Plus className="h-4 w-4 mr-2" aria-hidden="true" />
+              ❌ Indisponível
+            </>
+          ) : hasPackageTracking ? (
+            <>
+              <Package className="h-4 w-4 mr-2" aria-hidden="true" />
+              📦 Selecionar
+            </>
+          ) : (
+            <>
+              <Plus className="h-4 w-4 mr-2" aria-hidden="true" />
+              🛒 Adicionar
+            </>
+          )}
         </Button>
       </div>
     </div>

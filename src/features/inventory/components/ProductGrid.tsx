@@ -17,6 +17,7 @@ interface ProductGridProps {
     desktop: number;
   };
   onAddToCart: (product: Product) => void;
+  onOpenSelection?: (product: Product) => void; // Nova prop para abrir modal de seleção
   variant?: 'default' | 'premium' | 'success' | 'warning' | 'error';
   glassEffect?: boolean;
   className?: string;
@@ -26,6 +27,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
   products,
   gridColumns,
   onAddToCart,
+  onOpenSelection,
   variant = 'default',
   glassEffect = true,
   className = '',
@@ -54,6 +56,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
           <ProductCard 
             product={product} 
             onAddToCart={onAddToCart}
+            onOpenSelection={onOpenSelection}
             variant={variant}
             glassEffect={glassEffect}
           />

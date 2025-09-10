@@ -7,6 +7,7 @@ import React from 'react';
 import type { Product } from '@/types/inventory.types';
 import { useProductsGridLogic, ProductsGridConfig } from '@/hooks/products/useProductsGridLogic';
 import { ProductsGridPresentation } from './ProductsGridPresentation';
+import { ProductSelectionModal } from '@/features/sales/components/ProductSelectionModal';
 
 export interface ProductsGridContainerProps extends ProductsGridConfig {
   showAddButton?: boolean;
@@ -47,6 +48,10 @@ export const ProductsGridContainer: React.FC<ProductsGridContainerProps> = ({
     hasActiveFilters,
     filterDescription,
 
+    // Estados do modal de seleção
+    isModalOpen,
+    selectedProduct,
+
     // Configuração
     showSearch,
     showFilters,
@@ -70,6 +75,11 @@ export const ProductsGridContainer: React.FC<ProductsGridContainerProps> = ({
     setItemsPerPage,
     handleBarcodeScanned,
     handleAddToCart,
+
+    // Ações do modal de seleção
+    openProductSelection,
+    closeProductSelection,
+    handleProductSelectionConfirm,
   } = useProductsGridLogic(config);
 
   // Preparar props para apresentação
@@ -115,13 +125,28 @@ export const ProductsGridContainer: React.FC<ProductsGridContainerProps> = ({
     onItemsPerPageChange: (value: string) => setItemsPerPage(parseInt(value)),
     onBarcodeScanned: handleBarcodeScanned,
     onAddToCart: handleAddToCart,
+    onOpenSelection: openProductSelection,
     onAddProduct,
     onViewDetails,
     onEdit,
     onAdjustStock,
   };
 
-  return <ProductsGridPresentation {...presentationProps} />;
+  return (
+    <>
+      <ProductsGridPresentation {...presentationProps} />
+      
+      {/* Modal de seleção de produto (unidade vs pacote) */}
+      {selectedProduct && (
+        <ProductSelectionModal
+          isOpen={isModalOpen}
+          onClose={closeProductSelection}
+          onConfirm={handleProductSelectionConfirm}
+          product={selectedProduct}
+        />
+      )}
+    </>
+  );
 };
 
 export default ProductsGridContainer;

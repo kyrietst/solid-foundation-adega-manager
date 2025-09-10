@@ -23,6 +23,7 @@ export const useReceiptData = (saleId: string | null) => {
         .select(`
           id,
           created_at,
+          total_amount,
           final_amount,
           discount_amount,
           payment_method,
@@ -91,6 +92,7 @@ export const useReceiptData = (saleId: string | null) => {
       const receiptData: ReceiptData = {
         id: saleData.id,
         created_at: saleData.created_at,
+        total_amount: Number(saleData.total_amount),
         final_amount: Number(saleData.final_amount),
         discount_amount: Number(saleData.discount_amount || 0),
         payment_method: saleData.payment_method,

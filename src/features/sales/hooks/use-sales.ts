@@ -76,10 +76,13 @@ type UpsertSaleInput = {
   customer_id: string | null;
   payment_method_id: string;
   total_amount: number;
+  discount_amount?: number; // Novo: valor do desconto aplicado
   items: { 
     product_id: string; 
     quantity: number; 
-    unit_price: number 
+    unit_price: number;
+    sale_type?: 'unit' | 'package'; // Novo: tipo de venda
+    package_units?: number; // Novo: unidades no pacote para controle de estoque
   }[];
   notes?: string;
   // Novos campos para delivery
@@ -270,108 +273,64 @@ export const useUpsertSale = () => {
         ? saleData.total_amount + saleData.deliveryData.deliveryFee
         : saleData.total_amount;
 
-      // 5. Cria a venda principal
-      const saleInsertData: any = {
-        customer_id: saleData.customer_id,
-        user_id: user.id,
-        seller_id: user.id,
-        total_amount: saleData.total_amount,
-        discount_amount: 0,
-        final_amount: totalWithDeliveryFee,
-        payment_method: paymentMethod?.name || 'Outro',
-        payment_status: 'paid',
-        status: isDeliveryOrder ? 'pending' : 'completed',
-        delivery: isDeliveryOrder,
-        delivery_address: isDeliveryOrder && saleData.deliveryData ? saleData.deliveryData.address : null,
-        delivery_user_id: null,
-        notes: saleData.notes || null,
-        // Novos campos de delivery
-        delivery_type: saleData.saleType,
-        delivery_fee: isDeliveryOrder && saleData.deliveryData ? saleData.deliveryData.deliveryFee : 0,
-        delivery_status: isDeliveryOrder ? 'pending' : null,
-        delivery_zone_id: isDeliveryOrder && saleData.deliveryData ? saleData.deliveryData.zoneId : null,
-        delivery_instructions: isDeliveryOrder && saleData.deliveryData ? saleData.deliveryData.instructions : null,
-        estimated_delivery_time: isDeliveryOrder && saleData.deliveryData 
-          ? new Date(Date.now() + saleData.deliveryData.estimatedTime * 60 * 1000).toISOString()
-          : null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-
-      const { data: sale, error: saleError } = await supabase
-        .from('sales')
-        .insert(saleInsertData)
-        .select('*')
-        .single();
-
-      if (saleError) {
-        console.error('Erro ao criar venda:', saleError);
-        throw new Error(`Falha ao criar venda: ${saleError.message}`);
-      }
-
       // 5. Valida os itens da venda
       if (!saleData.items || saleData.items.length === 0) {
         throw new Error("A venda deve conter pelo menos um item");
       }
 
-      // 6. Verifica a disponibilidade em estoque antes de processar a venda
-      const { data: products, error: productsError } = await supabase
-        .from('products')
-        .select('id, stock_quantity')
-        .in('id', saleData.items.map(item => item.product_id));
-
-      if (productsError) {
-        console.error('Erro ao verificar estoque:', productsError);
-        throw new Error("Erro ao verificar a disponibilidade dos produtos");
-      }
-
-      // Cria um mapa de estoque para verificação rápida
-      const stockMap = new Map(products.map(p => [p.id, p.stock_quantity]));
-      
-      // Verifica se algum produto não tem estoque suficiente
-      const outOfStockItems = saleData.items.filter(item => {
-        const availableStock = stockMap.get(item.product_id) || 0;
-        return item.quantity > availableStock;
+      // 6. Usa a stored procedure process_sale para criar a venda
+      const { data: saleId, error: saleError } = await supabase.rpc('process_sale', {
+        p_customer_id: saleData.customer_id,
+        p_user_id: user.id,
+        p_payment_method_id: saleData.payment_method_id,
+        p_items: saleData.items,
+        p_notes: saleData.notes || null,
+        p_total_amount: saleData.total_amount,
+        p_discount_amount: saleData.discount_amount || 0
       });
 
-      if (outOfStockItems.length > 0) {
-        const productNames = await Promise.all(
-          outOfStockItems.map(async (item) => {
-            const { data: product } = await supabase
-              .from('products')
-              .select('name')
-              .eq('id', item.product_id)
-              .single();
-            return product?.name || `Produto ${item.product_id}`;
+      if (saleError) {
+        console.error('Erro ao processar venda:', saleError);
+        throw new Error(`Falha ao processar venda: ${saleError.message}`);
+      }
+
+      // 7. Se for uma venda com delivery, atualiza os campos específicos
+      if (isDeliveryOrder && saleData.deliveryData) {
+        const { error: updateError } = await supabase
+          .from('sales')
+          .update({
+            delivery: true,
+            delivery_address: saleData.deliveryData.address,
+            delivery_type: saleData.saleType,
+            delivery_fee: saleData.deliveryData.deliveryFee,
+            delivery_status: 'pending',
+            delivery_zone_id: saleData.deliveryData.zoneId,
+            delivery_instructions: saleData.deliveryData.instructions,
+            estimated_delivery_time: new Date(Date.now() + saleData.deliveryData.estimatedTime * 60 * 1000).toISOString(),
+            final_amount: saleData.total_amount + saleData.deliveryData.deliveryFee - (saleData.discount_amount || 0),
+            status: 'pending'
           })
-        );
-        
-        throw new Error(
-          `Os seguintes produtos não têm estoque suficiente: ${productNames.join(', ')}`
-        );
+          .eq('id', saleId);
+
+        if (updateError) {
+          console.error('Erro ao atualizar delivery:', updateError);
+          // Não falha a venda por erro no delivery, apenas loga
+        }
       }
 
-      // 7. Insere os itens da venda
-      const saleItems = saleData.items.map(item => ({
-        sale_id: sale.id,
-        product_id: item.product_id,
-        quantity: item.quantity,
-        unit_price: item.unit_price
-      }));
+      // 8. Busca a venda criada para retornar
+      const { data: sale, error: fetchError } = await supabase
+        .from('sales')
+        .select('*')
+        .eq('id', saleId)
+        .single();
 
-      const { error: itemsError } = await supabase
-        .from('sale_items')
-        .insert(saleItems);
-
-      if (itemsError) {
-        console.error('Erro ao salvar itens da venda:', itemsError);
-        throw new Error(`Falha ao salvar os itens da venda: ${itemsError.message}`);
+      if (fetchError || !sale) {
+        console.error('Erro ao buscar venda criada:', fetchError);
+        // Retorna um objeto mínimo se não conseguir buscar
+        const saleResult = { id: saleId };
+        return saleResult;
       }
-
-      // 8. Ajuste de estoque
-      // O estoque será ajustado automaticamente por meio dos triggers do banco de dados
-      // (sale_items -> inventory_movements -> adjust_product_stock). Não é necessário
-      // fazer nenhuma chamada RPC manual aqui para evitar dedução dupla de estoque.
 
       // 9. Registra a auditoria da venda
       try {
@@ -381,11 +340,12 @@ export const useUpsertSale = () => {
             user_id: user.id,
             action: 'create_sale',
             table_name: 'sales',
-            record_id: sale.id,
+            record_id: saleId,
             old_data: null,
             new_data: {
               customer_id: saleData.customer_id,
               total_amount: saleData.total_amount,
+              discount_amount: saleData.discount_amount || 0,
               item_count: saleData.items.length,
               payment_method: paymentMethod?.name || 'Outro'
             },
@@ -403,7 +363,7 @@ export const useUpsertSale = () => {
           await supabase
             .from('delivery_tracking')
             .insert({
-              sale_id: sale.id,
+              sale_id: saleId,
               status: 'pending',
               notes: 'Pedido criado - aguardando preparação',
               created_by: user.id
@@ -420,8 +380,8 @@ export const useUpsertSale = () => {
           await recordCustomerEvent({
             customer_id: saleData.customer_id,
             type: 'sale',
-            origin_id: sale.id,
-            value: totalWithDeliveryFee,
+            origin_id: saleId,
+            value: totalWithDeliveryFee - (saleData.discount_amount || 0),
             description: isDeliveryOrder ? 'Venda delivery registrada' : 'Venda registrada'
           });
           console.log('Evento do cliente registrado com sucesso');

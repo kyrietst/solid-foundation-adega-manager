@@ -67,12 +67,30 @@ export const useCheckout = (
           {
             customer_id: customerId!,
             payment_method_id: paymentMethodId,
-            total_amount: cartSummary.total,
-            items: items.map(item => ({ 
-              product_id: item.id, 
-              quantity: item.quantity, 
-              unit_price: item.price 
-            }))
+            total_amount: cartSummary.subtotal, // Enviar subtotal (antes do desconto)
+            discount_amount: discount > 0 ? discount : undefined, // Enviar desconto separadamente
+            items: items.map(item => {
+              // Para pacotes: quantity sempre = 1, e estoque será descontado pelo packageUnits
+              // Para unidades: quantity = quantidade selecionada
+              const correctQuantity = item.type === 'package' ? 1 : item.quantity;
+              
+              console.log(`[DEBUG] useCheckout - Mapeando item para venda:`, {
+                name: item.name,
+                type: item.type,
+                originalQuantity: item.quantity,
+                correctQuantity: correctQuantity,
+                price: item.price,
+                packageUnits: item.packageUnits
+              });
+              
+              return {
+                product_id: item.id,
+                quantity: correctQuantity,
+                unit_price: item.price,
+                sale_type: item.type, // Adicionar tipo de venda
+                package_units: item.packageUnits // Para controle de estoque
+              };
+            })
           },
           {
             onSuccess: (data) => resolve(data),
@@ -93,10 +111,10 @@ export const useCheckout = (
       setPaymentMethodId('');
       onSaleComplete?.(saleData.id);
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({ 
         title: 'Erro ao finalizar a venda', 
-        description: error.message, 
+        description: error instanceof Error ? error.message : 'Erro desconhecido', 
         variant: 'destructive' 
       });
     }
