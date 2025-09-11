@@ -91,7 +91,7 @@ export const useCart = create<CartState>()(
               // Adiciona um novo item ao carrinho com ID único
               const newItem = { 
                 ...item, 
-                quantity: 1, // FORÇANDO 1 - PODE SER O PROBLEMA!
+                quantity: item.quantity || 1, // CORREÇÃO: Usar quantidade do item
                 displayName: item.displayName || `${item.name} ${item.type === 'package' ? `(Pacote ${item.packageUnits || 1}x)` : '(Unidade)'}`
               };
               

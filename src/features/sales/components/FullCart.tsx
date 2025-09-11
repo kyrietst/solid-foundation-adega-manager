@@ -117,17 +117,38 @@ export function FullCart({
           // O carrinho mantém: 1 pacote = quantity: 1, type: 'package'
           // O stored procedure fará: 1 pacote × 6 unidades = 6 para o estoque
           
-          
-          return {
+          const itemData = {
             product_id: item.id,
             quantity: item.quantity, // Quantidade original do carrinho (1 para pacotes)
             unit_price: item.price,
             sale_type: item.type, // Adicionar tipo de venda
             package_units: item.packageUnits // Para controle de estoque no stored procedure
           };
+          
+          // 🔍 DEBUG: Log de cada item sendo enviado para stored procedure
+          console.log('💾 FullCart - Item sendo enviado para stored procedure:', {
+            nome: item.name,
+            quantidade: itemData.quantity,
+            tipo: itemData.sale_type,
+            packageUnits: itemData.package_units,
+            estoqueQueSeraDescontado: itemData.sale_type === 'package' 
+              ? `${itemData.quantity} × ${itemData.package_units} = ${itemData.quantity * (itemData.package_units || 1)} unidades`
+              : `${itemData.quantity} unidades`,
+            dadosCompletos: itemData
+          });
+          
+          return itemData;
         }),
         notes: `Desconto aplicado: R$ ${allowDiscounts ? discount.toFixed(2) : '0.00'}`
       };
+      
+      // 🔍 DEBUG: Log dos dados completos sendo enviados
+      console.log('💾 FullCart - Dados completos da venda:', {
+        totalItens: saleData.items.length,
+        valorTotal: saleData.total_amount,
+        itens: saleData.items,
+        dadosCompletos: saleData
+      });
 
       const result = await upsertSale.mutateAsync(saleData);
       
