@@ -10,13 +10,7 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/shared/ui/primitives/dialog';
+import { BaseModal } from '@/shared/ui/composite';
 import {
   Form,
   FormControl,
@@ -345,19 +339,20 @@ export const NewProductModal: React.FC<NewProductModalProps> = ({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="w-[95vw] max-w-4xl h-[90vh] max-h-[90vh] bg-black/95 backdrop-blur-sm border border-white/10 flex flex-col hero-spotlight hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300 overflow-hidden" onMouseMove={handleMouseMove}>
-        <DialogHeader>
-          <DialogTitle className="text-xl font-bold text-white flex items-center gap-2">
-            <Plus className="h-5 w-5 text-yellow-400" />
-            Adicionar Novo Produto
-          </DialogTitle>
-          <DialogDescription className="text-gray-400">
-            Preencha os dados do produto. Campos com * são obrigatórios.
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="flex-1 overflow-y-auto pr-2">
+    <BaseModal
+      isOpen={isOpen}
+      onClose={handleClose}
+      title={
+        <>
+          <Plus className="h-5 w-5 text-yellow-400" />
+          Adicionar Novo Produto
+        </>
+      }
+      description="Preencha os dados do produto. Campos com * são obrigatórios."
+      size="2xl"
+      className="h-[90vh] max-h-[90vh] bg-black/95 backdrop-blur-sm border border-white/10 flex flex-col hero-spotlight hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300 overflow-hidden"
+    >
+      <div className="flex-1 overflow-y-auto pr-2" onMouseMove={handleMouseMove}>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
               {/* Informações Básicas */}
@@ -953,9 +948,8 @@ export const NewProductModal: React.FC<NewProductModalProps> = ({
             </div>
             </form>
           </Form>
-        </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </BaseModal>
   );
 };
 

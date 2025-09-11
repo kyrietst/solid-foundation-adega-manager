@@ -10,13 +10,7 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/shared/ui/primitives/dialog';
+import { BaseModal } from '@/shared/ui/composite';
 import {
   Form,
   FormControl,
@@ -220,17 +214,19 @@ export const NewCustomerModal: React.FC<NewCustomerModalProps> = ({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-black/95 backdrop-blur-sm border border-white/10">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-bold text-white flex items-center gap-2">
-            <UserPlus className="h-5 w-5 text-yellow-400" />
-            Cadastrar Novo Cliente
-          </DialogTitle>
-          <DialogDescription className="text-gray-400">
-            Preencha os dados do cliente. Apenas o nome é obrigatório.
-          </DialogDescription>
-        </DialogHeader>
+    <BaseModal
+      isOpen={isOpen}
+      onClose={handleClose}
+      title={
+        <>
+          <UserPlus className="h-5 w-5 text-yellow-400" />
+          Cadastrar Novo Cliente
+        </>
+      }
+      description="Preencha os dados do cliente. Apenas o nome é obrigatório."
+      size="2xl"
+      className="max-h-[90vh] overflow-y-auto bg-black/95 backdrop-blur-sm border border-white/10"
+    >
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -538,8 +534,7 @@ export const NewCustomerModal: React.FC<NewCustomerModalProps> = ({
             </div>
           </form>
         </Form>
-      </DialogContent>
-    </Dialog>
+    </BaseModal>
   );
 };
 
