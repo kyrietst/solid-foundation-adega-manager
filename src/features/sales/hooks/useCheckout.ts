@@ -80,7 +80,17 @@ export const useCheckout = (
                 originalQuantity: item.quantity,
                 correctQuantity: correctQuantity,
                 price: item.price,
-                packageUnits: item.packageUnits
+                packageUnits: item.packageUnits,
+                displayName: item.displayName
+              });
+              
+              console.log(`[DEBUG] useCheckout - Enviando para stored procedure:`, {
+                product_id: item.id,
+                quantity: correctQuantity,
+                unit_price: item.price,
+                sale_type: item.type,
+                package_units: item.packageUnits,
+                expected_total_for_this_item: item.price * correctQuantity
               });
               
               return {

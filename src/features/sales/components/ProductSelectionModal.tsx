@@ -109,6 +109,7 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
       packageUnits: selectionType === 'package' ? stockInfo.packageUnits : undefined
     };
     
+    
     onConfirm(selection);
     onClose();
   };

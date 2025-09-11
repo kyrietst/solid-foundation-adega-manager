@@ -66,6 +66,7 @@ export const useCart = create<CartState>()(
       
         addItem: (item) => {
           set((state) => {
+            
             // Gerar ID único baseado no produto e tipo
             const uniqueId = `${item.id}-${item.type}`;
             const existingItem = state.items.find((i) => 
@@ -80,6 +81,7 @@ export const useCart = create<CartState>()(
                 existingItem.maxQuantity
               );
               
+              
               newItems = state.items.map((i) =>
                 i.id === item.id && i.type === item.type
                   ? { ...i, quantity: newQuantity }
@@ -89,9 +91,11 @@ export const useCart = create<CartState>()(
               // Adiciona um novo item ao carrinho com ID único
               const newItem = { 
                 ...item, 
-                quantity: 1,
+                quantity: 1, // FORÇANDO 1 - PODE SER O PROBLEMA!
                 displayName: item.displayName || `${item.name} ${item.type === 'package' ? `(Pacote ${item.packageUnits || 1}x)` : '(Unidade)'}`
               };
+              
+              
               newItems = [...state.items, newItem];
             }
             

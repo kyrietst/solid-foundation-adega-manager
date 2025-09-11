@@ -146,7 +146,7 @@ export const convertSelectionToCartItem = (
   product: Product, 
   selection: ProductSelectionData
 ) => {
-  return {
+  const cartItem = {
     id: product.id,
     name: product.name,
     price: selection.price,
@@ -155,4 +155,7 @@ export const convertSelectionToCartItem = (
     packageUnits: selection.packageUnits,
     quantity: selection.quantity
   };
+  
+  
+  return cartItem;
 };

@@ -113,25 +113,17 @@ export function FullCart({
         total_amount: total,
         payment_method_id: paymentMethodId,
         items: items.map(item => {
-          // Calcular quantidade real em unidades para o estoque
-          // Se é pacote, multiplica pela quantidade de unidades do pacote
-          // Se é unidade, mantém a quantidade original
-          const realQuantity = item.type === 'package' 
-            ? item.quantity * (item.packageUnits || 1)
-            : item.quantity;
+          // CORREÇÃO: Não fazer conversão aqui, deixar o useCheckout/stored procedure fazer
+          // O carrinho mantém: 1 pacote = quantity: 1, type: 'package'
+          // O stored procedure fará: 1 pacote × 6 unidades = 6 para o estoque
           
-          console.log('[DEBUG] FullCart - Calculando quantidade para estoque:', {
-            itemName: item.name,
-            itemType: item.type,
-            cartQuantity: item.quantity,
-            packageUnits: item.packageUnits,
-            realQuantity: realQuantity
-          });
           
           return {
             product_id: item.id,
-            quantity: realQuantity, // Quantidade em unidades para desconto do estoque
-            unit_price: item.price
+            quantity: item.quantity, // Quantidade original do carrinho (1 para pacotes)
+            unit_price: item.price,
+            sale_type: item.type, // Adicionar tipo de venda
+            package_units: item.packageUnits // Para controle de estoque no stored procedure
           };
         }),
         notes: `Desconto aplicado: R$ ${allowDiscounts ? discount.toFixed(2) : '0.00'}`
