@@ -14,6 +14,7 @@ export interface KpiData {
   href?: string;
   isLoading?: boolean;
   subLabel?: string;
+  formatType?: 'currency' | 'number' | 'percentage' | 'none'; // tipo de formatação para FormatDisplay
 }
 
 export interface KpiCardsProps {
@@ -77,6 +78,7 @@ export function KpiCards({ items, className, showAnimation = true }: KpiCardsPro
               layout="crm"
               className={kpi.isLoading ? 'animate-pulse' : ''}
               onClick={kpi.href ? () => handleKpiClick(kpi.href) : undefined}
+              formatType={kpi.formatType || 'number'} // ✅ Passa formatType para StatCard
             />
           </div>
         );

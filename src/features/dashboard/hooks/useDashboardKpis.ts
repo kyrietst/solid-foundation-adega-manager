@@ -82,12 +82,14 @@ export function useSalesKpis(windowDays: number = 30) {
       // Calcular KPIs atuais com proteção anti-NaN
       const revenue = safeNumber((currentSales || []).reduce((sum, sale) => sum + safeNumber(sale.final_amount), 0));
       const orders = safeNumber((currentSales || []).length);
-      const avgTicket = debugNaN(safePercentage(revenue, orders), 'avgTicket');
+      // ✅ Correção: avgTicket é divisão simples, não percentual
+      const avgTicket = orders > 0 ? safeNumber(revenue / orders) : 0;
 
       // Calcular KPIs anteriores com proteção anti-NaN
       const revenuePrev = safeNumber((prevSales || []).reduce((sum, sale) => sum + safeNumber(sale.final_amount), 0));
       const ordersPrev = safeNumber((prevSales || []).length);
-      const avgTicketPrev = debugNaN(safePercentage(revenuePrev, ordersPrev), 'avgTicketPrev');
+      // ✅ Correção: avgTicketPrev é divisão simples, não percentual
+      const avgTicketPrev = ordersPrev > 0 ? safeNumber(revenuePrev / ordersPrev) : 0;
 
       // Calcular deltas com proteção anti-NaN
       const revenueDelta = debugNaN(safeDelta(revenue, revenuePrev), 'revenueDelta');
@@ -286,10 +288,8 @@ export function useExpenseKpis(windowDays: number = 30) {
       
       // Calcular margem líquida com proteção anti-NaN
       const revenue = safeNumber(salesData?.revenue);
-      const netMargin = debugNaN(
-        revenue > 0 ? safePercentage(revenue - totalExpenses, revenue) : 0, 
-        'netMargin'
-      );
+      // ✅ Correção: Cálculo direto da margem líquida
+      const netMargin = revenue > 0 ? safeNumber(((revenue - totalExpenses) / revenue) * 100) : 0;
       
       // Calcular variação de despesas (para implementar depois com dados históricos)
       const expensesDelta = 0; // Placeholder por enquanto

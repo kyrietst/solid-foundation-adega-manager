@@ -53,14 +53,33 @@ export const FormatDisplay: React.FC<FormatDisplayProps> = ({
 
   // Função para formatar o valor baseado no tipo
   const formatValue = (val: string | number | Date | null | undefined): string => {
+    // ✅ Verificação expandida para valores inválidos
     if (val === null || val === undefined || val === '') {
+      return placeholder;
+    }
+
+    // ✅ Verificação específica para NaN e valores inválidos numéricos
+    if (typeof val === 'number' && (isNaN(val) || !isFinite(val))) {
+      console.warn(`FormatDisplay: Valor numérico inválido detectado (${val}) para tipo ${type}, usando placeholder`);
+      return placeholder;
+    }
+
+    // ✅ Verificação para strings que representam NaN
+    if (typeof val === 'string' && (val.toLowerCase() === 'nan' || val === 'NaN')) {
+      console.warn(`FormatDisplay: String NaN detectada (${val}) para tipo ${type}, usando placeholder`);
       return placeholder;
     }
 
     try {
       switch (type) {
-        case 'currency':
-          return formatters.currency(Number(val));
+        case 'currency': {
+          const numVal = Number(val);
+          // ✅ Dupla verificação para currency
+          if (isNaN(numVal) || !isFinite(numVal)) {
+            return placeholder;
+          }
+          return formatters.currency(numVal);
+        }
         case 'date':
           return formatters.date(val);
         case 'datetime':
@@ -71,18 +90,36 @@ export const FormatDisplay: React.FC<FormatDisplayProps> = ({
           return formatters.cpf(String(val));
         case 'cnpj':
           return formatters.cnpj(String(val));
-        case 'percentage':
-          return formatters.percentage(Number(val));
-        case 'number':
-          return formatters.number(Number(val));
-        case 'numberCompact':
-          return formatters.numberCompact(Number(val));
+        case 'percentage': {
+          const numVal = Number(val);
+          // ✅ Dupla verificação para percentage
+          if (isNaN(numVal) || !isFinite(numVal)) {
+            return placeholder;
+          }
+          return formatters.percentage(numVal);
+        }
+        case 'number': {
+          const numVal = Number(val);
+          // ✅ Dupla verificação para number
+          if (isNaN(numVal) || !isFinite(numVal)) {
+            return placeholder;
+          }
+          return formatters.number(numVal);
+        }
+        case 'numberCompact': {
+          const numVal = Number(val);
+          // ✅ Dupla verificação para numberCompact
+          if (isNaN(numVal) || !isFinite(numVal)) {
+            return placeholder;
+          }
+          return formatters.numberCompact(numVal);
+        }
         default:
           return String(val);
       }
     } catch (error) {
       console.warn(`FormatDisplay: Erro ao formatar valor ${val} com tipo ${type}:`, error);
-      return String(val);
+      return placeholder; // ✅ Retorna placeholder em vez de valor bruto em caso de erro
     }
   };
 

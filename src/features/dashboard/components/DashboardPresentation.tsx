@@ -111,90 +111,98 @@ function KpiSection() {
   const { data: e, isLoading: l4 } = useExpenseKpis(30);
   const loading = l1 || l2 || l3 || l4;
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
+  // Helper para garantir valores numéricos válidos
+  const safeValue = (value: any, fallback: number = 0): number => {
+    if (value === null || value === undefined || isNaN(Number(value)) || !isFinite(Number(value))) {
+      return fallback;
+    }
+    return Number(value);
   };
 
   const items = [
     { 
       id: 'revenue', 
       label: 'Receita Total', 
-      value: formatCurrency(s?.revenue || 0),
-      delta: s?.revenueDelta,
+      value: safeValue(s?.revenue, 0), // ✅ Valor bruto, FormatDisplay formata
+      delta: safeValue(s?.revenueDelta),
       icon: DollarSign,
       valueType: 'positive' as const,
       isLoading: l1,
       href: '/reports?tab=financial&period=30d',
-      subLabel: 'Últimos 30 dias'
+      subLabel: 'Últimos 30 dias',
+      formatType: 'currency' as const // ✅ FormatDisplay cuida da formatação
     },
     { 
       id: 'orders', 
       label: 'Total de Vendas', 
-      value: s?.orders || 0,
-      delta: s?.ordersDelta,
+      value: safeValue(s?.orders, 0),
+      delta: safeValue(s?.ordersDelta),
       icon: ShoppingCart,
       valueType: 'positive' as const,
       isLoading: l1,
       href: '/reports?tab=sales&period=30d',
-      subLabel: 'Últimos 30 dias'
+      subLabel: 'Últimos 30 dias',
+      formatType: 'number' as const
     },
     { 
       id: 'avg', 
       label: 'Ticket Médio', 
-      value: formatCurrency(s?.avgTicket || 0),
-      delta: s?.avgTicketDelta,
+      value: safeValue(s?.avgTicket, 0), // ✅ Valor bruto, FormatDisplay formata
+      delta: safeValue(s?.avgTicketDelta),
       icon: TrendingUp,
       valueType: 'neutral' as const,
       isLoading: l1,
       href: '/reports?tab=sales&period=30d',
-      subLabel: 'Por venda'
+      subLabel: 'Por venda',
+      formatType: 'currency' as const // ✅ FormatDisplay cuida da formatação
     },
     {
       id: 'customers',
       label: 'Clientes Ativos',
-      value: c?.activeCustomers || 0,
+      value: safeValue(c?.activeCustomers, 0),
       icon: Users,
       valueType: 'positive' as const,
       isLoading: l2,
       href: '/reports?tab=crm&period=30d',
-      subLabel: 'Últimos 30 dias'
+      subLabel: 'Últimos 30 dias',
+      formatType: 'number' as const
     },
     {
       id: 'expenses',
       label: 'Despesas OpEx',
-      value: formatCurrency(e?.totalExpenses || 0),
-      delta: e?.expensesDelta,
+      value: safeValue(e?.totalExpenses, 0), // ✅ Valor bruto, FormatDisplay formata
+      delta: safeValue(e?.expensesDelta),
       icon: CreditCard,
       valueType: 'negative' as const,
       isLoading: l4,
       href: '/expenses',
-      subLabel: 'Últimos 30 dias'
+      subLabel: 'Últimos 30 dias',
+      formatType: 'currency' as const // ✅ FormatDisplay cuida da formatação
     },
     {
       id: 'budget-variance',
       label: 'Variação Orçamentária',
-      value: `${e?.budgetVariance && !isNaN(e.budgetVariance) ? (e.budgetVariance > 0 ? '+' : '') + e.budgetVariance.toFixed(1) : '0.0'}%`,
+      value: safeValue(e?.budgetVariance, 0), // ✅ Valor bruto percentual
       icon: Target,
       valueType: e?.budgetStatus === 'OVER_BUDGET' ? 'negative' as const : 
                  e?.budgetStatus === 'WARNING' ? 'warning' as const : 'positive' as const,
       isLoading: l4,
       href: '/expenses?tab=budget',
       subLabel: e?.budgetStatus === 'OVER_BUDGET' ? 'Acima do orçamento' :
-                e?.budgetStatus === 'WARNING' ? 'Próximo do limite' : 'Dentro do orçamento'
+                e?.budgetStatus === 'WARNING' ? 'Próximo do limite' : 'Dentro do orçamento',
+      formatType: 'percentage' as const // ✅ FormatDisplay cuida da formatação
     },
     {
       id: 'net-margin',
       label: 'Margem Líquida',
-      value: `${e?.netMargin && !isNaN(e.netMargin) ? e.netMargin.toFixed(1) : '0.0'}%`,
+      value: safeValue(e?.netMargin, 0), // ✅ Valor bruto percentual
       icon: Calculator,
-      valueType: (e?.netMargin || 0) > 10 ? 'positive' as const : 
-                 (e?.netMargin || 0) > 5 ? 'neutral' as const : 'negative' as const,
+      valueType: (safeValue(e?.netMargin, 0)) > 10 ? 'positive' as const : 
+                 (safeValue(e?.netMargin, 0)) > 5 ? 'neutral' as const : 'negative' as const,
       isLoading: l4,
       href: '/reports?tab=financial&period=30d',
-      subLabel: 'Após despesas OpEx'
+      subLabel: 'Após despesas OpEx',
+      formatType: 'percentage' as const // ✅ FormatDisplay cuida da formatação
     }
   ];
 
