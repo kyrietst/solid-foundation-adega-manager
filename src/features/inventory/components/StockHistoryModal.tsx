@@ -24,6 +24,8 @@ import { cn } from '@/core/config/utils';
 import { formatCurrency } from '@/core/config/utils';
 import { supabase } from '@/core/api/supabase/client';
 import { useFormatBrazilianDate } from '@/shared/hooks/common/use-brasil-timezone';
+import { useProductVariants } from '@/features/sales/hooks/useProductVariants';
+import { VariantStockBadge } from './VariantStockDisplay';
 import type { Product } from '@/types/inventory.types';
 
 interface StockHistoryModalProps {
@@ -197,6 +199,9 @@ export const StockHistoryModal: React.FC<StockHistoryModalProps> = ({
   const [movements, setMovements] = useState<StockMovement[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { formatCompact } = useFormatBrazilianDate();
+  
+  // Buscar dados de variantes do produto para mostrar breakdown atual
+  const { data: productWithVariants, isLoading: variantsLoading } = useProductVariants(product?.id || '');
 
   useEffect(() => {
     if (product && isOpen) {
@@ -228,10 +233,30 @@ export const StockHistoryModal: React.FC<StockHistoryModalProps> = ({
           {/* Informações do produto */}
           <div className="bg-black/30 rounded-lg p-3 mt-4">
             <h4 className="font-medium text-gray-100 mb-1">{product.name}</h4>
-            <div className="flex items-center gap-4 text-sm text-gray-400">
-              <span>Categoria: {product.category}</span>
-              <span>Estoque Atual: <span className="text-gray-100 font-medium">{product.stock_quantity} un</span></span>
-              <span>Total de Movimentações: <span className="text-yellow-400 font-medium">{movements.length}</span></span>
+            <div className="space-y-2">
+              <div className="flex items-center gap-4 text-sm text-gray-400">
+                <span>Categoria: {product.category}</span>
+                <span>Total de Movimentações: <span className="text-yellow-400 font-medium">{movements.length}</span></span>
+              </div>
+              
+              {/* Estoque atual com variantes quando disponível */}
+              {variantsLoading ? (
+                <div className="flex items-center gap-2 text-sm text-gray-400">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  <span>Carregando estoque atual...</span>
+                </div>
+              ) : productWithVariants ? (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm text-gray-400">
+                    <span>Estoque Total: <span className="text-gray-100 font-medium">{productWithVariants.total_stock_units} un</span></span>
+                  </div>
+                  <VariantStockBadge product={productWithVariants} />
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 text-sm text-gray-400">
+                  <span>Estoque Atual: <span className="text-gray-100 font-medium">{product.stock_quantity} un</span></span>
+                </div>
+              )}
             </div>
           </div>
         </DialogHeader>

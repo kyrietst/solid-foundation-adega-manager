@@ -3,13 +3,7 @@
  */
 
 import React, { useEffect, useRef } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/shared/ui/primitives/dialog';
+import { BaseModal } from '@/shared/ui/composite';
 import { LoadingSpinner } from '@/shared/ui/composite/loading-spinner';
 import { Button } from '@/shared/ui/primitives/button';
 import { ReceiptPrint } from './ReceiptPrint';
@@ -115,17 +109,19 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md bg-white text-black">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-primary-yellow">
-            <Receipt className="h-5 w-5 text-primary-yellow" />
-            Cupom Fiscal - Adega Anita's
-          </DialogTitle>
-          <DialogDescription className="text-gray-700 font-medium">
-            {saleId ? `Venda: #${saleId.slice(-8).toUpperCase()}` : 'Preparando cupom...'}
-          </DialogDescription>
-        </DialogHeader>
+    <BaseModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={
+        <>
+          <Receipt className="h-5 w-5 text-primary-yellow" />
+          Cupom Fiscal - Adega Anita's
+        </>
+      }
+      description={saleId ? `Venda: #${saleId.slice(-8).toUpperCase()}` : 'Preparando cupom...'}
+      size="md"
+      className="bg-white text-black"
+    >
 
         <div className="mt-4">
           {isLoading && (
@@ -198,8 +194,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
             </>
           )}
         </div>
-      </DialogContent>
-    </Dialog>
+    </BaseModal>
   );
 };
 

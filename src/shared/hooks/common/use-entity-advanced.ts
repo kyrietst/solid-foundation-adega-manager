@@ -449,3 +449,108 @@ export function createRepository<T extends BaseEntity>(
     }
   };
 }
+
+// ============================================================================
+// MAIN ENTITY ADVANCED HOOK
+// ============================================================================
+
+/**
+ * Hook principal que combina todas as funcionalidades avançadas
+ * Serve como interface unificada para os hooks especializados
+ */
+export function useEntityAdvanced<T extends BaseEntity>(
+  table: string,
+  options?: {
+    type?: 'searchable' | 'product' | 'customer' | 'sale' | 'paginated';
+    searchTerm?: string;
+    filters?: Record<string, unknown>;
+    pagination?: PaginationOptions & OrderableEntity<T>;
+    productFilters?: { category?: string; inStock?: boolean };
+    dateRange?: { start: Date; end: Date };
+  }
+) {
+  const {
+    type = 'searchable',
+    searchTerm,
+    filters,
+    pagination,
+    productFilters,
+    dateRange
+  } = options || {};
+
+  // Hook para entidades pesquisáveis
+  const searchableQuery = useQuery({
+    queryKey: [table, 'searchable-advanced', searchTerm],
+    queryFn: async (): Promise<T[]> => {
+      let query = supabase.from(table).select('*');
+      
+      if (searchTerm) {
+        query = query.ilike('name', `%${searchTerm}%`);
+      }
+      
+      const { data, error } = await query;
+      if (error) throw error;
+      
+      const validData = (data || []).filter(hasId) as T[];
+      return validData;
+    },
+    enabled: type === 'searchable',
+  });
+
+  // Hook para produtos
+  const productQuery = useProductEntity(table, productFilters);
+
+  // Hook para clientes  
+  const customerQuery = useCustomerEntity(table, searchTerm);
+
+  // Hook para vendas
+  const saleQuery = useSaleEntity(table, dateRange);
+
+  // Hook paginado
+  const paginatedQuery = usePaginatedEntity(table, pagination);
+
+  // Repository
+  const repository = createRepository<T>(table);
+
+  // Hook para mutations validadas
+  const mutation = useValidatedMutation<T>(table);
+
+  // Retornar dados baseado no tipo
+  switch (type) {
+    case 'product':
+      return {
+        ...productQuery,
+        repository,
+        mutation,
+        type: 'product' as const
+      };
+    case 'customer':
+      return {
+        ...customerQuery,
+        repository,
+        mutation,
+        type: 'customer' as const
+      };
+    case 'sale':
+      return {
+        ...saleQuery,
+        repository,
+        mutation,
+        type: 'sale' as const
+      };
+    case 'paginated':
+      return {
+        ...paginatedQuery,
+        repository,
+        mutation,
+        type: 'paginated' as const
+      };
+    default:
+      return {
+        ...searchableQuery,
+        repository,
+        mutation,
+        type: 'searchable' as const
+      };
+  }
+}

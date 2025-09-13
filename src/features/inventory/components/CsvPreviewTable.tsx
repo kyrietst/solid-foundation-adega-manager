@@ -1,10 +1,10 @@
 /**
  * Tabela de Preview dos Dados CSV
  * Mostra prévia dos dados antes da importação
+ * Migrado para usar o DataTable genérico (Fase 2.1 refatoração DRY)
  */
 
 import React from 'react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/primitives/table';
 import { Badge } from '@/shared/ui/primitives/badge';
 import { Alert, AlertDescription } from '@/shared/ui/primitives/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/primitives/card';
@@ -18,7 +18,9 @@ import {
 } from 'lucide-react';
 import { cn } from '@/core/config/utils';
 import { getValueClasses } from '@/core/config/theme-utils';
-import { formatCurrency } from '@/core/config/utils';
+import { DataTable } from '@/shared/ui/composite/DataTable';
+import { DataTableColumn } from '@/shared/hooks/common/useDataTable';
+import { CurrencyDisplay } from '@/shared/ui/composite/FormatDisplay';
 import { parseMonetaryValue, parseVolumeToMl, parsePackageInfo } from '../utils/csvUtils';
 import type { CsvImportPreview } from '../utils/csvParser';
 
@@ -26,6 +28,9 @@ interface CsvPreviewTableProps {
   preview: CsvImportPreview | null;
   isLoading?: boolean;
 }
+
+// Tipo para os dados da linha da tabela
+type CsvRowData = Record<string, string>;
 
 export const CsvPreviewTable: React.FC<CsvPreviewTableProps> = ({
   preview,
@@ -69,9 +74,10 @@ export const CsvPreviewTable: React.FC<CsvPreviewTableProps> = ({
     if (header.includes('Preço') && header.includes('R$')) {
       const numericValue = parseMonetaryValue(value);
       return numericValue ? (
-        <span className={cn(valueClasses, "text-accent-green")}>
-          {formatCurrency(numericValue)}
-        </span>
+        <CurrencyDisplay 
+          value={numericValue}
+          className={cn(valueClasses, "text-accent-green")}
+        />
       ) : (
         <span className="text-gray-500 italic">-</span>
       );
@@ -133,13 +139,20 @@ export const CsvPreviewTable: React.FC<CsvPreviewTableProps> = ({
     return <span className="text-gray-200">{value}</span>;
   };
   
-  // Função para obter classe CSS da coluna
-  const getColumnClass = (header: string) => {
-    if (header === 'Nome do Produto') return 'font-medium text-white min-w-[200px]';
-    if (header.includes('Preço')) return 'text-right';
-    if (header === 'Estoque Atual') return 'text-center';
-    return '';
-  };
+  // Configuração das colunas para o DataTable
+  const columns: DataTableColumn<CsvRowData>[] = preview.headers.map((header) => ({
+    id: header,
+    label: header,
+    accessor: header as keyof CsvRowData,
+    width: header === 'Nome do Produto' ? '200px' : 
+           header.includes('Preço') ? '140px' : 
+           header === 'Estoque Atual' ? '120px' : 
+           undefined,
+    align: header.includes('Preço') ? 'right' as const : 
+           header === 'Estoque Atual' ? 'center' as const : 
+           undefined,
+    render: (value, _row) => formatCellValue(header, String(value || '')),
+  }));
   
   return (
     <div className="space-y-6">
@@ -209,7 +222,7 @@ export const CsvPreviewTable: React.FC<CsvPreviewTableProps> = ({
         </Alert>
       )}
       
-      {/* Tabela de Prévia */}
+      {/* Tabela de Prévia - Migrado para DataTable */}
       <Card className="bg-gray-800/50 border-primary-yellow/30">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-gray-100">
@@ -217,57 +230,26 @@ export const CsvPreviewTable: React.FC<CsvPreviewTableProps> = ({
             Prévia dos Dados (primeiras 10 linhas)
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          {preview.sampleData.length === 0 ? (
-            <div className="text-center py-8">
-              <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-400">Nenhum dado válido encontrado para prévia</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="border-gray-700">
-                    {preview.headers.map((header, index) => (
-                      <TableHead 
-                        key={index} 
-                        className={cn(
-                          "text-gray-300 whitespace-nowrap",
-                          getColumnClass(header)
-                        )}
-                      >
-                        {header}
-                      </TableHead>
-                    ))}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {preview.sampleData.map((row, rowIndex) => (
-                    <TableRow 
-                      key={rowIndex} 
-                      className="border-gray-700 hover:bg-gray-800/30"
-                    >
-                      {preview.headers.map((header, colIndex) => (
-                        <TableCell 
-                          key={colIndex}
-                          className={cn(
-                            "py-3",
-                            getColumnClass(header)
-                          )}
-                        >
-                          {formatCellValue(header, row[header] || '')}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
+        <CardContent className="p-0">
+          <DataTable<CsvRowData>
+            data={preview.sampleData as CsvRowData[]}
+            columns={columns}
+            loading={false}
+            searchPlaceholder="Buscar nos dados da prévia..."
+            searchFields={preview.headers as (keyof CsvRowData)[]}
+            maxRows={10}
+            empty={{
+              title: 'Nenhum dado válido encontrado',
+              description: 'Nenhum dado válido encontrado para prévia',
+              icon: Package,
+            }}
+            caption="Prévia dos dados CSV importados"
+            className="border-0"
+          />
           
           {/* Indicador de mais dados */}
           {preview.totalRows > preview.sampleData.length && (
-            <div className="mt-4 text-center text-gray-400 text-sm">
+            <div className="p-4 text-center text-gray-400 text-sm border-t border-white/10">
               Mostrando {preview.sampleData.length} de {preview.totalRows} linhas
             </div>
           )}

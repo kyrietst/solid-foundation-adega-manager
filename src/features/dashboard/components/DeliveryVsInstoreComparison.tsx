@@ -37,31 +37,107 @@ export const DeliveryVsInstoreComparison = ({ className }: DeliveryVsInstoreComp
 
   const days = selectedPeriod === '7d' ? 7 : selectedPeriod === '30d' ? 30 : 90;
 
-  // Query para dados comparativos básicos para dashboard
+  // Query para dados comparativos básicos para dashboard com fallback
   const { data: comparison, isLoading } = useQuery({
     queryKey: ['delivery-vs-instore-dashboard', selectedPeriod],
     queryFn: async (): Promise<ComparisonData> => {
       console.log('📊 Carregando comparativo básico para dashboard...');
       
-      const { data, error } = await supabase.rpc('get_delivery_vs_instore_comparison', {
-        p_days: days
-      });
+      try {
+        // Tentar usar RPC primeiro
+        const { data, error } = await supabase.rpc('get_delivery_vs_instore_comparison', {
+          p_days: days
+        });
 
-      if (error) {
-        console.error('❌ Erro ao carregar comparativo:', error);
-        throw error;
+        if (error) {
+          console.warn('⚠️ RPC falhou, usando fallback manual:', error);
+          throw error;
+        }
+
+        console.log('✅ RPC funcionou, usando dados:', data[0]);
+        return data[0] || {
+          delivery_orders: 0,
+          delivery_revenue: 0,
+          delivery_avg_ticket: 0,
+          instore_orders: 0,
+          instore_revenue: 0,
+          instore_avg_ticket: 0,
+          delivery_growth_rate: 0,
+          instore_growth_rate: 0
+        };
+      } catch (rpcError) {
+        // Fallback: cálculo manual direto
+        console.log('🔄 Executando fallback manual para comparativo delivery vs presencial...');
+        
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setDate(endDate.getDate() - days);
+        
+        // Período anterior para crescimento
+        const prevStartDate = new Date();
+        prevStartDate.setDate(startDate.getDate() - days);
+        
+        // Buscar vendas atuais
+        const { data: currentSales, error: currentError } = await supabase
+          .from('sales')
+          .select('delivery_type, final_amount')
+          .eq('status', 'completed')
+          .gte('created_at', startDate.toISOString())
+          .lte('created_at', endDate.toISOString())
+          .not('final_amount', 'is', null);
+
+        if (currentError) {
+          console.error('❌ Erro no fallback - vendas atuais:', currentError);
+          throw currentError;
+        }
+
+        // Buscar vendas anteriores
+        const { data: prevSales } = await supabase
+          .from('sales')
+          .select('delivery_type, final_amount')
+          .eq('status', 'completed')
+          .gte('created_at', prevStartDate.toISOString())
+          .lt('created_at', startDate.toISOString())
+          .not('final_amount', 'is', null);
+
+        // Calcular métricas atuais
+        const deliverySales = (currentSales || []).filter(s => s.delivery_type === 'delivery');
+        const presencialSales = (currentSales || []).filter(s => s.delivery_type === 'presencial');
+        
+        const deliveryOrders = deliverySales.length;
+        const deliveryRevenue = deliverySales.reduce((sum, s) => sum + Number(s.final_amount || 0), 0);
+        const deliveryAvgTicket = deliveryOrders > 0 ? deliveryRevenue / deliveryOrders : 0;
+        
+        const instoreOrders = presencialSales.length;
+        const instoreRevenue = presencialSales.reduce((sum, s) => sum + Number(s.final_amount || 0), 0);
+        const instoreAvgTicket = instoreOrders > 0 ? instoreRevenue / instoreOrders : 0;
+        
+        // Calcular crescimento (período anterior)
+        const prevDeliveryRevenue = (prevSales || [])
+          .filter(s => s.delivery_type === 'delivery')
+          .reduce((sum, s) => sum + Number(s.final_amount || 0), 0);
+        const prevInstoreRevenue = (prevSales || [])
+          .filter(s => s.delivery_type === 'presencial')
+          .reduce((sum, s) => sum + Number(s.final_amount || 0), 0);
+          
+        const deliveryGrowthRate = prevDeliveryRevenue > 0 ? 
+          ((deliveryRevenue - prevDeliveryRevenue) / prevDeliveryRevenue) * 100 : 0;
+        const instoreGrowthRate = prevInstoreRevenue > 0 ? 
+          ((instoreRevenue - prevInstoreRevenue) / prevInstoreRevenue) * 100 : 0;
+
+        console.log('✅ Fallback concluído:', { deliveryOrders, instoreOrders, instoreRevenue });
+
+        return {
+          delivery_orders: deliveryOrders,
+          delivery_revenue: deliveryRevenue,
+          delivery_avg_ticket: deliveryAvgTicket,
+          instore_orders: instoreOrders,
+          instore_revenue: instoreRevenue,
+          instore_avg_ticket: instoreAvgTicket,
+          delivery_growth_rate: deliveryGrowthRate,
+          instore_growth_rate: instoreGrowthRate
+        };
       }
-
-      return data[0] || {
-        delivery_orders: 0,
-        delivery_revenue: 0,
-        delivery_avg_ticket: 0,
-        instore_orders: 0,
-        instore_revenue: 0,
-        instore_avg_ticket: 0,
-        delivery_growth_rate: 0,
-        instore_growth_rate: 0
-      };
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -84,13 +160,18 @@ export const DeliveryVsInstoreComparison = ({ className }: DeliveryVsInstoreComp
     );
   }
 
-  // Calcular totais
-  const totalOrders = comparison.delivery_orders + comparison.instore_orders;
-  const totalRevenue = comparison.delivery_revenue + comparison.instore_revenue;
+  // Calcular totais com proteção contra NaN
+  const deliveryOrders = Number(comparison.delivery_orders) || 0;
+  const instoreOrders = Number(comparison.instore_orders) || 0;
+  const deliveryRevenue = Number(comparison.delivery_revenue) || 0;
+  const instoreRevenue = Number(comparison.instore_revenue) || 0;
   
-  // Percentuais e formatação
-  const deliveryOrdersPercent = totalOrders > 0 ? (comparison.delivery_orders / totalOrders) * 100 : 0;
-  const instoreOrdersPercent = 100 - deliveryOrdersPercent;
+  const totalOrders = deliveryOrders + instoreOrders;
+  const totalRevenue = deliveryRevenue + instoreRevenue;
+  
+  // Percentuais com validação de NaN
+  const deliveryOrdersPercent = totalOrders > 0 && !isNaN(deliveryOrders) ? (deliveryOrders / totalOrders) * 100 : 0;
+  const instoreOrdersPercent = totalOrders > 0 && !isNaN(instoreOrders) ? (instoreOrders / totalOrders) * 100 : 0;
   
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -110,7 +191,7 @@ export const DeliveryVsInstoreComparison = ({ className }: DeliveryVsInstoreComp
       valueType: 'positive' as const,
       isLoading: false,
       href: '/reports?tab=delivery&section=delivery-overview',
-      subLabel: `${deliveryOrdersPercent.toFixed(1)}%`
+      subLabel: `${!isNaN(deliveryOrdersPercent) ? deliveryOrdersPercent.toFixed(1) : '0.0'}%`
     },
     {
       id: 'presencial',
@@ -121,7 +202,7 @@ export const DeliveryVsInstoreComparison = ({ className }: DeliveryVsInstoreComp
       valueType: 'positive' as const,
       isLoading: false,
       href: '/reports?tab=delivery&section=instore-overview',
-      subLabel: `${instoreOrdersPercent.toFixed(1)}%`
+      subLabel: `${!isNaN(instoreOrdersPercent) ? instoreOrdersPercent.toFixed(1) : '0.0'}%`
     },
     {
       id: 'receita-total',

@@ -44,7 +44,7 @@ export const useBrasilTimezone = () => {
 
       const spDate = convertToSaoPaulo(utcTimestamp);
       
-      let formatOptions: Intl.DateTimeFormatOptions = {
+      const formatOptions: Intl.DateTimeFormatOptions = {
         timeZone: 'America/Sao_Paulo'
       };
 

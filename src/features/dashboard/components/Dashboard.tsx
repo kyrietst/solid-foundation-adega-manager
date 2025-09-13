@@ -6,7 +6,7 @@
 import React from 'react';
 import { DashboardContainer } from './DashboardContainer';
 
-const Dashboard = () => {
+export const Dashboard = () => {
   return <DashboardContainer />;
 };
 

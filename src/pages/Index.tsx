@@ -35,12 +35,9 @@ const ActivitiesPage = lazy(() => import('@/shared/components/ActivityLogsPage')
 const ExpensesPage = lazy(() => import('@/features/expenses/components/ExpensesPage'));
 
 const Index = () => {
-  console.log('🏠 Index.tsx - Componente Index carregado');
   const navigate = useNavigate();
   const location = useLocation();
   const { user, userRole, loading, hasPermission } = useAuth();
-  
-  console.log('🏠 Index.tsx - Estado auth:', { user: !!user, userRole, loading });
 
   // Extrai o nome da aba da URL (ex: /sales -> 'sales')
   const activeTab = location.pathname.split('/')[1] || 'dashboard';
@@ -52,9 +49,15 @@ const Index = () => {
     }
   }, [userRole, activeTab, navigate]);
 
+  // Redirecionamento para login
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate('/auth', { replace: true });
+    }
+  }, [loading, user, navigate]);
+
   // Mostra loading enquanto carrega as permissões
   if (loading) {
-    console.log('⏳ Index.tsx - Ainda em loading, mostrando tela de carregamento');
     return (
       <div className="flex items-center justify-center min-h-screen bg-black">
         <div className="flex flex-col items-center space-y-4">
@@ -66,16 +69,13 @@ const Index = () => {
     );
   }
 
-  // Se não tem usuário, redireciona para login
+  // Se não tem usuário, retorna null (redirecionamento acontece no useEffect)
   if (!user) {
-    console.log('🚫 Index.tsx - Sem usuário, redirecionando para /auth');
-    navigate('/auth', { replace: true });
     return null;
   }
 
   // Se não tem role, mostra error
   if (!userRole) {
-    console.log('⚠️ Index.tsx - Usuário sem role definido');
     return (
       <div className="flex items-center justify-center min-h-screen bg-black">
         <div className="text-red-400 text-center">

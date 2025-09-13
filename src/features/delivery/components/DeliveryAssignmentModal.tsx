@@ -8,13 +8,7 @@
 
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle,
-  DialogDescription 
-} from '@/shared/ui/primitives/dialog';
+import { BaseModal } from '@/shared/ui/composite';
 import { Button } from '@/shared/ui/primitives/button';
 import { Badge } from '@/shared/ui/primitives/badge';
 import { Card, CardContent } from '@/shared/ui/primitives/card';
@@ -154,20 +148,23 @@ export const DeliveryAssignmentModal = ({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl bg-black/95 backdrop-blur-xl border-white/20">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-xl font-bold text-white">
-            <User className="h-6 w-6 text-blue-400" />
-            Atribuir Entregador
-          </DialogTitle>
-          <DialogDescription className="text-gray-400">
-            {currentDeliveryPersonId 
-              ? `Entregador atual: ${currentDeliveryPersonName}. Selecione um novo entregador ou use atribuição automática.`
-              : 'Selecione um entregador para esta entrega ou use a atribuição automática.'
-            }
-          </DialogDescription>
-        </DialogHeader>
+    <BaseModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={
+        <>
+          <User className="h-6 w-6 text-blue-400" />
+          Atribuir Entregador
+        </>
+      }
+      description={
+        currentDeliveryPersonId 
+          ? `Entregador atual: ${currentDeliveryPersonName}. Selecione um novo entregador ou use atribuição automática.`
+          : 'Selecione um entregador para esta entrega ou use a atribuição automática.'
+      }
+      size="4xl"
+      className="bg-black/95 backdrop-blur-xl border-white/20"
+    >
 
         <div className="space-y-6">
           {/* Botão de Atribuição Automática */}
@@ -335,8 +332,7 @@ export const DeliveryAssignmentModal = ({
             </Button>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+    </BaseModal>
   );
 };
 

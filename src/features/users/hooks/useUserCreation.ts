@@ -43,7 +43,7 @@ export const useUserCreation = (): UserCreationOperations => {
       }
 
       if (authData.user) {
-        let hasError = false;
+        const hasError = false;
 
         // 2. O trigger automático handle_new_user_simple cria registros em users e profiles
         console.log('User and profile creation handled by trigger handle_new_user_simple');

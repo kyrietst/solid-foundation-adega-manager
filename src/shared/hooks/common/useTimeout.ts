@@ -10,7 +10,7 @@ import {
   getTimeoutConfig, 
   adjustTimeoutForNetwork, 
   detectNetworkSpeed 
-} from '@/lib/timeout-config';
+} from '@/core/config/timeout-config';
 
 export interface TimeoutState {
   isRunning: boolean;

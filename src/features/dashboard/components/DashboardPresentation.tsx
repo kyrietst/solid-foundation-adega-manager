@@ -176,7 +176,7 @@ function KpiSection() {
     {
       id: 'budget-variance',
       label: 'Variação Orçamentária',
-      value: `${e?.budgetVariance ? (e.budgetVariance > 0 ? '+' : '') + e.budgetVariance.toFixed(1) : '0.0'}%`,
+      value: `${e?.budgetVariance && !isNaN(e.budgetVariance) ? (e.budgetVariance > 0 ? '+' : '') + e.budgetVariance.toFixed(1) : '0.0'}%`,
       icon: Target,
       valueType: e?.budgetStatus === 'OVER_BUDGET' ? 'negative' as const : 
                  e?.budgetStatus === 'WARNING' ? 'warning' as const : 'positive' as const,
@@ -188,7 +188,7 @@ function KpiSection() {
     {
       id: 'net-margin',
       label: 'Margem Líquida',
-      value: `${e?.netMargin ? e.netMargin.toFixed(1) : '0.0'}%`,
+      value: `${e?.netMargin && !isNaN(e.netMargin) ? e.netMargin.toFixed(1) : '0.0'}%`,
       icon: Calculator,
       valueType: (e?.netMargin || 0) > 10 ? 'positive' as const : 
                  (e?.netMargin || 0) > 5 ? 'neutral' as const : 'negative' as const,

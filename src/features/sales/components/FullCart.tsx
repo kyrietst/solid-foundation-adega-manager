@@ -113,42 +113,25 @@ export function FullCart({
         total_amount: total,
         payment_method_id: paymentMethodId,
         items: items.map(item => {
-          // CORREÇÃO: Não fazer conversão aqui, deixar o useCheckout/stored procedure fazer
-          // O carrinho mantém: 1 pacote = quantity: 1, type: 'package'
-          // O stored procedure fará: 1 pacote × 6 unidades = 6 para o estoque
-          
           const itemData = {
             product_id: item.id,
-            quantity: item.quantity, // Quantidade original do carrinho (1 para pacotes)
+            variant_id: item.variant_id,
+            quantity: item.quantity,
             unit_price: item.price,
-            sale_type: item.type, // Adicionar tipo de venda
-            package_units: item.packageUnits // Para controle de estoque no stored procedure
+            units_sold: item.units_sold,
+            conversion_required: item.conversion_required,
+            packages_converted: item.packages_converted || 0,
+            // Campos legados para compatibilidade
+            sale_type: item.variant_type,
+            package_units: item.packageUnits
           };
           
-          // 🔍 DEBUG: Log de cada item sendo enviado para stored procedure
-          console.log('💾 FullCart - Item sendo enviado para stored procedure:', {
-            nome: item.name,
-            quantidade: itemData.quantity,
-            tipo: itemData.sale_type,
-            packageUnits: itemData.package_units,
-            estoqueQueSeraDescontado: itemData.sale_type === 'package' 
-              ? `${itemData.quantity} × ${itemData.package_units} = ${itemData.quantity * (itemData.package_units || 1)} unidades`
-              : `${itemData.quantity} unidades`,
-            dadosCompletos: itemData
-          });
           
           return itemData;
         }),
         notes: `Desconto aplicado: R$ ${allowDiscounts ? discount.toFixed(2) : '0.00'}`
       };
       
-      // 🔍 DEBUG: Log dos dados completos sendo enviados
-      console.log('💾 FullCart - Dados completos da venda:', {
-        totalItens: saleData.items.length,
-        valorTotal: saleData.total_amount,
-        itens: saleData.items,
-        dadosCompletos: saleData
-      });
 
       const result = await upsertSale.mutateAsync(saleData);
       
@@ -279,23 +262,33 @@ export function FullCart({
       <ScrollArea className="flex-1 min-h-0 overflow-hidden">
         <div className="p-4 space-y-3">
           {items.map((item) => (
-            <div key={`${item.id}-${item.type}`} className="flex items-center justify-between p-3 glass-subtle rounded-lg hover:bg-primary-yellow/5 transition-colors">
+            <div key={`${item.id}-${item.variant_id}`} className="flex items-center justify-between p-3 glass-subtle rounded-lg hover:bg-primary-yellow/5 transition-colors">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
                   <h4 className="font-medium text-sm text-gray-100">{item.name}</h4>
                   <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
-                    item.type === 'package' 
+                    item.variant_type === 'package' 
                       ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' 
                       : 'bg-green-500/20 text-green-300 border border-green-500/30'
                   }`}>
-                    {item.type === 'package' ? `Pacote ${item.packageUnits}x` : 'Unidade'}
+                    {item.variant_type === 'package' ? `Pacote ${item.packageUnits || 1}x` : 'Unidade'}
                   </span>
+                  {item.conversion_required && (
+                    <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-orange-500/20 text-orange-300 border border-orange-500/30">
+                      Conversão
+                    </span>
+                  )}
                 </div>
                 <p className="text-xs text-gray-400">
                   {formatCurrency(item.price)} × {item.quantity}
-                  {item.type === 'package' && item.packageUnits && (
+                  {item.variant_type === 'package' && item.packageUnits && (
                     <span className="ml-1 text-blue-300">
-                      ({item.quantity * item.packageUnits} unid. total)
+                      ({item.units_sold} unid. total)
+                    </span>
+                  )}
+                  {item.conversion_required && item.packages_converted && (
+                    <span className="ml-1 text-orange-300">
+                      • {item.packages_converted} pacotes convertidos
                     </span>
                   )}
                 </p>
@@ -306,9 +299,9 @@ export function FullCart({
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => updateItemQuantity(item.id, item.type, Math.max(0, item.quantity - 1))}
+                    onClick={() => updateItemQuantity(item.id, item.variant_id, Math.max(0, item.quantity - 1))}
                     className="h-6 w-6 p-0 text-gray-300 hover:text-primary-yellow hover:bg-primary-yellow/10"
-                    aria-label={`Diminuir quantidade de ${item.name} ${item.type === 'package' ? 'Pacote' : 'Unidade'}`}
+                    aria-label={`Diminuir quantidade de ${item.name} ${item.variant_type === 'package' ? 'Pacote' : 'Unidade'}`}
                   >
                     -
                   </Button>
@@ -316,10 +309,10 @@ export function FullCart({
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => updateItemQuantity(item.id, item.type, item.quantity + 1)}
+                    onClick={() => updateItemQuantity(item.id, item.variant_id, item.quantity + 1)}
                     className="h-6 w-6 p-0 text-gray-300 hover:text-primary-yellow hover:bg-primary-yellow/10"
                     disabled={item.quantity >= maxItems}
-                    aria-label={`Aumentar quantidade de ${item.name} ${item.type === 'package' ? 'Pacote' : 'Unidade'}`}
+                    aria-label={`Aumentar quantidade de ${item.name} ${item.variant_type === 'package' ? 'Pacote' : 'Unidade'}`}
                   >
                     +
                   </Button>
@@ -328,9 +321,9 @@ export function FullCart({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => removeItem(item.id, item.type)}
+                  onClick={() => removeItem(item.id, item.variant_id)}
                   className="h-6 w-6 p-0 text-accent-red hover:text-accent-red/80 hover:bg-accent-red/10"
-                  aria-label={`Remover ${item.name} ${item.type === 'package' ? 'Pacote' : 'Unidade'} do carrinho`}
+                  aria-label={`Remover ${item.name} ${item.variant_type === 'package' ? 'Pacote' : 'Unidade'} do carrinho`}
                 >
                   <Trash2 className="h-3 w-3" aria-hidden="true" />
                 </Button>

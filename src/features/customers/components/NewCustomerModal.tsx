@@ -6,9 +6,7 @@
  * @version 1.0.0
  */
 
-import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import React from 'react';
 import { z } from 'zod';
 import { BaseModal } from '@/shared/ui/composite';
 import {
@@ -31,9 +29,8 @@ import {
   SelectValue,
 } from '@/shared/ui/primitives/select';
 import { SwitchAnimated } from '@/shared/ui/primitives/switch-animated';
-import { Label } from '@/shared/ui/primitives/label';
 import { useUpsertCustomer } from '@/features/customers/hooks/use-crm';
-import { useToast } from '@/shared/hooks/common/use-toast';
+import { useStandardForm } from '@/shared/hooks/common/useStandardForm';
 import { 
   User, 
   Phone, 
@@ -64,7 +61,7 @@ const newCustomerSchema = z.object({
     .string()
     .min(10, 'Telefone deve ter pelo menos 10 dígitos')
     .max(15, 'Telefone deve ter no máximo 15 dígitos')
-    .regex(/^[\d\s\(\)\-\+]+$/, 'Formato de telefone inválido')
+    .regex(/^[\d\s()+-]+$/, 'Formato de telefone inválido')
     .optional()
     .or(z.literal('')),
   
@@ -112,12 +109,10 @@ export const NewCustomerModal: React.FC<NewCustomerModalProps> = ({
   isOpen,
   onClose,
 }) => {
-  const { toast } = useToast();
   const upsertCustomer = useUpsertCustomer();
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const form = useForm<NewCustomerFormData>({
-    resolver: zodResolver(newCustomerSchema),
+  const { form, isLoading, handleSubmit } = useStandardForm<NewCustomerFormData>({
+    schema: newCustomerSchema,
     defaultValues: {
       name: '',
       email: '',
@@ -134,12 +129,12 @@ export const NewCustomerModal: React.FC<NewCustomerModalProps> = ({
       contact_permission: false,
       notes: '',
     },
-  });
-
-  const onSubmit = async (data: NewCustomerFormData) => {
-    setIsSubmitting(true);
-    
-    try {
+    onSuccess: (data) => `✅ Cliente ${data.name} cadastrado com sucesso!`,
+    onError: 'Erro ao cadastrar cliente. Tente novamente.',
+    onSuccessCallback: () => {
+      onClose();
+    },
+    onSubmit: async (data) => {
       // Preparar dados para envio
       const customerData = {
         name: data.name,
@@ -170,45 +165,17 @@ export const NewCustomerModal: React.FC<NewCustomerModalProps> = ({
         tags: [],
       };
 
-      await new Promise((resolve) => {
+      return new Promise<void>((resolve, reject) => {
         upsertCustomer.mutate(customerData, {
-          onSuccess: () => {
-            toast({
-              title: "✅ Cliente cadastrado!",
-              description: `${data.name} foi adicionado com sucesso.`,
-              variant: "default",
-            });
-            
-            // Reset form e fechar modal
-            form.reset();
-            onClose();
-            resolve(true);
-          },
-          onError: (error: any) => {
-            console.error('Erro ao cadastrar cliente:', error);
-            toast({
-              title: "❌ Erro ao cadastrar",
-              description: error.message || "Erro inesperado. Tente novamente.",
-              variant: "destructive",
-            });
-            resolve(false);
-          },
+          onSuccess: () => resolve(),
+          onError: (error: Error) => reject(error),
         });
       });
-    } catch (error) {
-      console.error('Erro no cadastro:', error);
-      toast({
-        title: "❌ Erro no cadastro",
-        description: "Erro inesperado. Verifique os dados e tente novamente.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+    },
+  });
 
   const handleClose = () => {
-    if (isSubmitting) return; // Não permitir fechar durante envio
+    if (isLoading) return; // Não permitir fechar durante envio
     form.reset();
     onClose();
   };
@@ -229,7 +196,7 @@ export const NewCustomerModal: React.FC<NewCustomerModalProps> = ({
     >
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
             {/* Informações Básicas */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-white flex items-center gap-2">
@@ -507,7 +474,7 @@ export const NewCustomerModal: React.FC<NewCustomerModalProps> = ({
                 type="button"
                 variant="outline"
                 onClick={handleClose}
-                disabled={isSubmitting}
+                disabled={isLoading}
                 className="border-gray-600 text-gray-300 hover:bg-gray-700"
               >
                 <X className="h-4 w-4 mr-2" />
@@ -516,10 +483,10 @@ export const NewCustomerModal: React.FC<NewCustomerModalProps> = ({
               
               <Button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isLoading}
                 className="bg-yellow-500 hover:bg-yellow-600 text-black font-medium"
               >
-                {isSubmitting ? (
+                {isLoading ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black mr-2"></div>
                     Cadastrando...

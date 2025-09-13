@@ -6,10 +6,12 @@
 import React from 'react';
 import { Button } from '@/shared/ui/primitives/button';
 import { Badge } from '@/shared/ui/primitives/badge';
-import { Eye, Edit, Package, MapPin, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { Eye, Edit, Package, MapPin, TrendingUp, TrendingDown, Minus, Loader2 } from 'lucide-react';
 import { cn } from '@/core/config/utils';
 import { getHoverTransformClasses } from '@/core/config/theme-utils';
 import { useMouseTracker } from '@/hooks/ui/useMouseTracker';
+import { useProductVariants } from '@/features/sales/hooks/useProductVariants';
+import { VariantStockBadge } from './VariantStockDisplay';
 import type { Product } from '@/types/inventory.types';
 
 interface InventoryCardProps {
@@ -50,7 +52,12 @@ export const InventoryCard: React.FC<InventoryCardProps> = ({
   variant = 'default',
   glassEffect = true,
 }) => {
-  const stockStatus = getStockStatus(product.stock_quantity, product.minimum_stock || 10);
+  // Buscar dados de variantes do produto
+  const { data: productWithVariants, isLoading: variantsLoading } = useProductVariants(product.id);
+  
+  // Calcular estoque baseado em variantes quando disponível
+  const currentStock = productWithVariants?.total_stock_units ?? product.stock_quantity;
+  const stockStatus = getStockStatus(currentStock, product.minimum_stock || 10);
   const turnoverAnalysis = getTurnoverAnalysis(product.turnover_rate || 'medium');
   const TurnoverIcon = turnoverAnalysis.icon;
   const { handleMouseMove } = useMouseTracker();
@@ -101,19 +108,42 @@ export const InventoryCard: React.FC<InventoryCardProps> = ({
           </p>
         </div>
 
-        {/* Informações de estoque */}
+        {/* Informações de estoque - Variantes ou Legacy */}
         <div className="space-y-2">
-          <div className="flex items-center gap-2 text-sm">
-            <Package className="h-4 w-4 text-yellow-400" />
-            <span className="text-gray-300">
-              Estoque: <span className="font-semibold text-gray-100">{product.stock_quantity}</span> un
-            </span>
-            {product.minimum_stock && (
-              <span className="text-gray-400">
-                | Mín: {product.minimum_stock} un
+          {variantsLoading ? (
+            <div className="flex items-center gap-2 text-sm text-gray-400">
+              <Loader2 className="h-4 w-4 animate-spin text-yellow-400" />
+              <span>Carregando estoque...</span>
+            </div>
+          ) : productWithVariants ? (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm">
+                <Package className="h-4 w-4 text-yellow-400" />
+                <span className="text-gray-300">
+                  Total: <span className="font-semibold text-gray-100">{productWithVariants.total_stock_units}</span> un
+                </span>
+                {product.minimum_stock && (
+                  <span className="text-gray-400">
+                    | Mín: {product.minimum_stock} un
+                  </span>
+                )}
+              </div>
+              {/* Breakdown por variante */}
+              <VariantStockBadge product={productWithVariants} className="ml-6" />
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 text-sm">
+              <Package className="h-4 w-4 text-yellow-400" />
+              <span className="text-gray-300">
+                Estoque: <span className="font-semibold text-gray-100">{product.stock_quantity}</span> un
               </span>
-            )}
-          </div>
+              {product.minimum_stock && (
+                <span className="text-gray-400">
+                  | Mín: {product.minimum_stock} un
+                </span>
+              )}
+            </div>
+          )}
 
           {/* Volume do produto */}
           <div className="flex items-center gap-2 text-sm">

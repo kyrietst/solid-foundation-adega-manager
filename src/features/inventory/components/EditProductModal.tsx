@@ -10,13 +10,7 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/shared/ui/primitives/dialog';
+import { BaseModal } from '@/shared/ui/composite';
 import {
   Form,
   FormControl,
@@ -37,8 +31,10 @@ import {
 } from '@/shared/ui/primitives/select';
 import { SwitchAnimated } from '@/shared/ui/primitives/switch-animated';
 import { BarcodeInput } from '@/features/inventory/components/BarcodeInput';
+import { VariantStockDisplay } from '@/features/inventory/components/VariantStockDisplay';
 import { useToast } from '@/shared/hooks/common/use-toast';
 import { useMouseTracker } from '@/hooks/ui/useMouseTracker';
+import { useProductVariants } from '@/features/sales/hooks/useProductVariants';
 import { supabase } from '@/core/api/supabase/client';
 import { 
   Package, 
@@ -158,6 +154,10 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
   const [suppliers, setSuppliers] = useState<string[]>([]);
   const [showCustomSupplier, setShowCustomSupplier] = useState(false);
   const [activeScanner, setActiveScanner] = useState<'main' | 'package' | null>(null);
+  
+  // Buscar dados de variantes para exibição read-only (sempre chamar o hook)
+  const productId = product?.id || '';
+  const { data: productWithVariants, isLoading: variantsLoading } = useProductVariants(productId);
 
   const form = useForm<EditProductFormData>({
     resolver: zodResolver(editProductSchema),
@@ -356,17 +356,19 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
   if (!product) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="w-[95vw] max-w-4xl h-[90vh] max-h-[90vh] bg-black/95 backdrop-blur-sm border border-white/10 flex flex-col hero-spotlight hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300 overflow-hidden" onMouseMove={handleMouseMove}>
-        <DialogHeader>
-          <DialogTitle className="text-xl font-bold text-white flex items-center gap-2">
-            <Edit className="h-5 w-5 text-yellow-400" />
-            Editar Produto
-          </DialogTitle>
-          <DialogDescription className="text-gray-400">
-            Modifique os dados do produto "{product.name}". Apenas campos alterados serão atualizados.
-          </DialogDescription>
-        </DialogHeader>
+    <BaseModal
+      isOpen={isOpen}
+      onClose={handleClose}
+      title={
+        <>
+          <Edit className="h-5 w-5 text-yellow-400" />
+          Editar Produto
+        </>
+      }
+      description={`Modifique os dados do produto "${product.name}". Apenas campos alterados serão atualizados.`}
+      size="4xl"
+      className="max-h-[90vh] overflow-y-auto bg-black/95 backdrop-blur-sm border border-white/10"
+    >
 
         <div className="flex-1 overflow-y-auto pr-2">
           <Form {...form}>
@@ -885,59 +887,102 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
                 )}
               </div>
 
-              {/* Estoque */}
+              {/* Informações de Estoque por Variantes (Read-Only) */}
               <div className="bg-gray-800/30 rounded-xl p-6 border border-gray-700/50 hero-spotlight hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300" onMouseMove={handleMouseMove}>
                 <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-5">
                   <Package className="h-5 w-5 text-yellow-400" />
-                  Controle de Estoque
+                  Informações de Estoque por Variante
                 </h3>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <FormField
-                  control={form.control}
-                  name="stock_quantity"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-gray-300">Quantidade em Estoque</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          placeholder="0"
-                          {...field}
-                          onChange={(e) => field.onChange(Number(e.target.value))}
-                          className="bg-gray-800/50 border-gray-600 text-white h-11"
+                <div className="space-y-6">
+                  {/* Sistema de variantes atual */}
+                  {productWithVariants && !variantsLoading ? (
+                    <>
+                      <div className="bg-blue-900/10 border border-blue-400/20 rounded-lg p-4">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Info className="h-4 w-4 text-blue-400" />
+                          <span className="text-sm font-medium text-blue-300">Sistema de Variantes Ativo</span>
+                        </div>
+                        <p className="text-xs text-gray-400">
+                          Este produto utiliza o novo sistema de variantes. O estoque é controlado separadamente por unidades e pacotes.
+                          Para ajustar estoque, use a funcionalidade "Ajustar Estoque" na página de inventário.
+                        </p>
+                      </div>
+                      
+                      <VariantStockDisplay
+                        product={productWithVariants}
+                        showPrices={true}
+                        showConversionInfo={true}
+                        className="bg-black/20 border-white/10"
+                      />
+                    </>
+                  ) : variantsLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-yellow mr-3"></div>
+                      <span className="text-gray-400">Carregando informações de variantes...</span>
+                    </div>
+                  ) : (
+                    <>
+                      {/* Fallback: sistema legado */}
+                      <div className="bg-orange-900/10 border border-orange-400/20 rounded-lg p-4 mb-5">
+                        <div className="flex items-center gap-2 mb-3">
+                          <AlertTriangle className="h-4 w-4 text-orange-400" />
+                          <span className="text-sm font-medium text-orange-300">Sistema Legado</span>
+                        </div>
+                        <p className="text-xs text-gray-400">
+                          Este produto ainda usa o sistema de estoque legado. Recomendamos migrar para o sistema de variantes.
+                        </p>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <FormField
+                          control={form.control}
+                          name="stock_quantity"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-gray-300">Quantidade em Estoque (Sistema Legado)</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  placeholder="0"
+                                  {...field}
+                                  onChange={(e) => field.onChange(Number(e.target.value))}
+                                  className="bg-gray-800/50 border-gray-600 text-white h-11"
+                                />
+                              </FormControl>
+                              <FormDescription className="text-xs text-gray-500">
+                                Quantidade atual em estoque (apenas para produtos não migrados)
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
                         />
-                      </FormControl>
-                      <FormDescription className="text-xs text-gray-500">
-                        Quantidade atual em estoque
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
 
-                <FormField
-                  control={form.control}
-                  name="minimum_stock"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-gray-300">Estoque Mínimo</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          placeholder="10"
-                          {...field}
-                          onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
-                          className="bg-gray-800/50 border-gray-600 text-white h-11"
+                        <FormField
+                          control={form.control}
+                          name="minimum_stock"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-gray-300">Estoque Mínimo</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  placeholder="10"
+                                  {...field}
+                                  onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+                                  className="bg-gray-800/50 border-gray-600 text-white h-11"
+                                />
+                              </FormControl>
+                              <FormDescription className="text-xs text-gray-500">
+                                Alerta quando estoque baixo
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
                         />
-                      </FormControl>
-                      <FormDescription className="text-xs text-gray-500">
-                        Alerta quando estoque baixo
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
+                      </div>
+                    </>
                   )}
-                />
                 </div>
               </div>
 
@@ -1071,8 +1116,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
             </form>
           </Form>
         </div>
-      </DialogContent>
-    </Dialog>
+    </BaseModal>
   );
 };
 

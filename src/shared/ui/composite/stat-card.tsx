@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/primitives/card';
 import { LucideIcon } from 'lucide-react';
 import { cn, getValueClasses, getGlassCardClasses, getIconClasses, getKPITextClasses } from '@/core/config/theme-utils';
+import { FormatDisplay } from './FormatDisplay';
 
 export interface StatCardProps {
   title: string;
@@ -12,6 +13,7 @@ export interface StatCardProps {
   className?: string;
   layout?: 'default' | 'crm'; // Novo: layout CRM ou padrão tradicional
   onClick?: () => void; // Novo: suporte para clique/navegação
+  formatType?: 'currency' | 'number' | 'percentage' | 'none'; // Novo: tipo de formatação
 }
 
 const variantStyles = {
@@ -68,7 +70,8 @@ export const StatCard: React.FC<StatCardProps> = ({
   variant = 'default',
   layout = 'default',
   className,
-  onClick
+  onClick,
+  formatType = 'number'
 }) => {
   const styles = variantStyles[variant];
 
@@ -97,7 +100,13 @@ export const StatCard: React.FC<StatCardProps> = ({
               
               {/* Valor Principal */}
               <div className={cn(getKPITextClasses('value'), 'mt-1', styles.value)}>
-                {typeof value === 'number' ? value.toLocaleString('pt-BR') : value}
+                {formatType === 'none' ? value : (
+                  <FormatDisplay
+                    value={value}
+                    type={formatType}
+                    variant="inherit"
+                  />
+                )}
               </div>
               
               {/* Descrição/Subtítulo */}
@@ -124,7 +133,13 @@ export const StatCard: React.FC<StatCardProps> = ({
       </CardHeader>
       <CardContent>
         <div className={cn(getKPITextClasses('value'), styles.value)}>
-          {typeof value === 'number' ? value.toLocaleString('pt-BR') : value}
+          {formatType === 'none' ? value : (
+            <FormatDisplay
+              value={value}
+              type={formatType}
+              variant="inherit"
+            />
+          )}
         </div>
         {description && (
           <p className={cn(getKPITextClasses('subtitle'), 'mt-1', styles.description)}>

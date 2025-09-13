@@ -14,7 +14,7 @@ import { useProductsGridLogic } from '@/hooks/products/useProductsGridLogic';
 import { NewProductModal } from './NewProductModal';
 import { ProductDetailsModal } from './ProductDetailsModal';
 import { EditProductModal } from './EditProductModal';
-import { StockAdjustmentModal, type StockAdjustment } from './StockAdjustmentModal';
+import { StockAdjustmentModal, type StockAdjustmentWithVariant } from './StockAdjustmentModal';
 import { StockHistoryModal } from './StockHistoryModal';
 import type { ProductFormData } from '@/core/types/inventory.types';
 
@@ -91,49 +91,86 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
 
   // Mutation para ajuste de estoque com registro de movimentação
   const stockAdjustmentMutation = useMutation({
-    mutationFn: async (adjustment: StockAdjustment) => {
-      const currentStock = selectedProduct?.stock_quantity || 0;
-      let newStockQuantity: number;
-      
-      if (adjustment.type === 'ajuste') {
-        newStockQuantity = adjustment.newStock || 0;
+    mutationFn: async (adjustment: StockAdjustmentWithVariant) => {
+      // Verificar se é ajuste de variante (novo sistema) ou produto legado
+      if (adjustment.variantId && adjustment.variantType) {
+        // NOVO SISTEMA: Usar função de variantes
+        const { data: result, error: variantError } = await supabase
+          .rpc('adjust_variant_stock', {
+            p_variant_id: adjustment.variantId,
+            p_adjustment_type: adjustment.type,
+            p_quantity: adjustment.quantity,
+            p_reason: adjustment.reason || `Ajuste de ${adjustment.variantType} via interface`,
+            p_new_stock: adjustment.newStock // Para tipo 'ajuste'
+          });
+
+        if (variantError) {
+          console.error('Erro ao ajustar variante:', variantError);
+          throw new Error(`Erro no ajuste de variante: ${variantError.message}`);
+        }
+
+        return { variantResult: result, isVariant: true };
       } else {
-        newStockQuantity = adjustment.type === 'entrada' 
-          ? currentStock + adjustment.quantity
-          : Math.max(0, currentStock - adjustment.quantity);
+        // SISTEMA LEGADO: Manter funcionalidade existente
+        const currentStock = selectedProduct?.stock_quantity || 0;
+        let newStockQuantity: number;
+        
+        if (adjustment.type === 'ajuste') {
+          newStockQuantity = adjustment.newStock || 0;
+        } else {
+          newStockQuantity = adjustment.type === 'entrada' 
+            ? currentStock + adjustment.quantity
+            : Math.max(0, currentStock - adjustment.quantity);
+        }
+
+        const { data: movementData, error: movementError } = await supabase
+          .rpc('record_product_movement', {
+            p_product_id: adjustment.productId,
+            p_type: adjustment.type,
+            p_quantity: adjustment.type === 'ajuste' 
+              ? (newStockQuantity - currentStock)
+              : adjustment.quantity,
+            p_reason: adjustment.reason || 'Ajuste de estoque via interface',
+            p_source: 'manual',
+            p_user_id: (await supabase.auth.getUser()).data.user?.id || null
+          });
+
+        if (movementError) {
+          console.error('Erro ao registrar movimentação:', movementError);
+          throw movementError;
+        }
+
+        // Buscar o produto atualizado
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .eq('id', adjustment.productId)
+          .single();
+
+        if (error) throw error;
+        
+        return { productData: data, isVariant: false };
       }
-
-      // Usar nossa função de registro de movimentação
-      const { data: movementData, error: movementError } = await supabase
-        .rpc('record_product_movement', {
-          p_product_id: adjustment.productId,
-          p_type: adjustment.type,
-          p_quantity: adjustment.type === 'ajuste' 
-            ? (newStockQuantity - currentStock) // Diferença para ajustes
-            : adjustment.quantity,
-          p_reason: adjustment.reason,
-          p_source: 'manual',
-          p_user_id: (await supabase.auth.getUser()).data.user?.id || null
-        });
-
-      if (movementError) {
-        console.error('Erro ao registrar movimentação:', movementError);
-        throw movementError;
-      }
-
-      // Buscar o produto atualizado
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .eq('id', adjustment.productId)
-        .single();
-
-      if (error) throw error;
-      
-      return data;
     },
     onSuccess: (data, variables) => {
+      // Invalidar múltiplos caches para garantir atualização
       queryClient.invalidateQueries({ queryKey: ['products'] });
+      
+      // Se foi ajuste de variante, invalidar todos os caches relacionados ao produto
+      if (data.isVariant && variables.productId) {
+        queryClient.invalidateQueries({ queryKey: ['product-variants', variables.productId] });
+        queryClient.invalidateQueries({ queryKey: ['product-variants'] }); // Invalidar geral também
+        
+        // Force refetch do produto específico
+        queryClient.refetchQueries({ 
+          queryKey: ['product-variants', variables.productId],
+          exact: false 
+        });
+      }
+      
+      // Invalidar cache geral de produtos com variantes se existir
+      queryClient.invalidateQueries({ queryKey: ['products-with-variants'] });
+      
       setIsStockAdjustmentOpen(false);
       
       const typeText = variables.type === 'entrada' ? 'Entrada' : 
@@ -154,7 +191,7 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
     },
   });
 
-  const handleConfirmStockAdjustment = (adjustment: StockAdjustment) => {
+  const handleConfirmStockAdjustment = (adjustment: StockAdjustmentWithVariant) => {
     stockAdjustmentMutation.mutate(adjustment);
   };
 

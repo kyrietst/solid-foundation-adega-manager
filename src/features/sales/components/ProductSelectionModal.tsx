@@ -1,16 +1,10 @@
 /**
- * ProductSelectionModal.tsx - Modal para seleção de unidade vs pacote
- * Permite ao usuário escolher entre vender unidade individual ou pacote/fardo completo
+ * ProductSelectionModal.tsx - Modal para seleção de variantes (unidade vs pacote)
+ * Atualizado para usar o novo sistema de product_variants
  */
 
-import React, { useState, useMemo } from 'react';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle,
-  DialogDescription 
-} from '@/shared/ui/primitives/dialog';
+import React, { useState, useMemo, useEffect } from 'react';
+import { BaseModal } from '@/shared/ui/composite';
 import { Button } from '@/shared/ui/primitives/button';
 import { Input } from '@/shared/ui/primitives/input';
 import { RadioGroup, RadioGroupItem } from '@/shared/ui/primitives/radio-group';
@@ -22,17 +16,25 @@ import {
   Minus, 
   ShoppingCart, 
   AlertTriangle,
-  CheckCircle 
+  CheckCircle,
+  Loader2,
+  RefreshCw
 } from 'lucide-react';
-import type { Product } from '@/types/inventory.types';
 import { formatCurrency, cn } from '@/core/config/utils';
 import { getGlassCardClasses } from '@/core/config/theme-utils';
+import { useProductVariants, useVariantAvailability } from '../hooks/useProductVariants';
+import type { 
+  VariantSelectionData, 
+  VariantType,
+  ProductWithVariants 
+} from '@/core/types/variants.types';
 
-export type SelectionType = 'unit' | 'package';
+export { type VariantType as SelectionType };
 
-export interface ProductSelectionData {
-  type: SelectionType;
-  quantity: number;
+// Interface atualizada para usar o sistema de variantes
+export interface ProductSelectionData extends VariantSelectionData {
+  // Mantendo compatibilidade com interface anterior
+  type: VariantType;
   price: number;
   totalPrice: number;
   packageUnits?: number;
@@ -42,47 +44,73 @@ interface ProductSelectionModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: (selection: ProductSelectionData) => void;
-  product: Product;
+  productId: string; // Mudança: usar ID em vez do objeto completo
 }
 
 export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
   isOpen,
   onClose,
   onConfirm,
-  product
+  productId
 }) => {
-  const [selectionType, setSelectionType] = useState<SelectionType>('unit');
+  const [selectionType, setSelectionType] = useState<VariantType>('unit');
   const [quantity, setQuantity] = useState(1);
 
-  // Calcular informações de estoque e preços
+  // Buscar dados do produto com variantes
+  const { 
+    data: product, 
+    isLoading: isLoadingProduct, 
+    error: productError,
+    refetch: refetchProduct 
+  } = useProductVariants(productId);
+
+  // Buscar disponibilidade da variante selecionada
+  const { 
+    data: availability, 
+    isLoading: isLoadingAvailability 
+  } = useVariantAvailability({
+    product_id: productId,
+    variant_type: selectionType,
+    quantity
+  });
+
+  // Calcular informações de estoque e preços baseado nas variantes reais
   const stockInfo = useMemo(() => {
-    const packageUnits = product.package_units || 1;
-    const totalStock = product.stock_quantity;
-    const completePackages = Math.floor(totalStock / packageUnits);
-    const remainingUnits = totalStock % packageUnits;
+    if (!product) return null;
+
+    const unitVariant = product.unit_variant;
+    const packageVariant = product.package_variant;
     
     return {
-      packageUnits,
-      totalStock,
-      completePackages,
-      remainingUnits,
-      unitPrice: product.price,
-      packagePrice: product.package_price || (product.price * packageUnits),
-      canSellPackages: completePackages > 0
+      unitVariant,
+      packageVariant,
+      totalStockUnits: product.total_stock_units,
+      canSellUnits: product.can_sell_units,
+      canSellPackages: product.can_sell_packages,
+      unitPrice: unitVariant?.price || 0,
+      packagePrice: packageVariant?.price || 0,
+      unitsPerPackage: packageVariant?.units_in_package || 1,
+      unitStock: unitVariant?.stock_quantity || 0,
+      packageStock: packageVariant?.stock_quantity || 0,
     };
   }, [product]);
 
   // Validar quantidade baseada no tipo selecionado
   const maxQuantity = useMemo(() => {
+    if (!stockInfo) return 0;
+    
     if (selectionType === 'unit') {
-      return stockInfo.totalStock;
+      // Para unidades, usar disponibilidade total (incluindo conversões possíveis)
+      return availability?.total_units_available || stockInfo.unitStock;
     } else {
-      return stockInfo.completePackages;
+      return stockInfo.packageStock;
     }
-  }, [selectionType, stockInfo]);
+  }, [selectionType, stockInfo, availability]);
 
   // Calcular preço total
   const totalPrice = useMemo(() => {
+    if (!stockInfo) return 0;
+    
     const unitPrice = selectionType === 'unit' 
       ? stockInfo.unitPrice 
       : stockInfo.packagePrice;
@@ -101,126 +129,200 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
   };
 
   const handleConfirm = () => {
-    const selection: ProductSelectionData = {
-      type: selectionType,
-      quantity,
-      price: selectionType === 'unit' ? stockInfo.unitPrice : stockInfo.packagePrice,
-      totalPrice,
-      packageUnits: selectionType === 'package' ? stockInfo.packageUnits : undefined
-    };
+    if (!stockInfo || !product) return;
+
+    const currentVariant = selectionType === 'unit' 
+      ? stockInfo.unitVariant 
+      : stockInfo.packageVariant;
     
+    if (!currentVariant) return;
+
+    const selection: ProductSelectionData = {
+      variant_id: currentVariant.id,
+      variant_type: selectionType,
+      quantity,
+      unit_price: currentVariant.price,
+      total_price: totalPrice,
+      units_sold: selectionType === 'unit' 
+        ? quantity 
+        : quantity * stockInfo.unitsPerPackage,
+      conversion_required: availability?.needs_conversion || false,
+      packages_converted: availability?.packages_converted || 0,
+      
+      // Compatibilidade com interface anterior
+      type: selectionType,
+      price: currentVariant.price,
+      totalPrice,
+      packageUnits: selectionType === 'package' ? stockInfo.unitsPerPackage : undefined
+    };
     
     onConfirm(selection);
     onClose();
   };
 
-  const isValidSelection = quantity > 0 && quantity <= maxQuantity;
+  const isValidSelection = quantity > 0 && quantity <= maxQuantity && stockInfo;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent 
-        className={cn(
-          "max-w-md w-full mx-4",
-          getGlassCardClasses(),
-          "border-white/20 bg-gray-900/95 backdrop-blur-xl"
-        )}
-      >
-        <DialogHeader className="text-center pb-4">
-          <DialogTitle className="text-xl font-bold text-white flex items-center justify-center gap-2">
-            <ShoppingCart className="h-5 w-5 text-primary-yellow" />
-            Selecionar Tipo de Venda
-          </DialogTitle>
-          <DialogDescription className="text-gray-400 mt-2">
-            Escolha como deseja adicionar este produto ao carrinho
-          </DialogDescription>
-        </DialogHeader>
-
-        {/* Informações do Produto */}
-        <div className="bg-black/40 rounded-lg p-4 border border-white/10 mb-4">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-12 h-12 rounded-lg bg-gradient-to-r from-purple-500 to-blue-500 flex items-center justify-center">
-              <Wine className="h-6 w-6 text-white" />
-            </div>
-            <div className="flex-1">
-              <h3 className="font-semibold text-white line-clamp-2">{product.name}</h3>
-              <p className="text-sm text-gray-400">{product.category}</p>
-            </div>
-          </div>
-          
-          {/* Informações de Estoque */}
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div className="text-center p-2 bg-white/5 rounded">
-              <p className="text-gray-400">Estoque Total</p>
-              <p className="font-semibold text-white">{stockInfo.totalStock} unidades</p>
-            </div>
-            <div className="text-center p-2 bg-white/5 rounded">
-              <p className="text-gray-400">Pacotes Completos</p>
-              <p className="font-semibold text-white">{stockInfo.completePackages} fardos</p>
-            </div>
-          </div>
+    <BaseModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={
+        <>
+          <ShoppingCart className="h-5 w-5 text-primary-yellow" />
+          Selecionar Tipo de Venda
+        </>
+      }
+      description="Escolha como deseja adicionar este produto ao carrinho"
+      size="md"
+      className={cn(
+        getGlassCardClasses(),
+        "border-white/20 bg-gray-900/95 backdrop-blur-xl"
+      )}
+    >
+      {/* Loading State */}
+      {isLoadingProduct && (
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="h-6 w-6 animate-spin text-primary-yellow" />
+          <span className="ml-2 text-white">Carregando produto...</span>
         </div>
+      )}
 
-        {/* Seleção do Tipo */}
-        <RadioGroup value={selectionType} onValueChange={(value) => setSelectionType(value as SelectionType)}>
-          {/* Opção Unidade */}
-          <div className={cn(
-            "flex items-center space-x-3 rounded-lg border p-4 transition-all duration-200",
-            selectionType === 'unit' 
-              ? "border-primary-yellow bg-primary-yellow/10" 
-              : "border-white/20 bg-black/20 hover:bg-white/5"
-          )}>
-            <RadioGroupItem value="unit" id="unit" />
-            <div className="flex-1">
-              <Label htmlFor="unit" className="cursor-pointer">
-                <div className="flex items-center gap-2 mb-1">
-                  <Wine className="h-4 w-4 text-blue-400" />
-                  <span className="font-semibold text-white">Unidade Individual</span>
-                </div>
-                <div className="text-sm text-gray-400">
-                  {formatCurrency(stockInfo.unitPrice)} cada • {stockInfo.totalStock} disponíveis
-                </div>
-              </Label>
+      {/* Error State */}
+      {productError && (
+        <div className="flex flex-col items-center justify-center py-8">
+          <AlertTriangle className="h-8 w-8 text-red-400 mb-2" />
+          <p className="text-red-400 text-center mb-4">Erro ao carregar produto</p>
+          <Button
+            onClick={() => refetchProduct()}
+            variant="outline"
+            size="sm"
+            className="border-white/20 text-white hover:bg-white/10"
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Tentar novamente
+          </Button>
+        </div>
+      )}
+
+      {/* Product Content */}
+      {product && stockInfo && (
+        <>
+          {/* Informações do Produto */}
+          <div className="bg-black/40 rounded-lg p-4 border border-white/10 mb-4">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-12 h-12 rounded-lg bg-gradient-to-r from-purple-500 to-blue-500 flex items-center justify-center">
+                <Wine className="h-6 w-6 text-white" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-white line-clamp-2">{product.name}</h3>
+                <p className="text-sm text-gray-400">{product.category}</p>
+              </div>
             </div>
-            {selectionType === 'unit' && (
-              <CheckCircle className="h-5 w-5 text-primary-yellow" />
+            
+            {/* Informações de Estoque */}
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="text-center p-2 bg-white/5 rounded">
+                <p className="text-gray-400">Total Disponível</p>
+                <p className="font-semibold text-white">{stockInfo.totalStockUnits} unidades</p>
+              </div>
+              <div className="text-center p-2 bg-white/5 rounded">
+                <p className="text-gray-400">Pacotes Disponíveis</p>
+                <p className="font-semibold text-white">{stockInfo.packageStock} fardos</p>
+              </div>
+            </div>
+
+            {/* Indicador de conversão se necessário */}
+            {availability?.needs_conversion && (
+              <div className="mt-3 p-2 bg-orange-500/10 border border-orange-500/20 rounded flex items-center gap-2">
+                <RefreshCw className="h-4 w-4 text-orange-400" />
+                <span className="text-sm text-orange-400">
+                  Conversão automática de pacotes será necessária
+                </span>
+              </div>
             )}
           </div>
 
-          {/* Opção Pacote */}
-          <div className={cn(
-            "flex items-center space-x-3 rounded-lg border p-4 transition-all duration-200",
-            selectionType === 'package' 
-              ? "border-primary-yellow bg-primary-yellow/10" 
-              : "border-white/20 bg-black/20 hover:bg-white/5",
-            !stockInfo.canSellPackages && "opacity-50"
-          )}>
-            <RadioGroupItem 
-              value="package" 
-              id="package" 
-              disabled={!stockInfo.canSellPackages}
-            />
-            <div className="flex-1">
-              <Label htmlFor="package" className={cn("cursor-pointer", !stockInfo.canSellPackages && "cursor-not-allowed")}>
-                <div className="flex items-center gap-2 mb-1">
-                  <Package className="h-4 w-4 text-green-400" />
-                  <span className="font-semibold text-white">Fardo/Pacote Completo</span>
+          {/* Seleção do Tipo */}
+          <RadioGroup value={selectionType} onValueChange={(value) => setSelectionType(value as VariantType)}>
+            {/* Opção Unidade */}
+            {stockInfo.unitVariant && (
+              <div className={cn(
+                "flex items-center space-x-3 rounded-lg border p-4 transition-all duration-200",
+                selectionType === 'unit' 
+                  ? "border-primary-yellow bg-primary-yellow/10" 
+                  : "border-white/20 bg-black/20 hover:bg-white/5",
+                !stockInfo.canSellUnits && "opacity-50"
+              )}>
+                <RadioGroupItem 
+                  value="unit" 
+                  id="unit" 
+                  disabled={!stockInfo.canSellUnits}
+                />
+                <div className="flex-1">
+                  <Label htmlFor="unit" className={cn("cursor-pointer", !stockInfo.canSellUnits && "cursor-not-allowed")}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <Wine className="h-4 w-4 text-blue-400" />
+                      <span className="font-semibold text-white">Unidade Individual</span>
+                    </div>
+                    <div className="text-sm text-gray-400">
+                      {formatCurrency(stockInfo.unitPrice)} cada • {stockInfo.unitStock} em estoque
+                      {availability?.total_units_available && availability.total_units_available > stockInfo.unitStock && (
+                        <span className="text-green-400"> (+{availability.total_units_available - stockInfo.unitStock} via conversão)</span>
+                      )}
+                    </div>
+                  </Label>
                 </div>
-                <div className="text-sm text-gray-400">
-                  {formatCurrency(stockInfo.packagePrice)} fardo ({stockInfo.packageUnits} unidades) • {stockInfo.completePackages} disponíveis
-                </div>
-                {!stockInfo.canSellPackages && (
-                  <div className="flex items-center gap-1 mt-1 text-xs text-orange-400">
-                    <AlertTriangle className="h-3 w-3" />
-                    Estoque insuficiente para fardo completo
-                  </div>
+                {selectionType === 'unit' && stockInfo.canSellUnits && (
+                  <CheckCircle className="h-5 w-5 text-primary-yellow" />
                 )}
-              </Label>
-            </div>
-            {selectionType === 'package' && stockInfo.canSellPackages && (
-              <CheckCircle className="h-5 w-5 text-primary-yellow" />
+              </div>
             )}
-          </div>
-        </RadioGroup>
+
+            {/* Opção Pacote */}
+            {stockInfo.packageVariant && (
+              <div className={cn(
+                "flex items-center space-x-3 rounded-lg border p-4 transition-all duration-200",
+                selectionType === 'package' 
+                  ? "border-primary-yellow bg-primary-yellow/10" 
+                  : "border-white/20 bg-black/20 hover:bg-white/5",
+                !stockInfo.canSellPackages && "opacity-50"
+              )}>
+                <RadioGroupItem 
+                  value="package" 
+                  id="package" 
+                  disabled={!stockInfo.canSellPackages}
+                />
+                <div className="flex-1">
+                  <Label htmlFor="package" className={cn("cursor-pointer", !stockInfo.canSellPackages && "cursor-not-allowed")}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <Package className="h-4 w-4 text-green-400" />
+                      <span className="font-semibold text-white">Fardo/Pacote Completo</span>
+                    </div>
+                    <div className="text-sm text-gray-400">
+                      {formatCurrency(stockInfo.packagePrice)} fardo ({stockInfo.unitsPerPackage} unidades) • {stockInfo.packageStock} disponíveis
+                    </div>
+                    {!stockInfo.canSellPackages && (
+                      <div className="flex items-center gap-1 mt-1 text-xs text-orange-400">
+                        <AlertTriangle className="h-3 w-3" />
+                        Nenhum pacote disponível no momento
+                      </div>
+                    )}
+                  </Label>
+                </div>
+                {selectionType === 'package' && stockInfo.canSellPackages && (
+                  <CheckCircle className="h-5 w-5 text-primary-yellow" />
+                )}
+              </div>
+            )}
+
+            {/* Caso nenhuma variante esteja disponível */}
+            {!stockInfo.canSellUnits && !stockInfo.canSellPackages && (
+              <div className="text-center py-4 text-gray-400">
+                <AlertTriangle className="h-8 w-8 mx-auto mb-2 text-orange-400" />
+                <p>Produto sem estoque disponível</p>
+              </div>
+            )}
+          </RadioGroup>
 
         {/* Seleção de Quantidade */}
         <div className="space-y-2">
@@ -276,30 +378,41 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
           </div>
           {selectionType === 'package' && (
             <div className="text-xs text-gray-500 mt-1">
-              Total: {quantity * stockInfo.packageUnits} unidades individuais
+              Total: {quantity * stockInfo.unitsPerPackage} unidades individuais
+            </div>
+          )}
+          {isLoadingAvailability && (
+            <div className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              Verificando disponibilidade...
             </div>
           )}
         </div>
 
-        {/* Botões de Ação */}
-        <div className="flex gap-3 pt-4">
-          <Button
-            variant="outline"
-            onClick={onClose}
-            className="flex-1 border-white/20 text-white hover:bg-white/10"
-          >
-            Cancelar
-          </Button>
-          <Button
-            onClick={handleConfirm}
-            disabled={!isValidSelection}
-            className="flex-1 bg-primary-yellow text-black hover:bg-primary-yellow/80 font-semibold"
-          >
-            <ShoppingCart className="h-4 w-4 mr-2" />
-            Adicionar ao Carrinho
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+          {/* Botões de Ação */}
+          <div className="flex gap-3 pt-4">
+            <Button
+              variant="outline"
+              onClick={onClose}
+              className="flex-1 border-white/20 text-white hover:bg-white/10"
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleConfirm}
+              disabled={!isValidSelection || isLoadingProduct || isLoadingAvailability}
+              className="flex-1 bg-primary-yellow text-black hover:bg-primary-yellow/80 font-semibold disabled:opacity-50"
+            >
+              {isLoadingAvailability ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <ShoppingCart className="h-4 w-4 mr-2" />
+              )}
+              Adicionar ao Carrinho
+            </Button>
+          </div>
+        </>
+      )}
+    </BaseModal>
   );
 };

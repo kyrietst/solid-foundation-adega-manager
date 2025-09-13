@@ -37,7 +37,7 @@ function getVariant(valueType?: KpiData['valueType']): 'default' | 'success' | '
 function formatDescription(delta?: number, subLabel?: string): string {
   let description = '';
   
-  if (typeof delta === 'number') {
+  if (typeof delta === 'number' && !isNaN(delta)) {
     const deltaText = delta > 0 ? `⬆ +${delta.toFixed(1)}%` : 
                      delta < 0 ? `⬇ ${delta.toFixed(1)}%` : 
                      '➖ 0%';

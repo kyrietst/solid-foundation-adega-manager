@@ -5,6 +5,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
+import { safeNumber, safePercentage, debugNaN } from '@/shared/utils/number-utils';
 
 export interface DashboardExpense {
   category_id: string;
@@ -129,18 +130,18 @@ export const useDashboardBudgetVariance = () => {
       const variances = (data || []).map(item => ({
         category_id: item.category_id,
         category_name: item.category_name,
-        budgeted_amount: Number(item.budgeted_amount),
-        actual_amount: Number(item.actual_amount),
-        variance: Number(item.variance),
-        variance_percent: Number(item.variance_percent),
+        budgeted_amount: safeNumber(item.budgeted_amount),
+        actual_amount: safeNumber(item.actual_amount),
+        variance: safeNumber(item.variance),
+        variance_percent: safeNumber(item.variance_percent),
         status: item.status as 'ON_TRACK' | 'WARNING' | 'OVER_BUDGET'
       }));
 
-      // Calcular totais
-      const totalBudgeted = variances.reduce((sum, v) => sum + v.budgeted_amount, 0);
-      const totalActual = variances.reduce((sum, v) => sum + v.actual_amount, 0);
-      const totalVariance = totalActual - totalBudgeted;
-      const totalVariancePercent = totalBudgeted > 0 ? (totalVariance / totalBudgeted) * 100 : 0;
+      // Calcular totais com proteção anti-NaN
+      const totalBudgeted = safeNumber(variances.reduce((sum, v) => sum + v.budgeted_amount, 0));
+      const totalActual = safeNumber(variances.reduce((sum, v) => sum + v.actual_amount, 0));
+      const totalVariance = safeNumber(totalActual - totalBudgeted);
+      const totalVariancePercent = debugNaN(safePercentage(totalVariance, totalBudgeted), 'totalVariancePercent');
 
       const onTrackCount = variances.filter(v => v.status === 'ON_TRACK').length;
       const warningCount = variances.filter(v => v.status === 'WARNING').length;
@@ -155,9 +156,12 @@ export const useDashboardBudgetVariance = () => {
         totalActual,
         totalVariance,
         totalVariancePercent,
+        variance_percentage: totalVariancePercent, // Alias para compatibilidade
+        status: overBudgetCount > 0 ? 'OVER_BUDGET' : (warningCount > 0 ? 'WARNING' : 'ON_TRACK'),
         categoriesOnTrack: onTrackCount,
         categoriesWarning: warningCount,
         categoriesOverBudget: overBudgetCount,
+        categories_over_budget: overBudgetCount, // Alias para compatibilidade
         totalCategories: variances.length
       };
     },

@@ -37,7 +37,7 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
     className
   } = config;
 
-  const { addItem } = useCart();
+  const { addItem, addFromVariantSelection } = useCart();
   const { searchByBarcode } = useBarcode();
   
   // Hook de seleção de produtos (unidade vs pacote)
@@ -212,24 +212,24 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
 
     console.log('[DEBUG] useProductsGridLogic - Confirmando seleção:', {
       productName: selectedProduct.name,
-      type: selection.type,
+      variant_type: selection.variant_type,
       quantity: selection.quantity,
-      price: selection.price,
-      totalPrice: selection.totalPrice
+      unit_price: selection.unit_price,
+      total_price: selection.total_price,
+      units_sold: selection.units_sold,
+      conversion_required: selection.conversion_required
     });
 
-    // Converter seleção para item do carrinho
-    const cartItem = convertSelectionToCartItem(selectedProduct, selection);
-    
-    console.log('[DEBUG] useProductsGridLogic - Adicionando item convertido ao carrinho:', cartItem);
-    
-    // Adicionar ao carrinho
-    addItem(cartItem);
+    // Usar o novo método addFromVariantSelection
+    addFromVariantSelection(selection, {
+      id: selectedProduct.id,
+      name: selectedProduct.name
+    });
     
     // Chamar callback se fornecido
     onProductSelect?.(selectedProduct);
     
-    console.log('[DEBUG] useProductsGridLogic - Produto adicionado com sucesso via modal de seleção');
+    console.log('[DEBUG] useProductsGridLogic - Produto adicionado com sucesso via sistema de variantes');
   };
 
   return {

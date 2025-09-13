@@ -142,7 +142,7 @@ export const ProductsGridContainer: React.FC<ProductsGridContainerProps> = ({
           isOpen={isModalOpen}
           onClose={closeProductSelection}
           onConfirm={handleProductSelectionConfirm}
-          product={selectedProduct}
+          productId={selectedProduct.id}
         />
       )}
     </>

@@ -5,12 +5,14 @@
 
 import React from 'react';
 import { Button } from '@/shared/ui/primitives/button';
-import { Plus, Package } from 'lucide-react';
+import { Badge } from '@/shared/ui/primitives/badge';
+import { Plus, Package, Wine, AlertTriangle } from 'lucide-react';
 import type { Product } from '@/types/inventory.types';
 import { formatCurrency, cn } from '@/core/config/utils';
 import { getGlassCardClasses, getHoverTransformClasses } from '@/core/config/theme-utils';
 import { text, shadows } from "@/core/config/theme";
 import { ProductImage } from '@/shared/ui/composite/optimized-image';
+import { useProductVariants } from '@/features/sales/hooks/useProductVariants';
 
 interface ProductCardProps {
   product: Product;
@@ -27,25 +29,39 @@ export const ProductCard = React.memo<ProductCardProps>(({
   variant = 'default',
   glassEffect = true,
 }) => {
-  const isOutOfStock = product.stock_quantity === 0;
+  // Buscar dados de variantes (hook sempre chamado)
+  const productId = product.id;
+  const { data: productWithVariants, isLoading: variantsLoading } = useProductVariants(productId);
+  
   const glassClasses = glassEffect ? getGlassCardClasses(variant) : '';
   
-  // Verificar se produto tem rastreamento de pacote
-  const hasPackageTracking = product.has_package_tracking && 
-    product.package_units && 
-    product.package_units > 1;
+  // Calcular estados baseados nas variantes
+  const hasVariants = productWithVariants && (productWithVariants.unit_variant || productWithVariants.package_variant);
+  const totalStock = productWithVariants?.total_stock_units || product.stock_quantity || 0;
+  const canSellUnits = productWithVariants?.can_sell_units || false;
+  const canSellPackages = productWithVariants?.can_sell_packages || false;
   
-  // Calcular se pode vender como pacote
-  const canSellAsPackage = hasPackageTracking && 
-    Math.floor(product.stock_quantity / (product.package_units || 1)) > 0;
+  
+  // Detectar se são variantes virtuais (baseadas em dados legados)
+  const hasVirtualVariants = productWithVariants?.unit_variant?.id.includes('-virtual') || 
+                            productWithVariants?.package_variant?.id.includes('-virtual');
+  
+  // Para variantes virtuais, usar dados do produto legado como referência
+  const displayStock = hasVirtualVariants ? (product.stock_quantity || 0) : totalStock;
+  const isOutOfStock = displayStock === 0;
+  
+  // CORREÇÃO PRINCIPAL: Abrir modal apenas quando há AMBAS as variantes com estoque > 0
+  // Isso significa que o usuário pode escolher entre comprar unidades ou pacotes
+  const hasMultipleOptions = canSellUnits && canSellPackages;
+    
 
   // Decidir como adicionar ao carrinho
   const handleAddClick = () => {
-    // Se tem rastreamento de pacote e pode vender como pacote, abrir modal
-    if (hasPackageTracking && onOpenSelection) {
+    // Se tem múltiplas opções de venda, abrir modal de seleção
+    if (hasMultipleOptions && onOpenSelection) {
       onOpenSelection(product);
     } else {
-      // Senão, adicionar direto como unidade
+      // Senão, adicionar direto como unidade (compatibilidade)
       onAddToCart(product);
     }
   };
@@ -76,16 +92,72 @@ export const ProductCard = React.memo<ProductCardProps>(({
           containerClassName="w-full h-full"
         />
         
-        {/* Badge de estoque melhorado */}
-        <div className={cn(
-          'absolute top-2 right-2 px-3 py-1 rounded-full text-xs font-bold border backdrop-blur-md shadow-lg transition-all duration-300 group-hover:scale-105',
-          isOutOfStock 
-            ? 'bg-red-500/30 text-red-200 border-red-400/50 shadow-red-500/25' 
-            : product.stock_quantity <= 5
-            ? 'bg-orange-500/30 text-orange-200 border-orange-400/50 shadow-orange-500/25'
-            : 'bg-emerald-500/30 text-emerald-200 border-emerald-400/50 shadow-emerald-500/25'
-        )}>
-          {isOutOfStock ? '⚠️ Esgotado' : product.stock_quantity <= 5 ? `⚡ ${product.stock_quantity} restam` : `✓ ${product.stock_quantity} disponível`}
+        {/* Badges de variantes inteligentes */}
+        <div className="absolute top-2 right-2 flex flex-col gap-1">
+          {variantsLoading ? (
+            <Badge variant="outline" className="bg-gray-500/30 text-gray-300 border-gray-400/50 backdrop-blur-md">
+              Carregando...
+            </Badge>
+          ) : isOutOfStock ? (
+            <Badge variant="destructive" className="bg-red-500/30 text-red-200 border-red-400/50 backdrop-blur-md shadow-lg">
+              ⚠️ Esgotado
+            </Badge>
+          ) : (
+            <>
+              {/* Mostrar breakdown de variantes ou badge de estoque total */}
+              {hasVariants ? (
+                <div className="flex flex-col gap-1">
+                  {/* Badge de estoque total (quando há variantes) */}
+                  <Badge 
+                    variant="outline" 
+                    className={cn(
+                      'backdrop-blur-md shadow-lg transition-all duration-300 group-hover:scale-105 text-xs',
+                      displayStock <= 5
+                        ? 'bg-orange-500/20 text-orange-200 border-orange-400/30'
+                        : 'bg-emerald-500/20 text-emerald-200 border-emerald-400/30'
+                    )}
+                  >
+                    {displayStock <= 5 ? `⚡ ${displayStock} total` : `✓ ${displayStock} total`}
+                    {hasVirtualVariants && <span className="ml-1 opacity-60">*</span>}
+                  </Badge>
+                  
+                  {/* Badges de variantes disponíveis */}
+                  <div className="flex gap-1">
+                    {canSellUnits && productWithVariants?.unit_variant && (
+                      <Badge 
+                        variant="secondary" 
+                        className="bg-green-500/20 text-green-300 border-green-500/30 backdrop-blur-md text-xs"
+                      >
+                        <Wine className="h-2 w-2 mr-1" />
+                        {productWithVariants.unit_variant.stock_quantity} un
+                      </Badge>
+                    )}
+                    {canSellPackages && productWithVariants?.package_variant && (
+                      <Badge 
+                        variant="secondary" 
+                        className="bg-blue-500/20 text-blue-300 border-blue-500/30 backdrop-blur-md text-xs"
+                      >
+                        <Package className="h-2 w-2 mr-1" />
+                        {productWithVariants.package_variant.stock_quantity} fardos
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <Badge 
+                  variant="outline" 
+                  className={cn(
+                    'backdrop-blur-md shadow-lg transition-all duration-300 group-hover:scale-105 font-bold',
+                    totalStock <= 5
+                      ? 'bg-orange-500/30 text-orange-200 border-orange-400/50 shadow-orange-500/25'
+                      : 'bg-emerald-500/30 text-emerald-200 border-emerald-400/50 shadow-emerald-500/25'
+                  )}
+                >
+                  {totalStock <= 5 ? `⚡ ${totalStock} restam` : `✓ ${totalStock} un`}
+                </Badge>
+              )}
+            </>
+          )}
         </div>
       </div>
 
@@ -104,22 +176,33 @@ export const ProductCard = React.memo<ProductCardProps>(({
             <div className="space-y-1 flex-1">
               <div className="flex items-center gap-2">
                 <span className="text-2xl font-bold text-primary-yellow">
-                  {formatCurrency(product.price)}
+                  {productWithVariants?.unit_variant?.price ? 
+                    formatCurrency(productWithVariants.unit_variant.price) : 
+                    formatCurrency(product.price)}
                 </span>
-                {hasPackageTracking && (
-                  <div className="flex items-center gap-1 px-2 py-1 bg-green-500/20 border border-green-500/30 rounded-full">
-                    <Package className="h-3 w-3 text-green-400" />
-                    <span className="text-xs text-green-400 font-medium">
-                      {product.package_units}un
-                    </span>
-                  </div>
-                )}
+                
+                {/* Badges de tipos de venda disponíveis */}
+                <div className="flex gap-1">
+                  {canSellUnits && (
+                    <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/30">
+                      <Wine className="h-3 w-3 mr-1" />
+                      Unidades
+                    </Badge>
+                  )}
+                  {canSellPackages && productWithVariants?.package_variant && (
+                    <Badge variant="outline" className="bg-blue-500/10 text-blue-400 border-blue-500/30">
+                      <Package className="h-3 w-3 mr-1" />
+                      Fardos
+                    </Badge>
+                  )}
+                </div>
               </div>
               
               {/* Mostrar preço do pacote se disponível */}
-              {hasPackageTracking && product.package_price && (
-                <div className="text-sm text-gray-400">
-                  Fardo: {formatCurrency(product.package_price)}
+              {canSellPackages && productWithVariants?.package_variant && (
+                <div className="text-sm text-gray-400 flex items-center gap-2">
+                  <span>Fardo: {formatCurrency(productWithVariants.package_variant.price)}</span>
+                  <span className="text-xs">({productWithVariants.package_variant.units_in_package || 1} un cada)</span>
                 </div>
               )}
               
@@ -142,14 +225,14 @@ export const ProductCard = React.memo<ProductCardProps>(({
             getHoverTransformClasses('scale'),
             isOutOfStock 
               ? 'bg-gray-600/30 text-gray-400 border border-gray-500/40 cursor-not-allowed backdrop-blur-sm'
-              : hasPackageTracking
+              : hasMultipleOptions
               ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-400 hover:to-emerald-400 border border-green-500/50 shadow-lg hover:shadow-green-400/30'
               : 'bg-gradient-to-r from-primary-yellow to-yellow-500 text-black hover:from-yellow-300 hover:to-yellow-400 border border-primary-yellow/50 shadow-lg hover:shadow-yellow-400/30'
           )}
           aria-label={
             isOutOfStock 
               ? `Produto ${product.name} indisponível` 
-              : hasPackageTracking 
+              : hasMultipleOptions 
               ? `Selecionar tipo de venda para ${product.name}`
               : `Adicionar ${product.name} ao carrinho`
           }
@@ -159,10 +242,15 @@ export const ProductCard = React.memo<ProductCardProps>(({
               <Plus className="h-4 w-4 mr-2" aria-hidden="true" />
               ❌ Indisponível
             </>
-          ) : hasPackageTracking ? (
+          ) : hasMultipleOptions ? (
             <>
               <Package className="h-4 w-4 mr-2" aria-hidden="true" />
-              📦 Selecionar
+              {hasVirtualVariants ? '📦 Opções' : '📦 Selecionar'}
+            </>
+          ) : variantsLoading ? (
+            <>
+              <Plus className="h-4 w-4 mr-2" aria-hidden="true" />
+              ⏳ Verificando...
             </>
           ) : (
             <>

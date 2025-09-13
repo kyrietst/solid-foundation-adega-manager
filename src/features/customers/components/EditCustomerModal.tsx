@@ -10,13 +10,7 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/shared/ui/primitives/dialog';
+import { BaseModal } from '@/shared/ui/composite';
 import {
   Form,
   FormControl,
@@ -271,17 +265,19 @@ export const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
   if (!customer) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-black/95 backdrop-blur-sm border border-white/10">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-bold text-white flex items-center gap-2">
-            <Edit className="h-5 w-5 text-blue-400" />
-            Editar Cliente
-          </DialogTitle>
-          <DialogDescription className="text-gray-400">
-            Atualize os dados de <span className="text-white font-medium">{customer.name}</span>
-          </DialogDescription>
-        </DialogHeader>
+    <BaseModal
+      isOpen={isOpen}
+      onClose={handleClose}
+      title={
+        <>
+          <Edit className="h-5 w-5 text-blue-400" />
+          Editar Cliente
+        </>
+      }
+      description={`Atualize os dados de ${customer.name}`}
+      size="2xl"
+      className="max-h-[90vh] overflow-y-auto bg-black/95 backdrop-blur-sm border border-white/10"
+    >
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -618,8 +614,7 @@ export const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
             </div>
           </form>
         </Form>
-      </DialogContent>
-    </Dialog>
+    </BaseModal>
   );
 };
 

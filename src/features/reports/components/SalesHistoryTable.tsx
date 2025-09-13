@@ -1,13 +1,15 @@
 /**
  * Sales History Table - Histórico completo de vendas
- * Tabela detalhada com todas as vendas do sistema
+ * Migrado para usar o DataTable genérico (Fase 2.1 refatoração DRY)
  */
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useSales } from '@/features/sales/hooks/use-sales';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { LoadingSpinner } from '@/shared/ui/composite/loading-spinner';
+import { DataTable } from '@/shared/ui/composite/DataTable';
+import { DataTableColumn } from '@/shared/hooks/common/useDataTable';
+import { CurrencyDisplay, DateDisplay } from '@/shared/ui/composite/FormatDisplay';
 import { Button } from '@/shared/ui/primitives/button';
 import { Input } from '@/shared/ui/primitives/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/primitives/select';
@@ -25,6 +27,24 @@ import {
 import { cn } from '@/core/config/utils';
 import { text, shadows } from '@/core/config/theme';
 
+// Types
+interface SaleWithRelations {
+  id: string;
+  created_at: string;
+  total_amount: number;
+  final_amount: number | null;
+  status: string;
+  payment_method: string;
+  payment_status: string;
+  customer?: {
+    name: string;
+  };
+  seller?: {
+    name: string;
+  };
+  items?: unknown[];
+}
+
 interface SalesHistoryTableProps {
   onViewSale?: (saleId: string) => void;
 }
@@ -39,30 +59,18 @@ export const SalesHistoryTable: React.FC<SalesHistoryTableProps> = ({ onViewSale
     limit: parseInt(limitFilter)
   });
 
-  // Filtrar vendas baseado nos filtros aplicados
-  const filteredSales = sales?.filter(sale => {
-    const searchLower = searchTerm.toLowerCase();
-    const matchesSearch = !searchTerm || 
-      sale.id.toLowerCase().includes(searchLower) ||
-      sale.customer?.name?.toLowerCase().includes(searchLower) ||
-      sale.seller?.name?.toLowerCase().includes(searchLower) ||
-      // CORRIGIDO: Incluir busca por método de pagamento
-      sale.payment_method?.toLowerCase().includes(searchLower) ||
-      formatPaymentMethod(sale.payment_method).toLowerCase().includes(searchLower) ||
-      // CORRIGIDO: Incluir busca por status
-      sale.status?.toLowerCase().includes(searchLower) ||
-      // CORRIGIDO: Incluir busca por valor formatado
-      formatCurrency(Number(sale.final_amount || sale.total_amount || 0)).includes(searchTerm) ||
-      // CORRIGIDO: Incluir busca por data formatada
-      format(new Date(sale.created_at), "dd/MM/yyyy", { locale: ptBR }).includes(searchTerm);
+  // Filtrar vendas baseado nos filtros aplicados (agora usando lógica externa à DataTable)
+  const filteredSales = useMemo(() => {
+    if (!sales) return [];
     
-    const matchesStatus = statusFilter === 'all' || sale.status === statusFilter;
-    // CORRIGIDO: Comparação case-insensitive para payment_method
-    const matchesPayment = paymentFilter === 'all' || 
-      sale.payment_method?.toLowerCase() === paymentFilter.toLowerCase();
-    
-    return matchesSearch && matchesStatus && matchesPayment;
-  }) || [];
+    return sales.filter((sale: SaleWithRelations) => {
+      const matchesStatus = statusFilter === 'all' || sale.status === statusFilter;
+      const matchesPayment = paymentFilter === 'all' || 
+        sale.payment_method?.toLowerCase() === paymentFilter.toLowerCase();
+      
+      return matchesStatus && matchesPayment;
+    });
+  }, [sales, statusFilter, paymentFilter]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -109,13 +117,125 @@ export const SalesHistoryTable: React.FC<SalesHistoryTableProps> = ({ onViewSale
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <LoadingSpinner size="lg" variant="gold" />
-      </div>
-    );
-  }
+  // Define colunas para o DataTable
+  const columns: DataTableColumn<SaleWithRelations>[] = [
+    {
+      id: 'id',
+      label: 'ID',
+      accessor: 'id',
+      width: '120px',
+      render: (value) => (
+        <span className="text-white font-mono">
+          #{String(value).slice(0, 8).toUpperCase()}
+        </span>
+      ),
+    },
+    {
+      id: 'created_at',
+      label: 'Data',
+      accessor: 'created_at',
+      width: '180px',
+      render: (value) => (
+        <div className="flex items-center gap-2">
+          <Calendar className="h-4 w-4 text-blue-400" />
+          <DateDisplay 
+            value={value as string}
+            format="dd/MM/yyyy HH:mm"
+            className="text-gray-300"
+          />
+        </div>
+      ),
+    },
+    {
+      id: 'customer',
+      label: 'Cliente',
+      accessor: (sale) => sale.customer?.name,
+      width: '180px',
+      render: (value) => (
+        <div className="flex items-center gap-2">
+          <User className="h-4 w-4 text-purple-400" />
+          <span className="text-gray-300">{value || 'Não informado'}</span>
+        </div>
+      ),
+    },
+    {
+      id: 'seller',
+      label: 'Vendedor',
+      accessor: (sale) => sale.seller?.name,
+      width: '180px',
+      render: (value) => (
+        <div className="flex items-center gap-2">
+          <User className="h-4 w-4 text-amber-400" />
+          <span className="text-gray-300">{value || 'Não informado'}</span>
+        </div>
+      ),
+    },
+    {
+      id: 'payment_method',
+      label: 'Pagamento',
+      accessor: 'payment_method',
+      width: '200px',
+      render: (value, item) => (
+        <div className="flex items-center gap-2">
+          <CreditCard className="h-4 w-4 text-green-400" />
+          <span className="text-gray-300">{formatPaymentMethod(String(value))}</span>
+          <span className={cn("text-xs px-2 py-0.5 rounded-full", getPaymentStatusBadge(item.payment_status))}>
+            {item.payment_status === 'paid' ? 'Pago' : 
+             item.payment_status === 'pending' ? 'Pendente' : 'Cancelado'}
+          </span>
+        </div>
+      ),
+    },
+    {
+      id: 'status',
+      label: 'Status',
+      accessor: 'status',
+      width: '120px',
+      render: (value) => (
+        <span className={cn("text-xs px-2 py-1 rounded-full", getStatusBadge(String(value)))}>
+          {String(value) === 'completed' ? 'Concluído' :
+           String(value) === 'pending' ? 'Pendente' :
+           String(value) === 'cancelled' ? 'Cancelado' : 'Devolvido'}
+        </span>
+      ),
+    },
+    {
+      id: 'final_amount',
+      label: 'Valor',
+      accessor: (sale) => Number(sale.final_amount || sale.total_amount || 0),
+      align: 'right',
+      width: '140px',
+      render: (value, item) => (
+        <div className="text-right">
+          <CurrencyDisplay 
+            value={Number(value)}
+            className="font-bold text-emerald-400"
+          />
+          <div className="text-xs text-gray-400">
+            {item.items?.length || 0} {(item.items?.length || 0) === 1 ? 'item' : 'itens'}
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: 'actions',
+      label: 'Ações',
+      accessor: () => '',
+      sortable: false,
+      align: 'center',
+      width: '80px',
+      render: (_, item) => (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 w-8 p-0 text-blue-400 hover:text-blue-300 hover:bg-blue-400/10"
+          onClick={() => onViewSale?.(item.id)}
+        >
+          <Eye className="h-4 w-4" />
+        </Button>
+      ),
+    },
+  ];
 
   return (
     <div className="space-y-6">
@@ -203,106 +323,23 @@ export const SalesHistoryTable: React.FC<SalesHistoryTableProps> = ({ onViewSale
         </Button>
       </div>
 
-      {/* Tabela */}
-      <div className="bg-black/70 backdrop-blur-xl border border-white/20 rounded-lg overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-black/50 border-b border-white/20">
-              <tr>
-                <th className="text-left py-3 px-4 text-sm font-medium text-gray-300">ID</th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-gray-300">Data</th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-gray-300">Cliente</th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-gray-300">Vendedor</th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-gray-300">Pagamento</th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-gray-300">Status</th>
-                <th className="text-right py-3 px-4 text-sm font-medium text-gray-300">Valor</th>
-                <th className="text-center py-3 px-4 text-sm font-medium text-gray-300">Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredSales.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="text-center py-12">
-                    <div className="flex flex-col items-center justify-center">
-                      <FileText className="h-12 w-12 text-gray-400 mb-4" />
-                      <h3 className={cn(text.h4, shadows.medium, "text-lg font-medium")}>
-                        Nenhuma venda encontrada
-                      </h3>
-                      <p className={cn(text.h6, shadows.subtle, "text-sm text-center max-w-md mt-1")}>
-                        Ajuste os filtros para encontrar as vendas desejadas.
-                      </p>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                filteredSales.map((sale) => (
-                  <tr 
-                    key={sale.id} 
-                    className="border-b border-white/10 hover:bg-white/5 transition-colors"
-                  >
-                    <td className="py-3 px-4 text-sm text-white font-mono">
-                      #{sale.id.slice(0, 8).toUpperCase()}
-                    </td>
-                    <td className="py-3 px-4 text-sm text-gray-300">
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-blue-400" />
-                        {format(new Date(sale.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 text-sm text-gray-300">
-                      <div className="flex items-center gap-2">
-                        <User className="h-4 w-4 text-purple-400" />
-                        {sale.customer?.name || 'Não informado'}
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 text-sm text-gray-300">
-                      <div className="flex items-center gap-2">
-                        <User className="h-4 w-4 text-amber-400" />
-                        {sale.seller?.name || 'Não informado'}
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 text-sm">
-                      <div className="flex items-center gap-2">
-                        <CreditCard className="h-4 w-4 text-green-400" />
-                        <span className="text-gray-300">{formatPaymentMethod(sale.payment_method)}</span>
-                        <span className={cn("text-xs px-2 py-0.5 rounded-full", getPaymentStatusBadge(sale.payment_status))}>
-                          {sale.payment_status === 'paid' ? 'Pago' : 
-                           sale.payment_status === 'pending' ? 'Pendente' : 'Cancelado'}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 text-sm">
-                      <span className={cn("text-xs px-2 py-1 rounded-full", getStatusBadge(sale.status))}>
-                        {sale.status === 'completed' ? 'Concluído' :
-                         sale.status === 'pending' ? 'Pendente' :
-                         sale.status === 'cancelled' ? 'Cancelado' : 'Devolvido'}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-sm text-right">
-                      <div className="font-bold text-emerald-400">
-                        {formatCurrency(Number(sale.final_amount || sale.total_amount || 0))}
-                      </div>
-                      <div className="text-xs text-gray-400">
-                        {sale.items?.length || 0} {(sale.items?.length || 0) === 1 ? 'item' : 'itens'}
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0 text-blue-400 hover:text-blue-300 hover:bg-blue-400/10"
-                        onClick={() => onViewSale?.(sale.id)}
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      {/* DataTable - Substitui toda a implementação manual da tabela */}
+      <DataTable
+        data={filteredSales}
+        columns={columns}
+        loading={isLoading}
+        searchPlaceholder="Buscar por ID, cliente, vendedor, método de pagamento..."
+        searchFields={['id', 'customer.name', 'seller.name', 'payment_method', 'status']}
+        defaultSortField="created_at"
+        defaultSortDirection="desc"
+        maxRows={parseInt(limitFilter)}
+        empty={{
+          title: 'Nenhuma venda encontrada',
+          description: 'Ajuste os filtros para encontrar as vendas desejadas.',
+          icon: FileText,
+        }}
+        caption="Histórico completo de vendas do sistema"
+      />
 
       {/* Footer com estatísticas */}
       {filteredSales.length > 0 && (

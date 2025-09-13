@@ -88,12 +88,9 @@ export function RecentSales() {
   const handleConfirmDelete = () => {
     if (!saleToDelete) return;
     
-    console.log('Iniciando exclusão da venda:', saleToDelete);
-    
     // Executa a mutação de exclusão
     deleteSale(saleToDelete.id, {
       onSuccess: () => {
-        console.log('Exclusão bem-sucedida, fechando modal');
         setIsDeleteDialogOpen(false);
         setSaleToDelete(null);
       },

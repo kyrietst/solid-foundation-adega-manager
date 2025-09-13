@@ -76,7 +76,6 @@ export const BaseModal: React.FC<BaseModalProps> = ({
           sizeClasses[size],
           className
         )}
-        showCloseButton={showCloseButton}
       >
         {showHeader && (title || description) && (
           <DialogHeader className="text-center pb-4">

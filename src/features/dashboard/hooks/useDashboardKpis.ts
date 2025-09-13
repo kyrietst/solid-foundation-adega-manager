@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
 import { useDashboardExpenses, useDashboardBudgetVariance } from './useDashboardExpenses';
+import { safeNumber, safePercentage, safeDelta, debugNaN } from '@/shared/utils/number-utils';
 
 export interface SalesKpis {
   revenue: number;
@@ -78,20 +79,20 @@ export function useSalesKpis(windowDays: number = 30) {
         // Não falhar se não houver dados anteriores
       }
 
-      // Calcular KPIs atuais
-      const revenue = (currentSales || []).reduce((sum, sale) => sum + (Number(sale.final_amount) || 0), 0);
-      const orders = (currentSales || []).length;
-      const avgTicket = orders > 0 ? revenue / orders : 0;
+      // Calcular KPIs atuais com proteção anti-NaN
+      const revenue = safeNumber((currentSales || []).reduce((sum, sale) => sum + safeNumber(sale.final_amount), 0));
+      const orders = safeNumber((currentSales || []).length);
+      const avgTicket = debugNaN(safePercentage(revenue, orders), 'avgTicket');
 
-      // Calcular KPIs anteriores
-      const revenuePrev = (prevSales || []).reduce((sum, sale) => sum + (Number(sale.final_amount) || 0), 0);
-      const ordersPrev = (prevSales || []).length;
-      const avgTicketPrev = ordersPrev > 0 ? revenuePrev / ordersPrev : 0;
+      // Calcular KPIs anteriores com proteção anti-NaN
+      const revenuePrev = safeNumber((prevSales || []).reduce((sum, sale) => sum + safeNumber(sale.final_amount), 0));
+      const ordersPrev = safeNumber((prevSales || []).length);
+      const avgTicketPrev = debugNaN(safePercentage(revenuePrev, ordersPrev), 'avgTicketPrev');
 
-      // Calcular deltas
-      const revenueDelta = revenuePrev > 0 ? ((revenue - revenuePrev) / revenuePrev) * 100 : 0;
-      const ordersDelta = ordersPrev > 0 ? ((orders - ordersPrev) / ordersPrev) * 100 : 0;
-      const avgTicketDelta = avgTicketPrev > 0 ? ((avgTicket - avgTicketPrev) / avgTicketPrev) * 100 : 0;
+      // Calcular deltas com proteção anti-NaN
+      const revenueDelta = debugNaN(safeDelta(revenue, revenuePrev), 'revenueDelta');
+      const ordersDelta = debugNaN(safeDelta(orders, ordersPrev), 'ordersDelta');
+      const avgTicketDelta = debugNaN(safeDelta(avgTicket, avgTicketPrev), 'avgTicketDelta');
 
       console.log(`📊 Sales KPIs calculados - Receita: R$ ${revenue.toFixed(2)}, Pedidos: ${orders}, Ticket Médio: R$ ${avgTicket.toFixed(2)}`);
 
@@ -100,9 +101,9 @@ export function useSalesKpis(windowDays: number = 30) {
         orders, 
         avgTicket, 
         revenuePrev,
-        revenueDelta: Math.round(revenueDelta * 100) / 100,
-        ordersDelta: Math.round(ordersDelta * 100) / 100,
-        avgTicketDelta: Math.round(avgTicketDelta * 100) / 100
+        revenueDelta: safeNumber(Math.round(revenueDelta * 100) / 100),
+        ordersDelta: safeNumber(Math.round(ordersDelta * 100) / 100),
+        avgTicketDelta: safeNumber(Math.round(avgTicketDelta * 100) / 100)
       };
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -191,17 +192,17 @@ export function useInventoryKpis() {
 
       const totalProducts = (products || []).length;
       
-      // Calcular valor total do estoque
-      const totalValue = (products || []).reduce((sum, product) => {
-        const stock = Number(product.stock_quantity) || 0;
-        const price = Number(product.price) || 0;
+      // Calcular valor total do estoque com proteção anti-NaN
+      const totalValue = safeNumber((products || []).reduce((sum, product) => {
+        const stock = safeNumber(product.stock_quantity);
+        const price = safeNumber(product.price);
         return sum + (stock * price);
-      }, 0);
+      }, 0));
 
       // Contar produtos com estoque baixo
       const lowStockCount = (products || []).filter(product => {
-        const currentStock = Number(product.stock_quantity) || 0;
-        const minStock = Number(product.minimum_stock) || 0;
+        const currentStock = safeNumber(product.stock_quantity);
+        const minStock = safeNumber(product.minimum_stock);
         return currentStock <= minStock && minStock > 0;
       }).length;
 
@@ -236,19 +237,19 @@ export function useLowStockProducts(limit: number = 10) {
         throw error;
       }
 
-      // Filtrar produtos onde estoque atual <= estoque mínimo
+      // Filtrar produtos onde estoque atual <= estoque mínimo com proteção anti-NaN
       const lowStockProducts = (products || [])
         .filter(product => {
-          const currentStock = Number(product.stock_quantity) || 0;
-          const minStock = Number(product.minimum_stock) || 0;
+          const currentStock = safeNumber(product.stock_quantity);
+          const minStock = safeNumber(product.minimum_stock);
           return currentStock <= minStock;
         })
         .map(product => ({
           id: product.id,
           name: product.name,
-          current_stock: Number(product.stock_quantity) || 0,
-          min_stock: Number(product.minimum_stock) || 0,
-          price: Number(product.price) || 0
+          current_stock: safeNumber(product.stock_quantity),
+          min_stock: safeNumber(product.minimum_stock),
+          price: safeNumber(product.price)
         }))
         .slice(0, limit);
 
@@ -275,17 +276,20 @@ export function useExpenseKpis(windowDays: number = 30) {
     queryFn: async (): Promise<ExpenseKpis> => {
       console.log(`💸 Expense KPIs - Calculando dados para ${windowDays} dias`);
       
-      const totalExpenses = expenses?.total_expenses || 0;
-      const avgExpense = expenses?.avg_expense || 0;
+      const totalExpenses = safeNumber(expenses?.total_expenses);
+      const avgExpense = safeNumber(expenses?.avg_expense);
       const topCategory = expenses?.top_category || 'N/A';
-      const topCategoryAmount = expenses?.top_category_amount || 0;
-      const categoriesOverBudget = budgetVariance?.categories_over_budget || 0;
+      const topCategoryAmount = safeNumber(expenses?.top_category_amount);
+      const categoriesOverBudget = safeNumber(budgetVariance?.categories_over_budget);
       const budgetStatus = budgetVariance?.status || 'ON_TRACK';
-      const budgetVariancePercent = budgetVariance?.variance_percentage || 0;
+      const budgetVariancePercent = safeNumber(budgetVariance?.variance_percentage);
       
-      // Calcular margem líquida
-      const revenue = salesData?.revenue || 0;
-      const netMargin = revenue > 0 ? ((revenue - totalExpenses) / revenue) * 100 : 0;
+      // Calcular margem líquida com proteção anti-NaN
+      const revenue = safeNumber(salesData?.revenue);
+      const netMargin = debugNaN(
+        revenue > 0 ? safePercentage(revenue - totalExpenses, revenue) : 0, 
+        'netMargin'
+      );
       
       // Calcular variação de despesas (para implementar depois com dados históricos)
       const expensesDelta = 0; // Placeholder por enquanto
@@ -293,15 +297,15 @@ export function useExpenseKpis(windowDays: number = 30) {
       console.log(`💸 Expense KPIs calculados - Total: R$ ${totalExpenses.toFixed(2)}, Categoria Top: ${topCategory}, Margem Líquida: ${netMargin.toFixed(1)}%`);
       
       return {
-        totalExpenses,
-        expensesDelta,
-        avgExpense,
-        budgetVariance: budgetVariancePercent,
+        totalExpenses: safeNumber(totalExpenses),
+        expensesDelta: safeNumber(expensesDelta),
+        avgExpense: safeNumber(avgExpense),
+        budgetVariance: safeNumber(budgetVariancePercent),
         budgetStatus: budgetStatus as 'ON_TRACK' | 'WARNING' | 'OVER_BUDGET',
         topCategory,
-        topCategoryAmount,
-        categoriesOverBudget,
-        netMargin
+        topCategoryAmount: safeNumber(topCategoryAmount),
+        categoriesOverBudget: safeNumber(categoriesOverBudget),
+        netMargin: safeNumber(netMargin)
       };
     },
     staleTime: 5 * 60 * 1000,
