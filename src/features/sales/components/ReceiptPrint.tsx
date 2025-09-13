@@ -6,6 +6,7 @@
 import React from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import '../styles/thermal-print.css';
 
 export interface ReceiptItem {
   quantity: number;
@@ -62,11 +63,26 @@ export const ReceiptPrint: React.FC<ReceiptPrintProps> = ({ data }) => {
 
   return (
     <>
-      {/* Importar CSS específico para impressão térmica */}
-      <link rel="stylesheet" href="/src/features/sales/styles/thermal-print.css" media="print" />
-
+      {/* CSS crítico inline como fallback */}
+      <style>{`
+        @media print {
+          @page { size: auto !important; margin: 0 !important; }
+          body * { visibility: hidden; }
+          .receipt-print, .receipt-print * { visibility: visible !important; }
+          .receipt-print {
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 58mm !important;
+            font-family: 'Courier New', monospace !important;
+            font-size: 14px !important;
+            color: #000 !important;
+            background: white !important;
+          }
+        }
+      `}</style>
+      
       <div className="max-w-sm mx-auto bg-white text-black p-4">
-
         {/* Cupom fiscal */}
         <div className="receipt-print font-mono text-xs">
           {/* Cabeçalho */}

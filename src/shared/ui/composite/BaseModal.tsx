@@ -88,12 +88,7 @@ export const BaseModal: React.FC<BaseModalProps> = ({
   // Determinar maxWidth: prop customizado ou baseado no tamanho
   const effectiveMaxWidth = maxWidth || sizeToMaxWidth[size];
 
-  console.log('🔍 BaseModal DEBUG:', {
-    size,
-    effectiveMaxWidth,
-    title: typeof title === 'string' ? title : 'ReactNode',
-    isOpen
-  });
+  // Debug removido para produção
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
