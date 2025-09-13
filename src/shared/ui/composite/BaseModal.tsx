@@ -16,7 +16,7 @@ import {
 } from '@/shared/ui/primitives/dialog';
 import { cn } from '@/core/config/utils';
 
-export type ModalSize = 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'full';
+export type ModalSize = 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | 'full';
 
 export interface BaseModalProps {
   /** Estado de abertura do modal */
@@ -31,6 +31,8 @@ export interface BaseModalProps {
   children: React.ReactNode;
   /** Tamanho do modal */
   size?: ModalSize;
+  /** Largura máxima customizada (sobrescreve o tamanho padrão) */
+  maxWidth?: string;
   /** Classes CSS adicionais */
   className?: string;
   /** Se deve mostrar o header (título/descrição) */
@@ -42,12 +44,26 @@ export interface BaseModalProps {
 }
 
 const sizeClasses: Record<ModalSize, string> = {
-  sm: 'max-w-sm',
-  md: 'max-w-md',
-  lg: 'max-w-lg', 
-  xl: 'max-w-xl',
-  '2xl': 'max-w-2xl',
-  full: 'max-w-full mx-4'
+  sm: '!max-w-sm',
+  md: '!max-w-md',
+  lg: '!max-w-lg', 
+  xl: '!max-w-xl',
+  '2xl': '!max-w-2xl',
+  '3xl': '!max-w-3xl',
+  '4xl': '!max-w-4xl',
+  full: '!max-w-full mx-4'
+};
+
+// Mapeamento de tamanhos para maxWidth do Radix UI
+const sizeToMaxWidth: Record<ModalSize, string> = {
+  sm: '384px',     // max-w-sm
+  md: '448px',     // max-w-md  
+  lg: '512px',     // max-w-lg
+  xl: '576px',     // max-w-xl
+  '2xl': '672px',  // max-w-2xl
+  '3xl': '768px',  // max-w-3xl - NOVO!
+  '4xl': '896px',  // max-w-4xl - NOVO!
+  full: '100vw'    // max-w-full
 };
 
 export const BaseModal: React.FC<BaseModalProps> = ({
@@ -57,6 +73,7 @@ export const BaseModal: React.FC<BaseModalProps> = ({
   description,
   children,
   size = 'md',
+  maxWidth,
   className,
   showHeader = true,
   closeOnOutsideClick = true,
@@ -68,14 +85,29 @@ export const BaseModal: React.FC<BaseModalProps> = ({
     }
   };
 
+  // Determinar maxWidth: prop customizado ou baseado no tamanho
+  const effectiveMaxWidth = maxWidth || sizeToMaxWidth[size];
+
+  console.log('🔍 BaseModal DEBUG:', {
+    size,
+    effectiveMaxWidth,
+    title: typeof title === 'string' ? title : 'ReactNode',
+    isOpen
+  });
+
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent 
         className={cn(
           'w-full',
+          // Manter classes Tailwind como fallback, mas Radix props têm prioridade
           sizeClasses[size],
           className
         )}
+        style={{ 
+          maxWidth: '900px !important',
+          width: '900px !important'
+        }}
       >
         {showHeader && (title || description) && (
           <DialogHeader className="text-center pb-4">

@@ -349,8 +349,13 @@ export const NewProductModal: React.FC<NewProductModalProps> = ({
         </>
       }
       description="Preencha os dados do produto. Campos com * são obrigatórios."
-      size="2xl"
-      className="h-[90vh] max-h-[90vh] bg-black/95 backdrop-blur-sm border border-white/10 flex flex-col hero-spotlight hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300 overflow-hidden"
+      size="4xl"
+      maxWidth="1200px"
+      className="h-[90vh] max-h-[90vh] bg-black/95 backdrop-blur-sm border border-white/10 flex flex-col hero-spotlight hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300 overflow-hidden !max-w-[1200px] !w-[1200px]"
+      style={{ 
+        maxWidth: '1200px !important',
+        width: '1200px !important' 
+      }}
     >
       <div className="flex-1 overflow-y-auto pr-2" onMouseMove={handleMouseMove}>
           <Form {...form}>
