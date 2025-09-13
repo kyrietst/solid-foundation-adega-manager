@@ -74,6 +74,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```
 📊 Core Business (370+ records)
 ├── products (125) - Complete catalog with barcode, turnover analysis
+├── product_variants - Product variant system for unit/package tracking
 ├── customers (91) - CRM with automated segmentation  
 ├── sales (52) - Sales with delivery tracking and multiple status
 ├── sale_items - Sale line items with validation
@@ -175,10 +176,13 @@ src/
 
 ### 3. **Inventory** - Intelligent Stock Management
 - **Complete product catalog** - 12 fields including barcode, volume, margins
+- **Product variants system** - Support for unit/package tracking with hierarchical barcodes
 - **Turnover analysis** - Fast/Medium/Slow automatic classification
 - **Barcode support** - Full scanner integration for operations
+- **Stock conversion system** - Automatic conversion between unit and package variants
 - **Automated alerts** - Low stock notifications with reorder suggestions
 - **Movement tracking** - Complete audit trail of all stock changes
+- **Expandable modals** - All inventory modals (Add, Edit, Adjust, History) use 1200px width for better UX
 
 ### 4. **Customers (CRM)** - Enterprise CRM
 - **Automated segmentation** - High Value, Regular, Occasional, New based on LTV
@@ -331,6 +335,10 @@ NODE_ENV=development
 - **Filtering**: Use `FilterToggle` component for collapsible filters
 - **Forms**: Use `useFormWithToast` hook for standardized form handling
 - **Entity operations**: Use `useEntity`, `useEntityList`, `useEntityMutation` hooks
+- **Modal system**: Use `BaseModal` component for consistent modal sizes (sm/md/lg/xl/2xl/3xl/4xl/full)
+  - Supports `maxWidth` prop for custom widths
+  - All inventory modals standardized to 1200px width for improved UX
+  - Uses Radix UI Dialog with proper style inheritance
 
 ### Database Schema Changes
 1. **Supabase dashboard** - Make schema changes directly
@@ -413,6 +421,21 @@ SELECT * FROM profiles WHERE id = auth.uid();
 - Verify manual fallback calculations are working
 - Ensure data translation functions are applied
 - Test with different user roles for data access
+
+**🔴 Modal/UI Cache Issues:**
+```bash
+# Clear Vite cache completely
+pkill -f "vite"
+rm -rf node_modules/.vite .vite dist
+npm run dev
+
+# Browser cache: Hard refresh
+# Ctrl+Shift+R (Windows/Linux) or Cmd+Shift+R (Mac)
+```
+- **HMR Cache**: Hot Module Replacement can cache old component versions
+- **CSS Cache**: Tailwind classes may not update without clearing cache
+- **Component Props**: BaseModal props need complete cache clear to apply
+- **Style Overrides**: Use inline styles with !important for critical styling
 
 ### Performance Issues
 - **Slow queries** - Check pg_stat_statements in Supabase
