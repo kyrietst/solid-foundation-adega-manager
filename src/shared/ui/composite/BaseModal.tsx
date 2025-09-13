@@ -105,8 +105,8 @@ export const BaseModal: React.FC<BaseModalProps> = ({
           className
         )}
         style={{ 
-          maxWidth: '900px !important',
-          width: '900px !important'
+          maxWidth: effectiveMaxWidth + ' !important',
+          width: effectiveMaxWidth + ' !important'
         }}
       >
         {showHeader && (title || description) && (

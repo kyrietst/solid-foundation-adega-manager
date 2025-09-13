@@ -220,7 +220,10 @@ export const StockHistoryModal: React.FC<StockHistoryModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden bg-adega-charcoal/95 border-adega-gold/30 backdrop-blur-xl">
+      <DialogContent 
+        className="max-w-[1200px] max-h-[90vh] overflow-hidden bg-adega-charcoal/95 border-adega-gold/30 backdrop-blur-xl"
+        style={{ maxWidth: '1200px !important' }}
+      >
         <DialogHeader className="border-b border-white/10 pb-4">
           <DialogTitle className="text-xl font-bold text-adega-platinum flex items-center">
             <Package className="h-5 w-5 mr-2 text-yellow-400" />

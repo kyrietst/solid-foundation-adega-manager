@@ -158,7 +158,10 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl bg-black/95 border-white/20 backdrop-blur-xl">
+      <DialogContent 
+        className="max-w-[1200px] bg-black/95 border-white/20 backdrop-blur-xl"
+        style={{ maxWidth: '1200px !important' }}
+      >
         <DialogHeader className="border-b border-white/10 pb-4">
           <DialogTitle className="text-xl font-bold text-white flex items-center gap-2">
             <Settings className="h-5 w-5 text-primary-yellow" />

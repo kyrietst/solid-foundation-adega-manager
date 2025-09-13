@@ -367,7 +367,12 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
       }
       description={`Modifique os dados do produto "${product.name}". Apenas campos alterados serão atualizados.`}
       size="4xl"
-      className="max-h-[90vh] overflow-y-auto bg-black/95 backdrop-blur-sm border border-white/10"
+      maxWidth="1200px"
+      className="max-h-[90vh] overflow-y-auto bg-black/95 backdrop-blur-sm border border-white/10 !max-w-[1200px] !w-[1200px]"
+      style={{ 
+        maxWidth: '1200px !important',
+        width: '1200px !important' 
+      }}
     >
 
         <div className="flex-1 overflow-y-auto pr-2">
