@@ -4,7 +4,7 @@
  */
 
 import React, { useMemo } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/shared/ui/primitives/dialog';
+import { BaseModal } from '@/shared/ui/composite/BaseModal';
 import { Button } from '@/shared/ui/primitives/button';
 import { Badge } from '@/shared/ui/primitives/badge';
 import { 
@@ -161,19 +161,23 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
   const TurnoverIcon = turnoverAnalysis.icon;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl h-[90vh] bg-black/95 backdrop-blur-sm border border-white/10 flex flex-col hero-spotlight hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300" onMouseMove={handleMouseMove}>
-        <DialogHeader className="border-b border-white/10 pb-4 flex-shrink-0">
-          <div className="flex items-center justify-between">
-            <div>
-              <DialogTitle className="text-2xl font-bold text-white">
-                {product.name}
-              </DialogTitle>
-              <DialogDescription className="text-gray-400 mt-2">
-                Visualização completa das informações do produto.
-              </DialogDescription>
-            </div>
+    <BaseModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={product.name}
+      description="Visualização completa das informações do produto."
+      size="full"
+      maxHeight="90vh"
+      className="hero-spotlight hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300"
+      onMouseMove={handleMouseMove}
+    >
+      <div className="flex flex-col h-full">
+        {/* Header personalizado com completude */}
+        <div className="flex items-center justify-between border-b border-white/10 pb-4 flex-shrink-0">
+          <div>
             
+          </div>
+
             {/* Indicador de completude detalhado */}
             <div className="flex items-center gap-4">
               <div className={cn(
@@ -227,8 +231,7 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
                 </div>
               )}
             </div>
-          </div>
-        </DialogHeader>
+        </div>
 
         <div className="flex-1 overflow-y-auto pr-2 space-y-6">
           {/* Seção de Dados Pendentes - Visível apenas quando há dados em falta */}
@@ -766,8 +769,8 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
             </div>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </BaseModal>
   );
 };
 

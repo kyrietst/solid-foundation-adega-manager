@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useCallback } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/shared/ui/primitives/dialog';
+import { BaseModal } from '@/shared/ui/composite/BaseModal';
 import { Button } from '@/shared/ui/primitives/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/primitives/card';
 import { Progress } from '@/shared/ui/primitives/progress';
@@ -157,17 +157,19 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({
   };
   
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden bg-black/95 backdrop-blur-xl border-primary-yellow/30 shadow-2xl">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-xl font-bold text-white">
-            <Package className="h-6 w-6 text-primary-yellow" />
-            Importação de Produtos via CSV
-          </DialogTitle>
-          <DialogDescription className="text-gray-300">
-            Importe produtos em massa a partir de um arquivo CSV. O sistema suporta conversões automáticas de preços, volumes e cálculos de estoque.
-          </DialogDescription>
-        </DialogHeader>
+    <BaseModal
+      isOpen={isOpen}
+      onClose={handleClose}
+      title={
+        <>
+          <Package className="h-6 w-6 text-primary-yellow" />
+          Importação de Produtos via CSV
+        </>
+      }
+      description="Importe produtos em massa a partir de um arquivo CSV. O sistema suporta conversões automáticas de preços, volumes e cálculos de estoque."
+      size="4xl"
+      className="max-h-[90vh] overflow-hidden bg-black/95 backdrop-blur-xl border-primary-yellow/30 shadow-2xl"
+    >
         
         <div className="space-y-6 overflow-y-auto">
           
@@ -361,7 +363,6 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({
             </Button>
           )}
         </div>
-      </DialogContent>
-    </Dialog>
+    </BaseModal>
   );
 };

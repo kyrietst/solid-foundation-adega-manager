@@ -5,12 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { X, Package, Calendar, AlertTriangle, Calculator, CheckCircle2 } from 'lucide-react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/shared/ui/primitives/dialog';
+import { BaseModal } from '@/shared/ui/composite/BaseModal';
 import { Input } from '@/shared/ui/primitives/input';
 import { Label } from '@/shared/ui/primitives/label';
 import { Button } from '@/shared/ui/primitives/button';
@@ -137,14 +132,18 @@ export const CreateBatchModal: React.FC<CreateBatchModalProps> = ({
   const valueClasses = getValueClasses('md', 'gold');
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-gray-900 border-primary-yellow/30">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-gray-100">
-            <Package className="h-5 w-5 text-primary-yellow" />
-            Criar Novo Lote - {product.name}
-          </DialogTitle>
-        </DialogHeader>
+    <BaseModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={
+        <>
+          <Package className="h-5 w-5 text-primary-yellow" />
+          Criar Novo Lote - {product.name}
+        </>
+      }
+      size="4xl"
+      className="max-h-[90vh] overflow-y-auto bg-gray-900 border-primary-yellow/30"
+    >
 
         <form onSubmit={handleSubmit} className="space-y-6">
           
@@ -415,7 +414,6 @@ export const CreateBatchModal: React.FC<CreateBatchModalProps> = ({
             </Button>
           </div>
         </form>
-      </DialogContent>
-    </Dialog>
+    </BaseModal>
   );
 };

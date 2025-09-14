@@ -5,7 +5,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/shared/ui/primitives/dialog';
+import { BaseModal } from '@/shared/ui/composite/BaseModal';
 import { Button } from '@/shared/ui/primitives/button';
 import { Input } from '@/shared/ui/primitives/input';
 import { Textarea } from '@/shared/ui/primitives/textarea';
@@ -157,20 +157,15 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
   const canConfirm = isValidQuantity && selectedVariantData && !willBeNegative && !isLoading;
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent 
-        className="max-w-[1200px] bg-black/95 border-white/20 backdrop-blur-xl"
-        style={{ maxWidth: '1200px !important' }}
-      >
-        <DialogHeader className="border-b border-white/10 pb-4">
-          <DialogTitle className="text-xl font-bold text-white flex items-center gap-2">
-            <Settings className="h-5 w-5 text-primary-yellow" />
-            Ajustar Estoque - {product.name}
-          </DialogTitle>
-          <DialogDescription className="text-gray-400 mt-2">
-            Selecione a variante e o tipo de ajuste para registrar a movimentação de estoque.
-          </DialogDescription>
-        </DialogHeader>
+    <BaseModal
+      isOpen={isOpen}
+      onClose={handleClose}
+      title={`Ajustar Estoque - ${product.name}`}
+      description="Selecione a variante e o tipo de ajuste para registrar a movimentação de estoque."
+      size="4xl"
+      icon={Settings}
+      iconColor="text-primary-yellow"
+    >
 
         <div className="space-y-6 mt-4">
           {/* Loading state */}
@@ -342,7 +337,6 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
             Confirmar Ajuste
           </Button>
         </div>
-      </DialogContent>
-    </Dialog>
+    </BaseModal>
   );
 };

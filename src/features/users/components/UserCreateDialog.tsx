@@ -4,13 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/shared/ui/primitives/dialog';
+import { BaseModal } from '@/shared/ui/composite/BaseModal';
 import { UserCreateDialogProps, NewUserData } from './types';
 import { UserForm } from './UserForm';
 import { useUserCreation } from '@/features/users/hooks/useUserCreation';
@@ -59,27 +53,22 @@ export const UserCreateDialog: React.FC<UserCreateDialogProps> = ({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md bg-gray-900/95 border-white/20 backdrop-blur-xl shadow-2xl">
-        <DialogHeader>
-          <DialogTitle className="text-2xl font-bold text-white text-center mb-2">
-            Criar Novo Usuário
-          </DialogTitle>
-          <DialogDescription className="text-gray-400 text-center mb-2">
-            Preencha as informações abaixo para criar um novo usuário no sistema.
-          </DialogDescription>
-          <div className="w-16 h-1 bg-gradient-to-r from-[#FFD700] to-[#FFA500] mx-auto rounded-full"></div>
-        </DialogHeader>
-        
-        <div className="mt-4">
-          <UserForm
-            onSubmit={handleSubmit}
-            onCancel={handleCancel}
-            isSubmitting={isSubmitting}
-            initialData={formData}
-          />
-        </div>
-      </DialogContent>
-    </Dialog>
+    <BaseModal
+      isOpen={isOpen}
+      onClose={handleCancel}
+      title="Criar Novo Usuário"
+      description="Preencha as informações abaixo para criar um novo usuário no sistema."
+      size="md"
+      className="shadow-2xl"
+    >
+      <div className="w-16 h-1 bg-gradient-to-r from-[#FFD700] to-[#FFA500] mx-auto rounded-full mb-4"></div>
+
+      <UserForm
+        onSubmit={handleSubmit}
+        onCancel={handleCancel}
+        isSubmitting={isSubmitting}
+        initialData={formData}
+      />
+    </BaseModal>
   );
 };

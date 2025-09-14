@@ -6,13 +6,8 @@ import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter
-} from '@/shared/ui/primitives/dialog';
+import { Edit } from 'lucide-react';
+import { BaseModal } from '@/shared/ui/composite/BaseModal';
 import { Button } from '@/shared/ui/primitives/button';
 import { Input } from '@/shared/ui/primitives/input';
 import { Label } from '@/shared/ui/primitives/label';
@@ -91,13 +86,16 @@ export const EditBudgetModal: React.FC<EditBudgetModalProps> = ({
 
   if (loadingBudget) {
     return (
-      <Dialog open={isOpen} onOpenChange={handleClose}>
-        <DialogContent className="bg-gray-800 border-gray-700 text-white">
-          <div className="flex items-center justify-center p-8">
-            <LoadingSpinner />
-          </div>
-        </DialogContent>
-      </Dialog>
+      <BaseModal
+        isOpen={isOpen}
+        onClose={handleClose}
+        title="Carregando..."
+        size="md"
+      >
+        <div className="flex items-center justify-center p-8">
+          <LoadingSpinner />
+        </div>
+      </BaseModal>
     );
   }
 
@@ -110,14 +108,15 @@ export const EditBudgetModal: React.FC<EditBudgetModalProps> = ({
     : 0;
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="bg-gray-800 border-gray-700 text-white max-w-md">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-bold">Editar Orçamento</DialogTitle>
-          <p className="text-gray-400">
-            {budget.expense_categories?.name} • {formatDate(budget.month_year)}
-          </p>
-        </DialogHeader>
+    <BaseModal
+      isOpen={isOpen}
+      onClose={handleClose}
+      title="Editar Orçamento"
+      description={`${budget.expense_categories?.name} • ${formatDate(budget.month_year)}`}
+      size="md"
+      icon={Edit}
+      iconColor="text-blue-400"
+    >
 
         {/* Informações Atuais */}
         <div className="bg-gray-700/30 rounded-lg p-4 space-y-3">
@@ -194,7 +193,7 @@ export const EditBudgetModal: React.FC<EditBudgetModalProps> = ({
             )}
           </div>
 
-          <DialogFooter className="flex gap-2 pt-4">
+          <div className="flex gap-2 pt-4">
             <Button
               type="button"
               variant="outline"
@@ -210,10 +209,9 @@ export const EditBudgetModal: React.FC<EditBudgetModalProps> = ({
             >
               {updateBudgetMutation.isPending ? 'Salvando...' : 'Salvar Alterações'}
             </Button>
-          </DialogFooter>
+          </div>
         </form>
-      </DialogContent>
-    </Dialog>
+    </BaseModal>
   );
 };
 

@@ -4,14 +4,8 @@
 
 import React from 'react';
 import { useForm } from 'react-hook-form';
-import { Home, Zap, Users, Megaphone, Wrench, Truck, Shield, Calculator, Package, Tag, Droplets, Wifi, MoreHorizontal } from 'lucide-react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter
-} from '@/shared/ui/primitives/dialog';
+import { Home, Zap, Users, Megaphone, Wrench, Truck, Shield, Calculator, Package, Tag, Droplets, Wifi, MoreHorizontal, Filter } from 'lucide-react';
+import { BaseModal } from '@/shared/ui/composite/BaseModal';
 import { Button } from '@/shared/ui/primitives/button';
 import { Input } from '@/shared/ui/primitives/input';
 import { Label } from '@/shared/ui/primitives/label';
@@ -86,11 +80,14 @@ export const ExpenseFiltersModal: React.FC<ExpenseFiltersModalProps> = ({
   }, [isOpen, filters, reset]);
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-gray-800 border-gray-700 text-white max-w-md">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-bold">Filtrar Despesas</DialogTitle>
-        </DialogHeader>
+    <BaseModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Filtrar Despesas"
+      size="md"
+      icon={Filter}
+      iconColor="text-blue-400"
+    >
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {/* Categoria */}
@@ -271,7 +268,7 @@ export const ExpenseFiltersModal: React.FC<ExpenseFiltersModalProps> = ({
             </Select>
           </div>
 
-          <DialogFooter className="flex gap-2 pt-4">
+          <div className="flex gap-2 pt-4">
             <Button
               type="button"
               variant="outline"
@@ -294,10 +291,9 @@ export const ExpenseFiltersModal: React.FC<ExpenseFiltersModalProps> = ({
             >
               Aplicar Filtros
             </Button>
-          </DialogFooter>
+          </div>
         </form>
-      </DialogContent>
-    </Dialog>
+    </BaseModal>
   );
 };
 

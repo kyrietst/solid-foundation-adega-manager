@@ -7,13 +7,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Home, Zap, Users, Megaphone, Wrench, Truck, Shield, Calculator, Package, Tag, Droplets, Wifi, MoreHorizontal } from 'lucide-react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter
-} from '@/shared/ui/primitives/dialog';
+import { BaseModal } from '@/shared/ui/composite/BaseModal';
 import { Button } from '@/shared/ui/primitives/button';
 import { Input } from '@/shared/ui/primitives/input';
 import { Label } from '@/shared/ui/primitives/label';
@@ -148,13 +142,17 @@ export const EditExpenseModal: React.FC<EditExpenseModalProps> = ({
 
   if (loadingExpense) {
     return (
-      <Dialog open={isOpen} onOpenChange={handleClose}>
-        <DialogContent className="bg-gray-800 border-gray-700 text-white">
-          <div className="flex items-center justify-center p-8">
-            <LoadingSpinner />
-          </div>
-        </DialogContent>
-      </Dialog>
+      <BaseModal
+        isOpen={isOpen}
+        onClose={handleClose}
+        title="Carregando..."
+        className="bg-gray-800 border-gray-700 text-white"
+        showHeader={false}
+      >
+        <div className="flex items-center justify-center p-8">
+          <LoadingSpinner />
+        </div>
+      </BaseModal>
     );
   }
 
@@ -163,11 +161,13 @@ export const EditExpenseModal: React.FC<EditExpenseModalProps> = ({
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="bg-gray-800 border-gray-700 text-white max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-bold">Editar Despesa</DialogTitle>
-        </DialogHeader>
+    <BaseModal
+      isOpen={isOpen}
+      onClose={handleClose}
+      title="Editar Despesa"
+      size="2xl"
+      className="bg-gray-800 border-gray-700 text-white max-h-[90vh] overflow-y-auto"
+    >
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -420,10 +420,9 @@ export const EditExpenseModal: React.FC<EditExpenseModalProps> = ({
             >
               {updateExpenseMutation.isPending ? 'Salvando...' : 'Salvar Alterações'}
             </Button>
-          </DialogFooter>
+          </div>
         </form>
-      </DialogContent>
-    </Dialog>
+    </BaseModal>
   );
 };
 

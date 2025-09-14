@@ -4,7 +4,7 @@
 
 import React, { useState } from 'react';
 import { X, Save, Building2, Phone, Mail, MessageCircle, Plus, Minus } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shared/ui/primitives/dialog';
+import { BaseModal } from '@/shared/ui/composite/BaseModal';
 import { Button } from '@/shared/ui/primitives/button';
 import { Input } from '@/shared/ui/primitives/input';
 import { Label } from '@/shared/ui/primitives/label';
@@ -110,17 +110,16 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
   });
   
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-black/95 backdrop-blur-xl border-purple-500/30 shadow-2xl">
-        <DialogHeader>
-          <DialogTitle className={cn(
-            "flex items-center gap-2 text-xl font-bold text-white",
-            getSFProTextClasses('heading', 'lg')
-          )}>
-            <Building2 className="h-6 w-6 text-purple-400" />
-            {mode === 'create' ? 'Novo Fornecedor' : 'Editar Fornecedor'}
-          </DialogTitle>
-        </DialogHeader>
+    <BaseModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={mode === 'create' ? 'Novo Fornecedor' : 'Editar Fornecedor'}
+      size="4xl"
+      maxHeight="90vh"
+      icon={Building2}
+      iconColor="text-purple-400"
+      className="backdrop-blur-xl border-purple-500/30 shadow-2xl"
+    >
         
         <form onSubmit={handleFormSubmit} className="space-y-6">
           {/* Informações básicas */}
@@ -394,7 +393,6 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
             </Button>
           </div>
         </form>
-      </DialogContent>
-    </Dialog>
+    </BaseModal>
   );
 };

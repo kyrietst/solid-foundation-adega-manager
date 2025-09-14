@@ -4,13 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/shared/ui/primitives/dialog';
+import { BaseModal } from '@/shared/ui/composite/BaseModal';
 import { Button } from '@/shared/ui/primitives/button';
 import { Input } from '@/shared/ui/primitives/input';
 import { Label } from '@/shared/ui/primitives/label';
@@ -143,21 +137,18 @@ export const ChangeTemporaryPasswordModal: React.FC<ChangeTemporaryPasswordModal
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={() => {}} modal>
-      <DialogContent 
-        className="bg-gray-800/95 border-gray-700/50 backdrop-blur-sm max-w-md"
-        onPointerDownOutside={(e) => e.preventDefault()}
-        onEscapeKeyDown={(e) => e.preventDefault()}
-      >
-        <DialogHeader>
-          <DialogTitle className="text-white text-xl font-bold flex items-center gap-2">
-            <Lock className="h-6 w-6 text-amber-400" />
-            Alterar Senha Temporária
-          </DialogTitle>
-          <DialogDescription className="text-gray-300">
-            Por segurança, você deve alterar sua senha temporária antes de continuar usando o sistema.
-          </DialogDescription>
-        </DialogHeader>
+    <BaseModal
+      isOpen={isOpen}
+      onClose={() => {}} // Bloquear fechamento
+      title="Alterar Senha Temporária"
+      description="Por segurança, você deve alterar sua senha temporária antes de continuar usando o sistema."
+      size="md"
+      icon={Lock}
+      iconColor="text-amber-400"
+      className="backdrop-blur-sm"
+      disableOutsideClick={true}
+      disableEscapeKey={true}
+    >
         
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Alerta informativo */}
@@ -329,7 +320,6 @@ export const ChangeTemporaryPasswordModal: React.FC<ChangeTemporaryPasswordModal
             </Button>
           </div>
         </form>
-      </DialogContent>
-    </Dialog>
+    </BaseModal>
   );
 };

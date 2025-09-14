@@ -7,13 +7,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Receipt, Save, X, Calendar, CreditCard, Building, FileText, Tag, DollarSign, RotateCcw, Home, Zap, Users, Megaphone, Wrench, Truck, Shield, Calculator, Package, Droplets, Wifi, MoreHorizontal } from 'lucide-react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter
-} from '@/shared/ui/primitives/dialog';
+import { BaseModal } from '@/shared/ui/composite/BaseModal';
 import { Button } from '@/shared/ui/primitives/button';
 import { Input } from '@/shared/ui/primitives/input';
 import { Label } from '@/shared/ui/primitives/label';
@@ -125,19 +119,22 @@ export const NewExpenseModal: React.FC<NewExpenseModalProps> = ({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-black/95 backdrop-blur-xl border-purple-500/30 shadow-2xl">
-        <DialogHeader>
-          <DialogTitle className={cn(
-            "flex items-center gap-2 text-xl font-bold text-white",
-            getSFProTextClasses('heading', 'lg')
-          )}>
-            <Receipt className="h-6 w-6 text-purple-400" />
-Nova Despesa
-          </DialogTitle>
-        </DialogHeader>
-
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <BaseModal
+      isOpen={isOpen}
+      onClose={handleClose}
+      title={
+        <span className={cn(
+          "flex items-center gap-2",
+          getSFProTextClasses('heading', 'lg')
+        )}>
+          <Receipt className="h-6 w-6 text-purple-400" />
+          Nova Despesa
+        </span>
+      }
+      size="4xl"
+      className="max-h-[90vh] overflow-y-auto bg-black/95 backdrop-blur-xl border-purple-500/30 shadow-2xl"
+    >
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           {/* Informações básicas */}
                 <Card className="bg-black/70 backdrop-blur-xl border-purple-500/30">
             <CardHeader>
@@ -468,8 +465,7 @@ Despesa Recorrente
             </Button>
           </div>
         </form>
-      </DialogContent>
-    </Dialog>
+    </BaseModal>
   );
 };
 

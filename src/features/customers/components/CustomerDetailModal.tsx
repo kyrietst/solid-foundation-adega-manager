@@ -5,12 +5,7 @@
  */
 
 import React, { useState, useMemo } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/shared/ui/primitives/dialog';
+import { BaseModal } from '@/shared/ui/composite/BaseModal';
 import { Button } from '@/shared/ui/primitives/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/primitives/card';
 import { Badge } from '@/shared/ui/primitives/badge';
@@ -182,31 +177,35 @@ export const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
   const glassClasses = getGlassCardClasses('premium');
   
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className={cn(
-        "w-[95vw] max-w-6xl h-[90vh] max-h-[90vh] overflow-hidden backdrop-blur-xl shadow-2xl",
+    <BaseModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={customer.name}
+      size="full"
+      maxHeight="90vh"
+      icon={User}
+      iconColor="text-primary-yellow"
+      className={cn(
+        "w-[95vw] max-w-6xl backdrop-blur-xl shadow-2xl",
         glassClasses,
-        "bg-gray-900/90 border border-primary-yellow/30 flex flex-col"
-      )}>
-        <DialogHeader>
-          <div className="flex items-center justify-between">
-            <DialogTitle className="text-white flex items-center gap-2 font-semibold">
-              <User className="h-5 w-5 text-primary-yellow" />
-              {customer.name}
-            </DialogTitle>
-            {canEdit && onEdit && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onEdit(customer)}
-                className="border-primary-yellow/30 text-primary-yellow hover:bg-primary-yellow/20 hover:border-primary-yellow/50 transition-all duration-200"
-              >
-                <Edit className="h-4 w-4 mr-2" />
-                Editar
-              </Button>
-            )}
-          </div>
-        </DialogHeader>
+        "bg-gray-900/90 border border-primary-yellow/30"
+      )}
+    >
+      {/* Header personalizado com botão de editar */}
+      <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-6">
+        <div></div>
+        {canEdit && onEdit && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onEdit(customer)}
+            className="border-primary-yellow/30 text-primary-yellow hover:bg-primary-yellow/20 hover:border-primary-yellow/50 transition-all duration-200"
+          >
+            <Edit className="h-4 w-4 mr-2" />
+            Editar
+          </Button>
+        )}
+      </div>
 
         {/* Tabs Navigation */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">
@@ -624,7 +623,6 @@ export const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
             </CardContent>
           </Card>
         )}
-      </DialogContent>
-    </Dialog>
+    </BaseModal>
   );
 };

@@ -16,7 +16,7 @@ import { Button } from '@/shared/ui/primitives/button';
 import { Input } from '@/shared/ui/primitives/input';
 import { ScrollArea } from '@/shared/ui/primitives/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/primitives/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/shared/ui/primitives/dialog';
+import { BaseModal } from '@/shared/ui/composite/BaseModal';
 import { useToast } from '@/shared/hooks/common/use-toast';
 
 import { CustomerSearch } from './CustomerSearch';
@@ -233,27 +233,31 @@ export function FullCart({
               selectedCustomer={selectedCustomer || null}
               onSelect={(customer) => setCustomer(customer?.id || null)}
             />
-            <Dialog open={isCustomerModalOpen} onOpenChange={setIsCustomerModalOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="w-full border-yellow-400/30 text-yellow-400 hover:bg-yellow-400/10 hover:border-yellow-400/50 backdrop-blur-sm">
-                  <UserPlus className="h-4 w-4 mr-2 text-yellow-400" aria-hidden="true" />
-                  Cadastrar Cliente
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="w-[95vw] sm:w-[90vw] md:w-[600px] max-w-[600px] h-[85vh] max-h-[85vh] overflow-hidden bg-black/95 backdrop-blur-sm border border-white/10 flex flex-col">
-                <DialogHeader className="flex-shrink-0 pb-4 border-b border-white/20">
-                  <DialogTitle className="text-lg font-bold text-white flex items-center gap-2">
-                    <UserPlus className="h-4 w-4 text-yellow-400" />
-                    Novo Cliente
-                  </DialogTitle>
-                </DialogHeader>
-                <div className="flex-1 min-h-0 overflow-y-auto px-2 py-1">
-                  <CustomerForm 
-                    onSuccess={() => setIsCustomerModalOpen(false)}
-                  />
-                </div>
-              </DialogContent>
-            </Dialog>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full border-yellow-400/30 text-yellow-400 hover:bg-yellow-400/10 hover:border-yellow-400/50 backdrop-blur-sm"
+              onClick={() => setIsCustomerModalOpen(true)}
+            >
+              <UserPlus className="h-4 w-4 mr-2 text-yellow-400" aria-hidden="true" />
+              Cadastrar Cliente
+            </Button>
+
+            <BaseModal
+              isOpen={isCustomerModalOpen}
+              onClose={() => setIsCustomerModalOpen(false)}
+              title="Novo Cliente"
+              size="lg"
+              maxHeight="85vh"
+              icon={UserPlus}
+              iconColor="text-yellow-400"
+            >
+              <div className="min-h-0 overflow-y-auto px-2 py-1">
+                <CustomerForm
+                  onSuccess={() => setIsCustomerModalOpen(false)}
+                />
+              </div>
+            </BaseModal>
           </div>
         )}
       </div>

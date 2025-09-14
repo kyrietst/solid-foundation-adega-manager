@@ -6,13 +6,7 @@ import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter
-} from '@/shared/ui/primitives/dialog';
+import { BaseModal } from '@/shared/ui/composite/BaseModal';
 import { Button } from '@/shared/ui/primitives/button';
 import { Input } from '@/shared/ui/primitives/input';
 import { Label } from '@/shared/ui/primitives/label';
@@ -83,11 +77,13 @@ export const NewBudgetModal: React.FC<NewBudgetModalProps> = ({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="bg-gray-800 border-gray-700 text-white max-w-md">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-bold">Novo Orçamento</DialogTitle>
-        </DialogHeader>
+    <BaseModal
+      isOpen={isOpen}
+      onClose={handleClose}
+      title="Novo Orçamento"
+      size="md"
+      className="bg-gray-800 border-gray-700 text-white"
+    >
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {/* Categoria */}
@@ -173,10 +169,9 @@ export const NewBudgetModal: React.FC<NewBudgetModalProps> = ({
             >
               {createBudgetMutation.isPending ? 'Criando...' : 'Criar Orçamento'}
             </Button>
-          </DialogFooter>
+          </div>
         </form>
-      </DialogContent>
-    </Dialog>
+    </BaseModal>
   );
 };
 

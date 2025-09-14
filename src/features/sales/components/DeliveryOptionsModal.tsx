@@ -8,13 +8,7 @@
 
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle,
-  DialogDescription 
-} from '@/shared/ui/primitives/dialog';
+import { BaseModal } from '@/shared/ui/composite/BaseModal';
 import { Button } from '@/shared/ui/primitives/button';
 import { Input } from '@/shared/ui/primitives/input';
 import { Label } from '@/shared/ui/primitives/label';
@@ -225,17 +219,19 @@ export const DeliveryOptionsModal = ({
   }, [isOpen]);
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl bg-black/95 backdrop-blur-xl border-white/20">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-xl font-bold text-white">
-            <MapPin className="h-6 w-6 text-green-400" />
-            Dados para Entrega
-          </DialogTitle>
-          <DialogDescription className="text-gray-400">
-            Preencha os dados de endereço para calcular a taxa de entrega
-          </DialogDescription>
-        </DialogHeader>
+    <BaseModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={
+        <>
+          <MapPin className="h-6 w-6 text-green-400" />
+          Dados para Entrega
+        </>
+      }
+      description="Preencha os dados de endereço para calcular a taxa de entrega"
+      size="2xl"
+      className="bg-black/95 backdrop-blur-xl border-white/20"
+    >
 
         <div className="space-y-6">
           {/* Informações do Pedido */}
@@ -428,7 +424,6 @@ export const DeliveryOptionsModal = ({
             </Button>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+    </BaseModal>
   );
 };

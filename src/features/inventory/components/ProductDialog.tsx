@@ -4,12 +4,8 @@
  */
 
 import React from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/shared/ui/primitives/dialog';
+import { Package } from 'lucide-react';
+import { BaseModal } from '@/shared/ui/composite/BaseModal';
 import { ProductForm } from './ProductForm';
 import { ProductDialogProps } from './types';
 
@@ -24,24 +20,22 @@ export const ProductDialog: React.FC<ProductDialogProps> = ({
   const isEditing = !!product;
   
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-adega-charcoal border-white/10">
-        <DialogHeader>
-          <DialogTitle className="text-adega-platinum">
-            {isEditing ? 'Editar Produto' : 'Novo Produto'}
-          </DialogTitle>
-        </DialogHeader>
-        
-        <div className="mt-4">
-          <ProductForm
-            product={product}
-            onSave={onSave}
-            onDelete={onDelete}
-            onCancel={onClose}
-            canDelete={canDelete}
-          />
-        </div>
-      </DialogContent>
-    </Dialog>
+    <BaseModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={isEditing ? 'Editar Produto' : 'Novo Produto'}
+      size="4xl"
+      maxHeight="90vh"
+      icon={Package}
+      iconColor="text-primary-yellow"
+    >
+      <ProductForm
+        product={product}
+        onSave={onSave}
+        onDelete={onDelete}
+        onCancel={onClose}
+        canDelete={canDelete}
+      />
+    </BaseModal>
   );
 };

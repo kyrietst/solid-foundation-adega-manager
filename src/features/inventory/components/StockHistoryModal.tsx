@@ -4,7 +4,7 @@
  */
 
 import React, { useMemo, useEffect, useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/shared/ui/primitives/dialog';
+import { BaseModal } from '@/shared/ui/composite/BaseModal';
 import { Button } from '@/shared/ui/primitives/button';
 import { Badge } from '@/shared/ui/primitives/badge';
 import { 
@@ -219,19 +219,16 @@ export const StockHistoryModal: React.FC<StockHistoryModalProps> = ({
   if (!product) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent 
-        className="max-w-[1200px] max-h-[90vh] overflow-hidden bg-adega-charcoal/95 border-adega-gold/30 backdrop-blur-xl"
-        style={{ maxWidth: '1200px !important' }}
-      >
-        <DialogHeader className="border-b border-white/10 pb-4">
-          <DialogTitle className="text-xl font-bold text-adega-platinum flex items-center">
-            <Package className="h-5 w-5 mr-2 text-yellow-400" />
-            Histórico de Movimentações
-          </DialogTitle>
-          <DialogDescription className="text-gray-400 mt-2">
-            Visualize todas as movimentações de estoque deste produto, incluindo entradas, saídas e ajustes.
-          </DialogDescription>
+    <BaseModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Histórico de Movimentações"
+      description="Visualize todas as movimentações de estoque deste produto, incluindo entradas, saídas e ajustes."
+      size="4xl"
+      maxHeight="90vh"
+      icon={Package}
+      iconColor="text-yellow-400"
+    >
           
           {/* Informações do produto */}
           <div className="bg-black/30 rounded-lg p-3 mt-4">
@@ -371,8 +368,7 @@ export const StockHistoryModal: React.FC<StockHistoryModalProps> = ({
             </div>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+    </BaseModal>
   );
 };
 
