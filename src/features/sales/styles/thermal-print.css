@@ -1,6 +1,6 @@
 /**
  * CSS específico para impressão em impressoras térmicas
- * Otimizado para Atomo MO-5812: 58mm, 203dpi
+ * Otimizado para Atomo MO-5812: 48mm, 203dpi
  * SUPER LEGÍVEL: Fontes grandes + Zero bordas tracejadas + Layout limpo
  */
 
@@ -20,7 +20,7 @@
   }
 
   html, body {
-    width: 58mm !important;
+    width: 48mm !important;
     margin: 0 !important;
     padding: 0 !important;
     font-family: 'Courier New', 'Consolas', monospace !important;
@@ -62,8 +62,8 @@
   /* Container principal - SUPER LEGÍVEL + VISIBILIDADE GARANTIDA */
   .receipt-print {
     position: relative !important; /* MUDANÇA: relative para garantir visibilidade */
-    width: 58mm !important;
-    max-width: 58mm !important;
+    width: 48mm !important;
+    max-width: 48mm !important;
     margin: 0 auto !important; /* Centralizado horizontalmente */
     padding: 3mm !important; /* Padding para legibilidade */
     font-family: 'Courier New', 'Consolas', monospace !important;
