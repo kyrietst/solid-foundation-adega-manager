@@ -7,8 +7,6 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { BaseModal } from '@/shared/ui/composite';
 import {
@@ -31,8 +29,9 @@ import {
 } from '@/shared/ui/primitives/select';
 import { SwitchAnimated } from '@/shared/ui/primitives/switch-animated';
 import { BarcodeInput } from '@/features/inventory/components/BarcodeInput';
-import { useToast } from '@/shared/hooks/common/use-toast';
-import { useMouseTracker } from '@/hooks/ui/useMouseTracker';
+import { useStandardForm } from '@/shared/hooks/common/useStandardForm';
+import { useGlassmorphismEffect } from '@/shared/hooks/ui/useGlassmorphismEffect';
+import { useToast } from '@/shared/hooks/use-toast';
 import { supabase } from '@/core/api/supabase/client';
 import { 
   Package, 
@@ -138,15 +137,17 @@ export const NewProductModal: React.FC<NewProductModalProps> = ({
   onSuccess,
 }) => {
   const { toast } = useToast();
-  const { handleMouseMove } = useMouseTracker();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { handleMouseMove } = useGlassmorphismEffect();
   const [categories, setCategories] = useState<string[]>([]);
   const [suppliers, setSuppliers] = useState<string[]>([]);
   const [showCustomSupplier, setShowCustomSupplier] = useState(false);
   const [activeScanner, setActiveScanner] = useState<'package' | 'unit' | null>(null);
 
-  const form = useForm<NewProductFormData>({
-    resolver: zodResolver(newProductSchema),
+  const { form, isLoading, handleSubmit } = useStandardForm<NewProductFormData>({
+    schema: newProductSchema,
+    onSuccess: (data) => `✅ ${data.name} foi adicionado com sucesso.`,
+    onError: "❌ Erro ao cadastrar produto",
+    resetOnSuccess: true,
     defaultValues: {
       name: '',
       category: '',
@@ -164,6 +165,54 @@ export const NewProductModal: React.FC<NewProductModalProps> = ({
       stock_quantity: 0,
       minimum_stock: 5,
     },
+    onSuccessCallback: () => {
+      setShowCustomSupplier(false);
+      onClose();
+      if (onSuccess) onSuccess();
+    },
+    onSubmit: async (data) => {
+      // Preparar dados para envio
+      const finalSupplier = data.supplier === 'custom' ? data.custom_supplier : data.supplier;
+
+      const productData = {
+        name: data.name,
+        category: data.category,
+        // Sistema de códigos hierárquicos - mapeamento correto
+        barcode: data.unit_barcode || null, // Código principal (unidade)
+        unit_barcode: data.unit_barcode || null,
+        package_barcode: data.package_barcode || null,
+        package_units: data.package_units || null, // Campo correto
+        units_per_package: data.package_units || 1, // Mantém compatibilidade
+        package_size: data.package_units || 1, // Mantém compatibilidade
+        is_package: data.has_package_tracking || false,
+        has_package_tracking: data.has_package_tracking || false,
+        has_unit_tracking: data.has_unit_tracking !== undefined ? data.has_unit_tracking : true,
+        // Preços
+        price: data.price,
+        package_price: data.package_price || null,
+        cost_price: data.cost_price || null,
+        // Calcular margem de unidade
+        margin_percent: data.cost_price ?
+          ((data.price - data.cost_price) / data.cost_price * 100) : null,
+        // Calcular margem de pacote (se houver preço de pacote)
+        package_margin: (data.package_price && data.cost_price && data.package_units) ?
+          (((data.package_price - (data.cost_price * data.package_units)) / (data.cost_price * data.package_units)) * 100) : null,
+        // Outros campos
+        supplier: finalSupplier || null,
+        volume_ml: data.volume_ml || null,
+        stock_quantity: data.stock_quantity,
+        minimum_stock: data.minimum_stock || 5,
+        // Valores padrão
+        turnover_rate: 'medium',
+        created_at: new Date().toISOString(),
+      };
+
+      const { error } = await supabase
+        .from('products')
+        .insert([productData]);
+
+      if (error) throw error;
+    }
   });
 
   // Buscar categorias e fornecedores existentes
@@ -233,82 +282,9 @@ export const NewProductModal: React.FC<NewProductModalProps> = ({
     return null;
   }, [watchedPackagePrice, watchedPrice, watchedPackageUnits]);
 
-  const onSubmit = async (data: NewProductFormData) => {
-    setIsSubmitting(true);
-    
-    try {
-      // Preparar dados para envio
-      const finalSupplier = data.supplier === 'custom' ? data.custom_supplier : data.supplier;
-      
-      const productData = {
-        name: data.name,
-        category: data.category,
-        // Sistema de códigos hierárquicos - mapeamento correto
-        barcode: data.unit_barcode || null, // Código principal (unidade)
-        unit_barcode: data.unit_barcode || null,
-        package_barcode: data.package_barcode || null,
-        package_units: data.package_units || null, // Campo correto
-        units_per_package: data.package_units || 1, // Mantém compatibilidade
-        package_size: data.package_units || 1, // Mantém compatibilidade
-        is_package: data.has_package_tracking || false,
-        has_package_tracking: data.has_package_tracking || false,
-        has_unit_tracking: data.has_unit_tracking !== undefined ? data.has_unit_tracking : true,
-        // Preços
-        price: data.price,
-        package_price: data.package_price || null,
-        cost_price: data.cost_price || null,
-        // Calcular margem de unidade
-        margin_percent: data.cost_price ? 
-          ((data.price - data.cost_price) / data.cost_price * 100) : null,
-        // Calcular margem de pacote (se houver preço de pacote)
-        package_margin: (data.package_price && data.cost_price && data.package_units) ? 
-          (((data.package_price - (data.cost_price * data.package_units)) / (data.cost_price * data.package_units)) * 100) : null,
-        // Outros campos
-        supplier: finalSupplier || null,
-        volume_ml: data.volume_ml || null,
-        stock_quantity: data.stock_quantity,
-        minimum_stock: data.minimum_stock || 5,
-        // Valores padrão
-        turnover_rate: 'medium',
-        created_at: new Date().toISOString(),
-      };
-
-      const { error } = await supabase
-        .from('products')
-        .insert([productData]);
-
-      if (error) throw error;
-
-      toast({
-        title: "✅ Produto cadastrado!",
-        description: `${data.name} foi adicionado com sucesso.`,
-        variant: "default",
-      });
-      
-      // Reset form e fechar modal
-      form.reset();
-      setShowCustomSupplier(false);
-      onClose();
-      
-      // Chamar callback de sucesso se fornecido
-      if (onSuccess) {
-        onSuccess();
-      }
-
-    } catch (error: any) {
-      console.error('Erro ao cadastrar produto:', error);
-      toast({
-        title: "❌ Erro ao cadastrar",
-        description: error.message || "Erro inesperado. Tente novamente.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   const handleClose = () => {
-    if (isSubmitting) return; // Não permitir fechar durante envio
+    if (isLoading) return; // Não permitir fechar durante envio
     form.reset();
     setShowCustomSupplier(false);
     onClose();
@@ -359,7 +335,7 @@ export const NewProductModal: React.FC<NewProductModalProps> = ({
     >
       <div className="flex-1 overflow-y-auto pr-2" onMouseMove={handleMouseMove}>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            <form onSubmit={handleSubmit} className="space-y-8">
               {/* Informações Básicas */}
               <div className="bg-gray-800/30 rounded-xl p-6 border border-gray-700/50 hero-spotlight hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300" onMouseMove={handleMouseMove}>
                 <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-5">
@@ -514,7 +490,7 @@ export const NewProductModal: React.FC<NewProductModalProps> = ({
                           variant="outline"
                           onClick={() => setActiveScanner('unit')}
                           className="w-full h-11 border-yellow-400/50 text-yellow-400 hover:bg-yellow-400/10 transition-all duration-200"
-                          disabled={isSubmitting}
+                          disabled={isLoading}
                         >
                           <ScanLine className="h-4 w-4 mr-2" />
                           Escanear Código da Unidade
@@ -574,7 +550,7 @@ export const NewProductModal: React.FC<NewProductModalProps> = ({
                             variant="outline"
                             onClick={() => setActiveScanner('package')}
                             className="w-full h-11 border-yellow-400/50 text-yellow-400 hover:bg-yellow-400/10 transition-all duration-200"
-                            disabled={isSubmitting}
+                            disabled={isLoading}
                           >
                             <ScanLine className="h-4 w-4 mr-2" />
                             Escanear Código do Pacote
@@ -926,7 +902,7 @@ export const NewProductModal: React.FC<NewProductModalProps> = ({
                 type="button"
                 variant="outline"
                 onClick={handleClose}
-                disabled={isSubmitting}
+                disabled={isLoading}
                 className="border-gray-600 text-gray-300 hover:bg-gray-700"
               >
                 <X className="h-4 w-4 mr-2" />
@@ -935,10 +911,10 @@ export const NewProductModal: React.FC<NewProductModalProps> = ({
               
               <Button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isLoading}
                 className="bg-yellow-500 hover:bg-yellow-600 text-black font-medium"
               >
-                {isSubmitting ? (
+                {isLoading ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black mr-2"></div>
                     Cadastrando...

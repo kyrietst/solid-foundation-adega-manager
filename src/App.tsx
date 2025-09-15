@@ -8,6 +8,7 @@ import { AuthProvider } from "@/app/providers/AuthContext";
 import { ErrorBoundary } from "@/shared/components/ErrorBoundary";
 import { RouteErrorBoundary } from "@/shared/components/RouteErrorBoundary";
 import { AuthErrorBoundary } from "@/shared/components/AuthErrorBoundary";
+import { QueryErrorBoundary } from "@/shared/ui/layout/QueryErrorBoundary";
 import { LavaLamp } from "@/components/ui/fluid-blob";
 import { TempPasswordHandler } from "@/shared/components/TempPasswordHandler";
 import Index from "./pages/Index";
@@ -25,7 +26,44 @@ const DesignSystemPage = lazy(() =>
   import('./pages/DesignSystemPage').then((m) => ({ default: m.default }))
 );
 
-const queryClient = new QueryClient();
+// Optimized QueryClient configuration (Context7 best practices)
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Context7: Better default settings for stability and performance
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      gcTime: 1000 * 60 * 30, // 30 minutes (formerly cacheTime)
+      retry: (failureCount, error) => {
+        // Context7: Smart retry logic
+        if (failureCount < 3) {
+          const errorMsg = error?.message?.toLowerCase() || '';
+          // Don't retry on auth errors or not found errors
+          if (errorMsg.includes('unauthorized') || errorMsg.includes('not found') || errorMsg.includes('forbidden')) {
+            return false;
+          }
+          return true;
+        }
+        return false;
+      },
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: true,
+    },
+    mutations: {
+      // Context7: Better default settings for mutations
+      retry: (failureCount, error) => {
+        if (failureCount < 2) {
+          const errorMsg = error?.message?.toLowerCase() || '';
+          // Don't retry on validation errors or duplicates
+          if (errorMsg.includes('duplicate') || errorMsg.includes('unique constraint') || errorMsg.includes('validation')) {
+            return false;
+          }
+          return true;
+        }
+        return false;
+      },
+    },
+  },
+});
 
 // Componente de workaround para garantir que o Tailwind inclua todas as classes de cor dinâmicas.
 const TailwindColorClasses = () => (
@@ -49,20 +87,21 @@ const App = () => {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <BrowserRouter>
-            <AuthErrorBoundary>
-              <AuthProvider>
-                <div className="min-h-screen w-full relative overflow-x-hidden min-w-0">
-                  {/* Background fluid blob */}
-                  <div className="fixed inset-0 z-0">
-                    <LavaLamp />
-                  </div>
-                  <Toaster />
-                  <Sonner />
-                  <TailwindColorClasses />
-                  <TempPasswordHandler />
-                  <div className="relative z-10">
+        <QueryErrorBoundary>
+          <TooltipProvider>
+            <BrowserRouter>
+              <AuthErrorBoundary>
+                <AuthProvider>
+                  <div className="min-h-screen w-full relative overflow-x-hidden min-w-0">
+                    {/* Background fluid blob */}
+                    <div className="fixed inset-0 z-0">
+                      <LavaLamp />
+                    </div>
+                    <Toaster />
+                    <Sonner />
+                    <TailwindColorClasses />
+                    <TempPasswordHandler />
+                    <div className="relative z-10">
                     <Routes>
                       {/* Rotas independentes PRIMEIRO para evitar conflitos */}
                       <Route 
@@ -219,12 +258,13 @@ const App = () => {
                     </Route>
                     <Route path="*" element={<NotFound />} />
                   </Routes>
+                  </div>
                 </div>
-              </div>
-            </AuthProvider>
-          </AuthErrorBoundary>
-        </BrowserRouter>
-      </TooltipProvider>
+              </AuthProvider>
+            </AuthErrorBoundary>
+          </BrowserRouter>
+        </TooltipProvider>
+      </QueryErrorBoundary>
     </QueryClientProvider>
   </ErrorBoundary>
   );

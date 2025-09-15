@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/primitives/card';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
@@ -28,7 +28,7 @@ const COLORS = [
   '#f43f5e', // rose
 ];
 
-export function CategoryMixDonut({ className, period = 30, showTotal = false }: CategoryMixDonutProps) {
+export const CategoryMixDonut = React.memo(function CategoryMixDonut({ className, period = 30, showTotal = false }: CategoryMixDonutProps) {
   const { data: categoryData, isLoading, error } = useQuery({
     queryKey: ['category-mix', period],
     queryFn: async (): Promise<CategoryMix[]> => {
@@ -102,31 +102,42 @@ export function CategoryMixDonut({ className, period = 30, showTotal = false }: 
     staleTime: 10 * 60 * 1000,
   });
 
-  const formatCurrency = (value: number) => {
+  const formatCurrency = useCallback((value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL'
     }).format(value);
-  };
+  }, []);
 
-  const formatCompact = (value: number) => {
+  const formatCompact = useCallback((value: number) => {
     if (value >= 1000000) {
       return (value / 1000000).toFixed(1) + 'M';
     } else if (value >= 1000) {
       return (value / 1000).toFixed(1) + 'K';
     }
     return value.toFixed(0);
-  };
+  }, []);
 
-  const data = categoryData && categoryData.length > 0 ? categoryData : fallbackData || [];
-  const totalRevenue = data.reduce((sum, item) => sum + item.revenue, 0);
-  const hasRealSalesData = categoryData && categoryData.length > 0;
+  // ✅ Context7 Pattern: Memoizar dados processados para evitar recalculo
+  const processedData = useMemo(() => {
+    return categoryData && categoryData.length > 0 ? categoryData : fallbackData || [];
+  }, [categoryData, fallbackData]);
 
-  const CustomTooltip = ({ active, payload }: any) => {
+  // ✅ Context7 Pattern: Memoizar cálculos pesados
+  const totalRevenue = useMemo(() => {
+    return processedData.reduce((sum, item) => sum + item.revenue, 0);
+  }, [processedData]);
+
+  const hasRealSalesData = useMemo(() => {
+    return categoryData && categoryData.length > 0;
+  }, [categoryData]);
+
+  // ✅ Context7 Pattern: Memoizar componentes customizados do chart
+  const CustomTooltip = useCallback(({ active, payload }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0];
       const percentage = totalRevenue > 0 ? (data.value / totalRevenue) * 100 : 0;
-      
+
       return (
         <div className="bg-black/95 backdrop-blur-xl border border-white/30 rounded-xl p-3 shadow-2xl">
           <p className="text-sm text-white font-semibold">{data.payload.category}</p>
@@ -137,29 +148,29 @@ export function CategoryMixDonut({ className, period = 30, showTotal = false }: 
       );
     }
     return null;
-  };
+  }, [totalRevenue, formatCurrency]);
 
-  const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
+  const renderCustomizedLabel = useCallback(({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
     if (percent < 0.05) return null; // Hide labels for slices smaller than 5%
-    
+
     const RADIAN = Math.PI / 180;
     const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
     const x = cx + radius * Math.cos(-midAngle * RADIAN);
     const y = cy + radius * Math.sin(-midAngle * RADIAN);
 
     return (
-      <text 
-        x={x} 
-        y={y} 
-        fill="white" 
-        textAnchor={x > cx ? 'start' : 'end'} 
+      <text
+        x={x}
+        y={y}
+        fill="white"
+        textAnchor={x > cx ? 'start' : 'end'}
         dominantBaseline="central"
         className="text-sm font-bold"
       >
         {`${(percent * 100).toFixed(0)}%`}
       </text>
     );
-  };
+  }, []);
 
   if (error) {
     return (
@@ -202,14 +213,14 @@ export function CategoryMixDonut({ className, period = 30, showTotal = false }: 
           <div className="h-[460px] flex items-center justify-center">
             <div className="w-8 h-8 border-2 border-amber-300/30 border-t-amber-300 rounded-full animate-spin" />
           </div>
-        ) : data && data.length > 0 ? (
+        ) : processedData && processedData.length > 0 ? (
           <div className="space-y-4">
             {/* Chart */}
             <div className="h-[360px]">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={data}
+                    data={processedData}
                     cx="50%"
                     cy="50%"
                     labelLine={false}
@@ -219,10 +230,10 @@ export function CategoryMixDonut({ className, period = 30, showTotal = false }: 
                     fill="#8884d8"
                     dataKey="revenue"
                   >
-                    {data.map((entry, index) => (
-                      <Cell 
-                        key={`cell-${index}`} 
-                        fill={COLORS[index % COLORS.length]} 
+                    {processedData.map((entry, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={COLORS[index % COLORS.length]}
                       />
                     ))}
                   </Pie>
@@ -233,7 +244,7 @@ export function CategoryMixDonut({ className, period = 30, showTotal = false }: 
 
             {/* Legend */}
             <div className="grid grid-cols-2 gap-3">
-              {data.map((entry, index) => (
+              {processedData.map((entry, index) => (
                 <div key={entry.category} className="flex items-center gap-3">
                   <div 
                     className="w-4 h-4 rounded-full" 
@@ -279,4 +290,4 @@ export function CategoryMixDonut({ className, period = 30, showTotal = false }: 
       </CardContent>
     </Card>
   );
-}
+});

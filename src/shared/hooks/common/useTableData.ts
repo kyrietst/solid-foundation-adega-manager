@@ -29,7 +29,7 @@ export interface UseTableDataConfig<T> {
   enablePagination?: boolean;
 }
 
-export const useTableData = <T extends Record<string, any>>(
+export const useTableData = <T extends Record<string, unknown>>(
   data: T[],
   config: UseTableDataConfig<T>
 ) => {

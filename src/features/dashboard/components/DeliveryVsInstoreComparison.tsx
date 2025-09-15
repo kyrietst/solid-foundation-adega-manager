@@ -260,7 +260,7 @@ export const DeliveryVsInstoreComparison = ({ className }: DeliveryVsInstoreComp
           </div>
         </h3>
         
-        <Select value={selectedPeriod} onValueChange={(value: any) => setSelectedPeriod(value)}>
+        <Select value={selectedPeriod} onValueChange={(value) => setSelectedPeriod(value as '7d' | '30d' | '90d')}>
           <SelectTrigger className="w-32 bg-black/40 border-white/30 text-white hover:bg-black/60 hover:border-purple-400/50 transition-all duration-300">
             <SelectValue />
           </SelectTrigger>

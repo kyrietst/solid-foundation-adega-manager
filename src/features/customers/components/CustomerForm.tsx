@@ -20,7 +20,7 @@ import {
   FormMessage,
 } from '@/shared/ui/primitives/form';
 import { useUpsertCustomer } from '@/features/customers/hooks/use-crm';
-import { useFormWithToast } from '@/shared/hooks/common/use-form-with-toast';
+import { useStandardForm } from '@/shared/hooks/common/useStandardForm';
 import { CustomerTagManager } from './CustomerTagManager';
 import { Loader2, MapPin, Calendar, Phone, MessageSquare, Shield, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/core/config/utils';
@@ -90,7 +90,7 @@ export function CustomerForm({
   const upsertCustomer = useUpsertCustomer();
   const [currentTags, setCurrentTags] = useState<string[]>([]);
 
-  const form = useFormWithToast<CustomerFormValues>({
+  const { form, isLoading, handleSubmit } = useStandardForm<CustomerFormValues>({
     schema: formSchema,
     defaultValues: {
       name: '',
@@ -111,10 +111,16 @@ export function CustomerForm({
       notes: '',
       tags: [],
     },
-    successMessage: 'Cliente salvo!',
-    successDescription: 'O novo cliente foi cadastrado com sucesso.',
-    errorTitle: 'Erro ao salvar',
-    onSuccess,
+    onSuccess: 'Cliente salvo com sucesso!',
+    onError: 'Erro ao salvar cliente',
+    onSubmit: async (data) => {
+      await upsertCustomer.mutateAsync({
+        ...data,
+        tags: currentTags,
+      });
+    },
+    onSuccessCallback: onSuccess,
+    resetOnSuccess: true,
   });
 
   // Calcular completude em tempo real
@@ -135,7 +141,7 @@ export function CustomerForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(upsertCustomer)} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-6">
         
         {/* Indicador de Completude do Perfil - Compacto */}
         <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-600/30">
@@ -529,12 +535,12 @@ export function CustomerForm({
 
         {/* Botão de Ação */}
         <div className="pt-4 border-t border-gray-700">
-          <Button 
-            type="submit" 
-            disabled={form.isSubmitting} 
+          <Button
+            type="submit"
+            disabled={isLoading}
             className="w-full bg-primary-yellow text-black hover:bg-primary-yellow/90 font-semibold"
           >
-            {form.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin text-black" aria-hidden="true" />}
+            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin text-black" aria-hidden="true" />}
             Salvar Cliente
           </Button>
         </div>

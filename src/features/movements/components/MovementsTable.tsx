@@ -1,15 +1,15 @@
 /**
  * Tabela de movimentações
- * Sub-componente especializado para exibição de dados
+ * Migrado para usar DataTable unificado com virtualização
  */
 
-import React, { useMemo, useState } from 'react';
-import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '@/shared/ui/primitives/dropdown-menu';
-import { Button } from '@/shared/ui/primitives/button';
-import { SearchBar21st } from '@/shared/ui/thirdparty/search-bar-21st';
-import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
-import { InventoryMovement } from '@/types/inventory.types';
+import React from 'react';
+import { DataTable } from '@/shared/ui/composite/DataTable';
+import { DataTableColumn } from '@/shared/hooks/common/useDataTable';
+import { InventoryMovement } from '@/core/types/inventory.types';
 import { Customer } from '@/features/movements/hooks/useMovements';
+import { Badge } from '@/shared/ui/primitives/badge';
+import { Clock } from 'lucide-react';
 
 interface MovementsTableProps {
   movements: InventoryMovement[];
@@ -18,12 +18,8 @@ interface MovementsTableProps {
   typeInfo: Record<string, { label: string; color: string }>;
   customers: Customer[];
   maxRows?: number;
+  isLoading?: boolean;
 }
-
-type SortField = 'date' | 'type' | 'product' | 'quantity' | 'reason' | 'customer' | 'user' | null;
-type SortDirection = 'asc' | 'desc';
-
-const ALL_COLUMNS = ['Data', 'Tipo', 'Produto', 'Quantidade', 'Motivo', 'Cliente', 'Responsável'] as const;
 
 export const MovementsTable: React.FC<MovementsTableProps> = ({
   movements,
@@ -32,228 +28,150 @@ export const MovementsTable: React.FC<MovementsTableProps> = ({
   typeInfo,
   customers,
   maxRows = 100,
+  isLoading = false,
 }) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [visibleColumns, setVisibleColumns] = useState<string[]>([...ALL_COLUMNS]);
-  const [sortField, setSortField] = useState<SortField>('date');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
-
-  const dataset = useMemo(() => {
-    const term = searchTerm.trim().toLowerCase();
-    let rows = term
-      ? movements.filter(m => {
-          const productName = productsMap[m.product_id]?.name?.toLowerCase?.() || '';
-          const userName = usersMap[m.user_id]?.toLowerCase?.() || '';
-          const customerName = customers.find(c => c.id === m.customer_id)?.name?.toLowerCase?.() || '';
-          return (
-            productName.includes(term) ||
-            userName.includes(term) ||
-            customerName.includes(term) ||
-            (m.reason || '').toLowerCase().includes(term)
-          );
-        })
-      : movements;
-
-    if (sortField) {
-      rows = [...rows].sort((a, b) => {
-        const toStr = (v: any) => (v == null ? '' : String(v).toLowerCase());
-        let av: any;
-        let bv: any;
-        switch (sortField) {
-          case 'date':
-            av = new Date(a.date).getTime();
-            bv = new Date(b.date).getTime();
-            break;
-          case 'type':
-            av = toStr(typeInfo[a.type]?.label || a.type);
-            bv = toStr(typeInfo[b.type]?.label || b.type);
-            break;
-          case 'product':
-            av = toStr(productsMap[a.product_id]?.name || a.product_id);
-            bv = toStr(productsMap[b.product_id]?.name || b.product_id);
-            break;
-          case 'quantity':
-            av = a.quantity; bv = b.quantity; break;
-          case 'reason':
-            av = toStr(a.reason);
-            bv = toStr(b.reason);
-            break;
-          case 'customer':
-            av = toStr(customers.find(c => c.id === a.customer_id)?.name);
-            bv = toStr(customers.find(c => c.id === b.customer_id)?.name);
-            break;
-          case 'user':
-            av = toStr(usersMap[a.user_id]);
-            bv = toStr(usersMap[b.user_id]);
-            break;
-          default:
-            av = 0; bv = 0;
-        }
-        if (typeof av === 'number' && typeof bv === 'number') {
-          return sortDirection === 'asc' ? av - bv : bv - av;
-        }
-        return sortDirection === 'asc' ? String(av).localeCompare(String(bv)) : String(bv).localeCompare(String(av));
-      });
+  const getTypeBadge = (type: string) => {
+    const info = typeInfo[type];
+    if (!info) {
+      return <Badge variant="secondary" className="text-xs">{type}</Badge>;
     }
-    // Apply row limit for performance
-    return rows.slice(0, maxRows);
-  }, [movements, searchTerm, sortField, sortDirection, productsMap, usersMap, typeInfo, customers, maxRows]);
 
-  const handleSort = (field: SortField) => {
-    if (sortField === field) setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
-    else { setSortField(field); setSortDirection('asc'); }
+    // Mapear cores CSS para variantes do Badge
+    const variant: "default" | "secondary" | "destructive" | "outline" = "default";
+    let className = "text-xs";
+
+    if (info.color.includes('green')) {
+      className = "bg-green-500/20 text-green-400 border-green-500/30 text-xs";
+    } else if (info.color.includes('red')) {
+      className = "bg-red-500/20 text-red-400 border-red-500/30 text-xs";
+    } else if (info.color.includes('blue')) {
+      className = "bg-blue-500/20 text-blue-400 border-blue-500/30 text-xs";
+    } else if (info.color.includes('yellow')) {
+      className = "bg-yellow-500/20 text-yellow-400 border-yellow-500/30 text-xs";
+    }
+
+    return (
+      <Badge variant={variant} className={className}>
+        {info.label}
+      </Badge>
+    );
   };
 
-  const icon = (field: SortField) => sortField !== field ? <ArrowUpDown className="w-4 h-4" /> : (sortDirection === 'asc' ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />);
-
-  if (dataset.length === 0) {
-    return (
-      <div className="text-center py-8">
-        <p className="text-adega-silver">Nenhuma movimentação encontrada</p>
-      </div>
-    );
-  }
+  const columns: DataTableColumn<InventoryMovement>[] = [
+    {
+      id: 'date',
+      label: 'Data',
+      accessor: 'date',
+      sortable: true,
+      width: '140px',
+      render: (value) => (
+        <div className="flex items-center gap-2">
+          <Clock className="h-4 w-4 text-adega-gold/60" />
+          <span className="text-adega-silver text-sm">
+            {new Date(value as string).toLocaleDateString('pt-BR', {
+              day: '2-digit',
+              month: '2-digit',
+              hour: '2-digit',
+              minute: '2-digit'
+            })}
+          </span>
+        </div>
+      ),
+    },
+    {
+      id: 'type',
+      label: 'Tipo',
+      accessor: 'type',
+      sortable: true,
+      width: '100px',
+      render: (_, movement) => getTypeBadge(movement.type),
+    },
+    {
+      id: 'product_id',
+      label: 'Produto',
+      accessor: 'product_id',
+      searchable: true,
+      sortable: true,
+      width: '200px',
+      render: (_, movement) => (
+        <div className="min-w-0">
+          <p className="font-medium text-adega-platinum truncate" title={productsMap[movement.product_id]?.name ?? movement.product_id}>
+            {productsMap[movement.product_id]?.name ?? movement.product_id}
+          </p>
+        </div>
+      ),
+    },
+    {
+      id: 'quantity',
+      label: 'Quantidade',
+      accessor: 'quantity',
+      sortable: true,
+      width: '100px',
+      align: 'center',
+      render: (value) => (
+        <span className="text-white font-medium">{value}</span>
+      ),
+    },
+    {
+      id: 'reason',
+      label: 'Motivo',
+      accessor: 'reason',
+      searchable: true,
+      sortable: true,
+      width: '150px',
+      render: (value) => (
+        <span className="text-adega-silver text-sm truncate block" title={value as string || '-'}>
+          {value || '-'}
+        </span>
+      ),
+    },
+    {
+      id: 'customer_id',
+      label: 'Cliente',
+      accessor: 'customer_id',
+      searchable: true,
+      sortable: true,
+      width: '160px',
+      render: (_, movement) => {
+        const customer = customers.find(c => c.id === movement.customer_id);
+        return (
+          <span className="text-adega-silver text-sm truncate block" title={customer?.name ?? '-'}>
+            {customer?.name ?? '-'}
+          </span>
+        );
+      },
+    },
+    {
+      id: 'user_id',
+      label: 'Responsável',
+      accessor: 'user_id',
+      searchable: true,
+      sortable: true,
+      width: '120px',
+      render: (_, movement) => (
+        <span className="text-adega-silver text-sm truncate block" title={usersMap[movement.user_id] ?? movement.user_id}>
+          {usersMap[movement.user_id] ?? movement.user_id}
+        </span>
+      ),
+    }
+  ];
 
   return (
-    <div className="h-full flex flex-col space-y-4 p-4">
-      <div className="flex items-center justify-end flex-shrink-0">
-        <div className="flex items-center gap-2 text-sm text-adega-platinum/70">
-          <span>
-            {dataset.length} de {movements.length} registros
-            {dataset.length >= maxRows && (
-              <span className="text-yellow-400 ml-1">(limitado a {maxRows})</span>
-            )}
-          </span>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">Colunas</Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56">
-              {ALL_COLUMNS.map(col => (
-                <DropdownMenuCheckboxItem
-                  key={col}
-                  checked={visibleColumns.includes(col)}
-                  onCheckedChange={() => setVisibleColumns(prev => prev.includes(col) ? prev.filter(c => c !== col) : [...prev, col])}
-                >
-                  {col}
-                </DropdownMenuCheckboxItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
-
-      {/* Container com scroll para tabela */}
-      <div className="bg-black/40 rounded-lg border border-white/10 overflow-hidden flex-1">
-        <div className="h-full max-h-full overflow-auto scrollbar-thin scrollbar-track-gray-900 scrollbar-thumb-gray-600 hover:scrollbar-thumb-gray-500">
-          <table className="w-full border-collapse min-w-full">
-            <thead className="sticky top-0 z-10">
-              <tr className="border-b border-white/10 bg-black/60 backdrop-blur-sm">
-                {visibleColumns.includes('Data') && (
-                  <th className="w-[140px] text-left p-3 text-adega-platinum font-semibold">
-                    <button className="inline-flex items-center gap-2 hover:text-yellow-400 transition-colors" onClick={() => handleSort('date')}>
-                      Data {icon('date')}
-                    </button>
-                  </th>
-                )}
-                {visibleColumns.includes('Tipo') && (
-                  <th className="w-[80px] text-left p-3 text-adega-platinum font-semibold">
-                    <button className="inline-flex items-center gap-2 hover:text-yellow-400 transition-colors" onClick={() => handleSort('type')}>
-                      Tipo {icon('type')}
-                    </button>
-                  </th>
-                )}
-                {visibleColumns.includes('Produto') && (
-                  <th className="w-[200px] text-left p-3 text-adega-platinum font-semibold">
-                    <button className="inline-flex items-center gap-2 hover:text-yellow-400 transition-colors" onClick={() => handleSort('product')}>
-                      Produto {icon('product')}
-                    </button>
-                  </th>
-                )}
-                {visibleColumns.includes('Quantidade') && (
-                  <th className="w-[100px] text-left p-3 text-adega-platinum font-semibold">
-                    <button className="inline-flex items-center gap-2 hover:text-yellow-400 transition-colors" onClick={() => handleSort('quantity')}>
-                      Qtd {icon('quantity')}
-                    </button>
-                  </th>
-                )}
-                {visibleColumns.includes('Motivo') && (
-                  <th className="w-[150px] text-left p-3 text-adega-platinum font-semibold">
-                    <button className="inline-flex items-center gap-2 hover:text-yellow-400 transition-colors" onClick={() => handleSort('reason')}>
-                      Motivo {icon('reason')}
-                    </button>
-                  </th>
-                )}
-                {visibleColumns.includes('Cliente') && (
-                  <th className="w-[160px] text-left p-3 text-adega-platinum font-semibold">
-                    <button className="inline-flex items-center gap-2 hover:text-yellow-400 transition-colors" onClick={() => handleSort('customer')}>
-                      Cliente {icon('customer')}
-                    </button>
-                  </th>
-                )}
-                {visibleColumns.includes('Responsável') && (
-                  <th className="w-[120px] text-left p-3 text-adega-platinum font-semibold">
-                    <button className="inline-flex items-center gap-2 hover:text-yellow-400 transition-colors" onClick={() => handleSort('user')}>
-                      Responsável {icon('user')}
-                    </button>
-                  </th>
-                )}
-              </tr>
-            </thead>
-            <tbody>
-              {dataset.map((movement: InventoryMovement, index: number) => (
-                <tr 
-                  key={movement.id} 
-                  className={`border-b border-white/5 hover:bg-white/5 transition-colors ${
-                    index % 2 === 0 ? 'bg-black/10' : 'bg-black/20'
-                  }`}
-                >
-                  {visibleColumns.includes('Data') && (
-                    <td className="p-3 text-adega-silver text-sm">
-                      {new Date(movement.date).toLocaleDateString('pt-BR', { 
-                        day: '2-digit', 
-                        month: '2-digit', 
-                        hour: '2-digit', 
-                        minute: '2-digit' 
-                      })}
-                    </td>
-                  )}
-                  {visibleColumns.includes('Tipo') && (
-                    <td className="p-3">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${typeInfo[movement.type]?.color || 'bg-gray-100 text-gray-700'}`}>
-                        {typeInfo[movement.type]?.label || movement.type}
-                      </span>
-                    </td>
-                  )}
-                  {visibleColumns.includes('Produto') && (
-                    <td className="p-3 text-white text-sm font-medium truncate" title={productsMap[movement.product_id]?.name ?? movement.product_id}>
-                      {productsMap[movement.product_id]?.name ?? movement.product_id}
-                    </td>
-                  )}
-                  {visibleColumns.includes('Quantidade') && (
-                    <td className="p-3 text-white font-medium text-center">{movement.quantity}</td>
-                  )}
-                  {visibleColumns.includes('Motivo') && (
-                    <td className="p-3 text-adega-silver text-sm truncate" title={movement.reason ?? '-'}>
-                      {movement.reason ?? '-'}
-                    </td>
-                  )}
-                  {visibleColumns.includes('Cliente') && (
-                    <td className="p-3 text-adega-silver text-sm truncate" title={customers.find(c => c.id === movement.customer_id)?.name ?? '-'}>
-                      {customers.find(c => c.id === movement.customer_id)?.name ?? '-'}
-                    </td>
-                  )}
-                  {visibleColumns.includes('Responsável') && (
-                    <td className="p-3 text-adega-silver text-sm truncate" title={usersMap[movement.user_id] ?? movement.user_id}>
-                      {usersMap[movement.user_id] ?? movement.user_id}
-                    </td>
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+    <DataTable
+      data={movements}
+      columns={columns}
+      loading={isLoading}
+      searchPlaceholder="Buscar por produto, usuário, cliente ou motivo..."
+      emptyTitle="Nenhuma movimentação encontrada"
+      emptyDescription="Não há movimentações de estoque registradas."
+      emptyIcon={<Clock className="h-12 w-12 text-adega-gold/50" />}
+      virtualization={true}
+      virtualizationThreshold={100}
+      rowHeight={60}
+      glassEffect={true}
+      variant="premium"
+      className="bg-adega-charcoal/20 border-white/10"
+      defaultSort={{ field: 'date', direction: 'desc' }}
+    />
   );
 };

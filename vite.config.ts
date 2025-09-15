@@ -20,6 +20,49 @@ export default defineConfig(({ mode }) => ({
     include: ['simplex-noise'],
     force: true
   },
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: ['./src/__tests__/setup.ts'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html'],
+      exclude: [
+        'node_modules/',
+        'src/__tests__/',
+        '**/*.d.ts',
+        '**/*.config.*',
+        '**/coverage/**'
+      ],
+      thresholds: {
+        global: {
+          branches: 70,
+          functions: 70,
+          lines: 70,
+          statements: 70
+        },
+        // Critical components require higher coverage
+        'src/features/sales/': {
+          branches: 85,
+          functions: 85,
+          lines: 85,
+          statements: 85
+        },
+        'src/features/inventory/': {
+          branches: 80,
+          functions: 80,
+          lines: 80,
+          statements: 80
+        },
+        'src/features/customers/': {
+          branches: 80,
+          functions: 80,
+          lines: 80,
+          statements: 80
+        }
+      }
+    }
+  },
   build: {
     target: 'es2020',
     chunkSizeWarningLimit: 800,
@@ -28,10 +71,10 @@ export default defineConfig(({ mode }) => ({
         manualChunks: {
           // Core essencial
           'vendor': ['react', 'react-dom', 'react-router-dom'],
-          
+
           // Charts heavy - PRECISA SER SEPARADO
           'charts': ['recharts', '@tanstack/react-table'],
-          
+
           // UI components - Radix UI separado
           'ui': [
             '@radix-ui/react-dialog',
@@ -46,13 +89,13 @@ export default defineConfig(({ mode }) => ({
             '@radix-ui/react-toast',
             'lucide-react'
           ],
-          
+
           // Backend integration
           'supabase': [
             '@supabase/supabase-js',
             '@tanstack/react-query'
           ],
-          
+
           // Utilities
           'utils': [
             'date-fns',
@@ -61,7 +104,7 @@ export default defineConfig(({ mode }) => ({
             'zod',
             'react-hook-form'
           ],
-          
+
           // Animations - Framer Motion é pesado
           'animations': [
             'framer-motion',

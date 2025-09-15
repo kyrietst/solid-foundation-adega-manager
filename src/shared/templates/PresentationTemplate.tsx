@@ -9,24 +9,28 @@ import React from 'react';
 
 // 1. Defina a interface para as props de apresentação
 export interface YourPresentationProps {
+  // Template interface - adicione suas props aqui
+  className?: string;
+
   // Dados processados (sempre readonly/imutáveis)
   // data: readonly YourDataType[];
   // isLoading: boolean;
-  
+
   // Estados (sempre readonly)
   // formData: Readonly<YourFormData>;
   // validation: Readonly<ValidationResult>;
-  
+
   // Configuração (sempre readonly)
   // config: Readonly<YourConfig>;
-  
+
   // Handlers (sempre prefixados com 'on')
   // onSubmit: (data: YourDataType) => void;
   // onCancel: () => void;
-  // onChange: (field: string, value: any) => void;
+  // onChange: (field: string, value: unknown) => void;
 }
 
 export const YourPresentation: React.FC<YourPresentationProps> = ({
+  className,
   // Desestruture todas as props aqui
   // data,
   // isLoading,
@@ -48,7 +52,7 @@ export const YourPresentation: React.FC<YourPresentationProps> = ({
   // const hasErrors = validation.errors.length > 0;
 
   return (
-    <div className="your-component-styles">
+    <div className={`your-component-styles ${className || ''}`}>
       {/* 4. Estrutura JSX focada apenas em apresentação */}
       
       {/* Loading state */}

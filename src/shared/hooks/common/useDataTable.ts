@@ -64,7 +64,7 @@ export interface UseDataTableReturn<T> {
   hasResults: boolean;
 }
 
-export const useDataTable = <T extends Record<string, any>>({
+export const useDataTable = <T extends Record<string, unknown>>({
   data,
   columns,
   searchFields,

@@ -11,6 +11,7 @@ import { Button } from '@/shared/ui/primitives/button';
 import { Badge } from '@/shared/ui/primitives/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/primitives/tabs';
 import { LoadingScreen } from '@/shared/ui/composite/loading-spinner';
+import { useGlassmorphismEffect } from '@/shared/hooks/ui/useGlassmorphismEffect';
 import { Input } from '@/shared/ui/primitives/input';
 import { 
   Select,
@@ -77,6 +78,9 @@ interface CustomerProfileProps {
 export const CustomerProfile = ({ className }: CustomerProfileProps) => {
   const { id } = useParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState('overview');
+
+  // Hook para efeito glassmorphism reutilizável (elimina 8x duplicações)
+  const { handleMouseMove } = useGlassmorphismEffect();
   
   // Função para verificar campos em falta que impactam relatórios
   const checkMissingReportFields = (customer: Record<string, any>) => {
@@ -616,15 +620,9 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
           {/* Overview Tab */}
           <TabsContent value="overview">
             {/* Container principal com glassmorphism */}
-            <section 
+            <section
               className="bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-6 hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300 space-y-6"
-              onMouseMove={(e) => {
-                const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                const x = ((e.clientX - rect.left) / rect.width) * 100;
-                const y = ((e.clientY - rect.top) / rect.height) * 100;
-                (e.currentTarget as HTMLElement).style.setProperty("--x", `${x}%`);
-                (e.currentTarget as HTMLElement).style.setProperty("--y", `${y}%`);
-              }}
+              onMouseMove={handleMouseMove}
             >
               {/* Alert geral para campos críticos em falta */}
               {criticalMissingFields.length > 0 && (
@@ -959,15 +957,9 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
           {/* Placeholders for other tabs */}
           <TabsContent value="purchases">
             {/* Container principal com glassmorphism */}
-            <section 
+            <section
               className="bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-6 hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300 space-y-6"
-              onMouseMove={(e) => {
-                const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                const x = ((e.clientX - rect.left) / rect.width) * 100;
-                const y = ((e.clientY - rect.top) / rect.height) * 100;
-                (e.currentTarget as HTMLElement).style.setProperty("--x", `${x}%`);
-                (e.currentTarget as HTMLElement).style.setProperty("--y", `${y}%`);
-              }}
+              onMouseMove={handleMouseMove}
             >
               {/* Header com filtros */}
               <Card className="bg-gray-800/30 border-gray-700/40">
@@ -1141,15 +1133,9 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
 
           <TabsContent value="analytics">
             {/* Container principal com glassmorphism */}
-            <section 
+            <section
               className="bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-6 hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300 space-y-6"
-              onMouseMove={(e) => {
-                const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                const x = ((e.clientX - rect.left) / rect.width) * 100;
-                const y = ((e.clientY - rect.top) / rect.height) * 100;
-                (e.currentTarget as HTMLElement).style.setProperty("--x", `${x}%`);
-                (e.currentTarget as HTMLElement).style.setProperty("--y", `${y}%`);
-              }}
+              onMouseMove={handleMouseMove}
             >
               {/* Header da Analytics */}
               <Card className="bg-gray-800/30 border-gray-700/40">
@@ -1373,15 +1359,9 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
 
           <TabsContent value="communication">
             {/* Container principal com glassmorphism */}
-            <section 
+            <section
               className="bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-6 hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300"
-              onMouseMove={(e) => {
-                const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                const x = ((e.clientX - rect.left) / rect.width) * 100;
-                const y = ((e.clientY - rect.top) / rect.height) * 100;
-                (e.currentTarget as HTMLElement).style.setProperty("--x", `${x}%`);
-                (e.currentTarget as HTMLElement).style.setProperty("--y", `${y}%`);
-              }}
+              onMouseMove={handleMouseMove}
             >
               <Card className="bg-gray-800/30 border-gray-700/40">
                 <CardHeader>
@@ -1400,15 +1380,9 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
 
           <TabsContent value="financial">
             {/* Container principal com glassmorphism */}
-            <section 
+            <section
               className="bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-6 hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300"
-              onMouseMove={(e) => {
-                const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                const x = ((e.clientX - rect.left) / rect.width) * 100;
-                const y = ((e.clientY - rect.top) / rect.height) * 100;
-                (e.currentTarget as HTMLElement).style.setProperty("--x", `${x}%`);
-                (e.currentTarget as HTMLElement).style.setProperty("--y", `${y}%`);
-              }}
+              onMouseMove={handleMouseMove}
             >
               <Card className="bg-gray-800/30 border-gray-700/40">
                 <CardHeader>
@@ -1427,15 +1401,9 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
 
           <TabsContent value="insights">
             {/* Container principal com glassmorphism */}
-            <section 
+            <section
               className="bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-6 hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300"
-              onMouseMove={(e) => {
-                const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                const x = ((e.clientX - rect.left) / rect.width) * 100;
-                const y = ((e.clientY - rect.top) / rect.height) * 100;
-                (e.currentTarget as HTMLElement).style.setProperty("--x", `${x}%`);
-                (e.currentTarget as HTMLElement).style.setProperty("--y", `${y}%`);
-              }}
+              onMouseMove={handleMouseMove}
             >
               <Card className="bg-gray-800/30 border-gray-700/40">
                 <CardHeader>
@@ -1454,15 +1422,9 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
 
           <TabsContent value="documents">
             {/* Container principal com glassmorphism */}
-            <section 
+            <section
               className="bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-6 hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300"
-              onMouseMove={(e) => {
-                const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                const x = ((e.clientX - rect.left) / rect.width) * 100;
-                const y = ((e.clientY - rect.top) / rect.height) * 100;
-                (e.currentTarget as HTMLElement).style.setProperty("--x", `${x}%`);
-                (e.currentTarget as HTMLElement).style.setProperty("--y", `${y}%`);
-              }}
+              onMouseMove={handleMouseMove}
             >
               <Card className="bg-gray-800/30 border-gray-700/40">
                 <CardHeader>
@@ -1481,15 +1443,9 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
 
           <TabsContent value="timeline">
             {/* Container principal com glassmorphism */}
-            <section 
+            <section
               className="bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-6 hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300"
-              onMouseMove={(e) => {
-                const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                const x = ((e.clientX - rect.left) / rect.width) * 100;
-                const y = ((e.clientY - rect.top) / rect.height) * 100;
-                (e.currentTarget as HTMLElement).style.setProperty("--x", `${x}%`);
-                (e.currentTarget as HTMLElement).style.setProperty("--y", `${y}%`);
-              }}
+              onMouseMove={handleMouseMove}
             >
               <Card className="bg-gray-800/30 border-gray-700/40">
                 <CardHeader>

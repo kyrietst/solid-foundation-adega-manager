@@ -6,7 +6,7 @@
  * @version 1.0.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/primitives/card';
 import { Button } from '@/shared/ui/primitives/button';
 import { Badge } from '@/shared/ui/primitives/badge';
@@ -41,7 +41,7 @@ interface DeliveryOrderCardProps {
   className?: string;
 }
 
-export const DeliveryOrderCard = ({
+export const DeliveryOrderCard = React.memo(({
   delivery,
   onUpdateStatus,
   onViewDetails,
@@ -50,8 +50,9 @@ export const DeliveryOrderCard = ({
 }: DeliveryOrderCardProps) => {
   const [isTimelineOpen, setIsTimelineOpen] = useState(false);
   const [isAssignmentOpen, setIsAssignmentOpen] = useState(false);
-  
-  const getStatusIcon = (status: string) => {
+
+  // ✅ Context7 Pattern: Memoizar funções utilitárias
+  const getStatusIcon = useCallback((status: string) => {
     switch (status) {
       case 'pending': return <Clock className="h-4 w-4 text-yellow-400" />;
       case 'preparing': return <Package className="h-4 w-4 text-orange-400" />;
@@ -60,9 +61,9 @@ export const DeliveryOrderCard = ({
       case 'cancelled': return <AlertCircle className="h-4 w-4 text-red-400" />;
       default: return <Clock className="h-4 w-4 text-gray-400" />;
     }
-  };
+  }, []);
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = useCallback((status: string) => {
     switch (status) {
       case 'pending': return 'bg-yellow-500/20 text-yellow-300 border-yellow-500/40';
       case 'preparing': return 'bg-orange-500/20 text-orange-300 border-orange-500/40';
@@ -71,9 +72,9 @@ export const DeliveryOrderCard = ({
       case 'cancelled': return 'bg-red-500/20 text-red-300 border-red-500/40';
       default: return 'bg-gray-500/20 text-gray-300 border-gray-500/40';
     }
-  };
+  }, []);
 
-  const getStatusText = (status: string) => {
+  const getStatusText = useCallback((status: string) => {
     switch (status) {
       case 'pending': return 'Pendente';
       case 'preparing': return 'Preparando';
@@ -82,18 +83,18 @@ export const DeliveryOrderCard = ({
       case 'cancelled': return 'Cancelado';
       default: return status;
     }
-  };
+  }, []);
 
-  const getNextStatus = (currentStatus: string) => {
+  const getNextStatus = useCallback((currentStatus: string) => {
     switch (currentStatus) {
       case 'pending': return 'preparing';
       case 'preparing': return 'out_for_delivery';
       case 'out_for_delivery': return 'delivered';
       default: return null;
     }
-  };
+  }, []);
 
-  const getNextStatusText = (currentStatus: string) => {
+  const getNextStatusText = useCallback((currentStatus: string) => {
     const nextStatus = getNextStatus(currentStatus);
     if (!nextStatus) return null;
     
@@ -103,12 +104,12 @@ export const DeliveryOrderCard = ({
       case 'delivered': return 'Marcar Entregue';
       default: return null;
     }
-  };
+  }, [getNextStatus]);
 
-  const formatAddress = (address: any) => {
+  const formatAddress = useCallback((address: any) => {
     if (!address) return 'Endereço não informado';
     return `${address.street} ${address.number}${address.complement ? `, ${address.complement}` : ''}, ${address.neighborhood}`;
-  };
+  }, []);
 
   const formatTime = (timeString?: string) => {
     if (!timeString) return '-';
@@ -127,8 +128,45 @@ export const DeliveryOrderCard = ({
     }
   };
 
-  const formatCurrency = (value: number) => 
-    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+  const formatCurrency = useCallback((value: number) =>
+    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value), []);
+
+  // ✅ Context7 Pattern: Memoizar event handlers para evitar re-criação
+  const handleOpenAssignment = useCallback(() => {
+    setIsAssignmentOpen(true);
+  }, []);
+
+  const handleOpenTimeline = useCallback(() => {
+    setIsTimelineOpen(true);
+  }, []);
+
+  const handleCloseTimeline = useCallback(() => {
+    setIsTimelineOpen(false);
+  }, []);
+
+  const handleCloseAssignment = useCallback(() => {
+    setIsAssignmentOpen(false);
+  }, []);
+
+  const handleAssignmentComplete = useCallback(() => {
+    setIsAssignmentOpen(false);
+  }, []);
+
+  const handleViewDetails = useCallback(() => {
+    if (onViewDetails) {
+      onViewDetails(delivery.id);
+    }
+  }, [onViewDetails, delivery.id]);
+
+  const handleUpdateStatus = useCallback(() => {
+    if (onUpdateStatus) {
+      const nextStatus = getNextStatus(delivery.delivery_status);
+      if (nextStatus) {
+        console.log(`🔄 Iniciando atualização de status: ${delivery.delivery_status} → ${nextStatus}`);
+        onUpdateStatus(delivery.id, nextStatus);
+      }
+    }
+  }, [onUpdateStatus, delivery.id, delivery.delivery_status, getNextStatus]);
 
   return (
     <Card className={cn(
@@ -229,7 +267,7 @@ export const DeliveryOrderCard = ({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setIsAssignmentOpen(true)}
+                onClick={handleOpenAssignment}
                 className="h-6 px-2 text-xs border-purple-400/50 text-purple-400 hover:bg-purple-400/10"
               >
                 {delivery.delivery_person?.name ? 'Alterar' : 'Atribuir'}
@@ -319,13 +357,7 @@ export const DeliveryOrderCard = ({
           {getNextStatusText(delivery.delivery_status) && onUpdateStatus && (
             <Button
               size="sm"
-              onClick={() => {
-                const nextStatus = getNextStatus(delivery.delivery_status);
-                if (nextStatus) {
-                  console.log(`🔄 Iniciando atualização de status: ${delivery.delivery_status} → ${nextStatus}`);
-                  onUpdateStatus(delivery.id, nextStatus);
-                }
-              }}
+              onClick={handleUpdateStatus}
               disabled={isUpdating}
               className={cn(
                 "transition-all duration-300 text-white font-medium",
@@ -360,7 +392,7 @@ export const DeliveryOrderCard = ({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setIsTimelineOpen(true)}
+            onClick={handleOpenTimeline}
             className="border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white"
           >
             <Calendar className="h-3 w-3 mr-1" />
@@ -372,7 +404,7 @@ export const DeliveryOrderCard = ({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => onViewDetails(delivery.id)}
+              onClick={handleViewDetails}
               className="border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white"
             >
               Ver Detalhes
@@ -388,7 +420,7 @@ export const DeliveryOrderCard = ({
       </CardContent>
 
       {/* Modal Timeline Detalhada */}
-      <Dialog open={isTimelineOpen} onOpenChange={setIsTimelineOpen}>
+      <Dialog open={isTimelineOpen} onOpenChange={handleCloseTimeline}>
         <DialogContent className="max-w-2xl bg-black/95 backdrop-blur-xl border-white/20">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-xl font-bold text-white">
@@ -406,17 +438,14 @@ export const DeliveryOrderCard = ({
       {/* Modal Atribuição de Entregador */}
       <DeliveryAssignmentModal
         isOpen={isAssignmentOpen}
-        onClose={() => setIsAssignmentOpen(false)}
+        onClose={handleCloseAssignment}
         saleId={delivery.id}
         currentDeliveryPersonId={delivery.delivery_person?.id}
         currentDeliveryPersonName={delivery.delivery_person?.name}
-        onAssignmentComplete={() => {
-          // O modal já invalida as queries necessárias
-          setIsAssignmentOpen(false);
-        }}
+        onAssignmentComplete={handleAssignmentComplete}
       />
     </Card>
   );
-};
+});
 
 export default DeliveryOrderCard;

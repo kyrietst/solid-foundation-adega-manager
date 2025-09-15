@@ -4,7 +4,7 @@
  */
 
 import { z } from 'zod';
-import { useFormWithToast } from '@/shared/hooks/common/use-form-with-toast';
+import { useStandardForm } from '@/shared/hooks/common/useStandardForm';
 import { useCreateSupplier, useUpdateSupplier } from './useSuppliers';
 import type { Supplier, SupplierFormData } from '../types';
 
@@ -51,9 +51,12 @@ const supplierSchema = z.object({
  */
 export const useCreateSupplierForm = () => {
   const createSupplier = useCreateSupplier();
-  
-  return useFormWithToast({
+
+  return useStandardForm({
     schema: supplierSchema,
+    onSuccess: 'Fornecedor criado com sucesso!',
+    onError: 'Erro ao criar fornecedor',
+    resetOnSuccess: true,
     defaultValues: {
       company_name: '',
       contact_info: {
@@ -67,10 +70,9 @@ export const useCreateSupplierForm = () => {
       minimum_order_value: 0,
       notes: '',
     },
-    onSuccess: (data: SupplierFormData) => {
-      createSupplier.mutate(data);
+    onSubmit: async (data: SupplierFormData) => {
+      await createSupplier.mutateAsync(data);
     },
-    successMessage: 'Fornecedor criado com sucesso!',
   });
 };
 
@@ -79,9 +81,11 @@ export const useCreateSupplierForm = () => {
  */
 export const useEditSupplierForm = (supplier: Supplier) => {
   const updateSupplier = useUpdateSupplier();
-  
-  return useFormWithToast({
+
+  return useStandardForm({
     schema: supplierSchema,
+    onSuccess: 'Fornecedor atualizado com sucesso!',
+    onError: 'Erro ao atualizar fornecedor',
     defaultValues: {
       company_name: supplier.company_name,
       contact_info: {
@@ -95,10 +99,9 @@ export const useEditSupplierForm = (supplier: Supplier) => {
       minimum_order_value: supplier.minimum_order_value || 0,
       notes: supplier.notes || '',
     },
-    onSuccess: (data: SupplierFormData) => {
-      updateSupplier.mutate({ id: supplier.id, data });
+    onSubmit: async (data: SupplierFormData) => {
+      await updateSupplier.mutateAsync({ id: supplier.id, data });
     },
-    successMessage: 'Fornecedor atualizado com sucesso!',
   });
 };
 

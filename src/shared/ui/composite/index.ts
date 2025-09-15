@@ -28,3 +28,27 @@ export {
   type FormatType
 } from './FormatDisplay';
 export { DataTable, type DataTableProps } from './DataTable';
+
+// Context7 Pattern: Enhanced Components (New DRY Refactoring)
+export {
+  EntityCard,
+  MemoizedEntityCard,
+  type EntityCardProps,
+  type EntityCardAction,
+  type EntityCardBadge,
+  type EntityCardField,
+  type EntityVariant,
+  type EntitySize,
+  type BaseEntityProps
+} from './EntityCard';
+
+export {
+  ProductEntityCard,
+  CustomerEntityCard,
+  SupplierEntityCard
+} from './entity-cards/index';
+
+export {
+  AdvancedFilterPanel,
+  MemoizedAdvancedFilterPanel
+} from './AdvancedFilterPanel';

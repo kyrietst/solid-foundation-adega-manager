@@ -59,3 +59,12 @@ const sessionStorageMock = {
   clear: vi.fn(),
 };
 global.sessionStorage = sessionStorageMock;
+
+// Add MSW setup
+import { server } from './mocks/server';
+import { beforeAll, afterAll } from 'vitest';
+
+// Setup MSW
+beforeAll(() => server.listen({ onUnhandledRequest: 'warn' }));
+afterEach(() => server.resetHandlers());
+afterAll(() => server.close());

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/primitives/card';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
@@ -21,7 +21,7 @@ interface TopProductsCardProps {
   cardHeight?: number; // altura fixa do card (para alinhar com outros cards)
 }
 
-export function TopProductsCard({ className, period = 30, limit = 5, useCurrentMonth = true, cardHeight }: TopProductsCardProps) {
+export const TopProductsCard = React.memo(function TopProductsCard({ className, period = 30, limit = 5, useCurrentMonth = true, cardHeight }: TopProductsCardProps) {
   const { data: topProducts, isLoading, error } = useQuery({
     queryKey: ['top-products', period, limit, useCurrentMonth],
     queryFn: async (): Promise<TopProduct[]> => {
@@ -99,19 +99,32 @@ export function TopProductsCard({ className, period = 30, limit = 5, useCurrentM
     refetchInterval: 5 * 60 * 1000,
   });
 
-  const formatCurrency = (value: number) => {
+  // ✅ Context7 Pattern: Memoizar funções de formatação
+  const formatCurrency = useCallback((value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL'
     }).format(value);
-  };
+  }, []);
 
-  const formatQuantity = (qty: number) => {
+  const formatQuantity = useCallback((qty: number) => {
     if (qty >= 1000) {
       return (qty / 1000).toFixed(1) + 'K';
     }
     return qty.toString();
-  };
+  }, []);
+
+  // ✅ Context7 Pattern: Memoizar cálculos pesados (reduce)
+  const totalStats = useMemo(() => {
+    if (!topProducts || topProducts.length === 0) {
+      return { totalRevenue: 0, totalQuantity: 0 };
+    }
+
+    return {
+      totalRevenue: topProducts.reduce((sum, p) => sum + p.revenue, 0),
+      totalQuantity: topProducts.reduce((sum, p) => sum + p.qty, 0)
+    };
+  }, [topProducts]);
 
   if (error) {
     return (
@@ -226,7 +239,7 @@ export function TopProductsCard({ className, period = 30, limit = 5, useCurrentM
             <div className="flex justify-between items-center">
               <div>
                 <div className="text-sm font-semibold text-white">
-                  Total: {formatCurrency(topProducts.reduce((sum, p) => sum + p.revenue, 0))}
+                  Total: {formatCurrency(totalStats.totalRevenue)}
                 </div>
                 <div className="text-xs text-gray-500 mt-0.5">
                   Receita combinada
@@ -234,7 +247,7 @@ export function TopProductsCard({ className, period = 30, limit = 5, useCurrentM
               </div>
               <div className="text-right">
                 <div className="text-sm font-semibold text-amber-400">
-                  {topProducts.reduce((sum, p) => sum + p.qty, 0)} itens
+                  {totalStats.totalQuantity} itens
                 </div>
                 <div className="text-xs text-gray-500 mt-0.5">
                   vendidos
@@ -246,4 +259,4 @@ export function TopProductsCard({ className, period = 30, limit = 5, useCurrentM
       </CardContent>
     </Card>
   );
-}
+});

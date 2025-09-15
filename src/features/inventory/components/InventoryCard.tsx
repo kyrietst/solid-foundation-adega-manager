@@ -9,7 +9,7 @@ import { Badge } from '@/shared/ui/primitives/badge';
 import { Eye, Edit, Package, MapPin, TrendingUp, TrendingDown, Minus, Loader2 } from 'lucide-react';
 import { cn } from '@/core/config/utils';
 import { getHoverTransformClasses } from '@/core/config/theme-utils';
-import { useMouseTracker } from '@/hooks/ui/useMouseTracker';
+import { useGlassmorphismEffect } from '@/shared/hooks/ui/useGlassmorphismEffect';
 import { useProductVariants } from '@/features/sales/hooks/useProductVariants';
 import { VariantStockBadge } from './VariantStockDisplay';
 import type { Product } from '@/types/inventory.types';
@@ -60,7 +60,7 @@ export const InventoryCard: React.FC<InventoryCardProps> = ({
   const stockStatus = getStockStatus(currentStock, product.minimum_stock || 10);
   const turnoverAnalysis = getTurnoverAnalysis(product.turnover_rate || 'medium');
   const TurnoverIcon = turnoverAnalysis.icon;
-  const { handleMouseMove } = useMouseTracker();
+  const { handleMouseMove } = useGlassmorphismEffect();
 
   // Classes para glass morphism
   const glassClasses = glassEffect ? 'bg-black/70 backdrop-blur-md border border-white/20 shadow-[0_8px_24px_rgba(0,0,0,0.6)]' : 'bg-gray-800 border border-gray-700';

@@ -259,7 +259,6 @@ export const StockHistoryModal: React.FC<StockHistoryModalProps> = ({
               )}
             </div>
           </div>
-        </DialogHeader>
 
         {/* Lista de movimentações */}
         <div className="flex-1 overflow-y-auto mt-4 space-y-3 max-h-[60vh]">

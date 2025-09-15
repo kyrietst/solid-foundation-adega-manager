@@ -7,7 +7,7 @@ import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
 import { useToast } from '@/shared/hooks/common/use-toast';
-import { useMouseTracker } from '@/hooks/ui/useMouseTracker';
+import { useGlassmorphismEffect } from '@/shared/hooks/ui/useGlassmorphismEffect';
 import { ProductsGridContainer } from './ProductsGridContainer';
 import { ProductsTitle, ProductsHeader } from './ProductsHeader';
 import { useProductsGridLogic } from '@/hooks/products/useProductsGridLogic';
@@ -60,7 +60,7 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const { handleMouseMove } = useMouseTracker();
+  const { handleMouseMove } = useGlassmorphismEffect();
 
 
   const handleAddProduct = () => {

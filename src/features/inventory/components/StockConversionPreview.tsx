@@ -58,7 +58,7 @@ export const StockConversionPreview: React.FC<StockConversionPreviewProps> = ({
       totalUnits: product.total_stock_units
     };
 
-    let after = { ...current };
+    const after = { ...current };
     let conversion: StockCalculation['conversion'];
     let financialImpact: StockCalculation['financialImpact'];
 

@@ -5,11 +5,11 @@
 
 /**
  * Converte um valor para número de forma segura, evitando NaN
- * @param value - Valor a ser convertido (qualquer tipo)
+ * @param value - Valor a ser convertido (string, number, null, undefined)
  * @param defaultValue - Valor padrão se a conversão falhar (padrão: 0)
  * @returns Número válido ou valor padrão
  */
-export function safeNumber(value: any, defaultValue: number = 0): number {
+export function safeNumber(value: string | number | null | undefined, defaultValue: number = 0): number {
   // Se é null, undefined ou string vazia, retorna default
   if (value === null || value === undefined || value === '') {
     return defaultValue;
@@ -36,7 +36,7 @@ export function safeNumber(value: any, defaultValue: number = 0): number {
  * @param defaultValue - Valor padrão se base for zero (padrão: 0)
  * @returns Percentual calculado ou valor padrão
  */
-export function safePercentage(value: any, base: any, defaultValue: number = 0): number {
+export function safePercentage(value: string | number | null | undefined, base: string | number | null | undefined, defaultValue: number = 0): number {
   const safeValue = safeNumber(value);
   const safeBase = safeNumber(base);
   
@@ -63,7 +63,7 @@ export function safePercentage(value: any, base: any, defaultValue: number = 0):
  * @param defaultValue - Valor padrão se previous for zero (padrão: 0)
  * @returns Variação percentual ou valor padrão
  */
-export function safeDelta(current: any, previous: any, defaultValue: number = 0): number {
+export function safeDelta(current: string | number | null | undefined, previous: string | number | null | undefined, defaultValue: number = 0): number {
   const safeCurrent = safeNumber(current);
   const safePrevious = safeNumber(previous);
   
@@ -81,7 +81,7 @@ export function safeDelta(current: any, previous: any, defaultValue: number = 0)
  * @param decimals - Número de casas decimais (padrão: 2)
  * @returns Número arredondado
  */
-export function safeRound(value: any, decimals: number = 2): number {
+export function safeRound(value: string | number | null | undefined, decimals: number = 2): number {
   const safeValue = safeNumber(value);
   const multiplier = Math.pow(10, decimals);
   
@@ -93,7 +93,7 @@ export function safeRound(value: any, decimals: number = 2): number {
  * @param value - Valor a ser validado
  * @returns true se é um número válido
  */
-export function isValidNumber(value: any): boolean {
+export function isValidNumber(value: unknown): boolean {
   const converted = Number(value);
   return !isNaN(converted) && isFinite(converted);
 }

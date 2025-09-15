@@ -32,8 +32,12 @@ import {
 import { SwitchAnimated } from '@/shared/ui/primitives/switch-animated';
 import { BarcodeInput } from '@/features/inventory/components/BarcodeInput';
 import { VariantStockDisplay } from '@/features/inventory/components/VariantStockDisplay';
+import { ProductBasicInfoForm } from '@/features/inventory/components/form-sections/ProductBasicInfoForm';
+import { ProductPricingForm } from '@/features/inventory/components/form-sections/ProductPricingForm';
+import { ProductTrackingForm } from '@/features/inventory/components/form-sections/ProductTrackingForm';
+import { ProductStockDisplay } from '@/features/inventory/components/form-sections/ProductStockDisplay';
 import { useToast } from '@/shared/hooks/common/use-toast';
-import { useMouseTracker } from '@/hooks/ui/useMouseTracker';
+import { useGlassmorphismEffect } from '@/shared/hooks/ui/useGlassmorphismEffect';
 import { useProductVariants } from '@/features/sales/hooks/useProductVariants';
 import { supabase } from '@/core/api/supabase/client';
 import { 
@@ -149,7 +153,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
   isLoading = false,
 }) => {
   const { toast } = useToast();
-  const { handleMouseMove } = useMouseTracker();
+  const { handleMouseMove } = useGlassmorphismEffect();
   const [categories, setCategories] = useState<string[]>([]);
   const [suppliers, setSuppliers] = useState<string[]>([]);
   const [showCustomSupplier, setShowCustomSupplier] = useState(false);

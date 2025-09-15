@@ -30,7 +30,7 @@ import { cn } from '@/core/config/utils';
 import { formatCurrency } from '@/core/config/utils';
 import { useFormatBrazilianDate } from '@/shared/hooks/common/use-brasil-timezone';
 import { useProductAnalytics } from '@/features/inventory/hooks/useProductAnalytics';
-import { useMouseTracker } from '@/hooks/ui/useMouseTracker';
+import { useGlassmorphismEffect } from '@/shared/hooks/ui/useGlassmorphismEffect';
 import { useProductVariants } from '@/features/sales/hooks/useProductVariants';
 import { VariantStockDisplay } from './VariantStockDisplay';
 import type { Product } from '@/types/inventory.types';
@@ -84,7 +84,7 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
   onViewHistory,
 }) => {
   const { formatCompact, formatRelative } = useFormatBrazilianDate();
-  const { handleMouseMove } = useMouseTracker();
+  const { handleMouseMove } = useGlassmorphismEffect();
   
   // Buscar dados analíticos reais do produto
   const { analytics, isLoading: analyticsLoading } = useProductAnalytics(product?.id || null);

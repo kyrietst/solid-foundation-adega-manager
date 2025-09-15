@@ -7,14 +7,13 @@ import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/shared/ui/primitives/card';
 import { Button } from '@/shared/ui/primitives/button';
 import { Plus } from 'lucide-react';
-import { LoadingSpinner } from '@/shared/ui/composite/loading-spinner';
 import { BlurIn } from '@/components/ui/blur-in';
 import { FormDialog } from '@/shared/ui/layout/FormDialog';
 import { cn } from '@/core/config/utils';
 import { getSFProTextClasses } from '@/core/config/theme-utils';
 import { MovementsTable } from './MovementsTable';
 import { MovementDialog } from './MovementDialog';
-import { InventoryMovement } from '@/types/inventory.types';
+import { InventoryMovement } from '@/core/types/inventory.types';
 import { Product, Customer, Sale } from '@/features/movements/hooks/useMovements';
 import { MovementFormData } from '@/features/movements/hooks/useMovementForm';
 
@@ -175,20 +174,15 @@ export const MovementsPresentation: React.FC<MovementsPresentationProps> = ({
           }}
         />
         <div className="relative z-10 h-full">
-          {isLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <LoadingSpinner size="lg" />
-            </div>
-          ) : (
-            <MovementsTable
-              movements={movements}
-              productsMap={productsMap}
-              usersMap={usersMap}
-              typeInfo={typeInfo}
-              customers={customers}
-              maxRows={50}
-            />
-          )}
+          <MovementsTable
+            movements={movements}
+            productsMap={productsMap}
+            usersMap={usersMap}
+            typeInfo={typeInfo}
+            customers={customers}
+            maxRows={50}
+            isLoading={isLoading}
+          />
         </div>
       </section>
     </div>

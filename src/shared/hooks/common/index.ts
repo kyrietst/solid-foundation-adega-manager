@@ -29,9 +29,43 @@ export {
   type UseStandardFormConfig,
   type UseStandardFormReturn
 } from './useStandardForm';
-export { 
+export {
   useDataTable,
   type DataTableColumn,
   type UseDataTableConfig,
   type UseDataTableReturn
 } from './useDataTable';
+
+// Context7 Pattern: Enhanced Hooks (New DRY Refactoring)
+export {
+  useFilters,
+  useAdvancedFilters,
+  useProductFilters,
+  useCustomerFilters,
+  createProductFilterConfigs,
+  createCustomerFilterConfigs,
+  createSupplierFilterConfigs,
+  type FilterConfig,
+  type ActiveFilter,
+  type FilterValue,
+  type FilterState,
+  type FilterFunctions,
+  type FilterOptions,
+  type UseFiltersConfig
+} from './useFilters';
+
+export {
+  useSupabaseQuery,
+  useSupabaseMutation,
+  useSupabaseCRUD,
+  useProductsQuery,
+  useCustomersQuery,
+  useSuppliersQuery,
+  useSalesQuery,
+  SupabaseQueryError,
+  SupabaseMutationError,
+  type QueryResult,
+  type MutationResult,
+  type SupabaseQueryConfig,
+  type SupabaseMutationConfig
+} from './useSupabaseQuery';
