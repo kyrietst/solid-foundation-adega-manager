@@ -4,7 +4,7 @@ import { Input } from '@/shared/ui/primitives/input';
 import { useAuth } from '@/app/providers/AuthContext';
 import { Navigate } from 'react-router-dom';
 import { cn } from '@/core/config/utils';
-import { WavyBackground } from '@/shared/ui/layout/wavy-background';
+import { TropicalDuskGlow } from '@/shared/ui/effects/tropical-dusk-glow';
 
 const Auth = () => {
   const [email, setEmail] = useState('');
@@ -48,15 +48,9 @@ const Auth = () => {
   };
 
   return (
-    <WavyBackground 
-      className="flex items-center justify-center"
-      colors={["#000000", "#FFD700"]}
-      waveWidth={50}
-      backgroundFill="#000000"
-      blur={10}
-      speed="slow"
-      waveOpacity={0.5}
-    >
+    <div className="min-h-screen w-full bg-black relative flex items-center justify-center">
+      {/* Tropical Dusk Glow Background - Performance optimized */}
+      <TropicalDuskGlow />
       {/* Login Form */}
       <div className="max-w-md w-full mx-auto rounded-2xl p-8 shadow-2xl bg-slate-900/95 border border-slate-700/50">
         {/* Header */}
@@ -134,7 +128,7 @@ const Auth = () => {
           </p>
         </div>
       </div>
-    </WavyBackground>
+    </div>
   );
 };
 
