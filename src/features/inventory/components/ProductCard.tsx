@@ -39,7 +39,13 @@ export const ProductCard = React.memo<ProductCardProps>(({
   const hasVariants = productWithVariants && (productWithVariants.unit_variant || productWithVariants.package_variant);
   const totalStock = productWithVariants?.total_stock_units || product.stock_quantity || 0;
   const canSellUnits = productWithVariants?.can_sell_units || false;
-  const canSellPackages = productWithVariants?.can_sell_packages || false;
+
+  // CORREÇÃO: canSellPackages deve considerar conversão automática
+  // Se há unidades suficientes para formar pelo menos 1 pacote, permitir venda de pacotes
+  const packageVariant = productWithVariants?.package_variant;
+  const unitsPerPackage = packageVariant?.units_in_package || 1;
+  const canFormPackages = totalStock >= unitsPerPackage;
+  const canSellPackages = productWithVariants?.can_sell_packages || canFormPackages;
   
   
   // Detectar se são variantes virtuais (baseadas em dados legados)
@@ -53,7 +59,9 @@ export const ProductCard = React.memo<ProductCardProps>(({
   // CORREÇÃO PRINCIPAL: Abrir modal apenas quando há AMBAS as variantes com estoque > 0
   // Isso significa que o usuário pode escolher entre comprar unidades ou pacotes
   const hasMultipleOptions = canSellUnits && canSellPackages;
-    
+
+
+
 
   // Decidir como adicionar ao carrinho
   const handleAddClick = () => {

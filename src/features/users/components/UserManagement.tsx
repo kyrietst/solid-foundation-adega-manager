@@ -7,7 +7,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/shared/ui/primitives/button';
 import { Plus, Users, FolderTree, Settings } from 'lucide-react';
-import { BlurIn } from '@/components/ui/blur-in';
+import { BlurIn } from '@/shared/ui/effects/blur-in';
 import { cn } from '@/core/config/utils';
 import { getSFProTextClasses } from '@/core/config/theme-utils';
 

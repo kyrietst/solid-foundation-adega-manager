@@ -91,7 +91,7 @@ import {
   getBadgeClasses,
   getGlassButtonClasses
 } from '@/core/config/theme-utils';
-import { BlurIn } from '@/components/ui/blur-in';
+import { BlurIn } from '@/shared/ui/effects/blur-in';
 import { StatCard } from '@/shared/ui/composite/stat-card';
 import { SparklesText } from '@/components/ui/sparkles-text';
 import { GradualSpacing } from '@/components/ui/gradual-spacing';

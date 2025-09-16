@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { recordCustomerEvent } from "@/features/customers/hooks/use-crm";
 import { supabase } from "@/core/api/supabase/client";
-import { useToast } from "@/shared/hooks/use-toast";
+import { useToast } from "@/shared/hooks/common/use-toast";
 import { DeliveryAddress } from "@/core/types/sales.types";
 import type { SaleType } from "@/features/sales/components/SalesPage";
 import type { DeliveryData } from "@/features/sales/components/DeliveryOptionsModal";
@@ -467,6 +467,8 @@ export const useUpsertSale = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["sales"] });
       queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["product-variants"] }); // CORREÇÃO: Invalidar cache de variantes
+      queryClient.invalidateQueries({ queryKey: ["variant-availability"] }); // CORREÇÃO: Invalidar disponibilidade
       queryClient.invalidateQueries({ queryKey: ["reports"] });
       toast({
         title: "Venda registrada com sucesso!",
@@ -547,6 +549,8 @@ export const useDeleteSale = () => {
       // Invalida todas as queries relacionadas
       queryClient.invalidateQueries({ queryKey: ["sales"] });
       queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["product-variants"] }); // CORREÇÃO: Invalidar cache de variantes
+      queryClient.invalidateQueries({ queryKey: ["variant-availability"] }); // CORREÇÃO: Invalidar disponibilidade
       queryClient.invalidateQueries({ queryKey: ["reports"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       

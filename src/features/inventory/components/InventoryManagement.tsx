@@ -10,11 +10,11 @@ import { useToast } from '@/shared/hooks/common/use-toast';
 import { useGlassmorphismEffect } from '@/shared/hooks/ui/useGlassmorphismEffect';
 import { ProductsGridContainer } from './ProductsGridContainer';
 import { ProductsTitle, ProductsHeader } from './ProductsHeader';
-import { useProductsGridLogic } from '@/hooks/products/useProductsGridLogic';
+import { useProductsGridLogic } from '@/shared/hooks/products/useProductsGridLogic';
 import { NewProductModal } from './NewProductModal';
 import { ProductDetailsModal } from './ProductDetailsModal';
 import { EditProductModal } from './EditProductModal';
-import { StockAdjustmentModal, type StockAdjustmentWithVariant } from './StockAdjustmentModal';
+import StockAdjustmentModal from './StockAdjustmentModal';
 import { StockHistoryModal } from './StockHistoryModal';
 import type { ProductFormData } from '@/core/types/inventory.types';
 
@@ -89,7 +89,8 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
     setIsHistoryModalOpen(true);
   };
 
-  // Mutation para ajuste de estoque com registro de movimentação
+  // REMOVIDO: Mutação antiga substituída pelo novo StockAdjustmentModal
+  /* CÓDIGO REMOVIDO - Substituído pelo novo StockAdjustmentModal
   const stockAdjustmentMutation = useMutation({
     mutationFn: async (adjustment: StockAdjustmentWithVariant) => {
       // Verificar se é ajuste de variante (novo sistema) ou produto legado
@@ -123,16 +124,29 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
             : Math.max(0, currentStock - adjustment.quantity);
         }
 
+        // Usar nova RPC create_inventory_movement do Single Source of Truth
+        const movementType = adjustment.type === 'entrada' ? 'inventory_adjustment' :
+                            adjustment.type === 'saida' ? 'inventory_adjustment' :
+                            'inventory_adjustment'; // Todos são ajustes de inventário
+
+        const quantityChange = adjustment.type === 'ajuste'
+          ? (newStockQuantity - currentStock)
+          : (adjustment.type === 'entrada' ? adjustment.quantity : -adjustment.quantity);
+
         const { data: movementData, error: movementError } = await supabase
-          .rpc('record_product_movement', {
+          .rpc('create_inventory_movement', {
             p_product_id: adjustment.productId,
-            p_type: adjustment.type,
-            p_quantity: adjustment.type === 'ajuste' 
-              ? (newStockQuantity - currentStock)
-              : adjustment.quantity,
+            p_quantity_change: quantityChange,
+            p_type: movementType,
             p_reason: adjustment.reason || 'Ajuste de estoque via interface',
-            p_source: 'manual',
-            p_user_id: (await supabase.auth.getUser()).data.user?.id || null
+            p_metadata: {
+              operation: 'stock_adjustment',
+              adjustment_type: adjustment.type,
+              interface_source: 'inventory_management',
+              previous_stock: currentStock,
+              new_stock: newStockQuantity,
+              user_action: 'manual_adjustment'
+            }
           });
 
         if (movementError) {
@@ -140,34 +154,35 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
           throw movementError;
         }
 
-        // Buscar o produto atualizado
-        const { data, error } = await supabase
-          .from('products')
-          .select('*')
-          .eq('id', adjustment.productId)
-          .single();
-
-        if (error) throw error;
-        
-        return { productData: data, isVariant: false };
+        // Nossa RPC retorna o novo estoque, não precisamos buscar o produto novamente
+        return {
+          productData: {
+            id: adjustment.productId,
+            stock_quantity: movementData.new_stock,
+            movement_id: movementData.movement_id
+          },
+          isVariant: false
+        };
       }
     },
     onSuccess: (data, variables) => {
-      // Invalidar múltiplos caches para garantir atualização
+      // Invalidar múltiplos caches para garantir atualização (incluindo movimentações)
       queryClient.invalidateQueries({ queryKey: ['products'] });
-      
+      queryClient.invalidateQueries({ queryKey: ['inventory_movements'] });
+      queryClient.invalidateQueries({ queryKey: ['movements'] });
+
       // Se foi ajuste de variante, invalidar todos os caches relacionados ao produto
       if (data.isVariant && variables.productId) {
         queryClient.invalidateQueries({ queryKey: ['product-variants', variables.productId] });
         queryClient.invalidateQueries({ queryKey: ['product-variants'] }); // Invalidar geral também
-        
+
         // Force refetch do produto específico
-        queryClient.refetchQueries({ 
+        queryClient.refetchQueries({
           queryKey: ['product-variants', variables.productId],
-          exact: false 
+          exact: false
         });
       }
-      
+
       // Invalidar cache geral de produtos com variantes se existir
       queryClient.invalidateQueries({ queryKey: ['products-with-variants'] });
       
@@ -194,6 +209,7 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
   const handleConfirmStockAdjustment = (adjustment: StockAdjustmentWithVariant) => {
     stockAdjustmentMutation.mutate(adjustment);
   };
+  */
 
   // Mutation para editar produto
   const editProductMutation = useMutation({
@@ -354,16 +370,32 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
         onViewHistory={handleViewHistory}
       />
 
-      {/* Modal de ajuste de estoque */}
+      {/* Modal de ajuste de estoque - NOVO: Single Source of Truth */}
       <StockAdjustmentModal
-        product={selectedProduct}
+        productId={selectedProduct?.id || ''}
         isOpen={isStockAdjustmentOpen}
         onClose={() => {
           setIsStockAdjustmentOpen(false);
           setSelectedProduct(null);
         }}
-        onConfirm={handleConfirmStockAdjustment}
-        isLoading={stockAdjustmentMutation.isPending}
+        onSuccess={(data) => {
+          console.log('Ajuste realizado:', data);
+
+          // Forçar atualização do cache manualmente
+          queryClient.invalidateQueries({ queryKey: ['products'] });
+          queryClient.invalidateQueries({ queryKey: ['product-variants'] });
+
+          // Refetch imediato se soubermos o produto
+          if (selectedProduct?.id) {
+            queryClient.refetchQueries({
+              queryKey: ['product-variants', selectedProduct.id],
+              exact: false
+            });
+          }
+
+          setIsStockAdjustmentOpen(false);
+          setSelectedProduct(null);
+        }}
       />
 
       {/* Modal para editar produto */}

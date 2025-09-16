@@ -63,7 +63,7 @@ vi.mock('@/core/api/supabase/client', () => ({
   supabase: mockSupabase
 }));
 
-vi.mock('@/shared/hooks/use-toast', () => ({
+vi.mock('@/shared/hooks/common/use-toast', () => ({
   useToast: () => ({ toast: mockToast })
 }));
 

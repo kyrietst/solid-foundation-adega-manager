@@ -6,7 +6,7 @@ import ExpensesTab from './ExpensesTab';
 import ExpenseReportsTab from './ExpenseReportsTab';
 import { useExpenseSummary } from '../hooks';
 import { format } from 'date-fns';
-import { BlurIn } from '@/components/ui/blur-in';
+import { BlurIn } from '@/shared/ui/effects/blur-in';
 import { StatCard } from '@/shared/ui/composite/stat-card';
 import { getGlassCardClasses, getGlassButtonClasses, getHoverTransformClasses, getSFProTextClasses } from '@/core/config/theme-utils';
 import { cn } from '@/core/config/utils';

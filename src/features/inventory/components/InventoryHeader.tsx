@@ -6,7 +6,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/shared/ui/primitives/button';
 import { Plus, Grid3X3, List, Upload } from 'lucide-react';
-import { BlurIn } from '@/components/ui/blur-in';
+import { BlurIn } from '@/shared/ui/effects/blur-in';
 import { InventoryStats } from './InventoryStats';
 import { CsvImportModal } from './CsvImportModal';
 import { InventoryHeaderProps } from './types';

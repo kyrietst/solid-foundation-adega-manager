@@ -13,7 +13,7 @@ import { useUserCreation } from '@/features/users/hooks/useUserCreation';
 import { useUserPermissions } from '@/features/users/hooks/useUserPermissions';
 
 // Testando componentes filhos progressivamente
-import { BlurIn } from '@/components/ui/blur-in';
+import { BlurIn } from '@/shared/ui/effects/blur-in';
 import { FirstAdminSetup } from './FirstAdminSetup';
 import { UserList } from './UserList';
 import { UserCreateDialog } from './UserCreateDialog';

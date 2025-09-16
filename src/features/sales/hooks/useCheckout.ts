@@ -1,14 +1,16 @@
 /**
  * Hook para processo de checkout
  * Centraliza lógica de finalização de venda
+ * Refatorado para usar Single Source of Truth (create_inventory_movement RPC)
  */
 
 import { useState } from 'react';
 import { useCart, useCartTotal, type CartItem } from './use-cart';
 import { useCustomer } from '@/features/customers/hooks/use-crm';
 import { usePaymentMethods, useUpsertSale } from './use-sales';
-import { useToast } from '@/shared/hooks/use-toast';
+import { useToast } from '@/shared/hooks/common/use-toast';
 import { useCartValidation, CartValidationConfig } from './useCartValidation';
+import { useInventoryMovements } from '@/features/inventory/hooks/useInventoryMovements';
 
 export const useCheckout = (
   config: CartValidationConfig & {
@@ -31,6 +33,7 @@ export const useCheckout = (
   const subtotal = useCartTotal();
   const upsertSale = useUpsertSale();
   const { toast } = useToast();
+  const { createSaleMovement } = useInventoryMovements();
 
   // Estados locais
   const [paymentMethodId, setPaymentMethodId] = useState<string>('');
@@ -73,8 +76,8 @@ export const useCheckout = (
               // Para pacotes: quantity sempre = 1, e estoque será descontado pelo packageUnits
               // Para unidades: quantity = quantidade selecionada
               const correctQuantity = item.type === 'package' ? 1 : item.quantity;
-              
-              
+
+
               return {
                 product_id: item.id,
                 quantity: correctQuantity,
@@ -91,12 +94,33 @@ export const useCheckout = (
         );
       });
 
+      // Criar movimentações de estoque para cada item usando nossa nova RPC
+      for (const item of items) {
+        const quantityToDeduct = item.type === 'package' ? item.packageUnits : item.quantity;
+
+        createSaleMovement(
+          item.id,
+          quantityToDeduct,
+          `Venda #${saleData.id} - ${item.name}${item.type === 'package' ? ' (pacote)' : ''}`,
+          saleData.id,
+          customerId || undefined,
+          {
+            sale_id: saleData.id,
+            sale_type: item.type,
+            package_units: item.packageUnits,
+            unit_price: item.price,
+            quantity_sold: item.quantity,
+            customer_id: customerId
+          }
+        );
+      }
+
       // Sucesso
-      toast({ 
-        title: 'Venda finalizada!', 
-        description: 'A venda foi registrada com sucesso.' 
+      toast({
+        title: 'Venda finalizada!',
+        description: 'A venda foi registrada com sucesso.'
       });
-      
+
       // Reset do estado
       clearCart();
       setDiscount(0);
@@ -104,10 +128,10 @@ export const useCheckout = (
       onSaleComplete?.(saleData.id);
 
     } catch (error: unknown) {
-      toast({ 
-        title: 'Erro ao finalizar a venda', 
-        description: error instanceof Error ? error.message : 'Erro desconhecido', 
-        variant: 'destructive' 
+      toast({
+        title: 'Erro ao finalizar a venda',
+        description: error instanceof Error ? error.message : 'Erro desconhecido',
+        variant: 'destructive'
       });
     }
   };

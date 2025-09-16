@@ -10,7 +10,7 @@ import { Button } from '@/shared/ui/primitives/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/primitives/tabs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/shared/ui/primitives/dropdown-menu';
 import { CalendarIcon, FileSpreadsheet, BarChart3, Users, Package, DollarSign, ChevronDown, Calendar, Truck } from 'lucide-react';
-import { BlurIn } from '@/components/ui/blur-in';
+import { BlurIn } from '@/shared/ui/effects/blur-in';
 import { getSFProTextClasses, getHeaderTextClasses } from '@/core/config/theme-utils';
 import { supabase } from '@/core/api/supabase/client';
 import { SalesReportsSection } from './SalesReportsSection';

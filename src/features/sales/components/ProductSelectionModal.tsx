@@ -23,6 +23,8 @@ import {
 import { formatCurrency, cn } from '@/core/config/utils';
 import { getGlassCardClasses } from '@/core/config/theme-utils';
 import { useProductVariants, useVariantAvailability } from '../hooks/useProductVariants';
+import { StockDisplay } from '@/shared/ui/composite/StockDisplay';
+import { calculatePackageDisplay } from '@/shared/utils/stockCalculations';
 import type { 
   VariantSelectionData, 
   VariantType,
@@ -74,24 +76,48 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
     quantity
   });
 
-  // Calcular informações de estoque e preços baseado nas variantes reais
+  // Calcular informações de estoque usando funções centralizadas
   const stockInfo = useMemo(() => {
     if (!product) return null;
 
     const unitVariant = product.unit_variant;
     const packageVariant = product.package_variant;
-    
+    const unitsPerPackage = packageVariant?.units_in_package || 1;
+
+    // CORREÇÃO: Usar calculatePackageDisplay para cálculos consistentes
+    const totalStockDisplay = calculatePackageDisplay(
+      product.total_stock_units || 0,
+      unitsPerPackage
+    );
+
+    const unitStockDisplay = calculatePackageDisplay(
+      unitVariant?.stock_quantity || 0,
+      unitsPerPackage
+    );
+
+    const packageStockDisplay = calculatePackageDisplay(
+      packageVariant?.stock_quantity || 0,
+      unitsPerPackage
+    );
+
     return {
       unitVariant,
       packageVariant,
-      totalStockUnits: product.total_stock_units,
-      canSellUnits: product.can_sell_units,
-      canSellPackages: product.can_sell_packages,
+      totalStockUnits: product.total_stock_units || 0,
+      canSellUnits: product.can_sell_units || false,
+      canSellPackages: product.can_sell_packages || false,
       unitPrice: unitVariant?.price || 0,
       packagePrice: packageVariant?.price || 0,
-      unitsPerPackage: packageVariant?.units_in_package || 1,
+      unitsPerPackage,
+
+      // CORREÇÃO: Usar dados calculados centralizados
       unitStock: unitVariant?.stock_quantity || 0,
       packageStock: packageVariant?.stock_quantity || 0,
+
+      // Adicionar exibições calculadas para consistência
+      totalStockDisplay,
+      unitStockDisplay,
+      packageStockDisplay,
     };
   }, [product]);
 
@@ -223,11 +249,26 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div className="text-center p-2 bg-white/5 rounded">
                 <p className="text-gray-400">Total Disponível</p>
-                <p className="font-semibold text-white">{stockInfo.totalStockUnits} unidades</p>
+                <div className="font-semibold text-white">
+                  <StockDisplay
+                    stock_quantity={stockInfo.totalStockUnits}
+                    units_per_package={stockInfo.unitsPerPackage}
+                    variant="compact"
+                    showTooltip={false}
+                    className="text-white"
+                  />
+                </div>
               </div>
               <div className="text-center p-2 bg-white/5 rounded">
                 <p className="text-gray-400">Pacotes Disponíveis</p>
-                <p className="font-semibold text-white">{stockInfo.packageStock} fardos</p>
+                <div className="font-semibold text-white">
+                  <StockDisplay
+                    stock_quantity={stockInfo.packageStock}
+                    variant="compact"
+                    showTooltip={false}
+                    className="text-white"
+                  />
+                </div>
               </div>
             </div>
 
@@ -265,7 +306,13 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
                       <span className="font-semibold text-white">Unidade Individual</span>
                     </div>
                     <div className="text-sm text-gray-400">
-                      {formatCurrency(stockInfo.unitPrice)} cada • {stockInfo.unitStock} em estoque
+                      {formatCurrency(stockInfo.unitPrice)} cada •
+                      <StockDisplay
+                        stock_quantity={stockInfo.unitStock}
+                        variant="compact"
+                        showTooltip={false}
+                        className="text-gray-400 inline ml-1"
+                      /> em estoque
                       {availability?.total_units_available && availability.total_units_available > stockInfo.unitStock && (
                         <span className="text-green-400"> (+{availability.total_units_available - stockInfo.unitStock} via conversão)</span>
                       )}
@@ -299,7 +346,13 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
                       <span className="font-semibold text-white">Fardo/Pacote Completo</span>
                     </div>
                     <div className="text-sm text-gray-400">
-                      {formatCurrency(stockInfo.packagePrice)} fardo ({stockInfo.unitsPerPackage} unidades) • {stockInfo.packageStock} disponíveis
+                      {formatCurrency(stockInfo.packagePrice)} fardo ({stockInfo.unitsPerPackage} unidades) •
+                      <StockDisplay
+                        stock_quantity={stockInfo.packageStock}
+                        variant="compact"
+                        showTooltip={false}
+                        className="text-gray-400 inline ml-1"
+                      /> disponíveis
                     </div>
                     {!stockInfo.canSellPackages && (
                       <div className="flex items-center gap-1 mt-1 text-xs text-orange-400">
@@ -378,7 +431,13 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
           </div>
           {selectionType === 'package' && (
             <div className="text-xs text-gray-500 mt-1">
-              Total: {quantity * stockInfo.unitsPerPackage} unidades individuais
+              Total:
+              <StockDisplay
+                stock_quantity={quantity * stockInfo.unitsPerPackage}
+                variant="compact"
+                showTooltip={false}
+                className="text-gray-500 inline ml-1"
+              />
             </div>
           )}
           {isLoadingAvailability && (

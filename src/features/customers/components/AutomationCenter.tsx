@@ -3,7 +3,7 @@ import { Badge } from '@/shared/ui/primitives/badge';
 import { Button } from '@/shared/ui/primitives/button';
 import { Progress } from '@/shared/ui/primitives/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/primitives/tabs';
-import { BlurIn } from '@/components/ui/blur-in';
+import { BlurIn } from '@/shared/ui/effects/blur-in';
 import { StatCard } from '@/shared/ui/composite/stat-card';
 import {
   Bot,

@@ -31,7 +31,7 @@ import { SwitchAnimated } from '@/shared/ui/primitives/switch-animated';
 import { BarcodeInput } from '@/features/inventory/components/BarcodeInput';
 import { useStandardForm } from '@/shared/hooks/common/useStandardForm';
 import { useGlassmorphismEffect } from '@/shared/hooks/ui/useGlassmorphismEffect';
-import { useToast } from '@/shared/hooks/use-toast';
+import { useToast } from '@/shared/hooks/common/use-toast';
 import { supabase } from '@/core/api/supabase/client';
 import { 
   Package, 

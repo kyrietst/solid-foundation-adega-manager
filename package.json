@@ -74,6 +74,7 @@
     "react": "^19.1.1",
     "react-day-picker": "^9.8.1",
     "react-dom": "^19.1.1",
+    "react-error-boundary": "^6.0.0",
     "react-grid-layout": "^1.5.2",
     "react-hook-form": "^7.53.0",
     "react-resizable-panels": "^2.1.3",

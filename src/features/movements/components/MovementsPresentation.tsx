@@ -7,7 +7,7 @@ import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/shared/ui/primitives/card';
 import { Button } from '@/shared/ui/primitives/button';
 import { Plus } from 'lucide-react';
-import { BlurIn } from '@/components/ui/blur-in';
+import { BlurIn } from '@/shared/ui/effects/blur-in';
 import { FormDialog } from '@/shared/ui/layout/FormDialog';
 import { cn } from '@/core/config/utils';
 import { getSFProTextClasses } from '@/core/config/theme-utils';

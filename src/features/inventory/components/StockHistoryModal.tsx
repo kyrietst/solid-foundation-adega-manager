@@ -51,18 +51,17 @@ const fetchRealStockHistory = async (productId: string): Promise<StockMovement[]
   try {
     console.log('Buscando movimentações para produto ID:', productId);
 
-    // Buscar as movimentações primeiro
+    // Buscar as movimentações primeiro usando nossa nova estrutura
     const { data: movements, error: movementsError } = await supabase
       .from('inventory_movements')
       .select(`
         id,
         date,
         type,
-        quantity,
+        quantity_change,
+        new_stock_quantity,
         reason,
-        reference_number,
-        previous_stock,
-        new_stock,
+        metadata,
         user_id
       `)
       .eq('product_id', productId)
@@ -97,9 +96,25 @@ const fetchRealStockHistory = async (productId: string): Promise<StockMovement[]
     }
 
     return movements.map(movement => {
-      // Mapear tipos corretamente baseado nos dados reais
+      // Mapear tipos corretamente baseado na nova estrutura enum
       let mappedType: StockMovement['type'];
       switch (movement.type) {
+        case 'initial_stock':
+        case 'stock_transfer_in':
+        case 'return':
+          mappedType = 'entrada';
+          break;
+        case 'sale':
+          mappedType = 'venda';
+          break;
+        case 'stock_transfer_out':
+        case 'personal_consumption':
+          mappedType = 'saida';
+          break;
+        case 'inventory_adjustment':
+          mappedType = 'ajuste';
+          break;
+        // Legacy support
         case 'out':
         case 'saida':
           mappedType = 'saida';
@@ -108,35 +123,27 @@ const fetchRealStockHistory = async (productId: string): Promise<StockMovement[]
         case 'entrada':
           mappedType = 'entrada';
           break;
-        case 'ajuste':
-        case 'correction':
-          mappedType = 'ajuste';
-          break;
-        case 'sale':
-          mappedType = 'venda';
-          break;
         default:
-          mappedType = movement.type as StockMovement['type'];
+          mappedType = 'ajuste'; // Default para adjustment
       }
 
-      // Calcular mudança de estoque baseado no tipo
-      let stockChange: number;
-      if (movement.previous_stock !== null && movement.new_stock !== null) {
-        stockChange = movement.new_stock - movement.previous_stock;
-      } else {
-        // Fallback baseado no tipo e quantidade
-        stockChange = mappedType === 'entrada' ? movement.quantity : -movement.quantity;
-      }
+      // Usar quantity_change diretamente (já indica positivo/negativo)
+      const stockChange = movement.quantity_change;
+      const displayQuantity = Math.abs(stockChange);
+
+      // Extrair informações do metadata se disponível
+      const metadata = movement.metadata || {};
+      const reference = metadata.sale_id || metadata.movement_id || undefined;
 
       return {
         id: movement.id,
         date: new Date(movement.date),
         type: mappedType,
-        quantity: Math.abs(movement.quantity), // Sempre positivo para display
+        quantity: displayQuantity,
         reason: movement.reason || 'Sem motivo especificado',
-        user: userMap.get(movement.user_id) || 'Usuário desconhecido',
-        balanceAfter: movement.new_stock || movement.previous_stock || 0,
-        reference: movement.reference_number || undefined,
+        user: userMap.get(movement.user_id) || 'Sistema',
+        balanceAfter: movement.new_stock_quantity || 0,
+        reference: reference,
         stockChange: stockChange
       };
     });

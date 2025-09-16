@@ -50,7 +50,7 @@ import {
   ChevronDown,
   Package
 } from 'lucide-react';
-import { BlurIn } from '@/components/ui/blur-in';
+import { BlurIn } from '@/shared/ui/effects/blur-in';
 import {
   PieChart as RechartsPieChart,
   Pie,

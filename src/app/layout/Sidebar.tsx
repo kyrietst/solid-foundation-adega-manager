@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Sidebar, SidebarBody, SidebarLink } from "@/components/ui/sidebar";
+import { Sidebar, SidebarBody, SidebarLink } from "@/shared/ui/layout/sidebar";
 import {
   IconChartBar,
   IconShoppingCart,

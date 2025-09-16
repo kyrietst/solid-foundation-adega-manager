@@ -4,7 +4,8 @@
  */
 
 import { useMemo } from 'react';
-import { useMovements, useMovementSupportData } from './useMovements';
+import { useMovements } from './useMovements';
+import { useMovementSupportData } from './useMovementSupportData';
 import { useMovementForm } from './useMovementForm';
 import { useMovementMutation } from './useMovementMutation';
 

@@ -10,7 +10,7 @@ import { Button } from '@/shared/ui/primitives/button';
 import { Badge } from '@/shared/ui/primitives/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shared/ui/primitives/dialog';
 import { Grid3X3, List, UserPlus } from 'lucide-react';
-import { BlurIn } from '@/components/ui/blur-in';
+import { BlurIn } from '@/shared/ui/effects/blur-in';
 import { useSpecificPermissions } from '@/shared/hooks/auth/usePermissions';
 import { CustomerForm } from '@/features/customers/components/CustomerForm';
 import { useCustomers, CustomerProfile } from '@/features/customers/hooks/use-crm';

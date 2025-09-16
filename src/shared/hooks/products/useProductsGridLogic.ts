@@ -3,14 +3,16 @@
  * Combina todos os hooks especializados em uma interface única
  */
 
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
 import { useCart } from '@/features/sales/hooks/use-cart';
 import { useBarcode } from '@/features/inventory/hooks/use-barcode';
-import { usePagination } from '@/hooks/use-pagination';
+import { usePagination } from '@/shared/hooks/common/use-pagination';
 import { useProductFilters } from './useProductFilters';
 import { useProductCategories } from './useProductCategories';
 import type { Product } from '@/types/inventory.types';
+import type { ProductSelectionData } from '@/features/sales/components/ProductSelectionModal';
 
 export interface ProductsGridConfig {
   showSearch?: boolean;
@@ -35,7 +37,7 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
     className
   } = config;
 
-  const { addItem } = useCart();
+  const { addItem, addFromVariantSelection } = useCart();
   const { searchByBarcode } = useBarcode();
 
   // Query para buscar produtos
@@ -44,17 +46,21 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
     queryFn: async (): Promise<Product[]> => {
       const { data, error } = await supabase
         .from('products')
-        .select('id, name, price, stock_quantity, image_url, barcode, category')
+        .select('id, name, price, stock_quantity, image_url, barcode, category, package_units, package_price, has_package_tracking, units_per_package')
         .order('name', { ascending: true });
-        
+
       if (error) {
         console.error('Error fetching products:', error);
         throw error;
       }
-      
+
       return data;
     },
   });
+
+  // Estados do modal de seleção de produto
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   // Lógica de filtros
   const {
@@ -121,6 +127,30 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
     onProductSelect?.(product);
   };
 
+  // Funções de controle do modal de seleção
+  const openProductSelection = (product: Product) => {
+    setSelectedProduct(product);
+    setIsModalOpen(true);
+  };
+
+  const closeProductSelection = () => {
+    setIsModalOpen(false);
+    setSelectedProduct(null);
+  };
+
+  const handleProductSelectionConfirm = (selection: ProductSelectionData) => {
+    if (!selectedProduct) return;
+
+    // Usar a função específica para seleção de variantes
+    addFromVariantSelection(selection, {
+      id: selectedProduct.id,
+      name: selectedProduct.name
+    });
+
+    onProductSelect?.(selectedProduct);
+    closeProductSelection();
+  };
+
   return {
     // Dados
     products,
@@ -150,6 +180,10 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
     filteredCount,
     totalProducts,
 
+    // Estados do modal de seleção
+    isModalOpen,
+    selectedProduct,
+
     // Ações
     setSearchTerm,
     setSelectedCategory,
@@ -159,6 +193,11 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
     setItemsPerPage,
     handleBarcodeScanned,
     handleAddToCart,
+
+    // Ações do modal de seleção
+    openProductSelection,
+    closeProductSelection,
+    handleProductSelectionConfirm,
 
     // Utilities
     getProductsByCategory,

@@ -8,7 +8,7 @@ import { Plus, Package } from 'lucide-react';
 import { Button } from '@/shared/ui/primitives/button';
 import { cn } from '@/core/config/utils';
 import { text, shadows } from '@/core/config/theme';
-import { BlurIn } from "@/components/ui/blur-in";
+import { BlurIn } from "@/shared/ui/effects/blur-in";
 import { getSFProTextClasses } from '@/core/config/theme-utils';
 
 interface ProductsHeaderProps {

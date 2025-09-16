@@ -1,6 +1,6 @@
 import { useForm, UseFormProps, UseFormReturn, FieldValues, Path } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useToast } from '@/shared/hooks/use-toast';
+import { useToast } from '@/shared/hooks/common/use-toast';
 import { ZodSchema } from 'zod';
 import { UseMutationResult } from '@tanstack/react-query';
 

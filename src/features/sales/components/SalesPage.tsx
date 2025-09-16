@@ -12,7 +12,7 @@ import { useCart, useCartItemCount } from "@/features/sales/hooks/use-cart";
 import { cn } from '@/core/config/utils';
 import { getGlassCardClasses, getSFProTextClasses } from '@/core/config/theme-utils';
 import { text, shadows } from "@/core/config/theme";
-import { BlurIn } from "@/components/ui/blur-in";
+import { BlurIn } from "@/shared/ui/effects/blur-in";
 import { getHeaderTextClasses } from '@/core/config/theme-utils';
 
 export type SaleType = 'presencial' | 'delivery' | 'pickup';
@@ -26,6 +26,7 @@ function SalesPage({
   variant = 'premium',
   glassEffect = true
 }: SalesPageProps = {}) {
+
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('new-sale');
   const [saleType, setSaleType] = useState<SaleType>('presencial');
@@ -216,7 +217,8 @@ function SalesPage({
               <div className="flex flex-col min-h-0 overflow-hidden">
                 {/* Products Grid - ocupa todo o espaço */}
                 <div className="flex-1 min-h-0 overflow-hidden">
-                  <ProductsGrid 
+                  <ProductsGrid
+                    mode="sales"
                     variant={variant}
                     glassEffect={glassEffect}
                     showHeader={false}
@@ -243,7 +245,8 @@ function SalesPage({
             <div className="lg:hidden flex flex-col h-full bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg">              
               {/* Products Grid - ocupa todo o espaço */}
               <div className="flex-1 min-h-0 overflow-hidden p-3">
-                <ProductsGrid 
+                <ProductsGrid
+                  mode="sales"
                   variant={variant}
                   glassEffect={glassEffect}
                   showHeader={false}

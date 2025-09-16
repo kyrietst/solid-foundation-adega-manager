@@ -6,7 +6,7 @@ import { vi } from 'vitest';
 
 // Mock contexts that might be needed
 const mockToast = vi.fn();
-vi.mock('@/shared/hooks/use-toast', () => ({
+vi.mock('@/shared/hooks/common/use-toast', () => ({
   useToast: () => ({ toast: mockToast }),
 }));
 

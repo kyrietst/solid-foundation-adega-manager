@@ -13,6 +13,7 @@ export interface ProductsGridProps {
   showHeader?: boolean;
   initialCategory?: string;
   onProductSelect?: (product: Product) => void;
+  mode?: 'sales' | 'inventory';
   gridColumns?: {
     mobile: number;
     tablet: number;

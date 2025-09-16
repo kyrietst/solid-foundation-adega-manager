@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { BlurIn } from "@/components/ui/blur-in";
+import { BlurIn } from "@/shared/ui/effects/blur-in";
 import { cn } from '@/core/config/utils';
 import { getSFProTextClasses, getHeaderTextClasses } from '@/core/config/theme-utils';
 

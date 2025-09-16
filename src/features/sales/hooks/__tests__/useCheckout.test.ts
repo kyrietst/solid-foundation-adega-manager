@@ -78,7 +78,7 @@ vi.mock('../use-sales', () => ({
   useUpsertSale: () => mockUpsertSale
 }));
 
-vi.mock('@/shared/hooks/use-toast', () => ({
+vi.mock('@/shared/hooks/common/use-toast', () => ({
   useToast: () => ({ toast: mockToast })
 }));
 

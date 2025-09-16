@@ -7,7 +7,7 @@ import { useCustomers } from '@/features/customers/hooks/use-crm';
 import { SearchBar21st } from '@/shared/ui/thirdparty/search-bar-21st';
 import { getGlassCardClasses, getGlassButtonClasses, getHoverTransformClasses, getSFProTextClasses } from '@/core/config/theme-utils';
 import { cn } from '@/core/config/utils';
-import { BlurIn } from '@/components/ui/blur-in';
+import { BlurIn } from '@/shared/ui/effects/blur-in';
 import { StatCard } from '@/shared/ui/composite/stat-card';
 import { Users, TrendingUp, UserPlus, Download, BarChart3 } from 'lucide-react';
 import CustomerDataTable from './CustomerDataTable';

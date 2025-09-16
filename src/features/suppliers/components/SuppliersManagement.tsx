@@ -17,7 +17,7 @@ import { useDebounce } from '@/shared/hooks/common/use-debounce';
 import { useAuth } from '@/app/providers/AuthContext';
 import { cn } from '@/core/config/utils';
 import { getSFProTextClasses, getGlassButtonClasses, getHoverTransformClasses } from '@/core/config/theme-utils';
-import { BlurIn } from '@/components/ui/blur-in';
+import { BlurIn } from '@/shared/ui/effects/blur-in';
 import { useSuppliers, useSuppliersStats } from '../hooks/useSuppliers';
 import { SupplierCard } from './SupplierCard';
 import { SupplierForm } from './SupplierForm';

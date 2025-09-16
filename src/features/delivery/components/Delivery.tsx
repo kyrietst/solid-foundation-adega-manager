@@ -11,7 +11,7 @@ import { ArrowUpDown, ArrowUp, ArrowDown, RefreshCw, MapPin, BarChart3 } from 'l
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/primitives/select';
 import { Truck, Clock, CheckCircle, AlertCircle, User, DollarSign } from 'lucide-react';
 import { useToast } from '@/shared/hooks/common/use-toast';
-import { BlurIn } from '@/components/ui/blur-in';
+import { BlurIn } from '@/shared/ui/effects/blur-in';
 import { useDeliveryOrders, useDeliveryMetrics, useUpdateDeliveryStatus } from '@/features/delivery/hooks/useDeliveryOrders';
 import DeliveryOrderCard from './DeliveryOrderCard';
 import NotificationCenter from './NotificationCenter';

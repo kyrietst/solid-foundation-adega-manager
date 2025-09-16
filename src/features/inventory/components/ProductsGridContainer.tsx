@@ -5,7 +5,7 @@
 
 import React from 'react';
 import type { Product } from '@/types/inventory.types';
-import { useProductsGridLogic, ProductsGridConfig } from '@/hooks/products/useProductsGridLogic';
+import { useProductsGridLogic, ProductsGridConfig } from '@/shared/hooks/products/useProductsGridLogic';
 import { ProductsGridPresentation } from './ProductsGridPresentation';
 import { ProductSelectionModal } from '@/features/sales/components/ProductSelectionModal';
 
@@ -21,8 +21,8 @@ export interface ProductsGridContainerProps extends ProductsGridConfig {
   glassEffect?: boolean;
 }
 
-export const ProductsGridContainer: React.FC<ProductsGridContainerProps> = ({ 
-  showAddButton, 
+export const ProductsGridContainer: React.FC<ProductsGridContainerProps> = ({
+  showAddButton,
   showHeader = true,
   mode = 'sales',
   onAddProduct,
@@ -31,7 +31,7 @@ export const ProductsGridContainer: React.FC<ProductsGridContainerProps> = ({
   onAdjustStock,
   variant = 'default',
   glassEffect = true,
-  ...config 
+  ...config
 }) => {
   // Lógica centralizada
   const {

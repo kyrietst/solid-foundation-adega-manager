@@ -17,7 +17,7 @@ import type {
 export function useProductVariants(productId: string, options?: UseProductVariantsOptions) {
   
   return useQuery({
-    queryKey: ['product-variants', productId, options, 'v2'], // Versão v2 para forçar invalidação
+    queryKey: ['product-variants', productId, options, 'v3'], // Versão v3 com invalidação otimizada
     queryFn: async (): Promise<ProductWithVariants> => {
       // Buscar produto base
       const { data: product, error: productError } = await supabase
@@ -71,21 +71,23 @@ export function useProductVariants(productId: string, options?: UseProductVarian
 
         // Se produto tem configuração de pacote (dados legados), criar variante de pacote
         // Condição mais flexível: só precisa ter package_units OU package_price configurado
-        const hasPackageData = product.has_package_tracking || 
-                               (product.package_units && product.package_units > 1) || 
+        const hasPackageData = product.has_package_tracking ||
+                               (product.package_units && product.package_units > 1) ||
                                product.package_price;
+
         
         
         if (hasPackageData) {
           // Valores padrão mais robustos
           const packageUnits = product.package_units || product.units_per_package || 6; // Padrão 6 unidades por pacote
           const packagePrice = product.package_price || (product.price * packageUnits * 0.9); // 10% desconto no pacote
-          
+          const packageStock = Math.floor((product.stock_quantity || 0) / packageUnits);
+
           packageVariant = {
             id: `${product.id}-package-virtual`,
             product_id: product.id,
             variant_type: 'package' as const,
-            stock_quantity: Math.floor((product.stock_quantity || 0) / packageUnits),
+            stock_quantity: packageStock,
             minimum_stock: product.minimum_stock ? Math.floor(product.minimum_stock / packageUnits) : 0,
             price: packagePrice,
             cost_price: product.cost_price ? (product.cost_price * packageUnits) : null,
@@ -96,6 +98,7 @@ export function useProductVariants(productId: string, options?: UseProductVarian
             updated_at: product.updated_at,
             units_in_package: packageUnits
           };
+
           
         }
       }
