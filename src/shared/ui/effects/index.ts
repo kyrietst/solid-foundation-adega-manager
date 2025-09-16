@@ -5,6 +5,7 @@
 
 export { default as BlurIn } from './blur-in';
 export { default as FluidBlob } from './fluid-blob';
+export { default as TropicalDuskGlow } from './tropical-dusk-glow';
 export { default as GlowEffect } from './glow-effect';
 export { default as GradientText } from './gradient-text';
 export { default as GradualSpacing } from './gradual-spacing';

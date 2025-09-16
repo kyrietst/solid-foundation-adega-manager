@@ -9,7 +9,7 @@ import { ErrorBoundary } from "@/shared/components/ErrorBoundary";
 import { RouteErrorBoundary } from "@/shared/components/RouteErrorBoundary";
 import { AuthErrorBoundary } from "@/shared/components/AuthErrorBoundary";
 import { QueryErrorBoundary } from "@/shared/ui/layout/QueryErrorBoundary";
-import { LavaLamp } from "@/components/ui/fluid-blob";
+import { TropicalDuskGlow } from "@/shared/ui/effects/tropical-dusk-glow";
 import { TempPasswordHandler } from "@/shared/components/TempPasswordHandler";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -93,9 +93,9 @@ const App = () => {
               <AuthErrorBoundary>
                 <AuthProvider>
                   <div className="min-h-screen w-full relative overflow-x-hidden min-w-0">
-                    {/* Background fluid blob */}
+                    {/* Background tropical dusk glow - Performance optimized */}
                     <div className="fixed inset-0 z-0">
-                      <LavaLamp />
+                      <TropicalDuskGlow />
                     </div>
                     <Toaster />
                     <Sonner />
