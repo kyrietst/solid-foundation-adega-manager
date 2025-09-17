@@ -59,7 +59,7 @@ export const UserForm: React.FC<UserFormProps> = ({
             value={formData.name}
             onChange={(e) => updateField('name', e.target.value)}
             placeholder="Digite o nome completo"
-            className="bg-black/40 border-white/30 text-white placeholder:text-white/50 focus:border-[#FFD700] focus:ring-[#FFD700]/20 transition-all duration-200"
+            className="bg-black/40 border-white/30 text-white placeholder:text-white/50 focus:border-accent-gold-100 focus:ring-accent-gold-100/20 transition-all duration-200"
             disabled={isSubmitting}
             aria-required="true"
             aria-invalid={!formData.name && formData.name !== ''}
@@ -83,7 +83,7 @@ export const UserForm: React.FC<UserFormProps> = ({
             value={formData.email}
             onChange={(e) => updateField('email', e.target.value)}
             placeholder="usuario@empresa.com"
-            className="bg-black/40 border-white/30 text-white placeholder:text-white/50 focus:border-[#FFD700] focus:ring-[#FFD700]/20 transition-all duration-200"
+            className="bg-black/40 border-white/30 text-white placeholder:text-white/50 focus:border-accent-gold-100 focus:ring-accent-gold-100/20 transition-all duration-200"
             disabled={isSubmitting}
             aria-required="true"
             aria-invalid={!formData.email && formData.email !== ''}
@@ -107,7 +107,7 @@ export const UserForm: React.FC<UserFormProps> = ({
             value={formData.password}
             onChange={(e) => updateField('password', e.target.value)}
             placeholder="Digite uma senha segura"
-            className="bg-black/40 border-white/30 text-white placeholder:text-white/50 focus:border-[#FFD700] focus:ring-[#FFD700]/20 transition-all duration-200"
+            className="bg-black/40 border-white/30 text-white placeholder:text-white/50 focus:border-accent-gold-100 focus:ring-accent-gold-100/20 transition-all duration-200"
             disabled={isSubmitting}
             aria-required="true"
             aria-invalid={!formData.password && formData.password !== ''}
@@ -165,7 +165,7 @@ export const UserForm: React.FC<UserFormProps> = ({
             disabled={isSubmitting}
           >
             <SelectTrigger 
-              className="bg-black/40 border-white/30 text-white focus:border-[#FFD700] focus:ring-[#FFD700]/20 transition-all duration-200"
+              className="bg-black/40 border-white/30 text-white focus:border-accent-gold-100 focus:ring-accent-gold-100/20 transition-all duration-200"
               aria-required="true"
               aria-describedby="user-role-help"
             >
@@ -201,7 +201,7 @@ export const UserForm: React.FC<UserFormProps> = ({
           role="region"
           aria-labelledby="role-levels-title"
         >
-          <p id="role-levels-title" className="font-bold text-[#FFD700] mb-3 flex items-center gap-2">
+          <p id="role-levels-title" className="font-bold text-accent-gold-100 mb-3 flex items-center gap-2">
             <Shield className="h-5 w-5" />
             Comparativo de Permissões:
           </p>

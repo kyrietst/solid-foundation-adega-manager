@@ -7,6 +7,7 @@ import React, { useState } from 'react';
 import { Plus, Building2, Search, Filter, Download, TrendingUp, Package } from 'lucide-react';
 import { Button } from '@/shared/ui/primitives/button';
 import { Input } from '@/shared/ui/primitives/input';
+import { Badge } from '@/shared/ui/primitives/badge';
 import { StatCard } from '@/shared/ui/composite/stat-card';
 import { LoadingSpinner } from '@/shared/ui/composite/loading-spinner';
 import { EmptyState } from '@/shared/ui/composite/empty-state';
@@ -17,7 +18,7 @@ import { useDebounce } from '@/shared/hooks/common/use-debounce';
 import { useAuth } from '@/app/providers/AuthContext';
 import { cn } from '@/core/config/utils';
 import { getSFProTextClasses, getGlassButtonClasses, getHoverTransformClasses } from '@/core/config/theme-utils';
-import { BlurIn } from '@/shared/ui/effects/blur-in';
+import { PageHeader } from '@/shared/ui/composite/PageHeader';
 import { useSuppliers, useSuppliersStats } from '../hooks/useSuppliers';
 import { SupplierCard } from './SupplierCard';
 import { SupplierForm } from './SupplierForm';
@@ -77,69 +78,48 @@ export const SuppliersManagement: React.FC<SuppliersManagementProps> = ({ classN
   }
   
   return (
-    <>
-      {/* Header padronizado */}
-      <div className="flex-shrink-0 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-        {/* Header sem container */}
-        <div className="relative text-center sm:text-left">
-          {/* Título animado */}
-          <BlurIn
-            word="FORNECEDORES"
-            duration={1.2}
-            variant={{
-              hidden: { filter: "blur(15px)", opacity: 0 },
-              visible: { filter: "blur(0px)", opacity: 1 }
-            }}
-            className={cn(
-              getSFProTextClasses('h1', 'accent'),
-              "text-transparent bg-clip-text bg-gradient-to-r from-[#FF2400] via-[#FFDA04] to-[#FF2400] drop-shadow-lg"
-            )}
-            style={{
-              textShadow: '0 2px 4px rgba(0,0,0,0.3), 0 0 20px rgba(255, 218, 4, 0.2)'
-            }}
-          />
-          
-          {/* Sublinhado elegante */}
-          <div className="w-full h-2 relative">
-            <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FF2400]/80 to-transparent h-[2px] w-full blur-sm" />
-            <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FF2400] to-transparent h-px w-full" />
-            <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FFDA04]/80 to-transparent h-[3px] w-3/4 blur-sm mx-auto" />
-            <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FFDA04] to-transparent h-px w-3/4 mx-auto" />
+    <div className="w-full h-full flex flex-col">
+      {/* Header - altura fixa */}
+      <PageHeader
+        title="GESTÃO DE FORNECEDORES"
+        count={suppliers.length}
+        countLabel="fornecedores"
+      />
+
+      {/* Container principal com glassmorphism - ocupa altura restante */}
+      <div className="flex-1 min-h-0 bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-4 flex flex-col hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300">
+
+        {/* Header com controles dentro do box */}
+        <div className="flex-shrink-0 mb-4">
+          <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
+            <div className="flex items-center space-x-4">
+              <h2 className="text-lg font-semibold text-adega-platinum">Lista de Fornecedores</h2>
+              <Badge variant="secondary" className="bg-gray-700/50 text-gray-100 border-gray-600/50">
+                {suppliers.length} fornecedores
+              </Badge>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              {/* Botões de ação */}
+              <Button
+                className={`${getGlassButtonClasses('outline', 'md')} ${getHoverTransformClasses('lift')}`}
+                onClick={() => { /* TODO: export */ }}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Exportar
+              </Button>
+              {userRole === 'admin' && (
+                <Button
+                  onClick={() => setIsAddModalOpen(true)}
+                  className="bg-gradient-to-r from-primary-yellow to-yellow-500 text-black hover:from-yellow-300 hover:to-yellow-400 font-semibold shadow-lg hover:shadow-yellow-400/30 transition-all duration-200 hover:scale-105"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  NOVO FORNECEDOR
+                </Button>
+              )}
+            </div>
           </div>
         </div>
-        
-        {/* Botões de ação */}
-        <div className="flex gap-2">
-          <Button 
-            className={`${getGlassButtonClasses('outline', 'md')} ${getHoverTransformClasses('lift')}`}
-            onClick={() => { /* TODO: export */ }}
-          >
-            <Download className="h-4 w-4 mr-2" />
-            Exportar
-          </Button>
-          {userRole === 'admin' && (
-            <Button
-              onClick={() => setIsAddModalOpen(true)}
-              className="bg-gradient-to-r from-primary-yellow to-yellow-500 text-black hover:from-yellow-300 hover:to-yellow-400 font-semibold shadow-lg hover:shadow-yellow-400/30 transition-all duration-200 hover:scale-105"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              NOVO FORNECEDOR
-            </Button>
-          )}
-        </div>
-      </div>
-
-      {/* Container principal com glassmorphism - KPIs + Grid de Fornecedores */}
-      <section 
-        className="flex-1 min-h-0 bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg hero-spotlight p-4 flex flex-col hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300 space-y-6"
-        onMouseMove={(e) => {
-          const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-          const x = ((e.clientX - rect.left) / rect.width) * 100;
-          const y = ((e.clientY - rect.top) / rect.height) * 100;
-          (e.currentTarget as HTMLElement).style.setProperty("--x", `${x}%`);
-          (e.currentTarget as HTMLElement).style.setProperty("--y", `${y}%`);
-        }}
-      >
         {/* Cards de estatísticas com cores padronizadas */}
         {stats && (
           <div className="flex-shrink-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -271,15 +251,15 @@ export const SuppliersManagement: React.FC<SuppliersManagementProps> = ({ classN
           </>
         )}
         </div>
-      </section>
-      
+      </div>
+
       {/* Modal de criação/edição com backdrop blur */}
       <SupplierForm
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         mode="create"
       />
-    </>
+    </div>
   );
 };
 

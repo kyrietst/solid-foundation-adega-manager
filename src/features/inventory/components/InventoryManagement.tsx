@@ -8,6 +8,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
 import { useToast } from '@/shared/hooks/common/use-toast';
 import { useGlassmorphismEffect } from '@/shared/hooks/ui/useGlassmorphismEffect';
+import { PageHeader } from '@/shared/ui/composite/PageHeader';
 import { ProductsGridContainer } from './ProductsGridContainer';
 import { ProductsTitle, ProductsHeader } from './ProductsHeader';
 import { useProductsGridLogic } from '@/shared/hooks/products/useProductsGridLogic';
@@ -319,14 +320,12 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
 
   return (
     <div className={`w-full h-full flex flex-col ${className || ''}`}>
-      {/* Título e contador na mesma linha, fora do box background */}
-      <div className="flex-shrink-0 flex justify-between items-center mb-4">
-        <ProductsTitle />
-        <div className="bg-black/50 backdrop-blur-sm border border-yellow-400/30 rounded-full px-6 py-3 shadow-lg">
-          <span className="text-base font-bold text-gray-100">{productsGridData.totalProducts}</span>
-          <span className="text-sm ml-2 opacity-75 text-gray-300">produtos</span>
-        </div>
-      </div>
+      {/* Header padronizado com contador de produtos */}
+      <PageHeader
+        title="GESTÃO DE ESTOQUE"
+        count={productsGridData.totalProducts}
+        countLabel="produtos"
+      />
 
       {/* Container com background glass morphism - ocupa altura restante */}
       <div 

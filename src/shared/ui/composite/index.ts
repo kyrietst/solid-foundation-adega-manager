@@ -28,6 +28,8 @@ export {
   type FormatType
 } from './FormatDisplay';
 export { DataTable, type DataTableProps } from './DataTable';
+// DEPRECATED: PageTitle has been replaced by PageHeader
+// export { PageTitle, type PageTitleProps } from './PageTitle';
 
 // Context7 Pattern: Enhanced Components (New DRY Refactoring)
 export {

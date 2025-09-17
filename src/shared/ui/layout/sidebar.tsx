@@ -149,7 +149,7 @@ export const MobileSidebar = ({
                 ease: "easeInOut",
               }}
               className={cn(
-                "fixed h-full w-full inset-0 bg-black/80 backdrop-blur-xl border border-white/20 shadow-2xl p-10 z-[100] flex flex-col justify-between hero-spotlight",
+                "fixed h-full w-full inset-0 bg-black/80 backdrop-blur-xl border border-white/20 shadow-2xl p-10 z-nav flex flex-col justify-between hero-spotlight",
                 className
               )}
               onMouseMove={(e) => {

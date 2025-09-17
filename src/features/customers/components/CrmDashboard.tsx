@@ -25,8 +25,8 @@ import {
 } from '@/shared/ui/primitives/dropdown-menu';
 import { cn } from '@/core/config/utils';
 import { formatCurrency } from '@/core/config/utils';
-import { getSFProTextClasses } from '@/core/config/theme-utils';
 import { StatCard } from '@/shared/ui/composite/stat-card';
+import { PageHeader } from '@/shared/ui/composite/PageHeader';
 import {
   Users,
   TrendingUp,
@@ -50,7 +50,6 @@ import {
   ChevronDown,
   Package
 } from 'lucide-react';
-import { BlurIn } from '@/shared/ui/effects/blur-in';
 import {
   PieChart as RechartsPieChart,
   Pie,
@@ -72,9 +71,10 @@ import { useCrmTrends } from '@/features/customers/hooks/useCrmTrends';
 import { useCrmMetrics } from '@/features/customers/hooks/useCrmMetrics';
 import { BirthdayCalendar } from './BirthdayCalendar';
 import { supabase } from '@/core/api/supabase/client';
+import { chartTheme } from '@/shared/ui/composite/ChartTheme';
 
-// Cores para gráficos
-const COLORS = ['#F59E0B', '#10B981', '#3B82F6', '#8B5CF6', '#F97316', '#06B6D4', '#84CC16'];
+// Usar paleta padronizada para CRM
+const COLORS = chartTheme.crm;
 
 interface SegmentData {
   segment: string;
@@ -307,127 +307,99 @@ export const CrmDashboard: React.FC = () => {
 
   return (
     <div className="w-full h-full flex flex-col p-4">
-      {/* Header padronizado */}
-      <div className="flex-shrink-0 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-        {/* Header com BlurIn animation */}
-        <div className="relative text-center sm:text-left">
-          {/* Título animado */}
-          <BlurIn
-            word="DASHBOARD CRM"
-            duration={1.2}
-            variant={{
-              hidden: { filter: "blur(15px)", opacity: 0 },
-              visible: { filter: "blur(0px)", opacity: 1 }
-            }}
-            className={cn(
-              getSFProTextClasses('h1', 'accent'),
-              "text-transparent bg-clip-text bg-gradient-to-r from-[#FF2400] via-[#FFDA04] to-[#FF2400] drop-shadow-lg"
-            )}
+      {/* Header padronizado com PageHeader */}
+      <PageHeader
+        title="DASHBOARD CRM"
+        count={metrics.totalCustomers}
+        countLabel="clientes"
+      >
+        {/* Filtro de Período */}
+        <div
+          className="relative flex items-center gap-2 h-10 px-3 py-2 bg-black/80 rounded-lg border border-white/10 backdrop-blur-sm hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300 group"
+          onMouseMove={(e) => {
+            const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+            const x = ((e.clientX - rect.left) / rect.width) * 100;
+            const y = ((e.clientY - rect.top) / rect.height) * 100;
+            (e.currentTarget as HTMLElement).style.setProperty("--x", `${x}%`);
+            (e.currentTarget as HTMLElement).style.setProperty("--y", `${y}%`);
+          }}
+        >
+          <span className="text-sm text-white/70 font-medium">Período:</span>
+          {[7, 30, 90, 180].map((days) => (
+            <Button
+              key={days}
+              variant={selectedPeriod === days ? "default" : "outline"}
+              size="sm"
+              onClick={() => setSelectedPeriod(days)}
+              className={`${
+                selectedPeriod === days
+                  ? "bg-gradient-to-r from-[#FFD700] to-[#FFA500] text-black font-bold shadow-lg shadow-[#FFD700]/30 scale-105 border-0"
+                  : "border-white/30 text-white hover:bg-white/20 hover:border-white/50 hover:scale-105 hover:shadow-md"
+              } backdrop-blur-sm transition-all duration-300 relative overflow-hidden group`}
+            >
+              <span className="relative z-10">{days}d</span>
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 -translate-x-full group-hover:translate-x-full transform" />
+            </Button>
+          ))}
+          {/* Purple glow effect */}
+          <div
+            className="absolute inset-0 rounded-lg bg-gradient-to-br from-purple-500/20 via-transparent to-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
             style={{
-              textShadow: '0 2px 4px rgba(0,0,0,0.3), 0 0 20px rgba(255, 218, 4, 0.2)'
+              background: `radial-gradient(600px circle at var(--x, 50%) var(--y, 50%), rgba(147, 51, 234, 0.15), transparent 40%)`
             }}
           />
-          
-          {/* Sublinhado elegante */}
-          <div className="w-full h-2 relative">
-            <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FF2400]/80 to-transparent h-[2px] w-full blur-sm" />
-            <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FF2400] to-transparent h-px w-full" />
-            <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FFDA04]/80 to-transparent h-[3px] w-3/4 blur-sm mx-auto" />
-            <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FFDA04] to-transparent h-px w-3/4 mx-auto" />
-          </div>
-          
         </div>
-        
-        {/* Controles padronizados */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
-          {/* Filtro de Período */}
-          <div 
-            className="relative flex items-center gap-2 h-10 px-3 py-2 bg-black/80 rounded-lg border border-white/10 backdrop-blur-sm hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300 group"
-            onMouseMove={(e) => {
-              const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-              const x = ((e.clientX - rect.left) / rect.width) * 100;
-              const y = ((e.clientY - rect.top) / rect.height) * 100;
-              (e.currentTarget as HTMLElement).style.setProperty("--x", `${x}%`);
-              (e.currentTarget as HTMLElement).style.setProperty("--y", `${y}%`);
-            }}
-          >
-            <span className="text-sm text-white/70 font-medium">Período:</span>
-            {[7, 30, 90, 180].map((days) => (
-              <Button
-                key={days}
-                variant={selectedPeriod === days ? "default" : "outline"}
-                size="sm"
-                onClick={() => setSelectedPeriod(days)}
-                className={`${
-                  selectedPeriod === days 
-                    ? "bg-gradient-to-r from-[#FFD700] to-[#FFA500] text-black font-bold shadow-lg shadow-[#FFD700]/30 scale-105 border-0" 
-                    : "border-white/30 text-white hover:bg-white/20 hover:border-white/50 hover:scale-105 hover:shadow-md"
-                } backdrop-blur-sm transition-all duration-300 relative overflow-hidden group`}
-              >
-                <span className="relative z-10">{days}d</span>
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 -translate-x-full group-hover:translate-x-full transform" />
-              </Button>
-            ))}
-            {/* Purple glow effect */}
-            <div 
-              className="absolute inset-0 rounded-lg bg-gradient-to-br from-purple-500/20 via-transparent to-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-              style={{
-                background: `radial-gradient(600px circle at var(--x, 50%) var(--y, 50%), rgba(147, 51, 234, 0.15), transparent 40%)`
-              }}
-            />
-          </div>
 
-          {/* Botão de Exportação */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button 
-                variant="outline"
-                size="sm"
-                className="h-10 bg-black/80 border-[#FFD700]/40 text-[#FFD700] hover:bg-[#FFD700]/20 hover:shadow-xl hover:shadow-[#FFD700]/30 hover:border-[#FFD700]/80 hover:scale-105 backdrop-blur-sm transition-all duration-300 relative overflow-hidden group"
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-[#FFD700]/5 via-[#FFD700]/10 to-[#FFD700]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                <FileSpreadsheet className="h-4 w-4 mr-2 relative z-10 group-hover:animate-bounce" />
-                <span className="relative z-10 font-medium">Exportar</span>
-                <ChevronDown className="h-4 w-4 ml-2 relative z-10 group-hover:rotate-180 transition-transform duration-300" />
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 -translate-x-full group-hover:translate-x-full transform" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent 
-              align="end" 
-              className="bg-black/95 border-[#FFD700]/20 backdrop-blur-md shadow-2xl shadow-[#FFD700]/10 animate-in fade-in-0 zoom-in-95 duration-300"
+        {/* Botão de Exportação */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-10 bg-black/80 border-accent-gold-100/40 text-accent-gold-100 hover:bg-accent-gold-100/20 hover:shadow-xl hover:shadow-accent-gold-100/30 hover:border-accent-gold-100/80 hover:scale-105 backdrop-blur-sm transition-all duration-300 relative overflow-hidden group"
             >
-              <DropdownMenuItem 
-                onClick={() => exportToCSV('clientes')}
-                className="text-white hover:bg-purple-500/20 hover:text-purple-300 cursor-pointer transition-all duration-200 group"
-              >
-                <Users className="h-4 w-4 mr-2 text-purple-400 group-hover:scale-110 transition-transform duration-200" />
-                <span className="group-hover:font-medium transition-all duration-200">Exportar Clientes</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                onClick={() => exportToCSV('insights')}
-                className="text-white hover:bg-blue-500/20 hover:text-blue-300 cursor-pointer transition-all duration-200 group"
-              >
-                <Sparkles className="h-4 w-4 mr-2 text-blue-400 group-hover:scale-110 transition-transform duration-200" />
-                <span className="group-hover:font-medium transition-all duration-200">Exportar Insights</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                onClick={() => exportToCSV('interacoes')}
-                className="text-white hover:bg-green-500/20 hover:text-green-300 cursor-pointer transition-all duration-200 group"
-              >
-                <MessageSquare className="h-4 w-4 mr-2 text-green-400 group-hover:scale-110 transition-transform duration-200" />
-                <span className="group-hover:font-medium transition-all duration-200">Exportar Interações</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                onClick={() => exportToCSV('vendas')}
-                className="text-white hover:bg-amber-500/20 hover:text-amber-300 cursor-pointer transition-all duration-200 group"
-              >
-                <BarChart3 className="h-4 w-4 mr-2 text-amber-400 group-hover:scale-110 transition-transform duration-200" />
-                <span className="group-hover:font-medium transition-all duration-200">Exportar Vendas</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
+              <div className="absolute inset-0 bg-gradient-to-r from-[#FFD700]/5 via-[#FFD700]/10 to-[#FFD700]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <FileSpreadsheet className="h-4 w-4 mr-2 relative z-10 group-hover:animate-bounce" />
+              <span className="relative z-10 font-medium">Exportar</span>
+              <ChevronDown className="h-4 w-4 ml-2 relative z-10 group-hover:rotate-180 transition-transform duration-300" />
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 -translate-x-full group-hover:translate-x-full transform" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="end"
+            className="bg-black/95 border-accent-gold-100/20 backdrop-blur-md shadow-2xl shadow-accent-gold-100/10 animate-in fade-in-0 zoom-in-95 duration-300"
+          >
+            <DropdownMenuItem
+              onClick={() => exportToCSV('clientes')}
+              className="text-white hover:bg-purple-500/20 hover:text-purple-300 cursor-pointer transition-all duration-200 group"
+            >
+              <Users className="h-4 w-4 mr-2 text-purple-400 group-hover:scale-110 transition-transform duration-200" />
+              <span className="group-hover:font-medium transition-all duration-200">Exportar Clientes</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => exportToCSV('insights')}
+              className="text-white hover:bg-blue-500/20 hover:text-blue-300 cursor-pointer transition-all duration-200 group"
+            >
+              <Sparkles className="h-4 w-4 mr-2 text-blue-400 group-hover:scale-110 transition-transform duration-200" />
+              <span className="group-hover:font-medium transition-all duration-200">Exportar Insights</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => exportToCSV('interacoes')}
+              className="text-white hover:bg-green-500/20 hover:text-green-300 cursor-pointer transition-all duration-200 group"
+            >
+              <MessageSquare className="h-4 w-4 mr-2 text-green-400 group-hover:scale-110 transition-transform duration-200" />
+              <span className="group-hover:font-medium transition-all duration-200">Exportar Interações</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => exportToCSV('vendas')}
+              className="text-white hover:bg-amber-500/20 hover:text-amber-300 cursor-pointer transition-all duration-200 group"
+            >
+              <BarChart3 className="h-4 w-4 mr-2 text-amber-400 group-hover:scale-110 transition-transform duration-200" />
+              <span className="group-hover:font-medium transition-all duration-200">Exportar Vendas</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </PageHeader>
 
       {/* Container principal com glassmorphism */}
       <section 
@@ -505,25 +477,25 @@ export const CrmDashboard: React.FC = () => {
           <TabsList className="grid w-full grid-cols-4 bg-black/40 border border-white/20 backdrop-blur-sm rounded-xl">
             <TabsTrigger 
               value="overview" 
-              className="data-[state=active]:bg-[#FFD700] data-[state=active]:text-black data-[state=active]:shadow-lg data-[state=active]:shadow-[#FFD700]/30 text-white hover:bg-white/10 transition-all duration-200"
+              className="data-[state=active]:bg-accent-gold-100 data-[state=active]:text-black data-[state=active]:shadow-lg data-[state=active]:shadow-accent-gold-100/30 text-white hover:bg-white/10 transition-all duration-200"
             >
               Visão Geral
             </TabsTrigger>
             <TabsTrigger 
               value="segments" 
-              className="data-[state=active]:bg-[#FFD700] data-[state=active]:text-black data-[state=active]:shadow-lg data-[state=active]:shadow-[#FFD700]/30 text-white hover:bg-white/10 transition-all duration-200"
+              className="data-[state=active]:bg-accent-gold-100 data-[state=active]:text-black data-[state=active]:shadow-lg data-[state=active]:shadow-accent-gold-100/30 text-white hover:bg-white/10 transition-all duration-200"
             >
               Segmentação
             </TabsTrigger>
             <TabsTrigger 
               value="calendar" 
-              className="data-[state=active]:bg-[#FFD700] data-[state=active]:text-black data-[state=active]:shadow-lg data-[state=active]:shadow-[#FFD700]/30 text-white hover:bg-white/10 transition-all duration-200"
+              className="data-[state=active]:bg-accent-gold-100 data-[state=active]:text-black data-[state=active]:shadow-lg data-[state=active]:shadow-accent-gold-100/30 text-white hover:bg-white/10 transition-all duration-200"
             >
               Calendário
             </TabsTrigger>
             <TabsTrigger 
               value="maps" 
-              className="data-[state=active]:bg-[#FFD700] data-[state=active]:text-black data-[state=active]:shadow-lg data-[state=active]:shadow-[#FFD700]/30 text-white hover:bg-white/10 transition-all duration-200"
+              className="data-[state=active]:bg-accent-gold-100 data-[state=active]:text-black data-[state=active]:shadow-lg data-[state=active]:shadow-accent-gold-100/30 text-white hover:bg-white/10 transition-all duration-200"
             >
               Mapas & IA
             </TabsTrigger>

@@ -63,7 +63,7 @@ export const MovementsTable: React.FC<MovementsTableProps> = ({
       label: 'Data',
       accessor: 'date',
       sortable: true,
-      width: '140px',
+      width: 'col-lg',
       render: (value) => (
         <div className="flex items-center gap-2">
           <Clock className="h-4 w-4 text-adega-gold/60" />
@@ -83,7 +83,7 @@ export const MovementsTable: React.FC<MovementsTableProps> = ({
       label: 'Tipo',
       accessor: 'type',
       sortable: true,
-      width: '100px',
+      width: 'col-sm',
       render: (_, movement) => getTypeBadge(movement.type),
     },
     {
@@ -92,7 +92,7 @@ export const MovementsTable: React.FC<MovementsTableProps> = ({
       accessor: 'product_id',
       searchable: true,
       sortable: true,
-      width: '200px',
+      width: 'col-3xl',
       render: (_, movement) => (
         <div className="min-w-0">
           <p className="font-medium text-adega-platinum truncate" title={productsMap[movement.product_id]?.name ?? movement.product_id}>
@@ -106,7 +106,7 @@ export const MovementsTable: React.FC<MovementsTableProps> = ({
       label: 'Quantidade',
       accessor: 'quantity',
       sortable: true,
-      width: '100px',
+      width: 'col-sm',
       align: 'center',
       render: (value) => (
         <span className="text-white font-medium">{value}</span>
@@ -118,7 +118,7 @@ export const MovementsTable: React.FC<MovementsTableProps> = ({
       accessor: 'reason',
       searchable: true,
       sortable: true,
-      width: '150px',
+      width: 'col-xl',
       render: (value) => (
         <span className="text-adega-silver text-sm truncate block" title={value as string || '-'}>
           {value || '-'}
@@ -131,7 +131,7 @@ export const MovementsTable: React.FC<MovementsTableProps> = ({
       accessor: 'customer_id',
       searchable: true,
       sortable: true,
-      width: '160px',
+      width: 'col-xl',
       render: (_, movement) => {
         const customer = customers.find(c => c.id === movement.customer_id);
         return (
@@ -147,7 +147,7 @@ export const MovementsTable: React.FC<MovementsTableProps> = ({
       accessor: 'user_id',
       searchable: true,
       sortable: true,
-      width: '120px',
+      width: 'col-md',
       render: (_, movement) => (
         <span className="text-adega-silver text-sm truncate block" title={usersMap[movement.user_id] ?? movement.user_id}>
           {usersMap[movement.user_id] ?? movement.user_id}

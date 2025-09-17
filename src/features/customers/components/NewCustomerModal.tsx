@@ -192,7 +192,7 @@ export const NewCustomerModal: React.FC<NewCustomerModalProps> = ({
       }
       description="Preencha os dados do cliente. Apenas o nome é obrigatório."
       size="2xl"
-      className="max-h-[90vh] overflow-y-auto bg-black/95 backdrop-blur-sm border border-white/10"
+      className="max-h-content-2xl overflow-y-auto bg-black/95 backdrop-blur-sm border border-white/10"
     >
 
         <Form {...form}>

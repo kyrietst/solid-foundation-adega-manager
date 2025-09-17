@@ -123,7 +123,7 @@ export const SalesHistoryTable: React.FC<SalesHistoryTableProps> = ({ onViewSale
       id: 'id',
       label: 'ID',
       accessor: 'id',
-      width: '120px',
+      width: 'col-md',
       render: (value) => (
         <span className="text-white font-mono">
           #{String(value).slice(0, 8).toUpperCase()}
@@ -134,7 +134,7 @@ export const SalesHistoryTable: React.FC<SalesHistoryTableProps> = ({ onViewSale
       id: 'created_at',
       label: 'Data',
       accessor: 'created_at',
-      width: '180px',
+      width: 'col-2xl',
       render: (value) => (
         <div className="flex items-center gap-2">
           <Calendar className="h-4 w-4 text-blue-400" />
@@ -150,7 +150,7 @@ export const SalesHistoryTable: React.FC<SalesHistoryTableProps> = ({ onViewSale
       id: 'customer',
       label: 'Cliente',
       accessor: (sale) => sale.customer?.name,
-      width: '180px',
+      width: 'col-2xl',
       render: (value) => (
         <div className="flex items-center gap-2">
           <User className="h-4 w-4 text-purple-400" />
@@ -162,7 +162,7 @@ export const SalesHistoryTable: React.FC<SalesHistoryTableProps> = ({ onViewSale
       id: 'seller',
       label: 'Vendedor',
       accessor: (sale) => sale.seller?.name,
-      width: '180px',
+      width: 'col-2xl',
       render: (value) => (
         <div className="flex items-center gap-2">
           <User className="h-4 w-4 text-amber-400" />
@@ -174,7 +174,7 @@ export const SalesHistoryTable: React.FC<SalesHistoryTableProps> = ({ onViewSale
       id: 'payment_method',
       label: 'Pagamento',
       accessor: 'payment_method',
-      width: '200px',
+      width: 'col-3xl',
       render: (value, item) => (
         <div className="flex items-center gap-2">
           <CreditCard className="h-4 w-4 text-green-400" />
@@ -190,7 +190,7 @@ export const SalesHistoryTable: React.FC<SalesHistoryTableProps> = ({ onViewSale
       id: 'status',
       label: 'Status',
       accessor: 'status',
-      width: '120px',
+      width: 'col-md',
       render: (value) => (
         <span className={cn("text-xs px-2 py-1 rounded-full", getStatusBadge(String(value)))}>
           {String(value) === 'completed' ? 'Concluído' :
@@ -204,7 +204,7 @@ export const SalesHistoryTable: React.FC<SalesHistoryTableProps> = ({ onViewSale
       label: 'Valor',
       accessor: (sale) => Number(sale.final_amount || sale.total_amount || 0),
       align: 'right',
-      width: '140px',
+      width: 'col-lg',
       render: (value, item) => (
         <div className="text-right">
           <CurrencyDisplay 
@@ -223,7 +223,7 @@ export const SalesHistoryTable: React.FC<SalesHistoryTableProps> = ({ onViewSale
       accessor: () => '',
       sortable: false,
       align: 'center',
-      width: '80px',
+      width: 'col-xs',
       render: (_, item) => (
         <Button
           variant="ghost"

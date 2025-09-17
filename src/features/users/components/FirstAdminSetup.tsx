@@ -14,7 +14,7 @@ export const FirstAdminSetup: React.FC<FirstAdminSetupProps> = ({
   isLoading,
 }) => {
   return (
-    <div className="flex items-center justify-center min-h-[60vh]">
+    <div className="flex items-center justify-center min-h-content-md">
       <Card className="w-full max-w-md bg-adega-charcoal/20 border-white/10">
         <CardHeader className="text-center">
           <Crown className="h-16 w-16 text-adega-gold mx-auto mb-4" />

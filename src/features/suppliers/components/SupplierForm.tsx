@@ -40,13 +40,14 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
   const createForm = useCreateSupplierForm();
   const editForm = useEditSupplierForm(supplier || {} as Supplier);
   
-  const form = mode === 'create' ? createForm : editForm;
-  const isSubmitting = mode === 'create' ? createSupplier.isPending : updateSupplier.isPending;
+  const formData = mode === 'create' ? createForm : editForm;
+  const form = formData.form; // Acessar a instância do react-hook-form
+  const isSubmitting = formData.isLoading || (mode === 'create' ? createSupplier.isPending : updateSupplier.isPending);
   
   // Reset form when closing
   React.useEffect(() => {
     if (!isOpen) {
-      form.reset();
+      formData.reset();
       setCustomProducts(['']);
     }
   }, [isOpen]); // Removido 'form' da dependência
@@ -69,7 +70,7 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
       
       // Update form value
       const validProducts = newProducts.filter(p => p.trim());
-      form.setValue('products_supplied', validProducts);
+      formData.setValue('products_supplied', validProducts);
     }
   };
   
@@ -80,7 +81,7 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
     
     // Update form value with valid products
     const validProducts = newProducts.filter(p => p.trim());
-    form.setValue('products_supplied', validProducts);
+    formData.setValue('products_supplied', validProducts);
   };
   
   const handlePaymentMethodToggle = (method: string, checked: boolean) => {
@@ -88,26 +89,20 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
     const newMethods = checked
       ? [...currentMethods, method]
       : currentMethods.filter(m => m !== method);
-    
-    form.setValue('payment_methods', newMethods);
+
+    formData.setValue('payment_methods', newMethods);
   };
   
-  const handleFormSubmit = form.handleSubmitWithCallback(async (data: any) => {
-    // Clean up products_supplied to remove empty strings
-    const cleanedData = {
-      ...data,
-      products_supplied: data.products_supplied.filter((p: string) => p.trim()),
-    };
-    
-    // Call the mutation directly
-    if (mode === 'create') {
-      await createSupplier.mutateAsync(cleanedData);
-    } else if (supplier) {
-      await updateSupplier.mutateAsync({ id: supplier.id, data: cleanedData });
+  const handleFormSubmit = async (e?: React.BaseSyntheticEvent) => {
+    try {
+      // Use o handleSubmit do useStandardForm que já está integrado
+      await formData.handleSubmit(e);
+      onClose();
+    } catch (error) {
+      // Error handling is done by useStandardForm
+      console.error('Form submission error:', error);
     }
-    
-    onClose();
-  });
+  };
   
   return (
     <BaseModal
@@ -267,7 +262,7 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
                 </Label>
                 <Select
                   value={form.watch('delivery_time') || ''}
-                  onValueChange={(value) => form.setValue('delivery_time', value)}
+                  onValueChange={(value) => formData.setValue('delivery_time', value)}
                 >
                   <SelectTrigger className="bg-black/70 border-white/30 text-white">
                     <SelectValue placeholder="Selecione o prazo" />

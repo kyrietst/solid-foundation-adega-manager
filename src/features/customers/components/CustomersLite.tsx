@@ -5,10 +5,10 @@ import { Button } from '@/shared/ui/primitives/button';
 import { LoadingScreen } from '@/shared/ui/composite/loading-spinner';
 import { useCustomers } from '@/features/customers/hooks/use-crm';
 import { SearchBar21st } from '@/shared/ui/thirdparty/search-bar-21st';
-import { getGlassCardClasses, getGlassButtonClasses, getHoverTransformClasses, getSFProTextClasses } from '@/core/config/theme-utils';
+import { getGlassCardClasses, getGlassButtonClasses, getHoverTransformClasses } from '@/core/config/theme-utils';
 import { cn } from '@/core/config/utils';
-import { BlurIn } from '@/shared/ui/effects/blur-in';
 import { StatCard } from '@/shared/ui/composite/stat-card';
+import { PageHeader } from '@/shared/ui/composite/PageHeader';
 import { Users, TrendingUp, UserPlus, Download, BarChart3 } from 'lucide-react';
 import CustomerDataTable from './CustomerDataTable';
 import { NewCustomerModal } from './NewCustomerModal';
@@ -141,54 +141,27 @@ const CustomersLite = () => {
 
   return (
     <div className="w-full h-full flex flex-col p-4 overflow-x-hidden min-w-0">
-      {/* Header */}
-      <div className="flex-shrink-0 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
-        {/* Header sem container */}
-        <div className="relative text-center sm:text-left">
-          {/* Título animado */}
-          <BlurIn
-            word="GESTÃO DE CLIENTES"
-            duration={1.2}
-            variant={{
-              hidden: { filter: "blur(15px)", opacity: 0 },
-              visible: { filter: "blur(0px)", opacity: 1 }
-            }}
-            className={cn(
-              getSFProTextClasses('h1', 'accent'),
-              "text-transparent bg-clip-text bg-gradient-to-r from-[#FF2400] via-[#FFDA04] to-[#FF2400] drop-shadow-lg"
-            )}
-            style={{
-              textShadow: '0 2px 4px rgba(0,0,0,0.3), 0 0 20px rgba(255, 218, 4, 0.2)'
-            }}
-          />
-          
-          {/* Sublinhado elegante */}
-          <div className="w-full h-2 relative">
-            <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FF2400]/80 to-transparent h-[2px] w-full blur-sm" />
-            <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FF2400] to-transparent h-px w-full" />
-            <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FFDA04]/80 to-transparent h-[3px] w-3/4 blur-sm mx-auto" />
-            <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FFDA04] to-transparent h-px w-3/4 mx-auto" />
-          </div>
-        </div>
-        
-        {/* Botões de ação */}
-        <div className="flex gap-2">
-          <Button 
-            className={`${getGlassButtonClasses('outline', 'md')} ${getHoverTransformClasses('lift')}`}
-            onClick={() => { /* TODO: export */ }}
-          >
-            <Download className="h-4 w-4 mr-2" />
-            Exportar
-          </Button>
-          <Button 
-            className={`${getGlassButtonClasses('primary', 'md')} ${getHoverTransformClasses('scale')} shadow-lg hover:shadow-yellow-400/30 font-semibold`}
-            onClick={() => setIsNewCustomerModalOpen(true)}
-          >
-            <UserPlus className="h-4 w-4 mr-2" />
-            NOVO CLIENTE
-          </Button>
-        </div>
-      </div>
+      {/* Header padronizado com PageHeader */}
+      <PageHeader
+        title="GESTÃO DE CLIENTES"
+        count={customers?.length || 0}
+        countLabel="clientes"
+      >
+        <Button
+          className={`${getGlassButtonClasses('outline', 'md')} ${getHoverTransformClasses('lift')}`}
+          onClick={() => { /* TODO: export */ }}
+        >
+          <Download className="h-4 w-4 mr-2" />
+          Exportar
+        </Button>
+        <Button
+          className={`${getGlassButtonClasses('primary', 'md')} ${getHoverTransformClasses('scale')} shadow-lg hover:shadow-yellow-400/30 font-semibold`}
+          onClick={() => setIsNewCustomerModalOpen(true)}
+        >
+          <UserPlus className="h-4 w-4 mr-2" />
+          NOVO CLIENTE
+        </Button>
+      </PageHeader>
 
       {/* Container principal com glassmorphism - KPIs + Tabela */}
       <section 

@@ -42,7 +42,7 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({
       accessor: 'name',
       searchable: true,
       sortable: true,
-      width: '250px',
+      width: 'col-max',
       render: (_, product) => (
         <div className="flex items-center gap-3">
           <div className="bg-adega-gold/20 border border-adega-gold/30 rounded-lg p-2 flex-shrink-0">
@@ -60,7 +60,7 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({
       label: 'Preço',
       accessor: 'price',
       sortable: true,
-      width: '120px',
+      width: 'col-md',
       align: 'right',
       render: (value) => (
         <span className="font-semibold text-adega-gold">
@@ -73,7 +73,7 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({
       label: 'Estoque',
       accessor: 'stock_quantity',
       sortable: true,
-      width: '120px',
+      width: 'col-md',
       align: 'center',
       render: (_, product) => {
         const status = getStockStatus(product.stock_quantity || 0, product.minimum_stock || 0);
@@ -92,7 +92,7 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({
       label: 'Mínimo',
       accessor: 'minimum_stock',
       sortable: true,
-      width: '80px',
+      width: 'col-xs',
       align: 'center',
       render: (value) => (
         <span className="text-adega-platinum/70">{value || '-'}</span>
@@ -103,7 +103,7 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({
       label: 'Giro',
       accessor: 'turnover_rate',
       sortable: true,
-      width: '100px',
+      width: 'col-sm',
       align: 'center',
       render: (_, product) => getTurnoverBadge(product.turnover_rate),
     },
@@ -113,7 +113,7 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({
       accessor: 'supplier',
       searchable: true,
       sortable: true,
-      width: '150px',
+      width: 'col-xl',
       render: (value) => (
         <span className="text-adega-platinum/80 truncate block" title={value as string}>
           {value || '-'}
@@ -125,7 +125,7 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({
       label: 'Código',
       accessor: 'barcode',
       searchable: true,
-      width: '120px',
+      width: 'col-md',
       render: (value) => (
         <span className="font-mono text-sm text-adega-platinum/60">
           {value || '-'}
@@ -135,7 +135,7 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({
     {
       id: 'actions',
       label: 'Ações',
-      width: '120px',
+      width: 'col-md',
       align: 'center',
       render: (_, product) => (
         <div className="flex items-center gap-2 justify-center">

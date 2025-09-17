@@ -2,10 +2,23 @@
  * Utilitários de Theme v2.1 - Sistema Completo Glass Morphism
  * Sistema baseado na análise de padrões existentes + Glass Morphism Enhancement
  * 30+ utility functions for comprehensive glass morphism theming
+ *
+ * PHASE 4 ENHANCEMENT - Design Token Integration
+ * Enhanced with TypeScript design token validation and type safety
  */
 
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import type {
+  ColorTokens,
+  DimensionTokens,
+  StatCardVariant,
+  ButtonVariant,
+  ButtonSize,
+  ModalSize,
+  DesignSystemProps
+} from '@/core/types/design-tokens';
+import { isValidColorToken, isValidDimensionToken } from '@/core/types/design-tokens';
 
 /**
  * Função de merge de classes otimizada
@@ -22,8 +35,9 @@ export function cn(...inputs: ClassValue[]) {
 /**
  * Gerador de classes para valores numéricos/texto com variantes
  * USADO EM: stat-card.tsx
+ * ENHANCED: Now uses typed StatCardVariant for better type safety
  */
-export function getValueClasses(size: 'sm' | 'md' | 'lg' = 'md', variant: 'default' | 'success' | 'warning' | 'error' | 'purple' | 'gold' = 'default') {
+export function getValueClasses(size: 'sm' | 'md' | 'lg' = 'md', variant: StatCardVariant = 'default') {
   const sizeClasses = {
     sm: 'text-lg font-semibold',
     md: 'text-xl font-bold',
@@ -33,10 +47,10 @@ export function getValueClasses(size: 'sm' | 'md' | 'lg' = 'md', variant: 'defau
   const variantClasses = {
     default: 'text-gray-100',
     success: 'text-accent-green',
-    warning: 'text-primary-yellow',
+    warning: 'text-accent-orange',
     error: 'text-accent-red',
     purple: 'text-accent-purple',
-    gold: 'text-primary-yellow'
+    gold: 'text-accent-gold-100'
   };
   
   return cn(sizeClasses[size], variantClasses[variant]);
@@ -468,4 +482,271 @@ export function getStatusTextClasses(type: 'badge' | 'alert' | 'notification' | 
   };
   
   return cn(typeClasses[type], casingClasses[casing]);
+}
+
+// ============================================================================
+// PHASE 4 DESIGN TOKEN UTILITIES - Type-Safe Functions
+// ============================================================================
+
+/**
+ * Type-safe color token utility with validation
+ * Provides compile-time and runtime validation for color tokens
+ */
+export function createColorClass(prefix: 'bg' | 'text' | 'border', token: ColorTokens): string {
+  if (!isValidColorToken(token)) {
+    console.warn(`Invalid color token: ${token}`);
+    return `${prefix}-gray-500`; // Fallback to neutral color
+  }
+  return `${prefix}-${token}`;
+}
+
+/**
+ * Type-safe dimension utility with validation
+ * Provides compile-time and runtime validation for dimension tokens
+ */
+export function createDimensionClass(prefix: 'w' | 'h' | 'max-w' | 'max-h' | 'min-w' | 'min-h', token: DimensionTokens): string {
+  if (!isValidDimensionToken(token)) {
+    console.warn(`Invalid dimension token: ${token}`);
+    return `${prefix}-auto`; // Fallback to auto
+  }
+  return `${prefix}-${token}`;
+}
+
+/**
+ * Enhanced button utility with full type safety
+ * Integrates with design tokens and proper TypeScript types
+ */
+export function createButtonClasses(
+  variant: ButtonVariant = 'default',
+  size: ButtonSize = 'default',
+  customColors?: {
+    background?: ColorTokens;
+    text?: ColorTokens;
+    border?: ColorTokens;
+  }
+): string {
+  const sizeClasses = {
+    default: 'h-10 px-4 py-2',
+    sm: 'h-9 rounded-md px-3',
+    lg: 'h-11 rounded-md px-8',
+    icon: 'h-10 w-10'
+  };
+
+  let variantClasses = '';
+
+  if (customColors) {
+    // Use custom design tokens
+    const bgClass = customColors.background ? createColorClass('bg', customColors.background) : '';
+    const textClass = customColors.text ? createColorClass('text', customColors.text) : '';
+    const borderClass = customColors.border ? createColorClass('border', customColors.border) : '';
+    variantClasses = cn(bgClass, textClass, borderClass);
+  } else {
+    // Use standard variants with design tokens
+    const standardVariants = {
+      default: 'bg-primary text-primary-foreground hover:bg-primary/90',
+      destructive: 'bg-accent-red text-white hover:bg-accent-red/90',
+      outline: 'border border-input bg-background hover:bg-accent hover:text-accent-foreground',
+      secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
+      ghost: 'hover:bg-accent hover:text-accent-foreground',
+      link: 'text-primary underline-offset-4 hover:underline'
+    };
+    variantClasses = standardVariants[variant];
+  }
+
+  return cn(
+    'inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+    sizeClasses[size],
+    variantClasses
+  );
+}
+
+/**
+ * Enhanced modal utility with design token integration
+ * Provides type-safe modal sizing with standardized tokens
+ */
+export function createModalClasses(
+  size: ModalSize = 'lg',
+  customMaxWidth?: DimensionTokens
+): string {
+  let sizeClass = '';
+
+  if (customMaxWidth) {
+    sizeClass = createDimensionClass('max-w', customMaxWidth);
+  } else {
+    const sizeClasses = {
+      sm: 'max-w-modal-sm',
+      md: 'max-w-modal-md',
+      lg: 'max-w-modal-lg',
+      xl: 'max-w-modal-xl',
+      '2xl': 'max-w-modal-2xl',
+      '3xl': 'max-w-modal-3xl',
+      '4xl': 'max-w-modal-4xl',
+      full: 'max-w-modal-full',
+      'modal-1200': 'max-w-modal-1200',
+      'modal-1400': 'max-w-modal-1400'
+    };
+    sizeClass = sizeClasses[size];
+  }
+
+  return cn(
+    'relative grid w-full gap-4 border bg-background p-6 shadow-lg duration-200',
+    'data-[state=open]:animate-in data-[state=closed]:animate-out',
+    'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
+    'data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
+    'data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%]',
+    'data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]',
+    'sm:rounded-lg',
+    sizeClass
+  );
+}
+
+/**
+ * Type-safe StatCard utility with design token variants
+ * Enhanced version with full design token integration
+ */
+export function createStatCardClasses(
+  variant: StatCardVariant = 'default',
+  customSize?: 'compact' | 'default' | 'expanded'
+): { container: string; title: string; value: string; description: string } {
+  const sizeClasses = {
+    compact: 'p-4',
+    default: 'p-6',
+    expanded: 'p-8'
+  };
+
+  const variantClasses = {
+    default: {
+      container: 'bg-card border-border',
+      title: 'text-muted-foreground',
+      value: 'text-foreground',
+      description: 'text-muted-foreground'
+    },
+    success: {
+      container: 'bg-card border-accent-green/20',
+      title: 'text-muted-foreground',
+      value: 'text-accent-green',
+      description: 'text-muted-foreground'
+    },
+    warning: {
+      container: 'bg-card border-accent-orange/20',
+      title: 'text-muted-foreground',
+      value: 'text-accent-orange',
+      description: 'text-muted-foreground'
+    },
+    error: {
+      container: 'bg-card border-accent-red/20',
+      title: 'text-muted-foreground',
+      value: 'text-accent-red',
+      description: 'text-muted-foreground'
+    },
+    purple: {
+      container: 'bg-card border-accent-purple/20',
+      title: 'text-muted-foreground',
+      value: 'text-accent-purple',
+      description: 'text-muted-foreground'
+    },
+    gold: {
+      container: 'bg-card border-accent-gold-100/20',
+      title: 'text-muted-foreground',
+      value: 'text-accent-gold-100',
+      description: 'text-muted-foreground'
+    }
+  };
+
+  const size = customSize || 'default';
+  const classes = variantClasses[variant];
+
+  return {
+    container: cn(
+      'rounded-lg border shadow-sm transition-colors',
+      sizeClasses[size],
+      classes.container
+    ),
+    title: cn('text-sm font-medium tracking-tight', classes.title),
+    value: cn('text-2xl font-bold tracking-tight', classes.value),
+    description: cn('text-xs', classes.description)
+  };
+}
+
+/**
+ * Design system props utility
+ * Converts DesignSystemProps to CSS classes
+ */
+export function convertDesignSystemProps(props: DesignSystemProps): string {
+  const classes: string[] = [];
+
+  if (props.backgroundColor) {
+    classes.push(props.backgroundColor);
+  }
+  if (props.textColor) {
+    classes.push(props.textColor);
+  }
+  if (props.borderColor) {
+    classes.push(props.borderColor);
+  }
+  if (props.width) {
+    classes.push(props.width);
+  }
+  if (props.height) {
+    classes.push(props.height);
+  }
+  if (props.layer) {
+    classes.push(props.layer);
+  }
+  if (props.fontFamily) {
+    classes.push(props.fontFamily);
+  }
+  if (props.textShadow) {
+    classes.push(props.textShadow);
+  }
+
+  return cn(...classes);
+}
+
+/**
+ * Enhanced theme validation utility
+ * Validates design token usage at runtime with helpful error messages
+ */
+export function validateDesignTokenUsage(className: string): {
+  isValid: boolean;
+  warnings: string[];
+  suggestions: string[];
+} {
+  const warnings: string[] = [];
+  const suggestions: string[] = [];
+
+  // Check for hardcoded colors
+  const hexColorPattern = /#[0-9a-fA-F]{3,8}/g;
+  const rgbPattern = /rgba?\([^)]+\)/g;
+  const hslPattern = /hsla?\([^)]+\)/g;
+
+  if (hexColorPattern.test(className)) {
+    warnings.push('Hardcoded hex colors found');
+    suggestions.push('Use design tokens like text-accent-gold-100 or bg-primary-black');
+  }
+
+  if (rgbPattern.test(className) || hslPattern.test(className)) {
+    warnings.push('Hardcoded RGB/HSL colors found');
+    suggestions.push('Use design tokens or CSS custom properties');
+  }
+
+  // Check for arbitrary values that could use tokens
+  const arbitraryWidthPattern = /w-\[[^\]]+\]/g;
+  const arbitraryHeightPattern = /h-\[[^\]]+\]/g;
+
+  if (arbitraryWidthPattern.test(className)) {
+    warnings.push('Arbitrary width values found');
+    suggestions.push('Consider using standardized width tokens like w-modal-lg or w-col-xl');
+  }
+
+  if (arbitraryHeightPattern.test(className)) {
+    warnings.push('Arbitrary height values found');
+    suggestions.push('Consider using standardized height tokens like h-content-md or h-dialog-lg');
+  }
+
+  return {
+    isValid: warnings.length === 0,
+    warnings,
+    suggestions
+  };
 }

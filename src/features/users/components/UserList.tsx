@@ -262,15 +262,15 @@ export const UserList: React.FC<UserListProps> = ({
                 className={cn(
                   "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-300 relative group",
                   activeTab === 'users'
-                    ? "bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/20 text-[#FFD700] border border-[#FFD700]/40 shadow-md shadow-[#FFD700]/20"
+                    ? "bg-gradient-to-r from-accent-gold-100/20 to-accent-gold-70/20 text-accent-gold-100 border border-accent-gold-100/40 shadow-md shadow-accent-gold-100/20"
                     : "text-gray-300 hover:text-white hover:bg-white/10 hover:border-white/20 border border-transparent"
                 )}
               >
-                <Users className={cn("h-3 w-3 transition-all duration-300", 
-                  activeTab === 'users' ? "text-[#FFD700]" : "text-gray-400 group-hover:text-white")} />
+                <Users className={cn("h-3 w-3 transition-all duration-300",
+                  activeTab === 'users' ? "text-accent-gold-100" : "text-gray-400 group-hover:text-white")} />
                 <span className="relative z-10">Usuários</span>
                 {activeTab === 'users' && (
-                  <div className="absolute inset-0 rounded-md bg-gradient-to-r from-[#FFD700]/10 via-[#FFD700]/20 to-[#FFD700]/10 opacity-50 animate-pulse" />
+                  <div className="absolute inset-0 rounded-md bg-gradient-to-r from-accent-gold-100/10 via-accent-gold-100/20 to-accent-gold-100/10 opacity-50 animate-pulse" />
                 )}
               </button>
               <button
@@ -278,15 +278,15 @@ export const UserList: React.FC<UserListProps> = ({
                 className={cn(
                   "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-300 relative group",
                   activeTab === 'categories'
-                    ? "bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/20 text-[#FFD700] border border-[#FFD700]/40 shadow-md shadow-[#FFD700]/20"
+                    ? "bg-gradient-to-r from-accent-gold-100/20 to-accent-gold-70/20 text-accent-gold-100 border border-accent-gold-100/40 shadow-md shadow-accent-gold-100/20"
                     : "text-gray-300 hover:text-white hover:bg-white/10 hover:border-white/20 border border-transparent"
                 )}
               >
                 <FolderTree className={cn("h-3 w-3 transition-all duration-300", 
-                  activeTab === 'categories' ? "text-[#FFD700]" : "text-gray-400 group-hover:text-white")} />
+                  activeTab === 'categories' ? "text-accent-gold-100" : "text-gray-400 group-hover:text-white")} />
                 <span className="relative z-10">Categorias</span>
                 {activeTab === 'categories' && (
-                  <div className="absolute inset-0 rounded-md bg-gradient-to-r from-[#FFD700]/10 via-[#FFD700]/20 to-[#FFD700]/10 opacity-50 animate-pulse" />
+                  <div className="absolute inset-0 rounded-md bg-gradient-to-r from-accent-gold-100/10 via-accent-gold-100/20 to-accent-gold-100/10 opacity-50 animate-pulse" />
                 )}
               </button>
             </div>
@@ -297,9 +297,9 @@ export const UserList: React.FC<UserListProps> = ({
               size="sm" 
               onClick={handleRefresh}
               disabled={isRefreshing || isLoading}
-              className="bg-black/80 border-[#FFD700]/40 text-[#FFD700] hover:bg-[#FFD700]/20 hover:shadow-lg hover:shadow-[#FFD700]/20 hover:border-[#FFD700]/80 hover:scale-105 backdrop-blur-sm transition-all duration-300 relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+              className="bg-black/80 border-accent-gold-100/40 text-accent-gold-100 hover:bg-accent-gold-100/20 hover:shadow-lg hover:shadow-accent-gold-100/20 hover:border-accent-gold-100/80 hover:scale-105 backdrop-blur-sm transition-all duration-300 relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-[#FFD700]/5 via-[#FFD700]/10 to-[#FFD700]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <div className="absolute inset-0 bg-gradient-to-r from-accent-gold-100/5 via-accent-gold-100/10 to-accent-gold-100/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               <RefreshCw className={`h-4 w-4 mr-2 relative z-10 transition-transform duration-300 ${isRefreshing ? 'animate-spin' : 'group-hover:rotate-180'}`} />
               <span className="relative z-10">{isRefreshing ? 'Atualizando...' : 'Atualizar'}</span>
             </Button>
@@ -358,7 +358,7 @@ export const UserList: React.FC<UserListProps> = ({
                   {visibleColumns.includes('Nome') && (
                     <th className="text-left p-4 font-medium text-white">
                       <button 
-                        className="inline-flex items-center gap-2 hover:text-[#FFD700] transition-colors duration-200 group" 
+                        className="inline-flex items-center gap-2 hover:text-accent-gold-100 transition-colors duration-200 group" 
                         onClick={() => handleSort('name')}
                       >
                         <span>Nome</span>
@@ -371,7 +371,7 @@ export const UserList: React.FC<UserListProps> = ({
                   {visibleColumns.includes('Email') && (
                     <th className="text-left p-4 font-medium text-white">
                       <button 
-                        className="inline-flex items-center gap-2 hover:text-[#FFD700] transition-colors duration-200 group" 
+                        className="inline-flex items-center gap-2 hover:text-accent-gold-100 transition-colors duration-200 group" 
                         onClick={() => handleSort('email')}
                       >
                         <span>Email</span>
@@ -384,7 +384,7 @@ export const UserList: React.FC<UserListProps> = ({
                   {visibleColumns.includes('Função') && (
                     <th className="text-left p-4 font-medium text-white">
                       <button 
-                        className="inline-flex items-center gap-2 hover:text-[#FFD700] transition-colors duration-200 group" 
+                        className="inline-flex items-center gap-2 hover:text-accent-gold-100 transition-colors duration-200 group" 
                         onClick={() => handleSort('role')}
                       >
                         <span>Função</span>
@@ -397,7 +397,7 @@ export const UserList: React.FC<UserListProps> = ({
                   {visibleColumns.includes('Criado em') && (
                     <th className="text-left p-4 font-medium text-white">
                       <button 
-                        className="inline-flex items-center gap-2 hover:text-[#FFD700] transition-colors duration-200 group" 
+                        className="inline-flex items-center gap-2 hover:text-accent-gold-100 transition-colors duration-200 group" 
                         onClick={() => handleSort('created_at')}
                       >
                         <span>Criado em</span>
@@ -421,9 +421,9 @@ export const UserList: React.FC<UserListProps> = ({
                     {visibleColumns.includes('Nome') && (
                       <td className="p-4">
                         <div className="flex items-center">
-                          <span className="font-medium text-white group-hover:text-[#FFD700] transition-colors duration-200">{user.name}</span>
+                          <span className="font-medium text-white group-hover:text-accent-gold-100 transition-colors duration-200">{user.name}</span>
                           {isSupremeAdmin(user.email) && (
-                            <Crown className="h-4 w-4 text-[#FFD700] ml-2 group-hover:animate-pulse" title="Administrador Supremo" />
+                            <Crown className="h-4 w-4 text-accent-gold-100 ml-2 group-hover:animate-pulse" title="Administrador Supremo" />
                           )}
                         </div>
                       </td>

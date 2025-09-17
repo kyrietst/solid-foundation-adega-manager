@@ -10,7 +10,7 @@ import { Button } from '@/shared/ui/primitives/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/primitives/tabs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/shared/ui/primitives/dropdown-menu';
 import { CalendarIcon, FileSpreadsheet, BarChart3, Users, Package, DollarSign, ChevronDown, Calendar, Truck } from 'lucide-react';
-import { BlurIn } from '@/shared/ui/effects/blur-in';
+import { PageHeader } from '@/shared/ui/composite/PageHeader';
 import { getSFProTextClasses, getHeaderTextClasses } from '@/core/config/theme-utils';
 import { supabase } from '@/core/api/supabase/client';
 import { SalesReportsSection } from './SalesReportsSection';
@@ -156,39 +156,15 @@ export const AdvancedReports: React.FC = () => {
 
 
   return (
-    <div className="w-full h-full flex flex-col p-4">
-      {/* Header padronizado */}
-      <div className="flex-shrink-0 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
-        {/* Header com BlurIn animation */}
-        <div className="relative text-center sm:text-left">
-          {/* Título animado */}
-          <BlurIn
-            word="RELATÓRIOS CENTRAIS"
-            duration={1.2}
-            variant={{
-              hidden: { filter: "blur(15px)", opacity: 0 },
-              visible: { filter: "blur(0px)", opacity: 1 }
-            }}
-            className={`${getHeaderTextClasses('main')} text-transparent bg-clip-text bg-gradient-to-r from-[#FF2400] via-[#FFDA04] to-[#FF2400] drop-shadow-lg`}
-            style={{
-              textShadow: '0 2px 4px rgba(0,0,0,0.3), 0 0 20px rgba(255, 218, 4, 0.2)'
-            }}
-          />
-          
-          {/* Sublinhado elegante */}
-          <div className="w-full h-2 relative">
-            <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FF2400]/80 to-transparent h-[2px] w-full blur-sm" />
-            <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FF2400] to-transparent h-px w-full" />
-            <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FFDA04]/80 to-transparent h-[3px] w-3/4 blur-sm mx-auto" />
-            <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FFDA04] to-transparent h-px w-3/4 mx-auto" />
-          </div>
-          
-        </div>
-        
+    <div className="w-full h-full flex flex-col">
+      {/* Header - altura fixa */}
+      <PageHeader
+        title="RELATÓRIOS CENTRAIS"
+      >
         {/* Controles globais */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
           {/* Filtro Global de Período */}
-          <div 
+          <div
             className="relative flex items-center gap-2 h-10 px-3 py-2 bg-black/80 rounded-lg border border-white/10 backdrop-blur-sm hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300 group"
             onMouseMove={(e) => {
               const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
@@ -206,8 +182,8 @@ export const AdvancedReports: React.FC = () => {
                 size="sm"
                 onClick={() => setGlobalPeriod(days)}
                 className={`${
-                  globalPeriod === days 
-                    ? "bg-gradient-to-r from-[#FFD700] to-[#FFA500] text-black font-bold shadow-lg shadow-[#FFD700]/30 scale-105 border-0" 
+                  globalPeriod === days
+                    ? "bg-gradient-to-r from-[#FFD700] to-[#FFA500] text-black font-bold shadow-lg shadow-[#FFD700]/30 scale-105 border-0"
                     : "border-white/30 text-white hover:bg-white/20 hover:border-white/50 hover:scale-105 hover:shadow-md"
                 } backdrop-blur-sm transition-all duration-300 relative overflow-hidden group`}
               >
@@ -219,7 +195,7 @@ export const AdvancedReports: React.FC = () => {
               </Button>
             ))}
             {/* Purple glow effect */}
-            <div 
+            <div
               className="absolute inset-0 rounded-lg bg-gradient-to-br from-purple-500/20 via-transparent to-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
               style={{
                 background: `radial-gradient(600px circle at var(--x, 50%) var(--y, 50%), rgba(147, 51, 234, 0.15), transparent 40%)`
@@ -228,10 +204,10 @@ export const AdvancedReports: React.FC = () => {
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button 
+              <Button
                 variant="outline"
                 size="sm"
-                className="h-10 bg-black/80 border-[#FFD700]/40 text-[#FFD700] hover:bg-[#FFD700]/20 hover:shadow-xl hover:shadow-[#FFD700]/30 hover:border-[#FFD700]/80 hover:scale-105 backdrop-blur-sm transition-all duration-300 relative overflow-hidden group"
+                className="h-10 bg-black/80 border-accent-gold-100/40 text-accent-gold-100 hover:bg-accent-gold-100/20 hover:shadow-xl hover:shadow-accent-gold-100/30 hover:border-accent-gold-100/80 hover:scale-105 backdrop-blur-sm transition-all duration-300 relative overflow-hidden group"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-[#FFD700]/5 via-[#FFD700]/10 to-[#FFD700]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 <FileSpreadsheet className="h-4 w-4 mr-2 relative z-10 group-hover:animate-bounce" />
@@ -240,32 +216,32 @@ export const AdvancedReports: React.FC = () => {
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 -translate-x-full group-hover:translate-x-full transform" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent 
-              align="end" 
-              className="bg-black/95 border-[#FFD700]/20 backdrop-blur-md shadow-2xl shadow-[#FFD700]/10 animate-in fade-in-0 zoom-in-95 duration-300"
+            <DropdownMenuContent
+              align="end"
+              className="bg-black/95 border-accent-gold-100/20 backdrop-blur-md shadow-2xl shadow-accent-gold-100/10 animate-in fade-in-0 zoom-in-95 duration-300"
             >
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 onClick={() => exportToCSV('vendas')}
                 className="text-white hover:bg-blue-500/20 hover:text-blue-300 cursor-pointer transition-all duration-200 group"
               >
                 <BarChart3 className="h-4 w-4 mr-2 text-blue-400 group-hover:scale-110 transition-transform duration-200" />
                 <span className="group-hover:font-medium transition-all duration-200">Exportar Vendas</span>
               </DropdownMenuItem>
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 onClick={() => exportToCSV('produtos')}
                 className="text-white hover:bg-green-500/20 hover:text-green-300 cursor-pointer transition-all duration-200 group"
               >
                 <Package className="h-4 w-4 mr-2 text-green-400 group-hover:scale-110 transition-transform duration-200" />
                 <span className="group-hover:font-medium transition-all duration-200">Exportar Produtos</span>
               </DropdownMenuItem>
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 onClick={() => exportToCSV('clientes')}
                 className="text-white hover:bg-purple-500/20 hover:text-purple-300 cursor-pointer transition-all duration-200 group"
               >
                 <Users className="h-4 w-4 mr-2 text-purple-400 group-hover:scale-110 transition-transform duration-200" />
                 <span className="group-hover:font-medium transition-all duration-200">Exportar Clientes</span>
               </DropdownMenuItem>
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 onClick={() => exportToCSV('estoque')}
                 className="text-white hover:bg-amber-500/20 hover:text-amber-300 cursor-pointer transition-all duration-200 group"
               >
@@ -275,12 +251,10 @@ export const AdvancedReports: React.FC = () => {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-      </div>
+      </PageHeader>
 
-
-      {/* Container principal com glassmorphism */}
-      <section 
-        className="bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-4 hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300"
+      {/* Container principal com glassmorphism - ocupa altura restante */}
+      <div className="flex-1 min-h-0 bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-4 flex flex-col hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300"
         onMouseMove={(e) => {
           const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
           const x = ((e.clientX - rect.left) / rect.width) * 100;
@@ -359,7 +333,7 @@ export const AdvancedReports: React.FC = () => {
             <ExpiryReportsSection />
           </TabsContent>
         </Tabs>
-      </section>
+      </div>
     </div>
   );
 };

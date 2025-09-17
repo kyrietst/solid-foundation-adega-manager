@@ -4,18 +4,24 @@ import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
 import jsxA11y from "eslint-plugin-jsx-a11y";
+// Phase 4.1: Design system governance enabled
+import { designSystemConfig } from "./eslint-design-system.config.js";
 
 export default tseslint.config(
-  { 
+  {
     ignores: [
       "dist",
-      "build", 
+      "build",
       "coverage",
       "node_modules",
       "src/__tests__/mocks/**/*",
       "src/__tests__/fixtures/**/*",
-      "src/integrations/supabase/types.ts"
-    ] 
+      "src/__tests__/utils/enhanced-test-utils.tsx",
+      "src/integrations/supabase/types.ts",
+      // Ignore design system violations in specific files
+      "src/shared/ui/thirdparty/**/*",
+      "src/core/error-handling/ErrorBoundary.tsx"
+    ]
   },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
@@ -28,6 +34,8 @@ export default tseslint.config(
       "react-hooks": reactHooks,
       "react-refresh": reactRefresh,
       "jsx-a11y": jsxA11y,
+      // Phase 4.1: Design system plugins enabled
+      ...designSystemConfig.plugins,
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
@@ -49,6 +57,9 @@ export default tseslint.config(
       "jsx-a11y/no-autofocus": "warn",
       "jsx-a11y/no-redundant-roles": "error",
       "jsx-a11y/role-supports-aria-props": "error",
+
+      // Phase 4.1: Design System Governance Rules enabled
+      ...designSystemConfig.rules,
     },
   },
   // Configuração específica para arquivos de teste
@@ -58,6 +69,11 @@ export default tseslint.config(
       "@typescript-eslint/no-explicit-any": "off",
       "@typescript-eslint/no-empty-object-type": "off",
       "prefer-const": "off",
+      // Disable design system rules for test files
+      "adega/no-hardcoded-colors": "off",
+      "adega/no-arbitrary-values": "off",
+      "adega/prefer-semantic-colors": "off",
+      "adega/require-size-tokens": "off",
     }
   }
 );

@@ -11,7 +11,7 @@ import { ArrowUpDown, ArrowUp, ArrowDown, RefreshCw, MapPin, BarChart3 } from 'l
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/primitives/select';
 import { Truck, Clock, CheckCircle, AlertCircle, User, DollarSign } from 'lucide-react';
 import { useToast } from '@/shared/hooks/common/use-toast';
-import { BlurIn } from '@/shared/ui/effects/blur-in';
+import { PageHeader } from '@/shared/ui/composite/PageHeader';
 import { useDeliveryOrders, useDeliveryMetrics, useUpdateDeliveryStatus } from '@/features/delivery/hooks/useDeliveryOrders';
 import DeliveryOrderCard from './DeliveryOrderCard';
 import NotificationCenter from './NotificationCenter';
@@ -184,41 +184,17 @@ const Delivery = () => {
   const stats = getDeliveryStats();
 
   return (
-    <div className="w-full h-full flex flex-col p-4">
-      {/* Header padronizado */}
-      <div className="flex-shrink-0 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-        {/* Header com BlurIn animation */}
-        <div className="relative text-center sm:text-left">
-          {/* Título animado */}
-          <BlurIn
-            word="CONTROLE DE ENTREGAS"
-            duration={1.2}
-            variant={{
-              hidden: { filter: "blur(15px)", opacity: 0 },
-              visible: { filter: "blur(0px)", opacity: 1 }
-            }}
-            className={cn(
-              getSFProTextClasses('h1', 'accent'),
-              "text-transparent bg-clip-text bg-gradient-to-r from-[#FF2400] via-[#FFDA04] to-[#FF2400] drop-shadow-lg"
-            )}
-            style={{
-              textShadow: '0 2px 4px rgba(0,0,0,0.3), 0 0 20px rgba(255, 218, 4, 0.2)'
-            }}
-          />
-          
-          {/* Sublinhado elegante */}
-          <div className="w-full h-2 relative">
-            <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FF2400]/80 to-transparent h-[2px] w-full blur-sm" />
-            <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FF2400] to-transparent h-px w-full" />
-            <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FFDA04]/80 to-transparent h-[3px] w-3/4 blur-sm mx-auto" />
-            <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FFDA04] to-transparent h-px w-3/4 mx-auto" />
-          </div>
-        </div>
-        
+    <div className="w-full h-full flex flex-col">
+      {/* Header - altura fixa */}
+      <PageHeader
+        title="CONTROLE DE ENTREGAS"
+        count={stats.total}
+        countLabel="entregas"
+      >
         {/* Controles */}
         <div className="flex items-center gap-4">
           <NotificationCenter />
-          <Button 
+          <Button
             onClick={() => refetch()}
             disabled={isLoadingDeliveries}
             className="bg-black/80 border-[#FFD700]/40 text-[#FFD700] hover:bg-[#FFD700]/20 hover:shadow-xl hover:shadow-[#FFD700]/30 hover:border-[#FFD700]/80 hover:scale-105 backdrop-blur-sm transition-all duration-300 relative overflow-hidden group disabled:opacity-50"
@@ -229,11 +205,10 @@ const Delivery = () => {
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 -translate-x-full group-hover:translate-x-full transform" />
           </Button>
         </div>
-      </div>
+      </PageHeader>
 
-      {/* Container principal com glassmorphism */}
-      <section 
-        className="bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-4 hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300 flex-1 space-y-6"
+      {/* Container principal com glassmorphism - ocupa altura restante */}
+      <div className="flex-1 min-h-0 bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-4 flex flex-col hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300 space-y-6"
         onMouseMove={(e) => {
           const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
           const x = ((e.clientX - rect.left) / rect.width) * 100;
@@ -581,7 +556,7 @@ const Delivery = () => {
             </Card>
           </TabsContent>
         </Tabs>
-      </section>
+      </div>
     </div>
   );
 };

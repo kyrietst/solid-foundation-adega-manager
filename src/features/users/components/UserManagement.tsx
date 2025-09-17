@@ -6,8 +6,9 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/shared/ui/primitives/button';
+import { Badge } from '@/shared/ui/primitives/badge';
 import { Plus, Users, FolderTree, Settings } from 'lucide-react';
-import { BlurIn } from '@/shared/ui/effects/blur-in';
+import { PageHeader } from '@/shared/ui/composite/PageHeader';
 import { cn } from '@/core/config/utils';
 import { getSFProTextClasses } from '@/core/config/theme-utils';
 
@@ -67,7 +68,7 @@ const UserManagement = () => {
   // Show access denied if user doesn't have permission
   if (!canViewUsers) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="flex items-center justify-center min-h-content-md">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-adega-platinum mb-4">
             Acesso Negado
@@ -82,70 +83,40 @@ const UserManagement = () => {
 
   return (
     <div className="w-full h-full flex flex-col">
-      {/* Header padronizado */}
-      <div className="flex-shrink-0 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        {/* Título Principal */}
-        <div className="relative text-center sm:text-left">
-          {/* Título animado */}
-          <BlurIn
-            word="ADMINISTRAÇÃO DO SISTEMA"
-            duration={1.2}
-            variant={{
-              hidden: { filter: "blur(15px)", opacity: 0 },
-              visible: { filter: "blur(0px)", opacity: 1 }
-            }}
-            className={cn(
-              getSFProTextClasses('h1', 'accent'),
-              "text-transparent bg-clip-text bg-gradient-to-r from-[#FF2400] via-[#FFDA04] to-[#FF2400] drop-shadow-lg"
-            )}
-            style={{
-              textShadow: '0 2px 4px rgba(0,0,0,0.3), 0 0 20px rgba(255, 218, 4, 0.2)'
-            }}
-          />
-          
-          {/* Sublinhado elegante */}
-          <div className="w-full h-6 relative mt-2">
-            {/* Camada 1: Vermelho com blur */}
-            <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FF2400]/80 to-transparent h-[2px] w-full blur-sm" />
-            
-            {/* Camada 2: Vermelho sólido */}
-            <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FF2400] to-transparent h-px w-full" />
-            
-            {/* Camada 3: Amarelo com blur (menor largura) */}
-            <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FFDA04]/80 to-transparent h-[3px] w-3/4 blur-sm mx-auto" />
-            
-            {/* Camada 4: Amarelo sólido (menor largura) */}
-            <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FFDA04] to-transparent h-px w-3/4 mx-auto" />
+      {/* Header - altura fixa */}
+      <PageHeader
+        title="ADMINISTRAÇÃO DO SISTEMA"
+        count={users.length}
+        countLabel="usuários"
+      />
+
+      {/* Container principal com glassmorphism - ocupa altura restante */}
+      <div className="flex-1 min-h-0 bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-4 flex flex-col hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300">
+
+        {/* Header com controles dentro do box */}
+        <div className="flex-shrink-0 mb-4">
+          <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
+            <div className="flex items-center space-x-4">
+              <h2 className="text-lg font-semibold text-adega-platinum">Gerenciar Usuários</h2>
+              <Badge variant="secondary" className="bg-gray-700/50 text-gray-100 border-gray-600/50">
+                {users.length} usuários
+              </Badge>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              {/* Botão Novo Usuário */}
+              {canCreateUsers && activeTab === 'users' && (
+                <Button
+                  onClick={() => setIsCreateDialogOpen(true)}
+                  className="bg-gradient-to-r from-primary-yellow to-yellow-500 text-black hover:from-yellow-300 hover:to-yellow-400 font-semibold shadow-lg hover:shadow-yellow-400/30 transition-all duration-200 hover:scale-105"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  NOVO USUÁRIO
+                </Button>
+              )}
+            </div>
           </div>
         </div>
-        
-        {/* Controles - apenas novo usuário aqui */}
-        {canCreateUsers && activeTab === 'users' && (
-          <div className="flex items-center gap-4">
-            <Button 
-              onClick={() => setIsCreateDialogOpen(true)}
-              className="bg-black/80 border-[#FFD700]/40 text-[#FFD700] hover:bg-[#FFD700]/20 hover:shadow-xl hover:shadow-[#FFD700]/30 hover:border-[#FFD700]/80 hover:scale-105 backdrop-blur-sm transition-all duration-300 relative overflow-hidden group"
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-[#FFD700]/5 via-[#FFD700]/10 to-[#FFD700]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <Plus className="h-4 w-4 mr-2 relative z-10 group-hover:rotate-90 transition-transform duration-300" />
-              <span className="relative z-10 font-medium">Novo Usuário</span>
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 -translate-x-full group-hover:translate-x-full transform" />
-            </Button>
-          </div>
-        )}
-      </div>
-
-      {/* Container principal com glassmorphism */}
-      <section 
-        className="bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-4 hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300 flex-1"
-        onMouseMove={(e) => {
-          const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-          const x = ((e.clientX - rect.left) / rect.width) * 100;
-          const y = ((e.clientY - rect.top) / rect.height) * 100;
-          (e.currentTarget as HTMLElement).style.setProperty("--x", `${x}%`);
-          (e.currentTarget as HTMLElement).style.setProperty("--y", `${y}%`);
-        }}
-      >
 
         {/* Conteúdo baseado na aba ativa */}
         {activeTab === 'users' ? (
@@ -175,7 +146,7 @@ const UserManagement = () => {
             <p className="text-gray-400">Funcionalidade de categorias temporariamente indisponível</p>
           </div>
         )}
-      </section>
+      </div>
     </div>
   );
 };

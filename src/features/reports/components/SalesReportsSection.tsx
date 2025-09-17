@@ -16,6 +16,7 @@ import { TrendingUp, Package, CreditCard, Download, Filter, History, BarChart3 }
 import { cn } from '@/core/config/utils';
 import { SalesHistoryTable } from './SalesHistoryTable';
 import { useLocation } from 'react-router-dom';
+import { chartTheme } from '@/shared/ui/composite/ChartTheme';
 
 interface SalesFilters {
   category: string;
@@ -330,27 +331,8 @@ export const SalesReportsSection: React.FC<SalesReportsSectionProps> = ({ period
     return name.substring(0, maxLength) + '...';
   };
 
-  const COLORS = [
-    '#f59e0b', // amber - Bebida Mista  
-    '#3b82f6', // blue - Cerveja
-    '#10b981', // emerald - Bebidas Quentes
-    '#8b5cf6', // purple - Refrigerante
-    '#f97316', // orange - Whisky
-    '#06b6d4', // cyan - Energético
-    '#84cc16', // lime - Vodka
-    '#f43f5e', // rose - Cigarro
-    '#6366f1', // indigo - Água
-    '#14b8a6', // teal - Vinho
-    '#a855f7', // violet - Licor
-    '#f59e0b', // amber-alt - Suco
-    '#ef4444', // red - Gin
-    '#22c55e', // green - Doces
-    '#eab308', // yellow - Isotônico
-    '#8b5cf6', // purple-alt - Tabacaria
-    '#f97316', // orange-alt - Gelo
-    '#06b6d4', // cyan-alt - Espumante
-    '#84cc16'  // lime-alt - Carvão
-  ];
+  // Usar paleta padronizada para vendas
+  const COLORS = chartTheme.sales;
 
   // Process category data - show ALL categories for complete report view
   const processedCategoryData = React.useMemo(() => {

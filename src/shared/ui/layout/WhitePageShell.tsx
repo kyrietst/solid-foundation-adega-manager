@@ -49,7 +49,7 @@ export function WhitePageShell({
             // Glassmorphism pattern - padrão estabelecido no sistema
             'bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg text-white hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300',
             // Ensure the edges and background are visible around container
-            'min-h-[60vh]',
+            'min-h-content-md',
             paddingClasses[padding],
             className,
           )}

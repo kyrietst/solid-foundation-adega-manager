@@ -24,6 +24,7 @@ import { SalesInsightsTabs } from './SalesInsightsTabs';
 import { DashboardHeader } from './DashboardHeader';
 import { DeliveryVsInstoreComparison } from './DeliveryVsInstoreComparison';
 import { DollarSign, ShoppingCart, TrendingUp, Users, AlertTriangle, CreditCard, Target, Calculator } from 'lucide-react';
+import { PageHeader } from '@/shared/ui/composite/PageHeader';
 
 export interface DashboardPresentationProps {
   // Dados processados
@@ -54,11 +55,12 @@ export const DashboardPresentation: React.FC<DashboardPresentationProps> = ({
   showEmployeeNote,
 }) => {
   return (
-    <div className="w-full min-h-screen flex flex-col">
+    <div className="w-full h-full flex flex-col">
       {/* Header padronizado */}
-      <DashboardHeader variant="premium" />
+      <PageHeader title="CENTRO DE COMANDO" />
 
-      <div className="flex-1 px-4 pb-4 lg:px-8 lg:pb-8">
+      {/* Container principal com glassmorphism - ocupa altura restante */}
+      <div className="flex-1 min-h-0 bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-4 flex flex-col hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* Canais de Venda no topo */}
           <div className="lg:col-span-12">

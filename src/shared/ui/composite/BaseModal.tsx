@@ -16,7 +16,7 @@ import {
 } from '@/shared/ui/primitives/dialog';
 import { cn } from '@/core/config/utils';
 
-export type ModalSize = 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | 'full';
+export type ModalSize = 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | '6xl' | 'full';
 
 export interface BaseModalProps {
   /** Estado de abertura do modal */
@@ -46,23 +46,27 @@ export interface BaseModalProps {
 const sizeClasses: Record<ModalSize, string> = {
   sm: '!max-w-sm',
   md: '!max-w-md',
-  lg: '!max-w-lg', 
+  lg: '!max-w-lg',
   xl: '!max-w-xl',
   '2xl': '!max-w-2xl',
   '3xl': '!max-w-3xl',
   '4xl': '!max-w-4xl',
+  '5xl': '!w-modal-1200 !max-w-modal-1200', // Inventory modals standard
+  '6xl': '!w-modal-1400 !max-w-modal-1400', // Ultra wide modals
   full: '!max-w-full mx-4'
 };
 
 // Mapeamento de tamanhos para maxWidth do Radix UI
 const sizeToMaxWidth: Record<ModalSize, string> = {
   sm: '384px',     // max-w-sm
-  md: '448px',     // max-w-md  
+  md: '448px',     // max-w-md
   lg: '512px',     // max-w-lg
   xl: '576px',     // max-w-xl
   '2xl': '672px',  // max-w-2xl
-  '3xl': '768px',  // max-w-3xl - NOVO!
-  '4xl': '896px',  // max-w-4xl - NOVO!
+  '3xl': '768px',  // max-w-3xl
+  '4xl': '896px',  // max-w-4xl
+  '5xl': '1200px', // Inventory modals standard
+  '6xl': '1400px', // Ultra wide modals
   full: '100vw'    // max-w-full
 };
 

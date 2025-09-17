@@ -39,7 +39,7 @@ export const CustomerTable: React.FC<CustomerTableProps> = ({
       label: 'Cliente',
       accessor: 'name',
       searchable: true,
-      width: '200px',
+      width: 'col-3xl',
       render: (_, customer) => (
         <div>
           <div className="font-medium text-adega-platinum">{customer.name}</div>
@@ -54,7 +54,7 @@ export const CustomerTable: React.FC<CustomerTableProps> = ({
       label: 'Segmento',
       accessor: 'segment',
       searchable: true,
-      width: '120px',
+      width: 'col-md',
       render: (_, customer) => (
         <CustomerSegmentBadge segment={customer.segment || ''} />
       ),
@@ -64,7 +64,7 @@ export const CustomerTable: React.FC<CustomerTableProps> = ({
       label: 'Contato',
       accessor: (customer) => formatContact(customer),
       searchable: true,
-      width: '220px',
+      width: 'col-4xl',
       render: (_, customer) => (
         <div className="space-y-1">
           {customer.email && (
@@ -91,7 +91,7 @@ export const CustomerTable: React.FC<CustomerTableProps> = ({
       id: 'lifetime_value',
       label: 'LTV',
       accessor: 'lifetime_value',
-      width: '120px',
+      width: 'col-md',
       align: 'right',
       render: (value) => (
         <span className="font-semibold text-adega-gold">
@@ -103,7 +103,7 @@ export const CustomerTable: React.FC<CustomerTableProps> = ({
       id: 'last_purchase_date',
       label: 'Última Compra',
       accessor: 'last_purchase_date',
-      width: '140px',
+      width: 'col-lg',
       render: (value) => (
         <span className="text-adega-platinum/80">
           {formatDate(value)}
@@ -114,7 +114,7 @@ export const CustomerTable: React.FC<CustomerTableProps> = ({
       id: 'favorite_category',
       label: 'Categoria Favorita',
       accessor: 'favorite_category',
-      width: '160px',
+      width: 'col-xl',
       render: (value) => (
         <span className="text-adega-platinum/60">
           {value || '-'}
@@ -127,7 +127,7 @@ export const CustomerTable: React.FC<CustomerTableProps> = ({
       accessor: (customer: CustomerProfile & { tags?: string[] | string }) => customer.tags,
       searchable: false,
       sortable: false,
-      width: '200px',
+      width: 'col-3xl',
       render: (_, customer: CustomerProfile & { tags?: string[] | string }) => (
         <div className="max-w-[200px]">
           <CustomerTagDisplay tags={customer.tags} maxVisible={2} size="sm" />
@@ -140,7 +140,7 @@ export const CustomerTable: React.FC<CustomerTableProps> = ({
       accessor: () => '',
       searchable: false,
       sortable: false,
-      width: '100px',
+      width: 'col-sm',
       render: (_, customer) => (
         <div className="flex gap-1">
           <Button

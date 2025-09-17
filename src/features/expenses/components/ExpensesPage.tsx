@@ -6,11 +6,11 @@ import ExpensesTab from './ExpensesTab';
 import ExpenseReportsTab from './ExpenseReportsTab';
 import { useExpenseSummary } from '../hooks';
 import { format } from 'date-fns';
-import { BlurIn } from '@/shared/ui/effects/blur-in';
 import { StatCard } from '@/shared/ui/composite/stat-card';
-import { getGlassCardClasses, getGlassButtonClasses, getHoverTransformClasses, getSFProTextClasses } from '@/core/config/theme-utils';
+import { getGlassCardClasses, getGlassButtonClasses, getHoverTransformClasses } from '@/core/config/theme-utils';
 import { cn } from '@/core/config/utils';
 import { LoadingScreen } from '@/shared/ui/composite/loading-spinner';
+import { PageHeader } from '@/shared/ui/composite/PageHeader';
 
 const ExpensesPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('expenses');
@@ -66,75 +66,35 @@ const ExpensesPage: React.FC = () => {
   }
 
   return (
-    <div className="w-full h-full flex flex-col overflow-x-hidden min-w-0">
-      {/* Header */}
-      <div className="flex-shrink-0 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        {/* Título Principal */}
-        <div className="relative text-center sm:text-left">
-          {/* Título animado */}
-          <BlurIn
-            word="GESTÃO DE DESPESAS"
-            duration={1.2}
-            variant={{
-              hidden: { filter: "blur(15px)", opacity: 0 },
-              visible: { filter: "blur(0px)", opacity: 1 }
-            }}
-            className={cn(
-              getSFProTextClasses('h1', 'accent'),
-              "text-transparent bg-clip-text bg-gradient-to-r from-[#FF2400] via-[#FFDA04] to-[#FF2400] drop-shadow-lg"
-            )}
-            style={{
-              textShadow: '0 2px 4px rgba(0,0,0,0.3), 0 0 20px rgba(255, 218, 4, 0.2)'
-            }}
-          />
-          
-          {/* Sublinhado elegante */}
-          <div className="w-full h-6 relative mt-2">
-            {/* Camada 1: Vermelho com blur */}
-            <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FF2400]/80 to-transparent h-[2px] w-full blur-sm" />
-            
-            {/* Camada 2: Vermelho sólido */}
-            <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FF2400] to-transparent h-px w-full" />
-            
-            {/* Camada 3: Amarelo com blur (menor largura) */}
-            <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FFDA04]/80 to-transparent h-[3px] w-3/4 blur-sm mx-auto" />
-            
-            {/* Camada 4: Amarelo sólido (menor largura) */}
-            <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FFDA04] to-transparent h-px w-3/4 mx-auto" />
-          </div>
-        </div>
+    <div className="w-full h-full flex flex-col">
+      {/* Header padronizado com botões de ação */}
+      <PageHeader title="GESTÃO DE DESPESAS">
+        <Button
+          onClick={() => setActiveTab('reports')}
+          className={cn(
+            getGlassButtonClasses('primary'),
+            getHoverTransformClasses('scale'),
+            "flex items-center gap-2"
+          )}
+        >
+          <BarChart3 className="h-4 w-4" />
+          Relatórios
+        </Button>
+        <Button
+          variant="outline"
+          className={cn(
+            getGlassButtonClasses('secondary'),
+            getHoverTransformClasses('scale'),
+            "flex items-center gap-2"
+          )}
+        >
+          <Download className="h-4 w-4" />
+          Exportar
+        </Button>
+      </PageHeader>
 
-        {/* Botões de Ação */}
-        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
-          <Button
-            onClick={() => setActiveTab('reports')}
-            className={cn(
-              getGlassButtonClasses('primary'),
-              getHoverTransformClasses('scale'),
-              "flex items-center gap-2"
-            )}
-          >
-            <BarChart3 className="h-4 w-4" />
-            Relatórios
-          </Button>
-          <Button
-            variant="outline"
-            className={cn(
-              getGlassButtonClasses('secondary'),
-              getHoverTransformClasses('scale'),
-              "flex items-center gap-2"
-            )}
-          >
-            <Download className="h-4 w-4" />
-            Exportar
-          </Button>
-        </div>
-      </div>
-
-
-      {/* Container Principal com glassmorphism - KPIs + Conteúdo */}
-      <section 
-        className="flex-1 min-h-0 bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg hero-spotlight p-6 flex flex-col hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300 overflow-visible space-y-6"
+      {/* Container principal com glassmorphism - ocupa altura restante */}
+      <div className="flex-1 min-h-0 bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-4 flex flex-col hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300 space-y-6"
         onMouseMove={(e) => {
           const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
           const x = ((e.clientX - rect.left) / rect.width) * 100;
@@ -205,7 +165,7 @@ const ExpensesPage: React.FC = () => {
           <ExpenseReportsTab />
         </TabsContent>
       </Tabs>
-      </section>
+      </div>
     </div>
   );
 };

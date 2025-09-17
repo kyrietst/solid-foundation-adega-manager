@@ -107,7 +107,34 @@ export default {
 				'accent-red': '#ef4444',
 				'accent-purple': '#8b5cf6',
 				'accent-orange': '#f97316',
-				
+
+				// Chart Color System - Extends accent colors for data visualization
+				'chart-1': '#3b82f6', // accent-blue
+				'chart-2': '#10b981', // accent-green
+				'chart-3': '#f97316', // accent-orange
+				'chart-4': '#8b5cf6', // accent-purple
+				'chart-5': '#ef4444', // accent-red
+				'chart-6': '#06b6d4', // cyan
+				'chart-7': '#f59e0b', // amber
+				'chart-8': '#84cc16', // lime
+
+				// ============================================================================
+				// GOLDEN ACCENT SYSTEM - Standardized Golden Color Variants
+				// ============================================================================
+				'accent-gold': {
+					'100': '#FFD700', // Primary golden color (was hardcoded #FFD700)
+					'90': '#FFC700',  // Slightly darker
+					'80': '#FFB700',  // Medium variant
+					'70': '#FFA700',  // Darker variant
+					'60': '#FF9700',  // Darkest variant
+					'50': '#FF8700',  // Ultra dark
+					'40': '#E6C200',  // Muted
+					'30': '#D4B800',  // Very muted
+					'20': '#C2A600',  // Subtle
+					'10': '#B09400',  // Very subtle
+					'5': '#9E8200',   // Ultra subtle
+				},
+
 				// Mantém compatibilidade com paleta anterior
 				'adega': {
 					'black': '#000000',
@@ -124,6 +151,81 @@ export default {
 					'yellow': '#ffd700'
 				}
 			},
+			// ============================================================================
+			// DIMENSION TOKEN SYSTEM - Standardized Sizing and Spacing
+			// ============================================================================
+
+			// Table Column Width System - Eliminates hardcoded px values
+			width: {
+				// Micro widths for icons/actions
+				'col-xs': '80px',     // Actions, icons
+				'col-sm': '100px',    // Small data (IDs, counts)
+				'col-md': '120px',    // Medium data (dates, numbers)
+				'col-lg': '140px',    // Standard text fields
+				'col-xl': '160px',    // Long text fields
+				'col-2xl': '180px',   // Extended text
+				'col-3xl': '200px',   // Wide content
+				'col-4xl': '220px',   // Very wide content
+				'col-max': '250px',   // Maximum standard width
+
+				// Modal width tokens - Eliminates !important overrides
+				'modal-xs': '320px',    // Extra small modals
+				'modal-sm': '384px',    // Small modals
+				'modal-md': '448px',    // Medium modals
+				'modal-lg': '512px',    // Large modals
+				'modal-xl': '576px',    // Extra large modals
+				'modal-2xl': '672px',   // 2x large modals
+				'modal-3xl': '768px',   // 3x large modals
+				'modal-4xl': '896px',   // 4x large modals
+				'modal-1200': '1200px', // Inventory modals (standardized)
+				'modal-1400': '1400px', // Ultra wide modals
+				'modal-full': '100vw',  // Full width modals
+			},
+
+			// Viewport Height Token System - Eliminates arbitrary vh values
+			height: {
+				// Content area heights
+				'content-xs': '40vh',   // Compact content
+				'content-sm': '50vh',   // Small content areas
+				'content-md': '60vh',   // Standard content height
+				'content-lg': '70vh',   // Large content areas
+				'content-xl': '80vh',   // Extra large content
+				'content-2xl': '90vh',  // Maximum content height
+				'content-full': '100vh', // Full viewport
+
+				// Dialog specific heights
+				'dialog-xs': '30vh',    // Small dialogs
+				'dialog-sm': '40vh',    // Standard dialogs
+				'dialog-md': '60vh',    // Medium dialogs
+				'dialog-lg': '80vh',    // Large dialogs
+				'dialog-xl': '90vh',    // Maximum dialog height
+			},
+
+			// Minimum Height System
+			minHeight: {
+				'content-xs': '40vh',
+				'content-sm': '50vh',
+				'content-md': '60vh',
+				'content-lg': '70vh',
+				'content-xl': '80vh',
+				'content-2xl': '90vh',
+			},
+
+			// Maximum Height System
+			maxHeight: {
+				'content-xs': '40vh',
+				'content-sm': '50vh',
+				'content-md': '60vh',
+				'content-lg': '70vh',
+				'content-xl': '80vh',
+				'content-2xl': '90vh',
+				'dialog-xs': '30vh',
+				'dialog-sm': '40vh',
+				'dialog-md': '60vh',
+				'dialog-lg': '80vh',
+				'dialog-xl': '90vh',
+			},
+
 			borderRadius: {
 				lg: 'var(--radius)',
 				md: 'calc(var(--radius) - 2px)',
@@ -186,6 +288,31 @@ export default {
 					"50%": { backgroundPosition: "100% 50%" },
 					"100%": { backgroundPosition: "0% 50%" },
 				},
+				// Standard animation keyframes
+				'fade-in': {
+					'0%': { opacity: '0' },
+					'100%': { opacity: '1' },
+				},
+				'fade-out': {
+					'0%': { opacity: '1' },
+					'100%': { opacity: '0' },
+				},
+				'slide-up': {
+					'0%': { transform: 'translateY(20px)', opacity: '0' },
+					'100%': { transform: 'translateY(0)', opacity: '1' },
+				},
+				'slide-down': {
+					'0%': { transform: 'translateY(-20px)', opacity: '0' },
+					'100%': { transform: 'translateY(0)', opacity: '1' },
+				},
+				'zoom-in': {
+					'0%': { transform: 'scale(0.95)', opacity: '0' },
+					'100%': { transform: 'scale(1)', opacity: '1' },
+				},
+				'zoom-out': {
+					'0%': { transform: 'scale(1.05)', opacity: '0' },
+					'100%': { transform: 'scale(1)', opacity: '1' },
+				},
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
@@ -205,6 +332,82 @@ export default {
 				},
 				// Animação para o NeonGradientCard
 				"background-position-spin": "background-position-spin 3000ms infinite alternate",
+				// Standardized transitions and animations
+				'fade-in': 'fade-in 0.3s ease-out',
+				'fade-out': 'fade-out 0.3s ease-out',
+				'slide-up': 'slide-up 0.3s ease-out',
+				'slide-down': 'slide-down 0.3s ease-out',
+				'zoom-in': 'zoom-in 0.2s ease-out',
+				'zoom-out': 'zoom-out 0.2s ease-out',
+			},
+
+			// ============================================================================
+			// TEXT SHADOW SYSTEM - Standardized Shadow Utilities
+			// ============================================================================
+			textShadow: {
+				// Basic shadows
+				'sm': '0 1px 1px rgba(0, 0, 0, 0.3)',
+				'DEFAULT': '0 1px 2px rgba(0, 0, 0, 0.4)',
+				'md': '0 1px 3px rgba(0, 0, 0, 0.6)',
+				'lg': '0 2px 4px rgba(0, 0, 0, 0.8)',
+				'xl': '0 3px 6px rgba(0, 0, 0, 0.9)',
+				'none': 'none',
+
+				// Semantic shadows
+				'subtle': '0 1px 1px rgba(0, 0, 0, 0.3)',
+				'light': '0 1px 2px rgba(0, 0, 0, 0.4)',
+				'medium': '0 1px 3px rgba(0, 0, 0, 0.6)',
+				'strong': '0 2px 4px rgba(0, 0, 0, 0.8)',
+
+				// Glow effects - standardizes the common pattern
+				'glow-yellow': '0 2px 4px rgba(0,0,0,0.3), 0 0 20px rgba(255, 218, 4, 0.2)',
+				'glow-gold': '0 2px 4px rgba(0,0,0,0.3), 0 0 20px rgba(255, 215, 0, 0.2)',
+				'glow-blue': '0 2px 4px rgba(0,0,0,0.3), 0 0 20px rgba(59, 130, 246, 0.2)',
+				'glow-green': '0 2px 4px rgba(0,0,0,0.3), 0 0 20px rgba(16, 185, 129, 0.2)',
+				'glow-purple': '0 2px 4px rgba(0,0,0,0.3), 0 0 20px rgba(139, 92, 246, 0.2)',
+
+				// Typography specific
+				'heading': '0 2px 4px rgba(0, 0, 0, 0.8)',
+				'subheading': '0 1px 3px rgba(0, 0, 0, 0.6)',
+				'body': '0 1px 2px rgba(0, 0, 0, 0.4)',
+
+				// Special effects
+				'inset': 'inset 0 1px 2px rgba(0, 0, 0, 0.5)',
+				'outline': '0 0 0 1px rgba(255, 255, 255, 0.1), 0 1px 3px rgba(0, 0, 0, 0.8)',
+			},
+
+			// ============================================================================
+			// Z-INDEX LAYERING SYSTEM - Semantic Layer Management
+			// ============================================================================
+			zIndex: {
+				// Base layers
+				'base': '0',
+				'below': '-1',
+				'above': '1',
+
+				// Content layers
+				'content': '10',
+				'elevated': '20',
+				'overlay': '30',
+
+				// Navigation layers
+				'nav': '40',
+				'header': '50',
+
+				// Interactive layers
+				'dropdown': '100',
+				'popup': '200',
+				'modal': '300',
+				'tooltip': '400',
+
+				// System layers
+				'notification': '500',
+				'loading': '600',
+				'skip-nav': '9999',
+
+				// Special cases (existing high values)
+				'tooltip-high': '50000',  // For tooltips that need to be above everything
+				'max': '99999',
 			}
 		}
 	},
@@ -212,7 +415,7 @@ export default {
 		// eslint-disable-next-line @typescript-eslint/no-require-imports
 		require("tailwindcss-animate"),
 		// Plugin para scrollbar customizada
-		function({ addUtilities }: any) {
+		function({ addUtilities }: { addUtilities: (utilities: Record<string, any>) => void }) {
 			const scrollbarUtilities = {
 				'.scrollbar-thin': {
 					'scrollbar-width': 'thin',
@@ -240,6 +443,17 @@ export default {
 				},
 			};
 			addUtilities(scrollbarUtilities);
+		},
+		// Plugin for text-shadow utilities
+		function({ matchUtilities, theme }: { matchUtilities: (utilities: Record<string, (value: string) => Record<string, string>>, options: { values: any }) => void, theme: (key: string) => any }) {
+			matchUtilities(
+				{
+					'text-shadow': (value: string) => ({
+						textShadow: value,
+					}),
+				},
+				{ values: theme('textShadow') }
+			);
 		}
 	],
 } satisfies Config;

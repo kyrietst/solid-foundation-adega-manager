@@ -93,8 +93,8 @@ import {
 } from '@/core/config/theme-utils';
 import { BlurIn } from '@/shared/ui/effects/blur-in';
 import { StatCard } from '@/shared/ui/composite/stat-card';
-import { SparklesText } from '@/components/ui/sparkles-text';
-import { GradualSpacing } from '@/components/ui/gradual-spacing';
+// import { SparklesText } from '@/components/ui/sparkles-text'; // Component not available
+// import { GradualSpacing } from '@/components/ui/gradual-spacing'; // Component not available
 import { LineChart as RechartsLineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart as RechartsBarChart, Bar } from 'recharts';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/primitives/select';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/shared/ui/primitives/sheet';
@@ -1367,39 +1367,35 @@ function AnimationsSection({ showCode }: { showCode: boolean }) {
             <h4 className={getSFProTextClasses('h4', 'accent')}>Aceternity UI - Componentes Avançados</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
               
-              {/* SparklesText */}
+              {/* SparklesText - Component not available */}
               <div className={cn(getGlassCardClasses('default'), 'p-6 text-center')}>
                 <h5 className="text-accent-yellow font-sf-medium text-sm mb-4">SparklesText</h5>
-                <SparklesText 
-                  text="✨ MÁGICO ✨" 
-                  className="text-xl font-bold text-primary-yellow"
-                />
-                <p className="text-gray-400 text-xs mt-3">Partículas animadas ao redor do texto</p>
+                <div className="text-xl font-bold text-primary-yellow">
+                  ✨ MÁGICO ✨
+                </div>
+                <p className="text-gray-400 text-xs mt-3">Partículas animadas ao redor do texto (component not available)</p>
               </div>
 
-              {/* GradualSpacing */}
+              {/* GradualSpacing - Component not available */}
               <div className={cn(getGlassCardClasses('default'), 'p-6 text-center')}>
                 <h5 className="text-accent-blue font-sf-medium text-sm mb-4">GradualSpacing</h5>
-                <GradualSpacing
-                  className="font-display text-center text-lg font-bold tracking-[-0.1em] text-accent-blue"
-                  text="ESPAÇAMENTO"
-                />
-                <p className="text-gray-400 text-xs mt-3">Letras se expandem gradualmente</p>
+                <div className="font-display text-center text-lg font-bold tracking-[-0.1em] text-accent-blue">
+                  ESPAÇAMENTO
+                </div>
+                <p className="text-gray-400 text-xs mt-3">Letras se expandem gradualmente (component not available)</p>
               </div>
             </div>
             {showCode && (
               <code className="text-xs text-gray-400 block mt-4 p-3 bg-gray-900/60 rounded">
-{`// SparklesText - Partículas animadas
-<SparklesText 
-  text="✨ MÁGICO ✨"
-  className="text-xl font-bold text-primary-yellow"
-/>
+{`// SparklesText - Component not available
+<div className="text-xl font-bold text-primary-yellow">
+  ✨ MÁGICO ✨
+</div>
 
-// GradualSpacing - Expansão de letras  
-<GradualSpacing
-  className="font-bold text-lg text-accent-blue"
-  text="ESPAÇAMENTO"
-/>`}
+// GradualSpacing - Component not available
+<div className="font-bold text-lg text-accent-blue">
+  ESPAÇAMENTO
+</div>`}
               </code>
             )}
           </div>

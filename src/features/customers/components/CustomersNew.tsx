@@ -10,15 +10,13 @@ import { Button } from '@/shared/ui/primitives/button';
 import { Badge } from '@/shared/ui/primitives/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shared/ui/primitives/dialog';
 import { Grid3X3, List, UserPlus } from 'lucide-react';
-import { BlurIn } from '@/shared/ui/effects/blur-in';
 import { useSpecificPermissions } from '@/shared/hooks/auth/usePermissions';
 import { CustomerForm } from '@/features/customers/components/CustomerForm';
 import { useCustomers, CustomerProfile } from '@/features/customers/hooks/use-crm';
 import { usePagination } from '@/shared/hooks/common/use-pagination';
 import { LoadingScreen } from '@/shared/ui/composite/loading-spinner';
-import { cn } from '@/core/config/utils';
-import { getSFProTextClasses } from '@/core/config/theme-utils';
 import { PaginationControls } from '@/shared/ui/composite/pagination-controls';
+import { PageHeader } from '@/shared/ui/composite/PageHeader';
 import { useCustomerFilters } from '@/shared/hooks/common/useFilters';
 
 // Componentes refatorados
@@ -102,56 +100,12 @@ export const CustomersNew = () => {
 
   return (
     <div className="w-full h-full flex flex-col">
-      {/* Header - altura fixa */}
-      <div className="flex-shrink-0 pb-4">
-        <div className="flex items-center justify-between gap-4">
-          <div className="w-full sm:w-auto flex-shrink-0">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              
-              {/* Header Container */}
-              <div className="relative w-full text-center sm:text-left bg-black/20 backdrop-blur-sm border border-white/10 rounded-xl p-4 shadow-lg">
-                
-                {/* Glow background sutil */}
-                <div className="absolute inset-0 bg-gradient-to-r from-[#FF2400]/5 via-[#FFDA04]/10 to-[#FF2400]/5 rounded-xl blur-xl" />
-                
-                <div className="relative">
-                  {/* Título animado */}
-                  <BlurIn
-                    word="GESTÃO DE CLIENTES"
-                    duration={1.2}
-                    variant={{
-                      hidden: { filter: "blur(15px)", opacity: 0 },
-                      visible: { filter: "blur(0px)", opacity: 1 }
-                    }}
-                    className={cn(
-                      getSFProTextClasses('h1', 'accent'),
-                      "text-transparent bg-clip-text bg-gradient-to-r from-[#FF2400] via-[#FFDA04] to-[#FF2400] drop-shadow-lg"
-                    )}
-                    style={{
-                      textShadow: '0 2px 4px rgba(0,0,0,0.3), 0 0 20px rgba(255, 218, 4, 0.2)'
-                    }}
-                  />
-                  
-                  {/* Sublinhado elegante */}
-                  <div className="w-full h-6 relative mt-2">
-                    <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FF2400]/80 to-transparent h-[2px] w-full blur-sm" />
-                    <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FF2400] to-transparent h-px w-full" />
-                    <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FFDA04]/80 to-transparent h-[3px] w-3/4 blur-sm mx-auto" />
-                    <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FFDA04] to-transparent h-px w-3/4 mx-auto" />
-                  </div>
-                </div>
-              </div>
-              
-              {/* Contador de clientes */}
-              <div className="bg-black/50 backdrop-blur-sm border border-yellow-400/30 rounded-full px-4 py-2 shadow-lg">
-                <span className="text-sm font-bold text-gray-100">{customers.length}</span>
-                <span className="text-xs ml-1 opacity-75 text-gray-300">clientes</span>
-              </div>
-              
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Standardized Header using PageHeader component */}
+      <PageHeader
+        title="GESTÃO DE CLIENTES"
+        count={customers.length}
+        countLabel="clientes"
+      />
 
       {/* Estatísticas */}
       <div className="flex-shrink-0">

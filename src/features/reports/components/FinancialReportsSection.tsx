@@ -18,6 +18,7 @@ import { useDashboardData } from '@/features/dashboard/hooks/useDashboardData';
 import { usePermissions } from '@/shared/hooks/auth/usePermissions';
 import { SensitiveData } from '@/shared/ui/composite';
 import { DREReport } from './DREReport';
+import { chartTheme } from '@/shared/ui/composite/ChartTheme';
 
 interface FinancialMetrics {
   current_amount: number;
@@ -177,7 +178,8 @@ export const FinancialReportsSection: React.FC<FinancialReportsSectionProps> = (
     { period: '90+d', amount: financialMetrics?.d90_plus || 0, color: '#991b1b' }
   ];
 
-  const COLORS = ['#10b981', '#f59e0b', '#f97316', '#ef4444', '#991b1b'];
+  // Usar paleta padronizada para relatórios financeiros
+  const COLORS = chartTheme.financial;
 
   const arColumns: TableColumn[] = [
     {

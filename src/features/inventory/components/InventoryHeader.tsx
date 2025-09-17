@@ -43,11 +43,8 @@ export const InventoryHeader: React.FC<InventoryHeaderProps> = ({
             }}
             className={cn(
               getSFProTextClasses('h1', 'accent'),
-              "text-transparent bg-clip-text bg-gradient-to-r from-[#FF2400] via-[#FFDA04] to-[#FF2400] drop-shadow-lg"
+              "text-transparent bg-clip-text bg-gradient-to-r from-[#FF2400] via-[#FFDA04] to-[#FF2400] drop-shadow-lg text-shadow-glow-yellow"
             )}
-            style={{
-              textShadow: '0 2px 4px rgba(0,0,0,0.3), 0 0 20px rgba(255, 218, 4, 0.2)'
-            }}
           />
           <p className={cn(getSFProTextClasses('body', 'secondary'), "mt-1")}>
             Controle completo do seu inventário com análise de giro

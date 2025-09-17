@@ -34,15 +34,12 @@ export const ProductsTitle: React.FC<ProductsTitleProps> = () => {
         }}
         className={cn(
           getSFProTextClasses('h1', 'accent'),
-          "text-transparent bg-clip-text bg-gradient-to-r from-[#FF2400] via-[#FFDA04] to-[#FF2400] drop-shadow-lg"
+          "text-transparent bg-clip-text bg-gradient-to-r from-[#FF2400] via-[#FFDA04] to-[#FF2400] drop-shadow-lg text-shadow-glow-yellow"
         )}
-        style={{
-          textShadow: '0 2px 4px rgba(0,0,0,0.3), 0 0 20px rgba(255, 218, 4, 0.2)'
-        }}
       />
       
       {/* Efeito de sublinhado elegante - tamanho proporcional ao texto */}
-      <div className="w-80 h-6 relative mt-2">
+      <div className="w-full h-6 relative mt-2">
         {/* Gradientes do sublinhado com mais opacidade */}
         <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FF2400]/80 to-transparent h-[2px] w-full blur-sm" />
         <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FF2400] to-transparent h-px w-full" />

@@ -3,7 +3,7 @@ import { Badge } from '@/shared/ui/primitives/badge';
 import { Button } from '@/shared/ui/primitives/button';
 import { Progress } from '@/shared/ui/primitives/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/primitives/tabs';
-import { BlurIn } from '@/shared/ui/effects/blur-in';
+import { PageHeader } from '@/shared/ui/composite/PageHeader';
 import { StatCard } from '@/shared/ui/composite/stat-card';
 import {
   Bot,
@@ -27,7 +27,6 @@ import { N8NPlaceholder } from './N8NPlaceholder';
 import { GoogleMapsPlaceholder } from './GoogleMapsPlaceholder';
 import { useAutomationMetrics, useWorkflowSuggestions, useRecentExecutions } from '../hooks/useAutomationMetrics';
 import { cn } from '@/core/config/utils';
-import { getSFProTextClasses } from '@/core/config/theme-utils';
 
 interface AutomationCenterProps {
   className?: string;
@@ -79,52 +78,13 @@ export const AutomationCenter = ({ className }: AutomationCenterProps) => {
   };
 
   return (
-    <div className="w-full h-full flex flex-col p-4">
-      {/* Header padronizado */}
-      <div className="flex-shrink-0 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
-        {/* Header com BlurIn animation */}
-        <div className="relative text-center sm:text-left">
-          {/* Título animado */}
-          <BlurIn
-            word="AUTOMAÇÕES & INTEGRAÇÕES"
-            duration={1.2}
-            variant={{
-              hidden: { filter: "blur(15px)", opacity: 0 },
-              visible: { filter: "blur(0px)", opacity: 1 }
-            }}
-            className={cn(
-              getSFProTextClasses('h1', 'accent'),
-              "text-transparent bg-clip-text bg-gradient-to-r from-[#FF2400] via-[#FFDA04] to-[#FF2400] drop-shadow-lg"
-            )}
-            style={{
-              textShadow: '0 2px 4px rgba(0,0,0,0.3), 0 0 20px rgba(255, 218, 4, 0.2)'
-            }}
-          />
-          
-          {/* Sublinhado elegante */}
-          <div className="w-full h-2 relative">
-            <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FF2400]/80 to-transparent h-[2px] w-full blur-sm" />
-            <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FF2400] to-transparent h-px w-full" />
-            <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FFDA04]/80 to-transparent h-[3px] w-3/4 blur-sm mx-auto" />
-            <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FFDA04] to-transparent h-px w-3/4 mx-auto" />
-          </div>
-        </div>
-        
-        {/* Contador de automações com loading */}
-        <div className="bg-black/50 backdrop-blur-sm border border-yellow-400/30 rounded-full px-4 py-2 shadow-lg">
-          {isLoadingMetrics ? (
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 border-2 border-yellow-400/30 border-t-yellow-400 rounded-full animate-spin"></div>
-              <span className="text-xs text-gray-300">carregando...</span>
-            </div>
-          ) : (
-            <>
-              <span className="text-sm font-bold text-gray-100">{automationStats.activeWorkflows}</span>
-              <span className="text-xs ml-1 opacity-75 text-gray-300">workflows sugeridos</span>
-            </>
-          )}
-        </div>
-      </div>
+    <div className="w-full h-full flex flex-col">
+      {/* Header padronizado com PageHeader */}
+      <PageHeader
+        title="AUTOMAÇÕES & INTEGRAÇÕES"
+        count={isLoadingMetrics ? undefined : automationStats.activeWorkflows}
+        countLabel="workflows sugeridos"
+      />
 
       {/* Container principal com glassmorphism */}
       <section 

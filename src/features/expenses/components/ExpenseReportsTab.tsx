@@ -44,11 +44,10 @@ import {
 } from '../hooks';
 import { getGlassCardClasses, getGlassButtonClasses, getHoverTransformClasses } from '@/core/config/theme-utils';
 import { cn } from '@/core/config/utils';
+import { chartTheme } from '@/shared/ui/composite/ChartTheme';
 
-const COLORS = [
-  '#DC2626', '#2563EB', '#16A34A', '#7C3AED', '#EA580C', 
-  '#0891B2', '#4F46E5', '#059669', '#6366F1', '#6B7280', '#F59E0B'
-];
+// Usar paleta padronizada para despesas
+const COLORS = chartTheme.expenses;
 
 export const ExpenseReportsTab: React.FC = () => {
   const [selectedPeriod, setSelectedPeriod] = useState('current_month');

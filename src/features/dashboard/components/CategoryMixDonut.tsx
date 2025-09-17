@@ -5,6 +5,7 @@ import { supabase } from '@/core/api/supabase/client';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { PieChart as PieChartIcon, ExternalLink } from 'lucide-react';
 import { cn } from '@/core/config/utils';
+import { chartTheme } from '@/shared/ui/composite/ChartTheme';
 
 interface CategoryMix {
   category: string;
@@ -17,16 +18,8 @@ interface CategoryMixDonutProps {
   showTotal?: boolean; // exibir bloco Total dentro do card (default: false)
 }
 
-const COLORS = [
-  '#f59e0b', // amber
-  '#3b82f6', // blue
-  '#10b981', // emerald
-  '#8b5cf6', // purple  
-  '#f97316', // orange
-  '#06b6d4', // cyan
-  '#84cc16', // lime
-  '#f43f5e', // rose
-];
+// Usar paleta padronizada para análise de vendas
+const COLORS = chartTheme.sales;
 
 export const CategoryMixDonut = React.memo(function CategoryMixDonut({ className, period = 30, showTotal = false }: CategoryMixDonutProps) {
   const { data: categoryData, isLoading, error } = useQuery({
