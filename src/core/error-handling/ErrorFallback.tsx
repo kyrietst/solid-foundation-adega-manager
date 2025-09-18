@@ -214,7 +214,7 @@ export const DashboardErrorFallback: React.FC<ErrorFallbackProps> = ({
             onClick={() => window.location.href = '/reports'}
             variant="outline"
             size="sm"
-            className="border-blue-500/40 text-blue-300 hover:bg-blue-500/10"
+            className="border-accent-blue/40 text-accent-blue/70 hover:bg-accent-blue/10"
           >
             <TrendingUp className="h-4 w-4 mr-2" />
             Ver Relatórios
@@ -223,7 +223,7 @@ export const DashboardErrorFallback: React.FC<ErrorFallbackProps> = ({
             onClick={() => window.location.href = '/sales'}
             variant="outline"
             size="sm"
-            className="border-green-500/40 text-green-300 hover:bg-green-500/10"
+            className="border-accent-green/40 text-accent-green/70 hover:bg-accent-green/10"
           >
             <Package className="h-4 w-4 mr-2" />
             Ir para Vendas
@@ -232,7 +232,7 @@ export const DashboardErrorFallback: React.FC<ErrorFallbackProps> = ({
             onClick={() => window.location.href = '/customers'}
             variant="outline"
             size="sm"
-            className="border-purple-500/40 text-purple-300 hover:bg-purple-500/10"
+            className="border-accent-purple/40 text-accent-purple/70 hover:bg-accent-purple/10"
           >
             <Users className="h-4 w-4 mr-2" />
             Ver Clientes
@@ -254,7 +254,7 @@ export const DashboardErrorFallback: React.FC<ErrorFallbackProps> = ({
             <summary className="cursor-pointer text-gray-400 hover:text-white mb-2">
               Stack Trace
             </summary>
-            <pre className="bg-black/50 p-3 rounded text-red-200 whitespace-pre-wrap text-xs overflow-x-auto">
+            <pre className="bg-black/50 p-3 rounded text-accent-red/70 whitespace-pre-wrap text-xs overflow-x-auto">
               {error.message}
               {error.stack && '\n\n' + error.stack}
             </pre>
@@ -355,7 +355,7 @@ export const RootErrorFallback: React.FC<ErrorFallbackProps> = ({
               onClick={() => window.location.reload()}
               variant="outline"
               size="sm"
-              className="border-blue-500/40 text-blue-300 hover:bg-blue-500/10"
+              className="border-accent-blue/40 text-accent-blue/70 hover:bg-accent-blue/10"
             >
               <RefreshCw className="h-4 w-4 mr-2" />
               Recarregar Página

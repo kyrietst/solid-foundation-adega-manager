@@ -28,7 +28,7 @@ export interface ErrorContext {
   feature: string;
   operation: string;
   userId?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface UseErrorHandlerReturn {

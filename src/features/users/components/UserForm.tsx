@@ -246,7 +246,7 @@ export const UserForm: React.FC<UserFormProps> = ({
         <Button 
           type="submit"
           disabled={!isFormValid || isSubmitting}
-          className="flex-1 bg-gradient-to-r from-[#FFD700] to-[#FFA500] hover:from-[#FFA500] hover:to-[#FFD700] text-black font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+          className="text-accent-gold-100 or bg-accent-gold-100"
           aria-label={isSubmitting ? 'Criando usuário...' : 'Criar novo usuário'}
         >
           {isSubmitting ? '⏳ Criando...' : '✨ Criar Usuário'}

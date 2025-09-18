@@ -222,7 +222,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
     return () => subscription.unsubscribe();
-  }, []); // Remove fetchUserProfile dependency to prevent infinite loop
+  }, [fetchUserProfile, user]); // Add fetchUserProfile and user dependencies
 
   const hasPermission = useCallback((requiredRole: UserRole | UserRole[]) => {
 

@@ -197,9 +197,9 @@ const Delivery = () => {
           <Button
             onClick={() => refetch()}
             disabled={isLoadingDeliveries}
-            className="bg-black/80 border-[#FFD700]/40 text-[#FFD700] hover:bg-[#FFD700]/20 hover:shadow-xl hover:shadow-[#FFD700]/30 hover:border-[#FFD700]/80 hover:scale-105 backdrop-blur-sm transition-all duration-300 relative overflow-hidden group disabled:opacity-50"
+            className="text-accent-gold-100 or bg-accent-gold-100"
           >
-            <div className="absolute inset-0 bg-gradient-to-r from-[#FFD700]/5 via-[#FFD700]/10 to-[#FFD700]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <div className="text-accent-gold-100 or bg-accent-gold-100" />
             <RefreshCw className="h-4 w-4 mr-2 relative z-10 group-hover:rotate-180 transition-transform duration-300" />
             <span className="relative z-10 font-medium">Atualizar</span>
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 -translate-x-full group-hover:translate-x-full transform" />

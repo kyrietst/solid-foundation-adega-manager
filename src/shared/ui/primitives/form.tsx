@@ -166,6 +166,7 @@ const FormMessage = React.forwardRef<
 })
 FormMessage.displayName = "FormMessage"
 
+// Allow exporting hooks with components for form-related functionality
 export {
   useFormField,
   Form,

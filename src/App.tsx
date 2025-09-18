@@ -69,12 +69,12 @@ const queryClient = new QueryClient({
 const TailwindColorClasses = () => (
   <div className="hidden">
     <span className="bg-pink-100 text-pink-800"></span>
-    <span className="bg-green-100 text-green-800"></span>
-    <span className="bg-blue-100 text-blue-800"></span>
-    <span className="bg-yellow-100 text-yellow-800"></span>
-    <span className="bg-purple-100 text-purple-800"></span>
-    <span className="bg-orange-100 text-orange-800"></span>
-    <span className="bg-red-100 text-red-800"></span>
+    <span className="bg-accent-green/10 text-accent-green"></span>
+    <span className="bg-accent-blue/10 text-accent-blue"></span>
+    <span className="bg-accent-gold-100/10 text-accent-gold-100"></span>
+    <span className="bg-accent-purple/10 text-accent-purple"></span>
+    <span className="bg-accent-orange/10 text-accent-orange"></span>
+    <span className="bg-accent-red/10 text-accent-red"></span>
     <span className="bg-sky-100 text-sky-800"></span>
     <span className="bg-teal-100 text-teal-800"></span>
     <span className="bg-gray-100 text-gray-800"></span>
@@ -124,7 +124,7 @@ const App = () => {
                         path="/designsystem" 
                         element={
                           <RouteErrorBoundary routeName="Design System">
-                            <Suspense fallback={<div className="flex items-center justify-center min-h-screen bg-black"><div className="text-yellow-400">Carregando Design System...</div></div>}>
+                            <Suspense fallback={<div className="flex items-center justify-center min-h-screen bg-black"><div className="text-accent-gold-100">Carregando Design System...</div></div>}>
                               <DesignSystemPage />
                             </Suspense>
                           </RouteErrorBoundary>
@@ -209,7 +209,7 @@ const App = () => {
                         path="reports" 
                         element={
                           <RouteErrorBoundary routeName="Relatórios">
-                            <Suspense fallback={<div className="flex items-center justify-center min-h-screen bg-black"><div className="text-yellow-400">Carregando relatórios...</div></div>}>
+                            <Suspense fallback={<div className="flex items-center justify-center min-h-screen bg-black"><div className="text-accent-gold-100">Carregando relatórios...</div></div>}>
                               <AdvancedReports />
                             </Suspense>
                           </RouteErrorBoundary>

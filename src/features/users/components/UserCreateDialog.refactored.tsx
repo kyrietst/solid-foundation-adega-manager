@@ -89,7 +89,7 @@ export const UserCreateDialog: React.FC<UserCreateDialogProps> = ({
       size="md"
       className="shadow-2xl"
     >
-      <div className="w-16 h-1 bg-gradient-to-r from-[#FFD700] to-[#FFA500] mx-auto rounded-full mb-4"></div>
+      <div className="text-accent-gold-100 or bg-accent-gold-100"></div>
 
       <UserForm
         onSubmit={handleFormSubmit}

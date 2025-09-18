@@ -176,7 +176,7 @@ export const GlobalErrorHandler: React.FC<GlobalErrorHandlerProps> = ({
       console.warn('[GlobalErrorHandler] Resource loading error:', {
         errorId,
         tagName: target?.tagName,
-        src: (target as any)?.src || (target as any)?.href,
+        src: (target as HTMLImageElement | HTMLScriptElement | HTMLLinkElement)?.src || (target as HTMLLinkElement)?.href,
         timestamp: new Date().toISOString(),
         url: window.location.href,
       });
@@ -206,9 +206,9 @@ export const GlobalErrorHandler: React.FC<GlobalErrorHandlerProps> = ({
  */
 const reportErrorToService = async (errorData: {
   type: string;
-  error: any;
+  error: Error | unknown;
   errorId: string;
-  context: Record<string, any>;
+  context: Record<string, unknown>;
 }) => {
   try {
     // TODO: Implementar serviço real de error reporting
@@ -258,7 +258,7 @@ const getSessionId = (): string => {
  * Hook para configurar error handling em componentes específicos
  */
 export const useGlobalErrorReporting = () => {
-  const reportError = (error: Error, context: Record<string, any> = {}) => {
+  const reportError = (error: Error, context: Record<string, unknown> = {}) => {
     const errorId = `manual_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
     console.error('[GlobalErrorHandler] Manual error report:', {

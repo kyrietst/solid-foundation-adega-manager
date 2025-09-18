@@ -10,7 +10,7 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { BaseModal } from '@/shared/ui/composite';
+import { EnhancedBaseModal } from '@/shared/ui/composite';
 import {
   Form,
   FormControl,
@@ -118,7 +118,7 @@ const editProductSchema = z.object({
     .number({ invalid_type_error: 'Estoque mínimo deve ser um número' })
     .min(0, 'Estoque mínimo não pode ser negativo')
     .optional(),
-    
+
   // Campos de controle de validade
   has_expiry_tracking: z.boolean().default(false),
   expiry_date: z
@@ -351,18 +351,28 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
   if (!product) return null;
 
   return (
-    <BaseModal
+    <EnhancedBaseModal
       isOpen={isOpen}
       onClose={handleClose}
-      title={
-        <>
-          <Edit className="h-5 w-5 text-yellow-400" />
-          Editar Produto
-        </>
-      }
-      description={`Modifique os dados do produto "${product.name}". Apenas campos alterados serão atualizados.`}
+      modalType="edit"
+      title="Editar Produto"
+      subtitle={`Modifique os dados do produto "${product.name}"`}
+      customIcon={Edit}
+      loading={isLoading}
       size="5xl"
-      className="max-h-content-2xl overflow-y-auto bg-black/95 backdrop-blur-sm border border-white/10"
+      primaryAction={{
+        label: isLoading ? "Salvando..." : "Salvar Alterações",
+        icon: isLoading ? undefined : Save,
+        onClick: () => form.handleSubmit(handleFormSubmit)(),
+        disabled: isLoading,
+        loading: isLoading
+      }}
+      secondaryAction={{
+        label: "Cancelar",
+        icon: X,
+        onClick: handleClose,
+        disabled: isLoading
+      }}
     >
 
         <div className="flex-1 overflow-y-auto pr-2">
@@ -1037,41 +1047,10 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
                 </div>
               </div>
 
-              {/* Botões de Ação */}
-              <div className="flex justify-end gap-3 pt-6 mt-2 border-t border-gray-700/50">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleClose}
-                disabled={isLoading}
-                className="border-gray-600 text-gray-300 hover:bg-gray-700"
-              >
-                <X className="h-4 w-4 mr-2" />
-                Cancelar
-              </Button>
-              
-              <Button
-                type="submit"
-                disabled={isLoading}
-                className="bg-yellow-500 hover:bg-yellow-600 text-black font-medium"
-              >
-                {isLoading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black mr-2"></div>
-                    Salvando...
-                  </>
-                ) : (
-                  <>
-                    <Save className="h-4 w-4 mr-2" />
-                    Salvar Alterações
-                  </>
-                )}
-              </Button>
-            </div>
             </form>
           </Form>
         </div>
-    </BaseModal>
+    </EnhancedBaseModal>
   );
 };
 

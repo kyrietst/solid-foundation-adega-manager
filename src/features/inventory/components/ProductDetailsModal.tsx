@@ -4,7 +4,7 @@
  */
 
 import React, { useMemo } from 'react';
-import { BaseModal } from '@/shared/ui/composite/BaseModal';
+import { EnhancedBaseModal } from '@/shared/ui/composite';
 import { Button } from '@/shared/ui/primitives/button';
 import { Badge } from '@/shared/ui/primitives/badge';
 import {
@@ -161,15 +161,16 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
   const TurnoverIcon = turnoverAnalysis.icon;
 
   return (
-    <BaseModal
+    <EnhancedBaseModal
       isOpen={isOpen}
       onClose={onClose}
-      title={product.name}
-      description="Visualização completa das informações do produto."
-      size="full"
-      maxHeight="90vh"
-      className="hero-spotlight hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300"
-      onMouseMove={handleMouseMove}
+      modalType="view"
+      title="Detalhes do Produto"
+      subtitle={product.name}
+      customIcon={Eye}
+      size="5xl"
+      className="max-h-[90vh]"
+      showCloseButton={true}
     >
       <div className="flex flex-col h-full">
         {/* Header personalizado com completude */}
@@ -797,7 +798,7 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
           </div>
         </div>
       </div>
-    </BaseModal>
+    </EnhancedBaseModal>
   );
 };
 

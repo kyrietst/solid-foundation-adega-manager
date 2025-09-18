@@ -14,7 +14,7 @@ const ToastViewport = React.forwardRef<
   <ToastPrimitives.Viewport
     ref={ref}
     className={cn(
-      "fixed top-0 z-notification flex max-h-screen w-full flex-col-reverse p-4 sm:bottom-0 sm:right-0 sm:top-auto sm:flex-col md:max-w-[420px]",
+      "fixed top-0 z-notification flex max-h-screen w-full flex-col-reverse p-4 sm:bottom-0 sm:right-0 sm:top-auto sm:flex-col md:max-w-md",
       className
     )}
     {...props}
@@ -75,7 +75,7 @@ const ToastClose = React.forwardRef<
   <ToastPrimitives.Close
     ref={ref}
     className={cn(
-      "absolute right-2 top-2 rounded-md p-1 text-gray-400 opacity-70 transition-all hover:text-amber-400 hover:bg-amber-400/10 hover:opacity-100 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-amber-400/50 group-hover:opacity-100 group-[.destructive]:text-red-300 group-[.destructive]:hover:text-red-100 group-[.destructive]:hover:bg-red-400/10 group-[.destructive]:focus:ring-red-400 group-[.destructive]:focus:ring-offset-red-600",
+      "absolute right-2 top-2 rounded-md p-1 text-gray-400 opacity-70 transition-all hover:text-accent-gold-100 hover:bg-accent-gold-100/10 hover:opacity-100 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-accent-gold-100/50 group-hover:opacity-100 group-[.destructive]:text-accent-red-300 group-[.destructive]:hover:text-accent-red-100 group-[.destructive]:hover:bg-accent-red-400/10 group-[.destructive]:focus:ring-accent-red-400 group-[.destructive]:focus:ring-offset-accent-red-600",
       className
     )}
     toast-close=""

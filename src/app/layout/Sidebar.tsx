@@ -210,7 +210,7 @@ export function AppSidebar() {
                 label: user?.email || "Usuário",
                 href: "#",
                 icon: (
-                  <div className="h-5 w-5 shrink-0 rounded-md bg-gradient-to-r from-primary-yellow to-yellow-90 flex items-center justify-center text-black-100 text-[10px] font-bold shadow-lg">
+                  <div className="h-5 w-5 shrink-0 rounded-md bg-gradient-to-r from-primary-yellow to-accent-gold-90 flex items-center justify-center text-black-100 text-xs /* arbitrary-allowed: icon sizing */ font-bold shadow-lg">
                     {user?.email?.[0]?.toUpperCase() || 'U'}
                   </div>
                 ),
@@ -239,7 +239,7 @@ export function AppSidebar() {
 export const Logo = () => {
   return (
     <div className="relative z-20 flex items-center space-x-3 py-2">
-      <div className="h-10 w-10 shrink-0 rounded-xl bg-gradient-to-r from-primary-yellow to-yellow-90 shadow-lg" />
+      <div className="h-10 w-10 shrink-0 rounded-xl bg-gradient-to-r from-primary-yellow to-accent-gold-90 shadow-lg" />
       <motion.div
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
@@ -260,7 +260,7 @@ export const Logo = () => {
 export const LogoIcon = () => {
   return (
     <div className="relative z-20 flex items-center justify-center py-2">
-      <div className="h-10 w-10 shrink-0 rounded-xl bg-gradient-to-r from-primary-yellow to-yellow-90 shadow-lg" />
+      <div className="h-10 w-10 shrink-0 rounded-xl bg-gradient-to-r from-primary-yellow to-accent-gold-90 shadow-lg" />
     </div>
   );
 };

@@ -1,6 +1,30 @@
 // Chrome-specific diagnostics utility
 // Can be called manually from browser console: window.chromeDiagnostics()
 
+// Type definitions for browser APIs
+interface NavigatorWithConnection extends Navigator {
+  connection?: {
+    effectiveType?: string;
+    downlink?: number;
+    saveData?: boolean;
+  };
+}
+
+interface WindowWithChrome extends Window {
+  chrome?: {
+    runtime?: unknown;
+  };
+}
+
+interface WindowWithWebRTC extends Window {
+  RTCPeerConnection?: unknown;
+}
+
+interface WindowWithDiagnostics extends Window {
+  chromeDiagnostics?: () => void;
+  clearChromeAuthData?: () => void;
+}
+
 export const runChromeDiagnostics = () => {
   console.group('🔍 CHROME DIAGNOSTICS - Análise Completa');
   
@@ -47,9 +71,9 @@ export const runChromeDiagnostics = () => {
 
   // Network diagnostics
   console.group('🌐 Network Diagnostics');
-  console.log('Connection type:', (navigator as any).connection?.effectiveType || 'unknown');
-  console.log('Network downlink:', (navigator as any).connection?.downlink || 'unknown');
-  console.log('Save data mode:', (navigator as any).connection?.saveData || false);
+  console.log('Connection type:', (navigator as NavigatorWithConnection).connection?.effectiveType || 'unknown');
+  console.log('Network downlink:', (navigator as NavigatorWithConnection).connection?.downlink || 'unknown');
+  console.log('Save data mode:', (navigator as NavigatorWithConnection).connection?.saveData || false);
 
   // Test DNS/network connectivity to Supabase
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -80,9 +104,9 @@ export const runChromeDiagnostics = () => {
 
   // Chrome-specific features
   console.group('🚀 Chrome-Specific Features');
-  console.log('Chrome extensions detected:', !!(window as any).chrome?.runtime);
-  console.log('WebRTC available:', !!(window as any).RTCPeerConnection);
-  console.log('Notification permission:', (Notification as any).permission || 'not available');
+  console.log('Chrome extensions detected:', !!(window as WindowWithChrome).chrome?.runtime);
+  console.log('WebRTC available:', !!(window as WindowWithWebRTC).RTCPeerConnection);
+  console.log('Notification permission:', typeof Notification !== 'undefined' ? Notification.permission : 'not available');
   console.groupEnd();
 
   // Environment variables check
@@ -109,8 +133,8 @@ export const runChromeDiagnostics = () => {
 
 // Make it available globally for manual testing
 if (typeof window !== 'undefined') {
-  (window as any).chromeDiagnostics = runChromeDiagnostics;
-  (window as any).clearChromeAuthData = () => {
+  (window as WindowWithDiagnostics).chromeDiagnostics = runChromeDiagnostics;
+  (window as WindowWithDiagnostics).clearChromeAuthData = () => {
     // Import the function dynamically to avoid circular dependencies
     import('@/core/api/supabase/client').then(({ clearChromeAuthData }) => {
       const cleared = clearChromeAuthData();

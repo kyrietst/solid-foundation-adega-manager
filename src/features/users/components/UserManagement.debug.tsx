@@ -42,7 +42,7 @@ const UserManagement = () => {
         <div className="flex items-center gap-4">
           <Button 
             onClick={() => setIsCreateDialogOpen(true)}
-            className="bg-black/80 border-[#FFD700]/40 text-[#FFD700]"
+            className="text-accent-gold-100 or bg-accent-gold-100"
           >
             <Plus className="h-4 w-4 mr-2" />
             Novo Usuário

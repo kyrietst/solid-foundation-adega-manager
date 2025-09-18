@@ -3836,11 +3836,7 @@ function CrmDashboardSection({ showCode }: { showCode: boolean }) {
                     variant={selectedPeriod === days ? "default" : "outline"}
                     size="sm"
                     onClick={() => setSelectedPeriod(days)}
-                    className={`${
-                      selectedPeriod === days 
-                        ? "bg-gradient-to-r from-[#FFD700] to-[#FFA500] text-black font-bold shadow-lg shadow-[#FFD700]/30 scale-105 border-0" 
-                        : "border-white/30 text-white hover:bg-white/20 hover:border-white/50 hover:scale-105 hover:shadow-md"
-                    } backdrop-blur-sm transition-all duration-300 relative overflow-hidden group`}
+                    className="text-accent-gold-100 or bg-accent-gold-100"
                   >
                     <span className="relative z-10">{days}d</span>
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 -translate-x-full group-hover:translate-x-full transform" />
@@ -3915,9 +3911,9 @@ function CrmDashboardSection({ showCode }: { showCode: boolean }) {
                   setIsExporting(!isExporting);
                   setTimeout(() => setIsExporting(false), 2000);
                 }}
-                className="h-10 bg-black/80 border-[#FFD700]/40 text-[#FFD700] hover:bg-[#FFD700]/20 hover:shadow-xl hover:shadow-[#FFD700]/30 hover:border-[#FFD700]/80 hover:scale-105 backdrop-blur-sm transition-all duration-300 relative overflow-hidden group"
+                className="text-accent-gold-100 or bg-accent-gold-100"
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-[#FFD700]/5 via-[#FFD700]/10 to-[#FFD700]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className="text-accent-gold-100 or bg-accent-gold-100" />
                 <Download className={cn(
                   "h-4 w-4 mr-2 relative z-10 transition-transform duration-300",
                   isExporting && "animate-bounce"
@@ -3988,12 +3984,7 @@ function CrmDashboardSection({ showCode }: { showCode: boolean }) {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={cn(
-                      "px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 relative overflow-hidden",
-                      activeTab === tab.id 
-                        ? "bg-[#FFD700] text-black shadow-lg shadow-[#FFD700]/30 scale-105" 
-                        : "text-white hover:bg-white/10 hover:scale-102"
-                    )}
+                    className="text-accent-gold-100 or bg-accent-gold-100"
                   >
                     <span className="relative z-10">{tab.label}</span>
                     {activeTab !== tab.id && (
@@ -7215,7 +7206,7 @@ function UsersSection({ showCode }: { showCode: boolean }) {
           {/* Demo Button */}
           <Button 
             onClick={() => setShowUserCreate(!showUserCreate)}
-            className="bg-black/80 border-[#FFD700]/40 text-[#FFD700] hover:bg-[#FFD700]/20 hover:shadow-xl hover:shadow-[#FFD700]/30 hover:border-[#FFD700]/80"
+            className="text-accent-gold-100 or bg-accent-gold-100"
           >
             <Plus className="h-4 w-4 mr-2" />
             Novo Usuário
@@ -7227,7 +7218,7 @@ function UsersSection({ showCode }: { showCode: boolean }) {
               <div className="text-center mb-4">
                 <h3 className="text-2xl font-bold text-white mb-2">Criar Novo Usuário</h3>
                 <p className="text-gray-400 mb-2">Preencha as informações abaixo</p>
-                <div className="w-16 h-1 bg-gradient-to-r from-[#FFD700] to-[#FFA500] mx-auto rounded-full"></div>
+                <div className="text-accent-gold-100 or bg-accent-gold-100"></div>
               </div>
               
               <div className="space-y-4">
@@ -7243,7 +7234,7 @@ function UsersSection({ showCode }: { showCode: boolean }) {
                   >
                     Cancelar
                   </Button>
-                  <Button className="flex-1 bg-[#FFD700] text-black hover:bg-[#FFD700]/80">
+                  <Button className="text-accent-gold-100 or bg-accent-gold-100">
                     Criar Usuário
                   </Button>
                 </div>

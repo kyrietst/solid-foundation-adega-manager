@@ -13,6 +13,14 @@ export { SimpleGlow } from './simple-glow';
 export { SensitiveData, useSensitiveValue } from './sensitive-data';
 export { default as ProfileCompleteness } from './profile-completeness';
 export { BaseModal, useBaseModal, type BaseModalProps, type ModalSize } from './BaseModal';
+export {
+  EnhancedBaseModal,
+  ModalSection,
+  useEnhancedModal,
+  type EnhancedBaseModalProps,
+  type ModalType,
+  type ModalAction
+} from './EnhancedBaseModal';
 export { 
   FormatDisplay, 
   CurrencyDisplay,

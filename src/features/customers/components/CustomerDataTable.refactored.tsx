@@ -55,7 +55,7 @@ export default function CustomerDataTable() {
 
   // Lógica de filtros e ordenação - Context7 pattern: lógica pura
   const filteredAndSortedData = useMemo(() => {
-    let filtered = customers.filter((customer) => {
+    const filtered = customers.filter((customer) => {
       const matchesSegment = !filters.segmentFilter || customer.segmento === filters.segmentFilter;
       const matchesStatus = !filters.statusFilter || customer.status === filters.statusFilter;
       const matchesSearch = !filters.searchTerm ||

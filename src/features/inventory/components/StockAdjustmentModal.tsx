@@ -5,7 +5,7 @@
  */
 
 import React, { useState, useMemo } from 'react';
-import { BaseModal } from '@/shared/ui/composite';
+import { EnhancedBaseModal, ModalSection } from '@/shared/ui/composite';
 import { Button } from '@/shared/ui/primitives/button';
 import { Input } from '@/shared/ui/primitives/input';
 import { RadioGroup, RadioGroupItem } from '@/shared/ui/primitives/radio-group';
@@ -216,45 +216,68 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
 
   if (isLoadingProduct) {
     return (
-      <BaseModal
+      <EnhancedBaseModal
         isOpen={isOpen}
         onClose={handleClose}
+        modalType="action"
         title="Ajustar Estoque"
-        maxWidth="1200px"
+        subtitle="Carregando informações do produto"
+        size="5xl"
+        loading={true}
       >
         <div className="flex items-center justify-center py-8">
-          <Loader2 className="h-8 w-8 animate-spin text-yellow-400" />
-          <span className="ml-2 text-gray-300">Carregando produto...</span>
+          <span className="text-gray-300">Carregando produto...</span>
         </div>
-      </BaseModal>
+      </EnhancedBaseModal>
     );
   }
 
   if (productError || !productInfo) {
     return (
-      <BaseModal
+      <EnhancedBaseModal
         isOpen={isOpen}
         onClose={handleClose}
-        title="Erro"
-        maxWidth="1200px"
+        modalType="danger"
+        title="Erro ao Carregar"
+        subtitle="Não foi possível carregar as informações do produto"
+        size="5xl"
+        status="error"
+        customIcon={AlertTriangle}
       >
         <div className="flex items-center justify-center py-8 text-red-400">
-          <AlertTriangle className="h-8 w-8 mr-2" />
-          <span>Erro ao carregar produto</span>
+          <span>Erro ao carregar produto. Tente novamente.</span>
         </div>
-      </BaseModal>
+      </EnhancedBaseModal>
     );
   }
 
   return (
-    <BaseModal
+    <EnhancedBaseModal
       isOpen={isOpen}
       onClose={handleClose}
-      title={`Ajustar Estoque - ${productInfo.product.name}`}
-      maxWidth="1200px"
+      modalType="action"
+      title="Ajustar Estoque"
+      subtitle={productInfo.product.name}
+      size="5xl"
+      customIcon={TrendingUp}
+      loading={adjustStockMutation.isPending}
+      primaryAction={{
+        label: adjustStockMutation.isPending ? "Ajustando..." : "Confirmar Ajuste",
+        icon: adjustStockMutation.isPending ? Loader2 : CheckCircle,
+        onClick: handleSubmit,
+        disabled: !canSubmit,
+        loading: adjustStockMutation.isPending
+      }}
+      secondaryAction={{
+        label: "Cancelar",
+        onClick: handleClose,
+        disabled: adjustStockMutation.isPending
+      }}
     >
-      <div className="space-y-6">
-        {/* Informações do produto */}
+      <ModalSection
+        title="Informações do Produto"
+        subtitle="Detalhes atuais do produto selecionado"
+      >
         <div className={cn(
           "p-4 rounded-lg border",
           getGlassCardClasses('premium')
@@ -274,68 +297,79 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
             </div>
           </div>
         </div>
+      </ModalSection>
 
-        {/* Seleção de unidade de ajuste */}
-        <div className="space-y-3">
-          <Label className="text-gray-100 font-medium">Unidade de Ajuste</Label>
-          <RadioGroup
-            value={adjustmentUnit}
-            onValueChange={(value) => setAdjustmentUnit(value as AdjustmentUnit)}
-            className="flex gap-4"
-          >
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="unit" id="unit" />
-              <Label htmlFor="unit" className="flex items-center gap-2 text-gray-300">
-                <Wine className="h-4 w-4" />
-                Unidades individuais
-              </Label>
-            </div>
-            {productInfo.canAdjustPackages && (
+      <ModalSection
+        title="Configuração do Ajuste"
+        subtitle="Selecione a unidade e tipo de ajuste"
+      >
+        <div className="space-y-6">
+          {/* Seleção de unidade de ajuste */}
+          <div className="space-y-3">
+            <Label className="text-gray-100 font-medium">Unidade de Ajuste</Label>
+            <RadioGroup
+              value={adjustmentUnit}
+              onValueChange={(value) => setAdjustmentUnit(value as AdjustmentUnit)}
+              className="flex flex-wrap gap-4"
+            >
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="package" id="package" />
-                <Label htmlFor="package" className="flex items-center gap-2 text-gray-300">
-                  <Package className="h-4 w-4" />
-                  Pacotes ({productInfo.packageUnits} un/cada)
+                <RadioGroupItem value="unit" id="unit" />
+                <Label htmlFor="unit" className="flex items-center gap-2 text-gray-300">
+                  <Wine className="h-4 w-4" />
+                  Unidades individuais
                 </Label>
               </div>
-            )}
-          </RadioGroup>
-        </div>
+              {productInfo.canAdjustPackages && (
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="package" id="package" />
+                  <Label htmlFor="package" className="flex items-center gap-2 text-gray-300">
+                    <Package className="h-4 w-4" />
+                    Pacotes ({productInfo.packageUnits} un/cada)
+                  </Label>
+                </div>
+              )}
+            </RadioGroup>
+          </div>
 
-        {/* Tipo de ajuste */}
-        <div className="space-y-3">
-          <Label className="text-gray-100 font-medium">Tipo de Ajuste</Label>
-          <RadioGroup
-            value={adjustmentType}
-            onValueChange={(value) => setAdjustmentType(value as AdjustmentType)}
-            className="flex gap-6"
-          >
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="entrada" id="entrada" />
-              <Label htmlFor="entrada" className="flex items-center gap-2 text-green-400">
-                <Plus className="h-4 w-4" />
-                Entrada (Adicionar)
-              </Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="saida" id="saida" />
-              <Label htmlFor="saida" className="flex items-center gap-2 text-red-400">
-                <Minus className="h-4 w-4" />
-                Saída (Remover)
-              </Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="ajuste" id="ajuste" />
-              <Label htmlFor="ajuste" className="flex items-center gap-2 text-blue-400">
-                <Settings className="h-4 w-4" />
-                Ajuste direto
-              </Label>
-            </div>
-          </RadioGroup>
+          {/* Tipo de ajuste */}
+          <div className="space-y-3">
+            <Label className="text-gray-100 font-medium">Tipo de Ajuste</Label>
+            <RadioGroup
+              value={adjustmentType}
+              onValueChange={(value) => setAdjustmentType(value as AdjustmentType)}
+              className="flex flex-wrap gap-4"
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="entrada" id="entrada" />
+                <Label htmlFor="entrada" className="flex items-center gap-2 text-green-400">
+                  <Plus className="h-4 w-4" />
+                  Entrada (Adicionar)
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="saida" id="saida" />
+                <Label htmlFor="saida" className="flex items-center gap-2 text-red-400">
+                  <Minus className="h-4 w-4" />
+                  Saída (Remover)
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="ajuste" id="ajuste" />
+                <Label htmlFor="ajuste" className="flex items-center gap-2 text-blue-400">
+                  <Settings className="h-4 w-4" />
+                  Ajuste direto
+                </Label>
+              </div>
+            </RadioGroup>
+          </div>
         </div>
+      </ModalSection>
 
-        {/* Input de quantidade ou estoque */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <ModalSection
+        title="Quantidade e Preview"
+        subtitle="Defina a quantidade e visualize o resultado"
+      >
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {adjustmentType === 'ajuste' ? (
             <div className="space-y-2">
               <Label htmlFor="newStock" className="text-gray-100">
@@ -368,7 +402,6 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
             </div>
           )}
 
-          {/* Preview do novo estoque */}
           <div className="space-y-2">
             <Label className="text-gray-100">Estoque após ajuste</Label>
             <div className={cn(
@@ -378,7 +411,7 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
                 : "border-red-500/30 bg-red-500/10"
             )}>
               <span className={cn(
-                "font-semibold",
+                "font-semibold text-lg",
                 calculatedNewStock >= 0 ? "text-green-400" : "text-red-400"
               )}>
                 {calculatedNewStock} unidades
@@ -386,8 +419,12 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
             </div>
           </div>
         </div>
+      </ModalSection>
 
-        {/* Motivo */}
+      <ModalSection
+        title="Justificativa"
+        subtitle="Descreva o motivo deste ajuste de estoque"
+      >
         <div className="space-y-2">
           <Label htmlFor="reason" className="text-gray-100">
             Motivo do ajuste <span className="text-red-400">*</span>
@@ -401,37 +438,8 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
             rows={3}
           />
         </div>
-
-        {/* Ações */}
-        <div className="flex gap-3 pt-4">
-          <Button
-            onClick={handleClose}
-            variant="outline"
-            className="flex-1"
-            disabled={adjustStockMutation.isPending}
-          >
-            Cancelar
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            disabled={!canSubmit}
-            className="flex-1 bg-gradient-to-r from-yellow-400 to-yellow-500 text-black hover:from-yellow-300 hover:to-yellow-400"
-          >
-            {adjustStockMutation.isPending ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Ajustando...
-              </>
-            ) : (
-              <>
-                <CheckCircle className="h-4 w-4 mr-2" />
-                Confirmar Ajuste
-              </>
-            )}
-          </Button>
-        </div>
-      </div>
-    </BaseModal>
+      </ModalSection>
+    </EnhancedBaseModal>
   );
 };
 

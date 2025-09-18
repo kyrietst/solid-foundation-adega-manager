@@ -181,15 +181,11 @@ export const AdvancedReports: React.FC = () => {
                 variant={globalPeriod === days ? "default" : "outline"}
                 size="sm"
                 onClick={() => setGlobalPeriod(days)}
-                className={`${
-                  globalPeriod === days
-                    ? "bg-gradient-to-r from-[#FFD700] to-[#FFA500] text-black font-bold shadow-lg shadow-[#FFD700]/30 scale-105 border-0"
-                    : "border-white/30 text-white hover:bg-white/20 hover:border-white/50 hover:scale-105 hover:shadow-md"
-                } backdrop-blur-sm transition-all duration-300 relative overflow-hidden group`}
+                className="text-accent-gold-100 or bg-accent-gold-100"
               >
                 <span className="relative z-10">{days}d</span>
                 {globalPeriod === days && (
-                  <div className="absolute inset-0 bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/20 animate-pulse" />
+                  <div className="text-accent-gold-100 or bg-accent-gold-100" />
                 )}
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 -translate-x-full group-hover:translate-x-full transform" />
               </Button>
@@ -209,7 +205,7 @@ export const AdvancedReports: React.FC = () => {
                 size="sm"
                 className="h-10 bg-black/80 border-accent-gold-100/40 text-accent-gold-100 hover:bg-accent-gold-100/20 hover:shadow-xl hover:shadow-accent-gold-100/30 hover:border-accent-gold-100/80 hover:scale-105 backdrop-blur-sm transition-all duration-300 relative overflow-hidden group"
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-[#FFD700]/5 via-[#FFD700]/10 to-[#FFD700]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className="text-accent-gold-100 or bg-accent-gold-100" />
                 <FileSpreadsheet className="h-4 w-4 mr-2 relative z-10 group-hover:animate-bounce" />
                 <span className="relative z-10 font-medium">Exportar</span>
                 <ChevronDown className="h-4 w-4 ml-2 relative z-10 group-hover:rotate-180 transition-transform duration-300" />

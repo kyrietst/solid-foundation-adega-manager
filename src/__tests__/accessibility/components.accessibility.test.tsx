@@ -31,7 +31,7 @@ vi.mock('@/core/api/supabase/client', () => ({
 
 // Componente de teste simples para formulário
 const TestForm = () => (
-  <form role="form" aria-label="Formulário de teste">
+  <form aria-label="Formulário de teste">
     <div>
       <label htmlFor="name">Nome *</label>
       <input 
@@ -63,7 +63,7 @@ const TestForm = () => (
 
 // Componente de teste para tabela
 const TestTable = () => (
-  <div role="region" aria-label="Lista de produtos" tabIndex={0}>
+  <div role="region" aria-label="Lista de produtos">
     <table role="table" aria-label="Produtos cadastrados">
       <caption>Lista completa de produtos do sistema</caption>
       <thead>
@@ -144,7 +144,7 @@ const TestModal = ({ isOpen }: { isOpen: boolean }) => {
           Tem certeza que deseja excluir este produto?
         </p>
         <div>
-          <button type="button" autoFocus>
+          <button type="button">
             Confirmar
           </button>
           <button type="button">
@@ -346,17 +346,17 @@ describe('Accessibility Tests', () => {
       <nav role="navigation" aria-label="Menu principal">
         <ul>
           <li>
-            <a href="#home" role="link">
+            <a href="#home">
               Home
             </a>
           </li>
           <li>
-            <a href="#products" role="link">
+            <a href="#products">
               Produtos
             </a>
           </li>
           <li>
-            <a href="#sales" role="link">
+            <a href="#sales">
               Vendas
             </a>
           </li>

@@ -313,10 +313,11 @@ export const CategoryManagement: React.FC = () => {
               <div className="space-y-4">
                 {/* Nome */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-300">
+                  <label htmlFor="category-name" className="text-sm font-medium text-gray-300">
                     Nome da Categoria *
                   </label>
                   <Input
+                    id="category-name"
                     value={formData.name}
                     onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                     placeholder="Ex: Vinhos Tintos, Cervejas, Refrigerantes"
@@ -332,10 +333,11 @@ export const CategoryManagement: React.FC = () => {
 
                 {/* Descrição */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-300">
+                  <label htmlFor="category-description" className="text-sm font-medium text-gray-300">
                     Descrição
                   </label>
                   <Textarea
+                    id="category-description"
                     value={formData.description}
                     onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                     placeholder="Descrição opcional para categorizar melhor os produtos"
@@ -356,11 +358,12 @@ export const CategoryManagement: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Cor */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-300">
+                  <label htmlFor="category-color" className="text-sm font-medium text-gray-300">
                     Cor da Categoria
                   </label>
                   <div className="flex items-center gap-3">
                     <input
+                      id="category-color"
                       type="color"
                       value={formData.color}
                       onChange={(e) => setFormData(prev => ({ ...prev, color: e.target.value }))}
@@ -377,10 +380,11 @@ export const CategoryManagement: React.FC = () => {
 
                 {/* Ícone */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-300">
+                  <label htmlFor="category-icon" className="text-sm font-medium text-gray-300">
                     Ícone (Lucide React)
                   </label>
                   <Input
+                    id="category-icon"
                     value={formData.icon}
                     onChange={(e) => setFormData(prev => ({ ...prev, icon: e.target.value }))}
                     placeholder="Package"

@@ -415,7 +415,7 @@ export default {
 		// eslint-disable-next-line @typescript-eslint/no-require-imports
 		require("tailwindcss-animate"),
 		// Plugin para scrollbar customizada
-		function({ addUtilities }: { addUtilities: (utilities: Record<string, any>) => void }) {
+		function({ addUtilities }: { addUtilities: (utilities: Record<string, Record<string, string>>) => void }) {
 			const scrollbarUtilities = {
 				'.scrollbar-thin': {
 					'scrollbar-width': 'thin',
@@ -445,7 +445,7 @@ export default {
 			addUtilities(scrollbarUtilities);
 		},
 		// Plugin for text-shadow utilities
-		function({ matchUtilities, theme }: { matchUtilities: (utilities: Record<string, (value: string) => Record<string, string>>, options: { values: any }) => void, theme: (key: string) => any }) {
+		function({ matchUtilities, theme }: { matchUtilities: (utilities: Record<string, (value: string) => Record<string, string>>, options: { values: Record<string, string> }) => void, theme: (key: string) => Record<string, string> }) {
 			matchUtilities(
 				{
 					'text-shadow': (value: string) => ({
