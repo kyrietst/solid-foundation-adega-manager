@@ -36,7 +36,7 @@ export interface Product {
   margin_percent?: Percentage;
   created_at: string;
   updated_at: string;
-  
+
   // Novos campos para estoque aprimorado
   unit_type: UnitType;
   package_size: NonNegativeInteger;
@@ -45,13 +45,13 @@ export interface Product {
   turnover_rate: TurnoverRate;
   last_sale_date?: string;
   barcode?: string;
-  
+
   // Campos adicionados na história 1.1 - Schema e Políticas de Segurança
   measurement_type?: string; // Tipo de medição (Volume, Unidade, etc.)
   measurement_value?: string; // Valor da medição para campos dinâmicos
   is_package?: boolean; // Se o produto é um pacote vs unidade individual
   units_per_package?: NonNegativeInteger; // Número de unidades por pacote
-  
+
   // Campos do sistema hierárquico de códigos de barras
   unit_barcode?: string; // Código de barras da unidade individual
   package_barcode?: string; // Código de barras do pacote/fardo
@@ -59,10 +59,14 @@ export interface Product {
   has_unit_tracking?: boolean; // Se permite venda por unidade
   has_package_tracking?: boolean; // Se permite venda por pacote
   packaging_type?: string; // Tipo de embalagem (fardo, caixa, etc.)
-  
+
   // Campos de controle de validade
   expiry_date?: string; // Data de validade do produto (ISO string)
   has_expiry_tracking?: boolean; // Se este produto tem controle de validade
+
+  // Campos da arquitetura de Dupla Contagem (Controle Explícito)
+  stock_packages: NonNegativeInteger; // Quantidade de pacotes fechados em estoque
+  stock_units_loose: NonNegativeInteger; // Quantidade de unidades soltas em estoque
 }
 
 export interface ProductFormData {
