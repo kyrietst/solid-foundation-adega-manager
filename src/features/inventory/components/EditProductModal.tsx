@@ -10,7 +10,7 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { EnhancedBaseModal } from '@/shared/ui/composite';
+import { EnhancedBaseModal, ModalSection } from '@/shared/ui/composite';
 import {
   Form,
   FormControl,
@@ -36,7 +36,7 @@ import { ProductPricingForm } from '@/features/inventory/components/form-section
 import { ProductTrackingForm } from '@/features/inventory/components/form-sections/ProductTrackingForm';
 import { ProductStockDisplay } from '@/features/inventory/components/form-sections/ProductStockDisplay';
 import { useToast } from '@/shared/hooks/common/use-toast';
-import { useGlassmorphismEffect } from '@/shared/hooks/ui/useGlassmorphismEffect';
+import { getGlassCardClasses } from '@/core/config/theme-utils';
 import { calculatePackageDisplay } from '@/shared/utils/stockCalculations';
 import { supabase } from '@/core/api/supabase/client';
 import { 
@@ -147,7 +147,6 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
   isLoading = false,
 }) => {
   const { toast } = useToast();
-  const { handleMouseMove } = useGlassmorphismEffect();
   const [categories, setCategories] = useState<string[]>([]);
   const [suppliers, setSuppliers] = useState<string[]>([]);
   const [showCustomSupplier, setShowCustomSupplier] = useState(false);
@@ -374,18 +373,27 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
         disabled: isLoading
       }}
     >
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-5">
+          {/* Hidden submit button for form submission */}
+          <button type="submit" className="hidden" />
+        </form>
+      </Form>
 
-        <div className="flex-1 overflow-y-auto pr-2">
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-8">
-              {/* Informações Básicas */}
-              <div className="bg-gray-800/30 rounded-xl p-6 border border-gray-700/50 hero-spotlight hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300" onMouseMove={handleMouseMove}>
-                <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-5">
-                  <Package className="h-5 w-5 text-blue-400" />
-                  Informações Básicas
-                </h3>
-                
-                <div className="space-y-5">
+      {/* Informações Básicas */}
+      <ModalSection
+        title="Informações Básicas"
+        subtitle="Dados fundamentais do produto"
+      >
+                <div className={cn(
+                  "p-5 rounded-lg border space-y-4",
+                  getGlassCardClasses('premium')
+                )}>
+                  <div className="flex items-center gap-3 mb-4">
+                    <Package className="h-5 w-5 text-blue-400" />
+                    <span className="text-lg font-medium text-gray-100">Dados do Produto</span>
+                  </div>
+
                   <FormField
                     control={form.control}
                     name="name"
@@ -404,7 +412,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
                     )}
                   />
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
                     <FormField
                       control={form.control}
                       name="category"
@@ -452,26 +460,57 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
                         </FormItem>
                       )}
                     />
+
+                    <FormField
+                      control={form.control}
+                      name="minimum_stock"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-gray-300">Estoque Mínimo</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              min="0"
+                              placeholder="Ex: 10"
+                              {...field}
+                              onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+                              className="bg-gray-800/50 border-gray-600 text-white h-11"
+                            />
+                          </FormControl>
+                          <FormDescription className="text-xs text-gray-500">
+                            Sistema alertará quando abaixo desta quantidade
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
                 </div>
-              </div>
+      </ModalSection>
 
-              {/* Sistema de Códigos Hierárquicos */}
-              <div className="bg-gray-800/30 rounded-xl p-6 border border-gray-700/50 hero-spotlight hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300" onMouseMove={handleMouseMove}>
-                <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-5">
-                  <Barcode className="h-5 w-5 text-yellow-400" />
-                  Sistema de Códigos de Barras
-                </h3>
-
-                {/* Código de barras principal do produto */}
-                <div className="space-y-4 mb-6">
-                  <div className="flex items-center gap-2 pb-2 border-b border-gray-700/50">
-                    <Barcode className="h-4 w-4 text-yellow-400" />
-                    <FormLabel className="text-base text-gray-300 font-medium">Código de Barras Principal</FormLabel>
+      {/* Sistema de Códigos Hierárquicos */}
+      <ModalSection
+        title="Sistema de Códigos de Barras"
+        subtitle="Configuração de códigos para unidade e pacote"
+      >
+                <div className={cn(
+                  "p-5 rounded-lg border",
+                  getGlassCardClasses('premium')
+                )}>
+                  <div className="flex items-center gap-3 mb-6">
+                    <Barcode className="h-5 w-5 text-yellow-400" />
+                    <span className="text-lg font-medium text-gray-100">Códigos de Barras</span>
                   </div>
-                  
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
-                    <div className="space-y-3">
+
+                  {/* Código de barras principal do produto */}
+                  <div className="space-y-5 mb-6">
+                    <div className="flex items-center gap-2 pb-3 border-b border-gray-700/30">
+                      <Barcode className="h-4 w-4 text-yellow-400" />
+                      <FormLabel className="text-base text-gray-300 font-medium">Código de Barras Principal</FormLabel>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
+                      <div className="lg:col-span-2 space-y-3">
                       {activeScanner !== 'main' ? (
                         <Button
                           type="button"
@@ -511,89 +550,91 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
                         )}
                       />
                     </div>
-                    <div className="text-sm text-gray-400 mt-2">
-                      <p>💡 <strong>Código principal:</strong> Código da unidade do produto. Se houver fardo, pode ser o código geral.</p>
+                      <div className="text-sm text-gray-400 bg-blue-900/10 border border-blue-400/20 rounded-lg p-3">
+                        <p>💡 <strong>Código principal:</strong> Código da unidade do produto. Se houver fardo, pode ser o código geral.</p>
+                      </div>
                     </div>
                   </div>
-                </div>
-                
-                {/* Toggles para tipos de venda */}
-                <div className="space-y-4 mb-6">
-                  <div className="flex items-center justify-between rounded-lg border border-blue-400/30 p-4 bg-blue-400/5">
-                    <div className="space-y-1">
-                      <FormLabel className="text-base text-gray-300 font-medium">
-                        Venda por Unidade
-                      </FormLabel>
-                      <FormDescription className="text-sm text-gray-500">
-                        Permite venda de itens individuais
-                      </FormDescription>
-                    </div>
-                    <FormField
-                      control={form.control}
-                      name="has_unit_tracking"
-                      render={({ field }) => (
-                        <FormControl>
-                          <SwitchAnimated
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                            variant="yellow"
-                            size="md"
-                          />
-                        </FormControl>
-                      )}
-                    />
-                  </div>
-                  
-                  <div className="flex items-center justify-between rounded-lg border border-yellow-400/30 p-4 bg-yellow-400/5">
-                    <div className="space-y-1">
-                      <FormLabel className="text-base text-gray-300 font-medium">
-                        Venda por Pacote/Fardo
-                      </FormLabel>
-                      <FormDescription className="text-sm text-gray-500">
-                        Ative para produtos vendidos em embalagens com vários itens
-                      </FormDescription>
-                    </div>
-                    <FormField
-                      control={form.control}
-                      name="has_package_tracking"
-                      render={({ field }) => (
-                        <FormControl>
-                          <SwitchAnimated
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                            variant="yellow"
-                            size="md"
-                          />
-                        </FormControl>
-                      )}
-                    />
-                  </div>
-                </div>
 
-                {/* Explicação da lógica de códigos */}
-                <div className="bg-blue-900/20 border border-blue-400/30 rounded-lg p-4">
-                  <div className="flex items-start gap-3">
-                    <Info className="h-5 w-5 text-blue-400 mt-0.5" />
-                    <div className="text-sm text-gray-300">
-                      <p className="font-medium mb-1">🔍 Como funciona a detecção automática:</p>
-                      <ul className="text-xs text-gray-400 space-y-1">
-                        <li>• <strong>Código principal:</strong> Usado para busca e identificação geral</li>
-                        <li>• <strong>Código de pacote:</strong> Usado apenas se o produto tem rastreamento por fardo</li>
-                        <li>• <strong>Na venda:</strong> Sistema detecta automaticamente se é unidade ou fardo</li>
-                      </ul>
+                  {/* Toggles para tipos de venda */}
+                  <div className="space-y-4 mb-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                      <div className="flex items-center justify-between rounded-lg border border-blue-400/30 p-4 bg-blue-400/5">
+                        <div className="space-y-1">
+                          <FormLabel className="text-base text-gray-300 font-medium">
+                            Venda por Unidade
+                          </FormLabel>
+                          <FormDescription className="text-sm text-gray-500">
+                            Permite venda de itens individuais
+                          </FormDescription>
+                        </div>
+                        <FormField
+                          control={form.control}
+                          name="has_unit_tracking"
+                          render={({ field }) => (
+                            <FormControl>
+                              <SwitchAnimated
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                                variant="yellow"
+                                size="md"
+                              />
+                            </FormControl>
+                          )}
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between rounded-lg border border-yellow-400/30 p-4 bg-yellow-400/5">
+                        <div className="space-y-1">
+                          <FormLabel className="text-base text-gray-300 font-medium">
+                            Venda por Pacote/Fardo
+                          </FormLabel>
+                          <FormDescription className="text-sm text-gray-500">
+                            Ative para produtos vendidos em embalagens com vários itens
+                          </FormDescription>
+                        </div>
+                        <FormField
+                          control={form.control}
+                          name="has_package_tracking"
+                          render={({ field }) => (
+                            <FormControl>
+                              <SwitchAnimated
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                                variant="yellow"
+                                size="md"
+                              />
+                            </FormControl>
+                          )}
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Código de barras do pacote (condicional) */}
-                {form.watch('has_package_tracking') && (
-                  <div className="space-y-4 border-t border-gray-700/50 pt-6">
-                    <div className="flex items-center gap-2 pb-2 border-b border-gray-700/50">
-                      <Package className="h-4 w-4 text-yellow-400" />
-                      <FormLabel className="text-base text-gray-300 font-medium">Código do Pacote/Fardo</FormLabel>
+                  {/* Explicação da lógica de códigos */}
+                  <div className="bg-blue-900/20 border border-blue-400/30 rounded-lg p-4">
+                    <div className="flex items-start gap-3">
+                      <Info className="h-5 w-5 text-blue-400 mt-0.5" />
+                      <div className="text-sm text-gray-300">
+                        <p className="font-medium mb-2">🔍 Como funciona a detecção automática:</p>
+                        <ul className="text-xs text-gray-400 space-y-1 ml-2">
+                          <li>• <strong>Código principal:</strong> Usado para busca e identificação geral</li>
+                          <li>• <strong>Código de pacote:</strong> Usado apenas se o produto tem rastreamento por fardo</li>
+                          <li>• <strong>Na venda:</strong> Sistema detecta automaticamente se é unidade ou fardo</li>
+                        </ul>
+                      </div>
                     </div>
-                    
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                  </div>
+
+                  {/* Código de barras do pacote (condicional) */}
+                  {form.watch('has_package_tracking') && (
+                    <div className="space-y-5 border-t border-gray-700/30 pt-6">
+                      <div className="flex items-center gap-2 pb-3 border-b border-gray-700/30">
+                        <Package className="h-4 w-4 text-yellow-400" />
+                        <FormLabel className="text-base text-gray-300 font-medium">Código do Pacote/Fardo</FormLabel>
+                      </div>
+
+                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
                       {/* Scanner e input do pacote */}
                       <div className="lg:col-span-2 space-y-3">
                         {activeScanner !== 'package' ? (
@@ -670,93 +711,118 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
                           </div>
                         </div>
                       </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+      </ModalSection>
+
+      {/* Fornecedor */}
+      <ModalSection
+        title="Fornecedor"
+        subtitle="Selecione ou adicione um novo fornecedor"
+      >
+                <div className={cn(
+                  "p-5 rounded-lg border",
+                  getGlassCardClasses('premium')
+                )}>
+                  <div className="flex items-center gap-3 mb-6">
+                    <Factory className="h-5 w-5 text-purple-400" />
+                    <span className="text-lg font-medium text-gray-100">Informações do Fornecedor</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="supplier"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-gray-300">Fornecedor</FormLabel>
+                            <Select onValueChange={handleSupplierChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white h-11">
+                                  <SelectValue placeholder="Selecione ou adicione novo..." />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {suppliers.map((supplier) => (
+                                  <SelectItem key={supplier} value={supplier}>
+                                    {supplier}
+                                  </SelectItem>
+                                ))}
+                                {suppliers.length > 0 && (
+                                  <SelectItem value="custom">+ Novo fornecedor</SelectItem>
+                                )}
+                                {suppliers.length === 0 && (
+                                  <SelectItem value="custom">+ Adicionar primeiro fornecedor</SelectItem>
+                                )}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      {showCustomSupplier && (
+                        <FormField
+                          control={form.control}
+                          name="custom_supplier"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-gray-300">Nome do Novo Fornecedor</FormLabel>
+                              <FormControl>
+                                <Input
+                                  placeholder="Ex: Distribuidora ABC"
+                                  {...field}
+                                  className="bg-gray-800/50 border-gray-600 text-white h-11"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-center">
+                      <div className="text-center text-gray-500">
+                        <Factory className="h-16 w-16 mx-auto mb-3 opacity-30" />
+                        <p className="text-sm opacity-75">Gestão de Fornecedores</p>
+                      </div>
                     </div>
                   </div>
-                )}
+                </div>
+      </ModalSection>
+
+      {/* Preços */}
+      <ModalSection
+        title="Preços e Margem"
+        subtitle="Definição de preços de custo e venda com cálculo automático de margem"
+      >
+        <div className={cn(
+          "p-5 rounded-lg border",
+          getGlassCardClasses('premium')
+        )}>
+          <div className="flex items-center gap-3 mb-6">
+            <DollarSign className="h-5 w-5 text-green-400" />
+            <span className="text-lg font-medium text-gray-100">Gestão de Preços</span>
+          </div>
+
+          {/* Preços de Unidade */}
+          <div className="space-y-6">
+            <div className="flex items-center gap-2 pb-3 border-b border-gray-700/30">
+              <ShoppingCart className="h-4 w-4 text-blue-400" />
+              <h4 className="text-base font-medium text-gray-200">Preços por Unidade</h4>
             </div>
 
-              {/* Fornecedor */}
-              <div className="bg-gray-800/30 rounded-xl p-6 border border-gray-700/50 hero-spotlight hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300" onMouseMove={handleMouseMove}>
-                <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-5">
-                  <Factory className="h-5 w-5 text-purple-400" />
-                  Fornecedor
-                </h3>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <FormField
-                  control={form.control}
-                  name="supplier"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-gray-300">Fornecedor</FormLabel>
-                      <Select onValueChange={handleSupplierChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white h-11">
-                            <SelectValue placeholder="Selecione ou adicione novo..." />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {suppliers.map((supplier) => (
-                            <SelectItem key={supplier} value={supplier}>
-                              {supplier}
-                            </SelectItem>
-                          ))}
-                          {suppliers.length > 0 && (
-                            <SelectItem value="custom">+ Novo fornecedor</SelectItem>
-                          )}
-                          {suppliers.length === 0 && (
-                            <SelectItem value="custom">+ Adicionar primeiro fornecedor</SelectItem>
-                          )}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {showCustomSupplier && (
-                  <FormField
-                    control={form.control}
-                    name="custom_supplier"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-gray-300">Nome do Novo Fornecedor</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="Ex: Distribuidora ABC"
-                            {...field}
-                            className="bg-gray-800/50 border-gray-600 text-white h-11"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                )}
-                </div>
-              </div>
-
-              {/* Preços */}
-              <div className="bg-gray-800/30 rounded-xl p-6 border border-gray-700/50 hero-spotlight hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300" onMouseMove={handleMouseMove}>
-                <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-5">
-                  <DollarSign className="h-5 w-5 text-green-400" />
-                  Preços e Margem
-                </h3>
-                
-                {/* Preços de Unidade */}
-                <div className="space-y-5">
-                  <h4 className="text-base font-medium text-gray-200 flex items-center gap-2">
-                    <ShoppingCart className="h-4 w-4 text-blue-400" />
-                    Preços por Unidade
-                  </h4>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-5">
                     <FormField
                       control={form.control}
                       name="cost_price"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-gray-300">Preço de Custo (unidade)</FormLabel>
+                          <FormLabel className="text-gray-300">Preço de Custo</FormLabel>
                           <FormControl>
                             <Input
                               type="number"
@@ -768,7 +834,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
                             />
                           </FormControl>
                           <FormDescription className="text-xs text-gray-500">
-                            Quanto custa cada unidade para você
+                            Custo por unidade
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
@@ -780,7 +846,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
                       name="price"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-gray-300">Preço de Venda (unidade) *</FormLabel>
+                          <FormLabel className="text-gray-300">Preço de Venda *</FormLabel>
                           <FormControl>
                             <Input
                               type="number"
@@ -792,7 +858,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
                             />
                           </FormControl>
                           <FormDescription className="text-xs text-gray-500">
-                            Preço de cada unidade para o cliente
+                            Preço por unidade
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
@@ -816,24 +882,14 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
                         Margem por unidade
                       </FormDescription>
                     </div>
-                  </div>
-                </div>
 
-                {/* Preços de Pacote - Condicional */}
-                {form.watch('has_package_tracking') && (
-                  <div className="space-y-5 border-t border-gray-700/50 pt-5">
-                    <h4 className="text-base font-medium text-gray-200 flex items-center gap-2">
-                      <Package className="h-4 w-4 text-yellow-400" />
-                      Preços por Pacote/Fardo
-                    </h4>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    {form.watch('has_package_tracking') && (
                       <FormField
                         control={form.control}
                         name="package_price"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-gray-300">Preço de Venda (pacote)</FormLabel>
+                            <FormLabel className="text-gray-300">Preço do Pacote</FormLabel>
                             <FormControl>
                               <Input
                                 type="number"
@@ -851,207 +907,163 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
                           </FormItem>
                         )}
                       />
-
-                      <div>
-                        <FormLabel className="text-gray-300">Margem do Pacote</FormLabel>
-                        <div className="h-11 bg-gray-800/30 border border-gray-600 rounded-md px-3 flex items-center mt-2">
-                          {calculatedPackageMargin ? (
-                            <span className="text-green-400 font-medium">
-                              {calculatedPackageMargin}%
-                            </span>
-                          ) : (
-                            <span className="text-gray-500">
-                              🔄 Auto-calculada
-                            </span>
-                          )}
-                        </div>
-                        <FormDescription className="text-xs text-gray-500 mt-1">
-                          Margem do pacote completo
-                        </FormDescription>
-                      </div>
-
-                      <div>
-                        <FormLabel className="text-gray-300">Economia do Cliente</FormLabel>
-                        <div className="h-11 bg-gray-800/30 border border-green-600/50 rounded-md px-3 flex items-center mt-2">
-                          {packageSavings ? (
-                            <span className="text-green-400 font-medium">
-                              R$ {packageSavings.amount.toFixed(2)} ({packageSavings.percent}%)
-                            </span>
-                          ) : (
-                            <span className="text-gray-500">
-                              💰 Calculando...
-                            </span>
-                          )}
-                        </div>
-                        <FormDescription className="text-xs text-gray-500 mt-1">
-                          Quanto o cliente economiza
-                        </FormDescription>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Informações de Estoque por Variantes (Read-Only) */}
-              <div className="bg-gray-800/30 rounded-xl p-6 border border-gray-700/50 hero-spotlight hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300" onMouseMove={handleMouseMove}>
-                <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-5">
-                  <Package className="h-5 w-5 text-yellow-400" />
-                  Informações de Estoque por Variante
-                </h3>
-                
-                <div className="space-y-6">
-                  {/* Sistema de variantes atual */}
-                  {/* Sistema SSoT ativo */}
-                  <div className="bg-blue-900/10 border border-blue-400/20 rounded-lg p-4">
-                    <div className="flex items-center gap-2 mb-3">
-                      <Info className="h-4 w-4 text-blue-400" />
-                      <span className="text-sm font-medium text-blue-300">Single Source of Truth (SSoT)</span>
-                    </div>
-                    <p className="text-xs text-gray-400">
-                      Este produto utiliza o sistema SSoT. O estoque é controlado diretamente na tabela products.
-                      Para ajustar estoque, use a funcionalidade "Ajustar Estoque" na página de inventário.
-                    </p>
+                    )}
                   </div>
 
-                  {/* Exibição de estoque SSoT */}
-                  <div className="bg-black/20 border-white/10 rounded-lg p-4">
-                    <div className="flex items-center gap-2 mb-4">
-                      <Package className="h-4 w-4 text-primary-yellow" />
-                      <span className="text-sm font-medium text-gray-100">Estoque Atual</span>
-                    </div>
+                    {/* Métricas do Pacote - Condicional */}
+                    {form.watch('has_package_tracking') && (
+                      <div className="space-y-4 border-t border-gray-700/30 pt-6">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                          <div>
+                            <FormLabel className="text-gray-300">Margem do Pacote</FormLabel>
+                            <div className="h-11 bg-gray-800/30 border border-gray-600 rounded-md px-3 flex items-center mt-2">
+                              {calculatedPackageMargin ? (
+                                <span className="text-green-400 font-medium">
+                                  {calculatedPackageMargin}%
+                                </span>
+                              ) : (
+                                <span className="text-gray-500">
+                                  🔄 Auto-calculada
+                                </span>
+                              )}
+                            </div>
+                            <FormDescription className="text-xs text-gray-500 mt-1">
+                              Margem do pacote completo
+                            </FormDescription>
+                          </div>
 
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-400">Total em unidades:</span>
-                        <span className="text-lg font-semibold text-primary-yellow">{product.stock_quantity || 0}</span>
+                          <div>
+                            <FormLabel className="text-gray-300">Economia do Cliente</FormLabel>
+                            <div className="h-11 bg-gray-800/30 border border-green-600/50 rounded-md px-3 flex items-center mt-2">
+                              {packageSavings ? (
+                                <span className="text-green-400 font-medium">
+                                  R$ {packageSavings.amount.toFixed(2)} ({packageSavings.percent}%)
+                                </span>
+                              ) : (
+                                <span className="text-gray-500">
+                                  💰 Calculando...
+                                </span>
+                              )}
+                            </div>
+                            <FormDescription className="text-xs text-gray-500 mt-1">
+                              Quanto o cliente economiza
+                            </FormDescription>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+            </div>
+          </div>
+        </div>
+      </ModalSection>
+
+      {/* Informações de Estoque (Read-Only) */}
+      <ModalSection
+        title="Estoque e Validade"
+        subtitle="Visualização do estoque atual e configuração de validade"
+      >
+                <div className={cn(
+                  "p-5 rounded-lg border",
+                  getGlassCardClasses('premium')
+                )}>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Coluna Esquerda - Estoque */}
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2 mb-4">
+                        <Package className="h-4 w-4 text-yellow-400" />
+                        <span className="text-sm font-medium text-gray-100">Estoque Atual (SSoT)</span>
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 bg-yellow-400/10 rounded-lg border border-yellow-400/20">
+                        <span className="text-sm text-gray-300">Total em unidades:</span>
+                        <span className="text-xl font-bold text-yellow-400">{product.stock_quantity || 0}</span>
                       </div>
 
                       {product.has_package_tracking && stockDisplay && stockDisplay.packages > 0 && (
-                        <>
-                          <div className="border-t border-gray-700/50 pt-3">
-                            <div className="grid grid-cols-2 gap-4 text-sm">
-                              <div className="text-center p-2 bg-blue-500/10 rounded">
-                                <div className="text-blue-400 font-semibold">{stockDisplay.packages}</div>
-                                <div className="text-xs text-gray-400">pacotes</div>
-                              </div>
-                              <div className="text-center p-2 bg-green-500/10 rounded">
-                                <div className="text-green-400 font-semibold">{stockDisplay.units}</div>
-                                <div className="text-xs text-gray-400">unidades soltas</div>
-                              </div>
-                            </div>
+                        <div className="grid grid-cols-2 gap-3 text-sm">
+                          <div className="text-center p-2 bg-blue-500/10 rounded border border-blue-400/20">
+                            <div className="text-blue-400 font-semibold">{stockDisplay.packages}</div>
+                            <div className="text-xs text-gray-400">pacotes</div>
                           </div>
-
-                          <div className="text-xs text-gray-500 text-center">
-                            {stockDisplay.formatted}
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Controle de Validade */}
-              <div className="bg-gray-800/30 rounded-xl p-6 border border-gray-700/50 hero-spotlight hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300" onMouseMove={handleMouseMove}>
-                <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-5">
-                  <Calendar className="h-5 w-5 text-orange-400" />
-                  Controle de Validade
-                </h3>
-                
-                <div className="space-y-5">
-                  {/* Toggle para ativação do controle de validade */}
-                  <div className="flex items-center justify-between rounded-lg border border-orange-400/30 p-4 bg-orange-400/5">
-                    <div className="space-y-1">
-                      <FormLabel className="text-base text-gray-300 font-medium">
-                        Produto com Prazo de Validade
-                      </FormLabel>
-                      <FormDescription className="text-sm text-gray-500">
-                        Ative para produtos perecíveis que possuem data de vencimento
-                      </FormDescription>
-                    </div>
-                    <FormField
-                      control={form.control}
-                      name="has_expiry_tracking"
-                      render={({ field }) => (
-                        <FormControl>
-                          <SwitchAnimated
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                            variant="orange"
-                            size="md"
-                          />
-                        </FormControl>
-                      )}
-                    />
-                  </div>
-
-                  {/* Campo de data de validade (condicional) */}
-                  {form.watch('has_expiry_tracking') && (
-                    <div className="space-y-3 border-t border-gray-700/50 pt-5">
-                      <FormField
-                        control={form.control}
-                        name="expiry_date"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-gray-300 flex items-center gap-2">
-                              <Calendar className="h-4 w-4 text-orange-400" />
-                              Data de Validade
-                            </FormLabel>
-                            <FormControl>
-                              <Input
-                                type="date"
-                                {...field}
-                                className="bg-gray-800/50 border-gray-600 text-white h-11"
-                              />
-                            </FormControl>
-                            <FormDescription className="text-xs text-gray-500">
-                              Data de vencimento deste produto (aplicável a unidades ou pacotes conforme sua venda)
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      {/* Indicador visual se próximo ao vencimento */}
-                      {form.watch('expiry_date') && (
-                        <div className="bg-amber-900/20 border border-amber-400/30 rounded-lg p-3">
-                          <div className="flex items-start gap-3">
-                            <AlertTriangle className="h-4 w-4 text-amber-400 mt-0.5" />
-                            <div className="text-sm">
-                              <p className="font-medium text-amber-300">💡 Dica do Sistema</p>
-                              <p className="text-gray-300 text-xs mt-1">
-                                O sistema alertará automaticamente quando produtos estiverem próximos ao vencimento no dashboard.
-                              </p>
-                            </div>
+                          <div className="text-center p-2 bg-green-500/10 rounded border border-green-400/20">
+                            <div className="text-green-400 font-semibold">{stockDisplay.units}</div>
+                            <div className="text-xs text-gray-400">unidades</div>
                           </div>
                         </div>
                       )}
-                    </div>
-                  )}
 
-                  {/* Explicação quando controle está desabilitado */}
-                  {!form.watch('has_expiry_tracking') && (
-                    <div className="bg-gray-900/20 border border-gray-500/30 rounded-lg p-4">
-                      <div className="flex items-start gap-3">
-                        <Info className="h-5 w-5 text-gray-400 mt-0.5" />
-                        <div className="text-sm text-gray-400">
-                          <p className="font-medium mb-1">Controle de Validade Desabilitado</p>
-                          <p className="text-xs">
-                            Para produtos duráveis (bebidas alcoólicas, produtos em conserva, etc.) 
-                            que não possuem prazo de validade crítico.
-                          </p>
-                        </div>
+                      <div className="text-xs text-gray-400 bg-blue-900/10 border border-blue-400/20 rounded p-2">
+                        💡 Para ajustar estoque, use "Ajustar Estoque" na página de inventário.
                       </div>
                     </div>
-                  )}
-                </div>
-              </div>
 
-            </form>
-          </Form>
-        </div>
+                    {/* Coluna Direita - Validade */}
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2 mb-4">
+                        <Calendar className="h-4 w-4 text-orange-400" />
+                        <span className="text-sm font-medium text-gray-100">Controle de Validade</span>
+                      </div>
+
+                      {/* Toggle para ativação do controle de validade */}
+                      <div className="flex items-center justify-between rounded-lg border border-orange-400/30 p-3 bg-orange-400/5">
+                        <div className="space-y-1">
+                          <FormLabel className="text-sm text-gray-300 font-medium">
+                            Produto com Validade
+                          </FormLabel>
+                          <FormDescription className="text-xs text-gray-500">
+                            Ative para produtos perecíveis
+                          </FormDescription>
+                        </div>
+                        <FormField
+                          control={form.control}
+                          name="has_expiry_tracking"
+                          render={({ field }) => (
+                            <FormControl>
+                              <SwitchAnimated
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                                variant="orange"
+                                size="md"
+                              />
+                            </FormControl>
+                          )}
+                        />
+                      </div>
+
+                      {/* Campo de data de validade (condicional) */}
+                      {form.watch('has_expiry_tracking') ? (
+                        <FormField
+                          control={form.control}
+                          name="expiry_date"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-gray-300 text-sm">Data de Validade</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="date"
+                                  {...field}
+                                  className="bg-gray-800/50 border-gray-600 text-white h-11"
+                                />
+                              </FormControl>
+                              <FormDescription className="text-xs text-gray-500">
+                                Data de vencimento deste produto
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      ) : (
+                        <div className="text-xs text-gray-400 bg-gray-900/30 border border-gray-500/30 rounded p-2">
+                          📦 Produto durável - sem controle de validade
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+      </ModalSection>
     </EnhancedBaseModal>
   );
 };
 
 export default EditProductModal;
+// TODO: Fix modal structure - currently has parsing errors due to improper JSX nesting
