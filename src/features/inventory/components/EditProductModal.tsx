@@ -37,6 +37,7 @@ import { ProductTrackingForm } from '@/features/inventory/components/form-sectio
 import { ProductStockDisplay } from '@/features/inventory/components/form-sections/ProductStockDisplay';
 import { useToast } from '@/shared/hooks/common/use-toast';
 import { getGlassCardClasses } from '@/core/config/theme-utils';
+import { cn } from '@/core/config/utils';
 import { calculatePackageDisplay } from '@/shared/utils/stockCalculations';
 import { supabase } from '@/core/api/supabase/client';
 import { 
@@ -358,7 +359,8 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
       subtitle={`Modifique os dados do produto "${product.name}"`}
       customIcon={Edit}
       loading={isLoading}
-      size="5xl"
+      size="6xl"
+      className="min-h-[85vh] max-h-[90vh] overflow-y-auto"
       primaryAction={{
         label: isLoading ? "Salvando..." : "Salvar Alterações",
         icon: isLoading ? undefined : Save,
@@ -374,19 +376,17 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
       }}
     >
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-5">
+        <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-8">
           {/* Hidden submit button for form submission */}
           <button type="submit" className="hidden" />
-        </form>
-      </Form>
 
-      {/* Informações Básicas */}
+          {/* Informações Básicas */}
       <ModalSection
         title="Informações Básicas"
         subtitle="Dados fundamentais do produto"
       >
                 <div className={cn(
-                  "p-5 rounded-lg border space-y-4",
+                  "p-6 rounded-lg border space-y-6",
                   getGlassCardClasses('premium')
                 )}>
                   <div className="flex items-center gap-3 mb-4">
@@ -412,7 +412,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
                     )}
                   />
 
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <FormField
                       control={form.control}
                       name="category"
@@ -494,7 +494,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
         subtitle="Configuração de códigos para unidade e pacote"
       >
                 <div className={cn(
-                  "p-5 rounded-lg border",
+                  "p-6 rounded-lg border",
                   getGlassCardClasses('premium')
                 )}>
                   <div className="flex items-center gap-3 mb-6">
@@ -509,7 +509,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
                       <FormLabel className="text-base text-gray-300 font-medium">Código de Barras Principal</FormLabel>
                     </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
                       <div className="lg:col-span-2 space-y-3">
                       {activeScanner !== 'main' ? (
                         <Button
@@ -634,7 +634,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
                         <FormLabel className="text-base text-gray-300 font-medium">Código do Pacote/Fardo</FormLabel>
                       </div>
 
-                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                       {/* Scanner e input do pacote */}
                       <div className="lg:col-span-2 space-y-3">
                         {activeScanner !== 'package' ? (
@@ -723,7 +723,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
         subtitle="Selecione ou adicione um novo fornecedor"
       >
                 <div className={cn(
-                  "p-5 rounded-lg border",
+                  "p-6 rounded-lg border",
                   getGlassCardClasses('premium')
                 )}>
                   <div className="flex items-center gap-3 mb-6">
@@ -816,7 +816,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
               <h4 className="text-base font-medium text-gray-200">Preços por Unidade</h4>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-5">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <FormField
                       control={form.control}
                       name="cost_price"
@@ -913,7 +913,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
                     {/* Métricas do Pacote - Condicional */}
                     {form.watch('has_package_tracking') && (
                       <div className="space-y-4 border-t border-gray-700/30 pt-6">
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                           <div>
                             <FormLabel className="text-gray-300">Margem do Pacote</FormLabel>
                             <div className="h-11 bg-gray-800/30 border border-gray-600 rounded-md px-3 flex items-center mt-2">
@@ -952,7 +952,6 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
                         </div>
                       </div>
                     )}
-            </div>
           </div>
         </div>
       </ModalSection>
@@ -963,7 +962,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
         subtitle="Visualização do estoque atual e configuração de validade"
       >
                 <div className={cn(
-                  "p-5 rounded-lg border",
+                  "p-6 rounded-lg border",
                   getGlassCardClasses('premium')
                 )}>
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1061,9 +1060,10 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
                   </div>
                 </div>
       </ModalSection>
+        </form>
+      </Form>
     </EnhancedBaseModal>
   );
 };
 
 export default EditProductModal;
-// TODO: Fix modal structure - currently has parsing errors due to improper JSX nesting

@@ -168,8 +168,8 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
       title="Detalhes do Produto"
       subtitle={product.name}
       customIcon={Eye}
-      size="5xl"
-      className="max-h-[90vh]"
+      size="6xl"
+      className="min-h-[85vh] max-h-[90vh] overflow-y-auto"
       showCloseButton={true}
     >
       <div className="flex flex-col h-full">
@@ -180,7 +180,7 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
           </div>
 
             {/* Indicador de completude detalhado */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-6">
               <div className={cn(
                 "flex items-center gap-3 px-4 py-3 rounded-lg border",
                 completeness.critical 
@@ -235,12 +235,12 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
         </div>
 
         <div className="flex-1 overflow-y-auto pr-2 space-y-6">
-          {/* Seção de Dados Pendentes - Visível apenas quando há dados em falta */}
+          {/* Seção de Dados Pendentes - Compacta e visível apenas quando há dados em falta */}
           {completeness.missing.length > 0 && (
             <div className={cn(
               "rounded-xl p-6 border hero-spotlight hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300",
-              completeness.critical 
-                ? "bg-red-500/10 border-red-400/30" 
+              completeness.critical
+                ? "bg-red-500/10 border-red-400/30"
                 : "bg-orange-500/10 border-orange-400/30"
             )} onMouseMove={handleMouseMove}>
               <div className="flex items-center gap-3 mb-4">
@@ -249,99 +249,86 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
                   completeness.critical ? "bg-red-500/20" : "bg-orange-500/20"
                 )}>
                   <Settings className={cn(
-                    "h-5 w-5",
+                    "h-4 w-4",
                     completeness.critical ? "text-red-400" : "text-orange-400"
                   )} />
                 </div>
-                <div>
+                <div className="flex-1">
                   <h3 className={cn(
-                    "text-lg font-semibold",
+                    "text-base font-semibold",
                     completeness.critical ? "text-red-300" : "text-orange-300"
                   )}>
-                    {completeness.critical ? "📋 Dados Críticos Pendentes" : "📝 Dados Pendentes de Preenchimento"}
+                    {completeness.critical ? "⚠️ Dados Críticos Pendentes" : "📝 Dados Pendentes"}
                   </h3>
-                  <p className="text-sm text-gray-400">
-                    Complete as informações abaixo para otimizar o controle do produto
+                  <p className="text-xs text-gray-400">
+                    Complete as informações para otimizar o controle
                   </p>
                 </div>
+                <div className="text-xs text-gray-300 bg-gray-800/30 px-3 py-1 rounded-lg border border-gray-600/50">
+                  <Globe className="h-3 w-3 inline mr-1 text-blue-400" />
+                  Use "Editar" para preencher
+                </div>
               </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
                 {completeness.missing.map((field, index) => (
-                  <div 
+                  <div
                     key={field.key}
                     className={cn(
-                      "flex items-center gap-3 p-3 rounded-lg border transition-all duration-200 hover:scale-105",
-                      field.critical 
-                        ? "bg-red-500/10 border-red-400/30 hover:border-red-400/50" 
+                      "flex items-center gap-2 p-2 rounded-lg border transition-all duration-200 hover:scale-105",
+                      field.critical
+                        ? "bg-red-500/10 border-red-400/30 hover:border-red-400/50"
                         : "bg-orange-500/10 border-orange-400/30 hover:border-orange-400/50"
                     )}
                   >
                     <div className={cn(
-                      "flex-shrink-0 w-2 h-2 rounded-full",
+                      "flex-shrink-0 w-1.5 h-1.5 rounded-full",
                       field.critical ? "bg-red-400 animate-pulse" : "bg-orange-400"
                     )} />
                     <div className="flex-1 min-w-0">
                       <div className={cn(
-                        "text-sm font-medium truncate",
+                        "text-xs font-medium truncate",
                         field.critical ? "text-red-300" : "text-orange-300"
                       )}>
                         {field.name}
                       </div>
-                      <div className="text-xs text-gray-500 capitalize">
-                        {field.section === 'basic' && '📋 Informações Básicas'}
-                        {field.section === 'barcode' && '🏷️ Códigos de Barras'}
-                        {field.section === 'pricing' && '💰 Preços'}
-                        {field.section === 'stock' && '📦 Controle de Estoque'}
-                        {field.section === 'package' && '📦 Configuração de Pacote'}
-                      </div>
+                      {field.critical && (
+                        <div className="text-red-400 text-xs font-medium animate-pulse">
+                          CRÍTICO
+                        </div>
+                      )}
                     </div>
-                    {field.critical && (
-                      <div className="text-red-400 text-xs font-medium animate-pulse">
-                        CRÍTICO
-                      </div>
-                    )}
                   </div>
                 ))}
               </div>
-              
-              <div className="mt-4 p-3 bg-gray-800/30 rounded-lg border border-gray-600/50">
-                <div className="flex items-center gap-2 text-sm text-gray-300">
-                  <Globe className="h-4 w-4 text-blue-400" />
-                  <span>
-                    <span className="font-medium text-blue-400">Dica:</span> 
-                    Use o botão "Editar" para preencher estes campos rapidamente
-                  </span>
-                </div>
-              </div>
             </div>
           )}
-          
-          {/* Seção Superior: Imagem e Informações Principais */}
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+
+          {/* Seção Principal: Layout Otimizado com Melhor Aproveitamento do Espaço */}
+          <div className="grid grid-cols-1 xl:grid-cols-6 gap-6">
             {/* Imagem do produto - 1 coluna */}
-            <div className="lg:col-span-1">
-              <div className="relative h-48 lg:h-64 bg-gray-700/50 rounded-xl flex items-center justify-center overflow-hidden">
+            <div className="xl:col-span-1">
+              <div className="relative h-48 xl:h-full min-h-[200px] bg-gray-700/50 rounded-xl flex items-center justify-center overflow-hidden">
                 {product.image_url ? (
-                  <img 
-                    src={product.image_url} 
+                  <img
+                    src={product.image_url}
                     alt={product.name}
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <Package className="h-32 w-32 text-gray-400" />
+                  <Package className="h-24 w-24 text-gray-400" />
                 )}
-                
+
                 {/* Badge de status */}
-                <div className="absolute top-3 right-3">
+                <div className="absolute top-2 right-2">
                   <Badge className={cn("text-xs font-medium", stockStatus.color)}>
                     {stockStatus.label}
                   </Badge>
                 </div>
               </div>
-              
+
               {/* Ações rápidas */}
-              <div className="flex gap-2 mt-4">
+              <div className="flex gap-2 mt-3">
                 <Button
                   onClick={() => onAdjustStock(product)}
                   size="sm"
@@ -351,7 +338,7 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
                   <Package className="h-3 w-3 mr-1" />
                   Ajustar
                 </Button>
-                
+
                 <Button
                   onClick={() => onViewHistory(product)}
                   size="sm"
@@ -364,180 +351,142 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
               </div>
             </div>
 
-            {/* Informações Básicas e Estoque - 2 colunas */}
-            <div className="lg:col-span-2">
+            {/* Informações Básicas - 2 colunas */}
+            <div className="xl:col-span-2">
               <div className="bg-gray-800/30 rounded-xl p-6 border border-gray-700/50 hero-spotlight hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300 h-full" onMouseMove={handleMouseMove}>
-                <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-5">
-                  <Package className="h-5 w-5 text-blue-400" />
+                <h3 className="text-base font-semibold text-white flex items-center gap-2 mb-4">
+                  <Package className="h-4 w-4 text-blue-400" />
                   Informações Básicas
                 </h3>
-                
-                <div className="space-y-4">
+
+                <div className="space-y-3">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="text-sm text-gray-400">Categoria</label>
-                      <p className="text-white font-medium">{product.category}</p>
+                      <span className="text-xs text-gray-400">Categoria</span>
+                      <p className="text-white font-medium text-sm">{product.category}</p>
                     </div>
-                    
+
                     <div>
-                      <label className="text-sm text-gray-400 flex items-center gap-2">
+                      <span className="text-xs text-gray-400 flex items-center gap-1">
                         Volume
                         {!product.volume_ml && <span className="text-orange-400 animate-pulse">📝</span>}
-                      </label>
+                      </span>
                       {!product.volume_ml ? (
-                        <div className="flex items-center gap-2">
-                          <p className="text-orange-400 font-medium flex items-center gap-1">
+                        <div className="flex items-center gap-1">
+                          <p className="text-orange-400 font-medium text-xs flex items-center gap-1">
                             <span className="animate-pulse">⚠️</span> Não informado
                           </p>
-                          <span className="text-xs bg-orange-500/20 px-2 py-1 rounded border border-orange-400/30 text-orange-300">
-                            PENDENTE
-                          </span>
                         </div>
                       ) : (
-                        <p className="text-white font-medium">{product.volume_ml} ml</p>
+                        <p className="text-white font-medium text-sm">{product.volume_ml} ml</p>
                       )}
                     </div>
                   </div>
-                  
+
                   <div>
-                    <label className="text-sm text-gray-400 flex items-center gap-2">
+                    <span className="text-xs text-gray-400 flex items-center gap-1">
                       Fornecedor
                       {(!product.supplier || String(product.supplier).trim() === '') && (
                         <span className="text-orange-400 animate-pulse">📝</span>
                       )}
-                    </label>
+                    </span>
                     {!product.supplier || String(product.supplier).trim() === '' ? (
-                      <div className="flex items-center gap-2">
-                        <p className="text-orange-400 font-medium flex items-center gap-1">
+                      <div className="flex items-center gap-1">
+                        <p className="text-orange-400 font-medium text-xs flex items-center gap-1">
                           <span className="animate-pulse">⚠️</span> Não informado
                         </p>
-                        <span className="text-xs bg-orange-500/20 px-2 py-1 rounded border border-orange-400/30 text-orange-300">
-                          PENDENTE
-                        </span>
                       </div>
                     ) : (
-                      <p className="text-white font-medium">{String(product.supplier).trim()}</p>
+                      <p className="text-white font-medium text-sm">{String(product.supplier).trim()}</p>
                     )}
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Controle de Estoque - 2 colunas */}
-            <div className="lg:col-span-2">
+            {/* Controle de Estoque - 3 colunas */}
+            <div className="xl:col-span-3">
               <div className="bg-gray-800/30 rounded-xl p-6 border border-gray-700/50 hero-spotlight hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300 h-full" onMouseMove={handleMouseMove}>
-                <div className="flex items-center justify-between mb-5">
-                  <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                    <Package className="h-5 w-5 text-yellow-400" />
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-base font-semibold text-white flex items-center gap-2">
+                    <Package className="h-4 w-4 text-yellow-400" />
                     Controle de Estoque
                   </h3>
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => onAdjustStock(product)}
-                      className="border-green-500/30 text-green-400 hover:bg-green-500/10"
-                    >
-                      <Settings className="h-4 w-4 mr-1" />
-                      Ajustar Estoque
-                    </Button>
-                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => onAdjustStock(product)}
+                    className="border-green-500/30 text-green-400 hover:bg-green-500/10 text-xs"
+                  >
+                    <Settings className="h-3 w-3 mr-1" />
+                    Ajustar
+                  </Button>
                 </div>
-                
-                <div className="space-y-4">
-                  {/* Display de estoque SSoT */}
-                  <div className="bg-gray-800/30 rounded-xl p-4 border border-gray-700/50">
-                    <div className="flex items-center justify-between mb-4">
-                      <h4 className="font-semibold text-white flex items-center gap-2">
-                        <Package className="h-4 w-4 text-primary-yellow" />
+
+                <div className="space-y-3">
+                  {/* Display de estoque SSoT - Mais compacto */}
+                  <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/50">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-semibold text-white flex items-center gap-2 text-sm">
+                        <Package className="h-3 w-3 text-primary-yellow" />
                         Estoque Atual
                       </h4>
-                      <div className="text-2xl font-bold text-primary-yellow">
-                        {product.stock_quantity} unidades
+                      <div className="text-xl font-bold text-primary-yellow">
+                        {product.stock_quantity} un.
                       </div>
                     </div>
 
-                    {/* Exibição de pacotes se configurado */}
+                    {/* Exibição de pacotes se configurado - Layout horizontal */}
                     {product.has_package_tracking && product.package_units && product.package_units > 1 && packageDisplay && (
-                      <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-gray-700/50">
-                        <div className="text-center p-3 bg-blue-500/10 border border-blue-400/30 rounded-lg">
-                          <div className="text-lg font-semibold text-blue-400">
+                      <div className="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-gray-700/50">
+                        <div className="text-center p-2 bg-blue-500/10 border border-blue-400/30 rounded">
+                          <div className="text-sm font-semibold text-blue-400">
                             {packageDisplay.packages}
                           </div>
-                          <div className="text-xs text-gray-400">pacotes completos</div>
-                          <div className="text-xs text-blue-300">
-                            ({packageDisplay.packages * product.package_units} unidades)
-                          </div>
+                          <div className="text-xs text-gray-400">pacotes</div>
                         </div>
 
-                        <div className="text-center p-3 bg-green-500/10 border border-green-400/30 rounded-lg">
-                          <div className="text-lg font-semibold text-green-400">
+                        <div className="text-center p-2 bg-green-500/10 border border-green-400/30 rounded">
+                          <div className="text-sm font-semibold text-green-400">
                             {packageDisplay.units}
                           </div>
-                          <div className="text-xs text-gray-400">unidades soltas</div>
-                          <div className="text-xs text-green-300">
-                            {packageDisplay.units > 0 ? 'fora de pacotes' : 'sem sobra'}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Exibição simples se não há pacotes */}
-                    {!product.has_package_tracking && (
-                      <div className="text-center p-4 bg-gray-800/30 border border-gray-600/30 rounded-lg">
-                        <div className="text-sm text-gray-400 mb-1">Controle simples por unidades</div>
-                        <div className="text-lg font-semibold text-gray-300">
-                          {product.stock_quantity} unidades disponíveis
+                          <div className="text-xs text-gray-400">soltas</div>
                         </div>
                       </div>
                     )}
                   </div>
 
-                  {/* Estoque mínimo e analytics */}
-                  <div className="grid grid-cols-2 gap-4">
+                  {/* Estoque mínimo e analytics - Layout horizontal */}
+                  <div className="grid grid-cols-3 gap-3">
                     <div className={cn(
-                      "rounded p-4 text-center border",
+                      "rounded p-3 text-center border",
                       !product.minimum_stock
                         ? "bg-orange-500/10 border-orange-400/30"
                         : "bg-gray-800/40 border-gray-600/30"
                     )}>
-                      <label className="text-xs text-gray-400 flex items-center justify-center gap-1">
-                        Estoque Mínimo
+                      <span className="text-xs text-gray-400 flex items-center justify-center gap-1">
+                        Mín.
                         {!product.minimum_stock && <span className="text-orange-400 animate-pulse">📝</span>}
-                      </label>
+                      </span>
                       {!product.minimum_stock ? (
-                        <div className="space-y-1">
-                          <p className="text-lg font-bold text-orange-400">10 (padrão)</p>
-                          <span className="text-xs bg-orange-500/20 px-2 py-1 rounded border border-orange-400/30 text-orange-300">
-                            USAR PERSONALIZADO
-                          </span>
-                        </div>
+                        <p className="text-sm font-bold text-orange-400">10</p>
                       ) : (
-                        <p className="text-2xl font-bold text-yellow-400">{product.minimum_stock}</p>
+                        <p className="text-sm font-bold text-yellow-400">{product.minimum_stock}</p>
                       )}
-                      <span className="text-xs text-gray-400">unidades</span>
                     </div>
 
-                    <div className="space-y-3 text-sm">
-                      <div>
-                        <label className="text-gray-400 flex items-center">
-                          <Calendar className="h-3 w-3 mr-1" />
-                          Última Entrada
-                        </label>
-                        <p className="text-gray-100 text-xs">
-                          {analyticsLoading ? 'Carregando...' : analytics?.lastEntry ? formatCompact(analytics.lastEntry) : 'Nenhuma'}
-                        </p>
-                      </div>
+                    <div className="text-center p-3 bg-gray-800/40 border border-gray-600/30 rounded">
+                      <span className="text-xs text-gray-400">Últ. Entrada</span>
+                      <p className="text-xs text-gray-100">
+                        {analyticsLoading ? '...' : analytics?.lastEntry ? formatCompact(analytics.lastEntry) : 'N/A'}
+                      </p>
+                    </div>
 
-                      <div>
-                        <label className="text-gray-400 flex items-center">
-                          <Calendar className="h-3 w-3 mr-1" />
-                          Última Saída
-                        </label>
-                        <p className="text-gray-100 text-xs">
-                          {analyticsLoading ? 'Carregando...' : analytics?.lastExit ? formatCompact(analytics.lastExit) : 'Nenhuma'}
-                        </p>
-                      </div>
+                    <div className="text-center p-3 bg-gray-800/40 border border-gray-600/30 rounded">
+                      <span className="text-xs text-gray-400">Últ. Saída</span>
+                      <p className="text-xs text-gray-100">
+                        {analyticsLoading ? '...' : analytics?.lastExit ? formatCompact(analytics.lastExit) : 'N/A'}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -545,108 +494,98 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
             </div>
           </div>
           
-          {/* Seção Média: Sistema de Códigos e Análise de Giro */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Sistema de Códigos Hierárquicos */}
-            <div className="bg-gray-800/30 rounded-xl p-6 border border-gray-700/50 hero-spotlight hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300" onMouseMove={handleMouseMove}>
-              <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-5">
-                <Barcode className="h-5 w-5 text-yellow-400" />
+          {/* Seção Média: Sistema de Códigos e Análise de Giro - Layout Otimizado */}
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            {/* Sistema de Códigos Hierárquicos - Mais compacto */}
+            <div className="xl:col-span-2 bg-gray-800/30 rounded-xl p-6 border border-gray-700/50 hero-spotlight hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300" onMouseMove={handleMouseMove}>
+              <h3 className="text-base font-semibold text-white flex items-center gap-2 mb-4">
+                <Barcode className="h-4 w-4 text-yellow-400" />
                 Sistema de Códigos de Barras
               </h3>
-              
-              <div className="space-y-4">
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {/* Venda por Unidade */}
-                <div className="flex items-center justify-between rounded-lg border border-blue-400/30 p-4 bg-blue-400/5">
+                <div className="flex items-center justify-between rounded-lg border border-blue-400/30 p-3 bg-blue-400/5">
                   <div className="space-y-1">
-                    <div className="text-base text-gray-300 font-medium flex items-center gap-2">
-                      <ShoppingCart className="h-4 w-4 text-blue-400" />
+                    <div className="text-sm text-gray-300 font-medium flex items-center gap-2">
+                      <ShoppingCart className="h-3 w-3 text-blue-400" />
                       Venda por Unidade
                     </div>
-                    <div className="text-sm text-gray-500">
+                    <div className="text-xs text-gray-500">
                       {product.has_unit_tracking !== false ? 'Habilitada' : 'Desabilitada'}
                     </div>
                   </div>
                   <div className="text-right">
                     {product.unit_barcode || product.barcode ? (
                       <div>
-                        <div className="text-sm text-gray-400">Código</div>
-                        <div className="font-mono text-white text-sm bg-gray-800/50 px-2 py-1 rounded">
-                          {product.unit_barcode || product.barcode}
+                        <div className="text-xs text-gray-400">Código</div>
+                        <div className="font-mono text-white text-xs bg-gray-800/50 px-2 py-1 rounded">
+                          {(product.unit_barcode || product.barcode)?.slice(0, 8)}...
                         </div>
                       </div>
                     ) : (
-                      <div className="space-y-1">
-                        <div className="text-orange-400 text-sm flex items-center gap-1">
-                          <span className="animate-pulse">⚠️</span> Sem código
-                        </div>
-                        <div className="text-xs bg-orange-500/20 px-2 py-1 rounded border border-orange-400/30 text-orange-300">
-                          RECOMENDADO
-                        </div>
+                      <div className="text-orange-400 text-xs flex items-center gap-1">
+                        <span className="animate-pulse">⚠️</span> Sem código
                       </div>
                     )}
                   </div>
                 </div>
-                
+
                 {/* Venda por Pacote */}
-                <div className="flex items-center justify-between rounded-lg border border-yellow-400/30 p-4 bg-yellow-400/5">
+                <div className="flex items-center justify-between rounded-lg border border-yellow-400/30 p-3 bg-yellow-400/5">
                   <div className="space-y-1">
-                    <div className="text-base text-gray-300 font-medium flex items-center gap-2">
-                      <Package className="h-4 w-4 text-yellow-400" />
-                      Venda por Pacote/Fardo
+                    <div className="text-sm text-gray-300 font-medium flex items-center gap-2">
+                      <Package className="h-3 w-3 text-yellow-400" />
+                      Venda por Pacote
                     </div>
-                    <div className="text-sm text-gray-500">
+                    <div className="text-xs text-gray-500">
                       {product.has_package_tracking ? 'Habilitada' : 'Desabilitada'}
                     </div>
                   </div>
                   <div className="text-right">
                     {product.has_package_tracking ? (
                       <div>
-                        <div className="text-sm text-gray-400">Código do Pacote</div>
+                        <div className="text-xs text-gray-400">Código</div>
                         {product.package_barcode ? (
-                          <div className="font-mono text-white text-sm bg-gray-800/50 px-2 py-1 rounded">
-                            {product.package_barcode}
+                          <div className="font-mono text-white text-xs bg-gray-800/50 px-2 py-1 rounded">
+                            {product.package_barcode.slice(0, 8)}...
                           </div>
                         ) : (
-                          <div className="space-y-1">
-                            <div className="text-orange-400 text-sm flex items-center gap-1">
-                              <span className="animate-pulse">⚠️</span> Não informado
-                            </div>
-                            <div className="text-xs bg-orange-500/20 px-1 py-0.5 rounded border border-orange-400/30 text-orange-300">
-                              PENDENTE
-                            </div>
+                          <div className="text-orange-400 text-xs flex items-center gap-1">
+                            <span className="animate-pulse">⚠️</span> Pendente
                           </div>
                         )}
                         <div className="text-xs text-gray-400 mt-1">
-                          {product.package_units || 1} unidades/pacote
+                          {product.package_units || 1} un./pacote
                         </div>
                       </div>
                     ) : (
-                      <div className="text-gray-500 text-sm">Não configurada</div>
+                      <div className="text-gray-500 text-xs">Não configurada</div>
                     )}
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Análise de giro */}
-            <div className="bg-gray-800/30 rounded-xl p-6 border border-gray-700/50 hero-spotlight hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300" onMouseMove={handleMouseMove}>
-              <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-5">
-                <TurnoverIcon className={cn("h-5 w-5", turnoverAnalysis.color)} />
+            {/* Análise de giro - Compacta */}
+            <div className="xl:col-span-1 bg-gray-800/30 rounded-xl p-6 border border-gray-700/50 hero-spotlight hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300" onMouseMove={handleMouseMove}>
+              <h3 className="text-base font-semibold text-white flex items-center gap-2 mb-4">
+                <TurnoverIcon className={cn("h-4 w-4", turnoverAnalysis.color)} />
                 Análise de Giro
               </h3>
-              
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div className="bg-gray-800/40 rounded p-4 text-center">
-                  <label className="text-xs text-gray-400">Classificação</label>
-                  <p className={cn("text-lg font-bold", turnoverAnalysis.color)}>
+
+              <div className="space-y-3">
+                <div className="bg-gray-800/40 rounded p-3 text-center">
+                  <span className="text-xs text-gray-400">Classificação</span>
+                  <p className={cn("text-sm font-bold", turnoverAnalysis.color)}>
                     Giro {turnoverAnalysis.rate}
                   </p>
                   <span className="text-xs text-gray-400">{turnoverAnalysis.description}</span>
                 </div>
-                
-                <div className="bg-gray-800/40 rounded p-4 text-center">
-                  <label className="text-xs text-gray-400">Vendas/Mês</label>
-                  <p className="text-lg font-bold text-gray-100">
+
+                <div className="bg-gray-800/40 rounded p-3 text-center">
+                  <span className="text-xs text-gray-400">Vendas/Mês</span>
+                  <p className="text-sm font-bold text-gray-100">
                     {analyticsLoading ? '...' : turnoverAnalysis.salesPerMonth}
                   </p>
                   <span className="text-xs text-gray-400">unidades</span>
@@ -660,124 +599,113 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
             </div>
           </div>
           
-          {/* Seção Inferior: Preços */}
-          <div className="space-y-6">
-            {/* Dados comerciais */}
-            <div className="bg-gray-800/30 rounded-xl p-6 border border-gray-700/50 hero-spotlight hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300" onMouseMove={handleMouseMove}>
-              <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-5">
-                <DollarSign className="h-5 w-5 text-green-400" />
-                Preços e Margem
-              </h3>
-              
-              {/* Preços de Unidade */}
-              <div className="space-y-5">
-                <h4 className="text-base font-medium text-gray-200 flex items-center gap-2">
-                  <ShoppingCart className="h-4 w-4 text-blue-400" />
+          {/* Seção Inferior: Preços - Layout Otimizado e Compacto */}
+          <div className="bg-gray-800/30 rounded-xl p-6 border border-gray-700/50 hero-spotlight hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300" onMouseMove={handleMouseMove}>
+            <h3 className="text-base font-semibold text-white flex items-center gap-2 mb-4">
+              <DollarSign className="h-4 w-4 text-green-400" />
+              Preços e Margem
+            </h3>
+
+            <div className="space-y-4">
+              {/* Preços de Unidade - Grid Horizontal */}
+              <div>
+                <h4 className="text-sm font-medium text-gray-200 flex items-center gap-2 mb-3">
+                  <ShoppingCart className="h-3 w-3 text-blue-400" />
                   Preços por Unidade
                 </h4>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                  <div>
-                    <label className="text-gray-300 flex items-center gap-2">
-                      Preço de Custo (unidade)
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                  <div className="space-y-1">
+                    <span className="text-xs text-gray-400 flex items-center gap-1">
+                      Preço de Custo
                       {(!product.cost_price || product.cost_price === 0) && (
-                        <span className="text-red-400 animate-bounce text-sm">⚠️ CRÍTICO</span>
+                        <span className="text-red-400 animate-bounce text-xs">⚠️</span>
                       )}
-                    </label>
+                    </span>
                     <div className={cn(
-                      "h-11 rounded-md px-3 flex items-center mt-2 border",
-                      !product.cost_price || product.cost_price === 0 
+                      "h-9 rounded-md px-3 flex items-center border",
+                      !product.cost_price || product.cost_price === 0
                         ? "bg-red-500/10 border-red-400/40 animate-pulse"
                         : "bg-gray-800/30 border-gray-600"
                     )}>
                       {!product.cost_price || product.cost_price === 0 ? (
-                        <div className="flex items-center justify-between w-full">
-                          <span className="text-red-400 font-medium flex items-center gap-2">
-                            <span className="animate-pulse">⚠️</span> Não informado
-                          </span>
-                          <span className="text-xs bg-red-500/20 px-2 py-1 rounded border border-red-400/30 text-red-300 animate-pulse">
-                            CRÍTICO
-                          </span>
-                        </div>
+                        <span className="text-red-400 font-medium text-sm flex items-center gap-1">
+                          <span className="animate-pulse">⚠️</span> Não informado
+                        </span>
                       ) : (
-                        <span className="text-white font-medium">{formatCurrency(product.cost_price)}</span>
+                        <span className="text-white font-medium text-sm">{formatCurrency(product.cost_price)}</span>
                       )}
                     </div>
                   </div>
 
-                  <div>
-                    <label className="text-gray-300">Preço de Venda (unidade)</label>
-                    <div className="h-11 bg-gray-800/30 border border-gray-600 rounded-md px-3 flex items-center mt-2">
-                      <span className="text-green-400 font-medium">{formatCurrency(product.price)}</span>
+                  <div className="space-y-1">
+                    <span className="text-xs text-gray-400">Preço de Venda</span>
+                    <div className="h-9 bg-gray-800/30 border border-gray-600 rounded-md px-3 flex items-center">
+                      <span className="text-green-400 font-medium text-sm">{formatCurrency(product.price)}</span>
                     </div>
                   </div>
 
-                  <div>
-                    <label className="text-gray-300">Margem Unitária</label>
-                    <div className="h-11 bg-gray-800/30 border border-gray-600 rounded-md px-3 flex items-center mt-2">
+                  <div className="space-y-1">
+                    <span className="text-xs text-gray-400">Margem Unitária</span>
+                    <div className="h-9 bg-gray-800/30 border border-gray-600 rounded-md px-3 flex items-center">
                       {!product.margin_percent ? (
-                        <span className="text-gray-500">🔄 Auto-calculada</span>
+                        <span className="text-gray-500 text-sm">🔄 Auto-calculada</span>
                       ) : (
-                        <span className="text-green-400 font-medium">{String(product.margin_percent).trim()}%</span>
+                        <span className="text-green-400 font-medium text-sm">{String(product.margin_percent).trim()}%</span>
                       )}
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Preços de Pacote - Condicional */}
+              {/* Preços de Pacote - Condicional e Compacto */}
               {product.has_package_tracking && (
-                <div className="space-y-5 border-t border-gray-700/50 pt-5">
-                  <h4 className="text-base font-medium text-gray-200 flex items-center gap-2">
-                    <Package className="h-4 w-4 text-yellow-400" />
+                <div className="border-t border-gray-700/50 pt-4">
+                  <h4 className="text-sm font-medium text-gray-200 flex items-center gap-2 mb-3">
+                    <Package className="h-3 w-3 text-yellow-400" />
                     Preços por Pacote/Fardo
                   </h4>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                    <div>
-                      <label className="text-gray-300 flex items-center gap-2">
-                        Preço de Venda (pacote)
+
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    <div className="space-y-1">
+                      <span className="text-xs text-gray-400 flex items-center gap-1">
+                        Preço do Pacote
                         {!product.package_price && (
-                          <span className="text-orange-400 animate-pulse text-sm">📝</span>
+                          <span className="text-orange-400 animate-pulse text-xs">📝</span>
                         )}
-                      </label>
+                      </span>
                       <div className={cn(
-                        "h-11 rounded-md px-3 flex items-center mt-2 border",
-                        !product.package_price 
+                        "h-9 rounded-md px-3 flex items-center border",
+                        !product.package_price
                           ? "bg-orange-500/10 border-orange-400/30"
                           : "bg-gray-800/30 border-gray-600"
                       )}>
                         {product.package_price ? (
-                          <span className="text-green-400 font-medium">{formatCurrency(product.package_price)}</span>
+                          <span className="text-green-400 font-medium text-sm">{formatCurrency(product.package_price)}</span>
                         ) : (
-                          <div className="flex items-center justify-between w-full">
-                            <span className="text-orange-400 font-medium flex items-center gap-1">
-                              <span className="animate-pulse">⚠️</span> Não informado
-                            </span>
-                            <span className="text-xs bg-orange-500/20 px-2 py-1 rounded border border-orange-400/30 text-orange-300">
-                              RECOMENDADO
-                            </span>
-                          </div>
+                          <span className="text-orange-400 font-medium text-sm flex items-center gap-1">
+                            <span className="animate-pulse">⚠️</span> Não informado
+                          </span>
                         )}
                       </div>
                     </div>
 
-                    <div>
-                      <label className="text-gray-300">Margem do Pacote</label>
-                      <div className="h-11 bg-gray-800/30 border border-gray-600 rounded-md px-3 flex items-center mt-2">
+                    <div className="space-y-1">
+                      <span className="text-xs text-gray-400">Margem do Pacote</span>
+                      <div className="h-9 bg-gray-800/30 border border-gray-600 rounded-md px-3 flex items-center">
                         {product.package_margin ? (
-                          <span className="text-green-400 font-medium">{String(product.package_margin).trim()}%</span>
+                          <span className="text-green-400 font-medium text-sm">{String(product.package_margin).trim()}%</span>
                         ) : (
-                          <span className="text-gray-500">🔄 Auto-calculada</span>
+                          <span className="text-gray-500 text-sm">🔄 Auto-calculada</span>
                         )}
                       </div>
                     </div>
 
-                    <div>
-                      <label className="text-gray-300">Economia do Cliente</label>
-                      <div className="h-11 bg-gray-800/30 border border-green-600/50 rounded-md px-3 flex items-center mt-2">
+                    <div className="space-y-1">
+                      <span className="text-xs text-gray-400">Economia do Cliente</span>
+                      <div className="h-9 bg-gray-800/30 border border-green-600/50 rounded-md px-3 flex items-center">
                         {product.package_price && product.price && product.package_units ? (
-                          <span className="text-green-400 font-medium">
+                          <span className="text-green-400 font-medium text-sm">
                             {(() => {
                               const units = product.package_units || 1;
                               const individualTotal = product.price * units;
@@ -787,7 +715,7 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
                             })()}
                           </span>
                         ) : (
-                          <span className="text-gray-500">💰 Calculando...</span>
+                          <span className="text-gray-500 text-sm">💰 Calculando...</span>
                         )}
                       </div>
                     </div>
