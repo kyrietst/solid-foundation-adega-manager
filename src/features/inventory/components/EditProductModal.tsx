@@ -31,14 +31,13 @@ import {
 } from '@/shared/ui/primitives/select';
 import { SwitchAnimated } from '@/shared/ui/primitives/switch-animated';
 import { BarcodeInput } from '@/features/inventory/components/BarcodeInput';
-import { VariantStockDisplay } from '@/features/inventory/components/VariantStockDisplay';
 import { ProductBasicInfoForm } from '@/features/inventory/components/form-sections/ProductBasicInfoForm';
 import { ProductPricingForm } from '@/features/inventory/components/form-sections/ProductPricingForm';
 import { ProductTrackingForm } from '@/features/inventory/components/form-sections/ProductTrackingForm';
 import { ProductStockDisplay } from '@/features/inventory/components/form-sections/ProductStockDisplay';
 import { useToast } from '@/shared/hooks/common/use-toast';
 import { useGlassmorphismEffect } from '@/shared/hooks/ui/useGlassmorphismEffect';
-import { useProductVariants } from '@/features/sales/hooks/useProductVariants';
+import { calculatePackageDisplay } from '@/shared/utils/stockCalculations';
 import { supabase } from '@/core/api/supabase/client';
 import { 
   Package, 
@@ -114,12 +113,7 @@ const editProductSchema = z.object({
     .number({ invalid_type_error: 'Volume deve ser um número' })
     .min(1, 'Volume deve ser maior que 0')
     .optional(),
-  
-  stock_quantity: z
-    .number({ invalid_type_error: 'Quantidade deve ser um número' })
-    .min(0, 'Quantidade não pode ser negativa')
-    .default(0),
-  
+
   minimum_stock: z
     .number({ invalid_type_error: 'Estoque mínimo deve ser um número' })
     .min(0, 'Estoque mínimo não pode ser negativo')
@@ -159,9 +153,8 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
   const [showCustomSupplier, setShowCustomSupplier] = useState(false);
   const [activeScanner, setActiveScanner] = useState<'main' | 'package' | null>(null);
   
-  // Buscar dados de variantes para exibição read-only (sempre chamar o hook)
-  const productId = product?.id || '';
-  const { data: productWithVariants, isLoading: variantsLoading } = useProductVariants(productId);
+  // SSoT: Calcular dados de estoque diretamente do produto
+  const stockDisplay = product ? calculatePackageDisplay(product.stock_quantity, product.package_units) : null;
 
   const form = useForm<EditProductFormData>({
     resolver: zodResolver(editProductSchema),
@@ -179,7 +172,6 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
       cost_price: undefined,
       price: 0,
       volume_ml: undefined,
-      stock_quantity: 0,
       minimum_stock: undefined,
       has_expiry_tracking: false,
       expiry_date: '',
@@ -204,7 +196,6 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
         cost_price: product.cost_price ? Number(product.cost_price) : undefined,
         price: Number(product.price) || 0,
         volume_ml: product.volume_ml ? Number(product.volume_ml) : undefined,
-        stock_quantity: product.stock_quantity || 0,
         minimum_stock: product.minimum_stock || undefined,
         has_expiry_tracking: product.has_expiry_tracking || false,
         expiry_date: product.expiry_date || '',
@@ -900,93 +891,53 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
                 
                 <div className="space-y-6">
                   {/* Sistema de variantes atual */}
-                  {productWithVariants && !variantsLoading ? (
-                    <>
-                      <div className="bg-blue-900/10 border border-blue-400/20 rounded-lg p-4">
-                        <div className="flex items-center gap-2 mb-3">
-                          <Info className="h-4 w-4 text-blue-400" />
-                          <span className="text-sm font-medium text-blue-300">Sistema de Variantes Ativo</span>
-                        </div>
-                        <p className="text-xs text-gray-400">
-                          Este produto utiliza o novo sistema de variantes. O estoque é controlado separadamente por unidades e pacotes.
-                          Para ajustar estoque, use a funcionalidade "Ajustar Estoque" na página de inventário.
-                        </p>
-                      </div>
-                      
-                      <VariantStockDisplay
-                        product={productWithVariants}
-                        showPrices={true}
-                        showConversionInfo={true}
-                        className="bg-black/20 border-white/10"
-                      />
-                    </>
-                  ) : variantsLoading ? (
-                    <div className="flex items-center justify-center py-8">
-                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-yellow mr-3"></div>
-                      <span className="text-gray-400">Carregando informações de variantes...</span>
+                  {/* Sistema SSoT ativo */}
+                  <div className="bg-blue-900/10 border border-blue-400/20 rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Info className="h-4 w-4 text-blue-400" />
+                      <span className="text-sm font-medium text-blue-300">Single Source of Truth (SSoT)</span>
                     </div>
-                  ) : (
-                    <>
-                      {/* Fallback: sistema legado */}
-                      <div className="bg-orange-900/10 border border-orange-400/20 rounded-lg p-4 mb-5">
-                        <div className="flex items-center gap-2 mb-3">
-                          <AlertTriangle className="h-4 w-4 text-orange-400" />
-                          <span className="text-sm font-medium text-orange-300">Sistema Legado</span>
-                        </div>
-                        <p className="text-xs text-gray-400">
-                          Este produto ainda usa o sistema de estoque legado. Recomendamos migrar para o sistema de variantes.
-                        </p>
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                        <FormField
-                          control={form.control}
-                          name="stock_quantity"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-gray-300">Quantidade em Estoque (Sistema Legado)</FormLabel>
-                              <FormControl>
-                                <Input
-                                  type="number"
-                                  placeholder="0"
-                                  {...field}
-                                  onChange={(e) => field.onChange(Number(e.target.value))}
-                                  className="bg-gray-800/50 border-gray-600 text-white h-11"
-                                />
-                              </FormControl>
-                              <FormDescription className="text-xs text-gray-500">
-                                Quantidade atual em estoque (apenas para produtos não migrados)
-                              </FormDescription>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                    <p className="text-xs text-gray-400">
+                      Este produto utiliza o sistema SSoT. O estoque é controlado diretamente na tabela products.
+                      Para ajustar estoque, use a funcionalidade "Ajustar Estoque" na página de inventário.
+                    </p>
+                  </div>
 
-                        <FormField
-                          control={form.control}
-                          name="minimum_stock"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-gray-300">Estoque Mínimo</FormLabel>
-                              <FormControl>
-                                <Input
-                                  type="number"
-                                  placeholder="10"
-                                  {...field}
-                                  onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
-                                  className="bg-gray-800/50 border-gray-600 text-white h-11"
-                                />
-                              </FormControl>
-                              <FormDescription className="text-xs text-gray-500">
-                                Alerta quando estoque baixo
-                              </FormDescription>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                  {/* Exibição de estoque SSoT */}
+                  <div className="bg-black/20 border-white/10 rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Package className="h-4 w-4 text-primary-yellow" />
+                      <span className="text-sm font-medium text-gray-100">Estoque Atual</span>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-400">Total em unidades:</span>
+                        <span className="text-lg font-semibold text-primary-yellow">{product.stock_quantity || 0}</span>
                       </div>
-                    </>
-                  )}
+
+                      {product.has_package_tracking && stockDisplay && stockDisplay.packages > 0 && (
+                        <>
+                          <div className="border-t border-gray-700/50 pt-3">
+                            <div className="grid grid-cols-2 gap-4 text-sm">
+                              <div className="text-center p-2 bg-blue-500/10 rounded">
+                                <div className="text-blue-400 font-semibold">{stockDisplay.packages}</div>
+                                <div className="text-xs text-gray-400">pacotes</div>
+                              </div>
+                              <div className="text-center p-2 bg-green-500/10 rounded">
+                                <div className="text-green-400 font-semibold">{stockDisplay.units}</div>
+                                <div className="text-xs text-gray-400">unidades soltas</div>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="text-xs text-gray-500 text-center">
+                            {stockDisplay.formatted}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
 
