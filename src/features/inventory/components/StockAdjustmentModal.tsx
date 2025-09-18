@@ -90,14 +90,37 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
   // Mutation para ajuste de estoque SSoT
   const adjustStockMutation = useMutation({
     mutationFn: async (data: StockAdjustmentData) => {
+      // Calcular mudança de quantidade baseada no tipo de ajuste
+      let quantityChange = 0;
+
+      if (data.adjustmentType === 'ajuste') {
+        // Para ajuste direto, calcular diferença do estoque atual
+        const currentStock = productInfo?.stockQuantity || 0;
+        quantityChange = (data.newStock || 0) - currentStock;
+      } else {
+        // Para entrada/saída, usar a quantidade informada
+        let adjustmentQuantity = data.quantity || 0;
+
+        // Se ajustando pacotes, converter para unidades
+        if (data.adjustmentUnit === 'package') {
+          adjustmentQuantity = adjustmentQuantity * (productInfo?.packageUnits || 1);
+        }
+
+        quantityChange = data.adjustmentType === 'entrada' ? adjustmentQuantity : -adjustmentQuantity;
+      }
+
+      // Usar record_product_movement para registrar o movimento
       const { data: result, error } = await supabase
-        .rpc('adjust_product_stock', {
+        .rpc('record_product_movement', {
           p_product_id: data.productId,
-          p_quantity: data.adjustmentType === 'ajuste'
-            ? data.newStock
-            : (data.adjustmentType === 'entrada' ? data.quantity : -(data.quantity || 0)),
+          p_type: data.adjustmentType,
+          p_quantity: Math.abs(quantityChange),
           p_reason: data.reason,
-          p_adjustment_type: data.adjustmentType
+          p_reference_number: null,
+          p_source: 'manual_adjustment',
+          p_user_id: null, // Será preenchido automaticamente com auth.uid()
+          p_related_sale_id: null,
+          p_notes: null
         });
 
       if (error) throw error;

@@ -455,7 +455,8 @@ export const EnhancedBaseModal: React.FC<EnhancedBaseModalProps> = ({
         config.colors.ring,
         className
       )}
-      title="" // Título gerenciado pelo nosso header
+      title={title} // Título para acessibilidade
+      description={subtitle} // Subtítulo para acessibilidade
     >
       {/* Header especializado */}
       <ModalHeader

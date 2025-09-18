@@ -96,33 +96,41 @@ export const BaseModal: React.FC<BaseModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent 
+      <DialogContent
         className={cn(
           'w-full',
           // Manter classes Tailwind como fallback, mas Radix props têm prioridade
           sizeClasses[size],
           className
         )}
-        style={{ 
+        style={{
           maxWidth: effectiveMaxWidth + ' !important',
           width: effectiveMaxWidth + ' !important'
         }}
       >
+        {/* DialogTitle sempre presente para acessibilidade, mas visualmente oculto quando showHeader=false */}
+        <DialogTitle className={cn(
+          showHeader ? "text-xl font-bold text-white flex items-center justify-center gap-2" : "sr-only"
+        )}>
+          {title}
+        </DialogTitle>
+
+        {/* DialogDescription sempre presente para acessibilidade, mas visualmente oculto quando showHeader=false */}
+        {description && (
+          <DialogDescription className={cn(
+            showHeader ? "text-gray-400 mt-2" : "sr-only"
+          )}>
+            {description}
+          </DialogDescription>
+        )}
+
         {showHeader && (title || description) && (
           <DialogHeader className="text-center pb-4">
-            {title && (
-              <DialogTitle className="text-xl font-bold text-white flex items-center justify-center gap-2">
-                {title}
-              </DialogTitle>
-            )}
-            {description && (
-              <DialogDescription className="text-gray-400 mt-2">
-                {description}
-              </DialogDescription>
-            )}
+            {/* Título visual já está no DialogTitle acima */}
+            {/* Descrição visual já está no DialogDescription acima */}
           </DialogHeader>
         )}
-        
+
         {children}
       </DialogContent>
     </Dialog>
