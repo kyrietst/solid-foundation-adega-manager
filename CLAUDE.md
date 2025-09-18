@@ -245,13 +245,60 @@ src/
 
 ### Component Development Best Practices (v2.0.0)
 - **Use shared/ui components first** - Check `shared/ui/composite/` for StatCard, PaginationControls, LoadingSpinner, SearchInput, EmptyState
-- **Follow feature-based structure** - Place new components in appropriate `features/` module  
+- **Follow feature-based structure** - Place new components in appropriate `features/` module
 - **Leverage shared hooks** - Use `usePagination`, `useEntity`, `useFormWithToast` from `shared/hooks/common/`
 - **TypeScript interfaces** - Define clear prop types for all components
 - **Container/Presentation pattern** - Separate business logic from UI rendering
 - **Performance optimization** - Use React.memo, useMemo, useCallback appropriately
 - **Accessibility compliance** - Follow WCAG 2.1 AA standards with proper ARIA attributes
 - **Role-based rendering** - Always implement proper role-based access control in UI
+
+### Standardized Component Editing Workflow (CSS Best Practices)
+When standardizing components or fixing styling issues, follow this proven workflow:
+
+#### 1. **CSS Specificity Analysis** (Critical)
+- **Check for conflicting utility functions** - Theme utility functions may override direct Tailwind classes
+- **Identify gradient conflicts** - `text-transparent bg-clip-text` requires no conflicting color classes
+- **Example**: `getSFProTextClasses('h1', 'accent')` returns `text-primary-yellow` which conflicts with `text-transparent`
+- **Solution**: Use direct Tailwind classes instead of utility functions for gradients
+
+#### 2. **Adega Gradient Implementation** (Standard)
+```tsx
+// ✅ CORRECT - Direct Tailwind classes
+className="font-sf-black text-3xl leading-tight text-transparent bg-clip-text bg-gradient-to-r from-[#FF2400] via-[#FFDA04] to-[#FF2400] drop-shadow-lg"
+
+// ❌ WRONG - Theme utility conflicts
+className={cn(
+  getSFProTextClasses('h1', 'accent'), // Returns 'text-primary-yellow'
+  "text-transparent bg-clip-text bg-gradient-to-r from-[#FF2400] via-[#FFDA04] to-[#FF2400]"
+)}
+```
+
+#### 3. **PageHeader Standardization Pattern**
+```tsx
+// Replace manual headers with PageHeader component
+<PageHeader
+  title="FEATURE NAME"
+  count={data?.length || 0}
+  countLabel="items"
+>
+  {/* Action buttons as children */}
+  <Button>Export</Button>
+  <Button>Add New</Button>
+</PageHeader>
+```
+
+#### 4. **Progressive Debugging Approach**
+1. **Identify root cause** - Use browser DevTools to inspect computed styles
+2. **Remove conflicting elements** - Eliminate glassmorphism, backgrounds, utility functions
+3. **Simplify CSS classes** - Use direct Tailwind classes for critical styling
+4. **Test thoroughly** - Verify gradient appears correctly across different browsers
+5. **Clean up imports** - Remove unused utility function imports
+
+#### 5. **CSS Class Validation**
+- **Verify class existence** - Check that all referenced CSS classes exist in stylesheets
+- **Remove non-existent classes** - Classes like `text-shadow-glow-yellow` may not be defined
+- **Use standard Tailwind** - Prefer documented Tailwind classes over custom utilities
 
 ### UI/UX Development with Aceternity UI
 - **Component Selection** - Always check Aceternity UI library first via MCP integration

@@ -1,7 +1,7 @@
 /**
- * StockAdjustmentModal.tsx - Modal unificado para ajustes de estoque
- * Implementa Single Source of Truth para ajustes usando apenas sistema de variantes
- * Pós-refatoração: substituirá todos os modais antigos de ajuste
+ * StockAdjustmentModal.tsx - Modal de ajuste de estoque SSoT
+ * REFATORADO: Utiliza exclusivamente dados da tabela 'products' (Single Source of Truth)
+ * Elimina dependência de product_variants
  */
 
 import React, { useState, useMemo } from 'react';
@@ -25,17 +25,19 @@ import {
 } from 'lucide-react';
 import { formatCurrency, cn } from '@/core/config/utils';
 import { getGlassCardClasses } from '@/core/config/theme-utils';
-import { useProductVariants } from '../../sales/hooks/useProductVariants';
-import { useStockAdjustment } from '../hooks/useStockAdjustment';
-import { StockDisplay } from '@/shared/ui/composite/StockDisplay';
-import type { VariantType } from '@/core/types/variants.types';
+import { calculatePackageDisplay } from '@/shared/utils/stockCalculations';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/core/api/supabase/client';
+import { useToast } from '@/shared/hooks/common/use-toast';
+import type { Product } from '@/types/inventory.types';
 
 type AdjustmentType = 'entrada' | 'saida' | 'ajuste';
+type AdjustmentUnit = 'unit' | 'package';
 
 interface StockAdjustmentData {
-  variantId: string;
-  variantType: VariantType;
+  productId: string;
   adjustmentType: AdjustmentType;
+  adjustmentUnit: AdjustmentUnit;
   quantity?: number;
   newStock?: number;
   reason: string;
@@ -54,419 +56,381 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
   productId,
   onSuccess
 }) => {
-  const [selectedVariant, setSelectedVariant] = useState<VariantType>('unit');
+  const [adjustmentUnit, setAdjustmentUnit] = useState<AdjustmentUnit>('unit');
   const [adjustmentType, setAdjustmentType] = useState<AdjustmentType>('entrada');
   const [quantity, setQuantity] = useState<number>(1);
   const [newStock, setNewStock] = useState<number>(0);
   const [reason, setReason] = useState<string>('');
 
-  // Buscar dados do produto com variantes
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Buscar dados do produto SSoT
   const {
     data: product,
     isLoading: isLoadingProduct,
-    error: productError,
-    refetch: refetchProduct
-  } = useProductVariants(productId);
+    error: productError
+  } = useQuery({
+    queryKey: ['product-ssot', productId],
+    queryFn: async (): Promise<Product | null> => {
+      if (!productId) return null;
 
-  // Hook para ajuste de estoque
-  const {
-    mutate: adjustStock,
-    isPending: isAdjusting
-  } = useStockAdjustment({
-    onSuccess: (data) => {
-      onSuccess?.(data as StockAdjustmentData);
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('id', productId)
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!productId && isOpen,
+  });
+
+  // Mutation para ajuste de estoque SSoT
+  const adjustStockMutation = useMutation({
+    mutationFn: async (data: StockAdjustmentData) => {
+      const { data: result, error } = await supabase
+        .rpc('adjust_product_stock', {
+          p_product_id: data.productId,
+          p_quantity: data.adjustmentType === 'ajuste'
+            ? data.newStock
+            : (data.adjustmentType === 'entrada' ? data.quantity : -(data.quantity || 0)),
+          p_reason: data.reason,
+          p_adjustment_type: data.adjustmentType
+        });
+
+      if (error) throw error;
+      return result;
+    },
+    onSuccess: (result, variables) => {
+      toast({
+        title: "Estoque ajustado com sucesso!",
+        description: `${variables.adjustmentType === 'entrada' ? 'Entrada' : variables.adjustmentType === 'saida' ? 'Saída' : 'Ajuste'} de ${variables.quantity || variables.newStock} unidades registrada.`,
+      });
+
+      // Invalidar queries relacionadas
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['product-ssot', productId] });
+
+      onSuccess?.(variables);
       onClose();
+
+      // Reset form
+      setQuantity(1);
+      setNewStock(0);
+      setReason('');
+    },
+    onError: (error) => {
+      toast({
+        title: "Erro ao ajustar estoque",
+        description: error.message,
+        variant: "destructive",
+      });
     }
   });
 
-  // Informações da variante selecionada
-  const selectedVariantInfo = useMemo(() => {
+  // Informações calculadas do produto
+  const productInfo = useMemo(() => {
     if (!product) return null;
 
-    const variant = selectedVariant === 'unit'
-      ? product.unit_variant
-      : product.package_variant;
+    const stockQuantity = product.stock_quantity || 0;
+    const packageUnits = product.package_units || 0;
+    const hasPackageTracking = product.has_package_tracking;
 
-    if (!variant) return null;
+    const stockDisplay = calculatePackageDisplay(stockQuantity, packageUnits);
 
     return {
-      variant,
-      currentStock: variant.stock_quantity || 0,
-      price: variant.price || 0,
-      unitsPerPackage: selectedVariant === 'package'
-        ? variant.units_in_package || 1
-        : 1,
-      canAdjust: variant.is_active
+      product,
+      stockQuantity,
+      packageUnits,
+      hasPackageTracking,
+      stockDisplay,
+      canAdjustUnits: true,
+      canAdjustPackages: hasPackageTracking && packageUnits > 0,
     };
-  }, [product, selectedVariant]);
+  }, [product]);
 
-  // Calcular estoque resultante
-  const resultingStock = useMemo(() => {
-    if (!selectedVariantInfo) return 0;
+  // Calcular novo estoque após ajuste
+  const calculatedNewStock = useMemo(() => {
+    if (!productInfo) return 0;
 
-    switch (adjustmentType) {
-      case 'entrada':
-        return selectedVariantInfo.currentStock + quantity;
-      case 'saida':
-        return Math.max(0, selectedVariantInfo.currentStock - quantity);
-      case 'ajuste':
-        return newStock;
-      default:
-        return selectedVariantInfo.currentStock;
+    const currentStock = productInfo.stockQuantity;
+
+    if (adjustmentType === 'ajuste') {
+      return newStock;
     }
-  }, [selectedVariantInfo, adjustmentType, quantity, newStock]);
 
-  // Validação do formulário
-  const isValidAdjustment = useMemo(() => {
-    if (!selectedVariantInfo) return false;
-    if (!reason.trim()) return false;
+    let adjustmentQuantity = quantity;
 
-    switch (adjustmentType) {
-      case 'entrada':
-      case 'saida':
-        return quantity > 0;
-      case 'ajuste':
-        return newStock >= 0;
-      default:
-        return false;
+    // Se ajustando pacotes, converter para unidades
+    if (adjustmentUnit === 'package') {
+      adjustmentQuantity = quantity * productInfo.packageUnits;
     }
-  }, [selectedVariantInfo, adjustmentType, quantity, newStock, reason]);
 
-  const handleConfirm = () => {
-    if (!selectedVariantInfo || !isValidAdjustment) return;
+    if (adjustmentType === 'entrada') {
+      return currentStock + adjustmentQuantity;
+    } else {
+      return Math.max(0, currentStock - adjustmentQuantity);
+    }
+  }, [productInfo, adjustmentType, adjustmentUnit, quantity, newStock]);
 
-    const adjustmentData: StockAdjustmentData = {
-      variantId: selectedVariantInfo.variant.id,
-      variantType: selectedVariant,
+  // Validações
+  const canSubmit = useMemo(() => {
+    if (!productInfo || !reason.trim() || adjustStockMutation.isPending) return false;
+
+    if (adjustmentType === 'ajuste') {
+      return newStock >= 0;
+    }
+
+    return quantity > 0;
+  }, [productInfo, reason, adjustmentType, quantity, newStock, adjustStockMutation.isPending]);
+
+  const handleSubmit = () => {
+    if (!canSubmit || !productInfo) return;
+
+    const data: StockAdjustmentData = {
+      productId,
       adjustmentType,
-      quantity: adjustmentType !== 'ajuste' ? quantity : undefined,
+      adjustmentUnit,
+      quantity: adjustmentType === 'ajuste' ? undefined : quantity,
       newStock: adjustmentType === 'ajuste' ? newStock : undefined,
-      reason: reason.trim()
+      reason: reason.trim(),
     };
 
-    adjustStock(adjustmentData);
+    adjustStockMutation.mutate(data);
   };
 
-  const handleClose = () => {
+  const resetForm = () => {
+    setAdjustmentUnit('unit');
+    setAdjustmentType('entrada');
     setQuantity(1);
     setNewStock(0);
     setReason('');
-    setAdjustmentType('entrada');
-    setSelectedVariant('unit');
+  };
+
+  const handleClose = () => {
+    resetForm();
     onClose();
   };
+
+  if (isLoadingProduct) {
+    return (
+      <BaseModal
+        isOpen={isOpen}
+        onClose={handleClose}
+        title="Ajustar Estoque"
+        maxWidth="1200px"
+      >
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin text-yellow-400" />
+          <span className="ml-2 text-gray-300">Carregando produto...</span>
+        </div>
+      </BaseModal>
+    );
+  }
+
+  if (productError || !productInfo) {
+    return (
+      <BaseModal
+        isOpen={isOpen}
+        onClose={handleClose}
+        title="Erro"
+        maxWidth="1200px"
+      >
+        <div className="flex items-center justify-center py-8 text-red-400">
+          <AlertTriangle className="h-8 w-8 mr-2" />
+          <span>Erro ao carregar produto</span>
+        </div>
+      </BaseModal>
+    );
+  }
 
   return (
     <BaseModal
       isOpen={isOpen}
       onClose={handleClose}
-      title={
-        <>
-          <Settings className="h-5 w-5 text-primary-yellow" />
-          Ajustar Estoque
-        </>
-      }
-      description="Faça ajustes precisos no estoque do produto"
-      size="lg"
-      className={cn(
-        getGlassCardClasses(),
-        "border-white/20 bg-gray-900/95 backdrop-blur-xl"
-      )}
+      title={`Ajustar Estoque - ${productInfo.product.name}`}
+      maxWidth="1200px"
     >
-      {/* Loading State */}
-      {isLoadingProduct && (
-        <div className="flex items-center justify-center py-8">
-          <Loader2 className="h-6 w-6 animate-spin text-primary-yellow" />
-          <span className="ml-2 text-white">Carregando produto...</span>
-        </div>
-      )}
-
-      {/* Error State */}
-      {productError && (
-        <div className="flex flex-col items-center justify-center py-8">
-          <AlertTriangle className="h-8 w-8 text-red-400 mb-2" />
-          <p className="text-red-400 text-center mb-4">Erro ao carregar produto</p>
-          <Button
-            onClick={() => refetchProduct()}
-            variant="outline"
-            size="sm"
-            className="border-white/20 text-white hover:bg-white/10"
-          >
-            Tentar novamente
-          </Button>
-        </div>
-      )}
-
-      {/* Product Content */}
-      {product && (
-        <>
-          {/* Informações do Produto */}
-          <div className="bg-black/40 rounded-lg p-4 border border-white/10 mb-6">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-12 h-12 rounded-lg bg-gradient-to-r from-purple-500 to-blue-500 flex items-center justify-center">
-                <Wine className="h-6 w-6 text-white" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-white">{product.name}</h3>
-                <p className="text-sm text-gray-400">{product.category}</p>
+      <div className="space-y-6">
+        {/* Informações do produto */}
+        <div className={cn(
+          "p-4 rounded-lg border",
+          getGlassCardClasses('premium')
+        )}>
+          <div className="flex items-center gap-4">
+            <Package className="h-8 w-8 text-yellow-400" />
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-gray-100">
+                {productInfo.product.name}
+              </h3>
+              <div className="flex items-center gap-4 text-sm text-gray-400">
+                <span>Estoque atual: <span className="font-semibold text-gray-100">{productInfo.stockQuantity} unidades</span></span>
+                {productInfo.hasPackageTracking && (
+                  <span>Breakdown: <span className="font-semibold text-blue-400">{productInfo.stockDisplay.formatted}</span></span>
+                )}
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Seleção da Variante */}
-          <div className="mb-6">
-            <Label className="text-white font-medium mb-3 block">Tipo de Estoque</Label>
-            <RadioGroup value={selectedVariant} onValueChange={(value) => setSelectedVariant(value as VariantType)}>
-              {/* Unidade */}
-              {product.unit_variant && (
-                <div className={cn(
-                  "flex items-center space-x-3 rounded-lg border p-4 transition-all",
-                  selectedVariant === 'unit'
-                    ? "border-primary-yellow bg-primary-yellow/10"
-                    : "border-white/20 bg-black/20 hover:bg-white/5"
-                )}>
-                  <RadioGroupItem value="unit" id="unit" />
-                  <div className="flex-1">
-                    <Label htmlFor="unit" className="cursor-pointer">
-                      <div className="flex items-center gap-2 mb-1">
-                        <Wine className="h-4 w-4 text-blue-400" />
-                        <span className="font-semibold text-white">Unidades</span>
-                      </div>
-                      <div className="text-sm text-gray-400">
-                        Estoque atual:
-                        <StockDisplay
-                          stock_quantity={product.unit_variant.stock_quantity || 0}
-                          variant="compact"
-                          showTooltip={false}
-                          className="text-gray-400 inline ml-1"
-                        />
-                        • {formatCurrency(product.unit_variant.price || 0)} cada
-                      </div>
-                    </Label>
-                  </div>
-                  {selectedVariant === 'unit' && (
-                    <CheckCircle className="h-5 w-5 text-primary-yellow" />
-                  )}
-                </div>
-              )}
-
-              {/* Pacote */}
-              {product.package_variant && (
-                <div className={cn(
-                  "flex items-center space-x-3 rounded-lg border p-4 transition-all",
-                  selectedVariant === 'package'
-                    ? "border-primary-yellow bg-primary-yellow/10"
-                    : "border-white/20 bg-black/20 hover:bg-white/5"
-                )}>
-                  <RadioGroupItem value="package" id="package" />
-                  <div className="flex-1">
-                    <Label htmlFor="package" className="cursor-pointer">
-                      <div className="flex items-center gap-2 mb-1">
-                        <Package className="h-4 w-4 text-green-400" />
-                        <span className="font-semibold text-white">Pacotes/Fardos</span>
-                      </div>
-                      <div className="text-sm text-gray-400">
-                        Estoque atual:
-                        <StockDisplay
-                          stock_quantity={product.package_variant.stock_quantity || 0}
-                          variant="compact"
-                          showTooltip={false}
-                          className="text-gray-400 inline ml-1"
-                        />
-                        • {formatCurrency(product.package_variant.price || 0)} por fardo
-                        • {product.package_variant.units_in_package || 1} unidades/fardo
-                      </div>
-                    </Label>
-                  </div>
-                  {selectedVariant === 'package' && (
-                    <CheckCircle className="h-5 w-5 text-primary-yellow" />
-                  )}
-                </div>
-              )}
-            </RadioGroup>
-          </div>
-
-          {selectedVariantInfo && (
-            <>
-              {/* Tipo de Ajuste */}
-              <div className="mb-6">
-                <Label className="text-white font-medium mb-3 block">Tipo de Ajuste</Label>
-                <RadioGroup value={adjustmentType} onValueChange={(value) => setAdjustmentType(value as AdjustmentType)}>
-                  <div className={cn(
-                    "flex items-center space-x-3 rounded-lg border p-3 transition-all",
-                    adjustmentType === 'entrada'
-                      ? "border-green-500 bg-green-500/10"
-                      : "border-white/20 bg-black/20 hover:bg-white/5"
-                  )}>
-                    <RadioGroupItem value="entrada" id="entrada" />
-                    <Label htmlFor="entrada" className="cursor-pointer flex items-center gap-2">
-                      <TrendingUp className="h-4 w-4 text-green-400" />
-                      <span className="text-white">Entrada (Adicionar estoque)</span>
-                    </Label>
-                  </div>
-
-                  <div className={cn(
-                    "flex items-center space-x-3 rounded-lg border p-3 transition-all",
-                    adjustmentType === 'saida'
-                      ? "border-red-500 bg-red-500/10"
-                      : "border-white/20 bg-black/20 hover:bg-white/5"
-                  )}>
-                    <RadioGroupItem value="saida" id="saida" />
-                    <Label htmlFor="saida" className="cursor-pointer flex items-center gap-2">
-                      <TrendingDown className="h-4 w-4 text-red-400" />
-                      <span className="text-white">Saída (Remover estoque)</span>
-                    </Label>
-                  </div>
-
-                  <div className={cn(
-                    "flex items-center space-x-3 rounded-lg border p-3 transition-all",
-                    adjustmentType === 'ajuste'
-                      ? "border-yellow-500 bg-yellow-500/10"
-                      : "border-white/20 bg-black/20 hover:bg-white/5"
-                  )}>
-                    <RadioGroupItem value="ajuste" id="ajuste" />
-                    <Label htmlFor="ajuste" className="cursor-pointer flex items-center gap-2">
-                      <Settings className="h-4 w-4 text-yellow-400" />
-                      <span className="text-white">Ajuste (Definir estoque exato)</span>
-                    </Label>
-                  </div>
-                </RadioGroup>
+        {/* Seleção de unidade de ajuste */}
+        <div className="space-y-3">
+          <Label className="text-gray-100 font-medium">Unidade de Ajuste</Label>
+          <RadioGroup
+            value={adjustmentUnit}
+            onValueChange={(value) => setAdjustmentUnit(value as AdjustmentUnit)}
+            className="flex gap-4"
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="unit" id="unit" />
+              <Label htmlFor="unit" className="flex items-center gap-2 text-gray-300">
+                <Wine className="h-4 w-4" />
+                Unidades individuais
+              </Label>
+            </div>
+            {productInfo.canAdjustPackages && (
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="package" id="package" />
+                <Label htmlFor="package" className="flex items-center gap-2 text-gray-300">
+                  <Package className="h-4 w-4" />
+                  Pacotes ({productInfo.packageUnits} un/cada)
+                </Label>
               </div>
+            )}
+          </RadioGroup>
+        </div>
 
-              {/* Quantidade/Novo Estoque */}
-              <div className="mb-6">
-                {adjustmentType === 'ajuste' ? (
-                  <>
-                    <Label className="text-white font-medium mb-2 block">Novo Estoque Total</Label>
-                    <div className="flex items-center gap-3">
-                      <Input
-                        type="number"
-                        value={newStock}
-                        onChange={(e) => setNewStock(parseInt(e.target.value) || 0)}
-                        className="bg-black/40 border-white/20 text-white"
-                        min="0"
-                        placeholder="0"
-                      />
-                      <span className="text-gray-400 text-sm">
-                        {selectedVariant === 'unit' ? 'unidades' : 'fardos'}
-                      </span>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <Label className="text-white font-medium mb-2 block">Quantidade</Label>
-                    <div className="flex items-center gap-3">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                        disabled={quantity <= 1}
-                        className="border-white/20 text-white hover:bg-white/10"
-                      >
-                        <Minus className="h-4 w-4" />
-                      </Button>
+        {/* Tipo de ajuste */}
+        <div className="space-y-3">
+          <Label className="text-gray-100 font-medium">Tipo de Ajuste</Label>
+          <RadioGroup
+            value={adjustmentType}
+            onValueChange={(value) => setAdjustmentType(value as AdjustmentType)}
+            className="flex gap-6"
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="entrada" id="entrada" />
+              <Label htmlFor="entrada" className="flex items-center gap-2 text-green-400">
+                <Plus className="h-4 w-4" />
+                Entrada (Adicionar)
+              </Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="saida" id="saida" />
+              <Label htmlFor="saida" className="flex items-center gap-2 text-red-400">
+                <Minus className="h-4 w-4" />
+                Saída (Remover)
+              </Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="ajuste" id="ajuste" />
+              <Label htmlFor="ajuste" className="flex items-center gap-2 text-blue-400">
+                <Settings className="h-4 w-4" />
+                Ajuste direto
+              </Label>
+            </div>
+          </RadioGroup>
+        </div>
 
-                      <Input
-                        type="number"
-                        value={quantity}
-                        onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                        className="text-center bg-black/40 border-white/20 text-white w-24"
-                        min="1"
-                      />
-
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setQuantity(quantity + 1)}
-                        className="border-white/20 text-white hover:bg-white/10"
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-
-                      <span className="text-gray-400 text-sm">
-                        {selectedVariant === 'unit' ? 'unidades' : 'fardos'}
-                      </span>
-                    </div>
-                  </>
-                )}
-              </div>
-
-              {/* Motivo */}
-              <div className="mb-6">
-                <Label className="text-white font-medium mb-2 block">Motivo do Ajuste</Label>
-                <Textarea
-                  value={reason}
-                  onChange={(e) => setReason(e.target.value)}
-                  className="bg-black/40 border-white/20 text-white resize-none"
-                  placeholder="Ex: Contagem física, correção de erro, produtos danificados..."
-                  rows={3}
-                />
-              </div>
-
-              {/* Resumo do Ajuste */}
-              <div className="bg-primary-yellow/10 border border-primary-yellow/20 rounded-lg p-4 mb-6">
-                <h4 className="text-white font-medium mb-3">Resumo do Ajuste</h4>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <p className="text-gray-400">Estoque Atual:</p>
-                    <div className="text-white font-medium">
-                      <StockDisplay
-                        stock_quantity={selectedVariantInfo.currentStock}
-                        units_per_package={selectedVariantInfo.unitsPerPackage}
-                        variant="compact"
-                        showTooltip={false}
-                        className="text-white"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-gray-400">Estoque Final:</p>
-                    <div className="text-primary-yellow font-medium">
-                      <StockDisplay
-                        stock_quantity={resultingStock}
-                        units_per_package={selectedVariantInfo.unitsPerPackage}
-                        variant="compact"
-                        showTooltip={false}
-                        className="text-primary-yellow"
-                      />
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-3 pt-3 border-t border-primary-yellow/20">
-                  <p className="text-gray-400 text-xs">
-                    Diferença: {resultingStock - selectedVariantInfo.currentStock > 0 ? '+' : ''}
-                    {resultingStock - selectedVariantInfo.currentStock} {selectedVariant === 'unit' ? 'unidades' : 'fardos'}
-                  </p>
-                </div>
-              </div>
-
-              {/* Botões de Ação */}
-              <div className="flex gap-3">
-                <Button
-                  variant="outline"
-                  onClick={handleClose}
-                  className="flex-1 border-white/20 text-white hover:bg-white/10"
-                  disabled={isAdjusting}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  onClick={handleConfirm}
-                  disabled={!isValidAdjustment || isAdjusting}
-                  className="flex-1 bg-primary-yellow text-black hover:bg-primary-yellow/80 font-semibold disabled:opacity-50"
-                >
-                  {isAdjusting ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                  )}
-                  Confirmar Ajuste
-                </Button>
-              </div>
-            </>
+        {/* Input de quantidade ou estoque */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {adjustmentType === 'ajuste' ? (
+            <div className="space-y-2">
+              <Label htmlFor="newStock" className="text-gray-100">
+                Novo estoque total (unidades)
+              </Label>
+              <Input
+                id="newStock"
+                type="number"
+                min="0"
+                value={newStock}
+                onChange={(e) => setNewStock(parseInt(e.target.value) || 0)}
+                className="bg-gray-800/50 border-gray-600 text-gray-100"
+                placeholder="Ex: 100"
+              />
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <Label htmlFor="quantity" className="text-gray-100">
+                Quantidade a {adjustmentType === 'entrada' ? 'adicionar' : 'remover'} ({adjustmentUnit === 'unit' ? 'unidades' : 'pacotes'})
+              </Label>
+              <Input
+                id="quantity"
+                type="number"
+                min="1"
+                value={quantity}
+                onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
+                className="bg-gray-800/50 border-gray-600 text-gray-100"
+                placeholder="Ex: 10"
+              />
+            </div>
           )}
-        </>
-      )}
+
+          {/* Preview do novo estoque */}
+          <div className="space-y-2">
+            <Label className="text-gray-100">Estoque após ajuste</Label>
+            <div className={cn(
+              "p-3 rounded-md border",
+              calculatedNewStock >= 0
+                ? "border-green-500/30 bg-green-500/10"
+                : "border-red-500/30 bg-red-500/10"
+            )}>
+              <span className={cn(
+                "font-semibold",
+                calculatedNewStock >= 0 ? "text-green-400" : "text-red-400"
+              )}>
+                {calculatedNewStock} unidades
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Motivo */}
+        <div className="space-y-2">
+          <Label htmlFor="reason" className="text-gray-100">
+            Motivo do ajuste <span className="text-red-400">*</span>
+          </Label>
+          <Textarea
+            id="reason"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            className="bg-gray-800/50 border-gray-600 text-gray-100"
+            placeholder="Descreva o motivo do ajuste de estoque..."
+            rows={3}
+          />
+        </div>
+
+        {/* Ações */}
+        <div className="flex gap-3 pt-4">
+          <Button
+            onClick={handleClose}
+            variant="outline"
+            className="flex-1"
+            disabled={adjustStockMutation.isPending}
+          >
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            disabled={!canSubmit}
+            className="flex-1 bg-gradient-to-r from-yellow-400 to-yellow-500 text-black hover:from-yellow-300 hover:to-yellow-400"
+          >
+            {adjustStockMutation.isPending ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Ajustando...
+              </>
+            ) : (
+              <>
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Confirmar Ajuste
+              </>
+            )}
+          </Button>
+        </div>
+      </div>
     </BaseModal>
   );
 };

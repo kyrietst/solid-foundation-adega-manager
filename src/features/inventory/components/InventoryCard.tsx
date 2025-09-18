@@ -1,6 +1,7 @@
 /**
  * Card específico para gestão de estoque
  * Foco em informações operacionais, não comerciais
+ * REFATORADO: Utiliza exclusivamente dados da tabela 'products' (SSoT)
  */
 
 import React from 'react';
@@ -10,8 +11,7 @@ import { Eye, Edit, Package, MapPin, TrendingUp, TrendingDown, Minus, Loader2 } 
 import { cn } from '@/core/config/utils';
 import { getHoverTransformClasses } from '@/core/config/theme-utils';
 import { useGlassmorphismEffect } from '@/shared/hooks/ui/useGlassmorphismEffect';
-import { useProductVariants } from '@/features/sales/hooks/useProductVariants';
-import { VariantStockBadge } from './VariantStockDisplay';
+import { calculatePackageDisplay } from '@/shared/utils/stockCalculations';
 import type { Product } from '@/types/inventory.types';
 
 interface InventoryCardProps {
@@ -52,12 +52,15 @@ export const InventoryCard: React.FC<InventoryCardProps> = ({
   variant = 'default',
   glassEffect = true,
 }) => {
-  // Buscar dados de variantes do produto
-  const { data: productWithVariants, isLoading: variantsLoading } = useProductVariants(product.id);
-  
-  // Calcular estoque baseado em variantes quando disponível
-  const currentStock = productWithVariants?.total_stock_units ?? product.stock_quantity;
-  const stockStatus = getStockStatus(currentStock, product.minimum_stock || 10);
+  // NOVO: Usar dados SSoT diretamente da tabela 'products'
+  const stockQuantity = product.stock_quantity || 0;
+  const packageUnits = product.package_units || 0;
+  const hasPackageTracking = product.has_package_tracking;
+
+  // Calcular informações de estoque usando função centralizada
+  const stockDisplay = calculatePackageDisplay(stockQuantity, packageUnits);
+
+  const stockStatus = getStockStatus(stockQuantity, product.minimum_stock || 10);
   const turnoverAnalysis = getTurnoverAnalysis(product.turnover_rate || 'medium');
   const TurnoverIcon = turnoverAnalysis.icon;
   const { handleMouseMove } = useGlassmorphismEffect();
@@ -108,40 +111,27 @@ export const InventoryCard: React.FC<InventoryCardProps> = ({
           </p>
         </div>
 
-        {/* Informações de estoque - Variantes ou Legacy */}
+        {/* Informações de estoque SSoT */}
         <div className="space-y-2">
-          {variantsLoading ? (
-            <div className="flex items-center gap-2 text-sm text-gray-400">
-              <Loader2 className="h-4 w-4 animate-spin text-yellow-400" />
-              <span>Carregando estoque...</span>
-            </div>
-          ) : productWithVariants ? (
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-sm">
-                <Package className="h-4 w-4 text-yellow-400" />
-                <span className="text-gray-300">
-                  Total: <span className="font-semibold text-gray-100">{productWithVariants.total_stock_units}</span> un
-                </span>
-                {product.minimum_stock && (
-                  <span className="text-gray-400">
-                    | Mín: {product.minimum_stock} un
-                  </span>
-                )}
-              </div>
-              {/* Breakdown por variante */}
-              <VariantStockBadge product={productWithVariants} className="ml-6" />
-            </div>
-          ) : (
-            <div className="flex items-center gap-2 text-sm">
-              <Package className="h-4 w-4 text-yellow-400" />
-              <span className="text-gray-300">
-                Estoque: <span className="font-semibold text-gray-100">{product.stock_quantity}</span> un
+          <div className="flex items-center gap-2 text-sm">
+            <Package className="h-4 w-4 text-yellow-400" />
+            <span className="text-gray-300">
+              Estoque: <span className="font-semibold text-gray-100">{stockQuantity}</span> un
+            </span>
+            {product.minimum_stock && (
+              <span className="text-gray-400">
+                | Mín: {product.minimum_stock} un
               </span>
-              {product.minimum_stock && (
-                <span className="text-gray-400">
-                  | Mín: {product.minimum_stock} un
-                </span>
-              )}
+            )}
+          </div>
+
+          {/* Breakdown de pacotes se habilitado */}
+          {hasPackageTracking && stockDisplay.packages > 0 && (
+            <div className="flex items-center gap-2 text-sm ml-6">
+              <Badge variant="outline" className="bg-blue-500/10 text-blue-400 border-blue-500/30">
+                <Package className="h-3 w-3 mr-1" />
+                {stockDisplay.formatted}
+              </Badge>
             </div>
           )}
 

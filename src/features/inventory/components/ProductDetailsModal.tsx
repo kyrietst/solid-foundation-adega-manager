@@ -7,10 +7,10 @@ import React, { useMemo } from 'react';
 import { BaseModal } from '@/shared/ui/composite/BaseModal';
 import { Button } from '@/shared/ui/primitives/button';
 import { Badge } from '@/shared/ui/primitives/badge';
-import { 
-  Package, 
-  TrendingUp, 
-  TrendingDown, 
+import {
+  Package,
+  TrendingUp,
+  TrendingDown,
   Minus,
   Eye,
   Edit,
@@ -24,15 +24,15 @@ import {
   Barcode,
   ShoppingCart,
   Tags,
-  Layers
+  Layers,
+  AlertTriangle
 } from 'lucide-react';
 import { cn } from '@/core/config/utils';
 import { formatCurrency } from '@/core/config/utils';
 import { useFormatBrazilianDate } from '@/shared/hooks/common/use-brasil-timezone';
 import { useProductAnalytics } from '@/features/inventory/hooks/useProductAnalytics';
 import { useGlassmorphismEffect } from '@/shared/hooks/ui/useGlassmorphismEffect';
-import { useProductVariants } from '@/features/sales/hooks/useProductVariants';
-import { VariantStockDisplay } from './VariantStockDisplay';
+import { calculatePackageDisplay } from '@/shared/utils/stockCalculations';
 import type { Product } from '@/types/inventory.types';
 
 interface ProductDetailsModalProps {
@@ -89,8 +89,8 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
   // Buscar dados analíticos reais do produto
   const { analytics, isLoading: analyticsLoading } = useProductAnalytics(product?.id || null);
   
-  // Buscar dados de variantes do produto
-  const { data: productWithVariants, isLoading: variantsLoading } = useProductVariants(product?.id || '');
+  // SSoT: Dados de estoque diretamente do produto
+  const packageDisplay = product ? calculatePackageDisplay(product.stock_quantity, product.package_units) : null;
   
   // Calcular completude dos dados (sempre executar o hook, independente do product)
   const completeness = useMemo(() => {
@@ -430,89 +430,116 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
                     <Package className="h-5 w-5 text-yellow-400" />
                     Controle de Estoque
                   </h3>
-                  {!variantsLoading && productWithVariants && (
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => onAdjustStock(product)}
-                        className="border-green-500/30 text-green-400 hover:bg-green-500/10"
-                      >
-                        <Settings className="h-4 w-4 mr-1" />
-                        Ajustar Estoque
-                      </Button>
-                    </div>
-                  )}
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => onAdjustStock(product)}
+                      className="border-green-500/30 text-green-400 hover:bg-green-500/10"
+                    >
+                      <Settings className="h-4 w-4 mr-1" />
+                      Ajustar Estoque
+                    </Button>
+                  </div>
                 </div>
                 
-                {variantsLoading ? (
-                  <div className="flex items-center justify-center py-8">
-                    <div className="text-gray-400">Carregando dados de estoque...</div>
-                  </div>
-                ) : productWithVariants ? (
-                  <div className="space-y-4">
-                    {/* Display de variantes */}
-                    <VariantStockDisplay 
-                      product={productWithVariants}
-                      showPrices={false}
-                      showConversionInfo={true}
-                      className="mb-4"
-                    />
-                    
-                    {/* Estoque mínimo e analytics */}
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className={cn(
-                        "rounded p-4 text-center border",
-                        !product.minimum_stock 
-                          ? "bg-orange-500/10 border-orange-400/30" 
-                          : "bg-gray-800/40 border-gray-600/30"
-                      )}>
-                        <label className="text-xs text-gray-400 flex items-center justify-center gap-1">
-                          Estoque Mínimo
-                          {!product.minimum_stock && <span className="text-orange-400 animate-pulse">📝</span>}
-                        </label>
-                        {!product.minimum_stock ? (
-                          <div className="space-y-1">
-                            <p className="text-lg font-bold text-orange-400">10 (padrão)</p>
-                            <span className="text-xs bg-orange-500/20 px-2 py-1 rounded border border-orange-400/30 text-orange-300">
-                              USAR PERSONALIZADO
-                            </span>
-                          </div>
-                        ) : (
-                          <p className="text-2xl font-bold text-yellow-400">{product.minimum_stock}</p>
-                        )}
-                        <span className="text-xs text-gray-400">unidades</span>
+                <div className="space-y-4">
+                  {/* Display de estoque SSoT */}
+                  <div className="bg-gray-800/30 rounded-xl p-4 border border-gray-700/50">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="font-semibold text-white flex items-center gap-2">
+                        <Package className="h-4 w-4 text-primary-yellow" />
+                        Estoque Atual
+                      </h4>
+                      <div className="text-2xl font-bold text-primary-yellow">
+                        {product.stock_quantity} unidades
                       </div>
-                      
-                      <div className="space-y-3 text-sm">
-                        <div>
-                          <label className="text-gray-400 flex items-center">
-                            <Calendar className="h-3 w-3 mr-1" />
-                            Última Entrada
-                          </label>
-                          <p className="text-gray-100 text-xs">
-                            {analyticsLoading ? 'Carregando...' : analytics?.lastEntry ? formatCompact(analytics.lastEntry) : 'Nenhuma'}
-                          </p>
+                    </div>
+
+                    {/* Exibição de pacotes se configurado */}
+                    {product.has_package_tracking && product.package_units && product.package_units > 1 && packageDisplay && (
+                      <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-gray-700/50">
+                        <div className="text-center p-3 bg-blue-500/10 border border-blue-400/30 rounded-lg">
+                          <div className="text-lg font-semibold text-blue-400">
+                            {packageDisplay.packages}
+                          </div>
+                          <div className="text-xs text-gray-400">pacotes completos</div>
+                          <div className="text-xs text-blue-300">
+                            ({packageDisplay.packages * product.package_units} unidades)
+                          </div>
                         </div>
-                        
-                        <div>
-                          <label className="text-gray-400 flex items-center">
-                            <Calendar className="h-3 w-3 mr-1" />
-                            Última Saída
-                          </label>
-                          <p className="text-gray-100 text-xs">
-                            {analyticsLoading ? 'Carregando...' : analytics?.lastExit ? formatCompact(analytics.lastExit) : 'Nenhuma'}
-                          </p>
+
+                        <div className="text-center p-3 bg-green-500/10 border border-green-400/30 rounded-lg">
+                          <div className="text-lg font-semibold text-green-400">
+                            {packageDisplay.units}
+                          </div>
+                          <div className="text-xs text-gray-400">unidades soltas</div>
+                          <div className="text-xs text-green-300">
+                            {packageDisplay.units > 0 ? 'fora de pacotes' : 'sem sobra'}
+                          </div>
                         </div>
+                      </div>
+                    )}
+
+                    {/* Exibição simples se não há pacotes */}
+                    {!product.has_package_tracking && (
+                      <div className="text-center p-4 bg-gray-800/30 border border-gray-600/30 rounded-lg">
+                        <div className="text-sm text-gray-400 mb-1">Controle simples por unidades</div>
+                        <div className="text-lg font-semibold text-gray-300">
+                          {product.stock_quantity} unidades disponíveis
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Estoque mínimo e analytics */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className={cn(
+                      "rounded p-4 text-center border",
+                      !product.minimum_stock
+                        ? "bg-orange-500/10 border-orange-400/30"
+                        : "bg-gray-800/40 border-gray-600/30"
+                    )}>
+                      <label className="text-xs text-gray-400 flex items-center justify-center gap-1">
+                        Estoque Mínimo
+                        {!product.minimum_stock && <span className="text-orange-400 animate-pulse">📝</span>}
+                      </label>
+                      {!product.minimum_stock ? (
+                        <div className="space-y-1">
+                          <p className="text-lg font-bold text-orange-400">10 (padrão)</p>
+                          <span className="text-xs bg-orange-500/20 px-2 py-1 rounded border border-orange-400/30 text-orange-300">
+                            USAR PERSONALIZADO
+                          </span>
+                        </div>
+                      ) : (
+                        <p className="text-2xl font-bold text-yellow-400">{product.minimum_stock}</p>
+                      )}
+                      <span className="text-xs text-gray-400">unidades</span>
+                    </div>
+
+                    <div className="space-y-3 text-sm">
+                      <div>
+                        <label className="text-gray-400 flex items-center">
+                          <Calendar className="h-3 w-3 mr-1" />
+                          Última Entrada
+                        </label>
+                        <p className="text-gray-100 text-xs">
+                          {analyticsLoading ? 'Carregando...' : analytics?.lastEntry ? formatCompact(analytics.lastEntry) : 'Nenhuma'}
+                        </p>
+                      </div>
+
+                      <div>
+                        <label className="text-gray-400 flex items-center">
+                          <Calendar className="h-3 w-3 mr-1" />
+                          Última Saída
+                        </label>
+                        <p className="text-gray-100 text-xs">
+                          {analyticsLoading ? 'Carregando...' : analytics?.lastExit ? formatCompact(analytics.lastExit) : 'Nenhuma'}
+                        </p>
                       </div>
                     </div>
                   </div>
-                ) : (
-                  <div className="text-center py-8 text-gray-400">
-                    <AlertTriangle className="h-8 w-8 mx-auto mb-2 text-orange-400" />
-                    <p>Não foi possível carregar dados de estoque</p>
-                  </div>
-                )}
+                </div>
               </div>
             </div>
           </div>
@@ -589,7 +616,7 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
                           </div>
                         )}
                         <div className="text-xs text-gray-400 mt-1">
-                          {product.package_units || product.units_per_package || 1} unidades/pacote
+                          {product.package_units || 1} unidades/pacote
                         </div>
                       </div>
                     ) : (
@@ -748,15 +775,15 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
                     <div>
                       <label className="text-gray-300">Economia do Cliente</label>
                       <div className="h-11 bg-gray-800/30 border border-green-600/50 rounded-md px-3 flex items-center mt-2">
-                        {product.package_price && product.price && (product.package_units || product.units_per_package) ? (
+                        {product.package_price && product.price && product.package_units ? (
                           <span className="text-green-400 font-medium">
                             {(() => {
-                              const units = product.package_units || product.units_per_package || 1;
+                              const units = product.package_units || 1;
                               const individualTotal = product.price * units;
                               const savings = individualTotal - product.package_price;
                               const savingsPercent = (savings / individualTotal * 100).toFixed(1);
                               return `R$ ${savings.toFixed(2)} (${savingsPercent}%)`;
-                            })()} 
+                            })()}
                           </span>
                         ) : (
                           <span className="text-gray-500">💰 Calculando...</span>

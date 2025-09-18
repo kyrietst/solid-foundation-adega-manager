@@ -24,8 +24,7 @@ import { cn } from '@/core/config/utils';
 import { formatCurrency } from '@/core/config/utils';
 import { supabase } from '@/core/api/supabase/client';
 import { useFormatBrazilianDate } from '@/shared/hooks/common/use-brasil-timezone';
-import { useProductVariants } from '@/features/sales/hooks/useProductVariants';
-import { VariantStockBadge } from './VariantStockDisplay';
+import { calculatePackageDisplay } from '@/shared/utils/stockCalculations';
 import type { Product } from '@/types/inventory.types';
 
 interface StockHistoryModalProps {
@@ -207,8 +206,8 @@ export const StockHistoryModal: React.FC<StockHistoryModalProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const { formatCompact } = useFormatBrazilianDate();
   
-  // Buscar dados de variantes do produto para mostrar breakdown atual
-  const { data: productWithVariants, isLoading: variantsLoading } = useProductVariants(product?.id || '');
+  // SSoT: Calcular breakdown de estoque diretamente do produto
+  const stockDisplay = product ? calculatePackageDisplay(product.stock_quantity, product.package_units) : null;
 
   useEffect(() => {
     if (product && isOpen) {
@@ -236,8 +235,7 @@ export const StockHistoryModal: React.FC<StockHistoryModalProps> = ({
       icon={Package}
       iconColor="text-yellow-400"
     >
-          
-          {/* Informações do produto */}
+      {/* Informações do produto */}
           <div className="bg-black/30 rounded-lg p-3 mt-4">
             <h4 className="font-medium text-gray-100 mb-1">{product.name}</h4>
             <div className="space-y-2">
@@ -247,41 +245,33 @@ export const StockHistoryModal: React.FC<StockHistoryModalProps> = ({
               </div>
               
               {/* Estoque atual com variantes quando disponível */}
-              {variantsLoading ? (
+              <div className="space-y-2">
                 <div className="flex items-center gap-2 text-sm text-gray-400">
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                  <span>Carregando estoque atual...</span>
+                  <span>Estoque Total: <span className="text-gray-100 font-medium">{product.stock_quantity} un</span></span>
                 </div>
-              ) : productWithVariants ? (
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-sm text-gray-400">
-                    <span>Estoque Total: <span className="text-gray-100 font-medium">{productWithVariants.total_stock_units} un</span></span>
+                {product.has_package_tracking && stockDisplay && stockDisplay.packages > 0 && (
+                  <div className="text-xs text-gray-500">
+                    {stockDisplay.formatted}
                   </div>
-                  <VariantStockBadge product={productWithVariants} />
-                </div>
-              ) : (
-                <div className="flex items-center gap-2 text-sm text-gray-400">
-                  <span>Estoque Atual: <span className="text-gray-100 font-medium">{product.stock_quantity} un</span></span>
-                </div>
-              )}
+                )}
             </div>
           </div>
 
-        {/* Lista de movimentações */}
-        <div className="flex-1 overflow-y-auto mt-4 space-y-3 max-h-[60vh]">
-          {isLoading ? (
-            <div className="text-center py-12">
-              <Loader2 className="h-16 w-16 text-yellow-400 mx-auto mb-4 animate-spin" />
-              <p className="text-gray-400">Carregando histórico de movimentações...</p>
-            </div>
-          ) : movements.length === 0 ? (
-            <div className="text-center py-12">
-              <Package className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-400">Nenhuma movimentação encontrada</p>
-              <p className="text-xs text-gray-500 mt-2">Este produto ainda não possui histórico de movimentações</p>
-            </div>
-          ) : (
-            movements.map((movement) => {
+      {/* Lista de movimentações */}
+      <div className="flex-1 overflow-y-auto mt-4 space-y-3 max-h-[60vh]">
+        {isLoading ? (
+          <div className="text-center py-12">
+            <Loader2 className="h-16 w-16 text-yellow-400 mx-auto mb-4 animate-spin" />
+            <p className="text-gray-400">Carregando histórico de movimentações...</p>
+          </div>
+        ) : movements.length === 0 ? (
+          <div className="text-center py-12">
+            <Package className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-400">Nenhuma movimentação encontrada</p>
+            <p className="text-xs text-gray-500 mt-2">Este produto ainda não possui histórico de movimentações</p>
+          </div>
+        ) : (
+          movements.map((movement) => {
               const MovementIcon = getMovementIcon(movement.type);
               const colorClasses = getMovementColor(movement.type);
               
@@ -346,34 +336,35 @@ export const StockHistoryModal: React.FC<StockHistoryModalProps> = ({
                 </div>
               );
             })
-          )}
-        </div>
-        
-        {/* Footer com estatísticas */}
-        <div className="border-t border-white/10 pt-4 mt-4">
-          <div className="grid grid-cols-3 gap-4 text-center">
-            <div className="bg-green-400/10 rounded-lg p-3 border border-green-400/30">
-              <div className="text-green-400 font-bold text-lg">
-                {movements.filter(m => m.type === 'entrada').reduce((sum, m) => sum + m.quantity, 0)}
-              </div>
-              <div className="text-xs text-green-400/70">Total Entradas</div>
+        )}
+      </div>
+
+      {/* Footer com estatísticas */}
+      <div className="border-t border-white/10 pt-4 mt-4">
+        <div className="grid grid-cols-3 gap-4 text-center">
+          <div className="bg-green-400/10 rounded-lg p-3 border border-green-400/30">
+            <div className="text-green-400 font-bold text-lg">
+              {movements.filter(m => m.type === 'entrada').reduce((sum, m) => sum + m.quantity, 0)}
             </div>
-            
-            <div className="bg-red-400/10 rounded-lg p-3 border border-red-400/30">
-              <div className="text-red-400 font-bold text-lg">
-                {movements.filter(m => m.type === 'saida' || m.type === 'venda').reduce((sum, m) => sum + m.quantity, 0)}
-              </div>
-              <div className="text-xs text-red-400/70">Total Saídas</div>
+            <div className="text-xs text-green-400/70">Total Entradas</div>
+          </div>
+
+          <div className="bg-red-400/10 rounded-lg p-3 border border-red-400/30">
+            <div className="text-red-400 font-bold text-lg">
+              {movements.filter(m => m.type === 'saida' || m.type === 'venda').reduce((sum, m) => sum + m.quantity, 0)}
             </div>
-            
-            <div className="bg-yellow-400/10 rounded-lg p-3 border border-yellow-400/30">
-              <div className="text-yellow-400 font-bold text-lg">
-                {movements.filter(m => m.type === 'ajuste').length}
-              </div>
-              <div className="text-xs text-yellow-400/70">Ajustes</div>
+            <div className="text-xs text-red-400/70">Total Saídas</div>
+          </div>
+
+          <div className="bg-yellow-400/10 rounded-lg p-3 border border-yellow-400/30">
+            <div className="text-yellow-400 font-bold text-lg">
+              {movements.filter(m => m.type === 'ajuste').length}
             </div>
+            <div className="text-xs text-yellow-400/70">Ajustes</div>
           </div>
         </div>
+      </div>
+      </div>
     </BaseModal>
   );
 };

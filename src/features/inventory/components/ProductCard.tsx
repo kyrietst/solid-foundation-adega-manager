@@ -1,6 +1,7 @@
 /**
  * Card individual do produto
  * Sub-componente especializado para exibição de produto individual
+ * REFATORADO: Utiliza exclusivamente dados da tabela 'products' (SSoT)
  */
 
 import React from 'react';
@@ -12,7 +13,7 @@ import { formatCurrency, cn } from '@/core/config/utils';
 import { getGlassCardClasses, getHoverTransformClasses } from '@/core/config/theme-utils';
 import { text, shadows } from "@/core/config/theme";
 import { ProductImage } from '@/shared/ui/composite/optimized-image';
-import { useProductVariants } from '@/features/sales/hooks/useProductVariants';
+import { calculatePackageDisplay } from '@/shared/utils/stockCalculations';
 
 interface ProductCardProps {
   product: Product;
@@ -29,35 +30,23 @@ export const ProductCard = React.memo<ProductCardProps>(({
   variant = 'default',
   glassEffect = true,
 }) => {
-  // Buscar dados de variantes (hook sempre chamado)
-  const productId = product.id;
-  const { data: productWithVariants, isLoading: variantsLoading } = useProductVariants(productId);
-  
   const glassClasses = glassEffect ? getGlassCardClasses(variant) : '';
-  
-  // Calcular estados baseados nas variantes
-  const hasVariants = productWithVariants && (productWithVariants.unit_variant || productWithVariants.package_variant);
-  const totalStock = productWithVariants?.total_stock_units || product.stock_quantity || 0;
-  const canSellUnits = productWithVariants?.can_sell_units || false;
 
-  // CORREÇÃO: canSellPackages deve considerar conversão automática
-  // Se há unidades suficientes para formar pelo menos 1 pacote, permitir venda de pacotes
-  const packageVariant = productWithVariants?.package_variant;
-  const unitsPerPackage = packageVariant?.units_in_package || 1;
-  const canFormPackages = totalStock >= unitsPerPackage;
-  const canSellPackages = productWithVariants?.can_sell_packages || canFormPackages;
-  
-  
-  // Detectar se são variantes virtuais (baseadas em dados legados)
-  const hasVirtualVariants = productWithVariants?.unit_variant?.id.includes('-virtual') || 
-                            productWithVariants?.package_variant?.id.includes('-virtual');
-  
-  // Para variantes virtuais, usar dados do produto legado como referência
-  const displayStock = hasVirtualVariants ? (product.stock_quantity || 0) : totalStock;
-  const isOutOfStock = displayStock === 0;
-  
-  // CORREÇÃO PRINCIPAL: Abrir modal apenas quando há AMBAS as variantes com estoque > 0
-  // Isso significa que o usuário pode escolher entre comprar unidades ou pacotes
+  // NOVO: Calcular estados usando exclusivamente dados da tabela 'products' (SSoT)
+  const stockQuantity = product.stock_quantity || 0;
+  const packageUnits = product.package_units || 0;
+  const hasPackageTracking = product.has_package_tracking;
+
+  // Usar função centralizada para cálculos de estoque
+  const stockDisplay = calculatePackageDisplay(stockQuantity, packageUnits);
+
+  // Determinar capacidades de venda baseadas nos dados do produto
+  const canSellUnits = stockQuantity > 0;
+  const canSellPackages = hasPackageTracking && stockDisplay.packages > 0;
+
+  const isOutOfStock = stockQuantity === 0;
+
+  // Determinar se tem múltiplas opções (unidades E pacotes disponíveis)
   const hasMultipleOptions = canSellUnits && canSellPackages;
 
 
@@ -100,69 +89,38 @@ export const ProductCard = React.memo<ProductCardProps>(({
           containerClassName="w-full h-full"
         />
         
-        {/* Badges de variantes inteligentes */}
+        {/* Badges de estoque SSoT */}
         <div className="absolute top-2 right-2 flex flex-col gap-1">
-          {variantsLoading ? (
-            <Badge variant="outline" className="bg-gray-500/30 text-gray-300 border-gray-400/50 backdrop-blur-md">
-              Carregando...
-            </Badge>
-          ) : isOutOfStock ? (
+          {isOutOfStock ? (
             <Badge variant="destructive" className="bg-red-500/30 text-red-200 border-red-400/50 backdrop-blur-md shadow-lg">
               ⚠️ Esgotado
             </Badge>
           ) : (
             <>
-              {/* Mostrar breakdown de variantes ou badge de estoque total */}
-              {hasVariants ? (
+              {/* Badge de estoque principal */}
+              <Badge
+                variant="outline"
+                className={cn(
+                  'backdrop-blur-md shadow-lg transition-all duration-300 group-hover:scale-105 text-xs',
+                  stockQuantity <= 5
+                    ? 'bg-orange-500/20 text-orange-200 border-orange-400/30'
+                    : 'bg-emerald-500/20 text-emerald-200 border-emerald-400/30'
+                )}
+              >
+                {stockQuantity <= 5 ? `⚡ ${stockQuantity} total` : `✓ ${stockQuantity} total`}
+              </Badge>
+
+              {/* Badges de breakdown (quando há pacotes) */}
+              {hasPackageTracking && stockDisplay.packages > 0 && (
                 <div className="flex flex-col gap-1">
-                  {/* Badge de estoque total (quando há variantes) */}
-                  <Badge 
-                    variant="outline" 
-                    className={cn(
-                      'backdrop-blur-md shadow-lg transition-all duration-300 group-hover:scale-105 text-xs',
-                      displayStock <= 5
-                        ? 'bg-orange-500/20 text-orange-200 border-orange-400/30'
-                        : 'bg-emerald-500/20 text-emerald-200 border-emerald-400/30'
-                    )}
+                  <Badge
+                    variant="secondary"
+                    className="bg-blue-500/20 text-blue-300 border-blue-500/30 backdrop-blur-md text-xs"
                   >
-                    {displayStock <= 5 ? `⚡ ${displayStock} total` : `✓ ${displayStock} total`}
-                    {hasVirtualVariants && <span className="ml-1 opacity-60">*</span>}
+                    <Package className="h-2 w-2 mr-1" />
+                    {stockDisplay.formatted}
                   </Badge>
-                  
-                  {/* Badges de variantes disponíveis */}
-                  <div className="flex gap-1">
-                    {canSellUnits && productWithVariants?.unit_variant && (
-                      <Badge 
-                        variant="secondary" 
-                        className="bg-green-500/20 text-green-300 border-green-500/30 backdrop-blur-md text-xs"
-                      >
-                        <Wine className="h-2 w-2 mr-1" />
-                        {productWithVariants.unit_variant.stock_quantity} un
-                      </Badge>
-                    )}
-                    {canSellPackages && productWithVariants?.package_variant && (
-                      <Badge 
-                        variant="secondary" 
-                        className="bg-blue-500/20 text-blue-300 border-blue-500/30 backdrop-blur-md text-xs"
-                      >
-                        <Package className="h-2 w-2 mr-1" />
-                        {productWithVariants.package_variant.stock_quantity} fardos
-                      </Badge>
-                    )}
-                  </div>
                 </div>
-              ) : (
-                <Badge 
-                  variant="outline" 
-                  className={cn(
-                    'backdrop-blur-md shadow-lg transition-all duration-300 group-hover:scale-105 font-bold',
-                    totalStock <= 5
-                      ? 'bg-orange-500/30 text-orange-200 border-orange-400/50 shadow-orange-500/25'
-                      : 'bg-emerald-500/30 text-emerald-200 border-emerald-400/50 shadow-emerald-500/25'
-                  )}
-                >
-                  {totalStock <= 5 ? `⚡ ${totalStock} restam` : `✓ ${totalStock} un`}
-                </Badge>
               )}
             </>
           )}
@@ -179,16 +137,14 @@ export const ProductCard = React.memo<ProductCardProps>(({
             {product.name}
           </h3>
           
-          {/* Preço com cores padronizadas */}
+          {/* Preço com dados SSoT */}
           <div className="flex items-center justify-between">
             <div className="space-y-1 flex-1">
               <div className="flex items-center gap-2">
                 <span className="text-2xl font-bold text-primary-yellow">
-                  {productWithVariants?.unit_variant?.price ? 
-                    formatCurrency(productWithVariants.unit_variant.price) : 
-                    formatCurrency(product.price)}
+                  {formatCurrency(product.price)}
                 </span>
-                
+
                 {/* Badges de tipos de venda disponíveis */}
                 <div className="flex gap-1">
                   {canSellUnits && (
@@ -197,7 +153,7 @@ export const ProductCard = React.memo<ProductCardProps>(({
                       Unidades
                     </Badge>
                   )}
-                  {canSellPackages && productWithVariants?.package_variant && (
+                  {canSellPackages && (
                     <Badge variant="outline" className="bg-blue-500/10 text-blue-400 border-blue-500/30">
                       <Package className="h-3 w-3 mr-1" />
                       Fardos
@@ -205,15 +161,15 @@ export const ProductCard = React.memo<ProductCardProps>(({
                   )}
                 </div>
               </div>
-              
+
               {/* Mostrar preço do pacote se disponível */}
-              {canSellPackages && productWithVariants?.package_variant && (
+              {canSellPackages && product.package_price && (
                 <div className="text-sm text-gray-400 flex items-center gap-2">
-                  <span>Fardo: {formatCurrency(productWithVariants.package_variant.price)}</span>
-                  <span className="text-xs">({productWithVariants.package_variant.units_in_package || 1} un cada)</span>
+                  <span>Fardo: {formatCurrency(product.package_price)}</span>
+                  <span className="text-xs">({packageUnits} un cada)</span>
                 </div>
               )}
-              
+
               {product.category && (
                 <span className="text-xs text-gray-400">
                   {product.category}
@@ -253,12 +209,7 @@ export const ProductCard = React.memo<ProductCardProps>(({
           ) : hasMultipleOptions ? (
             <>
               <Package className="h-4 w-4 mr-2" aria-hidden="true" />
-              {hasVirtualVariants ? '📦 Opções' : '📦 Selecionar'}
-            </>
-          ) : variantsLoading ? (
-            <>
-              <Plus className="h-4 w-4 mr-2" aria-hidden="true" />
-              ⏳ Verificando...
+              📦 Selecionar
             </>
           ) : (
             <>

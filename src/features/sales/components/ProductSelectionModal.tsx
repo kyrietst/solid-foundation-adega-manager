@@ -1,20 +1,20 @@
 /**
- * ProductSelectionModal.tsx - Modal para seleção de variantes (unidade vs pacote)
- * Atualizado para usar o novo sistema de product_variants
+ * ProductSelectionModal.tsx - Modal para seleção de tipo de venda (unidade vs pacote)
+ * Refatorado para usar Single Source of Truth (SSoT) - Opera exclusivamente com tabela 'products'
  */
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { BaseModal } from '@/shared/ui/composite';
 import { Button } from '@/shared/ui/primitives/button';
 import { Input } from '@/shared/ui/primitives/input';
 import { RadioGroup, RadioGroupItem } from '@/shared/ui/primitives/radio-group';
 import { Label } from '@/shared/ui/primitives/label';
-import { 
-  Package, 
-  Wine, 
-  Plus, 
-  Minus, 
-  ShoppingCart, 
+import {
+  Package,
+  Wine,
+  Plus,
+  Minus,
+  ShoppingCart,
   AlertTriangle,
   CheckCircle,
   Loader2,
@@ -22,21 +22,17 @@ import {
 } from 'lucide-react';
 import { formatCurrency, cn } from '@/core/config/utils';
 import { getGlassCardClasses } from '@/core/config/theme-utils';
-import { useProductVariants, useVariantAvailability } from '../hooks/useProductVariants';
-import { StockDisplay } from '@/shared/ui/composite/StockDisplay';
-import { calculatePackageDisplay } from '@/shared/utils/stockCalculations';
-import type { 
-  VariantSelectionData, 
-  VariantType,
-  ProductWithVariants 
-} from '@/core/types/variants.types';
+import { useProductSSoT, useStockAvailabilitySSoT, createProductSelection } from '../hooks/useProductsSSoT';
 
-export { type VariantType as SelectionType };
-
-// Interface atualizada para usar o sistema de variantes
-export interface ProductSelectionData extends VariantSelectionData {
-  // Mantendo compatibilidade com interface anterior
-  type: VariantType;
+// Interface simplificada para seleção de produto (SSoT)
+export interface ProductSelectionData {
+  product_id: string;
+  quantity: number;
+  type: 'unit' | 'package';
+  unit_price: number;
+  total_price: number;
+  units_sold: number; // Total de unidades individuais vendidas
+  // Campos para compatibilidade com sistema anterior
   price: number;
   totalPrice: number;
   packageUnits?: number;
@@ -46,7 +42,7 @@ interface ProductSelectionModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: (selection: ProductSelectionData) => void;
-  productId: string; // Mudança: usar ID em vez do objeto completo
+  productId: string;
 }
 
 export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
@@ -55,90 +51,63 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
   onConfirm,
   productId
 }) => {
-  const [selectionType, setSelectionType] = useState<VariantType>('unit');
+  const [selectionType, setSelectionType] = useState<'unit' | 'package'>('unit');
   const [quantity, setQuantity] = useState(1);
 
-  // Buscar dados do produto com variantes
-  const { 
-    data: product, 
-    isLoading: isLoadingProduct, 
+  // Buscar dados do produto usando SSoT
+  const {
+    data: product,
+    isLoading: isLoadingProduct,
     error: productError,
-    refetch: refetchProduct 
-  } = useProductVariants(productId);
+    refetch: refetchProduct
+  } = useProductSSoT(productId);
 
-  // Buscar disponibilidade da variante selecionada
-  const { 
-    data: availability, 
-    isLoading: isLoadingAvailability 
-  } = useVariantAvailability({
-    product_id: productId,
-    variant_type: selectionType,
-    quantity
-  });
+  // Buscar disponibilidade simplificada
+  const {
+    data: availability,
+    isLoading: isLoadingAvailability
+  } = useStockAvailabilitySSoT(productId, quantity, selectionType);
 
-  // Calcular informações de estoque usando funções centralizadas
+  // Calcular informações de estoque usando dados SSoT
   const stockInfo = useMemo(() => {
     if (!product) return null;
 
-    const unitVariant = product.unit_variant;
-    const packageVariant = product.package_variant;
-    const unitsPerPackage = packageVariant?.units_in_package || 1;
-
-    // CORREÇÃO: Usar calculatePackageDisplay para cálculos consistentes
-    const totalStockDisplay = calculatePackageDisplay(
-      product.total_stock_units || 0,
-      unitsPerPackage
-    );
-
-    const unitStockDisplay = calculatePackageDisplay(
-      unitVariant?.stock_quantity || 0,
-      unitsPerPackage
-    );
-
-    const packageStockDisplay = calculatePackageDisplay(
-      packageVariant?.stock_quantity || 0,
-      unitsPerPackage
-    );
-
     return {
-      unitVariant,
-      packageVariant,
-      totalStockUnits: product.total_stock_units || 0,
-      canSellUnits: product.can_sell_units || false,
-      canSellPackages: product.can_sell_packages || false,
-      unitPrice: unitVariant?.price || 0,
-      packagePrice: packageVariant?.price || 0,
-      unitsPerPackage,
+      // Dados básicos já calculados no hook SSoT
+      totalStockUnits: product.stock_quantity || 0,
+      canSellUnits: product.canSellUnits,
+      canSellPackages: product.canSellPackages,
+      unitPrice: product.unitPrice,
+      packagePrice: product.packagePrice,
+      unitsPerPackage: product.unitsPerPackage,
 
-      // CORREÇÃO: Usar dados calculados centralizados
-      unitStock: unitVariant?.stock_quantity || 0,
-      packageStock: packageVariant?.stock_quantity || 0,
+      // Estoque calculado usando SSoT
+      stockDisplay: product.stockDisplay,
 
-      // Adicionar exibições calculadas para consistência
-      totalStockDisplay,
-      unitStockDisplay,
-      packageStockDisplay,
+      // Status de estoque
+      stockStatus: product.stockStatus,
+      stockStatusLabel: product.stockStatusLabel,
+      stockStatusColor: product.stockStatusColor,
     };
   }, [product]);
 
   // Validar quantidade baseada no tipo selecionado
   const maxQuantity = useMemo(() => {
-    if (!stockInfo) return 0;
-    
+    if (!availability) return 0;
+
     if (selectionType === 'unit') {
-      // Para unidades, usar disponibilidade total (incluindo conversões possíveis)
-      return availability?.total_units_available || stockInfo.unitStock;
+      return availability.maxUnits;
     } else {
-      return stockInfo.packageStock;
+      return availability.maxPackages;
     }
-  }, [selectionType, stockInfo, availability]);
+  }, [selectionType, availability]);
 
   // Calcular preço total
   const totalPrice = useMemo(() => {
     if (!stockInfo) return 0;
-    
-    const unitPrice = selectionType === 'unit' 
-      ? stockInfo.unitPrice 
+
+    const unitPrice = selectionType === 'unit'
+      ? stockInfo.unitPrice
       : stockInfo.packagePrice;
     return unitPrice * quantity;
   }, [selectionType, quantity, stockInfo]);
@@ -157,31 +126,17 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
   const handleConfirm = () => {
     if (!stockInfo || !product) return;
 
-    const currentVariant = selectionType === 'unit' 
-      ? stockInfo.unitVariant 
-      : stockInfo.packageVariant;
-    
-    if (!currentVariant) return;
+    // Usar função helper para criar seleção padronizada
+    const baseSelection = createProductSelection(product, quantity, selectionType);
 
     const selection: ProductSelectionData = {
-      variant_id: currentVariant.id,
-      variant_type: selectionType,
-      quantity,
-      unit_price: currentVariant.price,
-      total_price: totalPrice,
-      units_sold: selectionType === 'unit' 
-        ? quantity 
-        : quantity * stockInfo.unitsPerPackage,
-      conversion_required: availability?.needs_conversion || false,
-      packages_converted: availability?.packages_converted || 0,
-      
-      // Compatibilidade com interface anterior
-      type: selectionType,
-      price: currentVariant.price,
-      totalPrice,
+      ...baseSelection,
+      // Campos para compatibilidade com sistema anterior
+      price: baseSelection.unit_price,
+      totalPrice: baseSelection.total_price,
       packageUnits: selectionType === 'package' ? stockInfo.unitsPerPackage : undefined
     };
-    
+
     onConfirm(selection);
     onClose();
   };

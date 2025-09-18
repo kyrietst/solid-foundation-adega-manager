@@ -15,7 +15,7 @@ import { useProductsGridLogic } from '@/shared/hooks/products/useProductsGridLog
 import { NewProductModal } from './NewProductModal';
 import { ProductDetailsModal } from './ProductDetailsModal';
 import { EditProductModal } from './EditProductModal';
-import StockAdjustmentModal from './StockAdjustmentModal';
+import { StockAdjustmentModal } from './StockAdjustmentModal';
 import { StockHistoryModal } from './StockHistoryModal';
 import type { ProductFormData } from '@/core/types/inventory.types';
 

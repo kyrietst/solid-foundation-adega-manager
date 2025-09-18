@@ -38,7 +38,10 @@
       "Bash(cd:*)",
       "Read(//mnt/d/1./**)",
       "Bash(awk:*)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "mcp__supabase__search_docs",
+      "mcp__supabase__list_migrations",
+      "Bash(node:*)"
     ],
     "deny": []
   }
