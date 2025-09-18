@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase, clearChromeAuthData } from '@/core/api/supabase/client';
 import { useToast } from '@/shared/hooks/common/use-toast';
@@ -20,13 +20,18 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  console.log('🔐 AuthProvider - Inicializando provider');
+  console.log('🔐 AuthProvider - Inicializando provider (render)');
   const [user, setUser] = useState<User | null>(null);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [loading, setLoading] = useState(true);
   const [hasTemporaryPassword, setHasTemporaryPassword] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Refs para evitar loops infinitos
+  const isInitialized = useRef(false);
+  const currentUserIdRef = useRef<string | null>(null);
+  const fetchingProfileRef = useRef(false);
 
   // Configurar error handler de autenticação
   const authErrorHandler = useAuthErrorHandler({
@@ -98,11 +103,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, [toast, authErrorHandler]);
 
   const fetchUserProfile = useCallback(async (currentUser: User) => {
-    // Evitar chamadas desnecessárias se o usuário é o mesmo
-    if (user && user.id === currentUser.id && userRole) {
-      console.log('🔄 AuthProvider - Perfil já carregado, pulando busca');
+    // Evitar loops infinitos e chamadas desnecessárias
+    if (fetchingProfileRef.current) {
+      console.log('🔄 AuthProvider - Já buscando perfil, pulando chamada duplicada');
       return;
     }
+
+    // Evitar busca se já temos os dados para o mesmo usuário
+    if (currentUserIdRef.current === currentUser.id && userRole) {
+      console.log('🔄 AuthProvider - Perfil já carregado para este usuário, pulando busca');
+      return;
+    }
+
+    fetchingProfileRef.current = true;
+    currentUserIdRef.current = currentUser.id;
 
     const fetchProfileOperation = async () => {
       // Se é o admin principal, define o role diretamente
@@ -152,37 +166,50 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.error('💥 AuthProvider - Erro ao buscar perfil:', error);
       // Em vez de fazer logout, apenas definir loading como false
       setLoading(false);
+    } finally {
+      fetchingProfileRef.current = false;
     }
-  }, [user, userRole]); // Dependências mais específicas
+  }, []); // Remover dependências que causam loops
 
   const onTemporaryPasswordChanged = useCallback(async () => {
-    if (!user) return;
-    
-    // Refresh user profile to update temporary password status
-    await fetchUserProfile(user);
-  }, [user, fetchUserProfile]);
+    const currentUser = currentUserIdRef.current;
+    if (!currentUser) return;
+
+    // Reset flag para permitir nova busca do perfil
+    fetchingProfileRef.current = false;
+
+    // Buscar usuário atual do Supabase para garantir dados atualizados
+    const { data: { user: latestUser } } = await supabase.auth.getUser();
+    if (latestUser) {
+      await fetchUserProfile(latestUser);
+    }
+  }, []); // Remover dependências
 
   useEffect(() => {
-    console.log('🔍 AuthProvider - useEffect iniciado, buscando sessão...');
-    
+    // Evitar re-execução se já inicializou
+    if (isInitialized.current) {
+      console.log('🔄 AuthProvider - Já inicializado, pulando useEffect');
+      return;
+    }
+
+    console.log('🔍 AuthProvider - useEffect iniciado (primeira vez), buscando sessão...');
+    isInitialized.current = true;
+
     // Timeout de segurança para evitar loading infinito
     const timeoutId = setTimeout(() => {
       console.warn('⏰ AuthProvider - Timeout de 10s atingido, forçando loading=false');
-      console.log('🔧 AuthProvider - Tentando limpeza de estado e redirecionamento...');
-      setUser(null);
-      setUserRole(null);
       setLoading(false);
-      // If we timeout and there's no user, redirect to auth page
-      if (!user) {
+      // Resetar estado em caso de timeout
+      if (!currentUserIdRef.current) {
         console.log('🚪 AuthProvider - Redirecionando para /auth devido ao timeout');
         window.location.href = '/auth';
       }
     }, 10000);
-    
+
     // Check active sessions and sets the user
     supabase.auth.getSession().then(({ data: { session }, error }) => {
-      console.log('📡 AuthProvider - Resposta getSession:', { 
-        hasSession: !!session, 
+      console.log('📡 AuthProvider - Resposta getSession:', {
+        hasSession: !!session,
         email: session?.user?.email || 'sem usuário',
         userId: session?.user?.id || 'sem ID',
         error: error
@@ -216,13 +243,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         console.log('❌ AuthProvider - onAuthStateChange: sem sessão, limpando dados');
         setUserRole(null);
         setHasTemporaryPassword(false);
+        currentUserIdRef.current = null;
       }
       setLoading(false);
       console.log('✅ AuthProvider - onAuthStateChange: loading=false definido');
     });
 
-    return () => subscription.unsubscribe();
-  }, [fetchUserProfile, user]); // Add fetchUserProfile and user dependencies
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timeoutId);
+    };
+  }, []); // IMPORTANTE: Array vazio para executar apenas uma vez
 
   const hasPermission = useCallback((requiredRole: UserRole | UserRole[]) => {
 
