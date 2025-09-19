@@ -19,7 +19,6 @@ export default {
 		},
 		extend: {
 			fontFamily: {
-				'sf-pro': ['SF Pro Display', 'ui-sans-serif', 'system-ui', '-apple-system', 'sans-serif'],
 				'sf-pro-display': ['SF Pro Display', 'ui-sans-serif', 'system-ui', '-apple-system', 'sans-serif'],
 			},
 			colors: {
@@ -119,6 +118,15 @@ export default {
 				'chart-8': '#84cc16', // lime
 
 				// ============================================================================
+				// GRADIENT SYSTEM - Standardized Gradient Colors
+				// ============================================================================
+				'gradient-fire': {
+					'from': '#FF2400',    // Fire red start
+					'via': '#FFDA04',     // Golden yellow center
+					'to': '#FF2400',      // Fire red end
+				},
+
+				// ============================================================================
 				// GOLDEN ACCENT SYSTEM - Standardized Golden Color Variants
 				// ============================================================================
 				'accent-gold': {
@@ -199,6 +207,11 @@ export default {
 				'dialog-md': '60vh',    // Medium dialogs
 				'dialog-lg': '80vh',    // Large dialogs
 				'dialog-xl': '90vh',    // Maximum dialog height
+
+				// Decorative element heights
+				'deco-thin': '1px',     // Ultra thin decorative lines
+				'deco-line': '2px',     // Standard decorative lines
+				'deco-border': '3px',   // Decorative borders
 			},
 
 			// Minimum Height System
