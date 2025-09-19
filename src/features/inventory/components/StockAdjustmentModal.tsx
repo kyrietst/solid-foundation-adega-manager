@@ -263,10 +263,11 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
 
       return result;
     },
-    onSuccess: async (result) => {
+    onSuccess: async (result, variables) => {
       console.log('✅ STOCK ADJUSTMENT SUCCESS - Invalidating all caches:', {
         productId,
         result,
+        variables,
         timestamp: new Date().toISOString()
       });
 
@@ -321,7 +322,7 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
 
       toast({
         title: "Estoque ajustado com sucesso!",
-        description: `Estoque atualizado para: ${result.new_packages || 0} pacotes e ${result.new_units_loose || 0} unidades soltas`,
+        description: `Estoque atualizado para: ${variables.newPackages} pacotes e ${variables.newUnitsLoose} unidades soltas`,
       });
 
       onSuccess?.();
