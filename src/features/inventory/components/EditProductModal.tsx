@@ -56,24 +56,24 @@ import {
 } from 'lucide-react';
 import type { Product } from '@/types/inventory.types';
 
-// Schema de validação com Zod - igual ao NewProductModal
+// Schema de validação com Zod - atualizado para compatibilidade com dupla contagem
 const editProductSchema = z.object({
   name: z
     .string()
     .min(2, 'Nome deve ter pelo menos 2 caracteres')
     .max(200, 'Nome deve ter no máximo 200 caracteres'),
-  
+
   category: z
     .string()
     .min(1, 'Categoria é obrigatória'),
-  
+
   // Código de barras principal do produto
   barcode: z
     .string()
     .optional()
     .or(z.literal('')),
-  
-  
+
+
   // Sistema de códigos hierárquicos
   has_unit_tracking: z.boolean().default(true),
   has_package_tracking: z.boolean().default(false),
@@ -90,26 +90,26 @@ const editProductSchema = z.object({
     .number({ invalid_type_error: 'Preço do pacote deve ser um número' })
     .min(0.01, 'Preço do pacote deve ser maior que 0')
     .optional(),
-  
+
   supplier: z
     .string()
     .optional()
     .or(z.literal('')),
-  
+
   custom_supplier: z
     .string()
     .optional()
     .or(z.literal('')),
-  
+
   cost_price: z
     .number({ invalid_type_error: 'Preço de custo deve ser um número' })
     .min(0, 'Preço de custo deve ser maior que 0')
     .optional(),
-  
+
   price: z
     .number({ invalid_type_error: 'Preço de venda deve ser um número' })
     .min(0.01, 'Preço de venda deve ser maior que 0'),
-  
+
   volume_ml: z
     .number({ invalid_type_error: 'Volume deve ser um número' })
     .min(1, 'Volume deve ser maior que 0')
@@ -126,6 +126,16 @@ const editProductSchema = z.object({
     .string()
     .optional()
     .or(z.literal('')),
+
+  // Campos de estoque da dupla contagem (read-only no form, mas incluídos para compatibilidade)
+  stock_packages: z
+    .number()
+    .min(0, 'Estoque de pacotes não pode ser negativo')
+    .optional(),
+  stock_units_loose: z
+    .number()
+    .min(0, 'Estoque de unidades soltas não pode ser negativo')
+    .optional(),
 });
 
 type EditProductFormData = z.infer<typeof editProductSchema>;
@@ -147,14 +157,20 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
   onSubmit,
   isLoading = false,
 }) => {
+  // Log de diagnóstico para verificar renderização
+  React.useEffect(() => {
+    if (isOpen) {
+      console.log('✅ RENDERIZANDO: Novo EditProductModal (Read-Only Estoque)');
+    }
+  }, [isOpen]);
+
   const { toast } = useToast();
   const [categories, setCategories] = useState<string[]>([]);
   const [suppliers, setSuppliers] = useState<string[]>([]);
   const [showCustomSupplier, setShowCustomSupplier] = useState(false);
   const [activeScanner, setActiveScanner] = useState<'main' | 'package' | null>(null);
   
-  // SSoT: Calcular dados de estoque diretamente do produto
-  const stockDisplay = product ? calculatePackageDisplay(product.stock_quantity, product.package_units) : null;
+  // Dupla contagem: usar diretamente os valores de stock_packages e stock_units_loose
 
   const form = useForm<EditProductFormData>({
     resolver: zodResolver(editProductSchema),
@@ -175,6 +191,8 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
       minimum_stock: undefined,
       has_expiry_tracking: false,
       expiry_date: '',
+      stock_packages: undefined,
+      stock_units_loose: undefined,
     },
   });
 
@@ -199,6 +217,8 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
         minimum_stock: product.minimum_stock || undefined,
         has_expiry_tracking: product.has_expiry_tracking || false,
         expiry_date: product.expiry_date || '',
+        stock_packages: product.stock_packages || 0,
+        stock_units_loose: product.stock_units_loose || 0,
       });
 
       fetchCategoriesAndSuppliers();
@@ -956,109 +976,180 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
         </div>
       </ModalSection>
 
-      {/* Informações de Estoque (Read-Only) */}
+      {/* Estoque Atual (Read-Only) */}
       <ModalSection
-        title="Estoque e Validade"
-        subtitle="Visualização do estoque atual e configuração de validade"
+        title="Estoque Atual"
+        subtitle="Visualização do estoque baseado na dupla contagem (somente leitura)"
       >
-                <div className={cn(
-                  "p-6 rounded-lg border",
-                  getGlassCardClasses('premium')
-                )}>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* Coluna Esquerda - Estoque */}
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-2 mb-4">
-                        <Package className="h-4 w-4 text-yellow-400" />
-                        <span className="text-sm font-medium text-gray-100">Estoque Atual (SSoT)</span>
-                      </div>
+        <div className={cn(
+          "p-6 rounded-lg border",
+          getGlassCardClasses('premium')
+        )}>
+          <div className="flex items-center gap-3 mb-6">
+            <Package className="h-5 w-5 text-blue-400" />
+            <span className="text-lg font-medium text-gray-100">Estoque Atual (Dupla Contagem)</span>
+          </div>
 
-                      <div className="flex items-center justify-between p-3 bg-yellow-400/10 rounded-lg border border-yellow-400/20">
-                        <span className="text-sm text-gray-300">Total em unidades:</span>
-                        <span className="text-xl font-bold text-yellow-400">{product.stock_quantity || 0}</span>
-                      </div>
-
-                      {product.has_package_tracking && stockDisplay && stockDisplay.packages > 0 && (
-                        <div className="grid grid-cols-2 gap-3 text-sm">
-                          <div className="text-center p-2 bg-blue-500/10 rounded border border-blue-400/20">
-                            <div className="text-blue-400 font-semibold">{stockDisplay.packages}</div>
-                            <div className="text-xs text-gray-400">pacotes</div>
-                          </div>
-                          <div className="text-center p-2 bg-green-500/10 rounded border border-green-400/20">
-                            <div className="text-green-400 font-semibold">{stockDisplay.units}</div>
-                            <div className="text-xs text-gray-400">unidades</div>
-                          </div>
-                        </div>
-                      )}
-
-                      <div className="text-xs text-gray-400 bg-blue-900/10 border border-blue-400/20 rounded p-2">
-                        💡 Para ajustar estoque, use "Ajustar Estoque" na página de inventário.
-                      </div>
-                    </div>
-
-                    {/* Coluna Direita - Validade */}
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-2 mb-4">
-                        <Calendar className="h-4 w-4 text-orange-400" />
-                        <span className="text-sm font-medium text-gray-100">Controle de Validade</span>
-                      </div>
-
-                      {/* Toggle para ativação do controle de validade */}
-                      <div className="flex items-center justify-between rounded-lg border border-orange-400/30 p-3 bg-orange-400/5">
-                        <div className="space-y-1">
-                          <FormLabel className="text-sm text-gray-300 font-medium">
-                            Produto com Validade
-                          </FormLabel>
-                          <FormDescription className="text-xs text-gray-500">
-                            Ative para produtos perecíveis
-                          </FormDescription>
-                        </div>
-                        <FormField
-                          control={form.control}
-                          name="has_expiry_tracking"
-                          render={({ field }) => (
-                            <FormControl>
-                              <SwitchAnimated
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                                variant="orange"
-                                size="md"
-                              />
-                            </FormControl>
-                          )}
-                        />
-                      </div>
-
-                      {/* Campo de data de validade (condicional) */}
-                      {form.watch('has_expiry_tracking') ? (
-                        <FormField
-                          control={form.control}
-                          name="expiry_date"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-gray-300 text-sm">Data de Validade</FormLabel>
-                              <FormControl>
-                                <Input
-                                  type="date"
-                                  {...field}
-                                  className="bg-gray-800/50 border-gray-600 text-white h-11"
-                                />
-                              </FormControl>
-                              <FormDescription className="text-xs text-gray-500">
-                                Data de vencimento deste produto
-                              </FormDescription>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      ) : (
-                        <div className="text-xs text-gray-400 bg-gray-900/30 border border-gray-500/30 rounded p-2">
-                          📦 Produto durável - sem controle de validade
-                        </div>
-                      )}
-                    </div>
-                  </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Pacotes Fechados */}
+            <div className="space-y-3">
+              <div className="text-center p-4 bg-blue-500/10 rounded-lg border border-blue-400/20">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <Package className="h-5 w-5 text-blue-400" />
+                  <span className="text-sm font-medium text-gray-300">Pacotes Fechados</span>
                 </div>
+                <div className="text-2xl font-bold text-blue-400">
+                  {product.stock_packages || 0}
+                </div>
+                <div className="text-xs text-gray-400">pacotes em estoque</div>
+              </div>
+            </div>
+
+            {/* Unidades Soltas */}
+            <div className="space-y-3">
+              <div className="text-center p-4 bg-green-500/10 rounded-lg border border-green-400/20">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <ShoppingCart className="h-5 w-5 text-green-400" />
+                  <span className="text-sm font-medium text-gray-300">Unidades Soltas</span>
+                </div>
+                <div className="text-2xl font-bold text-green-400">
+                  {product.stock_units_loose || 0}
+                </div>
+                <div className="text-xs text-gray-400">unidades avulsas</div>
+              </div>
+            </div>
+
+            {/* Ações de Estoque */}
+            <div className="space-y-3">
+              <div className="text-center p-4 bg-orange-500/10 rounded-lg border border-orange-400/20">
+                <div className="flex items-center justify-center gap-2 mb-3">
+                  <Edit className="h-5 w-5 text-orange-400" />
+                  <span className="text-sm font-medium text-gray-300">Ajustes</span>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="w-full border-orange-400/50 text-orange-400 hover:bg-orange-400/10 transition-all duration-200"
+                  disabled={isLoading}
+                  onClick={() => {
+                    // TODO: Implementar abertura do StockAdjustmentModal
+                    toast({
+                      title: "🔄 Funcionalidade em desenvolvimento",
+                      description: "Em breve você poderá ajustar o estoque diretamente daqui.",
+                      variant: "default",
+                    });
+                  }}
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Ajustar Estoque
+                </Button>
+                <div className="text-xs text-gray-500 mt-2">
+                  Para modificações no estoque
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Informações Adicionais */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-6 pt-6 border-t border-gray-700/30">
+            <div className="text-xs text-gray-400 bg-blue-900/10 border border-blue-400/20 rounded p-3">
+              <div className="flex items-start gap-2">
+                <Info className="h-4 w-4 text-blue-400 mt-0.5" />
+                <div>
+                  <p className="font-medium text-blue-300 mb-1">Sistema de Dupla Contagem</p>
+                  <p>O estoque é rastreado separadamente para pacotes fechados e unidades soltas, garantindo maior precisão no controle.</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="text-xs text-gray-400 bg-yellow-900/10 border border-yellow-400/20 rounded p-3">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="h-4 w-4 text-yellow-400 mt-0.5" />
+                <div>
+                  <p className="font-medium text-yellow-300 mb-1">Estoque Mínimo</p>
+                  <p>Alertas são gerados quando o estoque fica abaixo de <strong>{product.minimum_stock || 5} unidades</strong> no total.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </ModalSection>
+
+      {/* Controle de Validade */}
+      <ModalSection
+        title="Controle de Validade"
+        subtitle="Configuração de prazo de validade para produtos perecíveis"
+      >
+        <div className={cn(
+          "p-6 rounded-lg border",
+          getGlassCardClasses('premium')
+        )}>
+          <div className="flex items-center gap-3 mb-6">
+            <Calendar className="h-5 w-5 text-orange-400" />
+            <span className="text-lg font-medium text-gray-100">Gestão de Validade</span>
+          </div>
+
+          <div className="space-y-6">
+            {/* Toggle para ativação do controle de validade */}
+            <div className="flex items-center justify-between rounded-lg border border-orange-400/30 p-4 bg-orange-400/5">
+              <div className="space-y-1">
+                <FormLabel className="text-base text-gray-300 font-medium">
+                  Produto com Validade
+                </FormLabel>
+                <FormDescription className="text-sm text-gray-500">
+                  Ative para produtos perecíveis que possuem data de vencimento
+                </FormDescription>
+              </div>
+              <FormField
+                control={form.control}
+                name="has_expiry_tracking"
+                render={({ field }) => (
+                  <FormControl>
+                    <SwitchAnimated
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                      variant="orange"
+                      size="md"
+                    />
+                  </FormControl>
+                )}
+              />
+            </div>
+
+            {/* Campo de data de validade (condicional) */}
+            {form.watch('has_expiry_tracking') ? (
+              <FormField
+                control={form.control}
+                name="expiry_date"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-gray-300">Data de Validade</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="date"
+                        {...field}
+                        className="bg-gray-800/50 border-gray-600 text-white h-11"
+                      />
+                    </FormControl>
+                    <FormDescription className="text-sm text-gray-500">
+                      Data de vencimento deste produto. Sistema alertará próximo ao vencimento.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            ) : (
+              <div className="text-sm text-gray-400 bg-gray-900/20 border border-gray-500/30 rounded-lg p-4">
+                <div className="flex items-center gap-2">
+                  <Package className="h-4 w-4 text-gray-500" />
+                  <span className="font-medium">Produto durável</span>
+                </div>
+                <p className="text-xs mt-1">Este produto não possui controle de validade ativo.</p>
+              </div>
+            )}
+          </div>
+        </div>
       </ModalSection>
         </form>
       </Form>

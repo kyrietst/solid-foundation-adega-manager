@@ -7,6 +7,7 @@
 import React from 'react';
 import { Button } from '@/shared/ui/primitives/button';
 import { Badge } from '@/shared/ui/primitives/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/shared/ui/primitives/tooltip';
 import { Plus, Package, Wine, AlertTriangle } from 'lucide-react';
 import type { Product } from '@/types/inventory.types';
 import { formatCurrency, cn } from '@/core/config/utils';
@@ -32,22 +33,42 @@ export const ProductCard = React.memo<ProductCardProps>(({
 }) => {
   const glassClasses = glassEffect ? getGlassCardClasses(variant) : '';
 
-  // NOVO: Calcular estados usando exclusivamente dados da tabela 'products' (SSoT)
+  // ATUALIZADO: Usar sistema de Dupla Contagem para determinar disponibilidade
   const stockQuantity = product.stock_quantity || 0;
   const packageUnits = product.package_units || 0;
   const hasPackageTracking = product.has_package_tracking;
 
-  // Usar função centralizada para cálculos de estoque
+  // Novos campos da Dupla Contagem
+  const stockPackages = product.stock_packages || 0;
+  const stockUnitsLoose = product.stock_units_loose || 0;
+
+  // Usar função centralizada para cálculos de estoque (compatibilidade)
   const stockDisplay = calculatePackageDisplay(stockQuantity, packageUnits);
 
-  // Determinar capacidades de venda baseadas nos dados do produto
-  const canSellUnits = stockQuantity > 0;
-  const canSellPackages = hasPackageTracking && stockDisplay.packages > 0;
+  // REGRAS DE NEGÓCIO CRÍTICAS: Capacidades baseadas na Dupla Contagem
+  const canSellUnits = stockUnitsLoose > 0; // Só pode vender unidades se há unidades soltas
+  const canSellPackages = hasPackageTracking && stockPackages > 0; // Só pode vender pacotes se há pacotes fechados
 
-  const isOutOfStock = stockQuantity === 0;
+  const isOutOfStock = stockUnitsLoose === 0 && stockPackages === 0; // Sem estoque se ambos são zero
 
   // Determinar se tem múltiplas opções (unidades E pacotes disponíveis)
   const hasMultipleOptions = canSellUnits && canSellPackages;
+
+  // Mensagens de tooltip para botões desabilitados
+  const getTooltipMessage = () => {
+    if (isOutOfStock) {
+      return 'Produto sem estoque disponível';
+    }
+    if (!canSellUnits && canSellPackages) {
+      return 'Sem unidades soltas em estoque. Apenas pacotes disponíveis.';
+    }
+    if (canSellUnits && !canSellPackages) {
+      return 'Sem pacotes fechados em estoque. Apenas unidades soltas disponíveis.';
+    }
+    return hasMultipleOptions
+      ? 'Selecionar tipo de venda (unidade ou pacote)'
+      : 'Adicionar ao carrinho';
+  };
 
 
 
@@ -89,7 +110,7 @@ export const ProductCard = React.memo<ProductCardProps>(({
           containerClassName="w-full h-full"
         />
         
-        {/* Badges de estoque SSoT */}
+        {/* Badges de estoque com Dupla Contagem */}
         <div className="absolute top-2 right-2 flex flex-col gap-1">
           {isOutOfStock ? (
             <Badge variant="destructive" className="bg-red-500/30 text-red-200 border-red-400/50 backdrop-blur-md shadow-lg">
@@ -97,30 +118,43 @@ export const ProductCard = React.memo<ProductCardProps>(({
             </Badge>
           ) : (
             <>
-              {/* Badge de estoque principal */}
-              <Badge
-                variant="outline"
-                className={cn(
-                  'backdrop-blur-md shadow-lg transition-all duration-300 group-hover:scale-105 text-xs',
-                  stockQuantity <= 5
-                    ? 'bg-orange-500/20 text-orange-200 border-orange-400/30'
-                    : 'bg-emerald-500/20 text-emerald-200 border-emerald-400/30'
-                )}
-              >
-                {stockQuantity <= 5 ? `⚡ ${stockQuantity} total` : `✓ ${stockQuantity} total`}
-              </Badge>
+              {/* Badge de unidades soltas */}
+              {stockUnitsLoose > 0 && (
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    'backdrop-blur-md shadow-lg transition-all duration-300 group-hover:scale-105 text-xs',
+                    stockUnitsLoose <= 5
+                      ? 'bg-orange-500/20 text-orange-200 border-orange-400/30'
+                      : 'bg-emerald-500/20 text-emerald-200 border-emerald-400/30'
+                  )}
+                >
+                  <Wine className="h-2 w-2 mr-1" />
+                  {stockUnitsLoose <= 5 ? `⚡ ${stockUnitsLoose} un` : `✓ ${stockUnitsLoose} un`}
+                </Badge>
+              )}
 
-              {/* Badges de breakdown (quando há pacotes) */}
-              {hasPackageTracking && stockDisplay.packages > 0 && (
-                <div className="flex flex-col gap-1">
-                  <Badge
-                    variant="secondary"
-                    className="bg-blue-500/20 text-blue-300 border-blue-500/30 backdrop-blur-md text-xs"
-                  >
-                    <Package className="h-2 w-2 mr-1" />
-                    {stockDisplay.formatted}
-                  </Badge>
-                </div>
+              {/* Badge de pacotes fechados */}
+              {hasPackageTracking && stockPackages > 0 && (
+                <Badge
+                  variant="secondary"
+                  className="bg-blue-500/20 text-blue-300 border-blue-500/30 backdrop-blur-md text-xs"
+                >
+                  <Package className="h-2 w-2 mr-1" />
+                  {stockPackages} pcte{stockPackages !== 1 ? 's' : ''}
+                </Badge>
+              )}
+
+              {/* Badge de status quando só um tipo está disponível */}
+              {!canSellUnits && canSellPackages && (
+                <Badge variant="outline" className="bg-yellow-500/20 text-yellow-200 border-yellow-400/30 backdrop-blur-md text-xs">
+                  ⚠️ Só pacotes
+                </Badge>
+              )}
+              {canSellUnits && !canSellPackages && hasPackageTracking && (
+                <Badge variant="outline" className="bg-yellow-500/20 text-yellow-200 border-yellow-400/30 backdrop-blur-md text-xs">
+                  ⚠️ Só unidades
+                </Badge>
               )}
             </>
           )}
@@ -179,45 +213,62 @@ export const ProductCard = React.memo<ProductCardProps>(({
           </div>
         </div>
         
-        {/* Botão com cores padronizadas do sistema */}
-        <Button 
-          size="sm" 
-          onClick={handleAddClick}
-          disabled={isOutOfStock}
-          className={cn(
-            'w-full h-10 font-semibold transition-all duration-200',
-            getHoverTransformClasses('scale'),
-            isOutOfStock 
-              ? 'bg-gray-600/30 text-gray-400 border border-gray-500/40 cursor-not-allowed backdrop-blur-sm'
-              : hasMultipleOptions
-              ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-400 hover:to-emerald-400 border border-green-500/50 shadow-lg hover:shadow-green-400/30'
-              : 'bg-gradient-to-r from-primary-yellow to-yellow-500 text-black hover:from-yellow-300 hover:to-yellow-400 border border-primary-yellow/50 shadow-lg hover:shadow-yellow-400/30'
-          )}
-          aria-label={
-            isOutOfStock 
-              ? `Produto ${product.name} indisponível` 
-              : hasMultipleOptions 
-              ? `Selecionar tipo de venda para ${product.name}`
-              : `Adicionar ${product.name} ao carrinho`
-          }
-        >
-          {isOutOfStock ? (
-            <>
-              <Plus className="h-4 w-4 mr-2" aria-hidden="true" />
-              ❌ Indisponível
-            </>
-          ) : hasMultipleOptions ? (
-            <>
-              <Package className="h-4 w-4 mr-2" aria-hidden="true" />
-              📦 Selecionar
-            </>
-          ) : (
-            <>
-              <Plus className="h-4 w-4 mr-2" aria-hidden="true" />
-              🛒 Adicionar
-            </>
-          )}
-        </Button>
+        {/* Botão com tooltip e guardas de estoque da Dupla Contagem */}
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                size="sm"
+                onClick={handleAddClick}
+                disabled={isOutOfStock}
+                className={cn(
+                  'w-full h-10 font-semibold transition-all duration-200',
+                  getHoverTransformClasses('scale'),
+                  isOutOfStock
+                    ? 'bg-gray-600/30 text-gray-400 border border-gray-500/40 cursor-not-allowed backdrop-blur-sm'
+                    : hasMultipleOptions
+                    ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-400 hover:to-emerald-400 border border-green-500/50 shadow-lg hover:shadow-green-400/30'
+                    : 'bg-gradient-to-r from-primary-yellow to-yellow-500 text-black hover:from-yellow-300 hover:to-yellow-400 border border-primary-yellow/50 shadow-lg hover:shadow-yellow-400/30'
+                )}
+                aria-label={
+                  isOutOfStock
+                    ? `Produto ${product.name} indisponível`
+                    : hasMultipleOptions
+                    ? `Selecionar tipo de venda para ${product.name}`
+                    : `Adicionar ${product.name} ao carrinho`
+                }
+              >
+                {isOutOfStock ? (
+                  <>
+                    <AlertTriangle className="h-4 w-4 mr-2" aria-hidden="true" />
+                    ❌ Indisponível
+                  </>
+                ) : hasMultipleOptions ? (
+                  <>
+                    <Package className="h-4 w-4 mr-2" aria-hidden="true" />
+                    📦 Selecionar
+                  </>
+                ) : canSellPackages ? (
+                  <>
+                    <Package className="h-4 w-4 mr-2" aria-hidden="true" />
+                    📦 Pacote
+                  </>
+                ) : (
+                  <>
+                    <Wine className="h-4 w-4 mr-2" aria-hidden="true" />
+                    🍷 Unidade
+                  </>
+                )}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent
+              side="top"
+              className="bg-black/90 backdrop-blur-md border border-white/20 text-white shadow-lg"
+            >
+              {getTooltipMessage()}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
     </div>
   );

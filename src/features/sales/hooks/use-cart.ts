@@ -1,9 +1,11 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { 
-  CartItemWithVariant, 
-  VariantSelectionData, 
-  VariantType 
+import { supabase } from '@/core/api/supabase/client';
+import { toast } from 'sonner';
+import type {
+  CartItemWithVariant,
+  VariantSelectionData,
+  VariantType
 } from '@/core/types/variants.types';
 
 // Interface do item do carrinho atualizada para variantes
@@ -14,15 +16,15 @@ interface CartItem extends CartItemWithVariant {
 interface CartState {
   items: CartItem[];
   customerId: string | null;
-  
-  // Actions atualizadas para variantes
-  addItem: (item: Omit<CartItem, 'displayName'>) => void;
-  addFromVariantSelection: (selection: VariantSelectionData, product: { id: string; name: string }) => void;
+
+  // Actions atualizadas para variantes - ALGUMAS AGORA SÃO ASSÍNCRONAS
+  addItem: (item: Omit<CartItem, 'displayName'>) => Promise<void>;
+  addFromVariantSelection: (selection: VariantSelectionData, product: { id: string; name: string }) => Promise<void>;
   updateItemQuantity: (productId: string, variantId: string, quantity: number) => void;
   removeItem: (productId: string, variantId: string) => void;
   setCustomer: (customerId: string | null) => void;
   clearCart: () => void;
-  
+
   // Computed values (calculated once, cached)
   total: number;
   itemCount: number;
@@ -37,7 +39,7 @@ const calculateComputedValues = (items: CartItem[]) => {
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
   const uniqueItemCount = items.length;
   const isEmpty = items.length === 0;
-  
+
   return {
     total,
     subtotal: total, // Alias for total (before discounts)
@@ -45,6 +47,60 @@ const calculateComputedValues = (items: CartItem[]) => {
     uniqueItemCount,
     isEmpty,
   };
+};
+
+// NOVO: Função para verificar estoque usando Sistema de Dupla Contagem
+const checkStockAvailability = async (productId: string, quantity: number = 1, variantType: 'unit' | 'package' = 'unit'): Promise<{ canAdd: boolean; message?: string }> => {
+  try {
+    // Buscar dados atuais do produto
+    const { data: product, error } = await supabase
+      .from('products')
+      .select('stock_packages, stock_units_loose, has_package_tracking, name')
+      .eq('id', productId)
+      .single();
+
+    if (error || !product) {
+      return {
+        canAdd: false,
+        message: 'Produto não encontrado ou indisponível.'
+      };
+    }
+
+    const stockPackages = product.stock_packages || 0;
+    const stockUnitsLoose = product.stock_units_loose || 0;
+    const hasPackageTracking = product.has_package_tracking;
+
+    // Verificar disponibilidade baseada no tipo de variante
+    if (variantType === 'unit') {
+      if (stockUnitsLoose < quantity) {
+        return {
+          canAdd: false,
+          message: `Estoque insuficiente. Apenas ${stockUnitsLoose} unidade(s) disponível(eis).`
+        };
+      }
+    } else if (variantType === 'package') {
+      if (!hasPackageTracking) {
+        return {
+          canAdd: false,
+          message: 'Este produto não possui rastreamento de pacotes.'
+        };
+      }
+      if (stockPackages < quantity) {
+        return {
+          canAdd: false,
+          message: `Estoque insuficiente. Apenas ${stockPackages} pacote(s) disponível(eis).`
+        };
+      }
+    }
+
+    return { canAdd: true };
+  } catch (error) {
+    console.error('Erro ao verificar estoque:', error);
+    return {
+      canAdd: false,
+      message: 'Erro ao verificar disponibilidade do produto.'
+    };
+  }
 };
 
 export const useCart = create<CartState>()(
@@ -63,13 +119,25 @@ export const useCart = create<CartState>()(
         items: [],
         customerId: null,
         ...calculateComputedValues([]), // Initial computed values
-      
-        addItem: (item) => {
+
+        addItem: async (item) => {
+          // NOVA GUARDA: Verificar estoque antes de adicionar
+          const variantType = item.variant_type === 'package' ? 'package' : 'unit';
+          const stockCheck = await checkStockAvailability(item.id, item.quantity || 1, variantType);
+
+          if (!stockCheck.canAdd) {
+            toast.error('Estoque Insuficiente', {
+              description: stockCheck.message,
+              duration: 4000,
+            });
+            return;
+          }
+
           set((state) => {
-            const existingItem = state.items.find((i) => 
+            const existingItem = state.items.find((i) =>
               i.id === item.id && i.variant_id === item.variant_id
             );
-            
+
             let newItems: CartItem[];
             if (existingItem) {
               // Se o item já existe, apenas atualiza a quantidade
@@ -77,7 +145,7 @@ export const useCart = create<CartState>()(
                 existingItem.quantity + (item.quantity || 1),
                 existingItem.maxQuantity
               );
-              
+
               newItems = state.items.map((i) =>
                 i.id === item.id && i.variant_id === item.variant_id
                   ? { ...i, quantity: newQuantity }
@@ -86,39 +154,60 @@ export const useCart = create<CartState>()(
             } else {
               // Adiciona um novo item ao carrinho
               const displayName = `${item.name} ${
-                item.variant_type === 'package' 
-                  ? `(Pacote ${item.packageUnits || 1}x)` 
+                item.variant_type === 'package'
+                  ? `(Pacote ${item.packageUnits || 1}x)`
                   : '(Unidade)'
               }`;
-              
-              const newItem: CartItem = { 
+
+              const newItem: CartItem = {
                 ...item,
                 quantity: item.quantity || 1,
                 displayName
               };
-              
+
               newItems = [...state.items, newItem];
             }
-            
+
             return updateState(newItems);
+          });
+
+          // Mostrar confirmação de sucesso
+          toast.success('Produto Adicionado', {
+            description: `${item.name} foi adicionado ao carrinho.`,
+            duration: 2000,
           });
         },
 
-        addFromVariantSelection: (selection, product) => {
+        addFromVariantSelection: async (selection, product) => {
+          // NOVA GUARDA: Verificar estoque antes de adicionar seleção de variante
+          const stockCheck = await checkStockAvailability(
+            product.id,
+            selection.quantity,
+            selection.variant_type
+          );
+
+          if (!stockCheck.canAdd) {
+            toast.error('Estoque Insuficiente', {
+              description: stockCheck.message,
+              duration: 4000,
+            });
+            return;
+          }
+
           set((state) => {
-            const existingItem = state.items.find((i) => 
+            const existingItem = state.items.find((i) =>
               i.id === product.id && i.variant_id === selection.variant_id
             );
-            
+
             let newItems: CartItem[];
             if (existingItem) {
               // Atualiza quantidade do item existente
               const newQuantity = existingItem.quantity + selection.quantity;
-              
+
               newItems = state.items.map((i) =>
                 i.id === product.id && i.variant_id === selection.variant_id
-                  ? { 
-                      ...i, 
+                  ? {
+                      ...i,
                       quantity: newQuantity,
                       units_sold: i.units_sold + selection.units_sold,
                       conversion_required: selection.conversion_required || i.conversion_required,
@@ -129,11 +218,11 @@ export const useCart = create<CartState>()(
             } else {
               // Cria novo item baseado na seleção de variante
               const displayName = `${product.name} ${
-                selection.variant_type === 'package' 
-                  ? `(Pacote ${selection.units_sold / selection.quantity}x)` 
+                selection.variant_type === 'package'
+                  ? `(Pacote ${selection.units_sold / selection.quantity}x)`
                   : '(Unidade)'
               }`;
-              
+
               const newItem: CartItem = {
                 id: product.id,
                 variant_id: selection.variant_id,
@@ -143,18 +232,25 @@ export const useCart = create<CartState>()(
                 quantity: selection.quantity,
                 maxQuantity: 999, // Será validado no backend
                 units_sold: selection.units_sold,
-                packageUnits: selection.variant_type === 'package' 
-                  ? selection.units_sold / selection.quantity 
+                packageUnits: selection.variant_type === 'package'
+                  ? selection.units_sold / selection.quantity
                   : undefined,
                 displayName,
                 conversion_required: selection.conversion_required,
                 packages_converted: selection.packages_converted || 0
               };
-              
+
               newItems = [...state.items, newItem];
             }
-            
+
             return updateState(newItems);
+          });
+
+          // Mostrar confirmação de sucesso
+          const typeLabel = selection.variant_type === 'package' ? 'Pacote' : 'Unidade';
+          toast.success('Produto Adicionado', {
+            description: `${product.name} (${typeLabel}) foi adicionado ao carrinho.`,
+            duration: 2000,
           });
         },
       

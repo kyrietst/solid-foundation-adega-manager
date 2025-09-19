@@ -40,13 +40,13 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
   const { addItem, addFromVariantSelection } = useCart();
   const { searchByBarcode } = useBarcode();
 
-  // Query para buscar produtos
+  // Query para buscar produtos incluindo campos da Dupla Contagem
   const { data: products = [], isLoading } = useQuery({
     queryKey: ['products', 'available'],
     queryFn: async (): Promise<Product[]> => {
       const { data, error } = await supabase
         .from('products')
-        .select('id, name, price, stock_quantity, image_url, barcode, category, package_units, package_price, has_package_tracking, units_per_package')
+        .select('id, name, price, stock_quantity, image_url, barcode, category, package_units, package_price, has_package_tracking, units_per_package, stock_packages, stock_units_loose')
         .order('name', { ascending: true });
 
       if (error) {
@@ -105,26 +105,38 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
   // Handler para código de barras escaneado
   const handleBarcodeScanned = async (barcode: string) => {
     const product = await searchByBarcode(barcode);
-    if (product && product.stock_quantity > 0) {
-      addItem({
-        id: product.id,
-        name: product.name,
-        price: product.price,
-        maxQuantity: product.stock_quantity
-      });
-      onProductSelect?.(product);
+    if (product) {
+      // Verificar disponibilidade usando campos da Dupla Contagem
+      const stockUnitsLoose = product.stock_units_loose || 0;
+
+      if (stockUnitsLoose > 0) {
+        await addItem({
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          maxQuantity: stockUnitsLoose,
+          variant_type: 'unit' // Barcode sempre adiciona como unidade
+        });
+        onProductSelect?.(product);
+      }
     }
   };
 
   // Handler para adicionar produto ao carrinho
-  const handleAddToCart = (product: Product) => {
-    addItem({
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      maxQuantity: product.stock_quantity
-    });
-    onProductSelect?.(product);
+  const handleAddToCart = async (product: Product) => {
+    // Verificar disponibilidade usando campos da Dupla Contagem
+    const stockUnitsLoose = product.stock_units_loose || 0;
+
+    if (stockUnitsLoose > 0) {
+      await addItem({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        maxQuantity: stockUnitsLoose,
+        variant_type: 'unit' // Adição direta sempre como unidade
+      });
+      onProductSelect?.(product);
+    }
   };
 
   // Funções de controle do modal de seleção
@@ -138,11 +150,11 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
     setSelectedProduct(null);
   };
 
-  const handleProductSelectionConfirm = (selection: ProductSelectionData) => {
+  const handleProductSelectionConfirm = async (selection: ProductSelectionData) => {
     if (!selectedProduct) return;
 
     // Usar a função específica para seleção de variantes
-    addFromVariantSelection(selection, {
+    await addFromVariantSelection(selection, {
       id: selectedProduct.id,
       name: selectedProduct.name
     });

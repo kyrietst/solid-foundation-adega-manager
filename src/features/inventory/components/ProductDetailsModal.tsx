@@ -32,7 +32,7 @@ import { formatCurrency } from '@/core/config/utils';
 import { useFormatBrazilianDate } from '@/shared/hooks/common/use-brasil-timezone';
 import { useProductAnalytics } from '@/features/inventory/hooks/useProductAnalytics';
 import { useGlassmorphismEffect } from '@/shared/hooks/ui/useGlassmorphismEffect';
-import { calculatePackageDisplay } from '@/shared/utils/stockCalculations';
+import { StatCard } from '@/shared/ui/composite/stat-card';
 import type { Product } from '@/types/inventory.types';
 
 interface ProductDetailsModalProps {
@@ -83,14 +83,25 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
   onAdjustStock,
   onViewHistory,
 }) => {
+  // Log de diagnóstico para verificar renderização
+  React.useEffect(() => {
+    if (isOpen) {
+      console.log('✅ RENDERIZANDO: Novo ProductDetailsModal (StatCards)');
+    }
+  }, [isOpen]);
+
   const { formatCompact, formatRelative } = useFormatBrazilianDate();
   const { handleMouseMove } = useGlassmorphismEffect();
   
   // Buscar dados analíticos reais do produto
   const { analytics, isLoading: analyticsLoading } = useProductAnalytics(product?.id || null);
   
-  // SSoT: Dados de estoque diretamente do produto
-  const packageDisplay = product ? calculatePackageDisplay(product.stock_quantity, product.package_units) : null;
+  // SSoT: Dados de estoque - Sistema de Dupla Contagem (Controle Explícito)
+  const stockData = product ? {
+    packages: product.stock_packages || 0,
+    unitsLoose: product.stock_units_loose || 0,
+    totalUnits: product.stock_quantity || 0
+  } : null;
   
   // Calcular completude dos dados (sempre executar o hook, independente do product)
   const completeness = useMemo(() => {
@@ -423,34 +434,56 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
                   </Button>
                 </div>
 
-                <div className="space-y-3">
-                  {/* Display de estoque SSoT - Mais compacto */}
-                  <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/50">
-                    <div className="flex items-center justify-between mb-3">
-                      <h4 className="font-semibold text-white flex items-center gap-2 text-sm">
-                        <Package className="h-3 w-3 text-primary-yellow" />
-                        Estoque Atual
-                      </h4>
-                      <div className="text-xl font-bold text-primary-yellow">
-                        {product.stock_quantity} un.
-                      </div>
+                <div className="space-y-4">
+                  {/* Novo Sistema de Dupla Contagem - Interface Intuitiva */}
+                  <div className="space-y-3">
+                    <h4 className="font-semibold text-white flex items-center gap-2 text-sm border-b border-gray-700/50 pb-2">
+                      <Package className="h-4 w-4 text-primary-yellow" />
+                      Sistema de Contagem Dupla
+                    </h4>
+
+                    {/* Grid de StatCards para Contagens Separadas */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+                      {/* Pacotes Fechados */}
+                      <StatCard
+                        title="Pacotes Fechados"
+                        value={stockData?.packages || 0}
+                        description="unidades fechadas"
+                        icon={Package}
+                        variant="warning"
+                        formatType="none"
+                        className="h-[100px]"
+                      />
+
+                      {/* Unidades Soltas */}
+                      <StatCard
+                        title="Unidades Soltas"
+                        value={stockData?.unitsLoose || 0}
+                        description="unidades avulsas"
+                        icon={Layers}
+                        variant="success"
+                        formatType="none"
+                        className="h-[100px]"
+                      />
+
+                      {/* Total de Unidades */}
+                      <StatCard
+                        title="Total Disponível"
+                        value={stockData?.totalUnits || 0}
+                        description="total em unidades"
+                        icon={ShoppingCart}
+                        variant="premium"
+                        formatType="none"
+                        className="h-[100px]"
+                      />
                     </div>
 
-                    {/* Exibição de pacotes se configurado - Layout horizontal */}
-                    {product.has_package_tracking && product.package_units && product.package_units > 1 && packageDisplay && (
-                      <div className="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-gray-700/50">
-                        <div className="text-center p-2 bg-blue-500/10 border border-blue-400/30 rounded">
-                          <div className="text-sm font-semibold text-blue-400">
-                            {packageDisplay.packages}
-                          </div>
-                          <div className="text-xs text-gray-400">pacotes</div>
-                        </div>
-
-                        <div className="text-center p-2 bg-green-500/10 border border-green-400/30 rounded">
-                          <div className="text-sm font-semibold text-green-400">
-                            {packageDisplay.units}
-                          </div>
-                          <div className="text-xs text-gray-400">soltas</div>
+                    {/* Indicador de Configuração de Pacotes */}
+                    {product.has_package_tracking && (
+                      <div className="text-center">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-500/10 border border-blue-400/30 rounded-full text-xs text-blue-400">
+                          <Package className="h-3 w-3" />
+                          Sistema de pacotes ativo: {product.package_units || 1} un./pacote
                         </div>
                       </div>
                     )}
