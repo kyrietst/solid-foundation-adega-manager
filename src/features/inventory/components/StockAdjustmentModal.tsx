@@ -1,7 +1,7 @@
 /**
- * StockAdjustmentModal.tsx - Modal de ajuste de estoque com Dupla Contagem (Controle Explícito)
- * REFATORADO COMPLETAMENTE: Nova arquitetura de contagem separada para pacotes e unidades soltas
- * Remove dependência de tipos de ajuste (entrada/saída) e implementa contagem física direta
+ * StockAdjustmentModal.tsx - Modal de ajuste de estoque com Estado Absoluto
+ * REFATORADO PARA MODELO ABSOLUTO: Frontend como mensageiro - não calcula deltas
+ * Envia valores absolutos diretamente para o backend via set_product_stock_absolute
  */
 
 import React, { useState, useMemo } from 'react';
@@ -28,6 +28,7 @@ import { getGlassCardClasses } from '@/core/config/theme-utils';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
 import { useToast } from '@/shared/hooks/common/use-toast';
+import { useAuth } from '@/app/providers/AuthContext';
 import type { Product } from '@/core/types/inventory.types';
 
 // Schema de validação para o formulário
@@ -61,6 +62,7 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   // Buscar dados do produto com campos de dupla contagem
   const {
@@ -136,75 +138,126 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
     }
   }, [product, setValue]);
 
-  // Mutation para ajuste de estoque usando a nova RPC
+  // Mutation para ajuste de estoque usando estado absoluto
   const adjustStockMutation = useMutation({
     mutationFn: async (formData: StockAdjustmentFormData) => {
-      if (!product) throw new Error('Produto não encontrado');
+      // 🛡️ VALIDAÇÕES CRÍTICAS DE SEGURANÇA
+      if (!product) {
+        console.error('❌ ERRO CRÍTICO: Produto não encontrado');
+        throw new Error('Produto não encontrado');
+      }
+
+      if (!user) {
+        console.error('❌ ERRO CRÍTICO: Usuário não está autenticado');
+        throw new Error('Usuário não autenticado. Por favor, faça login novamente.');
+      }
+
+      if (!user.id) {
+        console.error('❌ ERRO CRÍTICO: ID do usuário não disponível', { user });
+        throw new Error('ID do usuário não disponível. Por favor, faça login novamente.');
+      }
+
+      if (!productId) {
+        console.error('❌ ERRO CRÍTICO: ID do produto não fornecido');
+        throw new Error('ID do produto é obrigatório');
+      }
 
       // Garantir valores numéricos válidos
-      const currentPackages = Number(product.stock_packages || 0);
-      const currentUnitsLoose = Number(product.stock_units_loose || 0);
       const newPackages = Number(formData.newPackages || 0);
       const newUnitsLoose = Number(formData.newUnitsLoose || 0);
+      const reason = (formData.reason || '').trim();
 
-      // Calcular diferenças (deltas)
-      const packagesChange = newPackages - currentPackages;
-      const unitsLooseChange = newUnitsLoose - currentUnitsLoose;
-
-      // 🔍 LOG DETALHADO PARA DIAGNÓSTICO
-      console.log('🔍 PAYLOAD DIAGNÓSTICO - StockAdjustmentModal:', {
-        product: {
+      // 🔍 LOG DETALHADO - MODELO ABSOLUTO COM VALIDAÇÃO
+      console.log('🔍 PAYLOAD ABSOLUTO - StockAdjustmentModal (VALIDADO):', {
+        user_info: {
+          id: user.id,
+          email: user.email,
+          authenticated: !!user
+        },
+        product_info: {
           id: productId,
-          name: product.name,
-          current_stock_packages: currentPackages,
-          current_stock_units_loose: currentUnitsLoose,
-          package_units: product.package_units,
-          units_per_package: product.units_per_package
+          name: product.name
         },
         form_data: {
           newPackages,
           newUnitsLoose,
-          reason: formData.reason
-        },
-        calculated_deltas: {
-          packagesChange,
-          unitsLooseChange
+          reason: reason
         },
         rpc_parameters: {
           p_product_id: productId,
-          p_packages_change: packagesChange,
-          p_units_loose_change: unitsLooseChange,
-          p_reason: formData.reason
+          p_new_packages: newPackages,
+          p_new_units_loose: newUnitsLoose,
+          p_reason: reason,
+          p_user_id: user.id
+        },
+        validation_checks: {
+          has_product: !!product,
+          has_user: !!user,
+          has_user_id: !!user?.id,
+          has_product_id: !!productId,
+          packages_valid: !isNaN(newPackages) && newPackages >= 0,
+          units_valid: !isNaN(newUnitsLoose) && newUnitsLoose >= 0,
+          reason_valid: reason.length >= 3
         }
       });
 
       // Validações antes de enviar
-      if (isNaN(packagesChange) || isNaN(unitsLooseChange)) {
-        throw new Error('Valores de mudança inválidos (NaN detectado)');
+      if (isNaN(newPackages) || isNaN(newUnitsLoose)) {
+        console.error('❌ VALIDAÇÃO: Valores inválidos (NaN detectado)', {
+          newPackages, newUnitsLoose
+        });
+        throw new Error('Valores inválidos (NaN detectado)');
       }
 
-      if (!formData.reason || formData.reason.trim().length < 3) {
+      if (newPackages < 0 || newUnitsLoose < 0) {
+        console.error('❌ VALIDAÇÃO: Valores negativos não permitidos', {
+          newPackages, newUnitsLoose
+        });
+        throw new Error('Valores não podem ser negativos');
+      }
+
+      if (reason.length < 3) {
+        console.error('❌ VALIDAÇÃO: Motivo muito curto', {
+          reason, length: reason.length
+        });
         throw new Error('Motivo deve ter pelo menos 3 caracteres');
       }
 
-      // Chamar a nova RPC adjust_stock_explicit
+      // 🚀 CHAMAR RPC COM TODOS OS 5 PARÂMETROS OBRIGATÓRIOS
+      console.log('🚀 EXECUTANDO RPC set_product_stock_absolute com parâmetros validados...');
+
       const { data: result, error } = await supabase
-        .rpc('adjust_stock_explicit', {
+        .rpc('set_product_stock_absolute', {
           p_product_id: productId,
-          p_packages_change: packagesChange,
-          p_units_loose_change: unitsLooseChange,
-          p_reason: formData.reason.trim()
+          p_new_packages: newPackages,
+          p_new_units_loose: newUnitsLoose,
+          p_reason: reason,
+          p_user_id: user.id
         });
 
       if (error) {
-        console.error('❌ ERRO RPC adjust_stock_explicit:', error);
+        console.error('❌ ERRO RPC set_product_stock_absolute:', {
+          error,
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code,
+          parameters_sent: {
+            p_product_id: productId,
+            p_new_packages: newPackages,
+            p_new_units_loose: newUnitsLoose,
+            p_reason: reason,
+            p_user_id: user.id
+          }
+        });
         throw error;
       }
 
-      console.log('✅ RESPOSTA RPC adjust_stock_explicit:', result);
+      console.log('✅ RESPOSTA RPC set_product_stock_absolute:', result);
 
       // Verificar se a RPC retornou sucesso
       if (!result?.success) {
+        console.error('❌ RPC retornou falha:', result);
         throw new Error(result?.error || 'Erro desconhecido no ajuste de estoque');
       }
 
@@ -268,7 +321,7 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
 
       toast({
         title: "Estoque ajustado com sucesso!",
-        description: `Pacotes: ${result.old_packages} → ${result.new_packages} | Unidades soltas: ${result.old_units_loose} → ${result.new_units_loose}`,
+        description: `Estoque atualizado para: ${result.new_packages || 0} pacotes e ${result.new_units_loose || 0} unidades soltas`,
       });
 
       onSuccess?.();
@@ -284,7 +337,7 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
     }
   });
 
-  // Cálculos em tempo real
+  // Cálculos simplificados para preview (sem lógica de deltas)
   const calculations = useMemo(() => {
     if (!product) return null;
 
@@ -307,11 +360,11 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
       return null;
     }
 
-    // Calcular totais
+    // Calcular totais para exibição apenas
     const currentTotal = (currentPackages * packageUnits) + currentUnitsLoose;
     const newTotal = (newPackages * packageUnits) + newUnitsLoose;
 
-    // Calcular diferenças
+    // Calcular diferenças apenas para preview visual (não enviadas ao backend)
     const packagesChange = newPackages - currentPackages;
     const unitsLooseChange = newUnitsLoose - currentUnitsLoose;
     const totalChange = newTotal - currentTotal;
@@ -321,11 +374,11 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
       currentUnitsLoose,
       currentTotal,
       newTotal,
-      packagesChange,
-      unitsLooseChange,
-      totalChange,
+      packagesChange, // Apenas para preview visual
+      unitsLooseChange, // Apenas para preview visual
+      totalChange, // Apenas para preview visual
       packageUnits,
-      hasChanges: packagesChange !== 0 || unitsLooseChange !== 0
+      hasChanges: newPackages !== currentPackages || newUnitsLoose !== currentUnitsLoose
     };
   }, [product, watchedValues]);
 
@@ -334,7 +387,13 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
     onClose();
   };
 
+  // Função simplificada - apenas envia valores absolutos
   const onSubmit = (data: StockAdjustmentFormData) => {
+    console.log('🚀 ENVIANDO VALORES ABSOLUTOS:', {
+      newPackages: data.newPackages,
+      newUnitsLoose: data.newUnitsLoose,
+      reason: data.reason
+    });
     adjustStockMutation.mutate(data);
   };
 
@@ -391,7 +450,7 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
         label: adjustStockMutation.isPending ? "Ajustando..." : "Confirmar Ajuste",
         icon: adjustStockMutation.isPending ? Loader2 : CheckCircle,
         onClick: handleSubmit(onSubmit),
-        disabled: !isDirty || !calculations.hasChanges || adjustStockMutation.isPending,
+        disabled: !isDirty || !calculations.hasChanges || adjustStockMutation.isPending || !user?.id,
         loading: adjustStockMutation.isPending
       }}
       secondaryAction={{
