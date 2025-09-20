@@ -34,7 +34,7 @@ export const useCheckout = (
   const subtotal = useCartTotal();
   const upsertSale = useUpsertSale();
   const { toast } = useToast();
-  const { createSaleMovement } = useInventoryMovements();
+  // REMOVIDO: useInventoryMovements - não precisamos mais de lógica complexa
 
   // Estados locais
   const [paymentMethodId, setPaymentMethodId] = useState<string>('');
@@ -74,17 +74,15 @@ export const useCheckout = (
             total_amount: cartSummary.subtotal, // Enviar subtotal (antes do desconto)
             discount_amount: discount > 0 ? discount : undefined, // Enviar desconto separadamente
             items: items.map(item => {
-              // Para pacotes: quantity sempre = 1, e estoque será descontado pelo packageUnits
-              // Para unidades: quantity = quantidade selecionada
-              const correctQuantity = item.type === 'package' ? 1 : item.quantity;
-
+              // ULTRA SIMPLES: quantidade direta
+              // 2 pacotes = quantity: 2, type: 'package'
+              // 10 unidades = quantity: 10, type: 'unit'
 
               return {
                 product_id: item.id,
-                quantity: correctQuantity,
+                quantity: item.quantity, // Quantidade DIRETA sem conversão
                 unit_price: item.price,
-                sale_type: item.type, // Adicionar tipo de venda
-                package_units: item.packageUnits // Para controle de estoque
+                sale_type: item.variant_type // 'package' ou 'unit'
               };
             })
           },

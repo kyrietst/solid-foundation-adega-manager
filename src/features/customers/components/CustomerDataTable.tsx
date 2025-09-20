@@ -428,9 +428,18 @@ const EnhancedProfileCompleteness = ({
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <div 
+          <div
             className="flex items-center gap-2 min-w-[100px] cursor-pointer hover:opacity-80 transition-opacity"
             onClick={() => onEditClick?.(row.id)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onEditClick?.(row.id);
+              }
+            }}
+            role="button"
+            tabIndex={0}
+            aria-label={`Editar perfil de ${row.name}, completude: ${completeness.percentage}%`}
           >
             <div className="flex-1">
               <div className="w-full bg-gray-700/50 rounded-full h-2.5">

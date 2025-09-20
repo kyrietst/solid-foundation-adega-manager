@@ -420,3 +420,151 @@ Estávamos focados exclusivamente no **módulo de gestão de clientes**, expandi
 - ✅ **Documentação completa** em CLIENTES.md
 
 **🎯 Resultado Final:** Sistema CRM empresarial 85% completo no **módulo Clientes**, com **Analytics funcionais implementados na Fase 3**, aguardando apenas integrações externas (Google Maps API + N8N Platform Setup) para funcionalidade 100%. Todo o trabalho foi focado exclusivamente na **aba Clientes** e suas funcionalidades de CRM, agora incluindo gráficos avançados com dados reais.
+
+---
+
+## 📦 **ESTOQUE E ALERTAS - RESPONSABILIDADES TRANSFERIDAS PARA N8N**
+
+### **Status:** Nova Responsabilidade - **Ultra-Simplificação Implementada (20 de setembro de 2025)**
+
+#### **CONTEXTO DA MUDANÇA:**
+Durante a **transformação ultra-simplificação** do sistema Adega Manager em setembro de 2025, todas as responsabilidades de **alertas de estoque** foram **removidas do frontend** e **transferidas para N8N**. O sistema agora segue o princípio **"O Estoque é um Espelho da Prateleira"** - sendo "burro e obediente".
+
+#### **RESPONSABILIDADES N8N - ESTOQUE:**
+
+**A. ALERTAS DE ESTOQUE MÍNIMO**
+- **Função:** Monitorar produtos com estoque baixo baseado em thresholds dinâmicos
+- **Fonte de Dados:** `products` table - campos `stock_packages` e `stock_units_loose`
+- **Trigger:** Query periódica (recomendado: a cada 30 minutos)
+- **Lógica de Alerta:**
+  ```sql
+  -- Produtos que precisam de reposição
+  SELECT * FROM products
+  WHERE (stock_packages + stock_units_loose) <= minimum_stock_threshold
+  AND minimum_stock_threshold > 0;
+  ```
+
+**B. ALERTAS DE ESTOQUE ZERO**
+- **Função:** Notificação imediata para produtos sem estoque
+- **Fonte de Dados:** `products` table
+- **Trigger:** Real-time via webhook ou query frequente (a cada 5 minutos)
+- **Lógica de Alerta:**
+  ```sql
+  -- Produtos completamente sem estoque
+  SELECT * FROM products
+  WHERE stock_packages = 0 AND stock_units_loose = 0;
+  ```
+
+**C. ALERTAS DE REORDER POINT**
+- **Função:** Cálculo inteligente de pontos de reposição baseado em velocidade de vendas
+- **Fonte de Dados:** `products`, `sales`, `sale_items`
+- **Trigger:** Análise diária (recomendado: 08:00 todos os dias)
+- **Lógica de Alerta:**
+  ```sql
+  -- Produtos que precisam de pedido ao fornecedor
+  -- Baseado na velocidade de vendas dos últimos 30 dias
+  WITH sales_velocity AS (
+    SELECT
+      si.product_id,
+      COUNT(*) as sales_count,
+      SUM(si.quantity) as total_sold
+    FROM sale_items si
+    JOIN sales s ON si.sale_id = s.id
+    WHERE s.created_at >= NOW() - INTERVAL '30 days'
+    GROUP BY si.product_id
+  )
+  SELECT p.*, sv.total_sold
+  FROM products p
+  LEFT JOIN sales_velocity sv ON p.id = sv.product_id
+  WHERE (p.stock_packages + p.stock_units_loose) <= COALESCE(sv.total_sold / 30 * 7, 5);
+  -- Alerta quando estoque atual <= vendas projetadas para 7 dias
+  ```
+
+**D. ANÁLISE DE TENDÊNCIAS DE CONSUMO**
+- **Função:** Identificar produtos com padrões de consumo anômalos
+- **Fonte de Dados:** Histórico de vendas dos últimos 90 dias
+- **Trigger:** Análise semanal (recomendado: segundas-feiras 09:00)
+- **Outputs:**
+  - Produtos com aumento súbito de demanda
+  - Produtos com queda de vendas
+  - Sazonalidade identificada
+
+**E. NOTIFICAÇÕES PARA FORNECEDORES**
+- **Função:** Automação de pedidos de reposição
+- **Trigger:** Baseado nos alertas de reorder point
+- **Canais:** Email automático, WhatsApp Business, SMS
+- **Dados Necessários:** `suppliers` table com contatos
+
+#### **CONFIGURAÇÃO N8N NECESSÁRIA:**
+
+**1. Database Connection**
+```json
+{
+  "connection_type": "PostgreSQL",
+  "host": "Supabase Database URL",
+  "credentials": "Service Role Key",
+  "ssl": true
+}
+```
+
+**2. Workflow de Monitoramento de Estoque**
+```json
+{
+  "trigger": "Schedule Trigger (every 30 minutes)",
+  "nodes": [
+    "PostgreSQL Query (check stock levels)",
+    "Condition (filter products needing alerts)",
+    "Switch (route by alert type)",
+    "WhatsApp/Email/SMS (notify team)",
+    "Database Update (log alert sent)"
+  ]
+}
+```
+
+**3. Webhook para Alertas em Tempo Real**
+```json
+{
+  "trigger": "Webhook (from Supabase triggers)",
+  "endpoint": "https://n8n.instance.com/webhook/stock-alert",
+  "authentication": "API key",
+  "payload": {
+    "product_id": "uuid",
+    "product_name": "string",
+    "current_stock": "number",
+    "alert_type": "zero_stock|low_stock|reorder_point"
+  }
+}
+```
+
+#### **DADOS DISPONÍVEIS PARA N8N:**
+
+**Sistema Ultra-Simplificado (Implementado):**
+```typescript
+// Apenas 2 campos de estoque diretos
+interface ProductStock {
+  stock_packages: number;      // Pacotes fechados
+  stock_units_loose: number;   // Unidades soltas
+  // stock_quantity: DEPRECATED - não usar
+}
+```
+
+**Tabelas Relacionadas:**
+- `products` - Catálogo principal com estoque atual
+- `sales` + `sale_items` - Histórico de vendas para análise
+- `inventory_movements` - Log completo de movimentações
+- `suppliers` - Dados de fornecedores para notificações
+
+#### **MÉTRICAS PARA N8N TRACKING:**
+- Total de alertas enviados por dia
+- Tempo médio de resposta aos alertas
+- Produtos frequentemente em falta
+- Eficácia das previsões de reposição
+- Taxa de conversão de alertas para pedidos
+
+#### **INTEGRAÇÃO COM ADEGA MANAGER:**
+- **Frontend:** Apenas exibe estoque atual (sem alertas)
+- **Backend:** N8N consome dados via API/database direct
+- **Notificações:** N8N envia via WhatsApp/Email/SMS
+- **Dashboard:** N8N pode enviar relatórios de estoque via webhook
+
+**🎯 Resultado:** Sistema de estoque ultra-simplificado no frontend + inteligência de alertas robusta no N8N, seguindo o princípio "O Estoque é um Espelho da Prateleira".

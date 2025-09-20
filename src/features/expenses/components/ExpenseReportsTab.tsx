@@ -69,7 +69,7 @@ export const ExpenseReportsTab: React.FC = () => {
           month: now.getMonth() + 1,
           year: now.getFullYear()
         };
-      case 'last_month':
+      case 'last_month': {
         const lastMonth = subMonths(now, 1);
         return {
           start: format(new Date(lastMonth.getFullYear(), lastMonth.getMonth(), 1), 'yyyy-MM-dd'),
@@ -77,7 +77,8 @@ export const ExpenseReportsTab: React.FC = () => {
           month: lastMonth.getMonth() + 1,
           year: lastMonth.getFullYear()
         };
-      case 'last_3_months':
+      }
+      case 'last_3_months': {
         const threeMonthsAgo = subMonths(now, 3);
         return {
           start: format(threeMonthsAgo, 'yyyy-MM-dd'),
@@ -85,6 +86,7 @@ export const ExpenseReportsTab: React.FC = () => {
           month: now.getMonth() + 1,
           year: now.getFullYear()
         };
+      }
       default:
         return {
           start: format(new Date(now.getFullYear(), now.getMonth(), 1), 'yyyy-MM-dd'),

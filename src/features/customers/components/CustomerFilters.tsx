@@ -30,12 +30,11 @@ export const CustomerFilters: React.FC<CustomerFiltersProps> = ({
           <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
             <div className="flex items-center space-x-4">
               <div className="w-64">
-                <SearchBar21st
+                <SearchInput
                   value={searchTerm}
                   onChange={onSearchChange}
                   placeholder="Buscar clientes..."
                   debounceMs={150}
-                  disableResizeAnimation={true}
                 />
               </div>
               
@@ -63,11 +62,11 @@ export const CustomerFilters: React.FC<CustomerFiltersProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Filtro por Segmento */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-adega-platinum">
+                <label htmlFor="segment-filter" className="text-sm font-medium text-adega-platinum">
                   Segmento
                 </label>
                 <Select value={segmentFilter} onValueChange={onSegmentFilterChange}>
-                  <SelectTrigger className="bg-adega-charcoal/30 border-white/10">
+                  <SelectTrigger id="segment-filter" className="bg-adega-charcoal/30 border-white/10">
                     <SelectValue placeholder="Todos os segmentos" />
                   </SelectTrigger>
                   <SelectContent>
@@ -83,22 +82,22 @@ export const CustomerFilters: React.FC<CustomerFiltersProps> = ({
 
               {/* Futuras expansões de filtros */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-adaga-platinum/60">
+                <label htmlFor="status-filter" className="text-sm font-medium text-adega-platinum/60">
                   Status (Em breve)
                 </label>
                 <Select disabled>
-                  <SelectTrigger className="bg-adega-charcoal/20 border-white/5 opacity-50">
+                  <SelectTrigger id="status-filter" className="bg-adega-charcoal/20 border-white/5 opacity-50">
                     <SelectValue placeholder="Todos os status" />
                   </SelectTrigger>
                 </Select>
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium text-adega-platinum/60">
+                <label htmlFor="category-filter" className="text-sm font-medium text-adega-platinum/60">
                   Categoria Favorita (Em breve)
                 </label>
                 <Select disabled>
-                  <SelectTrigger className="bg-adega-charcoal/20 border-white/5 opacity-50">
+                  <SelectTrigger id="category-filter" className="bg-adega-charcoal/20 border-white/5 opacity-50">
                     <SelectValue placeholder="Todas as categorias" />
                   </SelectTrigger>
                 </Select>

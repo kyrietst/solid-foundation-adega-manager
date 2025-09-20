@@ -1,13 +1,14 @@
 /**
- * Card de controle de estoque do produto
- * Sub-componente especializado para dados de estoque
+ * Card de controle de estoque do produto - VERSÃO ULTRA SIMPLIFICADA
+ * Apenas 2 campos: Pacotes e Unidades Soltas (conforme solicitação do cliente)
+ * Sistema "burro e obediente" - o que o usuário informa é o que fica
  */
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/primitives/card';
 import { Input } from '@/shared/ui/primitives/input';
 import { Label } from '@/shared/ui/primitives/label';
-import { TrendingUp } from 'lucide-react';
+import { Package, Box } from 'lucide-react';
 import { ProductFormData } from '@/types/inventory.types';
 import { cn } from '@/core/config/utils';
 import { getGlassCardClasses } from '@/core/config/theme-utils';
@@ -33,63 +34,90 @@ export const ProductStockCard: React.FC<ProductStockCardProps> = ({
     <Card className={cn(glassClasses, 'shadow-xl')}>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-gray-100">
-          <TrendingUp className="h-5 w-5 text-primary-yellow" />
-          Controle de Estoque
+          <Package className="h-5 w-5 text-primary-yellow" />
+          Controle de Estoque Simplificado
         </CardTitle>
+        <p className="text-gray-400 text-sm">
+          Informe exatamente o que você tem na prateleira
+        </p>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Estoque Atual */}
+          {/* Pacotes */}
           <div>
-            <Label htmlFor="stock_quantity" className="text-gray-200">Estoque Atual *</Label>
+            <Label htmlFor="stock_packages" className="text-gray-200 flex items-center gap-2">
+              <Box className="h-4 w-4 text-blue-400" />
+              Pacotes em Estoque
+            </Label>
             <Input
-              id="stock_quantity"
+              id="stock_packages"
               type="number"
-              value={formData.stock_quantity ?? ''}
-              onChange={(e) => onInputChange('stock_quantity', Number(e.target.value))}
+              value={formData.stock_packages ?? ''}
+              onChange={(e) => onInputChange('stock_packages', Number(e.target.value))}
               min="0"
-              required
+              placeholder="Ex: 12"
               className={cn(
-                'bg-gray-800/50 border-primary-yellow/30 text-gray-200 focus:border-primary-yellow',
-                fieldErrors.stock_quantity && 'border-accent-red'
+                'bg-gray-800/50 border-blue-400/30 text-gray-200 focus:border-blue-400',
+                fieldErrors.stock_packages && 'border-accent-red'
               )}
             />
-            {fieldErrors.stock_quantity && (
-              <p className="text-accent-red text-sm mt-1">{fieldErrors.stock_quantity}</p>
+            <p className="text-gray-500 text-xs mt-1">Quantos pacotes fechados você tem?</p>
+            {fieldErrors.stock_packages && (
+              <p className="text-accent-red text-sm mt-1">{fieldErrors.stock_packages}</p>
+            )}
+          </div>
+
+          {/* Unidades Soltas */}
+          <div>
+            <Label htmlFor="stock_units_loose" className="text-gray-200 flex items-center gap-2">
+              <Package className="h-4 w-4 text-green-400" />
+              Unidades Soltas
+            </Label>
+            <Input
+              id="stock_units_loose"
+              type="number"
+              value={formData.stock_units_loose ?? ''}
+              onChange={(e) => onInputChange('stock_units_loose', Number(e.target.value))}
+              min="0"
+              placeholder="Ex: 300"
+              className={cn(
+                'bg-gray-800/50 border-green-400/30 text-gray-200 focus:border-green-400',
+                fieldErrors.stock_units_loose && 'border-accent-red'
+              )}
+            />
+            <p className="text-gray-500 text-xs mt-1">Quantas unidades avulsas você tem?</p>
+            {fieldErrors.stock_units_loose && (
+              <p className="text-accent-red text-sm mt-1">{fieldErrors.stock_units_loose}</p>
             )}
           </div>
 
           {/* Estoque Mínimo */}
           <div>
-            <Label htmlFor="minimum_stock" className="text-gray-200">Estoque Mínimo *</Label>
+            <Label htmlFor="minimum_stock" className="text-gray-200">Estoque Mínimo (Alerta)</Label>
             <Input
               id="minimum_stock"
               type="number"
               value={formData.minimum_stock ?? ''}
               onChange={(e) => onInputChange('minimum_stock', Number(e.target.value))}
               min="0"
-              required
+              placeholder="Ex: 5"
               className={cn(
-                'bg-gray-800/50 border-primary-yellow/30 text-gray-200 focus:border-primary-yellow',
+                'bg-gray-800/50 border-yellow-400/30 text-gray-200 focus:border-yellow-400',
                 fieldErrors.minimum_stock && 'border-accent-red'
               )}
             />
+            <p className="text-gray-500 text-xs mt-1">Para avisos de estoque baixo</p>
             {fieldErrors.minimum_stock && (
               <p className="text-accent-red text-sm mt-1">{fieldErrors.minimum_stock}</p>
             )}
           </div>
+        </div>
 
-          {/* Fornecedor */}
-          <div>
-            <Label htmlFor="supplier" className="text-gray-200">Fornecedor</Label>
-            <Input
-              id="supplier"
-              value={formData.supplier || ''}
-              onChange={(e) => onInputChange('supplier', e.target.value)}
-              placeholder="Nome do fornecedor"
-              className="bg-gray-800/50 border-primary-yellow/30 text-gray-200 focus:border-primary-yellow placeholder:text-gray-400"
-            />
-          </div>
+        <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-600">
+          <p className="text-gray-300 text-sm">
+            💡 <strong>Sistema Simplificado:</strong> Informe apenas o que você consegue contar fisicamente.
+            O sistema não fará conversões automáticas - o que você informar é exatamente o que ficará registrado.
+          </p>
         </div>
       </CardContent>
     </Card>

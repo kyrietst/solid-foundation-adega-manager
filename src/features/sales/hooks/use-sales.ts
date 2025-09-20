@@ -83,8 +83,6 @@ type UpsertSaleInput = {
     quantity: number; 
     unit_price: number;
     units_sold: number; // Novo: unidades efetivamente vendidas
-    conversion_required: boolean; // Novo: se requer conversão automática
-    packages_converted?: number; // Novo: quantos pacotes foram convertidos
     // Campos legados para compatibilidade (serão removidos futuramente)
     sale_type?: 'unit' | 'package';
     package_units?: number;
@@ -297,8 +295,7 @@ export const useUpsertSale = () => {
         quantity: item.quantity,
         unit_price: item.unit_price,
         units_sold: item.units_sold || item.quantity,
-        conversion_required: item.conversion_required || false,
-        packages_converted: item.packages_converted || 0
+        sale_type: item.sale_type // ✅ CORREÇÃO CRÍTICA: Incluir sale_type no processamento
       }));
 
       console.log('📦 Itens processados para process_sale:', JSON.stringify(processedItems, null, 2));

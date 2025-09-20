@@ -19,7 +19,7 @@ interface ProductsHeaderProps {
 }
 
 interface ProductsTitleProps {
-  // Componente separado apenas para o título
+  className?: string;
 }
 
 export const ProductsTitle: React.FC<ProductsTitleProps> = () => {

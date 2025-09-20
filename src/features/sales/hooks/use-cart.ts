@@ -243,9 +243,7 @@ export const useCart = create<CartState>()(
                   ? {
                       ...i,
                       quantity: newQuantity,
-                      units_sold: i.units_sold + selection.units_sold,
-                      conversion_required: selection.conversion_required || i.conversion_required,
-                      packages_converted: (i.packages_converted || 0) + (selection.packages_converted || 0)
+                      units_sold: i.units_sold + selection.units_sold
                     }
                   : i
               );
@@ -269,9 +267,7 @@ export const useCart = create<CartState>()(
                 packageUnits: selection.variant_type === 'package'
                   ? selection.units_sold / selection.quantity
                   : undefined,
-                displayName,
-                conversion_required: selection.conversion_required,
-                packages_converted: selection.packages_converted || 0
+                displayName
               };
 
               newItems = [...state.items, newItem];

@@ -546,7 +546,6 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
                         <BarcodeInput
                           onScan={(code) => handleBarcodeScanned(code, 'main')}
                           placeholder="Escaneie o código principal..."
-                          autoFocus={true}
                           className="w-full"
                         />
                       )}
@@ -672,7 +671,6 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
                           <BarcodeInput
                             onScan={(code) => handleBarcodeScanned(code, 'package')}
                             placeholder="Escaneie o código do pacote..."
-                            autoFocus={true}
                             className="w-full"
                           />
                         )}

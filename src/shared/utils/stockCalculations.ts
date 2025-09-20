@@ -1,7 +1,7 @@
 /**
- * Utilities para cálculos de estoque dinâmico
- * Implementa a exibição de pacotes/unidades conforme SPRINT 3
- * Baseado na documentação docs/limpeza/prompt.md
+ * UTILITIES ULTRA SIMPLIFICADAS PARA ESTOQUE
+ * Compatibilidade com sistema legado mas SEM CONVERSÕES AUTOMÁTICAS
+ * Sistema simplificado: apenas 2 números diretos
  */
 
 import { useMemo } from 'react';
@@ -14,73 +14,49 @@ export interface PackageDisplay {
 }
 
 /**
- * Calcula a exibição dinâmica de pacotes e unidades
- * Fórmula (Pacotes): Math.floor(stock_quantity / units_per_package)
- * Fórmula (Unidades Soltas): stock_quantity % units_per_package
+ * FUNÇÃO MANTIDA APENAS PARA COMPATIBILIDADE
+ * Não faz conversões reais - retorna valores diretos
+ * TODO: Remover quando todos os componentes forem atualizados
  */
 export const calculatePackageDisplay = (
   stock_quantity: number,
   units_per_package: number
 ): PackageDisplay => {
-  if (!units_per_package || units_per_package <= 0) {
-    return {
-      packages: 0,
-      units: stock_quantity,
-      total: stock_quantity,
-      formatted: `${stock_quantity} unidades`
-    };
-  }
-
-  const packages = Math.floor(stock_quantity / units_per_package);
-  const units = stock_quantity % units_per_package;
-
-  let formatted = '';
-  if (packages > 0 && units > 0) {
-    formatted = `${packages} pacotes e ${units} unidades`;
-  } else if (packages > 0) {
-    formatted = `${packages} pacotes`;
-  } else {
-    formatted = `${units} unidades`;
-  }
-
+  // NOTA: Esta função existe apenas para compatibilidade
+  // O sistema agora usa stock_packages e stock_units_loose diretamente
   return {
-    packages,
-    units,
-    total: stock_quantity,
-    formatted
+    packages: 0,
+    units: stock_quantity || 0,
+    total: stock_quantity || 0,
+    formatted: `${stock_quantity || 0} unidades`
   };
 };
 
 /**
- * Hook para usar cálculos de estoque em componentes
- * Otimizado com useMemo para performance
+ * FUNÇÃO SIMPLIFICADA - SEM CONVERSÕES
  */
 export const useStockDisplay = (stock_quantity: number, units_per_package?: number) => {
   return useMemo(() => {
-    if (!units_per_package) return { formatted: `${stock_quantity} unidades` };
-    return calculatePackageDisplay(stock_quantity, units_per_package);
-  }, [stock_quantity, units_per_package]);
+    return { formatted: `${stock_quantity || 0} unidades` };
+  }, [stock_quantity]);
 };
 
 /**
- * Utility para determinar status do estoque
+ * Status ultra-simplificado: apenas em estoque ou sem estoque
  */
-export const getStockStatus = (stock_quantity: number, minimum_stock?: number) => {
-  if (stock_quantity === 0) return 'out_of_stock';
-  if (minimum_stock && stock_quantity <= minimum_stock) return 'low_stock';
-  return 'adequate';
+export const getStockStatus = (total: number) => {
+  if (total === 0) return 'out_of_stock';
+  return 'in_stock';
 };
 
 /**
- * Utility para cores do status do estoque
+ * Cores do status ultra-simplificado
  */
 export const getStockStatusColor = (status: string) => {
   switch (status) {
     case 'out_of_stock':
       return 'text-red-600';
-    case 'low_stock':
-      return 'text-yellow-600';
-    case 'adequate':
+    case 'in_stock':
       return 'text-green-600';
     default:
       return 'text-gray-600';
@@ -88,16 +64,14 @@ export const getStockStatusColor = (status: string) => {
 };
 
 /**
- * Utility para labels do status do estoque
+ * Labels do status ultra-simplificado
  */
 export const getStockStatusLabel = (status: string) => {
   switch (status) {
     case 'out_of_stock':
       return 'Sem estoque';
-    case 'low_stock':
-      return 'Estoque baixo';
-    case 'adequate':
-      return 'Estoque adequado';
+    case 'in_stock':
+      return 'Em estoque';
     default:
       return 'Status desconhecido';
   }

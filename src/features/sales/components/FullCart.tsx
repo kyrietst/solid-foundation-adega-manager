@@ -119,8 +119,6 @@ export function FullCart({
             quantity: item.quantity,
             unit_price: item.price,
             units_sold: item.units_sold,
-            conversion_required: item.conversion_required,
-            packages_converted: item.packages_converted || 0,
             // Campos legados para compatibilidade - CORREÇÃO: converter variant_type para sale_type
             sale_type: item.variant_type === 'package' ? 'package' : 'unit',
             package_units: item.packageUnits
@@ -277,22 +275,12 @@ export function FullCart({
                   }`}>
                     {item.variant_type === 'package' ? `Pacote ${item.packageUnits || 1}x` : 'Unidade'}
                   </span>
-                  {item.conversion_required && (
-                    <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-orange-500/20 text-orange-300 border border-orange-500/30">
-                      Conversão
-                    </span>
-                  )}
                 </div>
                 <p className="text-xs text-gray-400">
                   {formatCurrency(item.price)} × {item.quantity}
                   {item.variant_type === 'package' && item.packageUnits && (
                     <span className="ml-1 text-blue-300">
                       ({item.units_sold} unid. total)
-                    </span>
-                  )}
-                  {item.conversion_required && item.packages_converted && (
-                    <span className="ml-1 text-orange-300">
-                      • {item.packages_converted} pacotes convertidos
                     </span>
                   )}
                 </p>

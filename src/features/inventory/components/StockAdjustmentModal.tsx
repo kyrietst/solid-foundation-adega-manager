@@ -338,47 +338,30 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
     }
   });
 
-  // Cálculos simplificados para preview (sem lógica de deltas)
+  // ULTRA SIMPLIFICADO - Apenas 2 números diretos
   const calculations = useMemo(() => {
     if (!product) return null;
 
-    // 🛡️ PROTEÇÃO CONTRA NaN - Garantir valores numéricos válidos
     const currentPackages = Number(product.stock_packages || 0);
     const currentUnitsLoose = Number(product.stock_units_loose || 0);
-
-    // Usar package_units prioritariamente, com fallback para units_per_package
-    const packageUnits = Number(product.package_units || product.units_per_package || 1);
-
     const newPackages = Number(watchedValues.newPackages || 0);
     const newUnitsLoose = Number(watchedValues.newUnitsLoose || 0);
 
     // Validar que não temos NaN
-    if (isNaN(currentPackages) || isNaN(currentUnitsLoose) || isNaN(packageUnits) ||
-        isNaN(newPackages) || isNaN(newUnitsLoose)) {
-      console.error('❌ NaN detectado nos cálculos:', {
-        currentPackages, currentUnitsLoose, packageUnits, newPackages, newUnitsLoose
-      });
+    if (isNaN(currentPackages) || isNaN(currentUnitsLoose) || isNaN(newPackages) || isNaN(newUnitsLoose)) {
+      console.error('❌ NaN detectado:', { currentPackages, currentUnitsLoose, newPackages, newUnitsLoose });
       return null;
     }
 
-    // Calcular totais para exibição apenas
-    const currentTotal = (currentPackages * packageUnits) + currentUnitsLoose;
-    const newTotal = (newPackages * packageUnits) + newUnitsLoose;
-
-    // Calcular diferenças apenas para preview visual (não enviadas ao backend)
+    // APENAS diferenças diretas dos 2 campos
     const packagesChange = newPackages - currentPackages;
     const unitsLooseChange = newUnitsLoose - currentUnitsLoose;
-    const totalChange = newTotal - currentTotal;
 
     return {
       currentPackages,
       currentUnitsLoose,
-      currentTotal,
-      newTotal,
-      packagesChange, // Apenas para preview visual
-      unitsLooseChange, // Apenas para preview visual
-      totalChange, // Apenas para preview visual
-      packageUnits,
+      packagesChange,
+      unitsLooseChange,
       hasChanges: newPackages !== currentPackages || newUnitsLoose !== currentUnitsLoose
     };
   }, [product, watchedValues]);
@@ -476,12 +459,12 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
                 {product.name}
               </h3>
               <p className="text-sm text-gray-400">
-                {product.category} • Unidades por pacote: {calculations.packageUnits || 1}
+                {product.category}
               </p>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="text-center p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
               <Package className="h-5 w-5 text-blue-400 mx-auto mb-1" />
               <div className="text-sm text-gray-400">Pacotes Fechados</div>
@@ -492,12 +475,6 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
               <Wine className="h-5 w-5 text-green-400 mx-auto mb-1" />
               <div className="text-sm text-gray-400">Unidades Soltas</div>
               <div className="text-xl font-bold text-green-400">{calculations.currentUnitsLoose || 0}</div>
-            </div>
-
-            <div className="text-center p-3 bg-yellow-500/10 rounded-lg border border-yellow-500/20">
-              <Calculator className="h-5 w-5 text-yellow-400 mx-auto mb-1" />
-              <div className="text-sm text-gray-400">Total de Unidades</div>
-              <div className="text-xl font-bold text-yellow-400">{calculations.currentTotal || 0}</div>
             </div>
           </div>
         </div>
@@ -577,7 +554,7 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
         )}>
           {calculations.hasChanges ? (
             <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="text-center">
                   <div className="text-sm text-gray-400 mb-1">Pacotes</div>
                   <div className="flex items-center justify-center gap-2">
@@ -612,27 +589,6 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
                         : "bg-gray-500/20 text-gray-400"
                     )}>
                       {(calculations.unitsLooseChange || 0) > 0 ? '+' : ''}{calculations.unitsLooseChange || 0}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="text-center">
-                  <div className="text-sm text-gray-400 mb-1">Total de Unidades</div>
-                  <div className="flex items-center justify-center gap-2">
-                    <span className="text-gray-300">
-                      {((product.stock_packages || 0) * (product.package_units || product.units_per_package || 1)) + (product.stock_units_loose || 0)}
-                    </span>
-                    <span className="text-gray-500">→</span>
-                    <span className="text-yellow-400 font-semibold">{calculations.newTotal || 0}</span>
-                    <span className={cn(
-                      "text-xs font-medium px-1.5 py-0.5 rounded",
-                      (calculations.totalChange || 0) > 0
-                        ? "bg-green-500/20 text-green-400"
-                        : (calculations.totalChange || 0) < 0
-                        ? "bg-red-500/20 text-red-400"
-                        : "bg-gray-500/20 text-gray-400"
-                    )}>
-                      {(calculations.totalChange || 0) > 0 ? '+' : ''}{calculations.totalChange || 0}
                     </span>
                   </div>
                 </div>

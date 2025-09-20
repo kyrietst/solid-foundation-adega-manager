@@ -18,7 +18,6 @@ export interface ProductVariant {
   price: Price;
   cost_price: Price | null;
   stock_quantity: StockQuantity;
-  minimum_stock: StockQuantity;
   units_in_package: number | null; // NULL para unidades, valor para pacotes
   margin_percent: Percentage | null;
   is_active: boolean;

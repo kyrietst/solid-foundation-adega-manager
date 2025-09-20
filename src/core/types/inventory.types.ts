@@ -31,7 +31,6 @@ export interface Product {
   volume_ml?: Volume; // Novo campo em mililitros
   image_url?: string;
   supplier?: string;
-  minimum_stock: StockQuantity;
   cost_price?: Price;
   margin_percent?: Percentage;
   created_at: string;
@@ -64,9 +63,12 @@ export interface Product {
   expiry_date?: string; // Data de validade do produto (ISO string)
   has_expiry_tracking?: boolean; // Se este produto tem controle de validade
 
-  // Campos da arquitetura de Dupla Contagem (Controle Explícito)
+  // ⭐ CAMPOS PRINCIPAIS DO SISTEMA SIMPLIFICADO ⭐
+  // "O Estoque é um Espelho da Prateleira" - apenas 2 números diretos
   stock_packages: NonNegativeInteger; // Quantidade de pacotes fechados em estoque
   stock_units_loose: NonNegativeInteger; // Quantidade de unidades soltas em estoque
+
+  // NOTA: stock_quantity é DEPRECATED - usar apenas os 2 campos acima
 }
 
 export interface ProductFormData {
@@ -76,8 +78,7 @@ export interface ProductFormData {
   price: Price;
   cost_price?: Price;
   margin_percent?: Percentage;
-  stock_quantity: StockQuantity;
-  minimum_stock: StockQuantity;
+  stock_quantity: StockQuantity; // DEPRECATED - manter para compatibilidade
   supplier?: string;
   producer?: string;
   country?: ProducingCountry;
@@ -86,7 +87,11 @@ export interface ProductFormData {
   alcohol_content?: Percentage;
   volume_ml?: Volume;
   image_url?: string;
-  
+
+  // ⭐ CAMPOS PRINCIPAIS DO SISTEMA SIMPLIFICADO ⭐
+  stock_packages: NonNegativeInteger; // Quantidade de pacotes fechados
+  stock_units_loose: NonNegativeInteger; // Quantidade de unidades soltas
+
   // Novos campos
   unit_type: UnitType;
   package_size: NonNegativeInteger;
@@ -94,13 +99,13 @@ export interface ProductFormData {
   package_margin?: Percentage;
   turnover_rate?: TurnoverRate;
   barcode?: string;
-  
+
   // Campos adicionados na história 1.1 - Schema e Políticas de Segurança
   measurement_type?: string; // Tipo de medição para campos dinâmicos
   measurement_value?: string; // Valor da medição para campos dinâmicos
   is_package?: boolean; // Se é pacote vs unidade individual
   units_per_package?: NonNegativeInteger; // Unidades por pacote
-  
+
   // Campos do sistema hierárquico de códigos de barras
   unit_barcode?: string; // Código de barras da unidade individual
   package_barcode?: string; // Código de barras do pacote/fardo
@@ -108,7 +113,7 @@ export interface ProductFormData {
   has_unit_tracking?: boolean; // Se permite venda por unidade
   has_package_tracking?: boolean; // Se permite venda por pacote
   packaging_type?: string; // Tipo de embalagem (fardo, caixa, etc.)
-  
+
   // Campos de controle de validade
   expiry_date?: string; // Data de validade do produto (ISO string)
   has_expiry_tracking?: boolean; // Se este produto tem controle de validade

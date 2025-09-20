@@ -75,7 +75,7 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({
     if (files && files[0]) {
       handleFileSelect(files[0]);
     }
-  }, []);
+  }, [handleFileSelect]);
   
   // Handler para seleção de arquivo
   const handleFileSelect = useCallback(async (file: File) => {

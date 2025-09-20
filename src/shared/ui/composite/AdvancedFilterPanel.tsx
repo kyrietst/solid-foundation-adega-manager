@@ -28,7 +28,7 @@ import {
 } from '@/shared/hooks/common/useFilters';
 
 // Context7 Pattern: Generic props interface
-interface AdvancedFilterPanelProps<T extends unknown> {
+interface AdvancedFilterPanelProps<T> {
   data: T[];
   filterConfigs: FilterConfig[];
   onFilteredDataChange?: (filteredData: T[]) => void;
@@ -56,8 +56,8 @@ interface AdvancedFilterPanelProps<T extends unknown> {
   hideFiltersLabel?: string;
 }
 
-// Context7 Pattern: Generic component with unknown extends for TSX compatibility
-export const AdvancedFilterPanel = <T extends unknown>({
+// Context7 Pattern: Generic component
+export const AdvancedFilterPanel = <T,>({
   data,
   filterConfigs,
   onFilteredDataChange,
@@ -73,7 +73,7 @@ export const AdvancedFilterPanel = <T extends unknown>({
   resetLabel = 'Restaurar Padrões',
   showFiltersLabel = 'Mostrar Filtros',
   hideFiltersLabel = 'Ocultar Filtros'
-}: AdvancedFilterPanelProps<T>) => {
+}: AdvancedFilterPanelProps<T>): React.ReactElement => {
   // Context7 Pattern: Use the advanced filters hook
   const filterFunctions: FilterFunctions<T> = useAdvancedFilters(data, filterConfigs, {
     persistKey,

@@ -1,17 +1,16 @@
 /**
- * Card específico para gestão de estoque
- * Foco em informações operacionais, não comerciais
- * REFATORADO: Utiliza exclusivamente dados da tabela 'products' (SSoT)
+ * Card ULTRA SIMPLIFICADO para gestão de estoque
+ * Apenas 2 números: Pacotes e Unidades Soltas
+ * Zero complexidade, zero conversões
  */
 
 import React from 'react';
 import { Button } from '@/shared/ui/primitives/button';
 import { Badge } from '@/shared/ui/primitives/badge';
-import { Eye, Edit, Package, MapPin, TrendingUp, TrendingDown, Minus, Loader2 } from 'lucide-react';
+import { Eye, Edit, Package, Box, AlertTriangle } from 'lucide-react';
 import { cn } from '@/core/config/utils';
 import { getHoverTransformClasses } from '@/core/config/theme-utils';
 import { useGlassmorphismEffect } from '@/shared/hooks/ui/useGlassmorphismEffect';
-import { calculatePackageDisplay } from '@/shared/utils/stockCalculations';
 import type { Product } from '@/types/inventory.types';
 
 interface InventoryCardProps {
@@ -23,25 +22,12 @@ interface InventoryCardProps {
   glassEffect?: boolean;
 }
 
-// Função para determinar status do estoque
-const getStockStatus = (currentStock: number, minStock: number = 10) => {
-  if (currentStock === 0) return { status: 'out', label: 'Sem Estoque', color: 'bg-red-500/20 text-red-400 border-red-400/30' };
-  if (currentStock <= minStock) return { status: 'low', label: 'Estoque Baixo', color: 'bg-yellow-500/20 text-yellow-400 border-yellow-400/30' };
-  if (currentStock > minStock * 3) return { status: 'excess', label: 'Excesso', color: 'bg-blue-500/20 text-blue-400 border-blue-400/30' };
+// Função ultra simples para status do estoque
+const getSimpleStockStatus = (packages: number, units: number, minStock: number = 10) => {
+  const total = packages + units;
+  if (total === 0) return { status: 'out', label: 'Sem Estoque', color: 'bg-red-500/20 text-red-400 border-red-400/30' };
+  if (total <= minStock) return { status: 'low', label: 'Estoque Baixo', color: 'bg-yellow-500/20 text-yellow-400 border-yellow-400/30' };
   return { status: 'available', label: 'Disponível', color: 'bg-green-500/20 text-green-400 border-green-400/30' };
-};
-
-// Função para determinar análise de giro baseada nos dados reais
-const getTurnoverAnalysis = (turnoverRate: string) => {
-  switch (turnoverRate) {
-    case 'fast':
-      return { rate: 'Rápido', icon: TrendingUp, color: 'text-green-400' };
-    case 'slow':
-      return { rate: 'Devagar', icon: TrendingDown, color: 'text-red-400' };
-    case 'medium':
-    default:
-      return { rate: 'Médio', icon: Minus, color: 'text-yellow-400' };
-  }
 };
 
 export const InventoryCard: React.FC<InventoryCardProps> = ({
@@ -52,17 +38,11 @@ export const InventoryCard: React.FC<InventoryCardProps> = ({
   variant = 'default',
   glassEffect = true,
 }) => {
-  // NOVO: Usar dados SSoT diretamente da tabela 'products'
-  const stockQuantity = product.stock_quantity || 0;
-  const packageUnits = product.package_units || 0;
-  const hasPackageTracking = product.has_package_tracking;
+  // SISTEMA ULTRA SIMPLIFICADO - apenas 2 números
+  const stockPackages = product.stock_packages || 0;
+  const stockUnitsLoose = product.stock_units_loose || 0;
 
-  // Calcular informações de estoque usando função centralizada
-  const stockDisplay = calculatePackageDisplay(stockQuantity, packageUnits);
-
-  const stockStatus = getStockStatus(stockQuantity, product.minimum_stock || 10);
-  const turnoverAnalysis = getTurnoverAnalysis(product.turnover_rate || 'medium');
-  const TurnoverIcon = turnoverAnalysis.icon;
+  const stockStatus = getSimpleStockStatus(stockPackages, stockUnitsLoose, product.minimum_stock || 10);
   const { handleMouseMove } = useGlassmorphismEffect();
 
   // Classes para glass morphism
@@ -80,17 +60,17 @@ export const InventoryCard: React.FC<InventoryCardProps> = ({
       onMouseMove={handleMouseMove}
     >
       {/* Imagem do produto com status overlay */}
-      <div className="relative h-48 bg-gray-700/50 flex items-center justify-center">
+      <div className="relative h-32 bg-gray-700/50 flex items-center justify-center">
         {product.image_url ? (
-          <img 
-            src={product.image_url} 
+          <img
+            src={product.image_url}
             alt={product.name}
             className="w-full h-full object-cover"
           />
         ) : (
-          <Package className="h-16 w-16 text-gray-400" />
+          <Package className="h-12 w-12 text-gray-400" />
         )}
-        
+
         {/* Badge de status no canto superior direito */}
         <div className="absolute top-2 right-2">
           <Badge className={cn("text-xs font-medium", stockStatus.color)}>
@@ -101,76 +81,68 @@ export const InventoryCard: React.FC<InventoryCardProps> = ({
 
       {/* Informações do produto */}
       <div className="p-4 space-y-3">
-        {/* Nome e categoria */}
+        {/* Nome do produto */}
         <div>
-          <h3 className="font-semibold text-gray-100 line-clamp-1">
+          <h3 className="font-semibold text-gray-100 line-clamp-2 text-sm">
             {product.name}
           </h3>
-          <p className="text-sm text-gray-400">
-            Código: {product.barcode || 'N/A'} | {product.category}
+          <p className="text-xs text-gray-400 truncate">
+            {product.barcode || 'Sem código'}
           </p>
         </div>
 
-        {/* Informações de estoque SSoT */}
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 text-sm">
-            <Package className="h-4 w-4 text-yellow-400" />
-            <span className="text-gray-300">
-              Estoque: <span className="font-semibold text-gray-100">{stockQuantity}</span> un
-            </span>
-            {product.minimum_stock && (
-              <span className="text-gray-400">
-                | Mín: {product.minimum_stock} un
-              </span>
-            )}
-          </div>
-
-          {/* Breakdown de pacotes se habilitado */}
-          {hasPackageTracking && stockDisplay.packages > 0 && (
-            <div className="flex items-center gap-2 text-sm ml-6">
-              <Badge variant="outline" className="bg-blue-500/10 text-blue-400 border-blue-500/30">
-                <Package className="h-3 w-3 mr-1" />
-                {stockDisplay.formatted}
-              </Badge>
+        {/* ESTOQUE ULTRA SIMPLIFICADO - APENAS 2 NÚMEROS */}
+        <div className="grid grid-cols-2 gap-2">
+          {/* Pacotes */}
+          <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-2">
+            <div className="flex items-center gap-1">
+              <Box className="h-3 w-3 text-blue-400" />
+              <span className="text-xs text-blue-400">Pacotes</span>
             </div>
-          )}
-
-          {/* Volume do produto */}
-          <div className="flex items-center gap-2 text-sm">
-            <Package className="h-4 w-4 text-purple-400" />
-            <span className="text-gray-300">
-              Volume: <span className="font-semibold text-gray-100">{product.volume_ml ? `${product.volume_ml}ml` : 'N/A'}</span>
-            </span>
+            <p className="text-lg font-bold text-blue-400">
+              {stockPackages}
+            </p>
           </div>
 
-          {/* Análise de giro */}
-          <div className="flex items-center gap-2 text-sm">
-            <TurnoverIcon className={cn("h-4 w-4", turnoverAnalysis.color)} />
-            <span className="text-gray-300">
-              Giro: <span className={cn("font-semibold", turnoverAnalysis.color)}>{turnoverAnalysis.rate}</span>
-            </span>
+          {/* Unidades Soltas */}
+          <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-2">
+            <div className="flex items-center gap-1">
+              <Package className="h-3 w-3 text-green-400" />
+              <span className="text-xs text-green-400">Unidades</span>
+            </div>
+            <p className="text-lg font-bold text-green-400">
+              {stockUnitsLoose}
+            </p>
           </div>
         </div>
 
-        {/* Ações operacionais */}
-        <div className="flex gap-2 pt-2">
+        {/* Alerta de estoque baixo */}
+        {stockStatus.status === 'low' && (
+          <div className="flex items-center gap-1 text-xs text-yellow-400">
+            <AlertTriangle className="h-3 w-3" />
+            <span>Estoque baixo (Mín: {product.minimum_stock || 10})</span>
+          </div>
+        )}
+
+        {/* Ações operacionais simplificadas */}
+        <div className="flex gap-1 pt-2">
           <Button
             onClick={() => onViewDetails(product)}
             size="sm"
             variant="outline"
-            className="flex-1 bg-gray-800/60 border-gray-600 text-gray-100 hover:bg-gray-700/80 transition-all duration-200"
+            className="flex-1 bg-gray-800/60 border-gray-600 text-gray-100 hover:bg-gray-700/80 transition-all duration-200 text-xs"
           >
-            <Eye className="h-4 w-4 mr-1" />
-            Ver Detalhes
+            <Eye className="h-3 w-3 mr-1" />
+            Ver
           </Button>
-          
+
           <Button
             onClick={() => onEdit(product)}
             size="sm"
             variant="outline"
-            className="flex-1 bg-yellow-400/10 border-yellow-400/30 text-yellow-400 hover:bg-yellow-400/20 transition-all duration-200"
+            className="flex-1 bg-yellow-400/10 border-yellow-400/30 text-yellow-400 hover:bg-yellow-400/20 transition-all duration-200 text-xs"
           >
-            <Edit className="h-4 w-4 mr-1" />
+            <Edit className="h-3 w-3 mr-1" />
             Editar
           </Button>
         </div>
@@ -181,9 +153,9 @@ export const InventoryCard: React.FC<InventoryCardProps> = ({
             onClick={() => onAdjustStock(product)}
             size="sm"
             variant="ghost"
-            className="w-full text-gray-400 hover:text-gray-100 hover:bg-gray-800/60 transition-all duration-200"
+            className="w-full text-gray-400 hover:text-gray-100 hover:bg-gray-800/60 transition-all duration-200 text-xs"
           >
-            📦 Ajustar Estoque
+            📦 Ajustar
           </Button>
         )}
       </div>

@@ -140,9 +140,7 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
           quantity: 1,
           maxQuantity: variantType === 'package' ? stockPackages : stockUnitsLoose,
           units_sold: variantType === 'package' ? (product.package_units || 1) : 1,
-          packageUnits: variantType === 'package' ? (product.package_units || 1) : undefined,
-          conversion_required: false, // Para barcode scanning, não há conversão inicialmente
-          packages_converted: 0
+          packageUnits: variantType === 'package' ? (product.package_units || 1) : undefined
         };
 
         console.log('[DEBUG] useProductsGridLogic - chamando addItem com:', itemToAdd);
@@ -174,9 +172,7 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
         quantity: 1,
         maxQuantity: stockUnitsLoose,
         units_sold: 1, // CORREÇÃO: Campo obrigatório para o sistema de variantes
-        packageUnits: undefined, // Não é pacote
-        conversion_required: false, // CORREÇÃO: Campo obrigatório para o sistema de variantes
-        packages_converted: 0 // CORREÇÃO: Campo obrigatório para o sistema de variantes
+        packageUnits: undefined // Não é pacote
       });
       onProductSelect?.(product);
     }

@@ -49,7 +49,7 @@ export const useDeliveryReportExport = () => {
 
       // Buscar dados baseado no tipo de relatório
       switch (params.reportType) {
-        case 'delivery_summary':
+        case 'delivery_summary': {
           const { data: summaryData, error: summaryError } = await supabase.rpc('get_delivery_summary_report', {
             p_days: days,
             p_zone_id: params.filters?.zoneId || null,
@@ -60,14 +60,15 @@ export const useDeliveryReportExport = () => {
 
           data = summaryData || [];
           headers = [
-            'ID Venda', 'Cliente', 'Endereço', 'Zona', 'Status', 
-            'Valor Total', 'Taxa Entrega', 'Entregador', 'Data Criação', 
+            'ID Venda', 'Cliente', 'Endereço', 'Zona', 'Status',
+            'Valor Total', 'Taxa Entrega', 'Entregador', 'Data Criação',
             'Tempo Estimado', 'Tempo Real', 'Pontual'
           ];
           fileName = `delivery_summary_${params.period}`;
           break;
+        }
 
-        case 'delivery_performance':
+        case 'delivery_performance': {
           const { data: performanceData, error: performanceError } = await supabase.rpc('get_delivery_person_performance', {
             p_days: days
           });
@@ -76,13 +77,14 @@ export const useDeliveryReportExport = () => {
 
           data = performanceData || [];
           headers = [
-            'ID Entregador', 'Nome', 'Total Entregas', 'Tempo Médio (min)', 
+            'ID Entregador', 'Nome', 'Total Entregas', 'Tempo Médio (min)',
             'Taxa Pontualidade (%)', 'Avaliação', 'Receita Total', 'Eficiência'
           ];
           fileName = `delivery_performance_${params.period}`;
           break;
+        }
 
-        case 'zone_analysis':
+        case 'zone_analysis': {
           const { data: zoneData, error: zoneError } = await supabase.rpc('get_zone_performance', {
             p_days: days
           });
@@ -95,8 +97,9 @@ export const useDeliveryReportExport = () => {
           ];
           fileName = `zone_analysis_${params.period}`;
           break;
+        }
 
-        case 'delivery_timeline':
+        case 'delivery_timeline': {
           const { data: timelineData, error: timelineError } = await supabase.rpc('get_delivery_daily_trends', {
             p_days: days
           });
@@ -109,6 +112,7 @@ export const useDeliveryReportExport = () => {
           ];
           fileName = `delivery_timeline_${params.period}`;
           break;
+        }
 
         default:
           throw new Error('Tipo de relatório não suportado');

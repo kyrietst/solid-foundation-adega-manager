@@ -18,72 +18,36 @@ export interface NotificationItem {
   data?: Record<string, unknown>;
 }
 
-export interface LowStockProduct {
+export interface OutOfStockProduct {
   id: string;
   name: string;
   stock_quantity: number;
-  minimum_stock: number;
   category: string;
   supplier?: string;
 }
 
 export const useNotifications = () => {
-  // Query para produtos com estoque baixo
-  const { data: lowStockProducts = [], isLoading: isLoadingLowStock } = useQuery({
-    queryKey: ['notifications', 'low-stock'],
-    queryFn: async () => {
-      // Buscar todos os produtos e filtrar no client-side 
-      // Correção: PostgREST não pode comparar duas colunas diretamente
-      const { data, error } = await supabase
-        .from('products')
-        .select('id, name, stock_quantity, minimum_stock, category, supplier');
-      
-      if (error) throw error;
-      
-      // Filtrar produtos com estoque baixo no client-side
-      const safeData = (data ?? []) as LowStockProduct[];
-      return safeData
-        .filter((p) => p.stock_quantity < (p.minimum_stock ?? 5))
-        .sort((a, b) => a.stock_quantity - b.stock_quantity);
-    },
-    refetchInterval: 5 * 60 * 1000, // Refetch a cada 5 minutos
-  });
-
-  // Query para produtos sem estoque
+  // Query para produtos sem estoque (ultra-simplificado)
   const { data: outOfStockProducts = [], isLoading: isLoadingOutOfStock } = useQuery({
     queryKey: ['notifications', 'out-of-stock'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('products')
         .select('id, name, stock_quantity, category, supplier')
-        .eq('stock_quantity', 0)
-        .order('name', { ascending: true });
-      
+        .eq('stock_quantity', 0);
+
       if (error) throw error;
-      return data;
+
+      return (data ?? []) as OutOfStockProduct[];
     },
-    refetchInterval: 5 * 60 * 1000,
+    refetchInterval: 5 * 60 * 1000, // Refetch a cada 5 minutos
   });
 
-  // Gerar notificações baseadas nos dados
+  // Gerar notificações ultra-simplificadas
   const notifications = useMemo((): NotificationItem[] => {
     const items: NotificationItem[] = [];
 
-    // Notificações de estoque baixo
-    lowStockProducts.forEach(product => {
-      items.push({
-        id: `low_stock_${product.id}`,
-        type: 'low_stock',
-        title: 'Estoque Baixo',
-        message: `${product.name} - ${product.stock_quantity} restantes (mínimo: ${product.minimum_stock})`,
-        priority: 'medium',
-        read: false,
-        created_at: new Date().toISOString(),
-        data: product
-      });
-    });
-
-    // Notificações de produto sem estoque
+    // Apenas notificações de produtos sem estoque
     outOfStockProducts.forEach(product => {
       items.push({
         id: `out_of_stock_${product.id}`,
@@ -118,33 +82,16 @@ export const useNotifications = () => {
       medium: notifications.filter(n => n.priority === 'medium').length,
       low: notifications.filter(n => n.priority === 'low').length,
     }
-  }), [notifications, lowStockProducts, outOfStockProducts]);
+  }), [notifications, outOfStockProducts]);
 
   return {
     notifications,
     stats,
-    lowStockProducts,
     outOfStockProducts,
-    isLoading: isLoadingLowStock || isLoadingOutOfStock,
-    
-    // Helpers
-    hasLowStock: lowStockProducts.length > 0,
+    isLoading: isLoadingOutOfStock,
+
+    // Helpers ultra-simplificados
     hasOutOfStock: outOfStockProducts.length > 0,
     hasNotifications: notifications.length > 0,
-    
-    // Legacy compatibility
-    lowStockCount: lowStockProducts.length,
-    lowStockItems: lowStockProducts,
-  };
-};
-
-// Hook específico só para estoque baixo (para compatibilidade)
-export const useLowStockNotifications = () => {
-  const { lowStockProducts, lowStockCount, isLoading } = useNotifications();
-  
-  return {
-    data: lowStockProducts,
-    count: lowStockCount,
-    isLoading,
   };
 };
