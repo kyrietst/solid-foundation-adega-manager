@@ -167,10 +167,16 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
     if (stockUnitsLoose > 0) {
       await addItem({
         id: product.id,
+        variant_id: `${product.id}-unit`, // CORREÇÃO: Campo obrigatório para o sistema de variantes
         name: product.name,
+        variant_type: 'unit', // Adição direta sempre como unidade
         price: product.price,
+        quantity: 1,
         maxQuantity: stockUnitsLoose,
-        variant_type: 'unit' // Adição direta sempre como unidade
+        units_sold: 1, // CORREÇÃO: Campo obrigatório para o sistema de variantes
+        packageUnits: undefined, // Não é pacote
+        conversion_required: false, // CORREÇÃO: Campo obrigatório para o sistema de variantes
+        packages_converted: 0 // CORREÇÃO: Campo obrigatório para o sistema de variantes
       });
       onProductSelect?.(product);
     }

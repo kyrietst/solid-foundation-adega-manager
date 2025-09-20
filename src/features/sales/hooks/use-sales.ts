@@ -287,75 +287,47 @@ export const useUpsertSale = () => {
         throw new Error("A venda deve conter pelo menos um item");
       }
 
-      // 6. Processa a venda usando o novo sistema de variantes
-      let saleId: string;
-      
-      // Primeiro, cria a venda básica
-      const salePayload = {
-        customer_id: saleData.customer_id,
-        user_id: user.id,
-        total_amount: saleData.total_amount,
-        discount_amount: saleData.discount_amount || 0,
-        final_amount: totalWithDeliveryFee - (saleData.discount_amount || 0),
-        payment_method: paymentMethod?.name || 'Não especificado',
-        payment_status: 'paid',
-        status: isDeliveryOrder ? 'pending' : 'completed',
-        notes: saleData.notes || null,
-        delivery: isDeliveryOrder
-      };
-      
-      console.log('🔥 PAYLOAD sendo enviado para tabela sales:', JSON.stringify(salePayload, null, 2));
-      
-      const { data: createdSale, error: saleError } = await supabase
-        .from('sales')
-        .insert(salePayload)
-        .select('id')
-        .single();
+      // 6. Processa a venda usando o procedimento process_sale (COM SUBTRAÇÃO DE ESTOQUE)
+      console.log('🔥 USANDO PROCEDIMENTO process_sale para subtração automática de estoque');
 
-      if (saleError) {
-        console.error('Erro ao criar venda:', saleError);
-        throw new Error(`Falha ao criar venda: ${saleError.message}`);
+      // Prepara os itens no formato esperado pelo procedimento
+      const processedItems = saleData.items.map(item => ({
+        product_id: item.product_id,
+        variant_id: item.variant_id,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        units_sold: item.units_sold || item.quantity,
+        conversion_required: item.conversion_required || false,
+        packages_converted: item.packages_converted || 0
+      }));
+
+      console.log('📦 Itens processados para process_sale:', JSON.stringify(processedItems, null, 2));
+
+      // Chama o procedimento process_sale que faz TUDO: cria venda + itens + subtrai estoque
+      // CORREÇÃO: Ordem correta dos parâmetros conforme assinatura do procedimento
+      const { data: saleResult, error: processError } = await supabase.rpc('process_sale', {
+        p_customer_id: saleData.customer_id,
+        p_user_id: user.id,
+        p_total_amount: saleData.total_amount,
+        p_final_amount: totalWithDeliveryFee - (saleData.discount_amount || 0),
+        p_payment_method_id: saleData.payment_method_id,
+        p_items: processedItems,
+        p_discount_amount: saleData.discount_amount || 0,
+        p_notes: saleData.notes || null,
+        p_is_delivery: isDeliveryOrder
+      });
+
+      if (processError) {
+        console.error('❌ Erro no procedimento process_sale:', processError);
+        throw new Error(`Falha ao processar venda: ${processError.message}`);
       }
 
-      saleId = createdSale.id;
-
-      // Processa cada item usando o sistema de variantes
-      for (const item of saleData.items) {
-        if (item.conversion_required) {
-          // Usa stored procedure para conversão automática
-          const { error: conversionError } = await supabase.rpc('process_sale_with_conversion', {
-            p_product_id: item.product_id,
-            p_variant_type: item.sale_type || 'unit',
-            p_quantity: item.quantity,
-            p_sale_id: saleId,
-            p_user_id: user.id
-          });
-
-          if (conversionError) {
-            console.error('Erro na conversão:', conversionError);
-            throw new Error(`Erro na conversão do produto: ${conversionError.message}`);
-          }
-        }
-
-        // Insere o item da venda com informações de variante
-        const { error: itemError } = await supabase
-          .from('sale_items')
-          .insert({
-            sale_id: saleId,
-            product_id: item.product_id,
-            variant_id: item.variant_id,
-            quantity: item.quantity,
-            unit_price: item.unit_price,
-            units_sold: item.units_sold,
-            conversion_required: item.conversion_required,
-            packages_converted: item.packages_converted || 0
-          });
-
-        if (itemError) {
-          console.error('Erro ao inserir item da venda:', itemError);
-          throw new Error(`Erro ao inserir item: ${itemError.message}`);
-        }
+      if (!saleResult || !saleResult.sale_id) {
+        throw new Error('Procedimento process_sale não retornou ID da venda');
       }
+
+      const saleId = saleResult.sale_id;
+      console.log('✅ Venda processada com sucesso via process_sale, ID:', saleId);
 
       // 7. Se for uma venda com delivery, atualiza os campos específicos
       if (isDeliveryOrder && saleData.deliveryData) {

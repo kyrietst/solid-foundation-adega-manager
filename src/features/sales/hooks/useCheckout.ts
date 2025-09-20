@@ -10,7 +10,8 @@ import { useCustomer } from '@/features/customers/hooks/use-crm';
 import { usePaymentMethods, useUpsertSale } from './use-sales';
 import { useToast } from '@/shared/hooks/common/use-toast';
 import { useCartValidation, CartValidationConfig } from './useCartValidation';
-import { useInventoryMovements } from '@/features/inventory/hooks/useInventoryMovements';
+// REMOVIDO: import desnecessário após correção da dupla subtração
+// import { useInventoryMovements } from '@/features/inventory/hooks/useInventoryMovements';
 
 export const useCheckout = (
   config: CartValidationConfig & {
@@ -94,26 +95,12 @@ export const useCheckout = (
         );
       });
 
-      // Criar movimentações de estoque para cada item usando nossa nova RPC
-      for (const item of items) {
-        const quantityToDeduct = item.type === 'package' ? item.packageUnits : item.quantity;
-
-        createSaleMovement(
-          item.id,
-          quantityToDeduct,
-          `Venda #${saleData.id} - ${item.name}${item.type === 'package' ? ' (pacote)' : ''}`,
-          saleData.id,
-          customerId || undefined,
-          {
-            sale_id: saleData.id,
-            sale_type: item.type,
-            package_units: item.packageUnits,
-            unit_price: item.price,
-            quantity_sold: item.quantity,
-            customer_id: customerId
-          }
-        );
-      }
+      // REMOVIDO: Loop duplicado de movimentação de estoque
+      // O procedimento process_sale já gerencia automaticamente:
+      // - Criação da venda
+      // - Inserção dos sale_items
+      // - Subtração do estoque via create_inventory_movement
+      // Este loop adicional estava causando DUPLA SUBTRAÇÃO
 
       // Sucesso
       toast({

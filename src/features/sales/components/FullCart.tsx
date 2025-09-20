@@ -121,8 +121,8 @@ export function FullCart({
             units_sold: item.units_sold,
             conversion_required: item.conversion_required,
             packages_converted: item.packages_converted || 0,
-            // Campos legados para compatibilidade
-            sale_type: item.variant_type,
+            // Campos legados para compatibilidade - CORREÇÃO: converter variant_type para sale_type
+            sale_type: item.variant_type === 'package' ? 'package' : 'unit',
             package_units: item.packageUnits
           };
           
