@@ -63,7 +63,7 @@ function tableReducer(state: TableState, action: TableAction): TableState {
         visibleColumns: action.payload,
       };
 
-    case 'TOGGLE_COLUMN':
+    case 'TOGGLE_COLUMN': {
       const columnKey = action.payload;
       const isVisible = state.visibleColumns.some(col => col.key === columnKey);
 
@@ -83,6 +83,7 @@ function tableReducer(state: TableState, action: TableAction): TableState {
           visibleColumns: [...state.visibleColumns, columnToAdd],
         };
       }
+    }
 
     case 'SET_SORT':
       return {
@@ -91,7 +92,7 @@ function tableReducer(state: TableState, action: TableAction): TableState {
         sortDirection: action.payload.direction,
       };
 
-    case 'TOGGLE_SORT':
+    case 'TOGGLE_SORT': {
       const field = action.payload;
       if (state.sortField === field) {
         // Alternar direção se mesmo campo
@@ -107,6 +108,7 @@ function tableReducer(state: TableState, action: TableAction): TableState {
           sortDirection: 'asc',
         };
       }
+    }
 
     case 'UPDATE_FILTER':
       return {

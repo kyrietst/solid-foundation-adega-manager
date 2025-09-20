@@ -9,6 +9,7 @@ import { UserRole } from '@/core/types/supabase';
 interface AuthContextType {
   user: User | null;
   userRole: UserRole | null;
+  featureFlags: Record<string, boolean> | null;
   loading: boolean;
   hasTemporaryPassword: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
@@ -23,6 +24,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   console.log('🔐 AuthProvider - Inicializando provider (render)');
   const [user, setUser] = useState<User | null>(null);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
+  const [featureFlags, setFeatureFlags] = useState<Record<string, boolean> | null>(null);
   const [loading, setLoading] = useState(true);
   const [hasTemporaryPassword, setHasTemporaryPassword] = useState(false);
   const { toast } = useToast();
@@ -52,6 +54,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       // Primeiro limpar estado local
       setUser(null);
       setUserRole(null);
+      setFeatureFlags(null);
       
       // Depois fazer logout no Supabase
       const { error } = await supabase.auth.signOut();
@@ -91,6 +94,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       await authErrorHandler.clearAuthState();
       setUser(null);
       setUserRole(null);
+      setFeatureFlags(null);
       
       toast({
         title: "Logout Forçado",
@@ -123,6 +127,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (currentUser.email === 'adm@adega.com') {
         setUserRole('admin');
         setHasTemporaryPassword(false);
+        // Admin principal tem todas as flags ativas
+        setFeatureFlags({
+          dashboard_enabled: true,
+          sales_enabled: true,
+          inventory_enabled: true,
+          customers_enabled: true,
+          suppliers_enabled: true,
+          delivery_enabled: true,
+          movements_enabled: true,
+          reports_enabled: true,
+          expenses_enabled: true
+        });
         return;
       }
 
@@ -130,7 +146,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.log('🔍 AuthProvider - Tentando buscar perfil para usuário ID:', currentUser.id);
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('role, is_temporary_password')
+        .select('role, is_temporary_password, feature_flags')
         .eq('id', currentUser.id)
         .single();
 
@@ -154,9 +170,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
         setUserRole(userData.role);
         setHasTemporaryPassword(false); // Users table doesn't have temp password field
+        setFeatureFlags(null); // Users table doesn't have feature flags
       } else {
         setUserRole(profileData.role);
         setHasTemporaryPassword(profileData.is_temporary_password || false);
+        setFeatureFlags(profileData.feature_flags || {});
       }
     };
 
@@ -242,6 +260,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       } else {
         console.log('❌ AuthProvider - onAuthStateChange: sem sessão, limpando dados');
         setUserRole(null);
+        setFeatureFlags(null);
         setHasTemporaryPassword(false);
         currentUserIdRef.current = null;
       }
@@ -352,13 +371,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const value = useMemo(() => ({
     user,
     userRole,
+    featureFlags,
     loading,
     hasTemporaryPassword,
     signIn,
     signOut,
     hasPermission,
     onTemporaryPasswordChanged,
-  }), [user, userRole, loading, hasTemporaryPassword, signIn, signOut, hasPermission, onTemporaryPasswordChanged]);
+  }), [user, userRole, featureFlags, loading, hasTemporaryPassword, signIn, signOut, hasPermission, onTemporaryPasswordChanged]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

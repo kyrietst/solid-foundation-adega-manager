@@ -147,7 +147,7 @@ export const CrmDashboard: React.FC = () => {
           break;
         }
 
-        case 'vendas':
+        case 'vendas': {
           const { data: salesData } = await supabase
             .from('sales')
             .select('*')
@@ -155,6 +155,7 @@ export const CrmDashboard: React.FC = () => {
           data = salesData || [];
           filename = 'vendas-clientes.csv';
           break;
+        }
 
         default:
           throw new Error('Tipo de relatório não suportado');
@@ -411,9 +412,17 @@ export const CrmDashboard: React.FC = () => {
 
         {/* Métricas Principais - Padronizadas com StatCard v2.0.0 - Clicáveis */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div 
-            className="cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/20" 
+          <div
+            className="cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/20"
+            role="button"
+            tabIndex={0}
             onClick={handleTotalCustomersClick}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleTotalCustomersClick();
+              }
+            }}
           >
             <StatCard
               layout="crm"
@@ -425,9 +434,17 @@ export const CrmDashboard: React.FC = () => {
             />
           </div>
 
-          <div 
-            className="cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-green-500/20" 
+          <div
+            className="cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-green-500/20"
+            role="button"
+            tabIndex={0}
             onClick={handleLtvClick}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleLtvClick();
+              }
+            }}
           >
             <StatCard
               layout="crm"
@@ -439,9 +456,17 @@ export const CrmDashboard: React.FC = () => {
             />
           </div>
 
-          <div 
-            className="cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-yellow-500/20" 
+          <div
+            className="cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-yellow-500/20"
+            role="button"
+            tabIndex={0}
             onClick={handleBirthdaysClick}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleBirthdaysClick();
+              }
+            }}
           >
             <StatCard
               layout="crm"
@@ -453,9 +478,17 @@ export const CrmDashboard: React.FC = () => {
             />
           </div>
 
-          <div 
-            className="cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-red-500/20" 
+          <div
+            className="cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-red-500/20"
+            role="button"
+            tabIndex={0}
             onClick={handleRiskClick}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleRiskClick();
+              }
+            }}
           >
             <StatCard
               layout="crm"

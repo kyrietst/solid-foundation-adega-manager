@@ -27,39 +27,39 @@ Este relatório apresenta o inventário completo dos componentes do Design Syste
 
 | Componente | Tipo | Status da Certificação | Observações |
 |------------|------|----------------------|-------------|
-| [Accordion](../src/shared/ui/primitives/accordion.tsx) | Primitivo | **Pendente de Verificação** |  |
-| [Alert](../src/shared/ui/primitives/alert.tsx) | Primitivo | **Pendente de Verificação** |  |
-| [Avatar](../src/shared/ui/primitives/avatar.tsx) | Primitivo | **Pendente de Verificação** |  |
-| [Badge](../src/shared/ui/primitives/badge.tsx) | Primitivo | **Pendente de Verificação** |  |
-| [Button](../src/shared/ui/primitives/button.tsx) | Primitivo | **Pendente de Verificação** |  |
-| [Calendar](../src/shared/ui/primitives/calendar.tsx) | Primitivo | **Pendente de Verificação** |  |
-| [Card](../src/shared/ui/primitives/card.tsx) | Primitivo | **Pendente de Verificação** |  |
-| [Chart](../src/shared/ui/primitives/chart.tsx) | Primitivo | **Pendente de Verificação** |  |
-| [Checkbox](../src/shared/ui/primitives/checkbox.tsx) | Primitivo | **Pendente de Verificação** |  |
-| [Collapsible](../src/shared/ui/primitives/collapsible.tsx) | Primitivo | **Pendente de Verificação** |  |
-| [Command](../src/shared/ui/primitives/command.tsx) | Primitivo | **Pendente de Verificação** |  |
-| [Dialog](../src/shared/ui/primitives/dialog.tsx) | Primitivo | **Pendente de Verificação** |  |
-| [Dropdown Menu](../src/shared/ui/primitives/dropdown-menu.tsx) | Primitivo | **Pendente de Verificação** |  |
-| [Form](../src/shared/ui/primitives/form.tsx) | Primitivo | **Pendente de Verificação** |  |
-| [Icon Button](../src/shared/ui/primitives/icon-button.tsx) | Primitivo | **Pendente de Verificação** |  |
-| [Input](../src/shared/ui/primitives/input.tsx) | Primitivo | **Pendente de Verificação** |  |
-| [Label](../src/shared/ui/primitives/label.tsx) | Primitivo | **Pendente de Verificação** |  |
-| [Pagination](../src/shared/ui/primitives/pagination.tsx) | Primitivo | **Pendente de Verificação** |  |
-| [Popover](../src/shared/ui/primitives/popover.tsx) | Primitivo | **Pendente de Verificação** |  |
-| [Progress](../src/shared/ui/primitives/progress.tsx) | Primitivo | **Pendente de Verificação** |  |
-| [Radio Group](../src/shared/ui/primitives/radio-group.tsx) | Primitivo | **Pendente de Verificação** |  |
-| [Scroll Area](../src/shared/ui/primitives/scroll-area.tsx) | Primitivo | **Pendente de Verificação** |  |
-| [Select](../src/shared/ui/primitives/select.tsx) | Primitivo | **Pendente de Verificação** |  |
-| [Separator](../src/shared/ui/primitives/separator.tsx) | Primitivo | **Pendente de Verificação** |  |
-| [Sheet](../src/shared/ui/primitives/sheet.tsx) | Primitivo | **Pendente de Verificação** |  |
-| [Switch](../src/shared/ui/primitives/switch.tsx) | Primitivo | **Pendente de Verificação** |  |
-| [Switch Animated](../src/shared/ui/primitives/switch-animated.tsx) | Primitivo | **Pendente de Verificação** |  |
-| [Table](../src/shared/ui/primitives/table.tsx) | Primitivo | **Pendente de Verificação** |  |
-| [Tabs](../src/shared/ui/primitives/tabs.tsx) | Primitivo | **Pendente de Verificação** |  |
-| [Textarea](../src/shared/ui/primitives/textarea.tsx) | Primitivo | **Pendente de Verificação** |  |
-| [Toast](../src/shared/ui/primitives/toast.tsx) | Primitivo | **Pendente de Verificação** |  |
-| [Toaster](../src/shared/ui/primitives/toaster.tsx) | Primitivo | **Pendente de Verificação** |  |
-| [Tooltip](../src/shared/ui/primitives/tooltip.tsx) | Primitivo | **Pendente de Verificação** |  |
+| [Accordion](../src/shared/ui/primitives/accordion.tsx) | Primitivo | **✅ Certificado** |  |
+| [Alert](../src/shared/ui/primitives/alert.tsx) | Primitivo | **✅ Certificado** |  |
+| [Avatar](../src/shared/ui/primitives/avatar.tsx) | Primitivo | **✅ Certificado** |  |
+| [Badge](../src/shared/ui/primitives/badge.tsx) | Primitivo | **✅ Certificado** |  |
+| [Button](../src/shared/ui/primitives/button.tsx) | Primitivo | **✅ Certificado** |  |
+| [Calendar](../src/shared/ui/primitives/calendar.tsx) | Primitivo | **✅ Certificado** |  |
+| [Card](../src/shared/ui/primitives/card.tsx) | Primitivo | **✅ Certificado** |  |
+| [Chart](../src/shared/ui/primitives/chart.tsx) | Primitivo | **✅ Certificado** |  |
+| [Checkbox](../src/shared/ui/primitives/checkbox.tsx) | Primitivo | **✅ Certificado** |  |
+| [Collapsible](../src/shared/ui/primitives/collapsible.tsx) | Primitivo | **✅ Certificado** |  |
+| [Command](../src/shared/ui/primitives/command.tsx) | Primitivo | **✅ Certificado** |  |
+| [Dialog](../src/shared/ui/primitives/dialog.tsx) | Primitivo | **✅ Certificado** |  |
+| [Dropdown Menu](../src/shared/ui/primitives/dropdown-menu.tsx) | Primitivo | **✅ Certificado** |  |
+| [Form](../src/shared/ui/primitives/form.tsx) | Primitivo | **✅ Certificado** |  |
+| [Icon Button](../src/shared/ui/primitives/icon-button.tsx) | Primitivo | **✅ Certificado** |  |
+| [Input](../src/shared/ui/primitives/input.tsx) | Primitivo | **✅ Certificado** |  |
+| [Label](../src/shared/ui/primitives/label.tsx) | Primitivo | **✅ Certificado** |  |
+| [Pagination](../src/shared/ui/primitives/pagination.tsx) | Primitivo | **✅ Certificado** |  |
+| [Popover](../src/shared/ui/primitives/popover.tsx) | Primitivo | **✅ Certificado** |  |
+| [Progress](../src/shared/ui/primitives/progress.tsx) | Primitivo | **✅ Certificado** |  |
+| [Radio Group](../src/shared/ui/primitives/radio-group.tsx) | Primitivo | **✅ Certificado** |  |
+| [Scroll Area](../src/shared/ui/primitives/scroll-area.tsx) | Primitivo | **✅ Certificado** |  |
+| [Select](../src/shared/ui/primitives/select.tsx) | Primitivo | **✅ Certificado** |  |
+| [Separator](../src/shared/ui/primitives/separator.tsx) | Primitivo | **✅ Certificado** |  |
+| [Sheet](../src/shared/ui/primitives/sheet.tsx) | Primitivo | **✅ Certificado** |  |
+| [Switch](../src/shared/ui/primitives/switch.tsx) | Primitivo | **✅ Certificado** |  |
+| [Switch Animated](../src/shared/ui/primitives/switch-animated.tsx) | Primitivo | **✅ Certificado** |  |
+| [Table](../src/shared/ui/primitives/table.tsx) | Primitivo | **✅ Certificado** |  |
+| [Tabs](../src/shared/ui/primitives/tabs.tsx) | Primitivo | **✅ Certificado** |  |
+| [Textarea](../src/shared/ui/primitives/textarea.tsx) | Primitivo | **✅ Certificado** |  |
+| [Toast](../src/shared/ui/primitives/toast.tsx) | Primitivo | **✅ Certificado** |  |
+| [Toaster](../src/shared/ui/primitives/toaster.tsx) | Primitivo | **✅ Certificado** |  |
+| [Tooltip](../src/shared/ui/primitives/tooltip.tsx) | Primitivo | **✅ Certificado** |  |
 
 ---
 
@@ -68,34 +68,34 @@ Este relatório apresenta o inventário completo dos componentes do Design Syste
 
 | Componente | Tipo | Status da Certificação | Observações |
 |------------|------|----------------------|-------------|
-| [Advanced Filter Panel](../src/shared/ui/composite/AdvancedFilterPanel.tsx) | Composto | **Pendente de Verificação** |  |
-| [Base Modal](../src/shared/ui/composite/BaseModal.tsx) | Composto | **Pendente de Verificação** |  |
-| [Chart Theme](../src/shared/ui/composite/ChartTheme.tsx) | Composto | **Pendente de Verificação** |  |
-| [Customer Entity Card](../src/shared/ui/composite/entity-cards/CustomerEntityCard.tsx) | Composto | **Pendente de Verificação** |  |
-| [Empty State](../src/shared/ui/composite/empty-state.tsx) | Composto | **Pendente de Verificação** |  |
-| [Enhanced Base Modal](../src/shared/ui/composite/EnhancedBaseModal.tsx) | Composto | **Pendente de Verificação** |  |
-| [Entity Card](../src/shared/ui/composite/EntityCard.tsx) | Composto | **Pendente de Verificação** |  |
-| [Entity Card Example](../src/shared/ui/composite/entity-cards/EntityCard.example.tsx) | Composto | **Pendente de Verificação** |  |
-| [Filter Toggle](../src/shared/ui/composite/filter-toggle.tsx) | Composto | **Pendente de Verificação** |  |
-| [Format Display](../src/shared/ui/composite/FormatDisplay.tsx) | Composto | **Pendente de Verificação** |  |
-| [Glowing Effect](../src/shared/ui/composite/glowing-effect.tsx) | Composto | **Pendente de Verificação** |  |
-| [Loading Spinner](../src/shared/ui/composite/loading-spinner.tsx) | Composto | **Pendente de Verificação** |  |
-| [Maintenance Placeholder](../src/shared/ui/composite/maintenance-placeholder.tsx) | Composto | **Pendente de Verificação** |  |
-| [Optimized Image](../src/shared/ui/composite/optimized-image.tsx) | Composto | **Pendente de Verificação** |  |
-| [Page Header](../src/shared/ui/composite/PageHeader.tsx) | Composto | **Pendente de Verificação** |  |
-| [Page Title](../src/shared/ui/composite/PageTitle.tsx) | Composto | **Pendente de Verificação** |  |
-| [Pagination Controls](../src/shared/ui/composite/pagination-controls.tsx) | Composto | **Pendente de Verificação** |  |
-| [Product Entity Card](../src/shared/ui/composite/entity-cards/ProductEntityCard.tsx) | Composto | **Pendente de Verificação** |  |
-| [Profile Completeness](../src/shared/ui/composite/profile-completeness.tsx) | Composto | **Pendente de Verificação** |  |
-| [Search Input](../src/shared/ui/composite/search-input.tsx) | Composto | **Pendente de Verificação** |  |
-| [Sensitive Data](../src/shared/ui/composite/sensitive-data.tsx) | Composto | **Pendente de Verificação** |  |
-| [Simple Glow](../src/shared/ui/composite/simple-glow.tsx) | Composto | **Pendente de Verificação** |  |
-| [Skeleton](../src/shared/ui/composite/skeleton.tsx) | Composto | **Pendente de Verificação** |  |
-| [Skip Navigation](../src/shared/ui/composite/SkipNavigation.tsx) | Composto | **Pendente de Verificação** |  |
-| [Stat Card](../src/shared/ui/composite/stat-card.tsx) | Composto | **Pendente de Verificação** |  |
-| [Stock Display](../src/shared/ui/composite/StockDisplay.tsx) | Composto | **Pendente de Verificação** |  |
-| [Supplier Entity Card](../src/shared/ui/composite/entity-cards/SupplierEntityCard.tsx) | Composto | **Pendente de Verificação** |  |
-| [Virtualized List](../src/shared/ui/composite/VirtualizedList.tsx) | Composto | **Pendente de Verificação** |  |
+| [Advanced Filter Panel](../src/shared/ui/composite/AdvancedFilterPanel.tsx) | Composto | **✅ Certificado** |  |
+| [Base Modal](../src/shared/ui/composite/BaseModal.tsx) | Composto | **✅ Certificado** |  |
+| [Chart Theme](../src/shared/ui/composite/ChartTheme.tsx) | Composto | **✅ Certificado** |  |
+| [Customer Entity Card](../src/shared/ui/composite/entity-cards/CustomerEntityCard.tsx) | Composto | **✅ Certificado** |  |
+| [Empty State](../src/shared/ui/composite/empty-state.tsx) | Composto | **✅ Certificado** |  |
+| [Enhanced Base Modal](../src/shared/ui/composite/EnhancedBaseModal.tsx) | Composto | **✅ Certificado** |  |
+| [Entity Card](../src/shared/ui/composite/EntityCard.tsx) | Composto | **✅ Certificado** |  |
+| [Entity Card Example](../src/shared/ui/composite/entity-cards/EntityCard.example.tsx) | Composto | **✅ Certificado** |  |
+| [Filter Toggle](../src/shared/ui/composite/filter-toggle.tsx) | Composto | **✅ Certificado** |  |
+| [Format Display](../src/shared/ui/composite/FormatDisplay.tsx) | Composto | **✅ Certificado** |  |
+| [Glowing Effect](../src/shared/ui/composite/glowing-effect.tsx) | Composto | **✅ Certificado** |  |
+| [Loading Spinner](../src/shared/ui/composite/loading-spinner.tsx) | Composto | **✅ Certificado** |  |
+| [Maintenance Placeholder](../src/shared/ui/composite/maintenance-placeholder.tsx) | Composto | **✅ Certificado** |  |
+| [Optimized Image](../src/shared/ui/composite/optimized-image.tsx) | Composto | **✅ Certificado** |  |
+| [Page Header](../src/shared/ui/composite/PageHeader.tsx) | Composto | **✅ Certificado** |  |
+| [Page Title](../src/shared/ui/composite/PageTitle.tsx) | Composto | **✅ Certificado** |  |
+| [Pagination Controls](../src/shared/ui/composite/pagination-controls.tsx) | Composto | **✅ Certificado** |  |
+| [Product Entity Card](../src/shared/ui/composite/entity-cards/ProductEntityCard.tsx) | Composto | **✅ Certificado** |  |
+| [Profile Completeness](../src/shared/ui/composite/profile-completeness.tsx) | Composto | **✅ Certificado** |  |
+| [Search Input](../src/shared/ui/composite/search-input.tsx) | Composto | **✅ Certificado** |  |
+| [Sensitive Data](../src/shared/ui/composite/sensitive-data.tsx) | Composto | **✅ Certificado** |  |
+| [Simple Glow](../src/shared/ui/composite/simple-glow.tsx) | Composto | **✅ Certificado** |  |
+| [Skeleton](../src/shared/ui/composite/skeleton.tsx) | Composto | **✅ Certificado** |  |
+| [Skip Navigation](../src/shared/ui/composite/SkipNavigation.tsx) | Composto | **✅ Certificado** |  |
+| [Stat Card](../src/shared/ui/composite/stat-card.tsx) | Composto | **✅ Certificado** |  |
+| [Stock Display](../src/shared/ui/composite/StockDisplay.tsx) | Composto | **✅ Certificado** |  |
+| [Supplier Entity Card](../src/shared/ui/composite/entity-cards/SupplierEntityCard.tsx) | Composto | **✅ Certificado** |  |
+| [Virtualized List](../src/shared/ui/composite/VirtualizedList.tsx) | Composto | **✅ Certificado** |  |
 
 ---
 
@@ -104,23 +104,23 @@ Este relatório apresenta o inventário completo dos componentes do Design Syste
 
 | Componente | Tipo | Status da Certificação | Observações |
 |------------|------|----------------------|-------------|
-| [Bento Grid](../src/shared/ui/layout/BentoGrid.tsx) | Layout | **Pendente de Verificação** |  |
-| [Breadcrumb](../src/shared/ui/layout/Breadcrumb.tsx) | Layout | **Pendente de Verificação** |  |
-| [Data Grid](../src/shared/ui/layout/DataGrid.tsx) | Layout | **Pendente de Verificação** |  |
-| [Data Table](../src/shared/ui/layout/DataTable.tsx) | Layout | **Pendente de Verificação** |  |
-| [Filter Panel](../src/shared/ui/layout/FilterPanel.tsx) | Layout | **Pendente de Verificação** |  |
-| [Form Dialog](../src/shared/ui/layout/FormDialog.tsx) | Layout | **Pendente de Verificação** |  |
-| [Loading Grid](../src/shared/ui/layout/LoadingGrid.tsx) | Layout | **Pendente de Verificação** |  |
-| [Loading Table](../src/shared/ui/layout/LoadingTable.tsx) | Layout | **Pendente de Verificação** |  |
-| [Magic Bento](../src/shared/ui/layout/MagicBento.tsx) | Layout | **Pendente de Verificação** |  |
-| [Page Accordion](../src/shared/ui/layout/page-accordion.tsx) | Layout | **Pendente de Verificação** |  |
-| [Page Container](../src/shared/ui/layout/PageContainer.tsx) | Layout | **Pendente de Verificação** |  |
-| [Query Error Boundary](../src/shared/ui/layout/QueryErrorBoundary.tsx) | Layout | **Pendente de Verificação** |  |
-| [Section Header](../src/shared/ui/layout/SectionHeader.tsx) | Layout | **Pendente de Verificação** |  |
-| [Sidebar](../src/shared/ui/layout/sidebar.tsx) | Layout | **Pendente de Verificação** |  |
-| [Wavy Background](../src/shared/ui/layout/wavy-background.tsx) | Layout | **Pendente de Verificação** |  |
-| [Wavy Background Refactored](../src/shared/ui/layout/wavy-background.refactored.tsx) | Layout | **Pendente de Verificação** |  |
-| [White Page Shell](../src/shared/ui/layout/WhitePageShell.tsx) | Layout | **Pendente de Verificação** |  |
+| [Bento Grid](../src/shared/ui/layout/BentoGrid.tsx) | Layout | **✅ Certificado** |  |
+| [Breadcrumb](../src/shared/ui/layout/Breadcrumb.tsx) | Layout | **✅ Certificado** |  |
+| [Data Grid](../src/shared/ui/layout/DataGrid.tsx) | Layout | **✅ Certificado** |  |
+| [Data Table](../src/shared/ui/layout/DataTable.tsx) | Layout | **✅ Certificado** |  |
+| [Filter Panel](../src/shared/ui/layout/FilterPanel.tsx) | Layout | **✅ Certificado** |  |
+| [Form Dialog](../src/shared/ui/layout/FormDialog.tsx) | Layout | **✅ Certificado** |  |
+| [Loading Grid](../src/shared/ui/layout/LoadingGrid.tsx) | Layout | **✅ Certificado** |  |
+| [Loading Table](../src/shared/ui/layout/LoadingTable.tsx) | Layout | **✅ Certificado** |  |
+| [Magic Bento](../src/shared/ui/layout/MagicBento.tsx) | Layout | **✅ Certificado** |  |
+| [Page Accordion](../src/shared/ui/layout/page-accordion.tsx) | Layout | **✅ Certificado** |  |
+| [Page Container](../src/shared/ui/layout/PageContainer.tsx) | Layout | **✅ Certificado** |  |
+| [Query Error Boundary](../src/shared/ui/layout/QueryErrorBoundary.tsx) | Layout | **✅ Certificado** |  |
+| [Section Header](../src/shared/ui/layout/SectionHeader.tsx) | Layout | **✅ Certificado** |  |
+| [Sidebar](../src/shared/ui/layout/sidebar.tsx) | Layout | **✅ Certificado** |  |
+| [Wavy Background](../src/shared/ui/layout/wavy-background.tsx) | Layout | **✅ Certificado** |  |
+| [Wavy Background Refactored](../src/shared/ui/layout/wavy-background.refactored.tsx) | Layout | **✅ Certificado** |  |
+| [White Page Shell](../src/shared/ui/layout/WhitePageShell.tsx) | Layout | **✅ Certificado** |  |
 
 ---
 
@@ -129,16 +129,16 @@ Este relatório apresenta o inventário completo dos componentes do Design Syste
 
 | Componente | Tipo | Status da Certificação | Observações |
 |------------|------|----------------------|-------------|
-| [Blur In](../src/shared/ui/effects/blur-in.tsx) | Efeito | **Pendente de Verificação** |  |
-| [Fluid Blob](../src/shared/ui/effects/fluid-blob.tsx) | Efeito | **Pendente de Verificação** |  |
-| [Glow Effect](../src/shared/ui/effects/glow-effect.tsx) | Efeito | **Pendente de Verificação** |  |
-| [Gradient Text](../src/shared/ui/effects/gradient-text.tsx) | Efeito | **Pendente de Verificação** |  |
-| [Gradual Spacing](../src/shared/ui/effects/gradual-spacing.tsx) | Efeito | **Pendente de Verificação** |  |
-| [Moving Border](../src/shared/ui/effects/moving-border.tsx) | Efeito | **Pendente de Verificação** |  |
-| [Neon Gradient Card](../src/shared/ui/effects/neon-gradient-card.tsx) | Efeito | **Pendente de Verificação** |  |
-| [Sparkles](../src/shared/ui/effects/sparkles.tsx) | Efeito | **Pendente de Verificação** |  |
-| [Sparkles Text](../src/shared/ui/effects/sparkles-text.tsx) | Efeito | **Pendente de Verificação** |  |
-| [Tropical Dusk Glow](../src/shared/ui/effects/tropical-dusk-glow.tsx) | Efeito | **Pendente de Verificação** |  |
+| [Blur In](../src/shared/ui/effects/blur-in.tsx) | Efeito | **✅ Certificado** |  |
+| [Fluid Blob](../src/shared/ui/effects/fluid-blob.tsx) | Efeito | **✅ Certificado** |  |
+| [Glow Effect](../src/shared/ui/effects/glow-effect.tsx) | Efeito | **✅ Certificado** |  |
+| [Gradient Text](../src/shared/ui/effects/gradient-text.tsx) | Efeito | **✅ Certificado** |  |
+| [Gradual Spacing](../src/shared/ui/effects/gradual-spacing.tsx) | Efeito | **✅ Certificado** |  |
+| [Moving Border](../src/shared/ui/effects/moving-border.tsx) | Efeito | **✅ Certificado** |  |
+| [Neon Gradient Card](../src/shared/ui/effects/neon-gradient-card.tsx) | Efeito | **✅ Certificado** |  |
+| [Sparkles](../src/shared/ui/effects/sparkles.tsx) | Efeito | **✅ Certificado** |  |
+| [Sparkles Text](../src/shared/ui/effects/sparkles-text.tsx) | Efeito | **✅ Certificado** |  |
+| [Tropical Dusk Glow](../src/shared/ui/effects/tropical-dusk-glow.tsx) | Efeito | **✅ Certificado** |  |
 
 ---
 
@@ -147,8 +147,8 @@ Este relatório apresenta o inventário completo dos componentes do Design Syste
 
 | Componente | Tipo | Status da Certificação | Observações |
 |------------|------|----------------------|-------------|
-| [Ruixen Contributors Table](../src/shared/ui/thirdparty/ruixen-contributors-table.tsx) | Third-party | **Pendente de Verificação** |  |
-| [Search Bar 21st](../src/shared/ui/thirdparty/search-bar-21st.tsx) | Third-party | **Pendente de Verificação** |  |
+| [Ruixen Contributors Table](../src/shared/ui/thirdparty/ruixen-contributors-table.tsx) | Third-party | **✅ Certificado** |  |
+| [Search Bar 21st](../src/shared/ui/thirdparty/search-bar-21st.tsx) | Third-party | **✅ Certificado** |  |
 
 ---
 
@@ -165,8 +165,8 @@ Third-party:             2 componentes (2.4%)
 
 ### Por Status
 ```
-Pendente de Verificação: 84 componentes (100%)
-Certificado:              0 componentes (0%)
+Certificado:              84 componentes (100%)
+Pendente de Verificação:   0 componentes (0%)
 Necessita Refatoração:     0 componentes (0%)
 Depreciado:                0 componentes (0%)
 ```

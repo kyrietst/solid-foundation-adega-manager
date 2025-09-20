@@ -59,7 +59,7 @@ export const ChartsSection: React.FC<ChartsSectionProps> = ({
   } as React.CSSProperties;
 
   return (
-    <section className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8" role="region" aria-label="Gráficos de vendas">
+    <section className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8" aria-label="Gráficos de vendas">
       {/* Gráfico de Barras - Vendas por Mês */}
       <Card className="border-white/20 bg-black/80 backdrop-blur-xl shadow-lg">
         <CardHeader>

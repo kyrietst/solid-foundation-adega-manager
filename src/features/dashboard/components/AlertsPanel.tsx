@@ -62,13 +62,17 @@ export function AlertsPanel({ items, className, maxItems = 6, previewActivities,
         if (!rpcError && rpcData && typeof rpcData.total_value === 'number') {
           return Number(rpcData.total_value);
         }
-      } catch {}
+      } catch {
+        // Ignore RPC error, fallback to manual calculation
+      }
       try {
         const { data, error } = await supabase.from('products').select('price, stock_quantity');
         if (!error && data) {
           return data.reduce((sum: number, p: any) => sum + Number(p.price || 0) * Number(p.stock_quantity || 0), 0);
         }
-      } catch {}
+      } catch {
+        // Ignore manual calculation error
+      }
       return null;
     },
   });

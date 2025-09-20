@@ -20,6 +20,7 @@ export default {
 		extend: {
 			fontFamily: {
 				'sf-pro-display': ['SF Pro Display', 'ui-sans-serif', 'system-ui', '-apple-system', 'sans-serif'],
+				'sf-pro': ['SF Pro Display', 'ui-sans-serif', 'system-ui', '-apple-system', 'sans-serif'], // Alias para compatibilidade
 			},
 			colors: {
 				border: 'hsl(var(--border))',

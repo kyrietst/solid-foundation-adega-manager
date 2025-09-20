@@ -64,7 +64,7 @@ const editCustomerSchema = z.object({
     .string()
     .min(10, 'Telefone deve ter pelo menos 10 dígitos')
     .max(15, 'Telefone deve ter no máximo 15 dígitos')
-    .regex(/^[\d\s\(\)\-\+]+$/, 'Formato de telefone inválido')
+    .regex(/^[\d\s()-+]+$/, 'Formato de telefone inválido')
     .optional()
     .or(z.literal('')),
   

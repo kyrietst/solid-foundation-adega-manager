@@ -27,9 +27,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   showHeader = true,
 }) => {
   return (
-    <section 
-      className="space-y-6" 
-      role="region" 
+    <section
+      className="space-y-6"
       aria-labelledby="admin-panel-title"
     >
       {showHeader && (

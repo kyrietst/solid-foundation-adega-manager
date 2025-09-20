@@ -169,7 +169,7 @@ export const NewBudgetModal: React.FC<NewBudgetModalProps> = ({
             >
               {createBudgetMutation.isPending ? 'Criando...' : 'Criar Orçamento'}
             </Button>
-          </div>
+          </DialogFooter>
         </form>
     </BaseModal>
   );

@@ -86,7 +86,7 @@ export const PageTitle: React.FC<PageTitleProps> = ({
                 }}
                 className={cn(
                   getSFProTextClasses('h1', 'accent'),
-                  "text-transparent bg-clip-text bg-gradient-to-r from-[#FF2400] to-[#FFDA04] drop-shadow-lg"
+                  "text-transparent bg-clip-text bg-gradient-to-r from-gradient-fire-from to-gradient-fire-via drop-shadow-lg"
                 )}
                 style={{
                   textShadow: '0 2px 4px rgba(0,0,0,0.3), 0 0 20px rgba(255, 218, 4, 0.2)'
@@ -100,19 +100,19 @@ export const PageTitle: React.FC<PageTitleProps> = ({
                 </p>
               )}
 
-              {/* Sistema de sublinhado de 4 camadas como página de clientes */}
+              {/* Sistema de sublinhado de 4 camadas usando tokens */}
               <div className="w-full h-2 relative mt-2">
-                {/* Red blur layer (2px height, full width) */}
-                <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FF2400]/80 to-transparent h-[2px] w-full blur-sm" />
+                {/* Red blur layer (deco-line height, full width) */}
+                <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-gradient-fire-from/80 to-transparent h-deco-line w-full blur-sm" />
 
-                {/* Red solid layer (1px height, full width) */}
-                <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FF2400] to-transparent h-px w-full" />
+                {/* Red solid layer (deco-thin height, full width) */}
+                <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-gradient-fire-from to-transparent h-deco-thin w-full" />
 
-                {/* Yellow blur layer (3px height, 3/4 width) */}
-                <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FFDA04]/80 to-transparent h-[3px] w-3/4 blur-sm mx-auto" />
+                {/* Yellow blur layer (deco-border height, 3/4 width) */}
+                <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-gradient-fire-via/80 to-transparent h-deco-border w-3/4 blur-sm mx-auto" />
 
-                {/* Yellow solid layer (1px height, 3/4 width) */}
-                <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FFDA04] to-transparent h-px w-3/4 mx-auto" />
+                {/* Yellow solid layer (deco-thin height, 3/4 width) */}
+                <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-gradient-fire-via to-transparent h-deco-thin w-3/4 mx-auto" />
               </div>
             </div>
 

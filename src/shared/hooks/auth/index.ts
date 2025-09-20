@@ -1,4 +1,5 @@
-// Shared Hooks Auth Export  
+// Shared Hooks Auth Export
 export { usePermissions } from './usePermissions';
 export { useAuthErrorHandler } from './useAuthErrorHandler';
 export { useAuditErrorHandler } from './useAuditErrorHandler';
+export { useFeatureFlag, useFeatureFlags } from './useFeatureFlag';

@@ -27,9 +27,9 @@ const toastVariants = cva(
   {
     variants: {
       variant: {
-        default: "border-amber-400/40 bg-black/90 text-white shadow-amber-400/20",
+        default: "border-accent-gold-100/40 bg-black-100/90 text-gray-50 shadow-accent-gold-100/20",
         destructive:
-          "destructive group border-red-400/40 bg-red-900/90 text-red-100 shadow-red-400/20",
+          "destructive group border-accent-red/40 bg-accent-red/90 text-gray-50 shadow-accent-red/20",
       },
     },
     defaultVariants: {
@@ -75,7 +75,7 @@ const ToastClose = React.forwardRef<
   <ToastPrimitives.Close
     ref={ref}
     className={cn(
-      "absolute right-2 top-2 rounded-md p-1 text-gray-400 opacity-70 transition-all hover:text-accent-gold-100 hover:bg-accent-gold-100/10 hover:opacity-100 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-accent-gold-100/50 group-hover:opacity-100 group-[.destructive]:text-accent-red-300 group-[.destructive]:hover:text-accent-red-100 group-[.destructive]:hover:bg-accent-red-400/10 group-[.destructive]:focus:ring-accent-red-400 group-[.destructive]:focus:ring-offset-accent-red-600",
+      "absolute right-2 top-2 rounded-md p-1 text-gray-400 opacity-70 transition-all hover:text-accent-gold-100 hover:bg-accent-gold-100/10 hover:opacity-100 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-accent-gold-100/50 group-hover:opacity-100 group-[.destructive]:text-accent-red group-[.destructive]:hover:text-accent-red group-[.destructive]:hover:bg-accent-red/10 group-[.destructive]:focus:ring-accent-red group-[.destructive]:focus:ring-offset-accent-red",
       className
     )}
     toast-close=""
@@ -92,7 +92,7 @@ const ToastTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <ToastPrimitives.Title
     ref={ref}
-    className={cn("text-sm font-semibold text-white", className)}
+    className={cn("text-sm font-semibold text-gray-50", className)}
     {...props}
   />
 ))
@@ -104,7 +104,7 @@ const ToastDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <ToastPrimitives.Description
     ref={ref}
-    className={cn("text-sm text-gray-200 opacity-95", className)}
+    className={cn("text-sm text-gray-300 opacity-95", className)}
     {...props}
   />
 ))

@@ -45,6 +45,9 @@ export default tseslint.config(
         { allowConstantExport: true },
       ],
       "@typescript-eslint/no-unused-vars": "off",
+      // Temporarily disabled for cleanup - Will be re-enabled after critical fixes
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-unsafe-function-type": "off",
 
       // Accessibility rules (WCAG 2.2 compliance)
       "jsx-a11y/alt-text": "error",

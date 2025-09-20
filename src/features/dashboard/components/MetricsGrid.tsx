@@ -34,7 +34,7 @@ export const MetricsGrid: React.FC<MetricsGridProps> = ({
   }
 
   return (
-    <section className="space-y-4" role="region" aria-labelledby={title ? 'metrics-title' : undefined}>
+    <section className="space-y-4" aria-labelledby={title ? 'metrics-title' : undefined}>
       {title && (
         <h3 id="metrics-title" className="text-xl font-bold text-white">{title}</h3>
       )}

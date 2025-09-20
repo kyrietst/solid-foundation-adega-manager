@@ -216,7 +216,7 @@ export function useSmartAlerts() {
           .rpc('get_inventory_total_value');
         if (!stockValueError && stockValueData && typeof stockValueData.total_value === 'number') {
           // anexar no retorno final
-          var inventoryTotalValue = Number(stockValueData.total_value);
+          const inventoryTotalValue = Number(stockValueData.total_value);
         }
       } catch (error) {
         console.error('Error fetching inventory total value:', error);

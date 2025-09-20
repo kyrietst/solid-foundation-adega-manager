@@ -1,13 +1,16 @@
-"use client";
-import * as React from "react";
-import { cn } from "@/core/config/utils";
-import { useMotionTemplate, useMotionValue, motion } from "motion/react";
+import * as React from "react"
+import { cn } from "@/core/config/utils"
+import { useMotionTemplate, useMotionValue, motion } from "motion/react"
 
-export type InputProps = React.InputHTMLAttributes<HTMLInputElement>
+export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  /** Enable enhanced hover effect with motion */
+  enhanced?: boolean
+}
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, type, ...props }, ref) => {
-    const radius = 100; // change this to increase the rdaius of the hover effect
+  ({ className, type, enhanced = true, ...props }, ref) => {
+    // Use design token for radius
+    const radius = 100; // TODO: Add to design tokens if needed
     const [visible, setVisible] = React.useState(false);
 
     const mouseX = useMotionValue(0);
@@ -15,20 +18,35 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
 
     function handleMouseMove({ currentTarget, clientX, clientY }: React.MouseEvent<HTMLDivElement>) {
       const { left, top } = currentTarget.getBoundingClientRect();
-
       mouseX.set(clientX - left);
       mouseY.set(clientY - top);
     }
+
+    if (!enhanced) {
+      // Standard input without motion effects
+      return (
+        <input
+          type={type}
+          className={cn(
+            "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+            className
+          )}
+          ref={ref}
+          {...props}
+        />
+      )
+    }
+
     return (
       <motion.div
         style={{
           background: useMotionTemplate`
-        radial-gradient(
-          ${visible ? radius + "px" : "0px"} circle at ${mouseX}px ${mouseY}px,
-          #3b82f6,
-          transparent 80%
-        )
-      `,
+            radial-gradient(
+              ${visible ? radius + "px" : "0px"} circle at ${mouseX}px ${mouseY}px,
+              hsl(var(--accent-blue)),
+              transparent 80%
+            )
+          `,
         }}
         onMouseMove={handleMouseMove}
         onMouseEnter={() => setVisible(true)}
@@ -38,15 +56,15 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         <input
           type={type}
           className={cn(
-            `shadow-input dark:placeholder-text-neutral-600 flex h-10 w-full rounded-md border-none bg-gray-50 px-3 py-2 text-sm text-black transition duration-400 group-hover/input:shadow-none file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-neutral-400 focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 dark:bg-zinc-800 dark:text-white dark:shadow-sm dark:focus-visible:ring-neutral-600`,
-            className,
+            "flex h-10 w-full rounded-md border-none bg-background px-3 py-2 text-sm text-foreground transition duration-400 group-hover/input:shadow-none file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50",
+            className
           )}
           ref={ref}
           {...props}
         />
       </motion.div>
     );
-  },
+  }
 );
 Input.displayName = "Input";
 

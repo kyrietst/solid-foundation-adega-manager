@@ -77,7 +77,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
                     hidden: { filter: "blur(15px)", opacity: 0 },
                     visible: { filter: "blur(0px)", opacity: 1 }
                   }}
-                  className="font-sf-black text-3xl leading-tight text-transparent bg-clip-text bg-gradient-to-r from-[#FF2400] via-[#FFDA04] to-[#FF2400] drop-shadow-lg"
+                  className="font-sf-black text-3xl leading-tight text-transparent bg-clip-text bg-gradient-to-r from-gradient-fire-from via-gradient-fire-via to-gradient-fire-to drop-shadow-lg"
                 />
 
                 {/* Descrição opcional */}
@@ -89,10 +89,10 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
 
                 {/* Sublinhado elegante usando tokens do design system */}
                 <div className="w-full h-6 relative mt-2">
-                  <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FF2400]/80 to-transparent h-[2px] w-full blur-sm" />
-                  <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FF2400] to-transparent h-px w-full" />
-                  <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FFDA04]/80 to-transparent h-[3px] w-3/4 blur-sm mx-auto" />
-                  <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-[#FFDA04] to-transparent h-px w-3/4 mx-auto" />
+                  <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-gradient-fire-from/80 to-transparent h-deco-line w-full blur-sm" />
+                  <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-gradient-fire-from to-transparent h-deco-thin w-full" />
+                  <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-gradient-fire-via/80 to-transparent h-deco-border w-3/4 blur-sm mx-auto" />
+                  <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-gradient-fire-via to-transparent h-deco-thin w-3/4 mx-auto" />
                 </div>
               </div>
             </div>

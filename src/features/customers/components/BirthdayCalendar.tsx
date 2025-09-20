@@ -206,7 +206,15 @@ export const BirthdayCalendar = ({ className, showActions = true }: BirthdayCale
                   getBirthdayColor(customer),
                   selectedCustomer?.id === customer.id && "ring-2 ring-primary-yellow/50"
                 )}
+                role="button"
+                tabIndex={0}
                 onClick={() => setSelectedCustomer(customer)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setSelectedCustomer(customer);
+                  }
+                }}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">

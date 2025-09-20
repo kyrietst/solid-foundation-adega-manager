@@ -20,6 +20,7 @@ import {
 import { motion } from "motion/react";
 import { cn } from "@/core/config/utils";
 import { useAuth } from "@/app/providers/AuthContext";
+import { useFeatureFlag } from "@/shared/hooks/auth/useFeatureFlag";
 import { getSFProTextClasses } from "@/core/config/theme-utils";
 
 export function AppSidebar() {
@@ -27,6 +28,17 @@ export function AppSidebar() {
   const location = useLocation();
   const { user, userRole, signOut } = useAuth();
   const [open, setOpen] = useState(false);
+
+  // Obter todas as feature flags necessárias uma vez no topo do componente
+  const isDashboardEnabled = useFeatureFlag('dashboard_enabled');
+  const isSalesEnabled = useFeatureFlag('sales_enabled');
+  const isInventoryEnabled = useFeatureFlag('inventory_enabled');
+  const isSuppliersEnabled = useFeatureFlag('suppliers_enabled');
+  const isCustomersEnabled = useFeatureFlag('customers_enabled');
+  const isDeliveryEnabled = useFeatureFlag('delivery_enabled');
+  const isMovementsEnabled = useFeatureFlag('movements_enabled');
+  const isReportsEnabled = useFeatureFlag('reports_enabled');
+  const isExpensesEnabled = useFeatureFlag('expenses_enabled');
 
   // Definir links baseado na documentação
   const allLinks = [
@@ -38,6 +50,7 @@ export function AppSidebar() {
         <IconChartBar className="h-5 w-5 shrink-0 text-primary-yellow" />
       ),
       roles: ["admin", "employee"],
+      featureFlag: "dashboard_enabled",
     },
     {
       id: "sales",
@@ -47,6 +60,7 @@ export function AppSidebar() {
         <IconShoppingCart className="h-5 w-5 shrink-0 text-primary-yellow" />
       ),
       roles: ["admin", "employee"],
+      featureFlag: "sales_enabled",
     },
     {
       id: "inventory",
@@ -56,6 +70,7 @@ export function AppSidebar() {
         <IconPackage className="h-5 w-5 shrink-0 text-primary-yellow" />
       ),
       roles: ["admin", "employee"],
+      featureFlag: "inventory_enabled",
     },
     {
       id: "suppliers",
@@ -65,6 +80,7 @@ export function AppSidebar() {
         <IconBuilding className="h-5 w-5 shrink-0 text-primary-yellow" />
       ),
       roles: ["admin", "employee"],
+      featureFlag: "suppliers_enabled",
     },
     {
       id: "customers",
@@ -74,6 +90,7 @@ export function AppSidebar() {
         <IconUsers className="h-5 w-5 shrink-0 text-primary-yellow" />
       ),
       roles: ["admin", "employee"],
+      featureFlag: "customers_enabled",
     },
     {
       id: "crm",
@@ -83,6 +100,7 @@ export function AppSidebar() {
         <IconChartPie className="h-5 w-5 shrink-0 text-primary-yellow" />
       ),
       roles: ["admin", "employee"],
+      featureFlag: "customers_enabled", // CRM usa a mesma flag que clientes
     },
     {
       id: "delivery",
@@ -92,6 +110,7 @@ export function AppSidebar() {
         <IconTruck className="h-5 w-5 shrink-0 text-primary-yellow" />
       ),
       roles: ["admin", "employee", "delivery"],
+      featureFlag: "delivery_enabled",
     },
     {
       id: "movements",
@@ -101,6 +120,7 @@ export function AppSidebar() {
         <IconRefresh className="h-5 w-5 shrink-0 text-primary-yellow" />
       ),
       roles: ["admin"],
+      featureFlag: "movements_enabled",
     },
     {
       id: "automations",
@@ -110,6 +130,7 @@ export function AppSidebar() {
         <IconRobot className="h-5 w-5 shrink-0 text-primary-yellow" />
       ),
       roles: ["admin"],
+      featureFlag: "movements_enabled", // Automações usa a mesma flag que movimentações
     },
     {
       id: "reports",
@@ -119,6 +140,7 @@ export function AppSidebar() {
         <IconReportAnalytics className="h-5 w-5 shrink-0 text-primary-yellow" />
       ),
       roles: ["admin", "employee"],
+      featureFlag: "reports_enabled",
     },
     {
       id: "expenses",
@@ -128,6 +150,7 @@ export function AppSidebar() {
         <IconReceipt className="h-5 w-5 shrink-0 text-primary-yellow" />
       ),
       roles: ["admin"],
+      featureFlag: "expenses_enabled",
     },
     {
       id: "users",
@@ -137,25 +160,60 @@ export function AppSidebar() {
         <IconSettings className="h-5 w-5 shrink-0 text-primary-yellow" />
       ),
       roles: ["admin"],
+      featureFlag: null, // Usuários sempre disponível para admin (gestão de sistema)
     },
   ];
 
-  // Filtrar links baseado no sistema de permissões da documentação
+  // Filtrar links baseado no sistema de permissões + feature flags
   const getFilteredLinks = () => {
     if (!userRole) return [];
 
-    // Admin principal (adm@adega.com) tem acesso a tudo
+    // Admin principal (adm@adega.com) tem acesso a tudo (feature flags já são true no AuthContext)
     if (user?.email === 'adm@adega.com') {
       return allLinks;
     }
 
-    // Entregadores só veem delivery
+    // Primeiro filtrar por roles
+    let linksFilteredByRole;
     if (userRole === 'delivery') {
-      return allLinks.filter(item => item.id === 'delivery');
+      // Entregadores só veem delivery
+      linksFilteredByRole = allLinks.filter(item => item.id === 'delivery');
+    } else {
+      // Outros usuários conforme roles permitidos
+      linksFilteredByRole = allLinks.filter(item => item.roles.includes(userRole));
     }
 
-    // Outros usuários conforme roles permitidos
-    return allLinks.filter(item => item.roles.includes(userRole));
+    // Depois filtrar por feature flags usando as flags já obtidas
+    return linksFilteredByRole.filter(link => {
+      // Se não tem feature flag, sempre inclui (ex: usuários)
+      if (!link.featureFlag) {
+        return true;
+      }
+
+      // Verifica se a feature flag está ativa usando as variáveis já obtidas
+      switch (link.featureFlag) {
+        case 'dashboard_enabled':
+          return isDashboardEnabled;
+        case 'sales_enabled':
+          return isSalesEnabled;
+        case 'inventory_enabled':
+          return isInventoryEnabled;
+        case 'suppliers_enabled':
+          return isSuppliersEnabled;
+        case 'customers_enabled':
+          return isCustomersEnabled;
+        case 'delivery_enabled':
+          return isDeliveryEnabled;
+        case 'movements_enabled':
+          return isMovementsEnabled;
+        case 'reports_enabled':
+          return isReportsEnabled;
+        case 'expenses_enabled':
+          return isExpensesEnabled;
+        default:
+          return false;
+      }
+    });
   };
 
   const filteredLinks = getFilteredLinks();

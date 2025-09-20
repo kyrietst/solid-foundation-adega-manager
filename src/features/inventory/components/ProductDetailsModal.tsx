@@ -87,26 +87,41 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
   React.useEffect(() => {
     if (isOpen) {
       console.log('✅ RENDERIZANDO: Novo ProductDetailsModal (StatCards)');
+      console.log('📊 PRODUTO RECEBIDO:', product ? { id: product.id, name: product.name } : null);
     }
-  }, [isOpen]);
+  }, [isOpen, product]);
 
   const { formatCompact, formatRelative } = useFormatBrazilianDate();
   const { handleMouseMove } = useGlassmorphismEffect();
-  
-  // Buscar dados analíticos reais do produto
-  const { analytics, isLoading: analyticsLoading } = useProductAnalytics(product?.id || null);
-  
+
+  // Buscar dados analíticos reais do produto apenas quando há produto válido
+  const { analytics, isLoading: analyticsLoading, error: analyticsError } = useProductAnalytics(
+    product?.id || null
+  );
+
+  // Log de diagnóstico para analytics
+  React.useEffect(() => {
+    if (product?.id) {
+      console.log('📈 ANALYTICS STATUS:', {
+        productId: product.id,
+        isLoading: analyticsLoading,
+        hasAnalytics: !!analytics,
+        error: analyticsError
+      });
+    }
+  }, [product?.id, analyticsLoading, analytics, analyticsError]);
+
   // SSoT: Dados de estoque - Sistema de Dupla Contagem (Controle Explícito)
   const stockData = product ? {
     packages: product.stock_packages || 0,
     unitsLoose: product.stock_units_loose || 0,
     totalUnits: product.stock_quantity || 0
   } : null;
-  
+
   // Calcular completude dos dados (sempre executar o hook, independente do product)
   const completeness = useMemo(() => {
     if (!product) return { percentage: 0, missing: [], filled: [], hasPackageData: false };
-    
+
     // Campos obrigatórios/importantes para preenchimento do usuário
     const fields = [
       { key: 'barcode', name: 'Código de Barras (Unidade)', critical: false, userInput: true, section: 'barcode' },
@@ -115,31 +130,31 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
       { key: 'volume_ml', name: 'Volume (ml)', critical: false, userInput: true, section: 'basic' },
       { key: 'minimum_stock', name: 'Estoque Mínimo', critical: false, userInput: true, section: 'stock' }
     ];
-    
+
     // Campos condicionais para pacote (se has_package_tracking = true)
     const packageFields = [
       { key: 'package_barcode', name: 'Código de Barras (Pacote)', critical: false, userInput: true, section: 'barcode' },
       { key: 'package_units', name: 'Unidades por Pacote', critical: false, userInput: true, section: 'package' },
       { key: 'package_price', name: 'Preço do Pacote', critical: false, userInput: true, section: 'pricing' }
     ];
-    
+
     const allFields = [...fields];
     const hasPackageTracking = product.has_package_tracking;
-    
+
     // Adicionar campos de pacote apenas se o tracking estiver ativo
     if (hasPackageTracking) {
       allFields.push(...packageFields);
     }
-    
+
     const total = allFields.length;
     let filled = 0;
     const missing = [];
     const filledFields = [];
-    
+
     allFields.forEach(field => {
       const value = product[field.key];
       const hasValue = value && value !== 0 && String(value).trim() !== '';
-      
+
       if (hasValue) {
         filled++;
         filledFields.push(field);
@@ -147,7 +162,7 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
         missing.push(field);
       }
     });
-    
+
     return {
       percentage: Math.round((filled / total) * 100),
       missing,
@@ -159,16 +174,48 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
     };
   }, [product]);
 
-  // Early return após todos os hooks
-  if (!product) return null;
+  // GUARDA DE RENDERIZAÇÃO: Modal deve estar aberto para renderizar
+  if (!isOpen) {
+    return null;
+  }
+
+  // GUARDA DE RENDERIZAÇÃO: Produto deve existir
+  if (!product) {
+    console.warn('⚠️ ProductDetailsModal: Tentativa de renderizar sem produto válido');
+    return (
+      <EnhancedBaseModal
+        isOpen={isOpen}
+        onClose={onClose}
+        modalType="view"
+        title="Produto Não Encontrado"
+        customIcon={AlertTriangle}
+        size="md"
+        showCloseButton={true}
+      >
+        <div className="flex flex-col items-center justify-center p-8 text-center">
+          <AlertTriangle className="h-16 w-16 text-red-400 mb-4" />
+          <h3 className="text-lg font-semibold text-red-300 mb-2">
+            Produto Não Encontrado
+          </h3>
+          <p className="text-gray-400 mb-4">
+            Não foi possível carregar os detalhes do produto selecionado.
+          </p>
+          <Button onClick={onClose} variant="outline">
+            Fechar
+          </Button>
+        </div>
+      </EnhancedBaseModal>
+    );
+  }
 
   const stockStatus = getStockStatus(product.stock_quantity, product.minimum_stock || 10);
-  
+
   // Usar dados reais ou fallback para análise de giro
-  const turnoverAnalysis = analytics 
+  // Se há erro nos analytics, usar dados padrão
+  const turnoverAnalysis = analytics && !analyticsError
     ? getTurnoverAnalysis(analytics.turnoverRate, analytics.salesPerMonth)
-    : getTurnoverAnalysis('baixo', 0); // Fallback enquanto carrega
-    
+    : getTurnoverAnalysis('baixo', 0); // Fallback enquanto carrega ou em caso de erro
+
   const TurnoverIcon = turnoverAnalysis.icon;
 
   return (
@@ -511,14 +558,18 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
                     <div className="text-center p-3 bg-gray-800/40 border border-gray-600/30 rounded">
                       <span className="text-xs text-gray-400">Últ. Entrada</span>
                       <p className="text-xs text-gray-100">
-                        {analyticsLoading ? '...' : analytics?.lastEntry ? formatCompact(analytics.lastEntry) : 'N/A'}
+                        {analyticsLoading ? '⏳ Carregando...' :
+                         analyticsError ? '❌ Erro' :
+                         analytics?.lastEntry ? formatCompact(analytics.lastEntry) : 'N/A'}
                       </p>
                     </div>
 
                     <div className="text-center p-3 bg-gray-800/40 border border-gray-600/30 rounded">
                       <span className="text-xs text-gray-400">Últ. Saída</span>
                       <p className="text-xs text-gray-100">
-                        {analyticsLoading ? '...' : analytics?.lastExit ? formatCompact(analytics.lastExit) : 'N/A'}
+                        {analyticsLoading ? '⏳ Carregando...' :
+                         analyticsError ? '❌ Erro' :
+                         analytics?.lastExit ? formatCompact(analytics.lastExit) : 'N/A'}
                       </p>
                     </div>
                   </div>
@@ -619,12 +670,19 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
                 <div className="bg-gray-800/40 rounded p-3 text-center">
                   <span className="text-xs text-gray-400">Vendas/Mês</span>
                   <p className="text-sm font-bold text-gray-100">
-                    {analyticsLoading ? '...' : turnoverAnalysis.salesPerMonth}
+                    {analyticsLoading ? '⏳ Carregando...' :
+                     analyticsError ? '❌ Erro' :
+                     turnoverAnalysis.salesPerMonth}
                   </p>
                   <span className="text-xs text-gray-400">unidades</span>
-                  {analytics && analytics.salesLast30Days > 0 && (
+                  {analytics && !analyticsError && analytics.salesLast30Days > 0 && (
                     <p className="text-xs text-gray-500 mt-1">
                       {analytics.salesLast30Days} últimos 30d
+                    </p>
+                  )}
+                  {analyticsError && (
+                    <p className="text-xs text-red-400 mt-1">
+                      Falha ao carregar dados
                     </p>
                   )}
                 </div>

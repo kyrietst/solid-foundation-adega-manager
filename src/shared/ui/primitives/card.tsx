@@ -10,17 +10,9 @@ const Card = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      // Neo glass dark card default (maior contraste)
-      "hero-spotlight rounded-2xl border border-white/20 bg-black/70 backdrop-blur-md text-card-foreground shadow-[0_8px_24px_rgba(0,0,0,0.6)]",
+      "rounded-lg border bg-card text-card-foreground shadow-sm",
       className
     )}
-    onMouseMove={(e) => {
-      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-      const x = ((e.clientX - rect.left) / rect.width) * 100;
-      const y = ((e.clientY - rect.top) / rect.height) * 100;
-      (e.currentTarget as HTMLElement).style.setProperty("--x", `${x}%`);
-      (e.currentTarget as HTMLElement).style.setProperty("--y", `${y}%`);
-    }}
     {...props}
   />
 ))

@@ -107,7 +107,7 @@ export const PaginationControls = ({
               value={itemsPerPage.toString()} 
               onValueChange={handleItemsPerPageChange}
             >
-              <SelectTrigger className={cn("w-20 bg-gray-800/60 border-gray-700 text-gray-100 backdrop-blur-sm")}>
+              <SelectTrigger className={cn("w-20 bg-secondary border-border text-foreground backdrop-blur-sm")}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
