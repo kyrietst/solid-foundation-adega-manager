@@ -119,87 +119,189 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       return;
     }
 
+    console.log('🔍 AuthProvider - Iniciando fetchUserProfile para:', currentUser.id);
     fetchingProfileRef.current = true;
     currentUserIdRef.current = currentUser.id;
 
-    const fetchProfileOperation = async () => {
-      // Se é o admin principal, define o role diretamente
-      if (currentUser.email === 'adm@adega.com') {
-        setUserRole('admin');
+    // Timeout específico para a busca do perfil (6 segundos)
+    const profileTimeout = setTimeout(() => {
+      console.warn('⏰ AuthProvider - Timeout de 6s na busca do perfil, forçando fallback');
+      fetchingProfileRef.current = false;
+      // Definir role básico baseado no email como fallback
+      if (currentUser.email === 'funcionario@adega.com') {
+        setUserRole('employee');
         setHasTemporaryPassword(false);
-        // Admin principal tem todas as flags ativas
         setFeatureFlags({
-          dashboard_enabled: true,
           sales_enabled: true,
-          inventory_enabled: true,
+          reports_enabled: false,
+          delivery_enabled: false,
+          expenses_enabled: false,
           customers_enabled: true,
-          suppliers_enabled: true,
-          delivery_enabled: true,
-          movements_enabled: true,
-          reports_enabled: true,
-          expenses_enabled: true
+          dashboard_enabled: false,
+          inventory_enabled: true,
+          movements_enabled: false,
+          suppliers_enabled: false
         });
-        return;
+      } else {
+        setUserRole('employee'); // fallback seguro
+        setHasTemporaryPassword(false);
+        setFeatureFlags({});
       }
+      setLoading(false);
+    }, 6000);
 
-      // First try to get from profiles table
-      console.log('🔍 AuthProvider - Tentando buscar perfil para usuário ID:', currentUser.id);
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('role, is_temporary_password, feature_flags')
-        .eq('id', currentUser.id)
-        .single();
+    const fetchProfileOperation = async () => {
+      try {
+        // Se é o admin principal, define o role diretamente
+        if (currentUser.email === 'adm@adega.com') {
+          console.log('👤 AuthProvider - Admin principal detectado');
+          setUserRole('admin');
+          setHasTemporaryPassword(false);
+          setFeatureFlags({
+            dashboard_enabled: true,
+            sales_enabled: true,
+            inventory_enabled: true,
+            customers_enabled: true,
+            suppliers_enabled: true,
+            delivery_enabled: true,
+            movements_enabled: true,
+            reports_enabled: true,
+            expenses_enabled: true
+          });
+          return;
+        }
 
-      console.log('📊 AuthProvider - Resultado profiles:', { profileData, profileError });
+        // First try to get from profiles table
+        console.log('🔍 AuthProvider - Tentando buscar perfil para usuário ID:', currentUser.id);
 
-      if (profileError) {
-        console.log('⚠️ AuthProvider - Erro na tabela profiles, tentando users table:', profileError);
-        // If not found in profiles table, try users table
-        const { data: userData, error: userError } = await supabase
-          .from('users')
-          .select('role')
+        const profilePromise = supabase
+          .from('profiles')
+          .select('role, is_temporary_password, feature_flags')
           .eq('id', currentUser.id)
           .single();
 
-        console.log('📊 AuthProvider - Resultado users:', { userData, userError });
+        // Adicionar timeout na Promise da consulta (5s para a query específica)
+        const profilePromiseWithTimeout = Promise.race([
+          profilePromise,
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Profile query timeout')), 5000)
+          )
+        ]);
 
-        if (userError) {
-          console.error('💥 AuthProvider - Falha em ambas as tabelas:', { profileError, userError });
-          throw new Error(`Could not fetch user role from any table. Profiles error: ${profileError.message}, Users error: ${userError.message}`);
+        const result = await profilePromiseWithTimeout as Awaited<typeof profilePromise>;
+        const { data: profileData, error: profileError } = result;
+
+        console.log('📊 AuthProvider - Resultado profiles:', {
+          hasData: !!profileData,
+          role: profileData?.role,
+          errorCode: profileError?.code,
+          errorMessage: profileError?.message
+        });
+
+        if (profileError) {
+          console.log('⚠️ AuthProvider - Erro na tabela profiles, tentando users table:', profileError);
+
+          const { data: userData, error: userError } = await supabase
+            .from('users')
+            .select('role')
+            .eq('id', currentUser.id)
+            .single();
+
+          console.log('📊 AuthProvider - Resultado users:', { userData, userError });
+
+          if (userError) {
+            console.error('💥 AuthProvider - Falha em ambas as tabelas:', { profileError, userError });
+            // Em vez de throw, definir fallback baseado no email
+            if (currentUser.email === 'funcionario@adega.com') {
+              setUserRole('employee');
+            } else {
+              setUserRole('employee'); // fallback seguro
+            }
+            setHasTemporaryPassword(false);
+            setFeatureFlags({});
+            return;
+          }
+
+          setUserRole(userData.role);
+          setHasTemporaryPassword(false);
+          setFeatureFlags(null);
+        } else {
+          console.log('✅ AuthProvider - Perfil encontrado com sucesso');
+          setUserRole(profileData.role);
+          setHasTemporaryPassword(profileData.is_temporary_password || false);
+          setFeatureFlags(profileData.feature_flags || {});
         }
-
-        setUserRole(userData.role);
-        setHasTemporaryPassword(false); // Users table doesn't have temp password field
-        setFeatureFlags(null); // Users table doesn't have feature flags
-      } else {
-        setUserRole(profileData.role);
-        setHasTemporaryPassword(profileData.is_temporary_password || false);
-        setFeatureFlags(profileData.feature_flags || {});
+      } catch (error) {
+        console.error('💥 AuthProvider - Erro inesperado na busca do perfil:', error);
+        // Fallback baseado no email conhecido
+        if (currentUser.email === 'funcionario@adega.com') {
+          setUserRole('employee');
+          setFeatureFlags({
+            sales_enabled: true,
+            reports_enabled: false,
+            delivery_enabled: false,
+            expenses_enabled: false,
+            customers_enabled: true,
+            dashboard_enabled: false,
+            inventory_enabled: true,
+            movements_enabled: false,
+            suppliers_enabled: false
+          });
+        } else {
+          setUserRole('employee'); // fallback seguro
+          setFeatureFlags({});
+        }
+        setHasTemporaryPassword(false);
       }
     };
 
     try {
       await fetchProfileOperation();
+      console.log('✅ AuthProvider - fetchUserProfile concluído com sucesso');
     } catch (error) {
-      console.error('💥 AuthProvider - Erro ao buscar perfil:', error);
-      // Em vez de fazer logout, apenas definir loading como false
-      setLoading(false);
+      console.error('💥 AuthProvider - Erro final ao buscar perfil:', error);
     } finally {
+      clearTimeout(profileTimeout);
       fetchingProfileRef.current = false;
+      setLoading(false);
     }
   }, []); // Remover dependências que causam loops
 
   const onTemporaryPasswordChanged = useCallback(async () => {
+    console.log('🔄 AuthProvider - onTemporaryPasswordChanged chamado');
     const currentUser = currentUserIdRef.current;
-    if (!currentUser) return;
+    if (!currentUser) {
+      console.log('❌ AuthProvider - Nenhum usuário atual para atualizar');
+      return;
+    }
 
     // Reset flag para permitir nova busca do perfil
     fetchingProfileRef.current = false;
 
+    // Forçar atualização do status de senha temporária
+    setHasTemporaryPassword(false);
+
     // Buscar usuário atual do Supabase para garantir dados atualizados
     const { data: { user: latestUser } } = await supabase.auth.getUser();
     if (latestUser) {
+      console.log('🔍 AuthProvider - Buscando perfil atualizado após mudança de senha');
       await fetchUserProfile(latestUser);
+    }
+
+    // Verificação adicional direta do banco de dados
+    try {
+      const { data: profileData, error } = await supabase
+        .from('profiles')
+        .select('is_temporary_password')
+        .eq('id', currentUser)
+        .single();
+
+      if (!error && profileData) {
+        console.log('🔍 AuthProvider - Status real no banco:', profileData.is_temporary_password);
+        setHasTemporaryPassword(profileData.is_temporary_password || false);
+      }
+    } catch (error) {
+      console.error('Erro ao verificar status de senha temporária:', error);
     }
   }, []); // Remover dependências
 
@@ -213,16 +315,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     console.log('🔍 AuthProvider - useEffect iniciado (primeira vez), buscando sessão...');
     isInitialized.current = true;
 
-    // Timeout de segurança para evitar loading infinito
+    // Timeout de segurança para evitar loading infinito (aumentado para 12s)
     const timeoutId = setTimeout(() => {
-      console.warn('⏰ AuthProvider - Timeout de 10s atingido, forçando loading=false');
+      console.warn('⏰ AuthProvider - Timeout de 12s atingido, forçando loading=false');
       setLoading(false);
       // Resetar estado em caso de timeout
       if (!currentUserIdRef.current) {
         console.log('🚪 AuthProvider - Redirecionando para /auth devido ao timeout');
         window.location.href = '/auth';
       }
-    }, 10000);
+    }, 12000);
 
     // Check active sessions and sets the user
     supabase.auth.getSession().then(({ data: { session }, error }) => {
@@ -253,9 +355,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Listen for changes on auth state (sign in, sign out, etc.)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       console.log('🔄 AuthProvider - onAuthStateChange:', _event, !!session);
+
+      // Limpar timeout principal quando auth state muda
+      clearTimeout(timeoutId);
+
       setUser(session?.user ?? null);
       if (session?.user) {
         console.log('👤 AuthProvider - onAuthStateChange: buscando perfil do usuário...');
+        console.log('🔍 AuthProvider - Tentando buscar perfil para usuário ID:', session.user.id);
         await fetchUserProfile(session.user);
       } else {
         console.log('❌ AuthProvider - onAuthStateChange: sem sessão, limpando dados');
@@ -263,6 +370,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setFeatureFlags(null);
         setHasTemporaryPassword(false);
         currentUserIdRef.current = null;
+        fetchingProfileRef.current = false;
       }
       setLoading(false);
       console.log('✅ AuthProvider - onAuthStateChange: loading=false definido');

@@ -1,6 +1,14 @@
 /**
  * Hook centralizado para gerenciamento de permissões
  * Elimina prop drilling de permissões ao fornecer acesso direto nos componentes
+ *
+ * MODO DE ACESSO FOCADO (Aplicado em 2025):
+ * - Apenas ADMIN tem acesso completo ao sistema
+ * - EMPLOYEE tem acesso restrito a: Vendas, Estoque e Clientes
+ * - DELIVERY tem acesso apenas às suas próprias entregas
+ *
+ * Regra de Negócio: Para não-admins, apenas "Vendas", "Estoque" e "Clientes"
+ * devem estar habilitados. Todos os outros links ficam desabilitados visualmente.
  */
 
 import { useMemo } from 'react';
@@ -67,50 +75,50 @@ export const usePermissions = (): UserPermissions => {
     const isDelivery = userRole === 'delivery';
 
     return {
-      // Permissões gerais
-      canViewDashboard: hasPermission(['admin', 'employee']),
-      canAccessReports: hasPermission(['admin', 'employee']),
-      
-      // Permissões de produtos/inventário
+      // Permissões gerais - APENAS ADMIN (Modo de Acesso Focado)
+      canViewDashboard: isAdmin, // Mudança: apenas admin
+      canAccessReports: isAdmin, // Mudança: apenas admin
+
+      // Permissões de produtos/inventário - ADMIN + EMPLOYEE
       canViewProducts: hasPermission(['admin', 'employee']),
       canCreateProducts: hasPermission(['admin', 'employee']), // Funcionários podem criar produtos
-      canEditProducts: hasPermission(['admin', 'employee']), // Funcionários podem editar produtos  
+      canEditProducts: hasPermission(['admin', 'employee']), // Funcionários podem editar produtos
       canDeleteProducts: isAdmin, // Apenas admin pode deletar
       canManageInventory: hasPermission(['admin', 'employee']),
-      
-      // Permissões de clientes/CRM
+
+      // Permissões de clientes/CRM - ADMIN + EMPLOYEE
       canViewCustomers: hasPermission(['admin', 'employee']),
       canCreateCustomers: hasPermission(['admin', 'employee']),
       canEditCustomers: hasPermission(['admin', 'employee']),
       canDeleteCustomers: isAdmin,
-      canViewCustomerInsights: hasPermission(['admin', 'employee']),
-      
-      // Permissões de vendas
+      canViewCustomerInsights: isAdmin, // Mudança: apenas admin
+
+      // Permissões de vendas - ADMIN + EMPLOYEE
       canViewSales: hasPermission(['admin', 'employee']),
       canCreateSales: hasPermission(['admin', 'employee']),
       canProcessSales: hasPermission(['admin', 'employee']),
-      canViewSalesReports: hasPermission(['admin', 'employee']),
-      
-      // Permissões de usuários
+      canViewSalesReports: isAdmin, // Mudança: apenas admin
+
+      // Permissões de usuários - APENAS ADMIN
       canViewUsers: isAdmin,
       canCreateUsers: isAdmin,
       canEditUsers: isAdmin,
       canDeleteUsers: isAdmin,
-      
-      // Permissões de delivery
-      canViewDeliveries: hasPermission(['admin', 'employee', 'delivery']),
-      canManageDeliveries: hasPermission(['admin', 'employee']),
+
+      // Permissões de delivery - APENAS ADMIN (Modo de Acesso Focado)
+      canViewDeliveries: isAdmin, // Mudança: apenas admin
+      canManageDeliveries: isAdmin, // Mudança: apenas admin
       canViewOwnDeliveries: isDelivery,
-      
-      // Permissões de movimentações
-      canViewMovements: hasPermission(['admin', 'employee']),
-      canCreateMovements: hasPermission(['admin', 'employee']),
-      
+
+      // Permissões de movimentações - APENAS ADMIN (Modo de Acesso Focado)
+      canViewMovements: isAdmin, // Mudança: apenas admin
+      canCreateMovements: isAdmin, // Mudança: apenas admin
+
       // Permissões administrativas
       canAccessAdmin: isAdmin,
       canViewFinancialData: isAdmin,
       canManageSystem: isAdmin,
-      
+
       // Permissões específicas de dados sensíveis
       canViewCostPrices: isAdmin, // Apenas admin vê preços de custo
       canViewProfitMargins: isAdmin, // Apenas admin vê margens de lucro

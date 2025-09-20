@@ -4,6 +4,7 @@ import { cn } from "@/core/config/utils";
 import React, { useState, createContext, useContext } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Menu, X } from "lucide-react";
+import { IconLock } from "@tabler/icons-react";
 import { getSFProTextClasses } from "@/core/config/theme-utils";
 
 interface Links {
@@ -180,32 +181,65 @@ export const SidebarLink = ({
   link,
   className,
   onClick,
+  disabled = false,
   ...props
 }: {
   link: Links;
   className?: string;
   onClick?: (e: React.MouseEvent) => void;
+  disabled?: boolean;
 }) => {
   const { open, animate } = useSidebar();
+
+  const handleClick = (e: React.MouseEvent) => {
+    if (disabled) {
+      e.preventDefault();
+      return;
+    }
+    onClick?.(e);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (disabled) {
+      e.preventDefault();
+      return;
+    }
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onClick?.(e as unknown as React.MouseEvent);
+    }
+  };
+
   return (
     <div
       className={cn(
-        "flex items-center justify-start gap-2 group/sidebar py-2 px-2 rounded-lg transition-all duration-200 cursor-pointer hover:transform hover:-translate-y-0.5",
+        "flex items-center justify-start gap-2 group/sidebar py-2 px-2 rounded-lg transition-all duration-200",
+        disabled
+          ? "cursor-not-allowed pointer-events-none opacity-60"
+          : "cursor-pointer hover:transform hover:-translate-y-0.5",
         className
       )}
-      onClick={onClick}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          onClick?.(e as unknown as React.MouseEvent);
-        }
-      }}
+      onClick={handleClick}
+      onKeyDown={handleKeyDown}
       role="button"
-      tabIndex={0}
+      tabIndex={disabled ? -1 : 0}
       aria-label={link.label}
+      aria-disabled={disabled}
       {...props}
     >
-      {link.icon}
+      {/* Ícone do link com estilo condicional */}
+      <div className={cn(
+        "transition-all duration-200",
+        disabled && "opacity-50"
+      )}>
+        {React.cloneElement(link.icon as React.ReactElement, {
+          className: cn(
+            (link.icon as React.ReactElement).props.className,
+            disabled && "text-gray-500"
+          )
+        })}
+      </div>
+
       <motion.span
         animate={{
           display: animate ? (open ? "inline-block" : "none") : "inline-block",
@@ -213,11 +247,27 @@ export const SidebarLink = ({
         }}
         className={cn(
           getSFProTextClasses('label', 'neutral'),
-          "text-gray-100 group-hover/sidebar:translate-x-1 transition duration-150 whitespace-pre inline-block !p-0 !m-0"
+          disabled
+            ? "text-gray-500"
+            : "text-gray-100 group-hover/sidebar:translate-x-1",
+          "transition duration-150 whitespace-pre inline-block !p-0 !m-0"
         )}
       >
         {link.label}
       </motion.span>
+
+      {/* Ícone de cadeado para links desabilitados (apenas quando sidebar está aberta) */}
+      {disabled && (
+        <motion.div
+          animate={{
+            display: animate ? (open ? "inline-block" : "none") : "inline-block",
+            opacity: animate ? (open ? 1 : 0) : 1,
+          }}
+          className="ml-auto"
+        >
+          <IconLock className="h-4 w-4 text-gray-500" aria-hidden="true" />
+        </motion.div>
+      )}
     </div>
   );
 };

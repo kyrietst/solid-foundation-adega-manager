@@ -104,21 +104,58 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
 
   // Handler para código de barras escaneado
   const handleBarcodeScanned = async (barcode: string) => {
-    const product = await searchByBarcode(barcode);
-    if (product) {
+    console.log('[DEBUG] useProductsGridLogic - handleBarcodeScanned iniciado para:', barcode);
+
+    const result = await searchByBarcode(barcode);
+    console.log('[DEBUG] useProductsGridLogic - resultado searchByBarcode:', result);
+
+    if (result && result.product) {
+      const { product, type } = result;
+
       // Verificar disponibilidade usando campos da Dupla Contagem
       const stockUnitsLoose = product.stock_units_loose || 0;
+      const stockPackages = product.stock_packages || 0;
 
-      if (stockUnitsLoose > 0) {
-        await addItem({
+      console.log('[DEBUG] useProductsGridLogic - produto encontrado:', {
+        productId: product.id,
+        productName: product.name,
+        stockUnitsLoose,
+        stockPackages,
+        barcodeType: type
+      });
+
+      if (stockUnitsLoose > 0 || stockPackages > 0) {
+        // Determinar variant_id e outros campos necessários
+        const variantType = type === 'package' ? 'package' : 'unit';
+        const variantId = type === 'package'
+          ? `${product.id}-package`
+          : `${product.id}-unit`;
+
+        const itemToAdd = {
           id: product.id,
+          variant_id: variantId,
           name: product.name,
+          variant_type: variantType,
           price: product.price,
-          maxQuantity: stockUnitsLoose,
-          variant_type: 'unit' // Barcode sempre adiciona como unidade
-        });
+          quantity: 1,
+          maxQuantity: variantType === 'package' ? stockPackages : stockUnitsLoose,
+          units_sold: variantType === 'package' ? (product.package_units || 1) : 1,
+          packageUnits: variantType === 'package' ? (product.package_units || 1) : undefined,
+          conversion_required: false, // Para barcode scanning, não há conversão inicialmente
+          packages_converted: 0
+        };
+
+        console.log('[DEBUG] useProductsGridLogic - chamando addItem com:', itemToAdd);
+
+        await addItem(itemToAdd);
         onProductSelect?.(product);
+
+        console.log('[DEBUG] useProductsGridLogic - addItem executado com sucesso');
+      } else {
+        console.log('[DEBUG] useProductsGridLogic - produto sem estoque disponível');
       }
+    } else {
+      console.log('[DEBUG] useProductsGridLogic - nenhum produto encontrado para o código:', barcode);
     }
   };
 

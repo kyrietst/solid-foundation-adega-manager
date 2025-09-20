@@ -57,7 +57,7 @@ export const ChangeTemporaryPasswordModal: React.FC<ChangeTemporaryPasswordModal
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!currentPassword || !newPassword || !confirmPassword) {
       toast({
         title: "Campos obrigatórios",
@@ -88,24 +88,85 @@ export const ChangeTemporaryPasswordModal: React.FC<ChangeTemporaryPasswordModal
     setIsSubmitting(true);
 
     try {
-      const { data, error } = await supabase.rpc('change_temporary_password', {
-        current_password: currentPassword,
-        new_password: newPassword
-      });
+      // Primeiro verificar se o usuário realmente tem senha temporária
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('is_temporary_password')
+        .eq('email', userEmail)
+        .single();
 
-      if (error) {
+      if (profileError) {
+        console.error('Erro ao verificar perfil:', profileError);
         toast({
-          title: "Erro ao alterar senha",
-          description: error.message,
+          title: "Erro de verificação",
+          description: "Não foi possível verificar o status da senha.",
           variant: "destructive",
         });
         return;
       }
 
-      if (data && !data.success) {
+      // Se não tem senha temporária, fechar modal e atualizar estado
+      if (!profileData.is_temporary_password) {
+        toast({
+          title: "Senha já foi alterada",
+          description: "Sua senha temporária já foi alterada anteriormente. Redirecionando...",
+          variant: "default",
+        });
+
+        // Callback para fechar modal e atualizar estado
+        onPasswordChanged();
+        return;
+      }
+
+      // Tentar alterar senha temporária primeiro
+      let changeResult;
+      let changeError;
+
+      const { data: tempData, error: tempError } = await supabase.rpc('change_temporary_password', {
+        current_password: currentPassword,
+        new_password: newPassword
+      });
+
+      // Se falhar porque não tem senha temporária, tentar função regular
+      if (tempError && tempError.message.includes('não possui senha temporária')) {
+        console.log('Tentando função regular de alteração de senha...');
+
+        const { data: regularData, error: regularError } = await supabase.rpc('change_user_password', {
+          current_password: currentPassword,
+          new_password: newPassword
+        });
+
+        changeResult = regularData;
+        changeError = regularError;
+      } else if (tempData && !tempData.success && tempData.error && tempData.error.includes('não possui senha temporária')) {
+        console.log('Tentando função regular de alteração de senha (via data.error)...');
+
+        const { data: regularData, error: regularError } = await supabase.rpc('change_user_password', {
+          current_password: currentPassword,
+          new_password: newPassword
+        });
+
+        changeResult = regularData;
+        changeError = regularError;
+      } else {
+        // Usar resultado da função temporária
+        changeResult = tempData;
+        changeError = tempError;
+      }
+
+      if (changeError) {
         toast({
           title: "Erro ao alterar senha",
-          description: data.error || "Erro desconhecido",
+          description: changeError.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (changeResult && !changeResult.success) {
+        toast({
+          title: "Erro ao alterar senha",
+          description: changeResult.error || "Erro desconhecido",
           variant: "destructive",
         });
         return;
@@ -121,7 +182,7 @@ export const ChangeTemporaryPasswordModal: React.FC<ChangeTemporaryPasswordModal
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
-      
+
       // Callback para fechar modal e atualizar estado
       onPasswordChanged();
 

@@ -52,7 +52,7 @@ const Auth = () => {
       {/* Tropical Dusk Glow Background - Performance optimized */}
       <TropicalDuskGlow />
       {/* Login Form */}
-      <div className="max-w-md w-full mx-auto rounded-2xl p-8 shadow-2xl bg-slate-900/95 border border-slate-700/50">
+      <div className="max-w-md w-full mx-auto rounded-2xl p-8 shadow-2xl bg-slate-900/98 border border-slate-600/60 backdrop-blur-sm">
         {/* Header */}
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
@@ -77,7 +77,12 @@ const Auth = () => {
         {/* Form */}
         <form onSubmit={handleLogin} className="space-y-6">
           <LabelInputContainer>
-            <Label htmlFor="email" className="text-amber-300 font-semibold tracking-wide">Email</Label>
+            <Label
+              htmlFor="email"
+              className="text-amber-300 font-semibold tracking-wide text-sm"
+            >
+              Email
+            </Label>
             <Input
               id="email"
               type="email"
@@ -85,12 +90,18 @@ const Auth = () => {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="seu.email@exemplo.com"
               required
-              className="bg-gradient-to-br from-gray-900/80 to-gray-800/70 border-2 border-gray-600/50 text-white placeholder:text-gray-400 focus:border-amber-400/80 focus:ring-2 focus:ring-amber-400/30 focus:bg-gray-800/90 rounded-lg transition-all duration-300 hover:border-amber-500/40 shadow-lg shadow-orange-500/30"
+              enhanced={false}
+              className="h-12 bg-gray-800/90 border-2 border-gray-600/50 text-white placeholder:text-gray-400 focus:border-amber-400/80 focus:ring-2 focus:ring-amber-400/30 focus:bg-gray-700/90 rounded-lg transition-all duration-300 hover:border-amber-500/40 focus:outline-none"
             />
           </LabelInputContainer>
 
           <LabelInputContainer>
-            <Label htmlFor="password" className="text-amber-300 font-semibold tracking-wide">Senha</Label>
+            <Label
+              htmlFor="password"
+              className="text-amber-300 font-semibold tracking-wide text-sm"
+            >
+              Senha
+            </Label>
             <Input
               id="password"
               type="password"
@@ -98,16 +109,19 @@ const Auth = () => {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
               required
-              className="bg-gradient-to-br from-gray-900/80 to-gray-800/70 border-2 border-gray-600/50 text-white placeholder:text-gray-400 focus:border-amber-400/80 focus:ring-2 focus:ring-amber-400/30 focus:bg-gray-800/90 rounded-lg transition-all duration-300 hover:border-amber-500/40 shadow-lg shadow-orange-500/30"
+              enhanced={false}
+              className="h-12 bg-gray-800/90 border-2 border-gray-600/50 text-white placeholder:text-gray-400 focus:border-amber-400/80 focus:ring-2 focus:ring-amber-400/30 focus:bg-gray-700/90 rounded-lg transition-all duration-300 hover:border-amber-500/40 focus:outline-none"
             />
           </LabelInputContainer>
 
           <button
             type="submit"
             disabled={isLoading}
-            className="group/btn relative block h-12 w-full rounded-lg bg-gradient-to-br from-amber-500 via-amber-600 to-yellow-600 font-semibold text-black shadow-xl transition-all duration-300 hover:shadow-amber-500/40 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+            className="group/btn relative block h-12 w-full rounded-lg bg-gradient-to-br from-amber-500 via-amber-600 to-yellow-600 font-semibold text-gray-900 shadow-xl transition-all duration-300 hover:shadow-amber-500/40 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed border border-amber-400/50"
           >
-            {isLoading ? 'Entrando...' : 'Entrar no Sistema'}
+            <span className="relative z-10">
+              {isLoading ? 'Entrando...' : 'Entrar no Sistema'}
+            </span>
             <BottomGradient />
           </button>
         </form>
