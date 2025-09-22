@@ -61,23 +61,30 @@ export function useProductSSoT(productId: string) {
       if (error) throw error;
       if (!product) return null;
 
-      // Calcular informações de estoque usando função centralizada
-      const stockDisplay = calculatePackageDisplay(
-        product.stock_quantity || 0,
-        product.package_units || 0
-      );
+      // ✅ ULTRA-SIMPLIFICAÇÃO: Usar apenas campos diretos (SEM SOMA)
+      const stockPackages = product.stock_packages || 0;
+      const stockUnitsLoose = product.stock_units_loose || 0;
+      // ✅ CORREÇÃO: Não somar tipos diferentes de estoque
 
-      // Calcular capacidades de venda
-      const canSellUnits = (product.stock_quantity || 0) > 0;
-      const canSellPackages = stockDisplay.packages > 0;
+      // ✅ ESPELHO DA PRATELEIRA: O que você vê é o que tem (SEPARADAMENTE)
+      const stockDisplay = {
+        packages: stockPackages,
+        units: stockUnitsLoose,
+        // ✅ REMOVIDO: total (não faz sentido somar pacotes + unidades)
+        formatted: `${stockPackages} pacotes + ${stockUnitsLoose} unidades soltas`
+      };
 
-      // Preços (com fallbacks seguros)
+      // ✅ CAPACIDADES DIRETAS: Tem estoque = pode vender
+      const canSellUnits = stockUnitsLoose > 0;
+      const canSellPackages = stockPackages > 0;
+
+      // ✅ PREÇOS DIRETOS
       const unitPrice = product.price || 0;
-      const packagePrice = product.package_price || (unitPrice * (product.package_units || 1));
-      const unitsPerPackage = product.package_units || 1;
+      const packagePrice = product.package_price || 0;
+      const unitsPerPackage = 1; // Sem conversões automáticas
 
-      // Status de estoque
-      const stockStatus = getStockStatus(product.stock_quantity || 0, product.minimum_stock);
+      // ✅ STATUS ULTRA-SIMPLES: Tem qualquer tipo de estoque = in_stock
+      const stockStatus = (stockPackages > 0 || stockUnitsLoose > 0) ? 'in_stock' : 'out_of_stock';
 
       const result: ProductSSoT = {
         ...product,
@@ -87,9 +94,9 @@ export function useProductSSoT(productId: string) {
         unitPrice,
         packagePrice,
         unitsPerPackage,
-        stockStatus: stockStatus.status,
-        stockStatusLabel: stockStatus.label,
-        stockStatusColor: stockStatus.color,
+        stockStatus,
+        stockStatusLabel: stockStatus === 'out_of_stock' ? 'Sem estoque' : 'Em estoque',
+        stockStatusColor: stockStatus === 'out_of_stock' ? 'text-red-500' : 'text-green-500',
       };
 
       return result;
@@ -231,10 +238,10 @@ export function useStockAvailabilitySSoT(productId: string, quantity: number, ty
         };
       }
 
-      // Buscar produto
+      // ✅ ULTRA-SIMPLIFICAÇÃO: Buscar apenas campos diretos
       const { data: product, error } = await supabase
         .from('products')
-        .select('stock_quantity, package_units')
+        .select('stock_packages, stock_units_loose')
         .eq('id', productId)
         .single();
 
@@ -248,27 +255,22 @@ export function useStockAvailabilitySSoT(productId: string, quantity: number, ty
         };
       }
 
-      const stockQuantity = product.stock_quantity || 0;
-      const unitsPerPackage = product.package_units || 1;
+      // ✅ ESPELHO DA PRATELEIRA: O que tem na prateleira
+      const stockPackages = product.stock_packages || 0;
+      const stockUnitsLoose = product.stock_units_loose || 0;
 
-      // Calcular disponibilidade usando função centralizada
-      const stockDisplay = calculatePackageDisplay(stockQuantity, unitsPerPackage);
+      // ✅ CAPACIDADE DIRETA: Sem conversões
+      const maxPackages = stockPackages;
+      const maxUnits = stockUnitsLoose;
 
-      const maxUnits = stockQuantity;
-      const maxPackages = stockDisplay.packages;
-
+      // ✅ DISPONIBILIDADE SIMPLES: Tem na prateleira = disponível
       let available = false;
-      let needsConversion = false;
+      const needsConversion = false; // Sem conversões automáticas
 
       if (type === 'unit') {
         available = quantity <= maxUnits;
       } else {
         available = quantity <= maxPackages;
-        // Se não há pacotes suficientes mas há unidades, marcar como conversão necessária
-        if (!available && stockQuantity >= quantity * unitsPerPackage) {
-          needsConversion = true;
-          available = true;
-        }
       }
 
       return {

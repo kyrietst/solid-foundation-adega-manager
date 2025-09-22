@@ -5,6 +5,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { BaseModal } from '@/shared/ui/composite';
+import { StockDisplay } from '@/shared/ui/composite/StockDisplay';
 import { Button } from '@/shared/ui/primitives/button';
 import { Input } from '@/shared/ui/primitives/input';
 import { RadioGroup, RadioGroupItem } from '@/shared/ui/primitives/radio-group';
@@ -29,6 +30,8 @@ export interface ProductSelectionData {
   product_id: string;
   quantity: number;
   type: 'unit' | 'package';
+  variant_type: 'unit' | 'package'; // ✅ CORREÇÃO: Campo necessário para o carrinho
+  variant_id: string; // ✅ CORREÇÃO: Campo necessário para o carrinho
   unit_price: number;
   total_price: number;
   units_sold: number; // Total de unidades individuais vendidas
@@ -68,23 +71,21 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
     isLoading: isLoadingAvailability
   } = useStockAvailabilitySSoT(productId, quantity, selectionType);
 
-  // Calcular informações de estoque usando dados SSoT
+  // ✅ ULTRA-SIMPLIFICAÇÃO: Informações diretas do estoque
   const stockInfo = useMemo(() => {
     if (!product) return null;
 
     return {
-      // Dados básicos já calculados no hook SSoT
-      totalStockUnits: product.stock_quantity || 0,
+      // ✅ DADOS DIRETOS DA PRATELEIRA (SEM SOMA)
+      stockPackages: product.stockDisplay.packages,
+      stockUnitsLoose: product.stockDisplay.units,
+      // ✅ REMOVIDO: totalStock (não somar tipos diferentes)
       canSellUnits: product.canSellUnits,
       canSellPackages: product.canSellPackages,
       unitPrice: product.unitPrice,
       packagePrice: product.packagePrice,
-      unitsPerPackage: product.unitsPerPackage,
 
-      // Estoque calculado usando SSoT
-      stockDisplay: product.stockDisplay,
-
-      // Status de estoque
+      // ✅ STATUS SIMPLIFICADO
       stockStatus: product.stockStatus,
       stockStatusLabel: product.stockStatusLabel,
       stockStatusColor: product.stockStatusColor,
@@ -131,10 +132,13 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
 
     const selection: ProductSelectionData = {
       ...baseSelection,
+      // ✅ CORREÇÃO: Campos necessários para o carrinho
+      variant_type: selectionType, // Mapear type para variant_type
+      variant_id: `${product.id}-${selectionType}`, // Criar variant_id
       // Campos para compatibilidade com sistema anterior
       price: baseSelection.unit_price,
       totalPrice: baseSelection.total_price,
-      packageUnits: selectionType === 'package' ? stockInfo.unitsPerPackage : undefined
+      packageUnits: selectionType === 'package' ? 1 : undefined
     };
 
     onConfirm(selection);
@@ -200,48 +204,29 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
               </div>
             </div>
             
-            {/* Informações de Estoque */}
+            {/* Informações de Estoque - ESPELHO DA PRATELEIRA */}
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div className="text-center p-2 bg-white/5 rounded">
-                <p className="text-gray-400">Total Disponível</p>
+                <p className="text-gray-400">Unidades Soltas</p>
                 <div className="font-semibold text-white">
-                  <StockDisplay
-                    stock_quantity={stockInfo.totalStockUnits}
-                    units_per_package={stockInfo.unitsPerPackage}
-                    variant="compact"
-                    showTooltip={false}
-                    className="text-white"
-                  />
+                  {stockInfo.stockUnitsLoose} unidades
                 </div>
               </div>
               <div className="text-center p-2 bg-white/5 rounded">
                 <p className="text-gray-400">Pacotes Disponíveis</p>
                 <div className="font-semibold text-white">
-                  <StockDisplay
-                    stock_quantity={stockInfo.packageStock}
-                    variant="compact"
-                    showTooltip={false}
-                    className="text-white"
-                  />
+                  {stockInfo.stockPackages} pacotes
                 </div>
               </div>
             </div>
 
-            {/* Indicador de conversão se necessário */}
-            {availability?.needs_conversion && (
-              <div className="mt-3 p-2 bg-orange-500/10 border border-orange-500/20 rounded flex items-center gap-2">
-                <RefreshCw className="h-4 w-4 text-orange-400" />
-                <span className="text-sm text-orange-400">
-                  Conversão automática de pacotes será necessária
-                </span>
-              </div>
-            )}
+            {/* ✅ ULTRA-SIMPLIFICAÇÃO: Sem conversões automáticas */}
           </div>
 
           {/* Seleção do Tipo */}
-          <RadioGroup value={selectionType} onValueChange={(value) => setSelectionType(value as VariantType)}>
+          <RadioGroup value={selectionType} onValueChange={(value) => setSelectionType(value as 'unit' | 'package')}>
             {/* Opção Unidade */}
-            {stockInfo.unitVariant && (
+            {stockInfo.canSellUnits && (
               <div className={cn(
                 "flex items-center space-x-3 rounded-lg border p-4 transition-all duration-200",
                 selectionType === 'unit' 
@@ -262,15 +247,7 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
                     </div>
                     <div className="text-sm text-gray-400">
                       {formatCurrency(stockInfo.unitPrice)} cada •
-                      <StockDisplay
-                        stock_quantity={stockInfo.unitStock}
-                        variant="compact"
-                        showTooltip={false}
-                        className="text-gray-400 inline ml-1"
-                      /> em estoque
-                      {availability?.total_units_available && availability.total_units_available > stockInfo.unitStock && (
-                        <span className="text-green-400"> (+{availability.total_units_available - stockInfo.unitStock} via conversão)</span>
-                      )}
+                      <span className="text-gray-400 ml-1">{stockInfo.stockUnitsLoose}</span> em estoque
                     </div>
                   </Label>
                 </div>
@@ -281,43 +258,29 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
             )}
 
             {/* Opção Pacote */}
-            {stockInfo.packageVariant && (
+            {stockInfo.canSellPackages && (
               <div className={cn(
                 "flex items-center space-x-3 rounded-lg border p-4 transition-all duration-200",
-                selectionType === 'package' 
-                  ? "border-primary-yellow bg-primary-yellow/10" 
-                  : "border-white/20 bg-black/20 hover:bg-white/5",
-                !stockInfo.canSellPackages && "opacity-50"
+                selectionType === 'package'
+                  ? "border-primary-yellow bg-primary-yellow/10"
+                  : "border-white/20 bg-black/20 hover:bg-white/5"
               )}>
-                <RadioGroupItem 
-                  value="package" 
-                  id="package" 
-                  disabled={!stockInfo.canSellPackages}
+                <RadioGroupItem
+                  value="package"
+                  id="package"
                 />
                 <div className="flex-1">
-                  <Label htmlFor="package" className={cn("cursor-pointer", !stockInfo.canSellPackages && "cursor-not-allowed")}>
+                  <Label htmlFor="package" className="cursor-pointer">
                     <div className="flex items-center gap-2 mb-1">
                       <Package className="h-4 w-4 text-green-400" />
                       <span className="font-semibold text-white">Fardo/Pacote Completo</span>
                     </div>
                     <div className="text-sm text-gray-400">
-                      {formatCurrency(stockInfo.packagePrice)} fardo ({stockInfo.unitsPerPackage} unidades) •
-                      <StockDisplay
-                        stock_quantity={stockInfo.packageStock}
-                        variant="compact"
-                        showTooltip={false}
-                        className="text-gray-400 inline ml-1"
-                      /> disponíveis
+                      {formatCurrency(stockInfo.packagePrice)} fardo • {stockInfo.stockPackages} disponíveis
                     </div>
-                    {!stockInfo.canSellPackages && (
-                      <div className="flex items-center gap-1 mt-1 text-xs text-orange-400">
-                        <AlertTriangle className="h-3 w-3" />
-                        Nenhum pacote disponível no momento
-                      </div>
-                    )}
                   </Label>
                 </div>
-                {selectionType === 'package' && stockInfo.canSellPackages && (
+                {selectionType === 'package' && (
                   <CheckCircle className="h-5 w-5 text-primary-yellow" />
                 )}
               </div>
@@ -386,13 +349,7 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
           </div>
           {selectionType === 'package' && (
             <div className="text-xs text-gray-500 mt-1">
-              Total:
-              <StockDisplay
-                stock_quantity={quantity * stockInfo.unitsPerPackage}
-                variant="compact"
-                showTooltip={false}
-                className="text-gray-500 inline ml-1"
-              />
+              Total: {quantity} fardo(s)
             </div>
           )}
           {isLoadingAvailability && (

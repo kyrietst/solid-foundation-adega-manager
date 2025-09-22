@@ -12,4 +12,3 @@ export { useProductValidation } from './useProductValidation';
 // Root level hooks moved to inventory
 export { useBarcode } from './use-barcode';
 export { useProduct } from './use-product';
-export { useLowStock } from './useLowStock';

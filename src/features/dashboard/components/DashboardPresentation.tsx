@@ -16,8 +16,6 @@ import { PageContainer } from '@/shared/ui/layout/PageContainer';
 import { SectionHeader } from '@/shared/ui/layout/SectionHeader';
 import { text, shadows } from '@/core/config/theme';
 import { KpiCards } from './KpiCards';
-import { AlertsPanel } from './AlertsPanel';
-import { AlertsCarousel } from './AlertsCarousel';
 import { SalesChartSection } from './SalesChartSection';
 import { useSalesKpis, useCustomerKpis, useInventoryKpis, useExpenseKpis } from '../hooks/useDashboardKpis';
 import { SalesInsightsTabs } from './SalesInsightsTabs';
@@ -72,17 +70,25 @@ export const DashboardPresentation: React.FC<DashboardPresentationProps> = ({
             <KpiSection />
           </div>
 
-          {/* Linha: Gráfico de Vendas + Alertas */}
+          {/* Linha: Gráfico de Vendas + Atividades Recentes */}
           <div className="lg:col-span-6">
             <SalesChartSection className="h-full" contentHeight={450} cardHeight={530} />
           </div>
           <div className="lg:col-span-6">
-            <AlertsCarousel 
-              cardHeight={530} 
-              autoRotateInterval={8000} 
-              showControls={true} 
-              previewActivities={recentActivities}
-            />
+            <Card className="border-white/20 bg-black/80 backdrop-blur-xl shadow-lg h-[530px]">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-white flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  Atividades Recentes
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="h-[450px] overflow-y-auto">
+                <RecentActivities
+                  activities={recentActivities}
+                  isLoading={isLoadingActivities}
+                />
+              </CardContent>
+            </Card>
           </div>
 
           {/* Insights em abas ocupando largura total */}

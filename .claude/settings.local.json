@@ -41,7 +41,8 @@
       "Bash(pkill:*)",
       "mcp__supabase__search_docs",
       "mcp__supabase__list_migrations",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(npm run dev:*)"
     ],
     "deny": []
   }

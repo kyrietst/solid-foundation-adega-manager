@@ -110,8 +110,10 @@ export function FullCart({
     try {
       const saleData = {
         customer_id: customerId,
-        total_amount: total,
+        total_amount: subtotal, // ✅ CORREÇÃO: Passar subtotal (sem desconto) para o procedimento
         payment_method_id: paymentMethodId,
+        discount_amount: allowDiscounts ? discount : 0, // ✅ CORREÇÃO: Adicionar campo discount_amount
+        saleType: 'presencial' as const, // ✅ CORREÇÃO: Adicionar saleType obrigatório para vendas no POS
         items: items.map(item => {
           const itemData = {
             product_id: item.id,
@@ -123,8 +125,8 @@ export function FullCart({
             sale_type: item.variant_type === 'package' ? 'package' : 'unit',
             package_units: item.packageUnits
           };
-          
-          
+
+
           return itemData;
         }),
         notes: `Desconto aplicado: R$ ${allowDiscounts ? discount.toFixed(2) : '0.00'}`

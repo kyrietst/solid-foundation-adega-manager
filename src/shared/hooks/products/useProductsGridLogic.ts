@@ -46,7 +46,7 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
     queryFn: async (): Promise<Product[]> => {
       const { data, error } = await supabase
         .from('products')
-        .select('id, name, price, stock_quantity, image_url, barcode, category, package_units, package_price, has_package_tracking, units_per_package, stock_packages, stock_units_loose')
+        .select('id, name, price, stock_quantity, image_url, barcode, unit_barcode, package_barcode, category, package_units, package_price, has_package_tracking, units_per_package, stock_packages, stock_units_loose, expiry_date, has_expiry_tracking')
         .order('name', { ascending: true });
 
       if (error) {
@@ -157,25 +157,51 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
     }
   };
 
-  // Handler para adicionar produto ao carrinho
+  // Handler para adicionar produto ao carrinho - CORRIGIDO PARA ULTRA-SIMPLIFICAÇÃO
   const handleAddToCart = async (product: Product) => {
-    // Verificar disponibilidade usando campos da Dupla Contagem
+    // ✅ CORREÇÃO: Verificar disponibilidade usando ambos os campos
     const stockUnitsLoose = product.stock_units_loose || 0;
+    const stockPackages = product.stock_packages || 0;
 
-    if (stockUnitsLoose > 0) {
+    // ✅ LÓGICA ULTRA-SIMPLES:
+    // 1. Se tem unidades soltas E pacotes: abrir modal para escolher
+    // 2. Se tem APENAS unidades: adicionar unidade automaticamente
+    // 3. Se tem APENAS pacotes: adicionar pacote automaticamente
+    // 4. Se não tem nada: não fazer nada
+
+    if (stockUnitsLoose > 0 && stockPackages > 0) {
+      // ✅ TEM AMBOS: Abrir modal para escolher
+      openProductSelection(product);
+    } else if (stockUnitsLoose > 0) {
+      // ✅ SÓ TEM UNIDADES: Adicionar unidade automaticamente
       await addItem({
         id: product.id,
-        variant_id: `${product.id}-unit`, // CORREÇÃO: Campo obrigatório para o sistema de variantes
+        variant_id: `${product.id}-unit`,
         name: product.name,
-        variant_type: 'unit', // Adição direta sempre como unidade
+        variant_type: 'unit',
         price: product.price,
         quantity: 1,
         maxQuantity: stockUnitsLoose,
-        units_sold: 1, // CORREÇÃO: Campo obrigatório para o sistema de variantes
-        packageUnits: undefined // Não é pacote
+        units_sold: 1,
+        packageUnits: undefined
+      });
+      onProductSelect?.(product);
+    } else if (stockPackages > 0) {
+      // ✅ SÓ TEM PACOTES: Adicionar pacote automaticamente
+      await addItem({
+        id: product.id,
+        variant_id: `${product.id}-package`,
+        name: product.name,
+        variant_type: 'package',
+        price: product.package_price || product.price,
+        quantity: 1,
+        maxQuantity: stockPackages,
+        units_sold: 1, // 1 pacote vendido
+        packageUnits: 1 // Sem conversões automáticas
       });
       onProductSelect?.(product);
     }
+    // ✅ Se não tem nem unidades nem pacotes: não fazer nada
   };
 
   // Funções de controle do modal de seleção

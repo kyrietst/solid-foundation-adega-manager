@@ -22,7 +22,7 @@ export interface CustomerKpis {
 export interface InventoryKpis {
   totalProducts: number;
   totalValue: number;
-  lowStockCount: number;
+  lowStockCount: number; // Ultra-simplificação: representa produtos SEM estoque (stock = 0)
 }
 
 export interface ExpenseKpis {
@@ -180,12 +180,12 @@ export function useInventoryKpis() {
   return useQuery({
     queryKey: ['kpis-inventory'],
     queryFn: async (): Promise<InventoryKpis> => {
-      console.log('📦 Inventory KPIs - Calculando dados reais do estoque');
-      
-      // Buscar produtos
+      console.log('📦 Inventory KPIs - Calculando dados ultra-simplificados do estoque');
+
+      // Buscar produtos com campos ultra-simplificados
       const { data: products, error: productsError } = await supabase
         .from('products')
-        .select('stock_quantity, price, minimum_stock');
+        .select('stock_packages, stock_units_loose, price');
 
       if (productsError) {
         console.error('❌ Erro ao buscar produtos:', productsError);
@@ -193,27 +193,29 @@ export function useInventoryKpis() {
       }
 
       const totalProducts = (products || []).length;
-      
+
       // Calcular valor total do estoque com proteção anti-NaN
       const totalValue = safeNumber((products || []).reduce((sum, product) => {
-        const stock = safeNumber(product.stock_quantity);
+        const stockPackages = safeNumber(product.stock_packages);
+        const stockUnitsLoose = safeNumber(product.stock_units_loose);
+        const totalStock = stockPackages + stockUnitsLoose;
         const price = safeNumber(product.price);
-        return sum + (stock * price);
+        return sum + (totalStock * price);
       }, 0));
 
-      // Contar produtos com estoque baixo
+      // Ultra-simplificação: Contar apenas produtos SEM ESTOQUE (packages = 0 E units = 0)
       const lowStockCount = (products || []).filter(product => {
-        const currentStock = safeNumber(product.stock_quantity);
-        const minStock = safeNumber(product.minimum_stock);
-        return currentStock <= minStock && minStock > 0;
+        const stockPackages = safeNumber(product.stock_packages);
+        const stockUnitsLoose = safeNumber(product.stock_units_loose);
+        return stockPackages === 0 && stockUnitsLoose === 0;
       }).length;
 
-      console.log(`📦 Inventory KPIs calculados - Produtos: ${totalProducts}, Valor: R$ ${totalValue.toFixed(2)}, Estoque Baixo: ${lowStockCount}`);
+      console.log(`📦 Inventory KPIs ultra-simplificados - Produtos: ${totalProducts}, Valor: R$ ${totalValue.toFixed(2)}, Sem Estoque: ${lowStockCount}`);
 
       return {
         totalProducts,
         totalValue,
-        lowStockCount
+        lowStockCount // Agora representa produtos sem estoque
       };
     },
     staleTime: 5 * 60 * 1000,
@@ -221,43 +223,39 @@ export function useInventoryKpis() {
   });
 }
 
-export function useLowStockProducts(limit: number = 10) {
+export function useOutOfStockProducts(limit: number = 10) {
   return useQuery({
-    queryKey: ['low-stock-products', limit],
+    queryKey: ['out-of-stock-products', limit],
     queryFn: async () => {
-      console.log(`⚠️ Low Stock Products - Buscando ${limit} produtos com estoque baixo`);
-      
-      // Buscar produtos com estoque baixo
+      console.log(`⚠️ Out of Stock Products - Buscando ${limit} produtos sem estoque`);
+
+      // Ultra-simplificação: Apenas produtos com estoque zero
       const { data: products, error } = await supabase
         .from('products')
-        .select('id, name, stock_quantity, minimum_stock, price')
-        .gt('minimum_stock', 0)
-        .order('stock_quantity', { ascending: true });
+        .select('id, name, stock_packages, stock_units_loose, price')
+        .eq('stock_packages', 0)
+        .eq('stock_units_loose', 0)
+        .limit(limit);
 
       if (error) {
-        console.error('❌ Erro ao buscar produtos com estoque baixo:', error);
+        console.error('❌ Erro ao buscar produtos sem estoque:', error);
         throw error;
       }
 
-      // Filtrar produtos onde estoque atual <= estoque mínimo com proteção anti-NaN
-      const lowStockProducts = (products || [])
-        .filter(product => {
-          const currentStock = safeNumber(product.stock_quantity);
-          const minStock = safeNumber(product.minimum_stock);
-          return currentStock <= minStock;
-        })
+      // Mapear produtos sem estoque
+      const outOfStockProducts = (products || [])
         .map(product => ({
           id: product.id,
           name: product.name,
-          current_stock: safeNumber(product.stock_quantity),
-          min_stock: safeNumber(product.minimum_stock),
+          current_stock: 0, // Sempre 0 por definição
+          stock_packages: product.stock_packages,
+          stock_units_loose: product.stock_units_loose,
           price: safeNumber(product.price)
-        }))
-        .slice(0, limit);
+        }));
 
-      console.log(`⚠️ Encontrados ${lowStockProducts.length} produtos com estoque baixo`);
+      console.log(`⚠️ Encontrados ${outOfStockProducts.length} produtos sem estoque`);
 
-      return lowStockProducts;
+      return outOfStockProducts;
     },
     staleTime: 5 * 60 * 1000,
     refetchInterval: 5 * 60 * 1000,
@@ -314,10 +312,10 @@ export function useExpenseKpis(windowDays: number = 30) {
   });
 }
 
-export function useLowStockKpi() {
+export function useOutOfStockKpi() {
   const { data, isLoading, error } = useInventoryKpis();
   return {
-    data: data ? { count: data.lowStockCount } : undefined,
+    data: data ? { count: data.lowStockCount } : undefined, // lowStockCount agora representa outOfStock
     isLoading,
     error
   };
