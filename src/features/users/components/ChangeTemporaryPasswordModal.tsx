@@ -118,41 +118,17 @@ export const ChangeTemporaryPasswordModal: React.FC<ChangeTemporaryPasswordModal
         return;
       }
 
-      // Tentar alterar senha temporária primeiro
-      let changeResult;
-      let changeError;
-
-      const { data: tempData, error: tempError } = await supabase.rpc('change_temporary_password', {
+      // ✅ SIMPLIFICADO: Usar função unificada que detecta automaticamente se é senha temporária
+      const { data: changeResult, error: changeError } = await supabase.rpc('change_password_unified', {
         current_password: currentPassword,
         new_password: newPassword
       });
 
-      // Se falhar porque não tem senha temporária, tentar função regular
-      if (tempError && tempError.message.includes('não possui senha temporária')) {
-        console.log('Tentando função regular de alteração de senha...');
-
-        const { data: regularData, error: regularError } = await supabase.rpc('change_user_password', {
-          current_password: currentPassword,
-          new_password: newPassword
-        });
-
-        changeResult = regularData;
-        changeError = regularError;
-      } else if (tempData && !tempData.success && tempData.error && tempData.error.includes('não possui senha temporária')) {
-        console.log('Tentando função regular de alteração de senha (via data.error)...');
-
-        const { data: regularData, error: regularError } = await supabase.rpc('change_user_password', {
-          current_password: currentPassword,
-          new_password: newPassword
-        });
-
-        changeResult = regularData;
-        changeError = regularError;
-      } else {
-        // Usar resultado da função temporária
-        changeResult = tempData;
-        changeError = tempError;
-      }
+      console.log('🔐 ChangeTemporaryPasswordModal - Resultado da alteração:', {
+        success: changeResult?.success,
+        wasTemporary: changeResult?.was_temporary,
+        error: changeError?.message
+      });
 
       if (changeError) {
         toast({

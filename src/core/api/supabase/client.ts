@@ -80,7 +80,7 @@ export const clearChromeAuthData = () => {
   return 0;
 };
 
-// Enhanced Supabase client configuration for Chrome compatibility
+// ✅ OTIMIZADO: Enhanced Supabase client configuration for performance + Chrome compatibility
 const supabaseConfig = {
   auth: {
     autoRefreshToken: true,
@@ -114,6 +114,21 @@ const supabaseConfig = {
         }
       }
     })
+  },
+  // ✅ NOVO: Configurações de performance para reduzir latência
+  global: {
+    headers: {
+      'X-Client-Info': 'adega-anitas-sistema'
+    }
+  },
+  db: {
+    schema: 'public'
+  },
+  // ✅ NOVO: Configurações de rede otimizadas
+  realtime: {
+    params: {
+      eventsPerSecond: 10
+    }
   }
 };
 

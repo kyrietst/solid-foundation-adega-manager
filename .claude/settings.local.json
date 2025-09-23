@@ -42,7 +42,15 @@
       "mcp__supabase__search_docs",
       "mcp__supabase__list_migrations",
       "Bash(node:*)",
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "mcp__microsoft-playwright-mcp__browser_type",
+      "mcp__microsoft-playwright-mcp__browser_click",
+      "mcp__microsoft-playwright-mcp__browser_evaluate",
+      "mcp__microsoft-playwright-mcp__browser_snapshot",
+      "mcp__microsoft-playwright-mcp__browser_navigate",
+      "mcp__microsoft-playwright-mcp__browser_wait_for",
+      "mcp__microsoft-playwright-mcp__browser_press_key",
+      "mcp__microsoft-playwright-mcp__browser_close"
     ],
     "deny": []
   }

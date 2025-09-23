@@ -515,6 +515,47 @@ npm run dev
 
 Always remember: This is a **production system** with real business data. Prioritize data integrity, security, and user experience in all modifications.
 
+## Documentation Architecture (v2.0.0)
+
+### Centralized Documentation System
+The project uses a **comprehensive, organized documentation architecture** located in the `docs/` folder. All documentation has been migrated from scattered locations throughout the system into this structured hierarchy:
+
+```
+docs/
+├── 01-getting-started/     # Quick start guides and installation
+├── 02-architecture/        # System architecture and technical design
+├── 03-modules/            # Feature-specific documentation (10 modules)
+├── 04-design-system/      # Complete Design System v2.0.0 documentation
+├── 05-business/           # Business rules and stakeholder information
+├── 06-operations/         # User manuals and operational procedures
+├── 07-changelog/          # Version history and migration guides
+├── 08-testing/            # Testing strategies and procedures
+├── 09-api/               # API documentation and integrations
+└── 10-legacy/            # Historical documentation and reports
+```
+
+### Key Documentation Features
+- **📚 Complete Coverage**: Every system aspect documented with examples
+- **🎯 Role-Based**: Different sections for developers, users, and stakeholders
+- **🔗 Cross-Referenced**: Extensive linking between related documentation
+- **📊 Up-to-Date**: Reflects current v2.0.0 system state with 925+ production records
+- **🗂️ Organized**: Numbered hierarchy for logical reading progression
+- **🏛️ Legacy Preserved**: Historical documentation maintained in structured archive
+
+### Documentation Guidelines
+- **ALWAYS reference docs/ first** when seeking project information
+- **Follow the numbered structure** for logical information discovery
+- **Use cross-references** to link related concepts across sections
+- **Maintain consistency** with established templates and patterns
+- **Update documentation** when implementing new features or changes
+
+### Root Documentation Files
+- **README.md** - Project overview and quick links (GitHub standard)
+- **CLAUDE.md** - This file - Claude Code instructions and project context
+- **docs/README.md** - Main documentation navigation hub
+
+**Migration Status**: ✅ **COMPLETE** - All scattered .md files consolidated into organized structure, eliminating documentation confusion.
+
 ## Project Status: ENTERPRISE PRODUCTION READY (v2.0.0)
 
-**Current State**: Fully functional enterprise application with 925+ real records, daily operations, complete security implementation, comprehensive feature set, and a complete reusable components system that eliminated 90% of code duplication. The system is mature, stable, actively used for business operations, and optimized for rapid future development with modern tooling and MCP integrations.
+**Current State**: Fully functional enterprise application with 925+ real records, daily operations, complete security implementation, comprehensive feature set, complete reusable components system that eliminated 90% of code duplication, and **centralized documentation architecture** that provides comprehensive guidance for all stakeholders. The system is mature, stable, actively used for business operations, and optimized for rapid future development with modern tooling and MCP integrations.

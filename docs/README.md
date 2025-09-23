@@ -71,6 +71,8 @@ O **Adega Manager** é um sistema empresarial completo para gestão de adega, at
 ### 📝 [07. Changelog](./07-changelog/)
 **Para histórico e versionamento**
 - [Histórico de Versões](./07-changelog/README.md)
+- [✅ Conquistas Realizadas](./07-changelog/accomplishments-tracking.md) - Melhorias já implementadas
+- [🚀 Milestones & Issues](./07-changelog/milestones-and-issues.md) - Sistema de acompanhamento GitHub
 - [Versão 2.0](./07-changelog/v2.0/) - Ultra-simplificação e correções
 - [Versão 1.0](./07-changelog/v1.0/) - Versão inicial
 - [Guias de Migração](./07-changelog/migration-guides/)
@@ -120,6 +122,12 @@ O **Adega Manager** é um sistema empresarial completo para gestão de adega, at
 1. 🚀 [Deploy](./01-getting-started/deployment.md)
 2. 🔒 [Segurança](./02-architecture/security-model.md)
 3. 🔧 [Manutenção](./06-operations/maintenance/)
+
+### Para Gestão de Projetos
+1. ✅ [Conquistas Realizadas](./07-changelog/accomplishments-tracking.md) - Marcar melhorias já feitas
+2. 📋 [Milestones & Issues](./07-changelog/milestones-and-issues.md) - Próximas implementações
+3. 📊 [Roadmap e Versões](./07-changelog/README.md) - Visão estratégica
+4. 📈 [Histórico de Mudanças](./07-changelog/) - Timeline completa
 
 ## 📊 Estatísticas do Sistema
 

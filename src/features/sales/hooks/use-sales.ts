@@ -91,6 +91,10 @@ type UpsertSaleInput = {
   // Campos para delivery
   saleType: SaleType;
   deliveryData?: DeliveryData;
+  // Novos campos individuais de delivery (simplificados)
+  delivery_address?: string | null;
+  delivery_fee?: number;
+  delivery_person_id?: string | null;
 };
 
 type PaymentMethod = {
@@ -276,9 +280,16 @@ export const useUpsertSale = () => {
 
       // 4. Prepara dados de delivery
       const isDeliveryOrder = saleData.saleType === 'delivery';
-      const totalWithDeliveryFee = isDeliveryOrder && saleData.deliveryData 
-        ? saleData.total_amount + saleData.deliveryData.deliveryFee
-        : saleData.total_amount;
+
+      // CORREÇÃO: Suportar tanto formato antigo (deliveryData) quanto novo (delivery_fee)
+      const deliveryFee = isDeliveryOrder
+        ? (saleData.deliveryData?.deliveryFee || saleData.delivery_fee || 0)
+        : 0;
+
+      const totalWithDeliveryFee = saleData.total_amount + deliveryFee;
+
+      console.log('🚚 DEBUG: deliveryFee usado no cálculo:', deliveryFee);
+      console.log('🚚 DEBUG: totalWithDeliveryFee calculado:', totalWithDeliveryFee);
 
       // 5. Valida os itens da venda
       if (!saleData.items || saleData.items.length === 0) {
@@ -303,7 +314,7 @@ export const useUpsertSale = () => {
       // Chama o procedimento process_sale que faz TUDO: cria venda + itens + subtrai estoque
       // CORREÇÃO: Ordem correta dos parâmetros conforme assinatura do procedimento
       const { data: saleResult, error: processError } = await supabase.rpc('process_sale', {
-        p_customer_id: saleData.customer_id,
+        p_customer_id: saleData.customer_id || null, // ✅ CORREÇÃO: Garantir que string vazia vire null
         p_user_id: user.id,
         p_total_amount: saleData.total_amount,
         p_final_amount: totalWithDeliveryFee - (saleData.discount_amount || 0),
@@ -326,27 +337,82 @@ export const useUpsertSale = () => {
       const saleId = saleResult.sale_id;
       console.log('✅ Venda processada com sucesso via process_sale, ID:', saleId);
 
-      // 7. Se for uma venda com delivery, atualiza os campos específicos
-      if (isDeliveryOrder && saleData.deliveryData) {
-        const { error: updateError } = await supabase
-          .from('sales')
-          .update({
-            delivery: true,
+      // 7. SEMPRE atualizar o delivery_type para todas as vendas (presencial/delivery/pickup)
+      console.log('🚚 DEBUG: saleData.saleType recebido:', saleData.saleType);
+      console.log('🚚 DEBUG: saleData.delivery_address:', saleData.delivery_address);
+      console.log('🚚 DEBUG: saleData.delivery_fee:', saleData.delivery_fee);
+      console.log('🚚 DEBUG: saleData.delivery_person_id:', saleData.delivery_person_id);
+      console.log('🚚 DEBUG: isDeliveryOrder:', isDeliveryOrder);
+
+      const baseUpdate: any = {
+        delivery_type: saleData.saleType
+      };
+      console.log('🚚 DEBUG: baseUpdate inicial:', JSON.stringify(baseUpdate, null, 2));
+
+      // 8. Se for uma venda com delivery, adiciona os campos específicos
+      if (isDeliveryOrder) {
+        const deliveryUpdate: any = {
+          delivery: true,
+          delivery_status: 'pending',
+          status: 'pending'
+        };
+
+        // Usar dados do deliveryData (modal complexo) OU dados simplificados
+        if (saleData.deliveryData) {
+          // Modal complexo de delivery (sistema antigo)
+          Object.assign(deliveryUpdate, {
             delivery_address: saleData.deliveryData.address,
-            delivery_type: saleData.saleType,
             delivery_fee: saleData.deliveryData.deliveryFee,
-            delivery_status: 'pending',
             delivery_zone_id: saleData.deliveryData.zoneId,
             delivery_instructions: saleData.deliveryData.instructions,
             estimated_delivery_time: new Date(Date.now() + saleData.deliveryData.estimatedTime * 60 * 1000).toISOString(),
-            final_amount: saleData.total_amount + saleData.deliveryData.deliveryFee - (saleData.discount_amount || 0),
-            status: 'pending'
-          })
-          .eq('id', saleId);
+            final_amount: saleData.total_amount + saleData.deliveryData.deliveryFee - (saleData.discount_amount || 0)
+          });
+        } else {
+          // Dados simplificados de delivery (novo sistema)
+          Object.assign(deliveryUpdate, {
+            delivery_address: saleData.delivery_address ? { address: saleData.delivery_address } : null,
+            delivery_fee: saleData.delivery_fee || 0,
+            delivery_person_id: saleData.delivery_person_id,
+            final_amount: saleData.total_amount + (saleData.delivery_fee || 0) - (saleData.discount_amount || 0)
+          });
+        }
 
-        if (updateError) {
-          console.error('Erro ao atualizar delivery:', updateError);
-          // Não falha a venda por erro no delivery, apenas loga
+        Object.assign(baseUpdate, deliveryUpdate);
+        console.log('🚚 DEBUG: baseUpdate final com delivery:', JSON.stringify(baseUpdate, null, 2));
+      } else {
+        console.log('🚚 DEBUG: Não é delivery order, usando apenas baseUpdate');
+      }
+
+      console.log('🚚 DEBUG: Update que será enviado ao Supabase:', JSON.stringify(baseUpdate, null, 2));
+      const { error: updateError } = await supabase
+        .from('sales')
+        .update(baseUpdate)
+        .eq('id', saleId);
+
+      if (updateError) {
+        console.error('❌ ERRO CRÍTICO ao atualizar delivery_type:', updateError);
+        console.error('❌ Update que falhou:', JSON.stringify(baseUpdate, null, 2));
+        console.error('❌ Sale ID:', saleId);
+        throw new Error(`Falha ao atualizar dados de delivery: ${updateError.message}`);
+      } else {
+        console.log('✅ Update executado com sucesso no Supabase');
+
+        // VERIFICAÇÃO ADICIONAL: Confirmar se dados foram realmente persistidos
+        const { data: verifyData, error: verifyError } = await supabase
+          .from('sales')
+          .select('delivery_type, delivery_address, delivery_fee')
+          .eq('id', saleId)
+          .single();
+
+        console.log('🔍 VERIFICAÇÃO: Dados após UPDATE:', verifyData);
+
+        if (verifyError) {
+          console.error('❌ ERRO na verificação pós-UPDATE:', verifyError);
+        } else if (isDeliveryOrder && verifyData?.delivery_type !== 'delivery') {
+          console.error('❌ PARADOXO: UPDATE disse sucesso mas dados não persistiram!');
+          console.error('❌ Esperado delivery_type=delivery, encontrado:', verifyData?.delivery_type);
+          throw new Error(`UPDATE falhou silenciosamente - delivery_type ainda é ${verifyData?.delivery_type}`);
         }
       }
 
@@ -433,18 +499,32 @@ export const useUpsertSale = () => {
 
       return sale;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["sales"] });
-      queryClient.invalidateQueries({ queryKey: ["products"] });
-      queryClient.invalidateQueries({ queryKey: ["product-variants"] }); // CORREÇÃO: Invalidar cache de variantes
-      queryClient.invalidateQueries({ queryKey: ["variant-availability"] }); // CORREÇÃO: Invalidar disponibilidade
-      queryClient.invalidateQueries({ queryKey: ["reports"] });
-      toast({
-        title: "Venda registrada com sucesso!",
-        description: "A venda foi registrada no sistema.",
-      });
+    onSuccess: (data) => {
+      // ✅ CORREÇÃO: Verificar se realmente houve sucesso antes de mostrar toast
+      if (data && data.id) {
+        queryClient.invalidateQueries({ queryKey: ["sales"] });
+        queryClient.invalidateQueries({ queryKey: ["products"] });
+        queryClient.invalidateQueries({ queryKey: ["product-variants"] }); // CORREÇÃO: Invalidar cache de variantes
+        queryClient.invalidateQueries({ queryKey: ["variant-availability"] }); // CORREÇÃO: Invalidar disponibilidade
+        queryClient.invalidateQueries({ queryKey: ["reports"] });
+
+        // ✅ CORREÇÃO: Toast de sucesso apenas com dados válidos
+        toast({
+          title: "Venda registrada com sucesso!",
+          description: "A venda foi registrada no sistema.",
+        });
+      } else {
+        // ✅ CORREÇÃO: Se onSuccess for chamado sem dados válidos, não mostrar toast de sucesso
+        console.warn('⚠️ onSuccess chamado sem dados válidos:', data);
+      }
     },
     onError: (error: Error) => {
+      // ✅ CORREÇÃO: Evitar toast de erro se for erro esperado/tratado
+      if (error.message.includes('Invalid login credentials')) {
+        // Error de login já é tratado na UI, não mostrar toast duplicado
+        return;
+      }
+
       toast({
         title: "Erro ao registrar venda",
         description: error.message,
@@ -514,28 +594,39 @@ export const useDeleteSale = () => {
     },
     onSuccess: (data) => {
       console.log('Exclusão concluída, invalidando queries...');
-      
-      // Invalida todas as queries relacionadas
-      queryClient.invalidateQueries({ queryKey: ["sales"] });
-      queryClient.invalidateQueries({ queryKey: ["products"] });
-      queryClient.invalidateQueries({ queryKey: ["product-variants"] }); // CORREÇÃO: Invalidar cache de variantes
-      queryClient.invalidateQueries({ queryKey: ["variant-availability"] }); // CORREÇÃO: Invalidar disponibilidade
-      queryClient.invalidateQueries({ queryKey: ["reports"] });
-      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-      
-      const message = data?.message || "A venda foi removida do sistema.";
-      const details = data?.items_deleted ? 
-        `${data.items_deleted} itens removidos, ${data.products_restored} produtos com estoque restaurado.` :
-        "Estoque dos produtos foi restaurado.";
-      
-      toast({
-        title: "Venda excluída com sucesso!",
-        description: `${message} ${details}`,
-      });
+
+      // ✅ CORREÇÃO: Verificar se realmente houve sucesso
+      if (data && (data.success || data.message)) {
+        // Invalida todas as queries relacionadas
+        queryClient.invalidateQueries({ queryKey: ["sales"] });
+        queryClient.invalidateQueries({ queryKey: ["products"] });
+        queryClient.invalidateQueries({ queryKey: ["product-variants"] }); // CORREÇÃO: Invalidar cache de variantes
+        queryClient.invalidateQueries({ queryKey: ["variant-availability"] }); // CORREÇÃO: Invalidar disponibilidade
+        queryClient.invalidateQueries({ queryKey: ["reports"] });
+        queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+
+        const message = data?.message || "A venda foi removida do sistema.";
+        const details = data?.items_deleted ?
+          `${data.items_deleted} itens removidos, ${data.products_restored} produtos com estoque restaurado.` :
+          "Estoque dos produtos foi restaurado.";
+
+        toast({
+          title: "Venda excluída com sucesso!",
+          description: `${message} ${details}`,
+        });
+      } else {
+        console.warn('⚠️ onSuccess de delete chamado sem dados válidos:', data);
+      }
     },
     onError: (error: Error) => {
       console.error('Erro final na exclusão:', error);
-      
+
+      // ✅ CORREÇÃO: Filtrar erros específicos que já são tratados
+      if (error.message.includes('Acesso negado') || error.message.includes('não encontrada')) {
+        // Estes erros são específicos e já bem tratados, não precisa de toast genérico
+        return;
+      }
+
       toast({
         title: "Erro ao excluir venda",
         description: error.message,

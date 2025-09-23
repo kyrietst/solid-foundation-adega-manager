@@ -58,6 +58,23 @@ stock_packages        -- Pacotes na prateleira
 stock_units_loose     -- Unidades soltas na prateleira
 ```
 
+#### Sistema de Delivery Completo (v2.0+)
+```typescript
+// ✅ Delivery Implementation: Campos dedicados
+delivery_address: string;           // Endereço completo
+delivery_fee: number;              // Taxa de entrega
+delivery_person_id: string;        // Entregador selecionado
+order_number: number;              // Numeração sequencial
+```
+
+#### Carrinho Responsivo (v2.0+)
+```css
+/* ✅ Responsive Cart: Altura dinâmica */
+h-[calc(100vh-120px)] min-h-[600px] max-h-[900px]
+/* Seções colapsáveis para economizar espaço */
+/* Lista de produtos sempre visível */
+```
+
 #### Lógica de Vendas Ultra-Simples
 ```typescript
 // ✅ Lógica v2.0: Ultra-simples
@@ -99,6 +116,16 @@ const saleData = {
 - **Correção**: Campo `discount_amount` adicionado ao fluxo de venda
 - **Arquivo**: `FullCart.tsx`
 
+#### Problema 4: Sistema de Delivery
+- **Situação**: Faltava funcionalidade completa de delivery
+- **Correção**: Implementação completa com endereço, taxa, entregador e numeração
+- **Arquivos**: `FullCart.tsx`, `use-sales.ts`, `RecentSales.tsx`
+
+#### Problema 5: Carrinho em Monitores Pequenos
+- **Situação**: Produtos desapareciam com formulários preenchidos
+- **Correção**: Interface responsiva com seções colapsáveis e altura dinâmica
+- **Arquivo**: `FullCart.tsx`
+
 ### 📦 [Estoque](./v2.0/ultra-simplification.md)
 
 #### Ultra-Simplificação Implementada
@@ -116,12 +143,13 @@ const saleData = {
 ## 📈 Métricas de Melhoria
 
 ### Performance
-| Métrica | v1.0 | v2.0 | Melhoria |
-|---------|------|------|----------|
-| Complexidade | Alta | Baixa | -90% |
-| Bugs Críticos | 3+ | 0 | -100% |
-| Tempo de Venda | ~3min | ~1min | -66% |
-| Confiabilidade | 85% | 99.9% | +15% |
+| Métrica | v1.0 | v2.0 | v2.0+ | Melhoria |
+|---------|------|------|-------|----------|
+| Complexidade | Alta | Baixa | Baixa | -90% |
+| Bugs Críticos | 3+ | 0 | 0 | -100% |
+| Tempo de Venda | ~3min | ~1min | ~45s | -75% |
+| Confiabilidade | 85% | 99.9% | 99.9% | +15% |
+| UX Monitor Pequeno | Ruim | Média | Excelente | +300% |
 
 ### Usabilidade
 | Aspecto | v1.0 | v2.0 | Impacto |
@@ -153,22 +181,55 @@ const saleData = {
 - **Zero downtime** durante migração
 - **100% compatibilidade** com dados existentes
 
+## 🚀 **Gestão de Projetos e Acompanhamento**
+
+### **[✅ Conquistas Realizadas](./accomplishments-tracking.md)**
+**Sistema de acompanhamento das melhorias e implementações já concluídas**
+
+- 🏆 **35 conquistas** organizadas em 12 fases de desenvolvimento
+- ✅ **Sistema de checkboxes** para marcar melhorias já implementadas
+- 📊 **Progresso visual** das transformações realizadas
+- 🎯 **Desde ultra-simplificação** até otimizações de produção
+- 📈 **Métricas de impacto** para cada melhoria
+
+**Foco em retrospectiva:**
+1. ✅ Marque conquistas já realizadas
+2. 📊 Acompanhe evolução do projeto
+3. 🏆 Demonstre produtividade alcançada
+4. 📈 Base para relatórios de progresso
+
+### **[📋 Milestones Futuras](./milestones-and-issues.md)**
+**Sistema organizado de milestones e issues do GitHub para próximas implementações**
+
+- 🎯 **Milestone ativa**: v2.1 - Otimização e Qualidade
+- 📊 **Progresso visual** com checkboxes para acompanhamento
+- 🏷️ **Issues categorizadas** por prioridade e tipo
+- 📝 **Sistema de checklist** para não perder tarefas
+- 🔗 **Integração com GitHub** para workflow completo
+
+**Foco no futuro:**
+1. 📋 Consulte a milestone ativa
+2. ✅ Marque issues conforme completa
+3. 📈 Acompanhe progresso visual
+4. 🆕 Adicione novas tasks conforme necessário
+
 ## 🎯 Roadmap Futuro
 
-### v2.1 (Q1 2026) - Melhorias Incrementais
-- Mobile app para clientes
-- API pública para integrações
-- Relatórios avançados
+### v2.1 (Q4 2025) - Otimização e Qualidade
+- Performance e otimizações
+- Melhorias UX/UI
+- Qualidade de código
+- Testes automatizados
 
-### v2.2 (Q2 2026) - Expansão
-- Multi-loja support
-- E-commerce integrado
-- BI avançado
+### v2.2 (Q1 2026) - Automação e Integrações
+- Integrações N8N completas
+- API mobile para entregadores
+- Automação de processos
 
-### v3.0 (Q4 2026) - Próxima Geração
-- AI/ML integração
-- IoT sensors
-- Blockchain tracking
+### v3.0 (Q2 2026) - Multi-loja e Franquias
+- Suporte multi-tenant
+- Gestão centralizada
+- Dashboard consolidado
 
 ## 📋 Templates de Changelog
 

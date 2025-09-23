@@ -13,6 +13,8 @@ O módulo **Sales** é o coração operacional do Adega Manager, responsável po
 - **Sistema de Desconto** - Descontos flexíveis por item ou total
 - **Multi-Pagamento** - Suporte a diversos métodos de pagamento
 - **Cálculo de Troco** - Automático para pagamentos em dinheiro
+- **Sistema de Delivery** - Gestão completa de entregas com endereço, taxa e entregador
+- **Carrinho Responsivo** - Interface adaptável para diferentes tamanhos de monitor
 
 ### 📊 Status Atual
 - **Status**: ✅ **100% Funcional em Produção**
@@ -51,8 +53,8 @@ Produto Selecionado → Carrinho → Cliente → Pagamento → Finalização
 ## 🧩 [Componentes Principais](./components.md)
 
 ### Interface Principal
-- **`SalesPage.tsx`** - Layout principal do POS
-- **`FullCart.tsx`** - Carrinho com todas as funcionalidades
+- **`SalesPage.tsx`** - Layout principal do POS com suporte a delivery/presencial
+- **`FullCart.tsx`** - Carrinho responsivo com seções colapsáveis e altura dinâmica
 - **`ProductsGrid.tsx`** - Grid de produtos com search/filtros
 
 ### Modais e Diálogos
@@ -112,16 +114,25 @@ if (stockUnitsLoose > 0 && stockPackages > 0) {
 ## 📱 Interface do Usuário
 
 ### Layout Principal
-- **Grid de Produtos** (esquerda) - Busca e seleção
-- **Carrinho** (direita) - Itens e finalização
+- **Grid de Produtos** (esquerda) - Busca e seleção com tipos de venda (presencial/delivery)
+- **Carrinho Responsivo** (direita) - Interface adaptável com seções colapsáveis
 - **Header** - Navegação e usuário
 - **Footer** - Status e informações
 
+### Design Responsivo do Carrinho
+- **Altura Dinâmica**: `h-[calc(100vh-120px)]` com limites min/max
+- **Seções Colapsáveis**: Cliente, Pagamento e Entrega podem ser recolhidas
+- **Lista de Produtos Garantida**: Altura mínima de 200px sempre visível
+- **Scroll Independente**: Produtos acessíveis mesmo com formulários preenchidos
+- **Adaptação Automática**: Interface se ajusta a diferentes tamanhos de monitor
+
 ### Interações Principais
-1. **Busca de Produto** - Por nome, categoria ou código
-2. **Adição ao Carrinho** - Click direto ou modal
-3. **Scanner** - Leitura de código de barras
-4. **Finalização** - Pagamento e impressão
+1. **Seleção de Tipo** - Presencial ou Delivery no início da venda
+2. **Busca de Produto** - Por nome, categoria ou código
+3. **Adição ao Carrinho** - Click direto ou modal com variantes
+4. **Scanner** - Leitura de código de barras
+5. **Gestão de Seções** - Expandir/recolher Cliente, Pagamento, Entrega
+6. **Finalização** - Pagamento com validações específicas por tipo
 
 ### Estados da Interface
 - **Loading** - Durante operações
@@ -195,6 +206,7 @@ if (stockUnitsLoose > 0 && stockPackages > 0) {
 - **Offline Mode** - Funcionar sem internet
 - **Advanced Analytics** - Relatórios em tempo real
 - **Printer Integration** - Impressão automática
+- **Melhorias UX** - Feedback das melhorias responsivas implementadas
 
 ### Longo Prazo (v3.0)
 - **AI Recommendations** - Sugestões inteligentes

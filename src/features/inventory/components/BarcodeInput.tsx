@@ -88,7 +88,7 @@ export const BarcodeInput: React.FC<BarcodeInputProps> = ({
           disabled={disabled || isProcessing}
           maxLength={14}
           className={cn(
-            "font-mono text-lg h-12", // Font monospace para códigos + altura fixa
+            "font-mono text-lg h-12 text-white placeholder:text-gray-200", // Font monospace para códigos + altura fixa + contraste melhorado
             !validation.isValid && "border-red-500 focus-visible:ring-red-500"
           )}
           autoComplete="off"

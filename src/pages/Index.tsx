@@ -56,14 +56,16 @@ const Index = () => {
     }
   }, [loading, user, navigate]);
 
-  // Mostra loading enquanto carrega as permissões
-  if (loading) {
+  // ✅ CORRIGIDO: Mostra loading enquanto carrega OU enquanto role não está definido
+  if (loading || (user && !userRole)) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-black">
         <div className="flex flex-col items-center space-y-4">
           <div className="animate-spin rounded-full h-16 w-16 border-4 border-yellow-500/30 border-t-yellow-400"></div>
           <div className="text-yellow-400 font-medium text-lg">Carregando...</div>
-          <div className="text-yellow-300 text-sm">Verificando autenticação...</div>
+          <div className="text-yellow-300 text-sm">
+            {loading ? 'Verificando autenticação...' : 'Carregando permissões...'}
+          </div>
         </div>
       </div>
     );
@@ -74,17 +76,8 @@ const Index = () => {
     return null;
   }
 
-  // Se não tem role, mostra error
-  if (!userRole) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-black">
-        <div className="text-red-400 text-center">
-          <div className="text-xl mb-2">Erro de Permissão</div>
-          <div>Role do usuário não definido</div>
-        </div>
-      </div>
-    );
-  }
+  // ✅ REMOVIDO: Condição redundante que causava o flash de erro
+  // A condição (!userRole) agora é tratada no loading state acima
 
   const renderContent = () => {
     const AccessDenied = () => (

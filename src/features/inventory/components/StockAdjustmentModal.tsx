@@ -381,7 +381,9 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
     adjustStockMutation.mutate(data);
   };
 
-  if (isLoadingProduct) {
+  // ✅ FIX: Previne flash do modal de erro durante carregamento inicial
+  // Só mostra erro se realmente houve um erro E não está carregando
+  if (isLoadingProduct || (!product && !productError)) {
     return (
       <EnhancedBaseModal
         isOpen={isOpen}
@@ -400,6 +402,7 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
     );
   }
 
+  // ✅ FIX: Só mostra erro se realmente houver erro ou dados inválidos após carregamento
   if (productError || !product || !calculations) {
     return (
       <EnhancedBaseModal

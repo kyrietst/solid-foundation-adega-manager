@@ -6,7 +6,8 @@ import type {
 } from "@/shared/ui/primitives/toast"
 
 const TOAST_LIMIT = 1
-const TOAST_REMOVE_DELAY = 1000000
+const TOAST_REMOVE_DELAY = 5000 // 5 segundos (era 1 milhão!)
+const TOAST_DEBOUNCE_DELAY = 100 // Debounce para evitar toasts consecutivos
 
 type ToasterToast = ToastProps & {
   id: string
@@ -54,6 +55,7 @@ interface State {
 }
 
 const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
+const toastDebounceMap = new Map<string, number>() // Debounce para evitar toasts duplicados
 
 const addToRemoveQueue = (toastId: string) => {
   if (toastTimeouts.has(toastId)) {
@@ -69,6 +71,20 @@ const addToRemoveQueue = (toastId: string) => {
   }, TOAST_REMOVE_DELAY)
 
   toastTimeouts.set(toastId, timeout)
+}
+
+// Função para verificar se o toast é duplicado (debounce)
+const isDuplicateToast = (title: string, description: string): boolean => {
+  const toastKey = `${title}-${description}`;
+  const now = Date.now();
+  const lastToastTime = toastDebounceMap.get(toastKey) || 0;
+
+  if (now - lastToastTime < TOAST_DEBOUNCE_DELAY) {
+    return true; // É duplicado, ignorar
+  }
+
+  toastDebounceMap.set(toastKey, now);
+  return false;
 }
 
 export const reducer = (state: State, action: Action): State => {
@@ -140,6 +156,19 @@ function dispatch(action: Action) {
 type Toast = Omit<ToasterToast, "id">
 
 function toast({ ...props }: Toast) {
+  // Verificar se é um toast duplicado usando debounce
+  const title = typeof props.title === 'string' ? props.title : '';
+  const description = typeof props.description === 'string' ? props.description : '';
+
+  if (isDuplicateToast(title, description)) {
+    console.log('🚫 Toast duplicado ignorado:', { title, description });
+    return {
+      id: '',
+      dismiss: () => {},
+      update: () => {},
+    };
+  }
+
   const id = genId()
 
   const update = (props: ToasterToast) =>

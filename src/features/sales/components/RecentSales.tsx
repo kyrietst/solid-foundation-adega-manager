@@ -3,7 +3,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Skeleton } from "@/shared/ui/composite/skeleton";
 import { Button } from "@/shared/ui/primitives/button";
-import { FileText, Download, CalendarDays, CreditCard, ChevronRight, User, Truck, Trash2, Eye, Package } from "lucide-react";
+import { FileText, Download, CalendarDays, CreditCard, ChevronRight, User, Truck, Trash2, Eye, Package, Store } from "lucide-react";
 import { useAuth } from "@/app/providers/AuthContext";
 import { useState } from "react";
 import { useToast } from "@/shared/hooks/common/use-toast";
@@ -26,6 +26,7 @@ type PaymentStatus = 'pending' | 'paid' | 'cancelled';
 
 interface Sale {
   id: string;
+  order_number: number;
   status: SaleStatus;
   payment_status: PaymentStatus;
   created_at: string;
@@ -34,7 +35,10 @@ interface Sale {
   discount_amount: number;
   final_amount: number;
   delivery: boolean;
-  delivery_address?: string | null;
+  delivery_type: string;
+  delivery_address?: { address: string } | null;
+  delivery_fee?: number;
+  delivery_person_id?: string | null;
   customer_id: string | null;
   seller_id: string;
   notes: string | null;
@@ -50,7 +54,11 @@ interface Sale {
     name: string;
     email?: string;
   } | null;
-  // seller_id já está definido acima na interface
+  delivery_person?: {
+    id: string;
+    name: string;
+    email?: string;
+  } | null;
   items?: Array<{
     id: string;
     sale_id: string;
@@ -69,7 +77,7 @@ export function RecentSales() {
   const { data: sales, isLoading } = useSales({ limit: 20 });
   const { mutate: deleteSale, isPending: isDeleting } = useDeleteSale();
   const { user, userRole } = useAuth();
-  const [saleToDelete, setSaleToDelete] = useState<{id: string, number: string} | null>(null);
+  const [saleToDelete, setSaleToDelete] = useState<{id: string, number: number} | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [expandedSaleId, setExpandedSaleId] = useState<string | null>(null);
   const { toast } = useToast();
@@ -80,7 +88,7 @@ export function RecentSales() {
     setExpandedSaleId(expandedSaleId === saleId ? null : saleId);
   };
 
-  const handleDeleteClick = (saleId: string, saleNumber: string) => {
+  const handleDeleteClick = (saleId: string, saleNumber: number) => {
     setSaleToDelete({ id: saleId, number: saleNumber });
     setIsDeleteDialogOpen(true);
   };
@@ -176,6 +184,28 @@ export function RecentSales() {
     return statusMap[status] || status;
   };
 
+  const formatDeliveryType = (type: string) => {
+    const typeMap: Record<string, string> = {
+      'presencial': 'Presencial',
+      'delivery': 'Delivery',
+      'pickup': 'Retirada'
+    };
+    return typeMap[type] || type;
+  };
+
+  const getDeliveryTypeIcon = (type: string) => {
+    switch (type) {
+      case 'presencial':
+        return 'Store';
+      case 'delivery':
+        return 'Truck';
+      case 'pickup':
+        return 'Package';
+      default:
+        return 'Store';
+    }
+  };
+
   return (
     <div className="flex flex-col h-full">
       {/* Header fixo */}
@@ -239,8 +269,13 @@ export function RecentSales() {
               <div className="flex flex-col sm:flex-row justify-between gap-4">
                 <div className="space-y-1">
                   <div className="flex items-center gap-3">
+                    {sale.delivery_type === 'delivery' ? (
+                      <Truck className="h-5 w-5 text-green-400" />
+                    ) : (
+                      <Store className="h-5 w-5 text-blue-400" />
+                    )}
                     <h3 className={cn(text.h3, shadows.medium, "font-semibold text-lg")}>
-                      Venda #{sale.id.slice(0, 8).toUpperCase()}
+                      {sale.delivery_type === 'delivery' ? 'Pedido' : 'Venda'} #{sale.order_number}
                     </h3>
                     <span 
                       className={cn("text-xs px-2 py-1 rounded-full", getStatusBadge(sale.status))}
@@ -283,11 +318,69 @@ export function RecentSales() {
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
+                      {(() => {
+                        const IconComponent = getDeliveryTypeIcon(sale.delivery_type) === 'Store' ? Store :
+                                             getDeliveryTypeIcon(sale.delivery_type) === 'Truck' ? Truck : Package;
+                        return <IconComponent className="h-4 w-4 text-orange-400" />;
+                      })()}
+                      <span className={cn(text.h6, shadows.subtle)}>
+                        Tipo: {formatDeliveryType(sale.delivery_type)}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
                       <CalendarDays className="h-4 w-4 text-emerald-400" />
                       <span className={cn(text.h6, shadows.subtle)}>
                         {format(new Date(sale.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                       </span>
                     </div>
+
+                    {/* Telefone do cliente */}
+                    {sale.customer?.phone && (
+                      <div className="flex items-center gap-2">
+                        <Package className="h-4 w-4 text-blue-400" />
+                        <span className={cn(text.h6, shadows.subtle)}>
+                          Tel: {sale.customer.phone}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Informações específicas de delivery */}
+                    {sale.delivery_type === 'delivery' && (
+                      <>
+                        {/* Endereço de entrega */}
+                        {sale.delivery_address && (
+                          <div className="flex items-center gap-2">
+                            <Package className="h-4 w-4 text-green-400" />
+                            <span className={cn(text.h6, shadows.subtle)}>
+                              Endereço: {sale.delivery_address.address}
+                            </span>
+                          </div>
+                        )}
+
+                        {/* Taxa de entrega */}
+                        {sale.delivery_fee && sale.delivery_fee > 0 && (
+                          <div className="flex items-center gap-2">
+                            <Package className="h-4 w-4 text-yellow-400" />
+                            <span className={cn(text.h6, shadows.subtle)}>
+                              Taxa: {new Intl.NumberFormat("pt-BR", {
+                                style: "currency",
+                                currency: "BRL"
+                              }).format(sale.delivery_fee)}
+                            </span>
+                          </div>
+                        )}
+
+                        {/* Entregador */}
+                        {sale.delivery_person?.name && (
+                          <div className="flex items-center gap-2">
+                            <Truck className="h-4 w-4 text-purple-400" />
+                            <span className={cn(text.h6, shadows.subtle)}>
+                              Entregador: {sale.delivery_person.name}
+                            </span>
+                          </div>
+                        )}
+                      </>
+                    )}
                   </div>
                 </div>
                 <div className="flex flex-col items-end gap-1">
@@ -312,7 +405,7 @@ export function RecentSales() {
                         variant="outline" 
                         size="sm" 
                         className="h-8 w-8 p-0 bg-black/50 border-red-400/30 text-red-400 hover:bg-red-400/10 hover:border-red-400/50 hover:text-red-300 transition-all duration-200 backdrop-blur-sm disabled:opacity-50"
-                        onClick={() => handleDeleteClick(sale.id, sale.id.slice(0, 8).toUpperCase())}
+                        onClick={() => handleDeleteClick(sale.id, sale.order_number)}
                         disabled={isDeleting}
                       >
                         <Trash2 className="h-3 w-3" />
@@ -415,7 +508,7 @@ export function RecentSales() {
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir venda</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir a venda #{saleToDelete?.number}? 
+              Tem certeza que deseja excluir o pedido #{saleToDelete?.number}? 
               <br /><br />
               <strong>Esta ação irá:</strong>
               <br />• Remover a venda do sistema
