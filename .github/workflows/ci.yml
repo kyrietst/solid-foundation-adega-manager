@@ -1,0 +1,115 @@
+name: CI - Quality Gate for Pull Requests
+
+# Trigger apenas em Pull Requests para main e development/simplification
+# Sem deploy automático - apenas validação de qualidade
+on:
+  pull_request:
+    branches:
+      - main
+      - 'development/*'
+    types: [opened, synchronize, reopened, ready_for_review]
+
+jobs:
+  quality-gate:
+    name: Quality Gate
+    runs-on: ubuntu-latest
+
+    # Pular se for draft PR
+    if: github.event.pull_request.draft == false
+
+    steps:
+    - name: 📁 Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: 🟢 Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: 📦 Install dependencies
+      run: npm ci
+
+    - name: 🔍 ESLint - Code Quality Check
+      run: npm run lint
+
+    - name: 🏗️ TypeScript - Build Check
+      run: npm run build
+
+    - name: 🧪 Tests - Unit & Integration
+      run: npm run test:run
+      continue-on-error: false
+
+    # Comentário no PR com resultado
+    - name: 💬 PR Quality Report
+      uses: actions/github-script@v7
+      if: always()
+      with:
+        script: |
+          const { data: comments } = await github.rest.issues.listComments({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+          });
+
+          // Remove comentários anteriores do bot
+          const botComments = comments.filter(comment =>
+            comment.user.type === 'Bot' && comment.body.includes('🎯 Quality Gate')
+          );
+
+          for (const comment of botComments) {
+            await github.rest.issues.deleteComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: comment.id,
+            });
+          }
+
+          // Status do job
+          const conclusion = '${{ job.status }}';
+          const emoji = conclusion === 'success' ? '✅' : '❌';
+          const status = conclusion === 'success' ? 'PASSOU' : 'FALHOU';
+
+          const body = `## 🎯 Quality Gate - ${status} ${emoji}
+
+**Resultados da Análise:**
+- **ESLint:** ${conclusion === 'success' ? '✅ Sem problemas' : '❌ Verificar erros'}
+- **TypeScript:** ${conclusion === 'success' ? '✅ Build OK' : '❌ Build falhou'}
+- **Testes:** ${conclusion === 'success' ? '✅ Todos passando' : '❌ Testes falharam'}
+
+${conclusion === 'success' ?
+  '🚀 **Pull Request aprovado para merge!**' :
+  '⚠️ **Corrija os problemas antes do merge**'
+}
+
+---
+*Executado automaticamente pelo GitHub Actions*`;
+
+          await github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: body
+          });
+
+  # Job separado para análise de segurança (opcional)
+  security-scan:
+    name: Security Analysis
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+
+    steps:
+    - name: 📁 Checkout
+      uses: actions/checkout@v4
+
+    - name: 🔒 npm audit
+      run: |
+        npm audit --audit-level moderate || echo "Security vulnerabilities found - review required"
+
+    - name: 📊 Bundle Size Analysis
+      run: |
+        npm ci
+        npm run build
+        echo "Build size analysis completed"

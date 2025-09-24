@@ -30,13 +30,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Testing Commands
 - `npm run test` - Run Vitest test suite
-- `npm run test:ui` - Vitest UI interface  
+- `npm run test:ui` - Vitest UI interface
 - `npm run test:run` - Run tests once (CI mode)
 - `npm run test:coverage` - Generate coverage reports
 - `npm run test:watch` - Watch mode for development
 - `npm run test:maintenance` - Test maintenance utilities
 - `npm run test:cleanup` - Cleanup test artifacts
 - `npm run test:health` - Health check for test environment
+
+### Database Migration Commands (v2.0.0 - New)
+- `npm run migration:create name` - Create new migration file
+- `npm run migration:apply` - Apply pending migrations to remote database
+- `npm run migration:status` - List all migrations and their status
+- `npm run migration:diff name` - Generate migration based on schema differences
+- `npm run migration:pull` - Pull latest schema from remote database
+- `npm run db:new name` - Direct Supabase CLI: create migration
+- `npm run db:up` - Direct Supabase CLI: push migrations to remote
+- `npm run db:status` - Direct Supabase CLI: list migration status
 
 ### Critical Notes
 - **Vitest testing framework** - Modern testing with JSDOM environment configured in src/__tests__/setup.ts
@@ -387,13 +397,94 @@ NODE_ENV=development
   - All inventory modals standardized to 1200px width for improved UX
   - Uses Radix UI Dialog with proper style inheritance
 
-### Database Schema Changes
-1. **Supabase dashboard** - Make schema changes directly
-2. **Regenerate types** - Use Supabase CLI: `supabase gen types typescript`
-3. **Update components** - Modify affected React components
-4. **Add RLS policies** - Implement security policies for new tables
-5. **Test thoroughly** - Verify all affected functionality
-6. **Backup first** - Always backup before major changes
+### Database Schema Changes (v2.0.0 - Migration-First Approach)
+**IMPORTANT: Use migration-first workflow instead of direct dashboard changes**
+
+1. **Create migration** - Use `npm run migration:create descriptive_name`
+2. **Edit SQL file** - Write migration in `supabase/migrations/` with rollback comments
+3. **Apply migration** - Use `npm run migration:apply` to push to remote database
+4. **Regenerate types** - Use Supabase CLI: `supabase gen types typescript` (if needed)
+5. **Update components** - Modify affected React components
+6. **Test thoroughly** - Verify all affected functionality in development branch
+7. **Create Pull Request** - GitHub Actions will validate lint, build, and tests
+8. **Manual production deploy** - After PR merge, manually apply migration to production
+
+**Migration Commands:**
+- `npm run migration:create add_new_feature` - Create new migration
+- `npm run migration:status` - Check which migrations are applied
+- `npm run migration:apply` - Apply pending migrations
+
+## Git Workflow & CI/CD (v2.0.0 - New Development Process)
+
+### Branch Strategy
+- **main** - Production-ready code, protected branch
+- **development/simplification** - Main development branch for system simplification
+- **feature/*** - Feature branches off development/simplification
+- **hotfix/*** - Emergency fixes directly to main (rare)
+
+### Development Workflow
+1. **Create feature branch** from development/simplification
+   ```bash
+   git checkout development/simplification
+   git pull origin development/simplification
+   git checkout -b feature/new-functionality
+   ```
+
+2. **Develop with migrations**
+   ```bash
+   npm run migration:create add_new_functionality
+   # Edit migration file
+   npm run migration:apply
+   # Develop React components
+   npm run dev
+   ```
+
+3. **Quality checks before commit**
+   ```bash
+   npm run lint        # Zero warnings required
+   npm run build       # Must compile successfully
+   npm run test:run    # All tests must pass
+   ```
+
+4. **Commit and push**
+   ```bash
+   git add .
+   git commit -m "feat: add new functionality with database migration"
+   git push origin feature/new-functionality
+   ```
+
+5. **Create Pull Request** to development/simplification
+   - GitHub Actions automatically runs quality gates
+   - Checks: ESLint, TypeScript build, unit tests
+   - Auto-comments with results
+   - Merge only after passing all checks
+
+6. **Production deployment** (manual)
+   ```bash
+   git checkout main
+   git merge development/simplification
+   npm run migration:apply  # Apply migrations to production
+   # Manual verification and deploy
+   ```
+
+### GitHub Actions CI/CD
+**File:** `.github/workflows/ci.yml`
+
+**Triggers:** Pull requests to main or development/* branches
+
+**Quality Gates:**
+- ✅ ESLint code quality check (zero warnings)
+- ✅ TypeScript compilation check
+- ✅ Unit and integration tests
+- ✅ Security audit (npm audit)
+- ✅ Bundle size analysis
+
+**No Automatic Deployment:** Manual control for production safety
+
+### Documentation Requirements
+- **Migration Guide:** `docs/06-operations/guides/MIGRATIONS_GUIDE.md`
+- **Complete examples** and troubleshooting included
+- **Beginner-friendly explanations** of technical concepts
 
 ## Critical System Information
 

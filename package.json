@@ -20,7 +20,18 @@
     "test:watch": "vitest watch",
     "test:maintenance": "node scripts/test-maintenance.js",
     "test:cleanup": "node scripts/test-maintenance.js --cleanup-only",
-    "test:health": "node scripts/test-maintenance.js --health-check"
+    "test:health": "node scripts/test-maintenance.js --health-check",
+    "db:new": "supabase migration new",
+    "db:up": "supabase db push",
+    "db:reset": "supabase db reset",
+    "db:diff": "supabase db diff",
+    "db:status": "supabase migration list",
+    "db:pull": "supabase db pull",
+    "migration:create": "npm run db:new",
+    "migration:apply": "npm run db:up",
+    "migration:status": "npm run db:status",
+    "migration:diff": "npm run db:diff --file",
+    "migration:pull": "npm run db:pull"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
@@ -115,6 +126,7 @@
     "jsdom": "^26.1.0",
     "msw": "^2.11.2",
     "postcss": "^8.5.6",
+    "supabase": "^2.45.5",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.0.1",
