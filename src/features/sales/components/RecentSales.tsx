@@ -400,7 +400,7 @@ export function RecentSales() {
                       <Eye className="h-3 w-3 mr-1" />
                       {expandedSaleId === sale.id ? 'Ocultar' : 'Detalhes'}
                     </Button>
-                    {userRole === 'admin' && (
+                    {(userRole === 'admin' || userRole === 'employee') && (
                       <Button 
                         variant="outline" 
                         size="sm" 
