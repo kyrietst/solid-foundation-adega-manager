@@ -35,7 +35,7 @@ interface EditProductFormData {
   price: number;
   volume_ml?: number;
   stock_quantity: number;
-  minimum_stock?: number;
+  // minimum_stock removido - coluna não existe na tabela products
 }
 import type { Product } from '@/types/inventory.types';
 
@@ -239,12 +239,12 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
       const updateData = {
         name: productData.name,
         price: productData.price,
-        stock_quantity: productData.stock_quantity || 0,
+        // stock_quantity: REMOVIDO - só pode ser alterado via create_inventory_movement()
         category: productData.category,
-        volume_ml: productData.volume_ml || null,
+        volume_ml: productData.volume_ml && productData.volume_ml > 0 ? productData.volume_ml : null,
         supplier: finalSupplier || null,
-        minimum_stock: productData.minimum_stock || null,
-        cost_price: productData.cost_price || null,
+        // minimum_stock removido - coluna não existe na tabela products
+        cost_price: productData.cost_price && productData.cost_price > 0 ? productData.cost_price : null,
         // Sistema de códigos de barras - mapeamento correto
         barcode: productData.barcode || null, // Código principal (corrigido)
         package_barcode: productData.package_barcode || null,
@@ -253,12 +253,12 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
         has_package_tracking: productData.has_package_tracking || false,
         has_unit_tracking: productData.has_unit_tracking !== undefined ? productData.has_unit_tracking : true,
         // Preços
-        package_price: productData.package_price || null,
+        package_price: productData.package_price && productData.package_price > 0 ? productData.package_price : null,
         // Calcular margens se houver preço de custo
-        margin_percent: (productData.cost_price && productData.price) ? 
+        margin_percent: (productData.cost_price && productData.cost_price > 0 && productData.price) ?
           ((productData.price - productData.cost_price) / productData.cost_price * 100) : null,
         // Calcular margem de pacote (se houver preço de pacote)
-        package_margin: (productData.package_price && productData.cost_price && productData.package_units) ? 
+        package_margin: (productData.package_price && productData.package_price > 0 && productData.cost_price && productData.cost_price > 0 && productData.package_units) ?
           (((productData.package_price - (productData.cost_price * productData.package_units)) / (productData.cost_price * productData.package_units)) * 100) : null,
         // Controle de validade
         has_expiry_tracking: productData.has_expiry_tracking || false,

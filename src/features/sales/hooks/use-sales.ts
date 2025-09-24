@@ -564,9 +564,11 @@ export const useDeleteSale = () => {
         throw new Error("Perfil de usuário não encontrado");
       }
 
-      if (profile.role !== 'admin') {
-        console.error('Usuário não é admin:', profile.role);
-        throw new Error("Apenas administradores podem excluir vendas");
+      // Verificar se o usuário tem uma função que permite excluir vendas (admin ou employee)
+      const allowedRoles: AllowedRole[] = ['admin', 'employee'];
+      if (!allowedRoles.includes(profile.role as AllowedRole)) {
+        console.error('Usuário não tem permissão para excluir:', profile.role);
+        throw new Error("Apenas administradores e funcionários podem excluir vendas");
       }
 
       console.log('Permissões validadas. Executando exclusão...');

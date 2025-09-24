@@ -51,8 +51,7 @@ import {
   ScanLine,
   ShoppingCart,
   Info,
-  Calendar,
-  AlertTriangle
+  Calendar
 } from 'lucide-react';
 import type { Product } from '@/types/inventory.types';
 
@@ -115,10 +114,6 @@ const editProductSchema = z.object({
     .min(1, 'Volume deve ser maior que 0')
     .optional(),
 
-  minimum_stock: z
-    .number({ invalid_type_error: 'Estoque mínimo deve ser um número' })
-    .min(0, 'Estoque mínimo não pode ser negativo')
-    .optional(),
 
   // Campos de controle de validade
   has_expiry_tracking: z.boolean().default(false),
@@ -182,17 +177,16 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
       has_package_tracking: false,
       package_barcode: '',
       package_units: 1,
-      package_price: undefined,
+      package_price: 0, // Mudado de undefined para 0 para evitar controlled->uncontrolled
       supplier: '',
       custom_supplier: '',
-      cost_price: undefined,
+      cost_price: 0, // Mudado de undefined para 0 para evitar controlled->uncontrolled
       price: 0,
-      volume_ml: undefined,
-      minimum_stock: undefined,
+      volume_ml: 0, // Mudado de undefined para 0 para evitar controlled->uncontrolled
       has_expiry_tracking: false,
       expiry_date: '',
-      stock_packages: undefined,
-      stock_units_loose: undefined,
+      stock_packages: 0, // Mudado de undefined para 0 para evitar controlled->uncontrolled
+      stock_units_loose: 0, // Mudado de undefined para 0 para evitar controlled->uncontrolled
     },
   });
 
@@ -208,13 +202,12 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
         has_package_tracking: product.has_package_tracking || false,
         package_barcode: product.package_barcode || '',
         package_units: product.package_units || product.units_per_package || 1,
-        package_price: product.package_price ? Number(product.package_price) : undefined,
+        package_price: product.package_price ? Number(product.package_price) : 0,
         supplier: product.supplier || '',
         custom_supplier: '',
-        cost_price: product.cost_price ? Number(product.cost_price) : undefined,
+        cost_price: product.cost_price ? Number(product.cost_price) : 0,
         price: Number(product.price) || 0,
-        volume_ml: product.volume_ml ? Number(product.volume_ml) : undefined,
-        minimum_stock: product.minimum_stock || undefined,
+        volume_ml: product.volume_ml ? Number(product.volume_ml) : 0,
         has_expiry_tracking: product.has_expiry_tracking || false,
         expiry_date: product.expiry_date || '',
         stock_packages: product.stock_packages || 0,
@@ -469,7 +462,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
                               type="number"
                               placeholder="350"
                               {...field}
-                              onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+                              onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : 0)}
                               className="bg-gray-800/50 border-gray-600 text-white h-11"
                             />
                           </FormControl>
@@ -481,29 +474,6 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
                       )}
                     />
 
-                    <FormField
-                      control={form.control}
-                      name="minimum_stock"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-gray-300">Estoque Mínimo</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              min="0"
-                              placeholder="Ex: 10"
-                              {...field}
-                              onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
-                              className="bg-gray-800/50 border-gray-600 text-white h-11"
-                            />
-                          </FormControl>
-                          <FormDescription className="text-xs text-gray-500">
-                            Sistema alertará quando abaixo desta quantidade
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
                   </div>
                 </div>
       </ModalSection>
@@ -847,7 +817,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
                               step="0.01"
                               placeholder="0,00"
                               {...field}
-                              onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+                              onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : 0)}
                               className="bg-gray-800/50 border-gray-600 text-white h-11"
                             />
                           </FormControl>
@@ -914,7 +884,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
                                 step="0.01"
                                 placeholder="0,00"
                                 {...field}
-                                onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+                                onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : 0)}
                                 className="bg-gray-800/50 border-gray-600 text-white h-11"
                               />
                             </FormControl>
@@ -1062,13 +1032,6 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
             </div>
 
             <div className="text-xs text-gray-400 bg-yellow-900/10 border border-yellow-400/20 rounded p-3">
-              <div className="flex items-start gap-2">
-                <AlertTriangle className="h-4 w-4 text-yellow-400 mt-0.5" />
-                <div>
-                  <p className="font-medium text-yellow-300 mb-1">Estoque Mínimo</p>
-                  <p>Alertas são gerados quando o estoque fica abaixo de <strong>{product.minimum_stock || 5} unidades</strong> no total.</p>
-                </div>
-              </div>
             </div>
           </div>
         </div>
