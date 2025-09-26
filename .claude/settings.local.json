@@ -20,9 +20,6 @@
       "Bash(done)",
       "Bash(mkdir:*)",
       "Bash(md-tree:*)",
-      "mcp__supabase__list_tables",
-      "mcp__supabase__apply_migration",
-      "mcp__supabase__execute_sql",
       "Bash(npx eslint:*)",
       "Bash(cd:*)",
       "Bash(npm run lint:*)",
@@ -39,8 +36,6 @@
       "Read(//mnt/d/1./**)",
       "Bash(awk:*)",
       "Bash(pkill:*)",
-      "mcp__supabase__search_docs",
-      "mcp__supabase__list_migrations",
       "Bash(node:*)",
       "Bash(npm run dev:*)",
       "mcp__microsoft-playwright-mcp__browser_type",
@@ -50,8 +45,16 @@
       "mcp__microsoft-playwright-mcp__browser_navigate",
       "mcp__microsoft-playwright-mcp__browser_wait_for",
       "mcp__microsoft-playwright-mcp__browser_press_key",
-      "mcp__microsoft-playwright-mcp__browser_close"
+      "mcp__microsoft-playwright-mcp__browser_close",
+      "mcp__microsoft-playwright-mcp__browser_take_screenshot",
+      "mcp__supabase__list_tables",
+      "mcp__supabase__list_projects",
+      "Bash(supabase:*)"
     ],
     "deny": []
-  }
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "supabase"
+  ]
 }
