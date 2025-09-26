@@ -14,7 +14,7 @@ import { ProductsTitle, ProductsHeader } from './ProductsHeader';
 import { useProductsGridLogic } from '@/shared/hooks/products/useProductsGridLogic';
 // Imports dos modais refatorados - Força HMR refresh para carregar logs de diagnóstico
 import { NewProductModal } from './NewProductModal';
-import { ProductDetailsModal } from './ProductDetailsModal';
+import { SimpleProductViewModal } from './SimpleProductViewModal'; // Modal simplificado v2.0
 import { SimpleEditProductModal } from './SimpleEditProductModal'; // Modal simplificado v2.0
 import { StockAdjustmentModal } from './StockAdjustmentModal';
 import { StockHistoryModal } from './StockHistoryModal';
@@ -69,8 +69,28 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
 
 
   // Handlers para os modais de inventário
-  const handleViewDetails = (product: Product) => {
-    setSelectedProduct(product);
+  const handleViewDetails = async (product: Product) => {
+    // Buscar dados atualizados do produto específico do banco (igual ao handleEditProduct)
+    try {
+      const { data: updatedProduct, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('id', product.id)
+        .single();
+
+      if (error) {
+        console.error('Erro ao buscar produto atualizado para visualização:', error);
+        // Fallback para produto original se houver erro
+        setSelectedProduct(product);
+      } else {
+        // Usar dados atualizados do banco
+        setSelectedProduct(updatedProduct);
+      }
+    } catch (error) {
+      console.error('Erro na busca do produto para visualização:', error);
+      setSelectedProduct(product);
+    }
+
     setIsDetailsModalOpen(true);
   };
 
@@ -365,14 +385,15 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
         }}
       />
 
-      {/* Modal de detalhes do produto */}
-      <ProductDetailsModal
+      {/* Modal simplificado de visualização do produto */}
+      <SimpleProductViewModal
         product={selectedProduct}
         isOpen={isDetailsModalOpen}
         onClose={() => {
           setIsDetailsModalOpen(false);
           setSelectedProduct(null);
         }}
+        onEdit={handleEditProduct}
         onAdjustStock={handleAdjustStock}
         onViewHistory={handleViewHistory}
       />
@@ -423,7 +444,7 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
         isOpen={isHistoryModalOpen}
         onClose={() => {
           setIsHistoryModalOpen(false);
-          setSelectedProduct(null);
+          // CORREÇÃO: Não limpar selectedProduct - deixar que o modal pai gerencie
         }}
       />
     </div>
