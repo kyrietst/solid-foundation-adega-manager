@@ -288,11 +288,13 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
         has_package_tracking: productData.has_package_tracking || false,
         has_unit_tracking: true, // Sempre ativado no sistema simplificado
         package_price: productData.package_price !== undefined ? productData.package_price : null,
-        // Auto-calcular margens (evita divisão por zero)
-        margin_percent: (productData.cost_price !== undefined && productData.cost_price !== null && productData.price && productData.cost_price > 0) ?
-          ((productData.price - productData.cost_price) / productData.cost_price * 100) : null,
-        package_margin: (productData.package_price !== undefined && productData.cost_price !== undefined && productData.cost_price !== null && productData.package_units && productData.cost_price > 0) ?
-          (((productData.package_price - (productData.cost_price * productData.package_units)) / (productData.cost_price * productData.package_units)) * 100) : null,
+        // Auto-calcular margens de forma segura (evita overflow numérico)
+        margin_percent: safeCalculateMargin(productData.price, productData.cost_price || 0),
+        package_margin: safeCalculatePackageMargin(
+          productData.package_price || 0,
+          productData.cost_price || 0,
+          productData.package_units || 1
+        ),
         turnover_rate: 'medium',
         updated_at: new Date().toISOString()
       };
@@ -338,6 +340,31 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
   const handleCancelEdit = () => {
     setIsEditProductOpen(false);
     setSelectedProduct(null);
+  };
+
+  // Função para calcular margens de forma segura, evitando overflow numérico
+  const safeCalculateMargin = (salePrice: number, costPrice: number, maxMargin: number = 999): number | null => {
+    if (!costPrice || costPrice <= 0 || !salePrice || salePrice <= 0) {
+      return null;
+    }
+
+    const margin = ((salePrice - costPrice) / costPrice) * 100;
+
+    // Limitar margem ao máximo permitido pelo banco (NUMERIC(5,2) = 999.99)
+    return Math.min(margin, maxMargin);
+  };
+
+  // Função para calcular margem de pacote de forma segura
+  const safeCalculatePackageMargin = (packagePrice: number, costPrice: number, packageUnits: number, maxMargin: number = 999): number | null => {
+    if (!packagePrice || !costPrice || costPrice <= 0 || !packageUnits || packageUnits <= 0) {
+      return null;
+    }
+
+    const totalCost = costPrice * packageUnits;
+    const margin = ((packagePrice - totalCost) / totalCost) * 100;
+
+    // Limitar margem ao máximo permitido pelo banco (NUMERIC(5,2) = 999.99)
+    return Math.min(margin, maxMargin);
   };
 
   // Hook para obter dados dos produtos usando o hook existente
