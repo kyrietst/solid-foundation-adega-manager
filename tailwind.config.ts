@@ -428,9 +428,10 @@ export default {
 	plugins: [
 		// eslint-disable-next-line @typescript-eslint/no-require-imports
 		require("tailwindcss-animate"),
-		// Plugin para scrollbar customizada
+		// Plugin para scrollbar customizada - Sistema Adega
 		function({ addUtilities }: { addUtilities: (utilities: Record<string, Record<string, string>>) => void }) {
 			const scrollbarUtilities = {
+				// Base scrollbar styles
 				'.scrollbar-thin': {
 					'scrollbar-width': 'thin',
 				},
@@ -441,6 +442,49 @@ export default {
 				'.scrollbar-none::-webkit-scrollbar': {
 					'display': 'none',
 				},
+
+				// Webkit scrollbar sizing
+				'.scrollbar-thin::-webkit-scrollbar': {
+					'width': '8px',
+					'height': '8px',
+				},
+				'.scrollbar-ultra-thin::-webkit-scrollbar': {
+					'width': '4px',
+					'height': '4px',
+				},
+
+				// Track styles
+				'.scrollbar-track-transparent::-webkit-scrollbar-track': {
+					'background-color': 'transparent',
+				},
+				'.scrollbar-track-dark::-webkit-scrollbar-track': {
+					'background-color': 'rgb(17 24 39 / 0.3)', // gray-900/30
+					'border-radius': '0.25rem',
+				},
+
+				// Thumb styles - Dark theme
+				'.scrollbar-thumb-dark::-webkit-scrollbar-thumb': {
+					'background-color': 'rgb(75 85 99 / 0.6)', // gray-600/60
+					'border-radius': '0.25rem',
+					'border': '2px solid transparent',
+					'background-clip': 'padding-box',
+				},
+				'.scrollbar-thumb-dark-subtle::-webkit-scrollbar-thumb': {
+					'background-color': 'rgb(75 85 99 / 0.3)', // gray-600/30
+					'border-radius': '0.25rem',
+				},
+
+				// Thumb styles - Adega theme
+				'.scrollbar-thumb-adega::-webkit-scrollbar-thumb': {
+					'background-color': 'rgb(255 215 0 / 0.4)', // accent-gold-100/40
+					'border-radius': '0.25rem',
+				},
+				'.scrollbar-thumb-adega-subtle::-webkit-scrollbar-thumb': {
+					'background-color': 'rgb(255 215 0 / 0.2)', // accent-gold-100/20
+					'border-radius': '0.25rem',
+				},
+
+				// Legacy amber support
 				'.scrollbar-thumb-amber-400\\/30::-webkit-scrollbar-thumb': {
 					'background-color': 'rgb(251 191 36 / 0.3)',
 					'border-radius': '0.25rem',
@@ -449,11 +493,53 @@ export default {
 					'background-color': 'rgb(251 191 36 / 0.5)',
 					'border-radius': '0.25rem',
 				},
-				'.scrollbar-track-transparent::-webkit-scrollbar-track': {
-					'background-color': 'transparent',
+
+				// Hover effects
+				'.hover\\:scrollbar-thumb-dark:hover::-webkit-scrollbar-thumb': {
+					'background-color': 'rgb(75 85 99 / 0.8)', // gray-600/80
+				},
+				'.hover\\:scrollbar-thumb-adega:hover::-webkit-scrollbar-thumb': {
+					'background-color': 'rgb(255 215 0 / 0.6)', // accent-gold-100/60
 				},
 				'.hover\\:scrollbar-thumb-amber-400\\/50:hover::-webkit-scrollbar-thumb': {
 					'background-color': 'rgb(251 191 36 / 0.5)',
+				},
+
+				// Combined utility classes for easy usage
+				'.scrollbar-dark': {
+					'scrollbar-width': 'thin',
+				},
+				'.scrollbar-dark::-webkit-scrollbar': {
+					'width': '8px',
+					'height': '8px',
+				},
+				'.scrollbar-dark::-webkit-scrollbar-track': {
+					'background-color': 'transparent',
+				},
+				'.scrollbar-dark::-webkit-scrollbar-thumb': {
+					'background-color': 'rgb(75 85 99 / 0.4)', // gray-600/40
+					'border-radius': '0.25rem',
+				},
+				'.scrollbar-dark:hover::-webkit-scrollbar-thumb': {
+					'background-color': 'rgb(75 85 99 / 0.6)', // gray-600/60
+				},
+
+				'.scrollbar-adega': {
+					'scrollbar-width': 'thin',
+				},
+				'.scrollbar-adega::-webkit-scrollbar': {
+					'width': '8px',
+					'height': '8px',
+				},
+				'.scrollbar-adega::-webkit-scrollbar-track': {
+					'background-color': 'transparent',
+				},
+				'.scrollbar-adega::-webkit-scrollbar-thumb': {
+					'background-color': 'rgb(255 215 0 / 0.3)', // accent-gold-100/30
+					'border-radius': '0.25rem',
+				},
+				'.scrollbar-adega:hover::-webkit-scrollbar-thumb': {
+					'background-color': 'rgb(255 215 0 / 0.5)', // accent-gold-100/50
 				},
 			};
 			addUtilities(scrollbarUtilities);

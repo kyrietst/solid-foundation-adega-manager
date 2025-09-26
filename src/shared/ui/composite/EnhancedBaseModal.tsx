@@ -471,7 +471,7 @@ export const EnhancedBaseModal: React.FC<EnhancedBaseModalProps> = ({
       {/* Conteúdo principal */}
       <div className={cn(
         'flex-1 px-6 py-6 overflow-y-auto',
-        'scrollbar-thin scrollbar-track-gray-900 scrollbar-thumb-gray-700',
+        'scrollbar-dark', // Nova scrollbar escura elegante
         'min-h-0', // Permite flex-shrink correto
         loading && 'opacity-60 pointer-events-none'
       )}>

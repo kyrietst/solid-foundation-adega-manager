@@ -15,29 +15,27 @@ import { useProductsGridLogic } from '@/shared/hooks/products/useProductsGridLog
 // Imports dos modais refatorados - Força HMR refresh para carregar logs de diagnóstico
 import { NewProductModal } from './NewProductModal';
 import { ProductDetailsModal } from './ProductDetailsModal';
-import { EditProductModal } from './EditProductModal';
+import { SimpleEditProductModal } from './SimpleEditProductModal'; // Modal simplificado v2.0
 import { StockAdjustmentModal } from './StockAdjustmentModal';
 import { StockHistoryModal } from './StockHistoryModal';
 import type { ProductFormData } from '@/core/types/inventory.types';
 
-interface EditProductFormData {
+// Interface simplificada para edição de produtos (v2.0)
+interface SimpleEditProductFormData {
   name: string;
   category: string;
-  unit_barcode?: string;
-  has_unit_tracking?: boolean;
+  price: number;
+  barcode?: string;
+  supplier?: string;
   has_package_tracking?: boolean;
   package_barcode?: string;
   package_units?: number;
   package_price?: number;
-  supplier?: string;
-  custom_supplier?: string;
   cost_price?: number;
-  price: number;
   volume_ml?: number;
-  stock_quantity: number;
   // minimum_stock removido - coluna não existe na tabela products
 }
-import type { Product } from '@/types/inventory.types';
+import type { Product } from '@/core/types/inventory.types';
 
 interface InventoryManagementProps {
   showAddButton?: boolean;
@@ -76,8 +74,28 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
     setIsDetailsModalOpen(true);
   };
 
-  const handleEditProduct = (product: Product) => {
-    setSelectedProduct(product);
+  const handleEditProduct = async (product: Product) => {
+    // Buscar dados atualizados do produto específico do banco
+    try {
+      const { data: updatedProduct, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('id', product.id)
+        .single();
+
+      if (error) {
+        console.error('Erro ao buscar produto atualizado:', error);
+        // Fallback para produto original se houver erro
+        setSelectedProduct(product);
+      } else {
+        // Usar dados atualizados do banco
+        setSelectedProduct(updatedProduct);
+      }
+    } catch (error) {
+      console.error('Erro na busca do produto:', error);
+      setSelectedProduct(product);
+    }
+
     setIsEditProductOpen(true);
   };
 
@@ -213,13 +231,10 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
   };
   */
 
-  // Mutation para editar produto
+  // Mutation simplificada para editar produto (v2.0)
   const editProductMutation = useMutation({
-    mutationFn: async (productData: EditProductFormData) => {
+    mutationFn: async (productData: SimpleEditProductFormData) => {
       if (!selectedProduct) throw new Error('Nenhum produto selecionado');
-
-      // Preparar fornecedor final
-      const finalSupplier = productData.supplier === 'custom' ? productData.custom_supplier : productData.supplier;
 
       // Validar códigos de barras se fornecidos
       if (productData.barcode && productData.barcode.trim()) {
@@ -235,35 +250,29 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
         }
       }
 
-      // Preparar dados para atualização
+      // Preparar dados simplificados para atualização
       const updateData = {
         name: productData.name,
         price: productData.price,
         // stock_quantity: REMOVIDO - só pode ser alterado via create_inventory_movement()
         category: productData.category,
-        volume_ml: productData.volume_ml && productData.volume_ml > 0 ? productData.volume_ml : null,
-        supplier: finalSupplier || null,
+        volume_ml: productData.volume_ml || null,
+        supplier: productData.supplier || null,
         // minimum_stock removido - coluna não existe na tabela products
-        cost_price: productData.cost_price && productData.cost_price > 0 ? productData.cost_price : null,
-        // Sistema de códigos de barras - mapeamento correto
-        barcode: productData.barcode || null, // Código principal (corrigido)
+        cost_price: productData.cost_price !== undefined ? productData.cost_price : null,
+        // Sistema de códigos simplificado
+        barcode: productData.barcode || null,
         package_barcode: productData.package_barcode || null,
         package_units: productData.package_units || null,
-        units_per_package: productData.package_units || 1, // Mantém compatibilidade
+        units_per_package: productData.package_units || 1,
         has_package_tracking: productData.has_package_tracking || false,
-        has_unit_tracking: productData.has_unit_tracking !== undefined ? productData.has_unit_tracking : true,
-        // Preços
-        package_price: productData.package_price && productData.package_price > 0 ? productData.package_price : null,
-        // Calcular margens se houver preço de custo
-        margin_percent: (productData.cost_price && productData.cost_price > 0 && productData.price) ?
+        has_unit_tracking: true, // Sempre ativado no sistema simplificado
+        package_price: productData.package_price !== undefined ? productData.package_price : null,
+        // Auto-calcular margens (evita divisão por zero)
+        margin_percent: (productData.cost_price !== undefined && productData.cost_price !== null && productData.price && productData.cost_price > 0) ?
           ((productData.price - productData.cost_price) / productData.cost_price * 100) : null,
-        // Calcular margem de pacote (se houver preço de pacote)
-        package_margin: (productData.package_price && productData.package_price > 0 && productData.cost_price && productData.cost_price > 0 && productData.package_units) ?
+        package_margin: (productData.package_price !== undefined && productData.cost_price !== undefined && productData.cost_price !== null && productData.package_units && productData.cost_price > 0) ?
           (((productData.package_price - (productData.cost_price * productData.package_units)) / (productData.cost_price * productData.package_units)) * 100) : null,
-        // Controle de validade
-        has_expiry_tracking: productData.has_expiry_tracking || false,
-        expiry_date: productData.expiry_date || null,
-        // Campos de compatibilidade
         turnover_rate: 'medium',
         updated_at: new Date().toISOString()
       };
@@ -279,12 +288,16 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
       return data;
     },
     onSuccess: (data) => {
+      // Invalidar cache para recarregar dados
       queryClient.invalidateQueries({ queryKey: ['products'] });
+
+      // Atualizar o selectedProduct com os dados atualizados
+      setSelectedProduct(data);
+
       setIsEditProductOpen(false);
-      setSelectedProduct(null);
       toast({
         title: 'Produto atualizado',
-        description: `Produto "${data.name}" atualizado com sucesso!`,
+        description: `"${data.name}" atualizado com sucesso!`,
         variant: 'default',
       });
     },
@@ -292,20 +305,14 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
       console.error('Erro ao editar produto:', error);
       toast({
         title: 'Erro ao editar produto',
-        description: 'Erro ao editar produto. Tente novamente.',
+        description: error.message || 'Tente novamente.',
         variant: 'destructive',
       });
     },
   });
 
-  const handleSubmitEditProduct = (data: EditProductFormData) => {
-    // Preparar dados com o mesmo formato que o mutation espera
-    const formattedData = {
-      ...data,
-      // Preparar dados adicionais se necessário
-      barcode: data.unit_barcode || data.barcode,
-    };
-    editProductMutation.mutate(formattedData);
+  const handleSubmitEditProduct = (data: SimpleEditProductFormData) => {
+    editProductMutation.mutate(data);
   };
 
   const handleCancelEdit = () => {
@@ -398,15 +405,14 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
         }}
       />
 
-      {/* Modal para editar produto */}
-      <EditProductModal
+      {/* Modal simplificado para editar produto (v2.0) */}
+      <SimpleEditProductModal
         isOpen={isEditProductOpen}
         onClose={handleCancelEdit}
         product={selectedProduct}
         onSubmit={handleSubmitEditProduct}
         isLoading={editProductMutation.isPending}
         onSuccess={() => {
-          // Invalidar queries para atualizar a lista de produtos
           queryClient.invalidateQueries({ queryKey: ['products'] });
         }}
       />
