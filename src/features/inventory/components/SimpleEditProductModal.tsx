@@ -302,7 +302,7 @@ export const SimpleEditProductModal: React.FC<SimpleEditProductModalProps> = ({
       primaryAction={{
         label: isLoading ? "Salvando..." : "Salvar",
         icon: isLoading ? undefined : Save,
-        onClick: () => form.handleSubmit(handleFormSubmit)(),
+        onClick: form.handleSubmit(handleFormSubmit),
         disabled: isLoading,
         loading: isLoading
       }}

@@ -289,11 +289,11 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
         has_unit_tracking: true, // Sempre ativado no sistema simplificado
         package_price: productData.package_price !== undefined ? productData.package_price : null,
         // Auto-calcular margens de forma segura (evita overflow numérico)
-        margin_percent: safeCalculateMargin(productData.price, productData.cost_price || 0),
+        margin_percent: safeCalculateMargin(productData.price, productData.cost_price),
         package_margin: safeCalculatePackageMargin(
-          productData.package_price || 0,
-          productData.cost_price || 0,
-          productData.package_units || 1
+          productData.package_price,
+          productData.cost_price,
+          productData.package_units
         ),
         turnover_rate: 'medium',
         updated_at: new Date().toISOString()
@@ -343,28 +343,37 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
   };
 
   // Função para calcular margens de forma segura, evitando overflow numérico
-  const safeCalculateMargin = (salePrice: number, costPrice: number, maxMargin: number = 999): number | null => {
-    if (!costPrice || costPrice <= 0 || !salePrice || salePrice <= 0) {
+  const safeCalculateMargin = (salePrice: number | undefined | null, costPrice: number | undefined | null, maxMargin: number = 999): number | null => {
+    // Validar inputs de forma robusta
+    const validSalePrice = typeof salePrice === 'number' && salePrice > 0 ? salePrice : null;
+    const validCostPrice = typeof costPrice === 'number' && costPrice > 0 ? costPrice : null;
+
+    if (!validSalePrice || !validCostPrice) {
       return null;
     }
 
-    const margin = ((salePrice - costPrice) / costPrice) * 100;
+    const margin = ((validSalePrice - validCostPrice) / validCostPrice) * 100;
 
-    // Limitar margem ao máximo permitido pelo banco (NUMERIC(5,2) = 999.99)
-    return Math.min(margin, maxMargin);
+    // Limitar margem ao máximo permitido pelo banco e garantir resultado válido
+    return Number.isFinite(margin) ? Math.min(Math.max(margin, 0), maxMargin) : null;
   };
 
   // Função para calcular margem de pacote de forma segura
-  const safeCalculatePackageMargin = (packagePrice: number, costPrice: number, packageUnits: number, maxMargin: number = 999): number | null => {
-    if (!packagePrice || !costPrice || costPrice <= 0 || !packageUnits || packageUnits <= 0) {
+  const safeCalculatePackageMargin = (packagePrice: number | undefined | null, costPrice: number | undefined | null, packageUnits: number | undefined | null, maxMargin: number = 999): number | null => {
+    // Validar inputs de forma robusta
+    const validPackagePrice = typeof packagePrice === 'number' && packagePrice > 0 ? packagePrice : null;
+    const validCostPrice = typeof costPrice === 'number' && costPrice > 0 ? costPrice : null;
+    const validPackageUnits = typeof packageUnits === 'number' && packageUnits > 0 ? packageUnits : null;
+
+    if (!validPackagePrice || !validCostPrice || !validPackageUnits) {
       return null;
     }
 
-    const totalCost = costPrice * packageUnits;
-    const margin = ((packagePrice - totalCost) / totalCost) * 100;
+    const totalCost = validCostPrice * validPackageUnits;
+    const margin = ((validPackagePrice - totalCost) / totalCost) * 100;
 
-    // Limitar margem ao máximo permitido pelo banco (NUMERIC(5,2) = 999.99)
-    return Math.min(margin, maxMargin);
+    // Limitar margem ao máximo permitido pelo banco e garantir resultado válido
+    return Number.isFinite(margin) ? Math.min(Math.max(margin, 0), maxMargin) : null;
   };
 
   // Hook para obter dados dos produtos usando o hook existente
