@@ -1,18 +1,19 @@
 /**
  * NewProductModal.tsx - Modal para cadastro de novos produtos
- * Padronizado com NewCustomerModal e MovementDialog
- * 
+ * Migrado para padrão v2.0 minimalista
+ *
  * @author Adega Manager Team
- * @version 1.0.0
+ * @version 2.0.0 - Minimalista
  */
 
 import React, { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { BaseModal } from '@/shared/ui/composite';
+import { EnhancedBaseModal } from '@/shared/ui/composite';
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -29,98 +30,87 @@ import {
 } from '@/shared/ui/primitives/select';
 import { SwitchAnimated } from '@/shared/ui/primitives/switch-animated';
 import { BarcodeInput } from '@/features/inventory/components/BarcodeInput';
-import { useStandardForm } from '@/shared/hooks/common/useStandardForm';
-import { useGlassmorphismEffect } from '@/shared/hooks/ui/useGlassmorphismEffect';
 import { useToast } from '@/shared/hooks/common/use-toast';
 import { supabase } from '@/core/api/supabase/client';
-import { 
-  Package, 
-  DollarSign, 
-  Barcode,
-  Factory,
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { cn } from '@/core/config/utils';
+import {
+  Package,
   Save,
   X,
   Plus,
   ScanLine,
-  ShoppingCart
+  ChevronDown,
+  ChevronUp,
+  TrendingUp,
+  DollarSign
 } from 'lucide-react';
 
-// Schema de validação com Zod
+// Schema simplificado - apenas campos essenciais
 const newProductSchema = z.object({
+  // Campos obrigatórios básicos
   name: z
     .string()
     .min(2, 'Nome deve ter pelo menos 2 caracteres')
     .max(200, 'Nome deve ter no máximo 200 caracteres'),
-  
+
   category: z
     .string()
     .min(1, 'Categoria é obrigatória'),
-  
-  // Código de barras da unidade
-  unit_barcode: z
+
+  price: z
+    .number({ invalid_type_error: 'Preço de venda deve ser um número' })
+    .min(0.01, 'Preço de venda deve ser maior que 0'),
+
+  // Campos opcionais essenciais
+  barcode: z
+    .string()
+    .optional()
+    .or(z.literal(''))
+    .refine((val) => {
+      if (!val || val === '') return true;
+      return /^[0-9]{8,14}$/.test(val);
+    }, {
+      message: 'Código de barras deve ter entre 8 e 14 dígitos numéricos'
+    }),
+
+  supplier: z
     .string()
     .optional()
     .or(z.literal('')),
-  
-  // Sistema de códigos hierárquicos
-  has_unit_tracking: z.boolean().default(true),
+
+  // Sistema de códigos inteligente
   has_package_tracking: z.boolean().default(false),
   package_barcode: z
     .string()
     .optional()
-    .or(z.literal('')),
+    .or(z.literal(''))
+    .refine((val) => {
+      if (!val || val === '') return true;
+      return /^[0-9]{8,14}$/.test(val);
+    }, {
+      message: 'Código de barras do pacote deve ter entre 8 e 14 dígitos numéricos'
+    }),
   package_units: z
     .number({ invalid_type_error: 'Quantidade deve ser um número' })
     .min(1, 'Deve ter pelo menos 1 unidade por pacote')
     .optional()
     .default(1),
   package_price: z
-    .union([
-      z.string().transform(val => val === '' ? undefined : Number(val)),
-      z.number()
-    ])
-    .optional()
-    .refine(val => val === undefined || val >= 0.01, 'Preço do pacote deve ser maior que 0'),
-  
-  supplier: z
-    .string()
-    .optional()
-    .or(z.literal('')),
-  
-  custom_supplier: z
-    .string()
-    .optional()
-    .or(z.literal('')),
-  
-  cost_price: z
-    .union([
-      z.string().transform(val => val === '' ? undefined : Number(val)),
-      z.number()
-    ])
-    .optional()
-    .refine(val => val === undefined || val >= 0, 'Preço de custo deve ser maior ou igual a 0'),
-  
-  price: z
-    .number({ invalid_type_error: 'Preço de venda deve ser um número' })
-    .min(0.01, 'Preço de venda deve ser maior que 0'),
-  
-  volume_ml: z
-    .union([
-      z.string().transform(val => val === '' ? undefined : Number(val)),
-      z.number()
-    ])
-    .optional()
-    .refine(val => val === undefined || val >= 1, 'Volume deve ser maior que 0'),
-  
-  stock_quantity: z
-    .number({ invalid_type_error: 'Quantidade deve ser um número' })
-    .min(0, 'Quantidade não pode ser negativa')
+    .number({ invalid_type_error: 'Preço do pacote deve ser um número' })
+    .min(0, 'Preço do pacote deve ser maior ou igual a 0')
     .default(0),
-  
-  minimum_stock: z
-    .number({ invalid_type_error: 'Estoque mínimo deve ser um número' })
-    .min(0, 'Estoque mínimo não pode ser negativo')
-    .default(5),
+
+  // Campos para cálculo de margem (seção avançada)
+  cost_price: z
+    .number({ invalid_type_error: 'Preço de custo deve ser um número' })
+    .min(0, 'Preço de custo deve ser maior ou igual a 0')
+    .default(0),
+
+  volume_ml: z
+    .number({ invalid_type_error: 'Volume deve ser um número' })
+    .min(0, 'Volume deve ser maior ou igual a 0')
+    .default(0),
 });
 
 type NewProductFormData = z.infer<typeof newProductSchema>;
@@ -137,102 +127,107 @@ export const NewProductModal: React.FC<NewProductModalProps> = ({
   onSuccess,
 }) => {
   const { toast } = useToast();
-  const { handleMouseMove } = useGlassmorphismEffect();
+  const queryClient = useQueryClient();
   const [categories, setCategories] = useState<string[]>([]);
   const [suppliers, setSuppliers] = useState<string[]>([]);
-  const [showCustomSupplier, setShowCustomSupplier] = useState(false);
-  const [activeScanner, setActiveScanner] = useState<'package' | 'unit' | null>(null);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [activeScanner, setActiveScanner] = useState<'main' | 'package' | null>(null);
 
-  const { form, isLoading, handleSubmit } = useStandardForm<NewProductFormData>({
-    schema: newProductSchema,
-    onSuccess: (data) => `✅ ${data.name} foi adicionado com sucesso.`,
-    onError: "❌ Erro ao cadastrar produto",
-    resetOnSuccess: true,
+  const form = useForm<NewProductFormData>({
+    resolver: zodResolver(newProductSchema),
     defaultValues: {
       name: '',
       category: '',
-      unit_barcode: '',
-      has_unit_tracking: true,
+      price: 0.01,
+      barcode: '',
+      supplier: 'none',
       has_package_tracking: false,
       package_barcode: '',
       package_units: 1,
-      package_price: '',
-      supplier: '',
-      custom_supplier: '',
-      cost_price: '',
-      price: 0,
-      volume_ml: '',
-      stock_quantity: 0,
-      minimum_stock: 5,
+      package_price: 0,
+      cost_price: 0,
+      volume_ml: 0,
     },
-    onSuccessCallback: () => {
-      setShowCustomSupplier(false);
-      onClose();
-      if (onSuccess) onSuccess();
-    },
-    onSubmit: async (data) => {
-      // Preparar dados para envio
-      const finalSupplier = data.supplier === 'custom' ? data.custom_supplier : data.supplier;
+  });
 
+  const createProductMutation = useMutation({
+    mutationFn: async (data: NewProductFormData) => {
+      // Preparar dados para envio
       const productData = {
         name: data.name,
         category: data.category,
-        // Sistema de códigos hierárquicos - mapeamento correto
-        barcode: data.unit_barcode || null, // Código principal (unidade)
-        unit_barcode: data.unit_barcode || null,
+        // Sistema v2.0 simplificado
+        barcode: data.barcode || null,
         package_barcode: data.package_barcode || null,
-        package_units: data.package_units || null, // Campo correto
-        units_per_package: data.package_units || 1, // Mantém compatibilidade
-        package_size: data.package_units || 1, // Mantém compatibilidade
-        is_package: data.has_package_tracking || false,
+        units_per_package: data.package_units || 1,
         has_package_tracking: data.has_package_tracking || false,
-        has_unit_tracking: data.has_unit_tracking !== undefined ? data.has_unit_tracking : true,
         // Preços
         price: data.price,
-        package_price: data.package_price || null,
-        cost_price: data.cost_price || null,
-        // Calcular margem de unidade
-        margin_percent: data.cost_price ?
-          ((data.price - data.cost_price) / data.cost_price * 100) : null,
-        // Calcular margem de pacote (se houver preço de pacote)
-        package_margin: (data.package_price && data.cost_price && data.package_units) ?
-          (((data.package_price - (data.cost_price * data.package_units)) / (data.cost_price * data.package_units)) * 100) : null,
+        package_price: data.package_price > 0 ? data.package_price : null,
+        cost_price: data.cost_price > 0 ? data.cost_price : null,
         // Outros campos
-        supplier: finalSupplier || null,
-        volume_ml: data.volume_ml || null,
-        stock_quantity: data.stock_quantity,
-        minimum_stock: data.minimum_stock || 5,
+        supplier: data.supplier === 'none' ? null : data.supplier,
+        volume_ml: data.volume_ml > 0 ? data.volume_ml : null,
+        // Estoque inicial v2.0
+        stock_packages: 0,
+        stock_units_loose: 0,
         // Valores padrão
         turnover_rate: 'medium',
         created_at: new Date().toISOString(),
       };
 
-      const { error } = await supabase
+      const { data: result, error } = await supabase
         .from('products')
-        .insert([productData]);
+        .insert([productData])
+        .select()
+        .single();
 
       if (error) throw error;
-    }
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      toast({
+        title: "✅ Produto adicionado!",
+        description: "Produto cadastrado com sucesso",
+        variant: "default",
+      });
+      form.reset();
+      onClose();
+      if (onSuccess) onSuccess();
+    },
+    onError: (error) => {
+      console.error('Erro ao cadastrar produto:', error);
+      toast({
+        title: "❌ Erro ao cadastrar",
+        description: "Não foi possível cadastrar o produto. Tente novamente.",
+        variant: "destructive",
+      });
+    },
   });
 
-  // Buscar categorias e fornecedores existentes
-  useEffect(() => {
-    if (isOpen) {
-      fetchCategoriesAndSuppliers();
-    }
-  }, [isOpen]);
-
-  const fetchCategoriesAndSuppliers = async () => {
+  const fetchCategoriesAndSuppliers = React.useCallback(async () => {
     try {
-      // Buscar categorias
-      const { data: categoriesData } = await supabase
-        .from('products')
-        .select('category')
-        .not('category', 'is', null);
-      
+      // Buscar categorias ATIVAS da tabela categories (não de products)
+      const { data: categoriesData, error: categoriesError } = await supabase
+        .from('categories')
+        .select('name')
+        .eq('is_active', true)
+        .order('name');
+
+      if (categoriesError) {
+        console.error('Erro ao buscar categorias:', categoriesError);
+        toast({
+          title: "⚠️ Erro ao carregar categorias",
+          description: "Não foi possível carregar as categorias ativas",
+          variant: "destructive",
+        });
+        return;
+      }
+
       if (categoriesData) {
-        const uniqueCategories = [...new Set(categoriesData.map(item => item.category))].sort();
-        setCategories(uniqueCategories);
+        const categoryNames = categoriesData.map(item => item.name);
+        setCategories(categoryNames);
       }
 
       // Buscar fornecedores
@@ -241,7 +236,7 @@ export const NewProductModal: React.FC<NewProductModalProps> = ({
         .select('supplier')
         .not('supplier', 'is', null)
         .neq('supplier', '');
-      
+
       if (suppliersData) {
         const uniqueSuppliers = [...new Set(suppliersData.map(item => item.supplier))].sort();
         setSuppliers(uniqueSuppliers);
@@ -249,9 +244,16 @@ export const NewProductModal: React.FC<NewProductModalProps> = ({
     } catch (error) {
       console.error('Erro ao buscar dados:', error);
     }
-  };
+  }, [toast]);
 
-  // Calcular margens automaticamente
+  // Buscar dados quando o modal abrir
+  useEffect(() => {
+    if (isOpen) {
+      fetchCategoriesAndSuppliers();
+    }
+  }, [isOpen, fetchCategoriesAndSuppliers]);
+
+  // Cálculo de margem em tempo real
   const watchedCostPrice = form.watch('cost_price');
   const watchedPrice = form.watch('price');
   const watchedPackagePrice = form.watch('package_price');
@@ -272,660 +274,569 @@ export const NewProductModal: React.FC<NewProductModalProps> = ({
     return null;
   }, [watchedPackagePrice, watchedCostPrice, watchedPackageUnits]);
 
-  const packageSavings = React.useMemo(() => {
-    if (watchedPackagePrice && watchedPrice && watchedPackageUnits) {
-      const individualTotal = watchedPrice * watchedPackageUnits;
-      const savings = individualTotal - watchedPackagePrice;
-      const savingsPercent = (savings / individualTotal * 100).toFixed(1);
-      return { amount: savings, percent: savingsPercent };
-    }
-    return null;
-  }, [watchedPackagePrice, watchedPrice, watchedPackageUnits]);
+  const handleFormSubmit = async (data: NewProductFormData) => {
+    try {
+      // Validações adicionais antes do envio
+      if (data.barcode && !/^[0-9]{8,14}$/.test(data.barcode)) {
+        toast({
+          title: "❌ Erro de validação",
+          description: "Código de barras deve ter entre 8 e 14 dígitos",
+          variant: "destructive",
+        });
+        return;
+      }
 
+      if (data.package_barcode && !/^[0-9]{8,14}$/.test(data.package_barcode)) {
+        toast({
+          title: "❌ Erro de validação",
+          description: "Código de barras do pacote deve ter entre 8 e 14 dígitos",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (data.has_package_tracking && !data.package_units) {
+        toast({
+          title: "❌ Erro de validação",
+          description: "Unidades por pacote é obrigatório quando embalagem está ativa",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Processar dados para envio
+      const processedData = {
+        ...data,
+        supplier: data.supplier === 'none' ? '' : data.supplier,
+        package_price: data.package_price > 0 ? data.package_price : 0,
+        cost_price: data.cost_price > 0 ? data.cost_price : 0,
+        volume_ml: data.volume_ml > 0 ? data.volume_ml : 0,
+      };
+
+      await createProductMutation.mutateAsync(processedData);
+    } catch (error) {
+      console.error('Erro ao processar formulário:', error);
+      toast({
+        title: "❌ Erro ao salvar",
+        description: "Ocorreu um erro inesperado. Verifique os dados e tente novamente.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleClose = () => {
-    if (isLoading) return; // Não permitir fechar durante envio
+    if (createProductMutation.isPending) return;
     form.reset();
-    setShowCustomSupplier(false);
+    setShowAdvanced(false);
+    setActiveScanner(null);
     onClose();
   };
 
-  const handleSupplierChange = (value: string) => {
-    form.setValue('supplier', value);
-    setShowCustomSupplier(value === 'custom');
-    if (value !== 'custom') {
-      form.setValue('custom_supplier', '');
-    }
-  };
+  const handleBarcodeScanned = async (code: string, type: 'main' | 'package') => {
+    try {
+      // Validação básica
+      const currentValues = form.getValues();
+      const duplicateField =
+        (type !== 'main' && currentValues.barcode === code) ? 'principal' :
+        (type !== 'package' && currentValues.package_barcode === code) ? 'pacote' : null;
 
-  // Handler para scanner de código de barras
-  const handleBarcodeScanned = async (code: string, type: 'package' | 'unit') => {
-    if (type === 'package') {
-      form.setValue('package_barcode', code);
-    } else {
-      form.setValue('unit_barcode', code);
+      if (duplicateField) {
+        toast({
+          title: "⚠️ Código duplicado",
+          description: `Este código já está sendo usado no campo ${duplicateField}`,
+          variant: "destructive",
+        });
+        setActiveScanner(null);
+        return;
+      }
+
+      // Definir valor no formulário
+      if (type === 'main') {
+        form.setValue('barcode', code);
+      } else if (type === 'package') {
+        form.setValue('package_barcode', code);
+      }
+
+      setActiveScanner(null);
+
+      toast({
+        title: "✅ Código escaneado!",
+        description: `Código ${type === 'main' ? 'principal' : 'do pacote'} registrado: ${code}`,
+        variant: "default",
+      });
+
+    } catch (error) {
+      console.error('Erro ao processar código escaneado:', error);
+      setActiveScanner(null);
+
+      toast({
+        title: "❌ Erro ao processar",
+        description: "Ocorreu um erro ao processar o código. Tente novamente.",
+        variant: "destructive",
+      });
     }
-    setActiveScanner(null);
-    
-    toast({
-      title: "✅ Código escaneado!",
-      description: `Código ${type === 'package' ? 'do pacote' : 'da unidade'} registrado: ${code}`,
-      variant: "default",
-    });
   };
 
   return (
-    <BaseModal
+    <EnhancedBaseModal
       isOpen={isOpen}
       onClose={handleClose}
-      title={
-        <>
-          <Plus className="h-5 w-5 text-yellow-400" />
-          Adicionar Novo Produto
-        </>
-      }
-      description="Preencha os dados do produto. Campos com * são obrigatórios."
-      size="5xl"
-      className="h-content-2xl max-h-content-2xl bg-black/95 backdrop-blur-sm border border-white/10 flex flex-col hero-spotlight hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300 overflow-hidden"
+      modalType="action"
+      title="Adicionar Produto"
+      subtitle="Preencha os dados do novo produto"
+      customIcon={Plus}
+      loading={createProductMutation.isPending}
+      size="2xl"
+      className="max-h-[90vh] overflow-y-auto"
+      primaryAction={{
+        label: createProductMutation.isPending ? "Cadastrando..." : "Adicionar",
+        icon: createProductMutation.isPending ? undefined : Save,
+        onClick: form.handleSubmit(handleFormSubmit),
+        disabled: createProductMutation.isPending,
+        loading: createProductMutation.isPending
+      }}
+      secondaryAction={{
+        label: "Cancelar",
+        icon: X,
+        onClick: handleClose,
+        disabled: createProductMutation.isPending
+      }}
     >
-      <div className="flex-1 overflow-y-auto pr-2" onMouseMove={handleMouseMove}>
-          <Form {...form}>
-            <form onSubmit={handleSubmit} className="space-y-8">
-              {/* Informações Básicas */}
-              <div className="bg-gray-800/30 rounded-xl p-6 border border-gray-700/50 hero-spotlight hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300" onMouseMove={handleMouseMove}>
-                <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-5">
-                  <Package className="h-5 w-5 text-blue-400" />
-                  Informações Básicas
-                </h3>
-                
-                <div className="space-y-5">
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
+          {/* Hidden submit button for form submission */}
+          <button type="submit" className="hidden" />
+
+          {/* ===== SEÇÃO PRINCIPAL - SEMPRE VISÍVEL ===== */}
+          <div className="bg-gray-800/30 rounded-lg border border-gray-600/50 p-6 space-y-6">
+            <div className="flex items-center gap-3 mb-4">
+              <Package className="h-5 w-5 text-blue-400" />
+              <span className="text-lg font-medium text-gray-100">Informações Essenciais</span>
+            </div>
+
+            {/* Nome do Produto */}
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-gray-300 text-base">Nome do Produto *</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Ex: Cerveja Heineken 350ml"
+                      {...field}
+                      className="bg-gray-800/50 border-gray-600 text-white h-12 text-base"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Categoria e Preço */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="category"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-gray-300 text-base">Categoria *</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value || ""}>
+                      <FormControl>
+                        <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white h-12 text-base">
+                          <SelectValue placeholder="Selecione..." />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {categories.map((category) => (
+                          <SelectItem key={category} value={category}>
+                            {category}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="price"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-gray-300 text-base">Preço de Venda *</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0.01"
+                        placeholder="0,00"
+                        {...field}
+                        onChange={(e) => field.onChange(Number(e.target.value))}
+                        className="bg-gray-800/50 border-gray-600 text-white h-12 text-base"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Código de Barras */}
+            <div className="space-y-3">
+              <FormLabel className="text-gray-300 text-base">Código de Barras</FormLabel>
+              {activeScanner !== 'main' ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setActiveScanner('main')}
+                  className="w-full h-12 border-yellow-400/50 text-yellow-400 hover:bg-yellow-400/10"
+                  disabled={createProductMutation.isPending}
+                >
+                  <ScanLine className="h-4 w-4 mr-2" />
+                  Escanear Código
+                </Button>
+              ) : (
+                <BarcodeInput
+                  onScan={(code) => handleBarcodeScanned(code, 'main')}
+                  placeholder="Escaneie o código..."
+                  className="w-full"
+                />
+              )}
+
+              <FormField
+                control={form.control}
+                name="barcode"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Input
+                        placeholder="Ou digite manualmente"
+                        {...field}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/\D/g, '');
+                          if (value.length <= 14) {
+                            field.onChange(value);
+                          }
+                        }}
+                        maxLength={14}
+                        className="font-mono bg-gray-800/50 border-gray-600 text-white h-12"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Fornecedor */}
+            <FormField
+              control={form.control}
+              name="supplier"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-gray-300 text-base">Fornecedor</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value || ""}>
+                    <FormControl>
+                      <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white h-12 text-base">
+                        <SelectValue placeholder="Selecione ou deixe vazio..." />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="none">Sem fornecedor</SelectItem>
+                      {suppliers.map((supplier) => (
+                        <SelectItem key={supplier} value={supplier}>
+                          {supplier}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Toggle para Embalagem Fechada */}
+            <div className="flex items-center justify-between rounded-lg border border-yellow-400/30 p-4 bg-yellow-400/5">
+              <div className="space-y-1">
+                <FormLabel className="text-base text-gray-300 font-medium">
+                  Este produto tem embalagem fechada?
+                </FormLabel>
+                <p className="text-sm text-gray-500">
+                  Ative para produtos vendidos em pacotes/fardos com código separado
+                </p>
+              </div>
+              <FormField
+                control={form.control}
+                name="has_package_tracking"
+                render={({ field }) => (
+                  <FormControl>
+                    <SwitchAnimated
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                      variant="yellow"
+                      size="md"
+                    />
+                  </FormControl>
+                )}
+              />
+            </div>
+
+            {/* Campos de Pacote (Condicional) */}
+            {form.watch('has_package_tracking') && (
+              <div className="space-y-6">
+                <div className="flex items-center gap-2">
+                  <Package className="h-4 w-4 text-yellow-400" />
+                  <span className="text-base font-medium text-gray-200">Configuração de Pacote</span>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Código do Pacote */}
+                  <div className="space-y-3">
+                    <FormLabel className="text-gray-300">Código do Pacote</FormLabel>
+                    {activeScanner !== 'package' ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setActiveScanner('package')}
+                        className="w-full h-12 border-yellow-400/50 text-yellow-400 hover:bg-yellow-400/10"
+                        disabled={createProductMutation.isPending}
+                      >
+                        <ScanLine className="h-4 w-4 mr-2" />
+                        Escanear Código
+                      </Button>
+                    ) : (
+                      <BarcodeInput
+                        onScan={(code) => handleBarcodeScanned(code, 'package')}
+                        placeholder="Escaneie o código do pacote..."
+                        className="w-full"
+                      />
+                    )}
+
+                    <FormField
+                      control={form.control}
+                      name="package_barcode"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Input
+                              placeholder="Ou digite manualmente"
+                              {...field}
+                              onChange={(e) => {
+                                const value = e.target.value.replace(/\D/g, '');
+                                if (value.length <= 14) {
+                                  field.onChange(value);
+                                }
+                              }}
+                              maxLength={14}
+                              className="font-mono bg-gray-800/50 border-gray-600 text-white h-12"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {/* Unidades por Pacote */}
                   <FormField
                     control={form.control}
-                    name="name"
+                    name="package_units"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-gray-300">Nome do Produto *</FormLabel>
+                        <FormLabel className="text-gray-300">Unidades por Pacote</FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="Ex: Cerveja Heineken 350ml"
+                            type="number"
+                            min="1"
+                            max="999"
+                            placeholder="Ex: 24"
                             {...field}
-                            className="bg-gray-800/50 border-gray-600 text-white h-11"
+                            onChange={(e) => field.onChange(Number(e.target.value))}
+                            onBlur={(e) => {
+                              const value = Number(e.target.value);
+                              if (value < 1) {
+                                field.onChange(1);
+                                toast({
+                                  title: "⚠️ Valor ajustado",
+                                  description: "Unidades por pacote deve ser no mínimo 1",
+                                  variant: "default",
+                                });
+                              }
+                            }}
+                            className="bg-gray-800/50 border-gray-600 text-white h-12"
                           />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <FormField
-                      control={form.control}
-                      name="category"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-gray-300">Categoria *</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white h-11">
-                                <SelectValue placeholder="Selecione..." />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {categories.map((category) => (
-                                <SelectItem key={category} value={category}>
-                                  {category}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="volume_ml"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-gray-300">Volume (ml)</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              placeholder="350"
-                              {...field}
-                              onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
-                              className="bg-gray-800/50 border-gray-600 text-white h-11"
-                            />
-                          </FormControl>
-                          <FormDescription className="text-xs text-gray-500">
-                            Volume em mililitros (ex: 350, 500, 1000)
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Sistema de Códigos Hierárquicos */}
-              <div className="bg-gray-800/30 rounded-xl p-6 border border-gray-700/50 hero-spotlight hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300" onMouseMove={handleMouseMove}>
-                <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-5">
-                  <Barcode className="h-5 w-5 text-yellow-400" />
-                  Sistema de Códigos de Barras
-                </h3>
-                
-                {/* Toggles para tipos de venda */}
-                <div className="space-y-4 mb-6">
-                  <div className="flex items-center justify-between rounded-lg border border-blue-400/30 p-4 bg-blue-400/5">
-                    <div className="space-y-1">
-                      <FormLabel className="text-base text-gray-300 font-medium">
-                        Venda por Unidade
-                      </FormLabel>
-                      <FormDescription className="text-sm text-gray-500">
-                        Permite venda de itens individuais
-                      </FormDescription>
-                    </div>
-                    <FormField
-                      control={form.control}
-                      name="has_unit_tracking"
-                      render={({ field }) => (
-                        <FormControl>
-                          <SwitchAnimated
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                            variant="yellow"
-                            size="md"
-                          />
-                        </FormControl>
-                      )}
-                    />
-                  </div>
-                  
-                  <div className="flex items-center justify-between rounded-lg border border-yellow-400/30 p-4 bg-yellow-400/5">
-                    <div className="space-y-1">
-                      <FormLabel className="text-base text-gray-300 font-medium">
-                        Venda por Pacote/Fardo
-                      </FormLabel>
-                      <FormDescription className="text-sm text-gray-500">
-                        Ative para produtos vendidos em embalagens com vários itens
-                      </FormDescription>
-                    </div>
-                    <FormField
-                      control={form.control}
-                      name="has_package_tracking"
-                      render={({ field }) => (
-                        <FormControl>
-                          <SwitchAnimated
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                            variant="yellow"
-                            size="md"
-                          />
-                        </FormControl>
-                      )}
-                    />
-                  </div>
                 </div>
 
-                {/* Código de barras da unidade - condicional */}
-                {form.watch('has_unit_tracking') && (
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 pb-2 border-b border-gray-700/50">
-                      <ShoppingCart className="h-4 w-4 text-yellow-400" />
-                      <FormLabel className="text-base text-gray-300 font-medium">Código da Unidade Individual</FormLabel>
-                    </div>
-                  
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
-                    <div className="space-y-3">
-                      {activeScanner !== 'unit' ? (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => setActiveScanner('unit')}
-                          className="w-full h-11 border-yellow-400/50 text-yellow-400 hover:bg-yellow-400/10 transition-all duration-200"
-                          disabled={isLoading}
-                        >
-                          <ScanLine className="h-4 w-4 mr-2" />
-                          Escanear Código da Unidade
-                        </Button>
-                      ) : (
-                        <BarcodeInput
-                          onScan={(code) => handleBarcodeScanned(code, 'unit')}
-                          placeholder="Escaneie o código da unidade..."
-                          autoFocus={true}
-                          className="w-full"
-                        />
-                      )}
-                      
-                      <FormField
-                        control={form.control}
-                        name="unit_barcode"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormControl>
-                              <Input
-                                placeholder="Ou digite manualmente (apenas números)"
-                                {...field}
-                                onChange={(e) => field.onChange(e.target.value.replace(/\D/g, ''))}
-                                maxLength={14}
-                                className="font-mono bg-gray-800/50 border-gray-600 text-white h-11"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                    <div className="hidden lg:flex items-start justify-center text-gray-500 pt-2">
-                      <div className="text-center">
-                        <Package className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                        <p className="text-sm">Código principal do produto</p>
-                      </div>
-                    </div>
-                  </div>
-                  </div>
-                )}
-
-                {/* Código de barras do pacote (condicional) */}
-                {form.watch('has_package_tracking') && (
-                  <div className="space-y-4 border-t border-gray-700/50 pt-6">
-                    <div className="flex items-center gap-2 pb-2 border-b border-gray-700/50">
-                      <Package className="h-4 w-4 text-yellow-400" />
-                      <FormLabel className="text-base text-gray-300 font-medium">Código do Pacote/Fardo</FormLabel>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-                      {/* Scanner e input do pacote */}
-                      <div className="lg:col-span-2 space-y-3">
-                        {activeScanner !== 'package' ? (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => setActiveScanner('package')}
-                            className="w-full h-11 border-yellow-400/50 text-yellow-400 hover:bg-yellow-400/10 transition-all duration-200"
-                            disabled={isLoading}
-                          >
-                            <ScanLine className="h-4 w-4 mr-2" />
-                            Escanear Código do Pacote
-                          </Button>
-                        ) : (
-                          <BarcodeInput
-                            onScan={(code) => handleBarcodeScanned(code, 'package')}
-                            placeholder="Escaneie o código do pacote..."
-                            autoFocus={true}
-                            className="w-full"
-                          />
-                        )}
-                        
-                        <FormField
-                          control={form.control}
-                          name="package_barcode"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormControl>
-                                <Input
-                                  placeholder="Ou digite manualmente (apenas números)"
-                                  {...field}
-                                  onChange={(e) => field.onChange(e.target.value.replace(/\D/g, ''))}
-                                  maxLength={14}
-                                  className="font-mono bg-gray-800/50 border-gray-600 text-white h-11"
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                      
-                      {/* Unidades por pacote */}
-                      <div className="flex flex-col">
-                        <FormField
-                          control={form.control}
-                          name="package_units"
-                          render={({ field }) => (
-                            <FormItem className="mt-0.5">
-                              <FormLabel className="text-gray-300">Unidades por Pacote</FormLabel>
-                              <FormControl>
-                                <Input
-                                  type="number"
-                                  min="1"
-                                  max="999"
-                                  placeholder="Ex: 24"
-                                  {...field}
-                                  onChange={(e) => field.onChange(Number(e.target.value))}
-                                  className="bg-gray-800/50 border-gray-600 text-white h-11 mt-2"
-                                />
-                              </FormControl>
-                              <FormDescription className="text-xs text-gray-500 mt-1">
-                                Quantas unidades há em cada pacote/fardo
-                              </FormDescription>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <div className="hidden lg:flex items-center justify-center text-gray-500 pt-4 mt-auto">
-                          <div className="text-center">
-                            <Package className="h-10 w-10 mx-auto mb-2 opacity-50" />
-                            <p className="text-xs">Sistema de pacotes</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-            </div>
-
-              {/* Fornecedor */}
-              <div className="bg-gray-800/30 rounded-xl p-6 border border-gray-700/50 hero-spotlight hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300" onMouseMove={handleMouseMove}>
-                <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-5">
-                  <Factory className="h-5 w-5 text-purple-400" />
-                  Fornecedor
-                </h3>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {/* Preço do Pacote */}
                 <FormField
                   control={form.control}
-                  name="supplier"
+                  name="package_price"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-gray-300">Fornecedor</FormLabel>
-                      <Select onValueChange={handleSupplierChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white h-11">
-                            <SelectValue placeholder="Selecione ou adicione novo..." />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {suppliers.map((supplier) => (
-                            <SelectItem key={supplier} value={supplier}>
-                              {supplier}
-                            </SelectItem>
-                          ))}
-                          {suppliers.length > 0 && (
-                            <SelectItem value="custom">+ Novo fornecedor</SelectItem>
-                          )}
-                          {suppliers.length === 0 && (
-                            <SelectItem value="custom">+ Adicionar primeiro fornecedor</SelectItem>
-                          )}
-                        </SelectContent>
-                      </Select>
+                      <FormLabel className="text-gray-300">Preço do Pacote</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="0,00"
+                          {...field}
+                          value={field.value || ''}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            if (value === '' || value === null) {
+                              field.onChange(0);
+                            } else {
+                              const numValue = Number(value);
+                              if (numValue >= 0) {
+                                field.onChange(numValue);
+                              }
+                            }
+                          }}
+                          className="bg-gray-800/50 border-gray-600 text-white h-12"
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+              </div>
+            )}
+          </div>
 
-                {showCustomSupplier && (
+          {/* ===== SEÇÃO AVANÇADA - COLAPSÁVEL ===== */}
+          <div className="bg-gray-800/20 rounded-lg border border-gray-600/30">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setShowAdvanced(!showAdvanced)}
+              className="w-full p-4 justify-between text-gray-300 hover:bg-gray-700/30"
+            >
+              <div className="flex items-center gap-3">
+                <TrendingUp className="h-5 w-5 text-green-400" />
+                <span className="text-base font-medium">Configurações Avançadas</span>
+                {calculatedMargin && (
+                  <span className="text-sm bg-green-400/20 text-green-400 px-2 py-1 rounded">
+                    Margem: {calculatedMargin}%
+                  </span>
+                )}
+              </div>
+              {showAdvanced ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+            </Button>
+
+            {showAdvanced && (
+              <div className="p-6 space-y-6 border-t border-gray-700/30">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Preço de Custo */}
                   <FormField
                     control={form.control}
-                    name="custom_supplier"
+                    name="cost_price"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-gray-300">Nome do Novo Fornecedor</FormLabel>
+                        <FormLabel className="text-gray-300">Preço de Custo</FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="Ex: Distribuidora ABC"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            placeholder="0,00"
                             {...field}
-                            className="bg-gray-800/50 border-gray-600 text-white h-11"
+                            value={field.value || ''}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              if (value === '' || value === null) {
+                                field.onChange(0);
+                              } else {
+                                const numValue = Number(value);
+                                if (numValue >= 0) {
+                                  field.onChange(numValue);
+                                }
+                              }
+                            }}
+                            className="bg-gray-800/50 border-gray-600 text-white h-12"
                           />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                )}
+
+                  {/* Volume */}
+                  <FormField
+                    control={form.control}
+                    name="volume_ml"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-gray-300">Volume (ml)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            min="1"
+                            placeholder="350"
+                            {...field}
+                            value={field.value || ''}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              if (value === '' || value === null) {
+                                field.onChange(0);
+                              } else {
+                                const numValue = Number(value);
+                                if (numValue >= 0) {
+                                  field.onChange(numValue);
+                                }
+                              }
+                            }}
+                            className="bg-gray-800/50 border-gray-600 text-white h-12"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
-              </div>
 
-              {/* Preços */}
-              <div className="bg-gray-800/30 rounded-xl p-6 border border-gray-700/50 hero-spotlight hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300" onMouseMove={handleMouseMove}>
-                <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-5">
-                  <DollarSign className="h-5 w-5 text-green-400" />
-                  Preços e Margem
-                </h3>
-                
-                {/* Preços de Unidade */}
-                <div className="space-y-5">
-                  <h4 className="text-base font-medium text-gray-200 flex items-center gap-2">
-                    <ShoppingCart className="h-4 w-4 text-blue-400" />
-                    Preços por Unidade
-                  </h4>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                    <FormField
-                      control={form.control}
-                      name="cost_price"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-gray-300">Preço de Custo (unidade)</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              placeholder="0,00"
-                              {...field}
-                              onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
-                              className="bg-gray-800/50 border-gray-600 text-white h-11"
-                            />
-                          </FormControl>
-                          <FormDescription className="text-xs text-gray-500">
-                            Quanto custa cada unidade para você
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                {/* Análise de Rentabilidade */}
+                {(calculatedMargin || calculatedPackageMargin) && (
+                  <div className="bg-green-900/20 border border-green-400/30 rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <DollarSign className="h-5 w-5 text-green-400" />
+                      <span className="text-base font-medium text-green-300">Análise de Rentabilidade</span>
+                    </div>
 
-                    <FormField
-                      control={form.control}
-                      name="price"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-gray-300">Preço de Venda (unidade) *</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              placeholder="0,00"
-                              {...field}
-                              onChange={(e) => field.onChange(Number(e.target.value))}
-                              className="bg-gray-800/50 border-gray-600 text-white h-11"
-                            />
-                          </FormControl>
-                          <FormDescription className="text-xs text-gray-500">
-                            Preço de cada unidade para o cliente
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <div>
-                      <FormLabel className="text-gray-300">Margem Unitária</FormLabel>
-                      <div className="h-11 bg-gray-800/30 border border-gray-600 rounded-md px-3 flex items-center mt-2">
-                        {calculatedMargin ? (
-                          <span className="text-green-400 font-medium">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {calculatedMargin && (
+                        <div className="text-center p-3 bg-green-500/10 rounded border border-green-400/20">
+                          <div className="text-lg font-bold text-green-400">
                             {calculatedMargin}%
-                          </span>
-                        ) : (
-                          <span className="text-gray-500">
-                            🔄 Auto-calculada
-                          </span>
-                        )}
-                      </div>
-                      <FormDescription className="text-xs text-gray-500 mt-1">
-                        Margem por unidade
-                      </FormDescription>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Preços de Pacote - Condicional */}
-                {form.watch('has_package_tracking') && (
-                  <div className="space-y-5 border-t border-gray-700/50 pt-5">
-                    <h4 className="text-base font-medium text-gray-200 flex items-center gap-2">
-                      <Package className="h-4 w-4 text-yellow-400" />
-                      Preços por Pacote/Fardo
-                    </h4>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                      <FormField
-                        control={form.control}
-                        name="package_price"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-gray-300">Preço de Venda (pacote)</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                step="0.01"
-                                placeholder="0,00"
-                                {...field}
-                                onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
-                                className="bg-gray-800/50 border-gray-600 text-white h-11"
-                              />
-                            </FormControl>
-                            <FormDescription className="text-xs text-gray-500">
-                              Preço do pacote completo
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <div>
-                        <FormLabel className="text-gray-300">Margem do Pacote</FormLabel>
-                        <div className="h-11 bg-gray-800/30 border border-gray-600 rounded-md px-3 flex items-center mt-2">
-                          {calculatedPackageMargin ? (
-                            <span className="text-green-400 font-medium">
-                              {calculatedPackageMargin}%
-                            </span>
-                          ) : (
-                            <span className="text-gray-500">
-                              🔄 Auto-calculada
-                            </span>
-                          )}
+                          </div>
+                          <div className="text-xs text-gray-400">Margem Unitária</div>
                         </div>
-                        <FormDescription className="text-xs text-gray-500 mt-1">
-                          Margem do pacote completo
-                        </FormDescription>
-                      </div>
+                      )}
 
-                      <div>
-                        <FormLabel className="text-gray-300">Economia do Cliente</FormLabel>
-                        <div className="h-11 bg-gray-800/30 border border-green-600/50 rounded-md px-3 flex items-center mt-2">
-                          {packageSavings ? (
-                            <span className="text-green-400 font-medium">
-                              R$ {packageSavings.amount.toFixed(2)} ({packageSavings.percent}%)
-                            </span>
-                          ) : (
-                            <span className="text-gray-500">
-                              💰 Calculando...
-                            </span>
-                          )}
+                      {calculatedPackageMargin && (
+                        <div className="text-center p-3 bg-green-500/10 rounded border border-green-400/20">
+                          <div className="text-lg font-bold text-green-400">
+                            {calculatedPackageMargin}%
+                          </div>
+                          <div className="text-xs text-gray-400">Margem do Pacote</div>
                         </div>
-                        <FormDescription className="text-xs text-gray-500 mt-1">
-                          Quanto o cliente economiza
-                        </FormDescription>
-                      </div>
+                      )}
                     </div>
                   </div>
                 )}
               </div>
-
-              {/* Estoque */}
-              <div className="bg-gray-800/30 rounded-xl p-6 border border-gray-700/50 hero-spotlight hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300" onMouseMove={handleMouseMove}>
-                <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-5">
-                  <Package className="h-5 w-5 text-yellow-400" />
-                  Controle de Estoque
-                </h3>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <FormField
-                  control={form.control}
-                  name="stock_quantity"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-gray-300">Quantidade Inicial</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          placeholder="0"
-                          {...field}
-                          onChange={(e) => field.onChange(Number(e.target.value))}
-                          className="bg-gray-800/50 border-gray-600 text-white h-11"
-                        />
-                      </FormControl>
-                      <FormDescription className="text-xs text-gray-500">
-                        Quantidade em estoque
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="minimum_stock"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-gray-300">Estoque Mínimo</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          placeholder="10"
-                          {...field}
-                          onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
-                          className="bg-gray-800/50 border-gray-600 text-white h-11"
-                        />
-                      </FormControl>
-                      <FormDescription className="text-xs text-gray-500">
-                        Alerta quando estoque baixo
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                </div>
-              </div>
-
-              {/* Botões de Ação */}
-              <div className="flex justify-end gap-3 pt-6 mt-2 border-t border-gray-700/50">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleClose}
-                disabled={isLoading}
-                className="border-gray-600 text-gray-300 hover:bg-gray-700"
-              >
-                <X className="h-4 w-4 mr-2" />
-                Cancelar
-              </Button>
-              
-              <Button
-                type="submit"
-                disabled={isLoading}
-                className="bg-yellow-500 hover:bg-yellow-600 text-black font-medium"
-              >
-                {isLoading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black mr-2"></div>
-                    Cadastrando...
-                  </>
-                ) : (
-                  <>
-                    <Save className="h-4 w-4 mr-2" />
-                    Adicionar Produto
-                  </>
-                )}
-              </Button>
-            </div>
-            </form>
-          </Form>
-      </div>
-    </BaseModal>
+            )}
+          </div>
+        </form>
+      </Form>
+    </EnhancedBaseModal>
   );
 };
 
