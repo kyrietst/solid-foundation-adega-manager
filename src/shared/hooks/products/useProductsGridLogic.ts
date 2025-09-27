@@ -136,11 +136,11 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
           variant_id: variantId,
           name: product.name,
           variant_type: variantType,
-          price: product.price,
+          price: variantType === 'package' ? (product.package_price || product.price) : product.price,
           quantity: 1,
           maxQuantity: variantType === 'package' ? stockPackages : stockUnitsLoose,
-          units_sold: variantType === 'package' ? (product.package_units || 1) : 1,
-          packageUnits: variantType === 'package' ? (product.package_units || 1) : undefined
+          units_sold: variantType === 'package' ? (product.units_per_package || 1) : 1,
+          packageUnits: variantType === 'package' ? (product.units_per_package || 1) : undefined
         };
 
         console.log('[DEBUG] useProductsGridLogic - chamando addItem com:', itemToAdd);
@@ -196,8 +196,8 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
         price: product.package_price || product.price,
         quantity: 1,
         maxQuantity: stockPackages,
-        units_sold: 1, // 1 pacote vendido
-        packageUnits: 1 // Sem conversões automáticas
+        units_sold: product.units_per_package || 1, // Quantas unidades são vendidas com 1 pacote
+        packageUnits: product.units_per_package || 1 // Quantas unidades tem no pacote
       });
       onProductSelect?.(product);
     }
