@@ -67,7 +67,13 @@ const simpleEditProductSchema = z.object({
   barcode: z
     .string()
     .optional()
-    .or(z.literal('')),
+    .or(z.literal(''))
+    .refine((val) => {
+      if (!val || val === '') return true;
+      return /^[0-9]{8,14}$/.test(val);
+    }, {
+      message: 'Código de barras deve ter entre 8 e 14 dígitos numéricos'
+    }),
 
 
   supplier: z
@@ -80,7 +86,13 @@ const simpleEditProductSchema = z.object({
   package_barcode: z
     .string()
     .optional()
-    .or(z.literal('')),
+    .or(z.literal(''))
+    .refine((val) => {
+      if (!val || val === '') return true;
+      return /^[0-9]{8,14}$/.test(val);
+    }, {
+      message: 'Código de barras do pacote deve ter entre 8 e 14 dígitos numéricos'
+    }),
   package_units: z
     .number({ invalid_type_error: 'Quantidade deve ser um número' })
     .min(1, 'Deve ter pelo menos 1 unidade por pacote')
@@ -89,18 +101,24 @@ const simpleEditProductSchema = z.object({
   package_price: z
     .number({ invalid_type_error: 'Preço do pacote deve ser um número' })
     .min(0.01, 'Preço do pacote deve ser maior que 0')
-    .optional(),
+    .optional()
+    .or(z.literal(0))
+    .or(z.literal(undefined)),
 
   // Campos para cálculo de margem (seção avançada)
   cost_price: z
     .number({ invalid_type_error: 'Preço de custo deve ser um número' })
-    .min(0, 'Preço de custo deve ser maior que 0')
-    .optional(),
+    .min(0, 'Preço de custo deve ser maior ou igual a 0')
+    .optional()
+    .or(z.literal(0))
+    .or(z.literal(undefined)),
 
   volume_ml: z
     .number({ invalid_type_error: 'Volume deve ser um número' })
     .min(1, 'Volume deve ser maior que 0')
-    .optional(),
+    .optional()
+    .or(z.literal(0))
+    .or(z.literal(undefined)),
 });
 
 type SimpleEditProductFormData = z.infer<typeof simpleEditProductSchema>;
@@ -133,55 +151,40 @@ export const SimpleEditProductModal: React.FC<SimpleEditProductModalProps> = ({
     defaultValues: {
       name: '',
       category: '',
-      price: 0,
+      price: 0.01, // Valor mínimo válido
       barcode: '',
       supplier: 'none',
       has_package_tracking: false,
       package_barcode: '',
       package_units: 1,
-      package_price: 0,
-      cost_price: 0,
-      volume_ml: 0,
+      package_price: undefined, // Permitir undefined para campos opcionais
+      cost_price: undefined,    // Permitir undefined para campos opcionais
+      volume_ml: undefined,     // Permitir undefined para campos opcionais
     },
   });
 
-  // Preencher formulário quando produto for carregado
-  useEffect(() => {
-    if (isOpen && product) {
-      form.reset({
-        name: product.name || '',
-        category: product.category || '',
-        price: Number(product.price) || 0,
-        barcode: product.barcode || '',
-        supplier: product.supplier || 'none',
-        has_package_tracking: product.has_package_tracking || false,
-        package_barcode: product.package_barcode || '',
-        package_units: product.package_units || product.units_per_package || 1,
-        package_price: product.package_price ? Number(product.package_price) : 0,
-        cost_price: product.cost_price ? Number(product.cost_price) : 0,
-        volume_ml: product.volume_ml ? Number(product.volume_ml) : 0,
-      });
+  const fetchCategoriesAndSuppliers = React.useCallback(async () => {
+    try {
+      // Buscar categorias ATIVAS da tabela categories (não de products)
+      const { data: categoriesData, error: categoriesError } = await supabase
+        .from('categories')
+        .select('name')
+        .eq('is_active', true)
+        .order('name');
 
-      // Se tem preço de custo, mostrar seção avançada automaticamente
-      if (product.cost_price && Number(product.cost_price) > 0) {
-        setShowAdvanced(true);
+      if (categoriesError) {
+        console.error('Erro ao buscar categorias:', categoriesError);
+        toast({
+          title: "⚠️ Erro ao carregar categorias",
+          description: "Não foi possível carregar as categorias ativas",
+          variant: "destructive",
+        });
+        return;
       }
 
-      fetchCategoriesAndSuppliers();
-    }
-  }, [isOpen, product, form]);
-
-  const fetchCategoriesAndSuppliers = async () => {
-    try {
-      // Buscar categorias
-      const { data: categoriesData } = await supabase
-        .from('products')
-        .select('category')
-        .not('category', 'is', null);
-
       if (categoriesData) {
-        const uniqueCategories = [...new Set(categoriesData.map(item => item.category))].sort();
-        setCategories(uniqueCategories);
+        const categoryNames = categoriesData.map(item => item.name);
+        setCategories(categoryNames);
       }
 
       // Buscar fornecedores
@@ -198,7 +201,33 @@ export const SimpleEditProductModal: React.FC<SimpleEditProductModalProps> = ({
     } catch (error) {
       console.error('Erro ao buscar dados:', error);
     }
-  };
+  }, [toast]);
+
+  // Preencher formulário quando produto for carregado
+  useEffect(() => {
+    if (isOpen && product) {
+      form.reset({
+        name: product.name || '',
+        category: product.category || '',
+        price: Number(product.price) || 0,
+        barcode: product.barcode || '',
+        supplier: product.supplier || 'none',
+        has_package_tracking: product.has_package_tracking || false,
+        package_barcode: product.package_barcode || '',
+        package_units: product.package_units || product.units_per_package || 1,
+        package_price: product.package_price ? Number(product.package_price) : undefined,
+        cost_price: product.cost_price ? Number(product.cost_price) : undefined,
+        volume_ml: product.volume_ml ? Number(product.volume_ml) : undefined,
+      });
+
+      // Se tem preço de custo, mostrar seção avançada automaticamente
+      if (product.cost_price && Number(product.cost_price) > 0) {
+        setShowAdvanced(true);
+      }
+
+      fetchCategoriesAndSuppliers();
+    }
+  }, [isOpen, product, form, fetchCategoriesAndSuppliers]);
 
   // Cálculo de margem em tempo real
   const watchedCostPrice = form.watch('cost_price');
@@ -221,16 +250,54 @@ export const SimpleEditProductModal: React.FC<SimpleEditProductModalProps> = ({
     return null;
   }, [watchedPackagePrice, watchedCostPrice, watchedPackageUnits]);
 
-  const handleFormSubmit = (data: SimpleEditProductFormData) => {
-    // Converter "none" para string vazia e campos vazios para null (exceto cost_price)
-    const processedData = {
-      ...data,
-      supplier: data.supplier === 'none' ? '' : data.supplier,
-      package_price: data.package_price === 0 ? undefined : data.package_price,
-      cost_price: data.cost_price, // Permitir cost_price = 0, só converter undefined/null
-      volume_ml: data.volume_ml === 0 ? undefined : data.volume_ml,
-    };
-    onSubmit(processedData);
+  const handleFormSubmit = async (data: SimpleEditProductFormData) => {
+    try {
+      // Validações adicionais antes do envio
+      if (data.barcode && !/^[0-9]{8,14}$/.test(data.barcode)) {
+        toast({
+          title: "❌ Erro de validação",
+          description: "Código de barras deve ter entre 8 e 14 dígitos",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (data.package_barcode && !/^[0-9]{8,14}$/.test(data.package_barcode)) {
+        toast({
+          title: "❌ Erro de validação",
+          description: "Código de barras do pacote deve ter entre 8 e 14 dígitos",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (data.has_package_tracking && !data.package_units) {
+        toast({
+          title: "❌ Erro de validação",
+          description: "Unidades por pacote é obrigatório quando embalagem está ativa",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Converter "none" para string vazia e campos vazios para null (exceto cost_price)
+      const processedData = {
+        ...data,
+        supplier: data.supplier === 'none' ? '' : data.supplier,
+        package_price: data.package_price === 0 ? undefined : data.package_price,
+        cost_price: data.cost_price, // Permitir cost_price = 0, só converter undefined/null
+        volume_ml: data.volume_ml === 0 ? undefined : data.volume_ml,
+      };
+
+      await onSubmit(processedData);
+    } catch (error) {
+      console.error('Erro ao processar formulário:', error);
+      toast({
+        title: "❌ Erro ao salvar",
+        description: "Ocorreu um erro inesperado. Verifique os dados e tente novamente.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleClose = () => {
@@ -381,6 +448,7 @@ export const SimpleEditProductModal: React.FC<SimpleEditProductModalProps> = ({
                       <Input
                         type="number"
                         step="0.01"
+                        min="0.01"
                         placeholder="0,00"
                         {...field}
                         onChange={(e) => field.onChange(Number(e.target.value))}
@@ -424,7 +492,12 @@ export const SimpleEditProductModal: React.FC<SimpleEditProductModalProps> = ({
                       <Input
                         placeholder="Ou digite manualmente"
                         {...field}
-                        onChange={(e) => field.onChange(e.target.value.replace(/\D/g, ''))}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/\D/g, '');
+                          if (value.length <= 14) {
+                            field.onChange(value);
+                          }
+                        }}
                         maxLength={14}
                         className="font-mono bg-gray-800/50 border-gray-600 text-white h-12"
                       />
@@ -528,7 +601,12 @@ export const SimpleEditProductModal: React.FC<SimpleEditProductModalProps> = ({
                             <Input
                               placeholder="Ou digite manualmente"
                               {...field}
-                              onChange={(e) => field.onChange(e.target.value.replace(/\D/g, ''))}
+                              onChange={(e) => {
+                                const value = e.target.value.replace(/\D/g, '');
+                                if (value.length <= 14) {
+                                  field.onChange(value);
+                                }
+                              }}
                               maxLength={14}
                               className="font-mono bg-gray-800/50 border-gray-600 text-white h-12"
                             />
@@ -554,6 +632,17 @@ export const SimpleEditProductModal: React.FC<SimpleEditProductModalProps> = ({
                             placeholder="Ex: 24"
                             {...field}
                             onChange={(e) => field.onChange(Number(e.target.value))}
+                            onBlur={(e) => {
+                              const value = Number(e.target.value);
+                              if (value < 1) {
+                                field.onChange(1);
+                                toast({
+                                  title: "⚠️ Valor ajustado",
+                                  description: "Unidades por pacote deve ser no mínimo 1",
+                                  variant: "default",
+                                });
+                              }
+                            }}
                             className="bg-gray-800/50 border-gray-600 text-white h-12"
                           />
                         </FormControl>
@@ -574,9 +663,20 @@ export const SimpleEditProductModal: React.FC<SimpleEditProductModalProps> = ({
                         <Input
                           type="number"
                           step="0.01"
+                          min="0"
                           placeholder="0,00"
                           {...field}
-                          onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : 0)}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            if (value === '' || value === null) {
+                              field.onChange(undefined);
+                            } else {
+                              const numValue = Number(value);
+                              if (numValue >= 0) {
+                                field.onChange(numValue);
+                              }
+                            }
+                          }}
                           className="bg-gray-800/50 border-gray-600 text-white h-12"
                         />
                       </FormControl>
@@ -622,9 +722,20 @@ export const SimpleEditProductModal: React.FC<SimpleEditProductModalProps> = ({
                           <Input
                             type="number"
                             step="0.01"
+                            min="0"
                             placeholder="0,00"
                             {...field}
-                            onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : 0)}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              if (value === '' || value === null) {
+                                field.onChange(undefined);
+                              } else {
+                                const numValue = Number(value);
+                                if (numValue >= 0) {
+                                  field.onChange(numValue);
+                                }
+                              }
+                            }}
                             className="bg-gray-800/50 border-gray-600 text-white h-12"
                           />
                         </FormControl>
@@ -643,9 +754,20 @@ export const SimpleEditProductModal: React.FC<SimpleEditProductModalProps> = ({
                         <FormControl>
                           <Input
                             type="number"
+                            min="1"
                             placeholder="350"
                             {...field}
-                            onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : 0)}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              if (value === '' || value === null) {
+                                field.onChange(undefined);
+                              } else {
+                                const numValue = Number(value);
+                                if (numValue >= 1) {
+                                  field.onChange(numValue);
+                                }
+                              }
+                            }}
                             className="bg-gray-800/50 border-gray-600 text-white h-12"
                           />
                         </FormControl>
