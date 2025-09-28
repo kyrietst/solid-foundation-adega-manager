@@ -16,22 +16,23 @@ import {
 } from '@/shared/ui/primitives/form';
 import { Input } from '@/shared/ui/primitives/input';
 import { DollarSign, Percent, TrendingUp } from 'lucide-react';
+import { useInventoryCalculations } from '@/features/inventory/hooks/useInventoryCalculations';
 
 interface ProductPricingFormProps {
   form: UseFormReturn<any>;
 }
 
 export const ProductPricingForm: React.FC<ProductPricingFormProps> = ({ form }) => {
-  // Calcular margem automaticamente
+  // Usar hook centralizado para cálculos de margem
   const watchCostPrice = form.watch('cost_price');
   const watchSalePrice = form.watch('sale_price');
 
-  const calculateMargin = () => {
-    const cost = parseFloat(watchCostPrice) || 0;
-    const sale = parseFloat(watchSalePrice) || 0;
-    if (cost === 0 || sale === 0) return '0';
-    return (((sale - cost) / cost) * 100).toFixed(1);
-  };
+  const { calculations } = useInventoryCalculations({
+    price: watchSalePrice,
+    cost_price: watchCostPrice
+  });
+
+  const calculatedMargin = calculations.unitMargin ? calculations.unitMargin.toFixed(1) : '0';
 
   return (
     <div className="space-y-4">
@@ -106,7 +107,7 @@ export const ProductPricingForm: React.FC<ProductPricingFormProps> = ({ form }) 
           <div className="flex items-center gap-2">
             <Percent className="h-4 w-4 text-blue-400" />
             <span className="text-2xl font-bold text-blue-400">
-              {calculateMargin()}%
+              {calculatedMargin}%
             </span>
           </div>
         </div>

@@ -21,9 +21,9 @@ describe('useInventoryCalculations', () => {
       };
 
       const { result } = renderHook(() => useInventoryCalculations(productData));
-      
-      // Margem = (100 - 60) / 60 * 100 = 66.67%
-      expect(result.current.calculations.unitMargin).toBe(66.67);
+
+      // Margem = (100 - 60) / 100 * 100 = 40%
+      expect(result.current.calculations.unitMargin).toBe(40);
       expect(result.current.calculations.unitProfitAmount).toBe(40);
     });
 
@@ -36,11 +36,11 @@ describe('useInventoryCalculations', () => {
       };
 
       const { result } = renderHook(() => useInventoryCalculations(productData));
-      
+
       // Custo do pacote: 15 * 6 = 90
       // Lucro do pacote: 140 - 90 = 50
-      // Margem do pacote: 50 / 90 * 100 = 55.56%
-      expect(result.current.calculations.packageMargin).toBe(55.56);
+      // Margem do pacote: 50 / 140 * 100 = 35.71%
+      expect(result.current.calculations.packageMargin).toBe(35.71);
       expect(result.current.calculations.packageProfitAmount).toBe(50);
     });
 
@@ -58,7 +58,7 @@ describe('useInventoryCalculations', () => {
       expect(result.current.calculations.pricePerPackage).toBeCloseTo(358.80, 2);
     });
 
-    it('deve lidar com margem zero quando custo é zero', () => {
+    it('deve lidar com margem quando custo é zero', () => {
       const productData: Partial<ProductFormData> = {
         price: 100,
         cost_price: 0,
@@ -66,9 +66,10 @@ describe('useInventoryCalculations', () => {
       };
 
       const { result } = renderHook(() => useInventoryCalculations(productData));
-      
-      expect(result.current.calculations.unitMargin).toBe(0);
-      expect(result.current.calculations.packageMargin).toBe(0);
+
+      // Com custo zero, o lucro é igual ao preço, então margem = 100%
+      expect(result.current.calculations.unitMargin).toBe(100);
+      expect(result.current.calculations.packageMargin).toBe(100);
     });
   });
 
@@ -94,10 +95,11 @@ describe('useInventoryCalculations', () => {
     it('deve calcular margem necessária para preço alvo', () => {
       const productData: Partial<ProductFormData> = {};
       const { result } = renderHook(() => useInventoryCalculations(productData));
-      
+
       // Custo R$ 80, preço alvo R$ 120
+      // Esta função ainda calcula markup, pois é usada para determinar preço com margem desejada
       const margin = result.current.calculateRequiredMargin(80, 120);
-      expect(margin).toBe(50); // (120 - 80) / 80 * 100 = 50%
+      expect(margin).toBe(50); // (120 - 80) / 80 * 100 = 50% (MARKUP para precificação)
     });
   });
 
@@ -179,10 +181,11 @@ describe('useInventoryCalculations', () => {
       };
 
       const { result } = renderHook(() => useInventoryCalculations(productData));
-      
+
       // Valores devem ser arredondados para 2 casas decimais
       expect(result.current.calculations.unitProfitAmount).toBe(11.11);
-      expect(result.current.calculations.unitMargin).toBe(50);
+      // Margem correta: (33.333 - 22.222) / 33.333 * 100 = 33.33%
+      expect(result.current.calculations.unitMargin).toBe(33.33);
     });
   });
 

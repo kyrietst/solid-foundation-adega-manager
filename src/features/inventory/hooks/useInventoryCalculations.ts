@@ -13,13 +13,13 @@ export const useInventoryCalculations = (productData: Partial<ProductFormData>) 
 
     // Cálculos de margem por unidade
     const unitProfitAmount = price - cost_price;
-    const unitMargin = cost_price > 0 ? (unitProfitAmount / cost_price) * 100 : 0;
+    const unitMargin = price > 0 ? (unitProfitAmount / price) * 100 : 0;
 
     // Cálculos para preço por pacote
     const calculatedPackagePrice = package_price || (price * package_size);
     const packageCostPrice = cost_price * package_size;
     const packageProfitAmount = calculatedPackagePrice - packageCostPrice;
-    const packageMargin = packageCostPrice > 0 ? (packageProfitAmount / packageCostPrice) * 100 : 0;
+    const packageMargin = calculatedPackagePrice > 0 ? (packageProfitAmount / calculatedPackagePrice) * 100 : 0;
 
     return {
       unitMargin: Math.round(unitMargin * 100) / 100,

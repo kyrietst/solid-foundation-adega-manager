@@ -40,6 +40,7 @@ import { getGlassCardClasses } from '@/core/config/theme-utils';
 import { cn } from '@/core/config/utils';
 import { calculatePackageDisplay } from '@/shared/utils/stockCalculations';
 import { supabase } from '@/core/api/supabase/client';
+import { useInventoryCalculations } from '@/features/inventory/hooks/useInventoryCalculations';
 import { 
   Package, 
   DollarSign, 
@@ -259,26 +260,23 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
     }
   };
 
-  // Calcular margens automaticamente
+  // Usar hook centralizado para cálculos de margem (ÚNICA FONTE DA VERDADE)
   const watchedCostPrice = form.watch('cost_price');
   const watchedPrice = form.watch('price');
   const watchedPackagePrice = form.watch('package_price');
   const watchedPackageUnits = form.watch('package_units');
 
-  const calculatedMargin = React.useMemo(() => {
-    if (watchedCostPrice && watchedPrice && watchedCostPrice > 0) {
-      return ((watchedPrice - watchedCostPrice) / watchedCostPrice * 100).toFixed(1);
-    }
-    return null;
-  }, [watchedCostPrice, watchedPrice]);
+  // ✅ NOVA IMPLEMENTAÇÃO: Hook centralizado com fórmulas corretas
+  const { calculations } = useInventoryCalculations({
+    price: watchedPrice,
+    cost_price: watchedCostPrice,
+    package_price: watchedPackagePrice,
+    package_size: watchedPackageUnits
+  });
 
-  const calculatedPackageMargin = React.useMemo(() => {
-    if (watchedPackagePrice && watchedCostPrice && watchedPackageUnits && watchedCostPrice > 0) {
-      const packageCost = watchedCostPrice * watchedPackageUnits;
-      return ((watchedPackagePrice - packageCost) / packageCost * 100).toFixed(1);
-    }
-    return null;
-  }, [watchedPackagePrice, watchedCostPrice, watchedPackageUnits]);
+  // Formatação para exibição (mesma interface anterior)
+  const calculatedMargin = calculations.unitMargin ? calculations.unitMargin.toFixed(1) : null;
+  const calculatedPackageMargin = calculations.packageMargin ? calculations.packageMargin.toFixed(1) : null;
 
   const packageSavings = React.useMemo(() => {
     if (watchedPackagePrice && watchedPrice && watchedPackageUnits) {

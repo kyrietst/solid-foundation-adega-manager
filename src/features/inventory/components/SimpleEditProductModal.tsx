@@ -33,6 +33,7 @@ import { BarcodeInput } from '@/features/inventory/components/BarcodeInput';
 import { useToast } from '@/shared/hooks/common/use-toast';
 import { cn } from '@/core/config/utils';
 import { supabase } from '@/core/api/supabase/client';
+import { useInventoryCalculations } from '@/features/inventory/hooks/useInventoryCalculations';
 import {
   Edit,
   Save,
@@ -229,26 +230,21 @@ export const SimpleEditProductModal: React.FC<SimpleEditProductModalProps> = ({
     }
   }, [isOpen, product, form, fetchCategoriesAndSuppliers]);
 
-  // Cálculo de margem em tempo real
+  // Cálculo de margem em tempo real usando hook centralizado
   const watchedCostPrice = form.watch('cost_price');
   const watchedPrice = form.watch('price');
   const watchedPackagePrice = form.watch('package_price');
   const watchedPackageUnits = form.watch('package_units');
 
-  const calculatedMargin = React.useMemo(() => {
-    if (watchedCostPrice && watchedPrice && watchedCostPrice > 0) {
-      return ((watchedPrice - watchedCostPrice) / watchedCostPrice * 100).toFixed(1);
-    }
-    return null;
-  }, [watchedCostPrice, watchedPrice]);
+  const { calculations } = useInventoryCalculations({
+    price: watchedPrice,
+    cost_price: watchedCostPrice,
+    package_price: watchedPackagePrice,
+    package_size: watchedPackageUnits
+  });
 
-  const calculatedPackageMargin = React.useMemo(() => {
-    if (watchedPackagePrice && watchedCostPrice && watchedPackageUnits && watchedCostPrice > 0) {
-      const packageCost = watchedCostPrice * watchedPackageUnits;
-      return ((watchedPackagePrice - packageCost) / packageCost * 100).toFixed(1);
-    }
-    return null;
-  }, [watchedPackagePrice, watchedCostPrice, watchedPackageUnits]);
+  const calculatedMargin = calculations.unitMargin ? calculations.unitMargin.toFixed(1) : null;
+  const calculatedPackageMargin = calculations.packageMargin ? calculations.packageMargin.toFixed(1) : null;
 
   const handleFormSubmit = async (data: SimpleEditProductFormData) => {
     try {
