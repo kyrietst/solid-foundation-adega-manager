@@ -126,6 +126,52 @@ const saleData = {
 - **Correção**: Interface responsiva com seções colapsáveis e altura dinâmica
 - **Arquivo**: `FullCart.tsx`
 
+### 🔄 **CORREÇÕES CRÍTICAS v2.0.1** (Setembro 2025)
+
+#### 🚨 Problema 6: Código de Barras com Preço Incorreto (CRÍTICO)
+- **Situação**: Código de barras de pacote adicionava produto com preço de unidade
+- **Exemplo**: Heineken pacote (R$ 130,00) sendo vendida por R$ 50,00
+- **Impacto**: ❌ Perda financeira significativa em vendas de pacotes
+- **Correção**: Implementada lógica condicional de preços baseada no tipo de código
+- **Arquivo**: `src/shared/hooks/products/useProductsGridLogic.ts` linha 139
+- **Código Corrigido**:
+  ```typescript
+  // ❌ ANTES (BUGGY)
+  price: product.price, // Sempre usava preço da unidade
+
+  // ✅ DEPOIS (CORRETO)
+  price: variantType === 'package' ? (product.package_price || product.price) : product.price,
+  ```
+
+#### 🚨 Problema 7: Cancelamento de Venda Restituía Estoque Incorreto (CRÍTICO)
+- **Situação**: Venda de pacote cancelada restaurava estoque como unidades
+- **Exemplo**: Venda 3 pacotes → cancelar → 3 unidades voltavam ao estoque
+- **Impacto**: ❌ Desencontro total de estoque físico vs sistema
+- **Correção**: Fixed stored procedure `delete_sale_with_items` com parâmetro `p_movement_type`
+- **Migration**: `20250927101008_fix_delete_sale_with_items_missing_parameter`
+- **Código Corrigido**:
+  ```sql
+  -- ✅ CORREÇÃO: Adicionado parâmetro que estava faltando
+  SELECT create_inventory_movement(
+    v_item.product_id,
+    v_quantity_to_restore,
+    'inventory_adjustment'::movement_type,
+    'Restauração automática - exclusão de venda (CORRIGIDO)',
+    jsonb_build_object(...),
+    v_item.sale_type  -- ← PARÂMETRO QUE ESTAVA FALTANDO!
+  ) INTO v_movement_result;
+  ```
+
+#### ✅ Problema 8: React Controlled/Uncontrolled Input Warnings
+- **Situação**: Avisos no console sobre componentes React controlados
+- **Arquivo**: `NewProductModal.tsx`
+- **Correção**: Mudança de `undefined` para `0` em campos numéricos no `defaultValues`
+- **Impacto**: Interface mais estável e console limpo
+
+### 🔧 **Migrations Aplicadas**
+1. **`fix_delete_sale_with_items_missing_parameter`** - Correção crítica do stored procedure
+2. **`standardize_payment_methods`** - Padronização de métodos de pagamento
+
 ### 📦 [Estoque](./v2.0/ultra-simplification.md)
 
 #### Ultra-Simplificação Implementada

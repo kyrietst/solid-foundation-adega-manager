@@ -6,8 +6,48 @@ import type {
 } from "@/shared/ui/primitives/toast"
 
 const TOAST_LIMIT = 1
-const TOAST_REMOVE_DELAY = 5000 // 5 segundos (era 1 milhão!)
+
+// Toast timing configuration based on context and type
+const TOAST_TIMING = {
+  // POS Environment - Faster for sales operations
+  pos: {
+    success: 2000,   // Quick confirmation (sale completed)
+    error: 4000,     // Longer for errors (needs attention)
+    warning: 3000,   // Medium for warnings (stock low)
+    info: 2500,      // Medium-fast for info (product added)
+    default: 2500,   // Default POS timing
+  },
+  // Standard Environment - Normal timing
+  standard: {
+    success: 3000,   // Standard success timing
+    error: 5000,     // Longer for errors
+    warning: 4000,   // Medium for warnings
+    info: 3500,      // Medium for info
+    default: 4000,   // Default standard timing
+  }
+} as const
+
 const TOAST_DEBOUNCE_DELAY = 100 // Debounce para evitar toasts consecutivos
+
+// Context detection - automatically determine if we're in POS environment
+const getCurrentContext = (): 'pos' | 'standard' => {
+  const pathname = window.location.pathname
+  return pathname.includes('/sales') || pathname.includes('/pos') ? 'pos' : 'standard'
+}
+
+// Get appropriate delay based on context and variant
+const getToastDelay = (variant?: string): number => {
+  const context = getCurrentContext()
+  const timing = TOAST_TIMING[context]
+
+  switch (variant) {
+    case 'destructive': return timing.error
+    case 'success': return timing.success
+    case 'warning': return timing.warning
+    case 'info': return timing.info
+    default: return timing.default
+  }
+}
 
 type ToasterToast = ToastProps & {
   id: string
@@ -57,10 +97,12 @@ interface State {
 const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
 const toastDebounceMap = new Map<string, number>() // Debounce para evitar toasts duplicados
 
-const addToRemoveQueue = (toastId: string) => {
+const addToRemoveQueue = (toastId: string, variant?: string) => {
   if (toastTimeouts.has(toastId)) {
     return
   }
+
+  const delay = getToastDelay(variant)
 
   const timeout = setTimeout(() => {
     toastTimeouts.delete(toastId)
@@ -68,7 +110,7 @@ const addToRemoveQueue = (toastId: string) => {
       type: "REMOVE_TOAST",
       toastId: toastId,
     })
-  }, TOAST_REMOVE_DELAY)
+  }, delay)
 
   toastTimeouts.set(toastId, timeout)
 }
@@ -109,10 +151,11 @@ export const reducer = (state: State, action: Action): State => {
       // ! Side effects ! - This could be extracted into a dismissToast() action,
       // but I'll keep it here for simplicity
       if (toastId) {
-        addToRemoveQueue(toastId)
+        const toast = state.toasts.find(t => t.id === toastId)
+        addToRemoveQueue(toastId, toast?.variant)
       } else {
         state.toasts.forEach((toast) => {
-          addToRemoveQueue(toast.id)
+          addToRemoveQueue(toast.id, toast.variant)
         })
       }
 
@@ -217,4 +260,128 @@ function useToast() {
   }
 }
 
-export { useToast, toast }
+// Helper functions for common toast types with better UX
+const toastHelpers = {
+  success: (title: string, description?: string) =>
+    toast({
+      title,
+      description,
+      variant: "success",
+    }),
+
+  error: (title: string, description?: string) =>
+    toast({
+      title,
+      description,
+      variant: "destructive",
+    }),
+
+  warning: (title: string, description?: string) =>
+    toast({
+      title,
+      description,
+      variant: "warning",
+    }),
+
+  info: (title: string, description?: string) =>
+    toast({
+      title,
+      description,
+      variant: "info",
+    }),
+
+  // POS-specific helpers with optimized messaging
+  pos: {
+    saleCompleted: (amount: string) =>
+      toast({
+        title: "Venda finalizada",
+        description: `Total: ${amount}`,
+        variant: "success",
+      }),
+
+    productAdded: (productName: string, type?: string) =>
+      toast({
+        title: "Produto adicionado",
+        description: type ? `${productName} (${type})` : productName,
+        variant: "success",
+      }),
+
+    stockWarning: (productName: string, stock: number) =>
+      toast({
+        title: "Estoque baixo",
+        description: `${productName}: ${stock} unidades restantes`,
+        variant: "warning",
+      }),
+
+    barcodeScanned: (productName: string, barcodeType: string) =>
+      toast({
+        title: "Código escaneado",
+        description: `${productName} - ${barcodeType}`,
+        variant: "info",
+      }),
+
+    saleCancelled: (reason?: string) =>
+      toast({
+        title: "Venda cancelada",
+        description: reason || "A venda foi cancelada com sucesso",
+        variant: "warning",
+      }),
+
+    paymentError: (message: string) =>
+      toast({
+        title: "Erro no pagamento",
+        description: message,
+        variant: "destructive",
+      }),
+  },
+
+  // Customer-specific helpers
+  customer: {
+    created: (name: string) =>
+      toast({
+        title: "Cliente cadastrado",
+        description: `${name} foi adicionado com sucesso`,
+        variant: "success",
+      }),
+
+    updated: (name: string) =>
+      toast({
+        title: "Cliente atualizado",
+        description: `Dados de ${name} foram atualizados`,
+        variant: "success",
+      }),
+
+    deleted: (name: string) =>
+      toast({
+        title: "Cliente removido",
+        description: `${name} foi removido do sistema`,
+        variant: "warning",
+      }),
+  },
+
+  // Inventory-specific helpers
+  inventory: {
+    stockAdjusted: (productName: string, newStock: number) =>
+      toast({
+        title: "Estoque ajustado",
+        description: `${productName}: ${newStock} unidades`,
+        variant: "info",
+      }),
+
+    productCreated: (name: string) =>
+      toast({
+        title: "Produto criado",
+        description: `${name} foi adicionado ao catálogo`,
+        variant: "success",
+      }),
+
+    lowStock: (productName: string, stock: number) =>
+      toast({
+        title: "Estoque crítico",
+        description: `${productName}: apenas ${stock} unidades`,
+        variant: "warning",
+      }),
+  },
+}
+
+export { useToast, toast, toastHelpers }

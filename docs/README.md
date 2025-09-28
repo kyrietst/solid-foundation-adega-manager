@@ -35,7 +35,9 @@ O **Adega Manager** é um sistema empresarial completo para gestão de adega, at
 ### ⚙️ [03. Módulos](./03-modules/)
 **Para trabalhar em funcionalidades específicas**
 - [Vendas (POS)](./03-modules/sales/) - Sistema de ponto de venda
+  - 📱 [Fluxo Completo de Vendas com Códigos de Barras](./03-modules/sales/BARCODE_SALES_FLOW.md) - **NOVO**
 - [Estoque](./03-modules/inventory/) - Gestão de inventário
+  - 🔧 [Sistema de Códigos de Barras - Guia Completo](./03-modules/inventory/BARCODE_SYSTEM_GUIDE.md) - **NOVO**
 - [Clientes (CRM)](./03-modules/customers/) - Sistema de relacionamento
 - [Delivery](./03-modules/delivery/) - Gestão de entregas
 - [Relatórios](./03-modules/reports/) - Analytics e dashboards
@@ -67,6 +69,7 @@ O **Adega Manager** é um sistema empresarial completo para gestão de adega, at
 - [Manual do Usuário](./06-operations/user-manual/)
 - [Manutenção](./06-operations/maintenance/)
 - [Solução de Problemas](./06-operations/troubleshooting/)
+  - 🚨 [Troubleshooting: Problemas de Preços em Códigos de Barras](./06-operations/troubleshooting/BARCODE_PRICING_TROUBLESHOOTING.md) - **NOVO**
 
 ### 📝 [07. Changelog](./07-changelog/)
 **Para histórico e versionamento**
@@ -92,6 +95,7 @@ O **Adega Manager** é um sistema empresarial completo para gestão de adega, at
 - [Endpoints](./09-api/endpoints/)
 - [Procedimentos Armazenados](./09-api/stored-procedures.md)
 - [Funções do Banco](./09-api/database-functions.md)
+- 🔧 [Correções de Stored Procedures - Documentação Técnica](./09-api/STORED_PROCEDURES_FIXES.md) - **NOVO**
 
 ### 📦 [10. Legacy](./10-legacy/)
 **Para preservar histórico e referências**
@@ -153,8 +157,40 @@ O **Adega Manager** é um sistema empresarial completo para gestão de adega, at
 - **❓ Dúvidas**: Verifique a documentação do módulo específico
 - **💡 Sugestões**: Contribua com melhorias na documentação
 
+## 🆕 **Atualizações Recentes v2.0.1** (Setembro 2025)
+
+### 📚 **Nova Documentação Adicionada**
+1. **🔧 [Sistema de Códigos de Barras - Guia Completo](./03-modules/inventory/BARCODE_SYSTEM_GUIDE.md)**
+   - Documentação técnica completa do sistema de códigos de barras
+   - Suporte para unidades e pacotes com códigos separados
+   - Validação e formatação de códigos EAN-13, UPC-A, etc.
+
+2. **📱 [Fluxo Completo de Vendas com Códigos de Barras](./03-modules/sales/BARCODE_SALES_FLOW.md)**
+   - Processo detalhado do escaneamento à finalização
+   - Cenários de uso para produtos simples e complexos
+   - Cálculos e restauração de estoque
+
+3. **🚨 [Troubleshooting: Problemas de Preços em Códigos de Barras](./06-operations/troubleshooting/BARCODE_PRICING_TROUBLESHOOTING.md)**
+   - Guia específico para resolver problemas de preços incorretos
+   - Debugging e validação de configurações de produtos
+   - Casos reais de problemas resolvidos
+
+4. **🔧 [Correções de Stored Procedures - Documentação Técnica](./09-api/STORED_PROCEDURES_FIXES.md)**
+   - Análise técnica das correções críticas aplicadas
+   - Correção do bug de restauração de estoque
+   - Migrations e validações de integridade
+
+### 🔄 **Documentação Atualizada**
+- **📝 [Changelog](./07-changelog/README.md)**: Adicionadas correções críticas v2.0.1
+- **🔧 [Guia de Migrações](./06-operations/guides/MIGRATIONS_GUIDE.md)**: Exemplos reais aplicados
+
+### 🚨 **Correções Críticas Documentadas**
+1. **Bug de Preços em Códigos de Barras**: Código de pacote usando preço de unidade
+2. **Bug de Cancelamento de Vendas**: Restauração incorreta de estoque (pacotes → unidades)
+3. **Stored Procedure Fix**: Parâmetro `p_movement_type` faltando em `delete_sale_with_items`
+
 ---
 
-**Última Atualização**: 21 de setembro de 2025
-**Versão da Documentação**: 2.0
-**Sistema**: Adega Manager v2.0 - Ultra-Simplificação
+**Última Atualização**: 27 de setembro de 2025
+**Versão da Documentação**: 2.0.1
+**Sistema**: Adega Manager v2.0.1 - Correções Críticas Aplicadas

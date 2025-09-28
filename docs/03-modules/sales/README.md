@@ -8,7 +8,7 @@ O módulo **Sales** é o coração operacional do Adega Manager, responsável po
 
 ### 🎯 Funcionalidades Principais
 - **POS Completo** - Interface otimizada para vendas rápidas
-- **Scanner de Código de Barras** - Integração com hardware de scanner
+- **Scanner de Código de Barras** - Integração com hardware de scanner (**📱 [Ver Fluxo Completo](./BARCODE_SALES_FLOW.md)**)
 - **Carrinho Inteligente** - Suporte a variantes (unidade/pacote)
 - **Sistema de Desconto** - Descontos flexíveis por item ou total
 - **Multi-Pagamento** - Suporte a diversos métodos de pagamento
@@ -167,13 +167,28 @@ if (stockUnitsLoose > 0 && stockPackages > 0) {
 - **Produtos Mais Vendidos** - Analytics integrado
 - **Métodos de Pagamento** - Distribuição
 
-## 🔧 [Troubleshooting](./troubleshooting.md)
+## 📚 **Documentação Especializada** (v2.0.1)
+
+### 🔧 **[Fluxo Completo de Vendas com Códigos de Barras](./BARCODE_SALES_FLOW.md)** ⭐
+**Documentação essencial para vendas com códigos de barras**
+- 📱 Processo detalhado do escaneamento à finalização
+- 🔍 Busca inteligente e identificação de produtos
+- ⚖️ Lógica ultra-simples de disponibilidade
+- 💰 Cálculos automáticos e gestão de preços
+- 🔄 Cenários reais de uso (simples, complexos, apenas pacotes)
+
+### 🚨 **Troubleshooting Especializado**
+- **[🔧 Sistema de Códigos de Barras](../inventory/BARCODE_SYSTEM_GUIDE.md)** - Guia técnico completo
+- **[🚨 Problemas de Preços](../../06-operations/troubleshooting/BARCODE_PRICING_TROUBLESHOOTING.md)** - Debug de preços incorretos
+
+## 🔧 Troubleshooting Geral
 
 ### Problemas Comuns
 - **Scanner não funciona** - Verificar configuração USB
 - **Produtos não aparecem** - Verificar conexão Supabase
 - **Carrinho trava** - Limpar cache do navegador
 - **Desconto não salva** - Verificar permissões
+- **Preço incorreto no código de barras** - ⭐ [Ver guia específico](../../06-operations/troubleshooting/BARCODE_PRICING_TROUBLESHOOTING.md)
 
 ### Soluções Rápidas
 - **Refresh da página** - Resolve problemas temporários
@@ -232,3 +247,4 @@ if (stockUnitsLoose > 0 && stockPackages > 0) {
 **Status**: ✅ **MÓDULO CRÍTICO EM PRODUÇÃO**
 **Responsabilidade**: Vendas presenciais e operação diária
 **Prioridade**: ALTA - Sistema core do negócio
+**Última Atualização**: 27 de setembro de 2025 - v2.0.1 com correções críticas aplicadas

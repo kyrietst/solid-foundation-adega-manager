@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from '@/core/api/supabase/client';
-import { toast } from 'sonner';
+import { toastHelpers } from '@/shared/hooks/common/use-toast';
 import type {
   CartItemWithVariant,
   VariantSelectionData,
@@ -131,10 +131,7 @@ export const useCart = create<CartState>()(
 
           if (!stockCheck.canAdd) {
             console.log('[DEBUG] use-cart - estoque insuficiente, aborting addItem');
-            toast.error('Estoque Insuficiente', {
-              description: stockCheck.message,
-              duration: 4000,
-            });
+            toastHelpers.error('Estoque Insuficiente', stockCheck.message);
             return;
           }
 
@@ -204,10 +201,7 @@ export const useCart = create<CartState>()(
           console.log('[DEBUG] use-cart - set() executado, mostrando toast de sucesso');
 
           // Mostrar confirmação de sucesso
-          toast.success('Produto Adicionado', {
-            description: `${item.name} foi adicionado ao carrinho.`,
-            duration: 2000,
-          });
+          toastHelpers.pos.productAdded(item.name);
 
           console.log('[DEBUG] use-cart - addItem finalizado com sucesso');
         },
@@ -221,10 +215,7 @@ export const useCart = create<CartState>()(
           );
 
           if (!stockCheck.canAdd) {
-            toast.error('Estoque Insuficiente', {
-              description: stockCheck.message,
-              duration: 4000,
-            });
+            toastHelpers.error('Estoque Insuficiente', stockCheck.message);
             return;
           }
 
@@ -277,11 +268,8 @@ export const useCart = create<CartState>()(
           });
 
           // Mostrar confirmação de sucesso
-          const typeLabel = selection.variant_type === 'package' ? 'Pacote' : 'Unidade';
-          toast.success('Produto Adicionado', {
-            description: `${product.name} (${typeLabel}) foi adicionado ao carrinho.`,
-            duration: 2000,
-          });
+          const typeLabel = selection.variant_type === 'package' ? 'pacote' : 'unidade';
+          toastHelpers.pos.productAdded(product.name, typeLabel);
         },
       
         updateItemQuantity: (productId, variantId, quantity) => {

@@ -1,5 +1,4 @@
 import { Toaster } from "@/shared/ui/primitives/toaster";
-import { Toaster as Sonner } from "@/shared/components/sonner";
 import { TooltipProvider } from "@/shared/ui/primitives/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
@@ -98,7 +97,6 @@ const App = () => {
                       <TropicalDuskGlow />
                     </div>
                     <Toaster />
-                    <Sonner />
                     <TailwindColorClasses />
                     <TempPasswordHandler />
                     <div className="relative z-10">

@@ -491,7 +491,7 @@ NODE_ENV=development
 ### Current Production Status
 - **925+ real records** in active use
 - **Daily operations** with real business transactions
-- **113 database migrations** applied (fully mature system)
+- **115+ database migrations** applied (fully mature system with v2.0.1 critical fixes)
 - **3 active users** with different roles (admin/employee/delivery)
 - **Multiple payment methods** configured and in use
 
@@ -519,9 +519,16 @@ NODE_ENV=development
 
 ## Available MCP Tools
 - **Aceternity UI MCP**: For component installation and management (`mcp__aceternityui__*`)
-- **Shadcn UI MCP**: For base component operations (`mcp__shadcn-ui__*`)  
-- **Supabase MCP**: For database operations and management (`mcp__supabase__*`)
+- **Shadcn UI MCP**: For base component operations (`mcp__shadcn-ui__*`)
+- **Supabase MCP**: For database operations and management (`mcp__supabase-dev__*`, `mcp__supabase-prod__*`)
 - **Context7 MCP**: For documentation and code reference (`mcp__context7__*`)
+
+### MCP Configuration Update (v2.0.1)
+The `.mcp.json` now includes both development and production Supabase connections:
+- `supabase-dev`: Development database (project-ref: goppneqeowgeehpqkcxe)
+- `supabase-prod`: Production database (project-ref: uujkzvbgnfzuzlztrzln)
+
+This dual configuration was essential for copying test data and applying critical fixes across environments.
 
 ## Troubleshooting (For AI Assistants)
 
@@ -559,6 +566,12 @@ SELECT * FROM profiles WHERE id = auth.uid();
 - Verify manual fallback calculations are working
 - Ensure data translation functions are applied
 - Test with different user roles for data access
+
+**🔴 Barcode Scanning Issues (v2.0.1 - CRITICAL FIXES APPLIED):**
+- **Package barcode using unit price**: Fixed in useProductsGridLogic.ts line 139
+- **Sale cancellation restoring wrong stock type**: Fixed via migration `fix_delete_sale_with_items_missing_parameter`
+- **Controlled/uncontrolled React inputs**: Fixed in NewProductModal.tsx defaultValues
+- For detailed troubleshooting: `docs/06-operations/troubleshooting/BARCODE_PRICING_TROUBLESHOOTING.md`
 
 **🔴 Modal/UI Cache Issues:**
 ```bash
@@ -601,8 +614,14 @@ npm run dev
 1. **Backup first** - `npm run backup` before any changes
 2. **Test in development** - Never modify production directly
 3. **Update types** - Regenerate TypeScript definitions
-4. **Consider migrations** - Document all schema changes
+4. **Consider migrations** - Document all schema changes (see MIGRATIONS_GUIDE.md)
 5. **Verify RLS** - Test security policies thoroughly
+
+#### When Working with Barcode System (v2.0.1 - CRITICAL)
+1. **Price validation** - Always verify package vs unit prices are correctly applied
+2. **Stock restoration** - Test sale cancellation to ensure correct stock type restoration
+3. **Product configuration** - Verify both barcode fields and has_package_tracking
+4. **Documentation reference** - Use `docs/03-modules/inventory/BARCODE_SYSTEM_GUIDE.md`
 
 Always remember: This is a **production system** with real business data. Prioritize data integrity, security, and user experience in all modifications.
 
@@ -629,9 +648,16 @@ docs/
 - **📚 Complete Coverage**: Every system aspect documented with examples
 - **🎯 Role-Based**: Different sections for developers, users, and stakeholders
 - **🔗 Cross-Referenced**: Extensive linking between related documentation
-- **📊 Up-to-Date**: Reflects current v2.0.0 system state with 925+ production records
+- **📊 Up-to-Date**: Reflects current v2.0.1 system state with 925+ production records and critical fixes
 - **🗂️ Organized**: Numbered hierarchy for logical reading progression
 - **🏛️ Legacy Preserved**: Historical documentation maintained in structured archive
+
+### Critical Documentation Updates (v2.0.1)
+- **Barcode System Guide**: `docs/03-modules/inventory/BARCODE_SYSTEM_GUIDE.md` - Complete technical documentation
+- **Sales Flow Documentation**: `docs/03-modules/sales/BARCODE_SALES_FLOW.md` - Detailed process flows
+- **Troubleshooting Guide**: `docs/06-operations/troubleshooting/BARCODE_PRICING_TROUBLESHOOTING.md` - Debug guide
+- **Stored Procedures Fixes**: `docs/09-api/STORED_PROCEDURES_FIXES.md` - Technical analysis of fixes
+- **Migration Examples**: Updated `docs/06-operations/guides/MIGRATIONS_GUIDE.md` with real examples
 
 ### Documentation Guidelines
 - **ALWAYS reference docs/ first** when seeking project information
@@ -647,6 +673,14 @@ docs/
 
 **Migration Status**: ✅ **COMPLETE** - All scattered .md files consolidated into organized structure, eliminating documentation confusion.
 
-## Project Status: ENTERPRISE PRODUCTION READY (v2.0.0)
+## Project Status: ENTERPRISE PRODUCTION READY (v2.0.1)
 
-**Current State**: Fully functional enterprise application with 925+ real records, daily operations, complete security implementation, comprehensive feature set, complete reusable components system that eliminated 90% of code duplication, and **centralized documentation architecture** that provides comprehensive guidance for all stakeholders. The system is mature, stable, actively used for business operations, and optimized for rapid future development with modern tooling and MCP integrations.
+**Current State**: Fully functional enterprise application with 925+ real records, daily operations, complete security implementation, comprehensive feature set, complete reusable components system that eliminated 90% of code duplication, and **centralized documentation architecture** that provides comprehensive guidance for all stakeholders.
+
+**v2.0.1 Critical Fixes Applied**:
+- ✅ **Barcode pricing bug resolved** - Package barcodes now use correct prices
+- ✅ **Sale cancellation bug resolved** - Stock restoration preserves unit/package types
+- ✅ **Stored procedure corrected** - Missing parameter in `delete_sale_with_items` fixed
+- ✅ **Complete documentation updated** - All critical fixes fully documented
+
+The system is mature, stable, actively used for business operations, and optimized for rapid future development with modern tooling and MCP integrations.
