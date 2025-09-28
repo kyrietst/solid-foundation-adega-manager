@@ -30,6 +30,7 @@ import { supabase } from '@/core/api/supabase/client';
 import { useToast } from '@/shared/hooks/common/use-toast';
 import { useAuth } from '@/app/providers/AuthContext';
 import type { Product } from '@/core/types/inventory.types';
+import { getSaoPauloTimestamp } from '@/shared/hooks/common/use-brasil-timezone';
 
 // Schema de validação para o formulário
 const stockAdjustmentSchema = z.object({
@@ -77,7 +78,7 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
       // 🔍 LOG: Buscar produto sempre com dados mais recentes
       console.log('🔍 FETCHING PRODUCT DATA - StockAdjustmentModal:', {
         productId,
-        timestamp: new Date().toISOString()
+        timestamp: getSaoPauloTimestamp() // Horário de São Paulo
       });
 
       const { data, error } = await supabase
@@ -268,7 +269,7 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
         productId,
         result,
         variables,
-        timestamp: new Date().toISOString()
+        timestamp: getSaoPauloTimestamp() // Horário de São Paulo
       });
 
       // 🚨 INVALIDAÇÃO AGRESSIVA DE CACHE - Garantir que todos os dados sejam atualizados
@@ -317,7 +318,7 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
 
       console.log('✅ CACHE INVALIDATION COMPLETED:', {
         productId,
-        timestamp: new Date().toISOString()
+        timestamp: getSaoPauloTimestamp() // Horário de São Paulo
       });
 
       toast({

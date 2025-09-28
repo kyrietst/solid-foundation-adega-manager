@@ -31,6 +31,7 @@ O **Adega Manager** é um sistema empresarial completo para gestão de adega, at
 - [Modelo de Segurança](./02-architecture/security-model.md)
 - [Padrões de API](./02-architecture/api-patterns.md)
 - [Estrutura de Pastas](./02-architecture/folder-structure.md)
+- 🕐 [**Arquitetura de Timezone**](./02-architecture/TIMEZONE_ARCHITECTURE.md) - **NOVO** - Fonte única da verdade para timezone
 
 ### ⚙️ [03. Módulos](./03-modules/)
 **Para trabalhar em funcionalidades específicas**
@@ -70,6 +71,8 @@ O **Adega Manager** é um sistema empresarial completo para gestão de adega, at
 - [Manutenção](./06-operations/maintenance/)
 - [Solução de Problemas](./06-operations/troubleshooting/)
   - 🚨 [Troubleshooting: Problemas de Preços em Códigos de Barras](./06-operations/troubleshooting/BARCODE_PRICING_TROUBLESHOOTING.md) - **NOVO**
+- [Guias Operacionais](./06-operations/guides/)
+  - 🧪 [**Guia de Validação de Timezone**](./06-operations/guides/TIMEZONE_VALIDATION_GUIDE.md) - **NOVO** - Procedimentos de teste
 
 ### 📝 [07. Changelog](./07-changelog/)
 **Para histórico e versionamento**
@@ -180,6 +183,16 @@ O **Adega Manager** é um sistema empresarial completo para gestão de adega, at
    - Correção do bug de restauração de estoque
    - Migrations e validações de integridade
 
+5. **🕐 [Arquitetura de Timezone - Fonte Única da Verdade](./02-architecture/TIMEZONE_ARCHITECTURE.md)**
+   - Implementação completa do sistema de timezone São Paulo
+   - Validação e testes de consistência
+   - Padronização de todas as operações de data/hora
+
+6. **🧪 [Guia de Validação de Timezone](./06-operations/guides/TIMEZONE_VALIDATION_GUIDE.md)**
+   - Procedimentos de teste e validação
+   - Debugging e correções de problemas
+   - Templates de relatório e monitoramento
+
 ### 🔄 **Documentação Atualizada**
 - **📝 [Changelog](./07-changelog/README.md)**: Adicionadas correções críticas v2.0.1
 - **🔧 [Guia de Migrações](./06-operations/guides/MIGRATIONS_GUIDE.md)**: Exemplos reais aplicados
@@ -188,6 +201,10 @@ O **Adega Manager** é um sistema empresarial completo para gestão de adega, at
 1. **Bug de Preços em Códigos de Barras**: Código de pacote usando preço de unidade
 2. **Bug de Cancelamento de Vendas**: Restauração incorreta de estoque (pacotes → unidades)
 3. **Stored Procedure Fix**: Parâmetro `p_movement_type` faltando em `delete_sale_with_items`
+4. **🕐 Timezone Padronização**: Sistema 100% padronizado para São Paulo/Brasil (UTC-3)
+   - Eliminação de timestamps UTC incorretos
+   - Implementação de fonte única da verdade
+   - Validação completa JavaScript ↔ PostgreSQL
 
 ---
 

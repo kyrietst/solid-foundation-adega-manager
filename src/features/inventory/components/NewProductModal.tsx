@@ -35,6 +35,7 @@ import { supabase } from '@/core/api/supabase/client';
 import { useInventoryCalculations } from '@/features/inventory/hooks/useInventoryCalculations';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { cn } from '@/core/config/utils';
+import { getSaoPauloTimestamp } from '@/shared/hooks/common/use-brasil-timezone';
 import {
   Package,
   Save,
@@ -174,7 +175,7 @@ export const NewProductModal: React.FC<NewProductModalProps> = ({
         stock_units_loose: 0,
         // Valores padrão
         turnover_rate: 'medium',
-        created_at: new Date().toISOString(),
+        created_at: getSaoPauloTimestamp(), // Data de criação em horário de São Paulo
       };
 
       const { data: result, error } = await supabase

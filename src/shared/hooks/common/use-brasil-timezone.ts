@@ -103,7 +103,7 @@ export const useBrasilTimezone = () => {
   const formatRelative = useMemo(() => {
     return (utcTimestamp: string | Date): string => {
       const spDate = convertToSaoPaulo(utcTimestamp);
-      const now = new Date();
+      const now = convertToSaoPaulo(new Date()); // Usar horário de São Paulo para comparação
       const diffMs = now.getTime() - spDate.getTime();
       const diffMinutes = Math.floor(diffMs / (1000 * 60));
       const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
@@ -129,6 +129,21 @@ export const useBrasilTimezone = () => {
     
     // Helpers
     getCurrentSaoPauloTime: () => convertToSaoPaulo(new Date()),
+
+    // Função para obter timestamp ISO em horário de São Paulo
+    getCurrentSaoPauloTimestamp: (): string => {
+      const saoPauloDate = new Date();
+      return new Date(saoPauloDate.toLocaleString("en-US", {timeZone: "America/Sao_Paulo"})).toISOString();
+    },
+
+    // Função para obter data/hora atual formatada para inserção no banco
+    getSaoPauloTimestampForDB: (): string => {
+      const now = new Date();
+      // Converter para São Paulo e retornar no formato ISO
+      const spTime = new Date(now.toLocaleString("en-US", {timeZone: "America/Sao_Paulo"}));
+      return spTime.toISOString();
+    },
+
     isToday: (utcTimestamp: string | Date) => {
       const spDate = convertToSaoPaulo(utcTimestamp);
       const today = convertToSaoPaulo(new Date());
@@ -139,12 +154,28 @@ export const useBrasilTimezone = () => {
 
 // Hook específico para componentes que precisam apenas de formatação simples
 export const useFormatBrazilianDate = () => {
-  const { formatCompact, formatRelative, formatDate, formatTime } = useBrasilTimezone();
-  
+  const {
+    formatCompact,
+    formatRelative,
+    formatDate,
+    formatTime,
+    getCurrentSaoPauloTimestamp,
+    getSaoPauloTimestampForDB
+  } = useBrasilTimezone();
+
   return {
     formatCompact,
     formatRelative,
     formatDate,
-    formatTime
+    formatTime,
+    getCurrentSaoPauloTimestamp,
+    getSaoPauloTimestampForDB
   };
+};
+
+// Função utilitária global para obter timestamp de São Paulo
+export const getSaoPauloTimestamp = (): string => {
+  const now = new Date();
+  const spTime = new Date(now.toLocaleString("en-US", {timeZone: "America/Sao_Paulo"}));
+  return spTime.toISOString();
 };

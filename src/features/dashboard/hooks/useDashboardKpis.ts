@@ -2,6 +2,32 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
 import { useDashboardExpenses, useDashboardBudgetVariance } from './useDashboardExpenses';
 import { safeNumber, safePercentage, safeDelta, debugNaN } from '@/shared/utils/number-utils';
+import { getSaoPauloTimestamp } from '@/shared/hooks/common/use-brasil-timezone';
+
+// Função auxiliar para criar ranges de data em horário de São Paulo
+function getSaoPauloDateRange(windowDays: number) {
+  // Obter data atual em São Paulo
+  const nowSP = new Date(new Date().toLocaleString("en-US", {timeZone: "America/Sao_Paulo"}));
+
+  const endDate = new Date(nowSP);
+  const startDate = new Date(nowSP);
+  startDate.setDate(endDate.getDate() - windowDays);
+
+  // Período anterior para comparação
+  const prevStartDate = new Date(startDate);
+  prevStartDate.setDate(startDate.getDate() - windowDays);
+
+  return {
+    current: {
+      start: startDate.toISOString(),
+      end: endDate.toISOString()
+    },
+    previous: {
+      start: prevStartDate.toISOString(),
+      end: startDate.toISOString()
+    }
+  };
+}
 
 export interface SalesKpis {
   revenue: number;
@@ -41,23 +67,18 @@ export function useSalesKpis(windowDays: number = 30) {
   return useQuery({
     queryKey: ['kpis-sales', windowDays],
     queryFn: async (): Promise<SalesKpis> => {
-      console.log(`📊 Sales KPIs - Calculando dados reais para ${windowDays} dias`);
-      
-      const endDate = new Date();
-      const startDate = new Date();
-      startDate.setDate(endDate.getDate() - windowDays);
-      
-      // Período anterior para comparação
-      const prevStartDate = new Date();
-      prevStartDate.setDate(startDate.getDate() - windowDays);
-      
+      console.log(`📊 Sales KPIs - Calculando dados reais para ${windowDays} dias (timezone São Paulo)`);
+
+      // Usar ranges de data em horário de São Paulo
+      const dateRange = getSaoPauloDateRange(windowDays);
+
       // Buscar vendas do período atual
       const { data: currentSales, error: currentError } = await supabase
         .from('sales')
         .select('final_amount')
         .eq('status', 'completed')
-        .gte('created_at', startDate.toISOString())
-        .lte('created_at', endDate.toISOString())
+        .gte('created_at', dateRange.current.start)
+        .lte('created_at', dateRange.current.end)
         .not('final_amount', 'is', null);
 
       if (currentError) {
@@ -70,8 +91,8 @@ export function useSalesKpis(windowDays: number = 30) {
         .from('sales')
         .select('final_amount')
         .eq('status', 'completed')
-        .gte('created_at', prevStartDate.toISOString())
-        .lt('created_at', startDate.toISOString())
+        .gte('created_at', dateRange.previous.start)
+        .lt('created_at', dateRange.previous.end)
         .not('final_amount', 'is', null);
 
       if (prevError) {
@@ -117,12 +138,11 @@ export function useCustomerKpis(windowDays: number = 30) {
   return useQuery({
     queryKey: ['kpis-customers', windowDays],
     queryFn: async (): Promise<CustomerKpis> => {
-      console.log(`👥 Customer KPIs - Calculando dados reais para ${windowDays} dias`);
-      
-      const endDate = new Date();
-      const startDate = new Date();
-      startDate.setDate(endDate.getDate() - windowDays);
-      
+      console.log(`👥 Customer KPIs - Calculando dados reais para ${windowDays} dias (timezone São Paulo)`);
+
+      // Usar ranges de data em horário de São Paulo
+      const dateRange = getSaoPauloDateRange(windowDays);
+
       // Buscar total de clientes
       const { data: allCustomers, error: totalError } = await supabase
         .from('customers')
@@ -133,12 +153,12 @@ export function useCustomerKpis(windowDays: number = 30) {
         throw totalError;
       }
 
-      // Buscar novos clientes no período
+      // Buscar novos clientes no período (usando horário de São Paulo)
       const { data: newCustomersData, error: newError } = await supabase
         .from('customers')
         .select('id', { count: 'exact', head: true })
-        .gte('created_at', startDate.toISOString())
-        .lte('created_at', endDate.toISOString());
+        .gte('created_at', dateRange.current.start)
+        .lte('created_at', dateRange.current.end);
 
       if (newError) {
         console.error('❌ Erro ao buscar novos clientes:', newError);
@@ -150,8 +170,8 @@ export function useCustomerKpis(windowDays: number = 30) {
         .from('sales')
         .select('customer_id', { count: 'exact', head: true })
         .eq('status', 'completed')
-        .gte('created_at', startDate.toISOString())
-        .lte('created_at', endDate.toISOString())
+        .gte('created_at', dateRange.current.start)
+        .lte('created_at', dateRange.current.end)
         .not('customer_id', 'is', null);
 
       if (activeError) {

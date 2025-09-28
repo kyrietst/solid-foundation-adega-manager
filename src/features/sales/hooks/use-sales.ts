@@ -5,6 +5,7 @@ import { useToast } from "@/shared/hooks/common/use-toast";
 import { DeliveryAddress } from "@/core/types/sales.types";
 import type { SaleType } from "@/features/sales/components/SalesPage";
 import type { DeliveryData } from "@/features/sales/components/DeliveryOptionsModal";
+import { getSaoPauloTimestamp } from "@/shared/hooks/common/use-brasil-timezone";
 
 // Interfaces para dados de query
 interface RawSaleItem {
@@ -365,7 +366,12 @@ export const useUpsertSale = () => {
             delivery_fee: saleData.deliveryData.deliveryFee,
             delivery_zone_id: saleData.deliveryData.zoneId,
             delivery_instructions: saleData.deliveryData.instructions,
-            estimated_delivery_time: new Date(Date.now() + saleData.deliveryData.estimatedTime * 60 * 1000).toISOString(),
+            estimated_delivery_time: (() => {
+              // Calcular tempo estimado de entrega baseado no horário de São Paulo
+              const saoPauloNow = new Date(new Date().toLocaleString("en-US", {timeZone: "America/Sao_Paulo"}));
+              const estimatedTime = new Date(saoPauloNow.getTime() + saleData.deliveryData.estimatedTime * 60 * 1000);
+              return estimatedTime.toISOString();
+            })(),
             final_amount: saleData.total_amount + saleData.deliveryData.deliveryFee - (saleData.discount_amount || 0)
           });
         } else {
