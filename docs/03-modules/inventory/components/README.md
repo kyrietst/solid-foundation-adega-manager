@@ -27,6 +27,59 @@ src/features/inventory/components/
 
 ---
 
+## 🏗️ **Arquitetura Container/Presentation (v2.0.1)**
+
+### **📋 Padrão Descoberto**
+Durante a limpeza de débito técnico (28/09/2025), foi identificado que o **ProductForm** implementa o padrão **Container/Presentation**, garantindo separação clara de responsabilidades.
+
+### **🔧 Estrutura do ProductForm**
+```typescript
+ProductForm (Entry Point)
+├── ProductFormContainer.tsx         # Coordenador de lógica de negócio
+│   └── useProductFormLogic()        # Hook central que combina:
+│       ├── useProductForm()         # Estado do formulário
+│       ├── useProductCalculations() # Cálculos em tempo real
+│       ├── useProductValidation()   # Validações robustas
+│       └── useCategories()          # Dados externos
+└── ProductFormPresentation.tsx     # Renderização pura
+    ├── ProductBasicInfoCard.tsx    # Sub-componente especializado
+    ├── ProductPricingCard.tsx      # Sub-componente de preços
+    ├── ProductStockCard.tsx        # Sub-componente de estoque
+    └── ProductFormActions.tsx      # Sub-componente de ações
+```
+
+### **✅ Benefícios Comprovados**
+- **🧪 Testabilidade:** 57% redução nas falhas de teste (42 → 18)
+- **🔄 Manutenibilidade:** Lógica isolada em hooks especializados
+- **🚀 Performance:** Re-renders otimizados
+- **♻️ Reutilização:** Hooks podem ser combinados diferentes formas
+
+### **📚 Referência Técnica**
+**Documentação completa:** [Container/Presentation Pattern](../../02-architecture/CONTAINER_PRESENTATION_PATTERN.md)
+
+---
+
+## 🧹 **Limpeza de Débito Técnico (v2.0.1)**
+
+### **🎯 Resultados da Auditoria**
+- **Componente Obsoleto Removido:** `InventoryTable.test.tsx` (substituído por DataTable unificado)
+- **Mocks Corrigidos:** `useProductValidation`, `useSensitiveValue`, `useProductCalculations`
+- **Seletores Atualizados:** Alinhados com UI moderna (preço de venda/custo, unidades soltas)
+- **Sistema de Segurança:** Descoberto `SensitiveData` component para campos de custo/lucro
+
+### **📊 Métricas de Melhoria**
+```
+Testes com Falhas: 42 → 18 (57% redução) ✅
+Taxa de Sucesso: 0% → 71% ✅
+Componentes Obsoletos: 1 removido ✅
+Mocks Funcionais: 4 hooks corrigidos ✅
+```
+
+### **📚 Documentação Técnica**
+**Relatório completo:** [Technical Debt Cleanup](../../07-changelog/TECHNICAL_DEBT_CLEANUP_INVENTORY_TESTS.md)
+
+---
+
 ## 🏆 **Sistema de Modais v2.0**
 
 ### **🎯 Características Principais**

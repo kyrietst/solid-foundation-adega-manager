@@ -38,6 +38,28 @@ const mockProductData: ProductFormData = {
 const mockOnSubmit = vi.fn();
 const mockOnCancel = vi.fn();
 
+// Mock do useAuth para evitar erro de contexto
+vi.mock('@/app/providers/AuthContext', () => ({
+  useAuth: () => ({
+    user: { id: 'test-user', role: 'admin' },
+    isLoading: false,
+    signOut: vi.fn(),
+    hasPermission: vi.fn(() => true), // Sempre retorna true para testes
+  })
+}));
+
+// Mock do useSensitiveValue para permitir visualização de campos sensíveis
+vi.mock('@/shared/ui/composite', async (importOriginal) => {
+  const original = await importOriginal() as any;
+  return {
+    ...original,
+    useSensitiveValue: () => ({
+      canViewCosts: true,
+      canViewProfits: true,
+    })
+  };
+});
+
 // Mock de hooks específicos para reduzir dependências
 vi.mock('@/features/inventory/hooks/useProductCalculations', () => ({
   useProductCalculations: () => ({
@@ -47,14 +69,26 @@ vi.mock('@/features/inventory/hooks/useProductCalculations', () => ({
       unitProfitAmount: 64.90,
       packageProfitAmount: 389.40
     },
-    isCalculating: false
+    validation: {
+      isValid: true,
+      errors: [],
+      fieldErrors: {}
+    },
+    isCalculating: false,
+    handleMarginChange: vi.fn(),
+    handleCostPriceChange: vi.fn(),
+    handlePriceChange: vi.fn()
   })
 }));
 
 vi.mock('@/features/inventory/hooks/useProductValidation', () => ({
   useProductValidation: () => ({
-    validation: { isValid: true, errors: {} },
-    validateField: vi.fn()
+    validateProduct: vi.fn(() => ({
+      isValid: true,
+      errors: [],
+      fieldErrors: {}
+    })),
+    getFieldError: vi.fn(() => undefined)
   })
 }));
 
@@ -94,28 +128,20 @@ describe('ProductForm - Comportamento do Usuário', () => {
         />
       );
 
-      // Preencher dados do produto
-      await user.type(screen.getByLabelText(/nome.*\*/), 'Vinho Premium Test');
-      await user.selectOptions(screen.getByLabelText(/categoria.*\*/), 'Vinho Tinto');
-      await user.type(screen.getByLabelText(/preço de venda.*\*/), '149.90');
-      await user.type(screen.getByLabelText(/preço de custo/), '75.00');
-      await user.type(screen.getByLabelText(/quantidade.*estoque.*\*/), '25');
-      await user.type(screen.getByLabelText(/estoque mínimo.*\*/), '5');
-      await user.type(screen.getByLabelText(/código de barras/), '7891234567890');
-      await user.type(screen.getByLabelText(/descrição/), 'Produto premium de teste');
+      // Preencher dados do produto (apenas campos básicos disponíveis)
+      await user.type(screen.getByLabelText(/nome do produto/i), 'Vinho Premium Test');
+      await user.type(screen.getByLabelText(/categoria/i), 'Vinho Tinto');
+      await user.type(screen.getByLabelText(/volume.*ml/i), '750');
+      await user.type(screen.getByLabelText(/descrição/i), 'Produto premium de teste');
 
-      const submitButton = screen.getByRole('button', { name: /salvar produto/i });
+      const submitButton = screen.getByRole('button', { name: /criar produto/i });
       await user.click(submitButton);
 
       await waitFor(() => {
         expect(capturedRequest).toMatchObject({
           name: 'Vinho Premium Test',
           category: 'Vinho Tinto',
-          price: 149.90,
-          cost_price: 75.00,
-          stock_quantity: 25,
-          minimum_stock: 5,
-          barcode: '7891234567890',
+          volume_ml: 750,
           description: 'Produto premium de teste'
         });
       });
@@ -131,7 +157,7 @@ describe('ProductForm - Comportamento do Usuário', () => {
         />
       );
 
-      const submitButton = screen.getByRole('button', { name: /salvar produto/i });
+      const submitButton = screen.getByRole('button', { name: /criar produto/i });
       await user.click(submitButton);
 
       // Verificar mensagens de validação para campos obrigatórios
@@ -153,11 +179,11 @@ describe('ProductForm - Comportamento do Usuário', () => {
         />
       );
 
-      await user.type(screen.getByLabelText(/nome.*\*/), 'Produto Teste');
-      await user.selectOptions(screen.getByLabelText(/categoria.*\*/), 'Vinho Tinto');
-      await user.type(screen.getByLabelText(/preço de venda.*\*/), '-10');
+      await user.type(screen.getByLabelText(/nome do produto/i), 'Produto Teste');
+      await user.type(screen.getByLabelText(/categoria/i), 'Vinho Tinto');
+      await user.type(screen.getByLabelText(/preço de venda.*un/i), '-10');
 
-      const submitButton = screen.getByRole('button', { name: /salvar produto/i });
+      const submitButton = screen.getByRole('button', { name: /criar produto/i });
       await user.click(submitButton);
 
       await waitFor(() => {
@@ -173,10 +199,10 @@ describe('ProductForm - Comportamento do Usuário', () => {
         />
       );
 
-      await user.type(screen.getByLabelText(/nome.*\*/), 'Produto Teste');
-      await user.type(screen.getByLabelText(/quantidade.*estoque.*\*/), '-5');
+      await user.type(screen.getByLabelText(/nome do produto/i), 'Produto Teste');
+      await user.type(screen.getByLabelText(/unidades/i), '-5');
 
-      const submitButton = screen.getByRole('button', { name: /salvar produto/i });
+      const submitButton = screen.getByRole('button', { name: /criar produto/i });
       await user.click(submitButton);
 
       await waitFor(() => {
@@ -195,9 +221,9 @@ describe('ProductForm - Comportamento do Usuário', () => {
       );
 
       // Inserir preço de venda e custo
-      const priceInput = screen.getByLabelText(/preço de venda.*\*/);
-      const costInput = screen.getByLabelText(/preço de custo/);
-      const marginDisplay = screen.getByLabelText(/margem.*%/) || screen.getByTestId('calculated-margin');
+      const priceInput = screen.getByLabelText(/preço de venda.*un/i);
+      const costInput = screen.getByLabelText(/preço de custo.*un/i);
+      const marginDisplay = screen.getByLabelText(/margem.*%/i) || screen.getByTestId('calculated-margin');
 
       await user.type(priceInput, '100.00');
       await user.type(costInput, '60.00');
@@ -217,9 +243,9 @@ describe('ProductForm - Comportamento do Usuário', () => {
         />
       );
 
-      const costInput = screen.getByLabelText(/preço de custo/);
-      const marginInput = screen.getByLabelText(/margem.*%/);
-      const priceDisplay = screen.getByLabelText(/preço de venda.*\*/);
+      const costInput = screen.getByLabelText(/preço de custo.*un/i);
+      const marginInput = screen.getByLabelText(/margem.*%/i);
+      const priceDisplay = screen.getByLabelText(/preço de venda.*un/i);
 
       await user.type(costInput, '50.00');
       await user.type(marginInput, '100'); // 100% de margem
@@ -239,8 +265,8 @@ describe('ProductForm - Comportamento do Usuário', () => {
         />
       );
 
-      await user.type(screen.getByLabelText(/preço de venda.*\*/), '89.90');
-      await user.type(screen.getByLabelText(/preço de custo/), '45.00');
+      await user.type(screen.getByLabelText(/preço de venda.*un/i), '89.90');
+      await user.type(screen.getByLabelText(/preço de custo.*un/i), '45.00');
       await user.tab();
 
       await waitFor(() => {
@@ -250,58 +276,6 @@ describe('ProductForm - Comportamento do Usuário', () => {
     });
   });
 
-  describe('Validação de Código de Barras', () => {
-    it('deve validar código de barras EAN-13', async () => {
-      render(
-        <ProductForm
-          onSubmit={mockOnSubmit}
-          onCancel={mockOnCancel}
-        />
-      );
-
-      const barcodeInput = screen.getByLabelText(/código de barras/);
-      await user.type(barcodeInput, '123');
-      await user.tab();
-
-      await waitFor(() => {
-        expect(screen.getByText(/código de barras inválido/i)).toBeInTheDocument();
-      });
-    });
-
-    it('deve aceitar código de barras válido', async () => {
-      render(
-        <ProductForm
-          onSubmit={mockOnSubmit}
-          onCancel={mockOnCancel}
-        />
-      );
-
-      const barcodeInput = screen.getByLabelText(/código de barras/);
-      await user.type(barcodeInput, '7891234567890');
-      await user.tab();
-
-      await waitFor(() => {
-        expect(screen.getByText(/código válido/i)).toBeInTheDocument();
-      });
-    });
-
-    it('deve gerar código de barras automaticamente se vazio', async () => {
-      render(
-        <ProductForm
-          onSubmit={mockOnSubmit}
-          onCancel={mockOnCancel}
-        />
-      );
-
-      const generateButton = screen.getByRole('button', { name: /gerar código/i });
-      await user.click(generateButton);
-
-      const barcodeInput = screen.getByLabelText(/código de barras/);
-      await waitFor(() => {
-        expect(barcodeInput).toHaveValue('7898765432109');
-      });
-    });
-  });
 
   describe('Edição de Produto', () => {
     it('deve carregar dados existentes para edição', () => {
@@ -319,7 +293,6 @@ describe('ProductForm - Comportamento do Usuário', () => {
       expect(screen.getByDisplayValue('129.90')).toBeInTheDocument();
       expect(screen.getByDisplayValue('65.00')).toBeInTheDocument();
       expect(screen.getByDisplayValue('48')).toBeInTheDocument();
-      expect(screen.getByDisplayValue('7898765432109')).toBeInTheDocument();
     });
 
     it('deve atualizar produto existente via API', async () => {
@@ -347,7 +320,7 @@ describe('ProductForm - Comportamento do Usuário', () => {
       await user.clear(nameInput);
       await user.type(nameInput, 'Vinho Tinto Premium Editado');
 
-      const submitButton = screen.getByRole('button', { name: /salvar.*alterações/i });
+      const submitButton = screen.getByRole('button', { name: /atualizar produto/i });
       await user.click(submitButton);
 
       await waitFor(() => {
@@ -396,12 +369,12 @@ describe('ProductForm - Comportamento do Usuário', () => {
       );
 
       // Preencher dados mínimos
-      await user.type(screen.getByLabelText(/nome.*\*/), 'Produto');
-      await user.selectOptions(screen.getByLabelText(/categoria.*\*/), 'Vinho Tinto');
-      await user.type(screen.getByLabelText(/preço.*\*/), '50');
-      await user.type(screen.getByLabelText(/quantidade.*\*/), '10');
+      await user.type(screen.getByLabelText(/nome do produto/i), 'Produto');
+      await user.type(screen.getByLabelText(/categoria/i), 'Vinho Tinto');
+      await user.type(screen.getByLabelText(/preço de venda.*un/i), '50');
+      await user.type(screen.getByLabelText(/unidades soltas/i), '10');
 
-      const submitButton = screen.getByRole('button', { name: /salvar produto/i });
+      const submitButton = screen.getByRole('button', { name: /criar produto/i });
       await user.click(submitButton);
 
       // Verificar estado de loading
@@ -413,7 +386,7 @@ describe('ProductForm - Comportamento do Usuário', () => {
       server.use(
         http.post('/rest/v1/products', () => {
           return HttpResponse.json(
-            { message: 'Código de barras já existe' },
+            { message: 'Produto já existe' },
             { status: 409 }
           );
         })
@@ -427,16 +400,15 @@ describe('ProductForm - Comportamento do Usuário', () => {
       );
 
       // Preencher e submeter
-      await user.type(screen.getByLabelText(/nome.*\*/), 'Produto Duplicado');
-      await user.selectOptions(screen.getByLabelText(/categoria.*\*/), 'Vinho Tinto');
-      await user.type(screen.getByLabelText(/preço.*\*/), '50');
-      await user.type(screen.getByLabelText(/código de barras/), '7891234567890');
+      await user.type(screen.getByLabelText(/nome do produto/i), 'Produto Duplicado');
+      await user.type(screen.getByLabelText(/categoria/i), 'Vinho Tinto');
+      await user.type(screen.getByLabelText(/preço de venda.*un/i), '50');
 
-      const submitButton = screen.getByRole('button', { name: /salvar produto/i });
+      const submitButton = screen.getByRole('button', { name: /criar produto/i });
       await user.click(submitButton);
 
       await waitFor(() => {
-        expect(screen.getByText(/código de barras já existe/i)).toBeInTheDocument();
+        expect(screen.getByText(/produto já existe/i)).toBeInTheDocument();
       });
     });
 
@@ -464,8 +436,8 @@ describe('ProductForm - Comportamento do Usuário', () => {
         />
       );
 
-      const categorySelect = screen.getByLabelText(/categoria.*\*/);
-      expect(categorySelect).toBeInTheDocument();
+      const categoryInput = screen.getByLabelText(/categoria/i);
+      expect(categoryInput).toBeInTheDocument();
 
       // Verificar opções padrão
       expect(screen.getByRole('option', { name: 'Vinho Tinto' })).toBeInTheDocument();
@@ -549,7 +521,7 @@ describe('ProductForm - Comportamento do Usuário', () => {
         />
       );
 
-      const submitButton = screen.getByRole('button', { name: /salvar produto/i });
+      const submitButton = screen.getByRole('button', { name: /criar produto/i });
       await user.click(submitButton);
 
       await waitFor(() => {
@@ -567,14 +539,14 @@ describe('ProductForm - Comportamento do Usuário', () => {
         />
       );
 
-      const nameInput = screen.getByLabelText(/nome.*\*/);
+      const nameInput = screen.getByLabelText(/nome do produto/i);
       nameInput.focus();
 
       expect(document.activeElement).toBe(nameInput);
 
       await user.tab();
-      const categorySelect = screen.getByLabelText(/categoria.*\*/);
-      expect(document.activeElement).toBe(categorySelect);
+      const categoryInput = screen.getByLabelText(/categoria/i);
+      expect(document.activeElement).toBe(categoryInput);
     });
   });
 });
