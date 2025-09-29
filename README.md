@@ -36,7 +36,7 @@ O Adega Manager é uma aplicação web moderna construída para gerenciamento co
 - **ESLint** - Análise estática de código e qualidade
 - **TypeScript** - Type checking robusto com strict mode configurável
 - **Build Validation** - Verificação de integridade em builds
-- **Performance Monitoring** - Monitoramento de performance via Supabase
+- **Performance Monitoring** - Monitoramento de performance automatizado
 - **Security Audit** - 57 políticas RLS + audit logs
 
 ### Backend & Infraestrutura  
@@ -144,7 +144,7 @@ npm install
 
 # 3. Configure as variáveis de ambiente
 cp .env.example .env
-# Edite o .env com suas credenciais Supabase
+# Edite o .env com suas credenciais do banco
 
 # 4. Inicie o servidor de desenvolvimento
 npm run dev
@@ -160,7 +160,7 @@ npm run lint         # Verificação de código (SEMPRE antes de commits)
 npm run preview      # Preview do build
 
 # Backup & Restore
-npm run backup       # Backup automático Supabase
+npm run backup       # Backup automático do banco
 npm run restore      # Restore do backup
 npm run setup:env    # Configurar variáveis de ambiente
 
@@ -170,8 +170,8 @@ npm run setup:env    # Configurar variáveis de ambiente
 ### Variáveis de Ambiente
 
 ```env
-# Supabase Configuration
-VITE_SUPABASE_URL=https://uujkzvbgnfzuzlztrzln.supabase.co
+# Supabase Configuration (Configure suas próprias credenciais)
+VITE_SUPABASE_URL=sua-url-supabase-aqui
 VITE_SUPABASE_ANON_KEY=sua-chave-anon-aqui
 
 # Development (opcional)
@@ -261,7 +261,7 @@ NODE_ENV=development
 # Verificar variáveis de ambiente
 npm run setup:env
 
-# Testar conexão Supabase
+# Testar conexão com banco
 npm run dev
 ```
 
@@ -300,10 +300,10 @@ npm run lint
 
 ### Ambientes
 - **Desenvolvimento** - Desenvolvimento local (porta 8080)
-- **Produção** - Deploy via Lovable ou manual
+- **Produção** - Deploy manual via CI/CD
 
 ### Monitoramento de Produção
-- **Painel Supabase** - Métricas de banco e API
+- **Painel de Administração** - Métricas de banco e API
 - **Rastreamento de erros** - Logs de erros automáticos
 - **Métricas de performance** - Performance de queries, uso
 
@@ -322,7 +322,7 @@ npm run lint
 - **Hook useFormWithToast**: Formulários padronizados com React Query + Zod
 - **EmptyState Components**: 4 componentes pré-configurados para estados vazios
 - **Sistema de Themes**: Paleta Adega Wine Cellar completa (12 cores) + 30+ utility functions
-- **Hooks Genéricos**: `useEntity`, `useEntityList`, `useEntityMutation` para queries Supabase
+- **Hooks Genéricos**: `useEntity`, `useEntityList`, `useEntityMutation` para operações de banco
 
 #### 🏆 **Resultados Alcançados**
 - **1.800+ linhas eliminadas** (90% da duplicação identificada)
@@ -332,14 +332,13 @@ npm run lint
 - **Build successful** - Sem regressões de performance
 
 #### 📚 **Documentação Atualizada**
-- `/doc/tarefas/refatoracao-duplicacao-codigo.md` - Documentação completa da refatoração
 - Todos os novos componentes com JSDoc completo
-- Exemplos práticos de uso dos hooks genéricos
+- Exemplos práticos de uso dos hooks genéricos integrados ao código
 
 ### v1.3.0 (16/07/2025)
-- ✅ **Documentação consolidada** em 4 arquivos principais
-- ✅ **Refatoração completa** da estrutura de docs
-- ✅ **Guias especializados** por área (arquitetura, módulos, operações, desenvolvimento)
+- ✅ **Documentação integrada** ao código fonte
+- ✅ **Refatoração completa** da arquitetura de componentes
+- ✅ **Sistema de comentários** JSDoc implementado
 
 ---
 
@@ -348,9 +347,9 @@ npm run lint
 ### Para Novos Desenvolvedores
 
 **📚 Integração:**
-1. Ler documentação completa em `/doc/`
+1. Ler documentação integrada no código fonte
 2. Configurar ambiente seguindo este README
-3. Explorar banco via painel Supabase
+3. Configurar acesso ao banco de dados
 4. Executar `npm run dev` e testar fluxos principais
 
 **✅ Melhores Práticas:**
@@ -398,7 +397,7 @@ src/
 ├── contexts/           # Providers globais
 ├── pages/              # Rotas principais
 ├── types/              # Definições TypeScript
-└── integrations/       # Supabase client + types
+└── integrations/       # Database client + types
 ```
 
 #### 🏛️ Padrão de Componentes Modernos
@@ -438,18 +437,16 @@ hooks/products/
 
 ## 🆘 Suporte e Documentação
 
-### Documentação Completa
-- **`/doc/ARCHITECTURE.md`** - Arquitetura detalhada do sistema
-- **`/doc/DEVELOPMENT.md`** - Guias de desenvolvimento
-- **`/doc/OPERATIONS.md`** - Manuais operacionais
-- **`/CLAUDE.md`** - Instruções para AI assistants
+### Documentação
+- Documentação técnica integrada ao código fonte
+- Comentários JSDoc em todos os componentes principais
+- README.md com guias de instalação e uso
 
 ### Links Importantes
-- **Painel Supabase:** [https://uujkzvbgnfzuzlztrzln.supabase.co](https://uujkzvbgnfzuzlztrzln.supabase.co)
-- **Projeto Lovable:** [https://lovable.dev/projects/6c6aa749-d816-4d71-8687-a8f6e93f05f4](https://lovable.dev/projects/6c6aa749-d816-4d71-8687-a8f6e93f05f4)
+- **Painel de Administração** - Acesso configurado via variáveis de ambiente
 
 ### Contato
-Para questões técnicas, consulte a documentação em `/doc/` ou revise os logs de auditoria no painel Supabase.
+Para questões técnicas, consulte a documentação integrada no código ou revise os logs de auditoria no painel de administração.
 
 ---
 

@@ -98,3 +98,35 @@ temp/
 # System files
 .fuse_hidden*flattened-codebase.xml
 .mcp.json
+
+# ===== SECURITY & DEVELOPMENT PROTECTION =====
+
+# AI Development Tools & Documentation
+CLAUDE.md
+.claude/
+*.claude
+
+# Internal Scripts & Backups
+scripts/
+backup.cjs
+full-backup.cjs
+restore-backup.cjs
+setup-env.cjs
+schedule-backup.*
+*.backup
+.env.backup*
+
+# Internal Documentation
+docs/
+@docs/
+
+# Configuration Files
+jsrepo.json
+vercel.json
+
+# Temporary Build Files
+*.timestamp-*
+vite.config.ts.timestamp-*
+
+# Development Artifacts
+flattened-codebase.xml
