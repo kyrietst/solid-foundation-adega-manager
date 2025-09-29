@@ -21,6 +21,13 @@ export {
   type ModalType,
   type ModalAction
 } from './EnhancedBaseModal';
+export {
+  SuperModal,
+  useSuperModal,
+  type SuperModalProps,
+  type FormFieldProps,
+  type UseSuperModalConfig
+} from './SuperModal';
 export { 
   FormatDisplay, 
   CurrencyDisplay,
