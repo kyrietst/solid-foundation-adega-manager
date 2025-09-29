@@ -324,8 +324,8 @@ export const SearchBar21st = ({ placeholder = "Search...", onSearch, onChange, d
             onFocus={() => setIsFocused(true)}
             onBlur={() => setTimeout(() => setIsFocused(false), 400)}
             className={cn(
-              "w-full py-3 bg-transparent outline-none placeholder:text-gray-200 dark:placeholder:text-gray-200 font-medium text-base relative z-10 transition-all",
-              isFocused ? "text-gray-800 dark:text-white tracking-wide" : "text-gray-100 dark:text-gray-100"
+              "w-full py-3 bg-transparent outline-none placeholder:text-gray-400 dark:placeholder:text-gray-400 font-medium text-base relative z-10 transition-all",
+              "!text-white tracking-wide"
             )}
             style={{
               transitionDuration: isFocused ? '600ms' : '1800ms',
