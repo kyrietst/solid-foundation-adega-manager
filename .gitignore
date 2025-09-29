@@ -130,3 +130,35 @@ vite.config.ts.timestamp-*
 
 # Development Artifacts
 flattened-codebase.xml
+
+# ===== REGRAS DE SEGURANÇA E ORGANIZAÇÃO ===== #
+
+# Arquivos de credenciais (NUNCA SUBIR)
+.env
+.env.*
+!.env.example
+
+# Documentação e Scripts Internos (Manter local, não subir)
+/docs/
+/scripts/
+
+# Ferramentas de IA e Desenvolvimento (Manter local, não subir)
+CLAUDE.md
+.claude/
+.mcp.json
+.playwright-mcp/
+
+# Backups e Arquivos Sensíveis (Deletar)
+*.sql
+*.sql.backup
+*_backup_*.sql
+/backups/
+*.backup
+*.cjs
+*.bat
+*.sh
+
+# Configs e Temporários
+vercel.json
+jsrepo.json
+*.timestamp-*
