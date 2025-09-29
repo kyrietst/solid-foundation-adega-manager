@@ -376,6 +376,108 @@ export const useProductOperations = (productData: Partial<ProductData> = {}) => 
   };
 
   // ============================================================================
+  // SSoT v3.0.0 - FUNÇÕES PARA MODAIS E FORMS
+  // ============================================================================
+
+  const getCategoriesFromActiveTable = async (): Promise<{ data: string[]; error: string | null }> => {
+    try {
+      // Importar supabase dinamicamente para evitar problemas de SSR
+      const { supabase } = await import('@/core/api/supabase/client');
+
+      const { data: categoriesData, error } = await supabase
+        .from('categories')
+        .select('name')
+        .eq('is_active', true)
+        .order('name');
+
+      if (error) {
+        console.error('Erro ao buscar categorias:', error);
+        return { data: [], error: 'Erro ao carregar categorias ativas' };
+      }
+
+      const categoryNames = categoriesData?.map(item => item.name) || [];
+      return { data: categoryNames, error: null };
+    } catch (error) {
+      console.error('Erro inesperado ao buscar categorias:', error);
+      return { data: [], error: 'Erro inesperado ao carregar categorias' };
+    }
+  };
+
+  const getSuppliersFromProducts = async (): Promise<{ data: string[]; error: string | null }> => {
+    try {
+      const { supabase } = await import('@/core/api/supabase/client');
+
+      const { data: suppliersData, error } = await supabase
+        .from('products')
+        .select('supplier')
+        .not('supplier', 'is', null)
+        .neq('supplier', '');
+
+      if (error) {
+        console.error('Erro ao buscar fornecedores:', error);
+        return { data: [], error: 'Erro ao carregar fornecedores' };
+      }
+
+      const uniqueSuppliers = [...new Set(suppliersData?.map(item => item.supplier) || [])].sort();
+      return { data: uniqueSuppliers, error: null };
+    } catch (error) {
+      console.error('Erro inesperado ao buscar fornecedores:', error);
+      return { data: [], error: 'Erro inesperado ao carregar fornecedores' };
+    }
+  };
+
+  const validateBarcodeUniqueness = async (barcode: string, excludeProductId?: number): Promise<{ isUnique: boolean; error: string | null }> => {
+    try {
+      if (!barcode || barcode === '') {
+        return { isUnique: true, error: null };
+      }
+
+      const { supabase } = await import('@/core/api/supabase/client');
+
+      let query = supabase
+        .from('products')
+        .select('id, name, barcode, package_barcode')
+        .or(`barcode.eq.${barcode},package_barcode.eq.${barcode}`);
+
+      if (excludeProductId) {
+        query = query.neq('id', excludeProductId);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('Erro ao validar código de barras:', error);
+        return { isUnique: false, error: 'Erro ao validar código de barras' };
+      }
+
+      if (data && data.length > 0) {
+        const conflictProduct = data[0];
+        const fieldType = conflictProduct.barcode === barcode ? 'principal' : 'pacote';
+        return {
+          isUnique: false,
+          error: `Código já existe no produto "${conflictProduct.name}" (campo ${fieldType})`
+        };
+      }
+
+      return { isUnique: true, error: null };
+    } catch (error) {
+      console.error('Erro inesperado ao validar código de barras:', error);
+      return { isUnique: false, error: 'Erro inesperado na validação' };
+    }
+  };
+
+  const getFormattedSupplierOptions = (suppliers: string[]) => {
+    return [
+      { value: 'none', label: 'Sem fornecedor' },
+      ...suppliers.map(supplier => ({ value: supplier, label: supplier }))
+    ];
+  };
+
+  const getFormattedCategoryOptions = (categories: string[]) => {
+    return categories.map(category => ({ value: category, label: category }));
+  };
+
+  // ============================================================================
   // RETURN
   // ============================================================================
 
@@ -394,6 +496,13 @@ export const useProductOperations = (productData: Partial<ProductData> = {}) => 
     getStockHealthColor,
     calculateOptimalPrice,
     getReorderRecommendation,
+
+    // SSoT v3.0.0 - Funções para modais e forms
+    getCategoriesFromActiveTable,
+    getSuppliersFromProducts,
+    validateBarcodeUniqueness,
+    getFormattedSupplierOptions,
+    getFormattedCategoryOptions,
 
     // Estados derivados
     isStarPerformer: performance.overallPerformance === 'star',
