@@ -24,6 +24,26 @@ export {
   type CustomerValidation
 } from './useCustomerOperations';
 
+// Customer Purchase History
+export {
+  useCustomerPurchaseHistory,
+  type Purchase,
+  type PurchaseItem,
+  type PurchaseFilters,
+  type PurchaseSummary,
+  type PurchaseHistoryOperations
+} from './useCustomerPurchaseHistory';
+
+// Customer Analytics & AI Insights
+export {
+  useCustomerAnalytics,
+  type SalesChartData,
+  type ProductChartData,
+  type FrequencyChartData,
+  type CustomerAIInsights,
+  type CustomerAnalyticsOperations
+} from './useCustomerAnalytics';
+
 // Product Business Logic
 export {
   useProductOperations,
