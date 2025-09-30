@@ -313,7 +313,12 @@ export const useCustomerTableData = () => {
         return await fetchCustomerTableDataFallback();
       }
     },
-    staleTime: 1000 * 60 * 5, // 5 minutos
-    gcTime: 1000 * 60 * 10, // 10 minutos
+    staleTime: 1000 * 30, // 30 segundos para dados mais atualizados
+    gcTime: 1000 * 60 * 5, // 5 minutos para garbage collection
+    refetchOnWindowFocus: true, // Atualizar quando o usuário voltar à aba
+    refetchOnReconnect: true, // Atualizar quando reconectar à internet
+    refetchInterval: 1000 * 60 * 2, // Atualizar automaticamente a cada 2 minutos
+    retry: 3, // Tentar novamente em caso de erro
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
   });
 };

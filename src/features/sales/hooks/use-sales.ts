@@ -513,6 +513,7 @@ export const useUpsertSale = () => {
         queryClient.invalidateQueries({ queryKey: ["product-variants"] }); // CORREÇÃO: Invalidar cache de variantes
         queryClient.invalidateQueries({ queryKey: ["variant-availability"] }); // CORREÇÃO: Invalidar disponibilidade
         queryClient.invalidateQueries({ queryKey: ["reports"] });
+        queryClient.invalidateQueries({ queryKey: ["customer-table-data"] }); // CORREÇÃO: Invalidar tabela de clientes para refletir última compra
 
         // ✅ CORREÇÃO: Toast de sucesso apenas com dados válidos
         toast({
@@ -612,6 +613,7 @@ export const useDeleteSale = () => {
         queryClient.invalidateQueries({ queryKey: ["variant-availability"] }); // CORREÇÃO: Invalidar disponibilidade
         queryClient.invalidateQueries({ queryKey: ["reports"] });
         queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+        queryClient.invalidateQueries({ queryKey: ["customer-table-data"] }); // CORREÇÃO: Invalidar tabela de clientes após exclusão de venda
 
         const message = data?.message || "A venda foi removida do sistema.";
         const details = data?.items_deleted ?

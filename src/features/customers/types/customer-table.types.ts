@@ -129,16 +129,23 @@ export const formatPaymentMethod = (method: string | null): string => {
 
 export const formatLastPurchase = (date: Date | null): string => {
   if (!date) return 'Nunca';
-  
+
+  // Normalize both dates to start of day in local timezone to avoid timezone issues
   const now = new Date();
-  const diffInDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-  
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  const purchaseDate = new Date(date);
+  const purchaseDateOnly = new Date(purchaseDate.getFullYear(), purchaseDate.getMonth(), purchaseDate.getDate());
+
+  // Calculate difference in days using normalized dates
+  const diffInDays = Math.floor((today.getTime() - purchaseDateOnly.getTime()) / (1000 * 60 * 60 * 24));
+
   if (diffInDays === 0) return 'Hoje';
   if (diffInDays === 1) return 'Ontem';
   if (diffInDays < 7) return `${diffInDays} dias atrás`;
   if (diffInDays < 30) return `${Math.floor(diffInDays / 7)} semanas atrás`;
   if (diffInDays < 365) return `${Math.floor(diffInDays / 30)} meses atrás`;
-  
+
   return date.toLocaleDateString('pt-BR');
 };
 
