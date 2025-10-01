@@ -234,12 +234,10 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
             />
           </TabsContent>
 
-          {/* Tab 4: Comunicação - Centro de comunicação + documentos */}
+          {/* Tab 4: Comunicação - Centro de comunicação SSoT v3.1.0 */}
           <TabsContent value="communication">
             <CustomerCommunicationTab
-              customer={customer}
-              onWhatsApp={handleWhatsApp}
-              onEmail={handleEmail}
+              customerId={id || ''}
             />
           </TabsContent>
 
