@@ -1,24 +1,24 @@
 /**
- * CustomerInsightsTab.tsx - Tab consolidada de Analytics + Insights IA
+ * CustomerInsightsTab.tsx - Tab SSoT v3.1.0 Server-Side
  *
  * @description
- * Componente SSoT v3.0.0 que unifica analytics e insights de IA em uma
- * interface única e otimizada. Elimina a redundância de 70% entre as duas tabs.
+ * Componente SSoT completo que busca dados diretamente do banco.
+ * Elimina dependência de props e implementa performance otimizada.
  *
  * @features
- * - Gráficos interativos (vendas por mês, top produtos, frequência)
- * - Insights de IA integrados
- * - Recomendações automáticas
- * - Análise de risco e oportunidades
- * - Métricas estatísticas avançadas
- * - Business logic centralizada em hooks
+ * - Busca direta do banco (sem props)
+ * - Gráficos interativos com dados em tempo real
+ * - Insights de IA baseados em dados frescos
+ * - Loading e error states internos
+ * - Analytics completos server-side
+ * - Cache inteligente e auto-refresh
  * - Glassmorphism effects
  *
  * @author Adega Manager Team
- * @version 3.0.0 - SSoT Implementation
+ * @version 3.1.0 - SSoT Server-Side Implementation
  */
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/primitives/card';
 import { Badge } from '@/shared/ui/primitives/badge';
 import { StatCard } from '@/shared/ui/composite/stat-card';
@@ -47,21 +47,16 @@ import {
   Zap
 } from 'lucide-react';
 import { formatCurrency } from '@/core/config/utils';
-import { useCustomerAnalytics } from '@/shared/hooks/business/useCustomerAnalytics';
-import { type Purchase } from '@/shared/hooks/business/useCustomerPurchaseHistory';
+import { LoadingSpinner } from '@/shared/ui/composite/loading-spinner';
+import { Button } from '@/shared/ui/primitives/button';
+import { useCustomerInsightsSSoT } from '@/shared/hooks/business/useCustomerInsightsSSoT';
 
 // ============================================================================
 // TYPES
 // ============================================================================
 
 export interface CustomerInsightsTabProps {
-  purchases: Purchase[];
-  customerData?: {
-    segmento?: string;
-    totalCompras?: number;
-    valorTotalCompras?: number;
-    ultimaCompra?: string;
-  };
+  customerId: string;
   className?: string;
 }
 
@@ -69,32 +64,38 @@ export interface CustomerInsightsTabProps {
 // COMPONENTE PRINCIPAL
 // ============================================================================
 
-export const CustomerInsightsTab: React.FC<CustomerInsightsTabProps> = ({
-  purchases = [],
-  customerData,
+export const CustomerInsightsTab: React.FC<CustomerInsightsTabProps> = React.memo(({
+  customerId,
   className = ''
 }) => {
   // ============================================================================
-  // BUSINESS LOGIC COM SSoT
+  // BUSINESS LOGIC COM SSoT v3.1.0
   // ============================================================================
 
   const { handleMouseMove } = useGlassmorphismEffect();
 
   const {
+    customer,
+    purchases,
+    isLoading,
+    error,
     salesChartData,
     productsChartData,
     frequencyChartData,
     insights,
     hasAnalyticsData,
     hasFrequencyData,
-    chartColors
-  } = useCustomerAnalytics(purchases, customerData);
+    chartColors,
+    refetch,
+    hasData,
+    isEmpty
+  } = useCustomerInsightsSSoT(customerId);
 
   // ============================================================================
-  // RISK LEVEL STYLING
+  // RISK LEVEL STYLING - OTIMIZADO COM useCallback
   // ============================================================================
 
-  const getRiskBadgeStyle = (riskLevel: string) => {
+  const getRiskBadgeStyle = useCallback((riskLevel: string) => {
     switch (riskLevel) {
       case 'high':
         return 'bg-red-500/20 text-red-400 border-red-500/30';
@@ -105,9 +106,9 @@ export const CustomerInsightsTab: React.FC<CustomerInsightsTabProps> = ({
       default:
         return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
     }
-  };
+  }, []);
 
-  const getGrowthBadgeStyle = (growthPotential: string) => {
+  const getGrowthBadgeStyle = useCallback((growthPotential: string) => {
     switch (growthPotential) {
       case 'high':
         return 'bg-green-500/20 text-green-400 border-green-500/30';
@@ -118,10 +119,116 @@ export const CustomerInsightsTab: React.FC<CustomerInsightsTabProps> = ({
       default:
         return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
     }
-  };
+  }, []);
 
   // ============================================================================
-  // RENDER
+  // LOADING STATES SSoT v3.1.0
+  // ============================================================================
+
+  if (isLoading) {
+    return (
+      <section
+        className={`bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-6 space-y-6 ${className}`}
+        onMouseMove={handleMouseMove}
+      >
+        <Card className="bg-gray-800/30 border-gray-700/40">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <Brain className="h-5 w-5 text-purple-400" />
+              Analytics & Insights IA
+              <LoadingSpinner size="sm" className="ml-2" />
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="py-8">
+            <div className="space-y-6">
+              {/* Skeleton para estatísticas */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="bg-gray-800/50 rounded-lg p-4 space-y-3">
+                    <div className="h-3 bg-gray-700/50 rounded animate-pulse w-1/2" />
+                    <div className="h-6 bg-gray-700/50 rounded animate-pulse w-3/4" />
+                    <div className="h-3 bg-gray-700/50 rounded animate-pulse w-2/3" />
+                  </div>
+                ))}
+              </div>
+
+              {/* Skeleton para gráficos */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {Array.from({ length: 2 }).map((_, i) => (
+                  <div key={i} className="bg-gray-800/50 rounded-lg p-4 space-y-4">
+                    <div className="h-4 bg-gray-700/50 rounded animate-pulse w-1/3" />
+                    <div className="h-48 bg-gray-700/30 rounded animate-pulse" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </section>
+    );
+  }
+
+  // ============================================================================
+  // ERROR STATES SSoT v3.1.0
+  // ============================================================================
+
+  if (error) {
+    return (
+      <section
+        className={`bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-6 space-y-6 ${className}`}
+        onMouseMove={handleMouseMove}
+      >
+        <Card className="bg-gradient-to-br from-red-900/30 to-red-800/20 border-red-700/40">
+          <CardContent className="py-12">
+            <div className="text-center space-y-6">
+              <div className="relative">
+                <AlertTriangle className="h-16 w-16 mx-auto text-red-500 opacity-80" />
+                <div className="absolute inset-0 bg-red-500/20 rounded-full blur-xl" />
+              </div>
+
+              <div className="space-y-3">
+                <h3 className="text-xl font-semibold text-white">
+                  Falha na Conexão
+                </h3>
+                <p className="text-red-300 max-w-md mx-auto leading-relaxed">
+                  Não foi possível carregar os dados de analytics e insights para este cliente.
+                  Verifique sua conexão e tente novamente.
+                </p>
+              </div>
+
+              <div className="bg-red-900/30 border border-red-700/40 rounded-lg p-4 max-w-sm mx-auto">
+                <div className="text-red-300 text-sm">
+                  <strong>Código do erro:</strong> {error?.message || 'Erro desconhecido'}
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <Button
+                  onClick={() => refetch()}
+                  variant="outline"
+                  className="border-red-500/40 text-red-400 hover:bg-red-500/10 transition-colors"
+                >
+                  <AlertTriangle className="h-4 w-4 mr-2" />
+                  Tentar Novamente
+                </Button>
+
+                <Button
+                  onClick={() => window.location.reload()}
+                  variant="ghost"
+                  className="text-gray-400 hover:text-white hover:bg-gray-700/30"
+                >
+                  Recarregar Página
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </section>
+    );
+  }
+
+  // ============================================================================
+  // RENDER PRINCIPAL SSoT v3.1.0
   // ============================================================================
 
   return (
@@ -129,16 +236,34 @@ export const CustomerInsightsTab: React.FC<CustomerInsightsTabProps> = ({
       className={`bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-6 hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300 space-y-6 ${className}`}
       onMouseMove={handleMouseMove}
     >
-      {/* Header dos Insights */}
-      <Card className="bg-gray-800/30 border-gray-700/40">
+      {/* Header dos Insights com Informações de Atualização */}
+      <Card className="bg-gradient-to-r from-gray-800/40 to-gray-900/30 border-gray-700/40 hover:border-purple-500/30 transition-colors">
         <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
-            <Brain className="h-5 w-5 text-purple-400" />
-            Analytics & Insights IA
-            <Badge variant="outline" className="ml-2 border-purple-500/30 text-purple-400">
-              {purchases?.length || 0} compras analisadas
-            </Badge>
-          </CardTitle>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <CardTitle className="text-white flex items-center gap-2">
+              <Brain className="h-5 w-5 text-purple-400" />
+              Analytics & Insights IA
+              <Badge variant="outline" className="border-purple-500/30 text-purple-400">
+                {purchases?.length || 0} compras analisadas
+              </Badge>
+            </CardTitle>
+
+            <div className="flex items-center gap-3 text-sm text-gray-400">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                <span>Dados em tempo real</span>
+              </div>
+              <Button
+                onClick={() => refetch()}
+                variant="ghost"
+                size="sm"
+                className="text-gray-400 hover:text-purple-400 hover:bg-purple-500/10 transition-colors"
+              >
+                <Brain className="h-4 w-4 mr-1" />
+                Atualizar
+              </Button>
+            </div>
+          </div>
         </CardHeader>
       </Card>
 
@@ -276,8 +401,8 @@ export const CustomerInsightsTab: React.FC<CustomerInsightsTabProps> = ({
             </div>
           </div>
 
-          {/* Gráficos Analíticos */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Gráficos Analíticos - Responsivo Otimizado */}
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
             {/* Gráfico de Vendas por Mês */}
             <Card className="bg-gray-800/30 border-gray-700/40">
               <CardHeader>
@@ -371,7 +496,7 @@ export const CustomerInsightsTab: React.FC<CustomerInsightsTabProps> = ({
 
             {/* Gráfico de Frequência (se houver dados) */}
             {hasFrequencyData && (
-              <Card className="bg-gray-800/30 border-gray-700/40 lg:col-span-2">
+              <Card className="bg-gray-800/30 border-gray-700/40 xl:col-span-2">
                 <CardHeader>
                   <CardTitle className="text-white text-base flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-purple-400" />
@@ -418,18 +543,53 @@ export const CustomerInsightsTab: React.FC<CustomerInsightsTabProps> = ({
           </div>
         </div>
       ) : (
-        <Card className="bg-gray-800/30 border-gray-700/40">
-          <CardContent className="py-12">
-            <div className="text-center text-gray-400">
-              <Brain className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p className="text-lg mb-2">Sem dados para análise</p>
-              <p className="text-sm">Este cliente ainda não possui histórico suficiente para gerar insights e analytics.</p>
+        <Card className="bg-gradient-to-br from-gray-800/40 to-gray-900/60 border-gray-700/40">
+          <CardContent className="py-16">
+            <div className="text-center space-y-6">
+              <div className="relative">
+                <Brain className="h-16 w-16 mx-auto text-gray-600 opacity-60" />
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-blue-500/20 rounded-full blur-xl" />
+              </div>
+
+              <div className="space-y-3">
+                <h3 className="text-xl font-semibold text-white">
+                  Insights em Preparação
+                </h3>
+                <p className="text-gray-400 max-w-md mx-auto leading-relaxed">
+                  Este cliente ainda não possui histórico de compras suficiente para gerar
+                  analytics e insights detalhados com IA.
+                </p>
+              </div>
+
+              <div className="bg-blue-900/20 border border-blue-700/30 rounded-lg p-4 max-w-sm mx-auto">
+                <div className="flex items-center gap-3 text-blue-400">
+                  <Lightbulb className="h-5 w-5 flex-shrink-0" />
+                  <div className="text-left">
+                    <div className="font-medium text-sm">Dica Estratégica</div>
+                    <div className="text-xs text-blue-300">
+                      Realize vendas para desbloquear insights de IA
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <Button
+                onClick={() => refetch()}
+                variant="outline"
+                className="border-purple-500/30 text-purple-400 hover:bg-purple-500/10 transition-colors"
+              >
+                <Brain className="h-4 w-4 mr-2" />
+                Verificar Novamente
+              </Button>
             </div>
           </CardContent>
         </Card>
       )}
     </section>
   );
-};
+});
+
+// Adicionar displayName para debugging melhor
+CustomerInsightsTab.displayName = 'CustomerInsightsTab';
 
 export default CustomerInsightsTab;

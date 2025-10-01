@@ -227,16 +227,10 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
             />
           </TabsContent>
 
-          {/* Tab 3: Insights & Analytics - Analytics + IA consolidados */}
+          {/* Tab 3: Insights & Analytics - SSoT v3.1.0 ✅ */}
           <TabsContent value="insights">
             <CustomerInsightsTab
-              purchases={[]} // TODO: CustomerInsightsTab precisa de auditoria SSoT
-              customerData={{
-                segmento: customer.segmento,
-                totalCompras: customer.totalCompras,
-                valorTotalCompras: customer.valorTotalCompras,
-                ultimaCompra: customer.ultimaCompra
-              }}
+              customerId={id || ''}
             />
           </TabsContent>
 

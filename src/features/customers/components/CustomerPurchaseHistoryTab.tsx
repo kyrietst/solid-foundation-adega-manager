@@ -7,7 +7,8 @@
  *
  * @features
  * - Busca direta do banco (sem props)
- * - Filtros server-side por período e busca
+ * - Filtros server-side por período e busca de produtos
+ * - Debounce otimizado (300ms) para busca real-time
  * - Loading e error states internos
  * - Resumo estatístico real-time
  * - Lista otimizada com paginação
@@ -18,7 +19,7 @@
  * @version 3.1.0 - SSoT Server-Side Implementation
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/primitives/card';
 import { Button } from '@/shared/ui/primitives/button';
 import { Badge } from '@/shared/ui/primitives/badge';
@@ -82,13 +83,38 @@ export const CustomerPurchaseHistoryTab: React.FC<CustomerPurchaseHistoryTabProp
   className = ''
 }) => {
   // ============================================================================
-  // ESTADO LOCAL
+  // ESTADO LOCAL - Server-Side Search
   // ============================================================================
 
+  const [searchInput, setSearchInput] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+
   const [filters, setFilters] = useState<PurchaseFilters>({
-    searchTerm: '',
-    periodFilter: 'all'
+    searchTerm: '', // Legacy - mantido para compatibilidade
+    periodFilter: 'all',
+    productSearchTerm: '' // Server-side search
   });
+
+  // ============================================================================
+  // DEBOUNCE IMPLEMENTATION
+  // ============================================================================
+
+  // Debounce para busca server-side (300ms)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchInput);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
+  // Atualizar filters quando debounced term muda
+  useEffect(() => {
+    setFilters(prev => ({
+      ...prev,
+      productSearchTerm: debouncedSearchTerm
+    }));
+  }, [debouncedSearchTerm]);
 
   // ============================================================================
   // BUSINESS LOGIC COM SSoT v3.1.0
@@ -113,9 +139,10 @@ export const CustomerPurchaseHistoryTab: React.FC<CustomerPurchaseHistoryTabProp
   // HANDLERS
   // ============================================================================
 
-  const handleSearchChange = useCallback((value: string) => {
-    setFilters(prev => ({ ...prev, searchTerm: value }));
-  }, []);
+  // DEPRECATED: Usando busca server-side agora
+  // const handleSearchChange = useCallback((value: string) => {
+  //   setFilters(prev => ({ ...prev, searchTerm: value }));
+  // }, []);
 
   const handlePeriodChange = useCallback((value: string) => {
     setFilters(prev => ({
@@ -125,9 +152,13 @@ export const CustomerPurchaseHistoryTab: React.FC<CustomerPurchaseHistoryTabProp
   }, []);
 
   const handleClearFilters = useCallback(() => {
+    // Limpar todos os estados de busca
+    setSearchInput('');
+    setDebouncedSearchTerm('');
     setFilters({
       searchTerm: '',
-      periodFilter: 'all'
+      periodFilter: 'all',
+      productSearchTerm: ''
     });
   }, []);
 
@@ -185,11 +216,11 @@ export const CustomerPurchaseHistoryTab: React.FC<CustomerPurchaseHistoryTabProp
             </CardTitle>
 
             <div className="flex items-center gap-3">
-              {/* Busca por produto - Usando SearchInput SSoT */}
+              {/* Busca por produto - Server-Side com Debounce */}
               <SearchInput
-                value={filters.searchTerm}
-                onChange={handleSearchChange}
-                placeholder="Buscar produtos..."
+                value={searchInput}
+                onChange={setSearchInput}
+                placeholder="Buscar produtos... (server-side)"
                 className="w-64"
               />
 

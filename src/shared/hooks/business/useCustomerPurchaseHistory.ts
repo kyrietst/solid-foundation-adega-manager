@@ -41,6 +41,7 @@ export interface Purchase {
 export interface PurchaseFilters {
   searchTerm: string;
   periodFilter: 'all' | '30' | '90' | '180' | '365';
+  productSearchTerm?: string; // Server-side product search
 }
 
 export interface PurchaseSummary {
@@ -125,7 +126,7 @@ export const useCustomerPurchaseHistory = (
 ): PurchaseHistoryOperations => {
 
   // Extrair valores individuais do filters para evitar problemas de dependência
-  const { searchTerm, periodFilter } = filters;
+  const { searchTerm, periodFilter, productSearchTerm } = filters;
 
   // ============================================================================
   // SERVER-SIDE DATA FETCHING
@@ -137,7 +138,7 @@ export const useCustomerPurchaseHistory = (
     error,
     refetch
   } = useQuery({
-    queryKey: ['customer-purchase-history', customerId, { searchTerm, periodFilter, page: pagination.page }],
+    queryKey: ['customer-purchase-history', customerId, { searchTerm, periodFilter, productSearchTerm, page: pagination.page }],
     queryFn: async (): Promise<Purchase[]> => {
       if (!customerId) return [];
 
@@ -160,6 +161,13 @@ export const useCustomerPurchaseHistory = (
           `)
           .eq('customer_id', customerId)
           .order('created_at', { ascending: false });
+
+        // Aplicar filtro de busca por produto server-side
+        if (productSearchTerm && productSearchTerm.trim() !== '') {
+          // Usar filtro ilike para busca case-insensitive nos produtos
+          query = query
+            .ilike('sale_items.products.name', `%${productSearchTerm.trim()}%`);
+        }
 
         // Aplicar filtro de período server-side
         const periodDate = calculatePeriodDate(periodFilter);
@@ -196,9 +204,13 @@ export const useCustomerPurchaseHistory = (
           };
         });
 
-        // Aplicar filtro de busca server-side seria ideal, mas como envolve relacionamentos complexos,
-        // mantemos client-side por agora (só para busca por produto)
-        if (searchTerm) {
+        // ============================================================================
+        // CLIENT-SIDE FILTERING (legacy searchTerm - deprecated)
+        // ============================================================================
+
+        // DEPRECATED: searchTerm is legacy, use productSearchTerm (server-side) instead
+        // Manter para compatibilidade, mas encorajar uso de productSearchTerm
+        if (searchTerm && !productSearchTerm) {
           return purchases.filter(purchase =>
             purchase.items.some(item =>
               item.product_name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -206,6 +218,7 @@ export const useCustomerPurchaseHistory = (
           );
         }
 
+        // Server-side filtering já aplicado via productSearchTerm - retornar dados diretamente
         return purchases;
 
       } catch (error) {
