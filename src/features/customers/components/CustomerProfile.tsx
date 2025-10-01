@@ -212,11 +212,7 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
           {/* Tab 1: Visão Geral - Dashboard + Timeline integrada */}
           <TabsContent value="overview">
             <CustomerOverviewTab
-              customer={customer}
-              realMetrics={realMetrics}
-              onEdit={handleEdit}
-              onWhatsApp={handleWhatsApp}
-              onEmail={handleEmail}
+              customerId={id || ''}
             />
           </TabsContent>
 

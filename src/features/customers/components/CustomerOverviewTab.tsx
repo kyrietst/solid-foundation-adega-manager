@@ -1,20 +1,23 @@
 /**
- * CustomerOverviewTab.tsx - Tab de visão geral unificada do cliente
+ * CustomerOverviewTab.tsx - Tab SSoT v3.1.0 Server-Side
  *
  * @description
- * Componente SSoT v3.0.0 que centraliza o dashboard principal do cliente
- * integrando dados financeiros, atividade, preferências e timeline.
+ * Componente SSoT completo que busca dados diretamente do banco para visão geral.
+ * Elimina dependência de props e implementa performance otimizada.
  *
  * @features
+ * - Busca direta do banco (sem props)
  * - Dashboard executivo com 4 cards principais
  * - Alertas para campos críticos em falta
  * - Métricas avançadas com StatCard
- * - Timeline integrada (futuro)
- * - Business logic centralizada em hooks
+ * - Timeline real integrada do banco
+ * - Loading e error states internos
+ * - Business logic centralizada em hook SSoT
+ * - Cache inteligente e auto-refresh
  * - Glassmorphism effects
  *
  * @author Adega Manager Team
- * @version 3.0.0 - SSoT Implementation
+ * @version 3.1.0 - SSoT Server-Side Implementation
  */
 
 import React from 'react';
@@ -22,6 +25,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/primitives
 import { Button } from '@/shared/ui/primitives/button';
 import { Badge } from '@/shared/ui/primitives/badge';
 import { StatCard } from '@/shared/ui/composite/stat-card';
+import { LoadingSpinner } from '@/shared/ui/composite/loading-spinner';
 import { useGlassmorphismEffect } from '@/shared/hooks/ui/useGlassmorphismEffect';
 import {
   DollarSign,
@@ -38,16 +42,10 @@ import {
   ShoppingBag,
   FileText,
   PhoneCall,
-  Clock
+  Clock,
+  AlertCircle
 } from 'lucide-react';
 import { formatCurrency } from '@/core/config/utils';
-import { type CustomerData } from '@/shared/hooks/business/useCustomerOperations';
-import { useCustomerAnalytics } from '@/shared/hooks/business/useCustomerAnalytics';
-import { useCustomerPurchaseHistory } from '@/shared/hooks/business/useCustomerPurchaseHistory';
-import { useCustomerRealMetrics } from '@/features/customers/hooks/useCustomerRealMetrics';
-import { useCustomerTimeline } from '@/features/customers/hooks/useCustomerTimeline';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/core/api/supabase/client';
 import {
   Tooltip,
   TooltipContent,
@@ -55,83 +53,18 @@ import {
   TooltipTrigger,
   TooltipPortal,
 } from '@/shared/ui/primitives/tooltip';
+import { useCustomerOverviewSSoT } from '@/shared/hooks/business/useCustomerOverviewSSoT';
 
 // ============================================================================
 // TYPES
 // ============================================================================
-
-interface Purchase {
-  id: string;
-  date: string;
-  total: number;
-  items: Array<{
-    product_name: string;
-    quantity: number;
-    unit_price: number;
-  }>;
-}
-
-// ============================================================================
-// HOOKS
-// ============================================================================
-
-/**
- * Hook para buscar histórico de compras do cliente no formato esperado pelos hooks SSoT
- */
-const useCustomerPurchases = (customerId: string | null) => {
-  return useQuery({
-    queryKey: ['customer-purchases', customerId],
-    queryFn: async (): Promise<Purchase[]> => {
-      if (!customerId) return [];
-
-      const { data, error } = await supabase
-        .from('sales')
-        .select(`
-          id,
-          created_at,
-          total_amount,
-          sale_items (
-            quantity,
-            unit_price,
-            products (
-              name
-            )
-          )
-        `)
-        .eq('customer_id', customerId)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching customer purchases:', error);
-        return [];
-      }
-
-      return (data || []).map(sale => ({
-        id: sale.id,
-        date: sale.created_at,
-        total: parseFloat(sale.total_amount),
-        items: sale.sale_items.map(item => ({
-          product_name: item.products?.name || 'Produto desconhecido',
-          quantity: item.quantity,
-          unit_price: parseFloat(item.unit_price)
-        }))
-      }));
-    },
-    enabled: !!customerId,
-    staleTime: 30000, // 30 segundos
-    refetchOnWindowFocus: true,
-  });
-};
 
 // ============================================================================
 // COMPONENT TYPES
 // ============================================================================
 
 export interface CustomerOverviewTabProps {
-  customer: CustomerData;
-  onEdit: () => void;
-  onWhatsApp?: () => void;
-  onEmail?: () => void;
+  customerId: string;
   className?: string;
 }
 
@@ -199,196 +132,87 @@ const MissingFieldAlert: React.FC<MissingFieldAlertProps> = ({
 // ============================================================================
 
 export const CustomerOverviewTab: React.FC<CustomerOverviewTabProps> = ({
-  customer,
-  onEdit,
-  onWhatsApp,
-  onEmail,
+  customerId,
   className = ''
 }) => {
   // ============================================================================
-  // BUSINESS LOGIC COM SSoT
+  // BUSINESS LOGIC COM SSoT v3.1.0
   // ============================================================================
 
-  // Hooks SSoT v3.0.0 - Dados reais do Supabase
-  const customerId = customer?.id || null;
-  const { data: realMetrics, isLoading: metricsLoading } = useCustomerRealMetrics(customerId);
-  const { data: purchases = [], isLoading: purchasesLoading } = useCustomerPurchases(customerId);
-  const { data: timeline = [], isLoading: timelineLoading } = useCustomerTimeline(customerId || '');
-
-  // Analytics e Purchase History com dados reais
-  const analytics = useCustomerAnalytics(purchases, {
-    segmento: realMetrics?.segment,
-    totalCompras: realMetrics?.total_purchases,
-    valorTotalCompras: realMetrics?.total_spent,
-    ultimaCompra: realMetrics?.last_purchase_real,
-  });
-
-  const purchaseHistory = useCustomerPurchaseHistory(purchases, {
-    searchTerm: '',
-    periodFilter: 'all'
-  });
-
-  // UI Effects
   const { handleMouseMove } = useGlassmorphismEffect();
 
-  // Loading e Error states
-  const isLoadingCriticalData = metricsLoading || purchasesLoading;
-
-  // Performance optimization: memoize analytics if not loading
-  const analyticsData = React.useMemo(() => {
-    if (isLoadingCriticalData) return null;
-    return analytics;
-  }, [analytics, isLoadingCriticalData]);
+  const {
+    customer,
+    realMetrics,
+    purchases,
+    timeline,
+    isLoading,
+    error,
+    sendWhatsApp,
+    sendEmail,
+    getCustomerStatusData,
+    getProfileCompleteness,
+    reportFields,
+    missingReportFields,
+    criticalMissingFields,
+    hasData,
+    isEmpty,
+    refetch
+  } = useCustomerOverviewSSoT(customerId);
 
   // ============================================================================
-  // CÁLCULOS REFINADOS - FASE 3
+  // GUARDS E VALIDAÇÕES
   // ============================================================================
 
-  // Status do cliente baseado em dados reais e analytics
-  const getCustomerStatusData = () => {
-    if (isLoadingCriticalData) {
-      return {
-        status: 'Carregando...',
-        className: 'border-gray-500/30 text-gray-400',
-        engagementLevel: 'Calculando...'
-      };
-    }
+  // Loading state
+  if (isLoading) {
+    return (
+      <section className={`bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-6 space-y-6 ${className}`}>
+        <div className="flex items-center justify-center py-8">
+          <LoadingSpinner text="Carregando visão geral do cliente..." />
+        </div>
+      </section>
+    );
+  }
 
-    const daysSinceLastPurchase = realMetrics?.days_since_last_purchase;
-    const totalPurchases = realMetrics?.total_purchases || 0;
-    const lifetimeValue = realMetrics?.lifetime_value_calculated || 0;
+  // Error state
+  if (error) {
+    return (
+      <section className={`bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-6 space-y-6 ${className}`}>
+        <Card className="bg-red-900/20 border-red-500/30">
+          <CardContent className="p-6 text-center">
+            <div className="text-red-400 text-lg">❌ Erro ao carregar visão geral</div>
+            <p className="text-gray-400 mt-2">{error.message}</p>
+            <Button onClick={() => refetch()} className="mt-4 bg-red-600 hover:bg-red-700">
+              Tentar Novamente
+            </Button>
+          </CardContent>
+        </Card>
+      </section>
+    );
+  }
 
-    // Lógica refinada de status
-    if (totalPurchases === 0) {
-      return {
-        status: 'Novo',
-        className: 'border-blue-500/30 text-blue-400',
-        engagementLevel: 'Baixo'
-      };
-    }
+  // Empty state (cliente não encontrado)
+  if (isEmpty) {
+    return (
+      <section className={`bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-6 space-y-6 ${className}`}>
+        <Card className="bg-gray-800/30 border-gray-700/40">
+          <CardContent className="p-8 text-center">
+            <AlertCircle className="h-12 w-12 mx-auto mb-4 text-gray-500 opacity-50" />
+            <div className="text-gray-400">Cliente não encontrado</div>
+          </CardContent>
+        </Card>
+      </section>
+    );
+  }
 
-    if (lifetimeValue >= 1000 && totalPurchases >= 5) {
-      return {
-        status: 'VIP',
-        className: 'border-yellow-500/30 text-yellow-400',
-        engagementLevel: 'Alto'
-      };
-    }
-
-    if (daysSinceLastPurchase !== undefined) {
-      if (daysSinceLastPurchase <= 30) {
-        return {
-          status: 'Ativo',
-          className: 'border-green-500/30 text-green-400',
-          engagementLevel: 'Alto'
-        };
-      }
-      if (daysSinceLastPurchase <= 90) {
-        return {
-          status: 'Regular',
-          className: 'border-yellow-500/30 text-yellow-400',
-          engagementLevel: 'Médio'
-        };
-      }
-      return {
-        status: 'Dormindo',
-        className: 'border-red-500/30 text-red-400',
-        engagementLevel: 'Baixo'
-      };
-    }
-
-    return {
-      status: 'Indefinido',
-      className: 'border-gray-500/30 text-gray-400',
-      engagementLevel: 'Baixo'
-    };
-  };
-
+  // Dados calculados
   const customerStatusData = getCustomerStatusData();
+  const profileCompleteness = getProfileCompleteness();
 
-  // Cálculo de completude do perfil baseado em dados reais
-  const getProfileCompleteness = () => {
-    if (isLoadingCriticalData) return 'Calculando...';
-
-    let completeness = 0;
-    const weights = {
-      email: 25,
-      telefone: 25,
-      endereco: 20,
-      hasRealPurchases: 20,
-      hasInsights: 10
-    };
-
-    if (customer?.email) completeness += weights.email;
-    if (customer?.telefone) completeness += weights.telefone;
-    if (customer?.endereco) completeness += weights.endereco;
-    if (realMetrics?.total_purchases && realMetrics.total_purchases > 0) {
-      completeness += weights.hasRealPurchases;
-    }
-    if (realMetrics?.insights_count && realMetrics.insights_count > 0) {
-      completeness += weights.hasInsights;
-    }
-
-    return `${completeness}%`;
-  };
-
-  // Campos que impactam relatórios (centralizados)
-  const reportFields = [
-    {
-      key: 'email',
-      label: 'Email',
-      value: customer?.email,
-      required: true,
-      icon: Mail,
-      impact: 'Necessário para campanhas de email marketing e relatórios de comunicação.'
-    },
-    {
-      key: 'telefone',
-      label: 'Telefone',
-      value: customer?.telefone,
-      required: true,
-      icon: Phone,
-      impact: 'Essencial para relatórios de WhatsApp e análises de contato.'
-    },
-    {
-      key: 'endereco',
-      label: 'Endereço',
-      value: customer?.endereco,
-      required: false,
-      icon: MapPin,
-      impact: 'Importante para análises geográficas e relatórios de entrega.'
-    }
-  ];
-
-  const missingReportFields = reportFields.filter(
-    field => !field.value || field.value === 'N/A' || field.value === 'Não definida'
-  );
-  const criticalMissingFields = missingReportFields.filter(field => field.required);
-
-  // ============================================================================
-  // HANDLERS
-  // ============================================================================
-
-  const handleWhatsAppDefault = () => {
-    if (!customer?.telefone) {
-      alert('Cliente não possui telefone cadastrado');
-      return;
-    }
-    const phone = customer.telefone.replace(/\D/g, '');
-    const message = `Olá ${customer.cliente}, tudo bem? Aqui é da Adega! 🍷`;
-    const url = `https://wa.me/55${phone}?text=${encodeURIComponent(message)}`;
-    window.open(url, '_blank');
-  };
-
-  const handleEmailDefault = () => {
-    if (!customer?.email) {
-      alert('Cliente não possui email cadastrado');
-      return;
-    }
-    const subject = `Contato - Adega Wine Store`;
-    const body = `Prezado(a) ${customer.cliente},\n\nEsperamos que esteja bem!\n\nAtenciosamente,\nEquipe Adega`;
-    const url = `mailto:${customer.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    window.open(url, '_blank');
+  // Placeholder para edição do perfil - será implementado no futuro
+  const handleEdit = () => {
+    console.log('📝 Editar perfil - implementar quando necessário');
   };
 
   // ============================================================================
@@ -460,7 +284,7 @@ export const CustomerOverviewTab: React.FC<CustomerOverviewTabProps> = ({
                 size="sm"
                 variant="outline"
                 className="border-red-400/50 text-red-400 hover:bg-red-400/10"
-                onClick={onEdit}
+                onClick={handleEdit}
               >
                 Editar Perfil
               </Button>
@@ -485,29 +309,20 @@ export const CustomerOverviewTab: React.FC<CustomerOverviewTabProps> = ({
                 <span className="text-gray-300">Valor Total (LTV):</span>
                 <div className="text-right">
                   <div className="text-lg font-bold text-green-400">
-                    {isLoadingCriticalData ?
-                      'Calculando...' :
-                      formatCurrency(realMetrics?.lifetime_value_calculated || 0)
-                    }
+                    {formatCurrency(realMetrics?.lifetime_value_calculated || 0)}
                     {realMetrics && !realMetrics.data_sync_status.ltv_synced && (
                       <span className="text-xs text-yellow-400 ml-1">⚠️</span>
                     )}
                   </div>
                   <div className="text-xs text-gray-500">
-                    {isLoadingCriticalData ?
-                      'Carregando...' :
-                      `${realMetrics?.total_purchases || 0} compras reais`
-                    }
+                    {`${realMetrics?.total_purchases || 0} compras reais`}
                   </div>
                 </div>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-gray-300">Ticket Médio:</span>
                 <div className="text-lg font-semibold text-purple-400">
-                  {isLoadingCriticalData ?
-                    'Calculando...' :
-                    formatCurrency(realMetrics?.avg_purchase_value || 0)
-                  }
+                  {formatCurrency(realMetrics?.avg_purchase_value || 0)}
                 </div>
               </div>
               <div className="pt-2 border-t border-gray-700/30">
@@ -533,22 +348,18 @@ export const CustomerOverviewTab: React.FC<CustomerOverviewTabProps> = ({
                 <span className="text-gray-300">Última Compra:</span>
                 <div className="text-right">
                   <div className="text-sm font-medium text-blue-400">
-                    {isLoadingCriticalData ?
-                      'Carregando...' :
-                      realMetrics?.last_purchase_real
-                        ? new Date(realMetrics.last_purchase_real).toLocaleDateString('pt-BR')
-                        : 'Nunca'
+                    {realMetrics?.last_purchase_real
+                      ? new Date(realMetrics.last_purchase_real).toLocaleDateString('pt-BR')
+                      : 'Nunca'
                     }
                     {realMetrics && !realMetrics.data_sync_status.dates_synced && (
                       <span className="text-xs text-yellow-400 ml-1">⚠️</span>
                     )}
                   </div>
                   <div className="text-xs text-gray-500">
-                    {isLoadingCriticalData ?
-                      'Calculando...' :
-                      realMetrics?.days_since_last_purchase !== undefined
-                        ? `${realMetrics.days_since_last_purchase} dias atrás`
-                        : 'Primeira compra pendente'
+                    {realMetrics?.days_since_last_purchase !== undefined
+                      ? `${realMetrics.days_since_last_purchase} dias atrás`
+                      : 'Primeira compra pendente'
                     }
                   </div>
                 </div>
@@ -585,10 +396,7 @@ export const CustomerOverviewTab: React.FC<CustomerOverviewTabProps> = ({
                 <div className="flex justify-between">
                   <span className="text-gray-300 text-sm">Categoria Favorita:</span>
                   <span className="text-purple-400 text-sm font-medium">
-                    {isLoadingCriticalData ?
-                      'Carregando...' :
-                      realMetrics?.calculated_favorite_category || 'Não definida'
-                    }
+                    {realMetrics?.calculated_favorite_category || 'Não definida'}
                     {realMetrics && !realMetrics.data_sync_status.preferences_synced && (
                       <span className="text-xs text-yellow-400 ml-1">⚠️</span>
                     )}
@@ -597,19 +405,13 @@ export const CustomerOverviewTab: React.FC<CustomerOverviewTabProps> = ({
                 <div className="flex justify-between">
                   <span className="text-gray-300 text-sm">Produto Favorito:</span>
                   <span className="text-purple-400 text-sm font-medium">
-                    {isLoadingCriticalData ?
-                      'Carregando...' :
-                      realMetrics?.calculated_favorite_product || 'Não definido'
-                    }
+                    {realMetrics?.calculated_favorite_product || 'Não definido'}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-300 text-sm">Insights AI:</span>
                   <span className="text-blue-400 text-sm font-medium">
-                    {isLoadingCriticalData ?
-                      'Carregando...' :
-                      `${realMetrics?.insights_count || 0} insights (${Math.round((realMetrics?.insights_confidence || 0) * 100)}% confiança)`
-                    }
+                    {`${realMetrics?.insights_count || 0} insights (${Math.round((realMetrics?.insights_confidence || 0) * 100)}% confiança)`}
                   </span>
                 </div>
               </div>
@@ -652,7 +454,7 @@ export const CustomerOverviewTab: React.FC<CustomerOverviewTabProps> = ({
                           size="sm"
                           variant="ghost"
                           className="h-6 px-2 text-xs text-orange-400 hover:text-orange-300"
-                          onClick={onWhatsApp || handleWhatsAppDefault}
+                          onClick={() => sendWhatsApp()}
                         >
                           WhatsApp
                         </Button>
@@ -678,7 +480,7 @@ export const CustomerOverviewTab: React.FC<CustomerOverviewTabProps> = ({
                           size="sm"
                           variant="ghost"
                           className="h-6 px-2 text-xs text-orange-400 hover:text-orange-300"
-                          onClick={onEmail || handleEmailDefault}
+                          onClick={() => sendEmail()}
                         >
                           Enviar
                         </Button>
@@ -698,7 +500,7 @@ export const CustomerOverviewTab: React.FC<CustomerOverviewTabProps> = ({
               <div className="flex justify-between items-center pt-2 border-t border-gray-700/30">
                 <span className="text-gray-300 text-sm">Completude:</span>
                 <span className="text-orange-400 text-sm">
-                  {getProfileCompleteness()}
+                  {profileCompleteness}
                 </span>
               </div>
             </div>
@@ -717,16 +519,11 @@ export const CustomerOverviewTab: React.FC<CustomerOverviewTabProps> = ({
             layout="crm"
             variant="default"
             title="Itens por Compra"
-            value={isLoadingCriticalData ?
-              'Carregando...' :
-              realMetrics?.avg_items_per_purchase ?
-                realMetrics.avg_items_per_purchase.toFixed(1) :
-                '0'
+            value={realMetrics?.avg_items_per_purchase ?
+              realMetrics.avg_items_per_purchase.toFixed(1) :
+              '0'
             }
-            description={isLoadingCriticalData ?
-              'Calculando dados...' :
-              `📦 ${realMetrics?.total_products_bought || 0} total itens`
-            }
+            description={`📦 ${realMetrics?.total_products_bought || 0} total itens`}
             icon={Package}
             formatType="none"
           />
@@ -735,10 +532,7 @@ export const CustomerOverviewTab: React.FC<CustomerOverviewTabProps> = ({
             layout="crm"
             variant="success"
             title="Ticket Médio"
-            value={isLoadingCriticalData ?
-              'Carregando...' :
-              formatCurrency(realMetrics?.avg_purchase_value || 0)
-            }
+            value={formatCurrency(realMetrics?.avg_purchase_value || 0)}
             description="💵 Por compra real"
             icon={DollarSign}
             formatType="none"
@@ -748,14 +542,8 @@ export const CustomerOverviewTab: React.FC<CustomerOverviewTabProps> = ({
             layout="crm"
             variant="purple"
             title="Categoria Favorita"
-            value={isLoadingCriticalData ?
-              'Carregando...' :
-              realMetrics?.calculated_favorite_category || 'N/A'
-            }
-            description={isLoadingCriticalData ?
-              'Calculando...' :
-              `📊 ${realMetrics?.data_sync_status.preferences_synced ? 'Sincronizado' : 'Desatualizado'}`
-            }
+            value={realMetrics?.calculated_favorite_category || 'N/A'}
+            description={`📊 ${realMetrics?.data_sync_status.preferences_synced ? 'Sincronizado' : 'Desatualizado'}`}
             icon={TrendingUp}
             formatType="none"
           />
@@ -767,18 +555,10 @@ export const CustomerOverviewTab: React.FC<CustomerOverviewTabProps> = ({
         <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
           <Calendar className="h-5 w-5 text-blue-400" />
           Timeline de Atividades
-          {timelineLoading && (
-            <div className="animate-spin h-4 w-4 border-2 border-blue-400 border-t-transparent rounded-full"></div>
-          )}
         </h3>
         <Card className="bg-gray-800/30 border-gray-700/40">
           <CardContent className="p-6">
-            {timelineLoading ? (
-              <div className="text-center py-4 text-gray-400">
-                <div className="animate-spin h-8 w-8 border-2 border-blue-400 border-t-transparent rounded-full mx-auto mb-2"></div>
-                <p className="text-sm">Carregando timeline...</p>
-              </div>
-            ) : timeline.length === 0 ? (
+            {timeline.length === 0 ? (
               <div className="text-center py-4 text-gray-400">
                 <Calendar className="h-8 w-8 mx-auto mb-2 opacity-50" />
                 <p className="text-sm">Nenhuma atividade encontrada</p>
