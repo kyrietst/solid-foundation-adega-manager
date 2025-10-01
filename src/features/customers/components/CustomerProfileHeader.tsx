@@ -417,6 +417,7 @@ export const CustomerProfileHeader: React.FC<CustomerProfileHeaderProps> = ({
                 description={`💰 LTV ${realMetrics?.data_sync_status.ltv_synced ? '✅' : '⚠️'}`}
                 icon={DollarSign}
                 className="h-24"
+                formatType="none"
               />
 
               <StatCard
@@ -433,10 +434,11 @@ export const CustomerProfileHeader: React.FC<CustomerProfileHeaderProps> = ({
                 layout="crm"
                 variant="warning"
                 title="Dias Atrás"
-                value={realMetrics?.days_since_last_purchase || '-'}
+                value={realMetrics?.days_since_last_purchase !== undefined ? realMetrics.days_since_last_purchase : '-'}
                 description="⏱️ Última compra"
                 icon={Calendar}
                 className="h-24"
+                formatType="none"
               />
             </div>
           </div>
