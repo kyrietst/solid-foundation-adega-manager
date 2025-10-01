@@ -96,28 +96,6 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
     window.open(salesUrl, '_blank');
   };
 
-  const handleWhatsApp = () => {
-    if (!customer?.telefone) {
-      alert('Cliente não possui telefone cadastrado');
-      return;
-    }
-    const phone = customer.telefone.replace(/\D/g, '');
-    const message = `Olá ${customer.cliente}, tudo bem? Aqui é da Adega! 🍷`;
-    const url = `https://wa.me/55${phone}?text=${encodeURIComponent(message)}`;
-    window.open(url, '_blank');
-  };
-
-  const handleEmail = () => {
-    if (!customer?.email) {
-      alert('Cliente não possui email cadastrado');
-      return;
-    }
-    const subject = `Contato - Adega Wine Store`;
-    const body = `Prezado(a) ${customer.cliente},\n\nEsperamos que esteja bem!\n\nAtenciosamente,\nEquipe Adega`;
-    const url = `mailto:${customer.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    window.open(url, '_blank');
-  };
-
   // ============================================================================
   // GUARDS E VALIDAÇÕES
   // ============================================================================
@@ -237,13 +215,10 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
             />
           </TabsContent>
 
-          {/* Tab 5: Ações Rápidas - NOVA - Ferramentas de vendas */}
+          {/* Tab 5: Ações Rápidas - SSoT v3.1.0 Revenue Intelligence Center */}
           <TabsContent value="actions">
             <CustomerActionsTab
-              customer={customer}
-              onNewSale={handleNewSale}
-              onWhatsApp={handleWhatsApp}
-              onEmail={handleEmail}
+              customerId={id || ''}
             />
           </TabsContent>
         </div>
