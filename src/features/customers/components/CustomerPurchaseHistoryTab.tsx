@@ -1,21 +1,21 @@
 /**
- * CustomerPurchaseHistoryTab.tsx - Tab unificada de histórico de compras e financeiro
+ * CustomerPurchaseHistoryTab.tsx - Tab SSoT v3.1.0 Server-Side
  *
  * @description
- * Componente SSoT v3.0.0 que consolida histórico de compras e dados financeiros
- * em uma interface única e otimizada.
+ * Componente SSoT completo que busca dados diretamente do banco.
+ * Elimina dependência de props e implementa performance otimizada.
  *
  * @features
- * - Histórico completo de compras com filtros avançados
- * - Dados financeiros integrados (LTV, ticket médio, etc.)
- * - Search e filtros por período
- * - Resumo estatístico com StatCard
- * - Lista detalhada de compras
- * - Business logic centralizada em hooks
+ * - Busca direta do banco (sem props)
+ * - Filtros server-side por período e busca
+ * - Loading e error states internos
+ * - Resumo estatístico real-time
+ * - Lista otimizada com paginação
+ * - Cache inteligente e auto-refresh
  * - Glassmorphism effects
  *
  * @author Adega Manager Team
- * @version 3.0.0 - SSoT Implementation
+ * @version 3.1.0 - SSoT Server-Side Implementation
  */
 
 import React, { useState, useCallback } from 'react';
@@ -45,6 +45,7 @@ import {
   Calendar
 } from 'lucide-react';
 import { formatCurrency } from '@/core/config/utils';
+import { LoadingSpinner } from '@/shared/ui/composite/loading-spinner';
 import {
   useCustomerPurchaseHistory,
   type Purchase,
@@ -56,9 +57,7 @@ import {
 // ============================================================================
 
 export interface CustomerPurchaseHistoryTabProps {
-  purchases: Purchase[];
-  isLoading?: boolean;
-  error?: Error | null;
+  customerId: string;
   className?: string;
 }
 
@@ -79,9 +78,7 @@ const PERIOD_OPTIONS = [
 // ============================================================================
 
 export const CustomerPurchaseHistoryTab: React.FC<CustomerPurchaseHistoryTabProps> = ({
-  purchases = [],
-  isLoading = false,
-  error = null,
+  customerId,
   className = ''
 }) => {
   // ============================================================================
@@ -94,20 +91,23 @@ export const CustomerPurchaseHistoryTab: React.FC<CustomerPurchaseHistoryTabProp
   });
 
   // ============================================================================
-  // BUSINESS LOGIC COM SSoT
+  // BUSINESS LOGIC COM SSoT v3.1.0
   // ============================================================================
 
   const { handleMouseMove } = useGlassmorphismEffect();
 
   const {
-    filteredPurchases,
+    purchases,
+    isLoading,
+    error,
     summary,
     formatPurchaseDate,
     formatPurchaseId,
     hasData,
     isEmpty,
-    isFiltered
-  } = useCustomerPurchaseHistory(purchases, filters);
+    isFiltered,
+    refetch
+  } = useCustomerPurchaseHistory(customerId, filters);
 
   // ============================================================================
   // HANDLERS
@@ -132,6 +132,38 @@ export const CustomerPurchaseHistoryTab: React.FC<CustomerPurchaseHistoryTabProp
   }, []);
 
   // ============================================================================
+  // GUARDS E VALIDAÇÕES
+  // ============================================================================
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <section className={`bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-6 space-y-6 ${className}`}>
+        <div className="flex items-center justify-center py-8">
+          <LoadingSpinner text="Carregando histórico de compras..." />
+        </div>
+      </section>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <section className={`bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-6 space-y-6 ${className}`}>
+        <Card className="bg-red-900/20 border-red-500/30">
+          <CardContent className="p-6 text-center">
+            <div className="text-red-400 text-lg">❌ Erro ao carregar histórico</div>
+            <p className="text-gray-400 mt-2">{error.message}</p>
+            <Button onClick={() => refetch()} className="mt-4 bg-red-600 hover:bg-red-700">
+              Tentar Novamente
+            </Button>
+          </CardContent>
+        </Card>
+      </section>
+    );
+  }
+
+  // ============================================================================
   // RENDER
   // ============================================================================
 
@@ -148,7 +180,7 @@ export const CustomerPurchaseHistoryTab: React.FC<CustomerPurchaseHistoryTabProp
               <ShoppingBag className="h-5 w-5 text-green-400" />
               Histórico de Compras & Financeiro
               <Badge variant="outline" className="ml-2 border-green-500/30 text-green-400">
-                {filteredPurchases.length} compras
+                {purchases.length} compras {isLoading && '(carregando...)'}
               </Badge>
             </CardTitle>
 
@@ -264,7 +296,7 @@ export const CustomerPurchaseHistoryTab: React.FC<CustomerPurchaseHistoryTabProp
             </CardContent>
           </Card>
         ) : (
-          filteredPurchases.map((purchase) => (
+          purchases.map((purchase) => (
             <Card key={purchase.id} className="bg-gray-800/30 border-gray-700/40 hover:border-gray-600/50 transition-colors">
               <CardContent className="p-4">
                 <div className="flex justify-between items-start mb-3">

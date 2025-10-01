@@ -41,7 +41,7 @@ import { CustomerActionsTab } from './CustomerActionsTab';
 import { EditCustomerModal } from './EditCustomerModal';
 
 // Hooks e dados
-import { useCustomer, useCustomerPurchases } from '@/features/customers/hooks/use-crm';
+import { useCustomer } from '@/features/customers/hooks/use-crm';
 import { useCustomerRealMetrics } from '@/features/customers/hooks/useCustomerRealMetrics';
 
 // ============================================================================
@@ -82,13 +82,6 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
     isLoading: isLoadingMetrics,
     error: metricsError
   } = useCustomerRealMetrics(id || '');
-
-  // Buscar histórico de compras
-  const {
-    data: purchases = [],
-    isLoading: isLoadingPurchases,
-    error: purchasesError
-  } = useCustomerPurchases(id || '');
 
   // ============================================================================
   // HANDLERS
@@ -227,19 +220,17 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
             />
           </TabsContent>
 
-          {/* Tab 2: Histórico de Compras - Compras + Financeiro unificados */}
+          {/* Tab 2: Histórico de Compras - SSoT v3.1.0 Server-Side */}
           <TabsContent value="purchases">
             <CustomerPurchaseHistoryTab
-              purchases={purchases}
-              isLoading={isLoadingPurchases}
-              error={purchasesError}
+              customerId={id || ''}
             />
           </TabsContent>
 
           {/* Tab 3: Insights & Analytics - Analytics + IA consolidados */}
           <TabsContent value="insights">
             <CustomerInsightsTab
-              purchases={purchases}
+              purchases={[]} // TODO: CustomerInsightsTab precisa de auditoria SSoT
               customerData={{
                 segmento: customer.segmento,
                 totalCompras: customer.totalCompras,
