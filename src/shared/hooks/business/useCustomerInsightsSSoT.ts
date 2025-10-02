@@ -41,8 +41,7 @@ export interface CustomerDataSSoT {
   email?: string;
   phone?: string;
   segment?: string;
-  total_purchases?: number;
-  total_spent?: number;
+  lifetime_value?: number;
   last_purchase_date?: string;
   created_at: string;
 }
@@ -151,8 +150,7 @@ export const useCustomerInsightsSSoT = (
             email,
             phone,
             segment,
-            total_purchases,
-            total_spent,
+            lifetime_value,
             last_purchase_date,
             created_at
           `)

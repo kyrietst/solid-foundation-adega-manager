@@ -143,18 +143,16 @@ export const CustomerOverviewTab: React.FC<CustomerOverviewTabProps> = ({
 
   const {
     customer,
-    realMetrics,
+    metrics: realMetrics,
     purchases,
     timeline,
     isLoading,
     error,
     sendWhatsApp,
     sendEmail,
-    getCustomerStatusData,
-    getProfileCompleteness,
-    reportFields,
-    missingReportFields,
-    criticalMissingFields,
+    customerStatus,
+    profileCompleteness,
+    missingCriticalFields: criticalMissingFields,
     hasData,
     isEmpty,
     refetch
@@ -206,9 +204,33 @@ export const CustomerOverviewTab: React.FC<CustomerOverviewTabProps> = ({
     );
   }
 
-  // Dados calculados
-  const customerStatusData = getCustomerStatusData();
-  const profileCompleteness = getProfileCompleteness();
+  // Dados calculados (já vêm do hook)
+  const customerStatusData = customerStatus;
+
+  // Report fields locais para MissingFieldAlert
+  const reportFields = [
+    {
+      key: 'phone',
+      label: 'Telefone',
+      required: true,
+      icon: Phone,
+      impact: 'Essencial para relatórios de WhatsApp e análises de contato.'
+    },
+    {
+      key: 'email',
+      label: 'Email',
+      required: true,
+      icon: Mail,
+      impact: 'Necessário para campanhas de email marketing e relatórios de comunicação.'
+    },
+    {
+      key: 'address',
+      label: 'Endereço',
+      required: false,
+      icon: MapPin,
+      impact: 'Importante para análises geográficas e relatórios de entrega.'
+    }
+  ];
 
   // Placeholder para edição do perfil - será implementado no futuro
   const handleEdit = () => {
@@ -419,14 +441,14 @@ export const CustomerOverviewTab: React.FC<CustomerOverviewTabProps> = ({
                 <span className="text-gray-300">Segmento:</span>
                 <Badge
                   className={`
-                    ${customer.segmento === 'High Value' ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' :
-                      customer.segmento === 'Regular' ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' :
-                      customer.segmento === 'New' ? 'bg-green-500/20 text-green-400 border-green-500/30' :
+                    ${customer.segment === 'high_value' ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' :
+                      customer.segment === 'regular' ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' :
+                      customer.segment === 'new' ? 'bg-green-500/20 text-green-400 border-green-500/30' :
                       'bg-gray-500/20 text-gray-400 border-gray-500/30'
                     }
                   `}
                 >
-                  {customer.segmento || 'Não Classificado'}
+                  {customer.segment || 'Não Classificado'}
                 </Badge>
               </div>
             </div>
@@ -447,7 +469,7 @@ export const CustomerOverviewTab: React.FC<CustomerOverviewTabProps> = ({
                 <div className="flex items-center justify-between">
                   <span className="text-gray-300 text-sm">Telefone:</span>
                   <div className="flex items-center gap-2">
-                    {customer.telefone ? (
+                    {customer.phone ? (
                       <>
                         <span className="text-green-400 text-xs">✓</span>
                         <Button
@@ -463,7 +485,7 @@ export const CustomerOverviewTab: React.FC<CustomerOverviewTabProps> = ({
                       <>
                         <span className="text-red-400 text-xs">✗ Não cadastrado</span>
                         <MissingFieldAlert
-                          field={reportFields.find(f => f.key === 'telefone')!}
+                          field={reportFields.find(f => f.key === 'phone')!}
                           variant="critical"
                         />
                       </>

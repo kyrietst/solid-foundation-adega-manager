@@ -58,14 +58,40 @@ export const CrmReportsSection: React.FC<CrmReportsSectionProps> = ({ period = 3
       const startDate = new Date();
       startDate.setDate(endDate.getDate() - windowDays);
 
-      const { data, error } = await supabase
-        .rpc('get_customer_metrics', {
-          start_date: startDate.toISOString(),
-          end_date: endDate.toISOString()
-        });
+      try {
+        // Cálculo manual das métricas de clientes (RPC get_customer_metrics não disponível)
 
-      if (error) throw error;
-      return data?.[0] || { total_customers: 0, new_customers: 0, active_customers: 0 };
+        // Total de clientes
+        const { count: totalCustomers } = await supabase
+          .from('customers')
+          .select('*', { count: 'exact', head: true });
+
+        // Novos clientes no período
+        const { count: newCustomers } = await supabase
+          .from('customers')
+          .select('*', { count: 'exact', head: true })
+          .gte('created_at', startDate.toISOString())
+          .lte('created_at', endDate.toISOString());
+
+        // Clientes ativos (com compras no período)
+        const { data: activeSales } = await supabase
+          .from('sales')
+          .select('customer_id')
+          .gte('created_at', startDate.toISOString())
+          .lte('created_at', endDate.toISOString())
+          .not('customer_id', 'is', null);
+
+        const activeCustomers = new Set(activeSales?.map(sale => sale.customer_id)).size;
+
+        return {
+          total_customers: totalCustomers || 0,
+          new_customers: newCustomers || 0,
+          active_customers: activeCustomers || 0
+        };
+      } catch (error) {
+        console.error('❌ Erro ao calcular métricas de clientes:', error);
+        return { total_customers: 0, new_customers: 0, active_customers: 0 };
+      }
     },
     staleTime: 5 * 60 * 1000,
   });

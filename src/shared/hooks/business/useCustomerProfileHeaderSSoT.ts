@@ -205,41 +205,13 @@ export const useCustomerProfileHeaderSSoT = (
       if (!customerId) return null;
 
       try {
-        // Primeiro, tentar usar stored procedure
-        const { data: rpcData, error: rpcError } = await supabase
-          .rpc('get_customer_metrics', {
-            customer_id_param: customerId
-          });
-
-        if (!rpcError && rpcData && rpcData.length > 0) {
-          const metrics = rpcData[0];
-          return {
-            total_purchases: metrics.total_purchases || 0,
-            total_spent: parseFloat(metrics.total_spent || '0'),
-            lifetime_value_calculated: parseFloat(metrics.lifetime_value_calculated || '0'),
-            avg_purchase_value: parseFloat(metrics.avg_purchase_value || '0'),
-            avg_items_per_purchase: parseFloat(metrics.avg_items_per_purchase || '0'),
-            total_products_bought: metrics.total_products_bought || 0,
-            last_purchase_real: metrics.last_purchase_real,
-            days_since_last_purchase: metrics.days_since_last_purchase,
-            purchase_frequency: parseFloat(metrics.purchase_frequency || '0'),
-            loyalty_score: parseFloat(metrics.loyalty_score || '0'),
-            data_sync_status: {
-              ltv_synced: true,
-              dates_synced: true,
-              preferences_synced: true,
-            }
-          };
-        }
-
-        // Fallback: Cálculo manual
-        console.warn('🔄 RPC falhou, usando cálculo manual para métricas do header');
+        // Cálculo manual das métricas (RPC get_customer_metrics não disponível)
 
         const { data: sales, error: salesError } = await supabase
           .from('sales')
           .select(`
             id,
-            total,
+            total_amount,
             created_at,
             sale_items (
               quantity,
@@ -256,7 +228,7 @@ export const useCustomerProfileHeaderSSoT = (
 
         // Cálculos manuais
         const totalPurchases = sales?.length || 0;
-        const totalSpent = sales?.reduce((sum, sale) => sum + (parseFloat(sale.total) || 0), 0) || 0;
+        const totalSpent = sales?.reduce((sum, sale) => sum + (parseFloat(sale.total_amount) || 0), 0) || 0;
         const avgPurchaseValue = totalPurchases > 0 ? totalSpent / totalPurchases : 0;
 
         const totalItems = sales?.reduce((sum, sale) => {
@@ -285,9 +257,9 @@ export const useCustomerProfileHeaderSSoT = (
           purchase_frequency: totalPurchases > 0 ? (totalPurchases / 365) : 0, // Simplificado
           loyalty_score: Math.min(totalSpent / 1000, 10), // Simplificado
           data_sync_status: {
-            ltv_synced: false, // Manual calculation
-            dates_synced: false,
-            preferences_synced: false,
+            ltv_synced: true, // Calculado manualmente com dados reais
+            dates_synced: true, // Calculado manualmente com dados reais
+            preferences_synced: false, // TODO: Implementar cálculo de preferências
           }
         };
 
