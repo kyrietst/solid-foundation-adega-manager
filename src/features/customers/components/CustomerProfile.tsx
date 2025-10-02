@@ -1,20 +1,20 @@
 /**
- * CustomerProfile.tsx - Página de perfil do cliente SSoT v3.0.0
+ * CustomerProfile.tsx - Página de perfil do cliente SSoT v3.1.0
  *
  * @description
- * Implementação completa SSoT v3.0.0 com nova arquitetura de informação
- * focada em ações de vendas. Reduzida de 1,475 → ~300 linhas (80% redução).
+ * Implementação SSoT v3.1.0 com arquitetura completamente server-side.
+ * CustomerProfileHeader e CustomerActionsTab agora são 100% autossuficientes.
  *
  * @features
- * - 5 tabs otimizadas (vs 8 antigas) - 37.5% redução na complexidade
- * - Business logic centralizada em hooks SSoT
- * - Componentes reutilizáveis
- * - Foco em geração de receita
- * - Timeline integrada na Visão Geral
- * - Analytics + IA unificados
+ * - 5 tabs otimizadas com SSoT v3.1.0 compliance
+ * - CustomerProfileHeader autossuficiente (customerId only)
+ * - CustomerActionsTab com Revenue Intelligence Center
+ * - Business logic centralizada em hooks SSoT server-side
+ * - Eliminação de props dependencies
+ * - Performance otimizada com cache inteligente
  *
  * @author Adega Manager Team
- * @version 3.0.0 - SSoT Implementation
+ * @version 3.1.0 - SSoT Server-Side Implementation
  */
 
 import React, { useState } from 'react';
@@ -42,7 +42,6 @@ import { EditCustomerModal } from './EditCustomerModal';
 
 // Hooks e dados
 import { useCustomer } from '@/features/customers/hooks/use-crm';
-import { useCustomerRealMetrics } from '@/features/customers/hooks/useCustomerRealMetrics';
 
 // ============================================================================
 // TYPES
@@ -66,22 +65,15 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   // ============================================================================
-  // DATA FETCHING
+  // DATA FETCHING - Mínimo necessário para validação
   // ============================================================================
 
-  // Buscar dados do cliente
+  // Buscar dados básicos do cliente apenas para validação
   const {
     data: customer,
     isLoading,
     error
   } = useCustomer(id || '');
-
-  // Buscar métricas reais calculadas
-  const {
-    data: realMetrics,
-    isLoading: isLoadingMetrics,
-    error: metricsError
-  } = useCustomerRealMetrics(id || '');
 
   // ============================================================================
   // HANDLERS
@@ -105,8 +97,8 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
     return <Navigate to="/customers" replace />;
   }
 
-  // Loading state
-  if (isLoading || isLoadingMetrics) {
+  // Loading state - Simplified (Header handles its own loading)
+  if (isLoading) {
     return <LoadingScreen text="Carregando perfil do cliente..." />;
   }
 
@@ -133,12 +125,9 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
 
   return (
     <div className={`space-y-6 ${className}`}>
-      {/* Header Unificado - Componente SSoT */}
+      {/* Header Unificado - Componente SSoT v3.1.0 */}
       <CustomerProfileHeader
-        customer={customer}
-        realMetrics={realMetrics}
-        onEdit={handleEdit}
-        onNewSale={handleNewSale}
+        customerId={id || ''}
       />
 
       {/* Sistema de Tabs - Nova Estrutura 5 Tabs */}
