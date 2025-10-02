@@ -48,6 +48,7 @@ import {
   TooltipTrigger,
   TooltipPortal,
 } from '@/shared/ui/primitives/tooltip';
+import { formatAddress } from '@/core/config/utils';
 
 // ============================================================================
 // TYPES
@@ -416,7 +417,7 @@ export const CustomerProfileHeader: React.FC<CustomerProfileHeaderProps> = ({
                   {customer.address && (
                     <div className="flex items-center gap-1 text-gray-300">
                       <MapPin className="h-4 w-4" />
-                      <span>{customer.address}</span>
+                      <span>{formatAddress(customer.address)}</span>
                     </div>
                   )}
                 </div>

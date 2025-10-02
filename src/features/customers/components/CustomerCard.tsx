@@ -7,7 +7,7 @@ import React, { useMemo } from 'react';
 import { Card, CardContent } from '@/shared/ui/primitives/card';
 import { Button } from '@/shared/ui/primitives/button';
 import { Phone, Mail, MapPin, Calendar, Eye, Edit } from 'lucide-react';
-import { formatCurrency, cn } from '@/core/config/utils';
+import { formatCurrency, cn, formatAddress } from '@/core/config/utils';
 import { getGlassCardClasses } from '@/core/config/theme-utils';
 import { CustomerCardProps } from './types';
 import { CustomerSegmentBadge } from './CustomerSegmentBadge';
@@ -113,8 +113,8 @@ export const CustomerCard = React.memo<ModernCustomerCardProps>(({
           {customer.address && (
             <div className="flex items-center gap-2 text-sm">
               <MapPin className="h-3 w-3 text-gray-400" aria-hidden="true" />
-              <span className="text-gray-200 truncate" title={customer.address}>
-                {customer.address}
+              <span className="text-gray-200 truncate" title={formatAddress(customer.address)}>
+                {formatAddress(customer.address)}
               </span>
             </div>
           )}
