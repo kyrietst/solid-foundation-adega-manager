@@ -80,7 +80,7 @@ export const CustomerProfile: React.FC<CustomerProfileProps> = ({ className }) =
   };
 
   return (
-    <div className={className}>
+    <div className={`w-full px-4 sm:px-6 lg:px-8 ${className || ''}`}>
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-4">
         {/* Header Principal */}
         <CustomerHeader

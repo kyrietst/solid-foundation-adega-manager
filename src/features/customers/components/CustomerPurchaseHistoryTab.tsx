@@ -169,7 +169,7 @@ export const CustomerPurchaseHistoryTab: React.FC<CustomerPurchaseHistoryTabProp
   // Loading state
   if (isLoading) {
     return (
-      <section className={`bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-6 space-y-6 ${className}`}>
+      <section className={`bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg py-6 px-4 sm:px-6 space-y-6 ${className}`}>
         <div className="flex items-center justify-center py-8">
           <LoadingSpinner text="Carregando histórico de compras..." />
         </div>
@@ -180,7 +180,7 @@ export const CustomerPurchaseHistoryTab: React.FC<CustomerPurchaseHistoryTabProp
   // Error state
   if (error) {
     return (
-      <section className={`bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-6 space-y-6 ${className}`}>
+      <section className={`bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg py-6 px-4 sm:px-6 space-y-6 ${className}`}>
         <Card className="bg-red-900/20 border-red-500/30">
           <CardContent className="p-6 text-center">
             <div className="text-red-400 text-lg">❌ Erro ao carregar histórico</div>
@@ -200,17 +200,17 @@ export const CustomerPurchaseHistoryTab: React.FC<CustomerPurchaseHistoryTabProp
 
   return (
     <section
-      className={`bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-6 hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300 space-y-6 ${className}`}
+      className={`bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg py-6 px-4 sm:px-6 hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300 space-y-6 ${className}`}
       onMouseMove={handleMouseMove}
     >
-      {/* Header com filtros */}
-      <Card className="bg-gray-800/30 border-gray-700/40">
+      {/* Header com filtros - Redesign UX/UI v3.2.0 */}
+      <Card className="bg-black/70 backdrop-blur-xl border-white/20 hover:border-white/40 hover:shadow-xl transition-all duration-300">
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="text-white flex items-center gap-2">
-              <ShoppingBag className="h-5 w-5 text-green-400" />
+            <CardTitle className="text-white font-semibold text-lg flex items-center gap-2">
+              <ShoppingBag className="h-5 w-5 text-accent-green" />
               Histórico de Compras & Financeiro
-              <Badge variant="outline" className="ml-2 border-green-500/30 text-green-400">
+              <Badge variant="outline" className="ml-2 border-2 border-accent-green/60 text-accent-green bg-accent-green/20 font-semibold">
                 {purchases.length} compras {isLoading && '(carregando...)'}
               </Badge>
             </CardTitle>
@@ -328,53 +328,53 @@ export const CustomerPurchaseHistoryTab: React.FC<CustomerPurchaseHistoryTabProp
           </Card>
         ) : (
           purchases.map((purchase) => (
-            <Card key={purchase.id} className="bg-gray-800/30 border-gray-700/40 hover:border-gray-600/50 transition-colors">
-              <CardContent className="p-4">
-                <div className="flex justify-between items-start mb-3">
+            <Card key={purchase.id} className="bg-black/70 backdrop-blur-xl border-white/20 hover:border-accent-green/60 hover:scale-[1.01] hover:shadow-xl transition-all duration-300">
+              <CardContent className="p-5">
+                <div className="flex justify-between items-start mb-4">
                   <div>
-                    <div className="text-white font-medium">
+                    <div className="text-white font-semibold text-base">
                       Compra {formatPurchaseId(purchase.id)}
                     </div>
-                    <div className="text-sm text-gray-400">
+                    <div className="text-sm text-gray-200 font-medium">
                       {formatPurchaseDate(purchase.date)}
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-lg font-bold text-green-400">
+                    <div className="text-xl font-bold text-accent-green">
                       {formatCurrency(purchase.total)}
                     </div>
-                    <div className="text-xs text-gray-400">
+                    <div className="text-xs text-gray-300 font-medium">
                       {purchase.items.length} {purchase.items.length === 1 ? 'item' : 'itens'}
                     </div>
                   </div>
                 </div>
 
-                {/* Lista de itens da compra */}
-                <div className="space-y-2 border-t border-gray-700/30 pt-3">
+                {/* Lista de itens da compra - Melhor contraste */}
+                <div className="space-y-2.5 border-t border-white/10 pt-3">
                   {purchase.items.map((item, index) => (
-                    <div key={index} className="flex justify-between items-center text-sm">
+                    <div key={index} className="flex justify-between items-center text-sm min-h-[32px]">
                       <div className="flex-1">
-                        <span className="text-gray-200">{item.product_name}</span>
-                        <span className="text-gray-500 ml-2">x{item.quantity}</span>
+                        <span className="text-white font-medium">{item.product_name}</span>
+                        <span className="text-accent-blue font-semibold ml-2">x{item.quantity}</span>
                       </div>
-                      <div className="text-gray-300">
+                      <div className="text-gray-200 font-semibold">
                         {formatCurrency(item.unit_price)}
                       </div>
                     </div>
                   ))}
                 </div>
 
-                {/* Métricas da compra */}
-                <div className="flex justify-between items-center mt-3 pt-3 border-t border-gray-700/30 text-xs">
+                {/* Métricas da compra - Melhor contraste */}
+                <div className="flex justify-between items-center mt-4 pt-3 border-t border-white/10 text-xs">
                   <div className="flex items-center gap-4">
-                    <span className="text-gray-400">
-                      Ticket: <span className="text-green-400">{formatCurrency(purchase.total)}</span>
+                    <span className="text-gray-200 font-medium">
+                      Ticket: <span className="text-accent-green font-bold">{formatCurrency(purchase.total)}</span>
                     </span>
-                    <span className="text-gray-400">
-                      Itens: <span className="text-blue-400">{purchase.items.reduce((sum, item) => sum + item.quantity, 0)}</span>
+                    <span className="text-gray-200 font-medium">
+                      Itens: <span className="text-accent-blue font-bold">{purchase.items.reduce((sum, item) => sum + item.quantity, 0)}</span>
                     </span>
                   </div>
-                  <div className="text-gray-500">
+                  <div className="text-gray-300 font-medium">
                     {new Date(purchase.date).toLocaleDateString('pt-BR')}
                   </div>
                 </div>
@@ -384,38 +384,38 @@ export const CustomerPurchaseHistoryTab: React.FC<CustomerPurchaseHistoryTabProp
         )}
       </div>
 
-      {/* Resumo de performance financeira */}
+      {/* Resumo de performance financeira - Redesign UX/UI v3.2.0 */}
       {hasData && (
-        <Card className="bg-gradient-to-r from-green-900/20 to-blue-900/20 border-green-700/30">
+        <Card className="bg-black/70 backdrop-blur-xl border-white/20 hover:border-accent-green/60 hover:shadow-xl transition-all duration-300">
           <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-green-400" />
+            <CardTitle className="text-white font-semibold text-lg flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-accent-green" />
               Performance Financeira
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-400">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="text-center p-4 bg-white/5 rounded-lg border border-white/10">
+                <div className="text-3xl font-bold text-accent-green">
                   {formatCurrency(summary.totalSpent)}
                 </div>
-                <div className="text-sm text-gray-400">Receita Total</div>
+                <div className="text-sm text-gray-200 font-medium mt-1">Receita Total</div>
               </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-blue-400">
+              <div className="text-center p-4 bg-white/5 rounded-lg border border-white/10">
+                <div className="text-3xl font-bold text-accent-blue">
                   {formatCurrency(summary.averageTicket)}
                 </div>
-                <div className="text-sm text-gray-400">Ticket Médio</div>
+                <div className="text-sm text-gray-200 font-medium mt-1">Ticket Médio</div>
               </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-purple-400">
+              <div className="text-center p-4 bg-white/5 rounded-lg border border-white/10">
+                <div className="text-3xl font-bold text-accent-purple">
                   {summary.purchaseCount}
                 </div>
-                <div className="text-sm text-gray-400">Total de Compras</div>
+                <div className="text-sm text-gray-200 font-medium mt-1">Total de Compras</div>
               </div>
             </div>
-            <div className="mt-4 pt-4 border-t border-gray-700/30">
-              <div className="text-center text-xs text-gray-400">
+            <div className="mt-4 pt-4 border-t border-white/10">
+              <div className="text-center text-xs text-gray-300 font-medium">
                 📊 Dados financeiros integrados com histórico de compras
               </div>
             </div>

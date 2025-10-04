@@ -128,7 +128,7 @@ export const CustomerInsightsTab: React.FC<CustomerInsightsTabProps> = React.mem
   if (isLoading) {
     return (
       <section
-        className={`bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-6 space-y-6 ${className}`}
+        className={`bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg py-6 px-4 sm:px-6 space-y-6 ${className}`}
         onMouseMove={handleMouseMove}
       >
         <Card className="bg-gray-800/30 border-gray-700/40">
@@ -175,7 +175,7 @@ export const CustomerInsightsTab: React.FC<CustomerInsightsTabProps> = React.mem
   if (error) {
     return (
       <section
-        className={`bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-6 space-y-6 ${className}`}
+        className={`bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg py-6 px-4 sm:px-6 space-y-6 ${className}`}
         onMouseMove={handleMouseMove}
       >
         <Card className="bg-gradient-to-br from-red-900/30 to-red-800/20 border-red-700/40">
@@ -233,17 +233,17 @@ export const CustomerInsightsTab: React.FC<CustomerInsightsTabProps> = React.mem
 
   return (
     <section
-      className={`bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-6 hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300 space-y-6 ${className}`}
+      className={`bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg py-6 px-4 sm:px-6 hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300 space-y-6 ${className}`}
       onMouseMove={handleMouseMove}
     >
-      {/* Header dos Insights com Informações de Atualização */}
-      <Card className="bg-gradient-to-r from-gray-800/40 to-gray-900/30 border-gray-700/40 hover:border-purple-500/30 transition-colors">
+      {/* Header dos Insights com Informações de Atualização - Redesign UX/UI v3.2.0 */}
+      <Card className="bg-black/70 backdrop-blur-xl border-white/20 hover:border-accent-purple/60 hover:shadow-xl transition-all duration-300">
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <CardTitle className="text-white flex items-center gap-2">
-              <Brain className="h-5 w-5 text-purple-400" />
+            <CardTitle className="text-white font-semibold text-lg flex items-center gap-2">
+              <Brain className="h-5 w-5 text-accent-purple" />
               Analytics & Insights IA
-              <Badge variant="outline" className="border-purple-500/30 text-purple-400">
+              <Badge variant="outline" className="border-2 border-accent-purple/60 text-accent-purple bg-accent-purple/20 font-semibold">
                 {purchases?.length || 0} compras analisadas
               </Badge>
             </CardTitle>
@@ -269,11 +269,11 @@ export const CustomerInsightsTab: React.FC<CustomerInsightsTabProps> = React.mem
 
       {hasAnalyticsData ? (
         <div className="space-y-6">
-          {/* Insights de IA - Seção Principal */}
-          <Card className="bg-gradient-to-r from-purple-900/20 to-blue-900/20 border-purple-700/30">
+          {/* Insights de IA - Seção Principal - Redesign UX/UI v3.2.0 */}
+          <Card className="bg-black/70 backdrop-blur-xl border-white/20 hover:border-accent-purple/60 hover:shadow-xl transition-all duration-300">
             <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
-                <Lightbulb className="h-5 w-5 text-purple-400" />
+              <CardTitle className="text-white font-semibold text-lg flex items-center gap-2">
+                <Lightbulb className="h-5 w-5 text-accent-purple" />
                 Insights de IA & Recomendações
               </CardTitle>
             </CardHeader>
@@ -403,11 +403,11 @@ export const CustomerInsightsTab: React.FC<CustomerInsightsTabProps> = React.mem
 
           {/* Gráficos Analíticos - Responsivo Otimizado */}
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-            {/* Gráfico de Vendas por Mês */}
-            <Card className="bg-gray-800/30 border-gray-700/40">
+            {/* Gráfico de Vendas por Mês - Redesign UX/UI v3.2.0 */}
+            <Card className="bg-black/70 backdrop-blur-xl border-white/20 hover:border-accent-green/60 hover:shadow-xl transition-all duration-300">
               <CardHeader>
-                <CardTitle className="text-white text-base flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4 text-green-400" />
+                <CardTitle className="text-white font-semibold text-base flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4 text-accent-green" />
                   Evolução de Vendas
                 </CardTitle>
               </CardHeader>
@@ -450,11 +450,11 @@ export const CustomerInsightsTab: React.FC<CustomerInsightsTabProps> = React.mem
               </CardContent>
             </Card>
 
-            {/* Gráfico de Top Produtos */}
-            <Card className="bg-gray-800/30 border-gray-700/40">
+            {/* Gráfico de Top Produtos - Redesign UX/UI v3.2.0 */}
+            <Card className="bg-black/70 backdrop-blur-xl border-white/20 hover:border-accent-blue/60 hover:shadow-xl transition-all duration-300">
               <CardHeader>
-                <CardTitle className="text-white text-base flex items-center gap-2">
-                  <Package className="h-4 w-4 text-blue-400" />
+                <CardTitle className="text-white font-semibold text-base flex items-center gap-2">
+                  <Package className="h-4 w-4 text-accent-blue" />
                   Top Produtos Preferidos
                 </CardTitle>
               </CardHeader>
@@ -494,12 +494,12 @@ export const CustomerInsightsTab: React.FC<CustomerInsightsTabProps> = React.mem
               </CardContent>
             </Card>
 
-            {/* Gráfico de Frequência (se houver dados) */}
+            {/* Gráfico de Frequência (se houver dados) - Redesign UX/UI v3.2.0 */}
             {hasFrequencyData && (
-              <Card className="bg-gray-800/30 border-gray-700/40 xl:col-span-2">
+              <Card className="bg-black/70 backdrop-blur-xl border-white/20 hover:border-accent-purple/60 hover:shadow-xl transition-all duration-300 xl:col-span-2">
                 <CardHeader>
-                  <CardTitle className="text-white text-base flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-purple-400" />
+                  <CardTitle className="text-white font-semibold text-base flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-accent-purple" />
                     Padrão de Compras (Intervalos)
                   </CardTitle>
                 </CardHeader>

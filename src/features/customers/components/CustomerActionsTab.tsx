@@ -107,7 +107,7 @@ export const CustomerActionsTab: React.FC<CustomerActionsTabProps> = ({
   // Loading state
   if (isLoading) {
     return (
-      <section className={`bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-6 space-y-6 ${className}`}>
+      <section className={`bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg py-6 px-4 sm:px-6 space-y-6 ${className}`}>
         <div className="flex items-center justify-center py-8">
           <LoadingSpinner text="Carregando centro de ações..." />
         </div>
@@ -118,7 +118,7 @@ export const CustomerActionsTab: React.FC<CustomerActionsTabProps> = ({
   // Error state
   if (error) {
     return (
-      <section className={`bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-6 space-y-6 ${className}`}>
+      <section className={`bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg py-6 px-4 sm:px-6 space-y-6 ${className}`}>
         <Card className="bg-red-900/20 border-red-500/30">
           <CardContent className="p-6 text-center">
             <div className="text-red-400 text-lg">❌ Erro ao carregar centro de ações</div>
@@ -135,11 +135,11 @@ export const CustomerActionsTab: React.FC<CustomerActionsTabProps> = ({
   // Empty state (cliente não encontrado)
   if (isEmpty) {
     return (
-      <section className={`bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-6 space-y-6 ${className}`}>
-        <Card className="bg-gray-800/30 border-gray-700/40">
+      <section className={`bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg py-6 px-4 sm:px-6 space-y-6 ${className}`}>
+        <Card className="bg-black/70 backdrop-blur-xl border-white/20">
           <CardContent className="p-8 text-center">
-            <AlertCircle className="h-12 w-12 mx-auto mb-4 text-gray-500 opacity-50" />
-            <div className="text-gray-400">Cliente não encontrado</div>
+            <AlertCircle className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+            <div className="text-gray-200 font-medium">Cliente não encontrado</div>
           </CardContent>
         </Card>
       </section>
@@ -179,36 +179,36 @@ export const CustomerActionsTab: React.FC<CustomerActionsTabProps> = ({
 
   return (
     <section
-      className={`bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-6 hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300 space-y-6 ${className}`}
+      className={`bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg py-6 px-4 sm:px-6 hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300 space-y-6 ${className}`}
       onMouseMove={handleMouseMove}
     >
-      {/* Header com Status Inteligente */}
-      <Card className="bg-gray-800/30 border-gray-700/40">
+      {/* Header com Status Inteligente - Redesign UX/UI v3.2.0 */}
+      <Card className="bg-black/70 backdrop-blur-xl border-white/20 hover:border-accent-purple/60 hover:shadow-xl transition-all duration-300">
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="text-white flex items-center gap-2">
-              <Brain className="h-5 w-5 text-purple-400" />
+            <CardTitle className="text-white font-semibold text-lg flex items-center gap-2">
+              <Brain className="h-5 w-5 text-accent-purple" />
               Centro de Inteligência Comercial
-              <Badge variant="outline" className="ml-2 border-purple-500/30 text-purple-400">
+              <Badge variant="outline" className="ml-2 border-2 border-accent-purple/60 text-accent-purple bg-accent-purple/20 font-semibold">
                 AI-Powered
               </Badge>
             </CardTitle>
 
             <div className="flex items-center gap-2">
               {hasIntelligentSuggestions && (
-                <Badge variant="outline" className="border-green-500/30 text-green-400">
+                <Badge variant="outline" className="border-2 border-accent-green/60 text-accent-green bg-accent-green/20 font-semibold">
                   {recommendedActions.length} ações sugeridas
                 </Badge>
               )}
 
               {isAtRisk && (
-                <Badge variant="outline" className="border-red-500/30 text-red-400">
+                <Badge variant="outline" className="border-2 border-accent-red/60 text-accent-red bg-accent-red/20 font-semibold">
                   ⚠️ Cliente em risco
                 </Badge>
               )}
 
               {isHighValue && (
-                <Badge variant="outline" className="border-yellow-500/30 text-yellow-400">
+                <Badge variant="outline" className="border-2 border-accent-gold-100/60 text-accent-gold-100 bg-accent-gold-100/20 font-semibold">
                   ⭐ High Value
                 </Badge>
               )}
@@ -217,38 +217,42 @@ export const CustomerActionsTab: React.FC<CustomerActionsTabProps> = ({
         </CardHeader>
       </Card>
 
-      {/* Análise de Risco de Churn */}
+      {/* Análise de Risco de Churn - Redesign UX/UI v3.2.0 */}
       {isAtRisk && (
-        <Card className={`bg-gradient-to-r from-red-900/30 to-orange-900/20 border-red-700/40`}>
+        <Card className="bg-black/70 backdrop-blur-xl border-accent-red/60 hover:border-accent-red hover:shadow-2xl hover:shadow-accent-red/20 transition-all duration-300">
           <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-red-400 animate-pulse" />
+            <CardTitle className="text-white font-semibold text-lg flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-accent-red animate-pulse" />
               Alerta de Churn - Ação Urgente
-              <Badge className="ml-2 bg-red-500/20 text-red-400 border-red-500/30">
+              <Badge variant="outline" className="ml-2 border-2 bg-accent-red/30 text-accent-red border-accent-red/60 font-semibold">
                 Risco {riskAnalysis.riskLevel}: {riskAnalysis.riskScore}%
               </Badge>
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div>
-                <h4 className="text-red-400 font-medium mb-2">🚨 Fatores de Risco:</h4>
-                <ul className="text-gray-300 text-sm space-y-1">
+              <div className="p-3 bg-white/5 rounded-lg border border-accent-red/20">
+                <h4 className="text-accent-red font-semibold mb-2 flex items-center gap-2">
+                  <span className="text-lg">🚨</span> Fatores de Risco
+                </h4>
+                <ul className="text-gray-200 text-sm space-y-1.5">
                   {riskAnalysis.riskFactors.map((factor, index) => (
-                    <li key={index}>• {factor}</li>
+                    <li key={index} className="font-medium">• {factor}</li>
                   ))}
                 </ul>
               </div>
-              <div>
-                <h4 className="text-orange-400 font-medium mb-2">🎯 Ações Preventivas:</h4>
-                <ul className="text-gray-300 text-sm space-y-1">
+              <div className="p-3 bg-white/5 rounded-lg border border-accent-orange/20">
+                <h4 className="text-accent-orange font-semibold mb-2 flex items-center gap-2">
+                  <span className="text-lg">🎯</span> Ações Preventivas
+                </h4>
+                <ul className="text-gray-200 text-sm space-y-1.5">
                   {riskAnalysis.preventionActions.map((action, index) => (
-                    <li key={index}>• {action}</li>
+                    <li key={index} className="font-medium">• {action}</li>
                   ))}
                 </ul>
               </div>
               <div className="text-center pt-2">
-                <Badge variant="outline" className="border-red-500/30 text-red-400">
+                <Badge variant="outline" className="border-2 border-accent-red/60 text-accent-red bg-accent-red/20 font-semibold">
                   ⏰ Tempo estimado para churn: {riskAnalysis.timeToChurn} dias
                 </Badge>
               </div>
@@ -257,45 +261,54 @@ export const CustomerActionsTab: React.FC<CustomerActionsTabProps> = ({
         </Card>
       )}
 
-      {/* Ações Inteligentes Recomendadas */}
+      {/* Ações Inteligentes Recomendadas - Redesign UX/UI v3.2.0 */}
       {hasIntelligentSuggestions && (
         <div>
           <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-            <Target className="h-5 w-5 text-purple-400" />
+            <Target className="h-5 w-5 text-accent-purple" />
             Ações Inteligentes Recomendadas
           </h3>
           <div className="space-y-3">
-            {recommendedActions.slice(0, 3).map((action) => (
-              <Card key={action.id} className={getUrgencyColor(action.urgency)}>
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h4 className="font-medium">{action.title}</h4>
-                        <Badge variant="outline" className="text-xs">
-                          {action.confidence}% confiança
-                        </Badge>
-                        {action.expectedRevenue > 0 && (
-                          <Badge variant="outline" className="text-xs border-green-500/30 text-green-400">
-                            +{formatCurrency(action.expectedRevenue)}
+            {recommendedActions.slice(0, 3).map((action) => {
+              const urgencyColors = {
+                critical: 'bg-black/70 backdrop-blur-xl border-accent-red/60 hover:border-accent-red hover:shadow-xl hover:shadow-accent-red/20 transition-all duration-300',
+                high: 'bg-black/70 backdrop-blur-xl border-accent-orange/60 hover:border-accent-orange hover:shadow-xl hover:shadow-accent-orange/20 transition-all duration-300',
+                medium: 'bg-black/70 backdrop-blur-xl border-yellow-400/60 hover:border-yellow-400 hover:shadow-xl hover:shadow-yellow-400/20 transition-all duration-300',
+                low: 'bg-black/70 backdrop-blur-xl border-accent-green/60 hover:border-accent-green hover:shadow-xl hover:shadow-accent-green/20 transition-all duration-300'
+              };
+
+              return (
+                <Card key={action.id} className={urgencyColors[action.urgency] || urgencyColors.low}>
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h4 className="text-white font-semibold">{action.title}</h4>
+                          <Badge variant="outline" className="text-xs border-2 border-accent-blue/60 text-accent-blue bg-accent-blue/20 font-semibold">
+                            {action.confidence}% confiança
                           </Badge>
-                        )}
+                          {action.expectedRevenue > 0 && (
+                            <Badge variant="outline" className="text-xs border-2 border-accent-green/60 text-accent-green bg-accent-green/20 font-semibold">
+                              +{formatCurrency(action.expectedRevenue)}
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-gray-200 text-sm mb-2 font-medium">{action.description}</p>
+                        <p className="text-gray-300 text-xs font-medium">💡 {action.reasoning}</p>
                       </div>
-                      <p className="text-sm mb-2">{action.description}</p>
-                      <p className="text-xs opacity-75">💡 {action.reasoning}</p>
+                      <Button
+                        size="sm"
+                        onClick={() => executeAction(action.id)}
+                        className="ml-4 bg-accent-purple hover:bg-accent-purple/80"
+                      >
+                        <Zap className="h-3 w-3 mr-1" />
+                        Executar
+                      </Button>
                     </div>
-                    <Button
-                      size="sm"
-                      onClick={() => executeAction(action.id)}
-                      className="ml-4"
-                    >
-                      <Zap className="h-3 w-3 mr-1" />
-                      Executar
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </div>
       )}
@@ -352,26 +365,32 @@ export const CustomerActionsTab: React.FC<CustomerActionsTabProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {revenueOpportunities.map((opportunity, index) => {
               const categoryColors = {
-                immediate: 'border-red-500/40 bg-red-900/20',
-                short_term: 'border-yellow-500/40 bg-yellow-900/20',
-                long_term: 'border-green-500/40 bg-green-900/20'
+                immediate: 'bg-black/70 backdrop-blur-xl border-accent-red/60 hover:border-accent-red hover:shadow-xl hover:shadow-accent-red/20 transition-all duration-300',
+                short_term: 'bg-black/70 backdrop-blur-xl border-yellow-400/60 hover:border-yellow-400 hover:shadow-xl hover:shadow-yellow-400/20 transition-all duration-300',
+                long_term: 'bg-black/70 backdrop-blur-xl border-accent-green/60 hover:border-accent-green hover:shadow-xl hover:shadow-accent-green/20 transition-all duration-300'
+              };
+
+              const categoryTextColors = {
+                immediate: 'text-accent-red',
+                short_term: 'text-yellow-400',
+                long_term: 'text-accent-green'
               };
 
               return (
                 <Card key={index} className={categoryColors[opportunity.category]}>
-                  <CardContent className="p-4">
-                    <div className="text-center">
-                      <h4 className="font-medium mb-2 capitalize">
+                  <CardContent className="p-5">
+                    <div className="text-center space-y-3">
+                      <h4 className="text-white font-semibold text-base capitalize">
                         {opportunity.category.replace('_', ' ')}
                       </h4>
-                      <div className="text-2xl font-bold mb-1">
+                      <div className={`text-3xl font-bold ${categoryTextColors[opportunity.category]}`}>
                         {formatCurrency(opportunity.potential)}
                       </div>
-                      <div className="text-sm opacity-75 mb-2">
+                      <div className="text-sm text-gray-200 font-medium">
                         {opportunity.probability}% probabilidade
                       </div>
-                      <p className="text-xs">{opportunity.action}</p>
-                      <Badge variant="outline" className="mt-2 text-xs">
+                      <p className="text-xs text-gray-300 font-medium">{opportunity.action}</p>
+                      <Badge variant="outline" className="mt-2 text-xs border-2 border-white/30 text-gray-200 bg-white/10 font-semibold">
                         {opportunity.timeframe}
                       </Badge>
                     </div>
@@ -432,23 +451,23 @@ export const CustomerActionsTab: React.FC<CustomerActionsTabProps> = ({
         </div>
       </div>
 
-      {/* Ferramentas de Marketing */}
-      <Card className="bg-gray-800/30 border-gray-700/40">
+      {/* Ferramentas de Marketing - Redesign UX/UI v3.2.0 */}
+      <Card className="bg-black/70 backdrop-blur-xl border-white/20 hover:border-accent-purple/60 hover:shadow-xl transition-all duration-300">
         <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
-            <Gift className="h-5 w-5 text-pink-400" />
+          <CardTitle className="text-white font-semibold text-lg flex items-center gap-2">
+            <Gift className="h-5 w-5 text-accent-purple" />
             Ferramentas de Marketing
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Campanhas Personalizadas */}
-            <div className="bg-gray-900/50 rounded-lg p-4">
-              <h4 className="text-white font-medium mb-2 flex items-center gap-2">
-                <Target className="h-4 w-4 text-pink-400" />
+            <div className="bg-white/5 border border-white/10 rounded-lg p-4">
+              <h4 className="text-white font-semibold mb-2 flex items-center gap-2">
+                <Target className="h-4 w-4 text-accent-purple" />
                 Campanhas Personalizadas
               </h4>
-              <p className="text-gray-400 text-sm mb-3">
+              <p className="text-gray-200 text-sm mb-3 font-medium">
                 Crie campanhas baseadas no perfil e histórico do cliente
               </p>
               <div className="space-y-2">
@@ -483,12 +502,12 @@ export const CustomerActionsTab: React.FC<CustomerActionsTabProps> = ({
             </div>
 
             {/* Automações */}
-            <div className="bg-gray-900/50 rounded-lg p-4">
-              <h4 className="text-white font-medium mb-2 flex items-center gap-2">
-                <Zap className="h-4 w-4 text-yellow-400" />
+            <div className="bg-white/5 border border-white/10 rounded-lg p-4">
+              <h4 className="text-white font-semibold mb-2 flex items-center gap-2">
+                <Zap className="h-4 w-4 text-accent-gold-100" />
                 Automações
               </h4>
-              <p className="text-gray-400 text-sm mb-3">
+              <p className="text-gray-200 text-sm mb-3 font-medium">
                 Status das automações para este cliente
               </p>
               <div className="space-y-2">
@@ -516,11 +535,11 @@ export const CustomerActionsTab: React.FC<CustomerActionsTabProps> = ({
         </CardContent>
       </Card>
 
-      {/* Links Rápidos */}
-      <Card className="bg-gradient-to-r from-indigo-900/20 to-purple-900/20 border-indigo-700/30">
+      {/* Links Rápidos - Redesign UX/UI v3.2.0 */}
+      <Card className="bg-black/70 backdrop-blur-xl border-white/20 hover:border-accent-blue/60 hover:shadow-xl transition-all duration-300">
         <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
-            <ExternalLink className="h-5 w-5 text-indigo-400" />
+          <CardTitle className="text-white font-semibold text-lg flex items-center gap-2">
+            <ExternalLink className="h-5 w-5 text-accent-blue" />
             Links Rápidos para Ação
           </CardTitle>
         </CardHeader>

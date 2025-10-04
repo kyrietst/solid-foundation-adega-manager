@@ -45,7 +45,7 @@ import {
   Clock,
   AlertCircle
 } from 'lucide-react';
-import { formatCurrency } from '@/core/config/utils';
+import { formatCurrency, cn } from '@/core/config/utils';
 import {
   Tooltip,
   TooltipContent,
@@ -165,7 +165,7 @@ export const CustomerOverviewTab: React.FC<CustomerOverviewTabProps> = ({
   // Loading state
   if (isLoading) {
     return (
-      <section className={`bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-6 space-y-6 ${className}`}>
+      <section className={`bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg py-6 px-4 sm:px-6 space-y-6 ${className}`}>
         <div className="flex items-center justify-center py-8">
           <LoadingSpinner text="Carregando visão geral do cliente..." />
         </div>
@@ -176,7 +176,7 @@ export const CustomerOverviewTab: React.FC<CustomerOverviewTabProps> = ({
   // Error state
   if (error) {
     return (
-      <section className={`bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-6 space-y-6 ${className}`}>
+      <section className={`bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg py-6 px-4 sm:px-6 space-y-6 ${className}`}>
         <Card className="bg-red-900/20 border-red-500/30">
           <CardContent className="p-6 text-center">
             <div className="text-red-400 text-lg">❌ Erro ao carregar visão geral</div>
@@ -193,7 +193,7 @@ export const CustomerOverviewTab: React.FC<CustomerOverviewTabProps> = ({
   // Empty state (cliente não encontrado)
   if (isEmpty) {
     return (
-      <section className={`bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-6 space-y-6 ${className}`}>
+      <section className={`bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg py-6 px-4 sm:px-6 space-y-6 ${className}`}>
         <Card className="bg-gray-800/30 border-gray-700/40">
           <CardContent className="p-8 text-center">
             <AlertCircle className="h-12 w-12 mx-auto mb-4 text-gray-500 opacity-50" />
@@ -280,7 +280,7 @@ export const CustomerOverviewTab: React.FC<CustomerOverviewTabProps> = ({
 
   return (
     <section
-      className={`bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-6 hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300 space-y-6 ${className}`}
+      className={`bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg py-6 px-4 sm:px-6 hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300 space-y-6 ${className}`}
       onMouseMove={handleMouseMove}
     >
       {/* Alert para campos críticos em falta */}
@@ -315,216 +315,212 @@ export const CustomerOverviewTab: React.FC<CustomerOverviewTabProps> = ({
         </Card>
       )}
 
-      {/* Cards Principais do Dashboard */}
+      {/* Cards Principais do Dashboard - Redesign UX/UI v3.2.0 */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-        {/* Card Resumo Financeiro */}
-        <Card className="bg-gradient-to-br from-green-900/20 to-green-800/20 border-green-700/40">
-          <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-green-400" />
+        {/* Card Resumo Financeiro - Variant Success */}
+        <Card className="bg-black/70 backdrop-blur-xl border-white/20 hover:border-accent-green/60 hover:scale-[1.02] hover:shadow-xl hover:bg-black/80 transition-all duration-300">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-white font-semibold text-base flex items-center gap-2">
+              <DollarSign className="h-5 w-5 text-accent-green" />
               Resumo Financeiro
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-300">Valor Total (LTV):</span>
-                <div className="text-right">
-                  <div className="text-lg font-bold text-green-400">
-                    {formatCurrency(realMetrics?.lifetime_value_calculated || 0)}
-                    {realMetrics && !realMetrics.data_sync_status.ltv_synced && (
-                      <span className="text-xs text-yellow-400 ml-1">⚠️</span>
-                    )}
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    {`${realMetrics?.total_purchases || 0} compras reais`}
-                  </div>
+          <CardContent className="space-y-3">
+            <div className="flex items-center justify-between min-h-[44px]">
+              <span className="text-gray-200 font-medium text-sm">Valor Total (LTV)</span>
+              <div className="text-right">
+                <div className="text-2xl font-bold text-accent-green">
+                  {formatCurrency(realMetrics?.lifetime_value_calculated || 0)}
+                  {realMetrics && !realMetrics.data_sync_status.ltv_synced && (
+                    <span className="text-xs text-yellow-400 ml-1">⚠️</span>
+                  )}
+                </div>
+                <div className="text-xs text-gray-300 font-medium">
+                  {`${realMetrics?.total_purchases || 0} compras reais`}
                 </div>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-300">Ticket Médio:</span>
-                <div className="text-lg font-semibold text-purple-400">
-                  {formatCurrency(realMetrics?.avg_purchase_value || 0)}
-                </div>
+            </div>
+            <div className="flex items-center justify-between min-h-[40px]">
+              <span className="text-gray-200 font-medium text-sm">Ticket Médio</span>
+              <div className="text-xl font-bold text-accent-purple">
+                {formatCurrency(realMetrics?.avg_purchase_value || 0)}
               </div>
-              <div className="pt-2 border-t border-gray-700/30">
-                <div className="text-xs text-gray-400 text-center">
-                  Cliente desde {new Date(customer.created_at || '').toLocaleDateString('pt-BR')}
-                </div>
+            </div>
+            <div className="pt-2 border-t border-white/10">
+              <div className="text-xs text-gray-300 text-center font-medium">
+                Cliente desde {new Date(customer.created_at || '').toLocaleDateString('pt-BR')}
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Card Atividade & Engajamento */}
-        <Card className="bg-gradient-to-br from-blue-900/20 to-blue-800/20 border-blue-700/40">
-          <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-blue-400" />
+        {/* Card Atividade & Engajamento - Variant Default */}
+        <Card className="bg-black/70 backdrop-blur-xl border-white/20 hover:border-white/40 hover:scale-[1.02] hover:shadow-xl hover:bg-black/80 transition-all duration-300">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-white font-semibold text-base flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-accent-blue" />
               Atividade & Engajamento
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-300">Última Compra:</span>
-                <div className="text-right">
-                  <div className="text-sm font-medium text-blue-400">
-                    {realMetrics?.last_purchase_real
-                      ? new Date(realMetrics.last_purchase_real).toLocaleDateString('pt-BR')
-                      : 'Nunca'
-                    }
-                    {realMetrics && !realMetrics.data_sync_status.dates_synced && (
-                      <span className="text-xs text-yellow-400 ml-1">⚠️</span>
-                    )}
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    {realMetrics?.days_since_last_purchase !== undefined
-                      ? `${realMetrics.days_since_last_purchase} dias atrás`
-                      : 'Primeira compra pendente'
-                    }
-                  </div>
+          <CardContent className="space-y-3">
+            <div className="flex items-center justify-between min-h-[44px]">
+              <span className="text-gray-200 font-medium text-sm">Última Compra</span>
+              <div className="text-right">
+                <div className="text-base font-bold text-white">
+                  {realMetrics?.last_purchase_real
+                    ? new Date(realMetrics.last_purchase_real).toLocaleDateString('pt-BR')
+                    : 'Nunca'
+                  }
+                  {realMetrics && !realMetrics.data_sync_status.dates_synced && (
+                    <span className="text-xs text-yellow-400 ml-1">⚠️</span>
+                  )}
+                </div>
+                <div className="text-xs text-gray-300 font-medium">
+                  {realMetrics?.days_since_last_purchase !== undefined
+                    ? `${realMetrics.days_since_last_purchase} dias atrás`
+                    : 'Primeira compra pendente'
+                  }
                 </div>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-300">Status:</span>
-                <Badge
-                  variant="outline"
-                  className={customerStatusData.className}
-                >
-                  {customerStatusData.status}
-                </Badge>
-              </div>
-              <div className="pt-2 border-t border-gray-700/30">
-                <div className="text-xs text-gray-400 text-center">
-                  Engajamento: {customerStatusData.engagementLevel}
-                </div>
+            </div>
+            <div className="flex items-center justify-between min-h-[40px]">
+              <span className="text-gray-200 font-medium text-sm">Status</span>
+              <Badge
+                variant="outline"
+                className={cn(
+                  "border-2 font-semibold",
+                  customerStatusData.className
+                )}
+              >
+                {customerStatusData.status}
+              </Badge>
+            </div>
+            <div className="pt-2 border-t border-white/10">
+              <div className="text-xs text-gray-300 text-center font-medium">
+                Engajamento: {customerStatusData.engagementLevel}
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Card Preferências & Perfil */}
-        <Card className="bg-gradient-to-br from-purple-900/20 to-purple-800/20 border-purple-700/40">
-          <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-purple-400" />
+        {/* Card Preferências & Perfil - Variant Purple */}
+        <Card className="bg-black/70 backdrop-blur-xl border-white/20 hover:border-accent-purple/60 hover:scale-[1.02] hover:shadow-xl hover:bg-black/80 transition-all duration-300">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-white font-semibold text-base flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-accent-purple" />
               Preferências & Perfil
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-gray-300 text-sm">Categoria Favorita:</span>
-                  <span className="text-purple-400 text-sm font-medium">
-                    {realMetrics?.calculated_favorite_category || 'Não definida'}
-                    {realMetrics && !realMetrics.data_sync_status.preferences_synced && (
-                      <span className="text-xs text-yellow-400 ml-1">⚠️</span>
-                    )}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-300 text-sm">Produto Favorito:</span>
-                  <span className="text-purple-400 text-sm font-medium">
-                    {realMetrics?.calculated_favorite_product || 'Não definido'}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-300 text-sm">Insights AI:</span>
-                  <span className="text-blue-400 text-sm font-medium">
-                    {`${realMetrics?.insights_count || 0} insights (${Math.round((realMetrics?.insights_confidence || 0) * 100)}% confiança)`}
-                  </span>
-                </div>
+          <CardContent className="space-y-3">
+            <div className="space-y-2.5">
+              <div className="flex items-center justify-between min-h-[36px]">
+                <span className="text-gray-200 font-medium text-sm">Categoria Favorita</span>
+                <span className="text-accent-purple text-sm font-bold">
+                  {realMetrics?.calculated_favorite_category || 'Não definida'}
+                  {realMetrics && !realMetrics.data_sync_status.preferences_synced && (
+                    <span className="text-xs text-yellow-400 ml-1">⚠️</span>
+                  )}
+                </span>
               </div>
-              <div className="flex justify-between items-center pt-2 border-t border-gray-700/30">
-                <span className="text-gray-300">Segmento:</span>
-                <Badge
-                  className={`
-                    ${customer.segment === 'high_value' ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' :
-                      customer.segment === 'regular' ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' :
-                      customer.segment === 'new' ? 'bg-green-500/20 text-green-400 border-green-500/30' :
-                      'bg-gray-500/20 text-gray-400 border-gray-500/30'
-                    }
-                  `}
-                >
-                  {customer.segment || 'Não Classificado'}
-                </Badge>
+              <div className="flex items-center justify-between min-h-[36px]">
+                <span className="text-gray-200 font-medium text-sm">Produto Favorito</span>
+                <span className="text-white text-sm font-bold">
+                  {realMetrics?.calculated_favorite_product || 'Não definido'}
+                </span>
               </div>
+              <div className="flex items-center justify-between min-h-[36px]">
+                <span className="text-gray-200 font-medium text-sm">Insights AI</span>
+                <span className="text-accent-blue text-sm font-bold">
+                  {`${realMetrics?.insights_count || 0} insights`}
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center justify-between pt-2 border-t border-white/10">
+              <span className="text-gray-200 font-medium text-sm">Segmento</span>
+              <Badge
+                variant="outline"
+                className={cn(
+                  "border-2 font-semibold",
+                  customer.segment === 'high_value' ? 'bg-accent-gold-100/30 text-accent-gold-100 border-accent-gold-100/60' :
+                  customer.segment === 'regular' ? 'bg-accent-blue/30 text-accent-blue border-accent-blue/60' :
+                  customer.segment === 'new' ? 'bg-accent-green/30 text-accent-green border-accent-green/60' :
+                  'bg-gray-500/30 text-gray-200 border-gray-500/60'
+                )}
+              >
+                {customer.segment || 'Não Classificado'}
+              </Badge>
             </div>
           </CardContent>
         </Card>
 
-        {/* Card Contato & Comunicação */}
-        <Card className="bg-gradient-to-br from-orange-900/20 to-orange-800/20 border-orange-700/40">
-          <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <MessageSquare className="h-5 w-5 text-orange-400" />
+        {/* Card Contato & Comunicação - Variant Warning */}
+        <Card className="bg-black/70 backdrop-blur-xl border-white/20 hover:border-accent-orange/60 hover:scale-[1.02] hover:shadow-xl hover:bg-black/80 transition-all duration-300">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-white font-semibold text-base flex items-center gap-2">
+              <MessageSquare className="h-5 w-5 text-accent-orange" />
               Contato & Comunicação
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-300 text-sm">Telefone:</span>
-                  <div className="flex items-center gap-2">
-                    {customer.phone ? (
-                      <>
-                        <span className="text-green-400 text-xs">✓</span>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-6 px-2 text-xs text-orange-400 hover:text-orange-300"
-                          onClick={() => sendWhatsApp()}
-                        >
-                          WhatsApp
-                        </Button>
-                      </>
-                    ) : (
-                      <>
-                        <span className="text-red-400 text-xs">✗ Não cadastrado</span>
-                        <MissingFieldAlert
-                          field={reportFields.find(f => f.key === 'phone')!}
-                          variant="critical"
-                        />
-                      </>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-300 text-sm">Email:</span>
-                  <div className="flex items-center gap-2">
-                    {customer.email ? (
-                      <>
-                        <span className="text-green-400 text-xs">✓</span>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-6 px-2 text-xs text-orange-400 hover:text-orange-300"
-                          onClick={() => sendEmail()}
-                        >
-                          Enviar
-                        </Button>
-                      </>
-                    ) : (
-                      <>
-                        <span className="text-red-400 text-xs">✗ Não cadastrado</span>
-                        <MissingFieldAlert
-                          field={reportFields.find(f => f.key === 'email')!}
-                          variant="critical"
-                        />
-                      </>
-                    )}
-                  </div>
+          <CardContent className="space-y-3">
+            <div className="space-y-2.5">
+              <div className="flex items-center justify-between min-h-[36px]">
+                <span className="text-gray-200 font-medium text-sm">Telefone</span>
+                <div className="flex items-center gap-2">
+                  {customer.phone ? (
+                    <>
+                      <span className="text-accent-green text-sm font-bold">✓</span>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 px-3 text-xs text-accent-orange hover:text-white hover:bg-accent-orange/20 font-semibold"
+                        onClick={() => sendWhatsApp()}
+                      >
+                        WhatsApp
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-accent-red text-xs font-bold">✗ Não cadastrado</span>
+                      <MissingFieldAlert
+                        field={reportFields.find(f => f.key === 'phone')!}
+                        variant="critical"
+                      />
+                    </>
+                  )}
                 </div>
               </div>
-              <div className="flex justify-between items-center pt-2 border-t border-gray-700/30">
-                <span className="text-gray-300 text-sm">Completude:</span>
-                <span className="text-orange-400 text-sm">
-                  {profileCompleteness}
-                </span>
+              <div className="flex items-center justify-between min-h-[36px]">
+                <span className="text-gray-200 font-medium text-sm">Email</span>
+                <div className="flex items-center gap-2">
+                  {customer.email ? (
+                    <>
+                      <span className="text-accent-green text-sm font-bold">✓</span>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 px-3 text-xs text-accent-orange hover:text-white hover:bg-accent-orange/20 font-semibold"
+                        onClick={() => sendEmail()}
+                      >
+                        Enviar
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-accent-red text-xs font-bold">✗ Não cadastrado</span>
+                      <MissingFieldAlert
+                        field={reportFields.find(f => f.key === 'email')!}
+                        variant="critical"
+                      />
+                    </>
+                  )}
+                </div>
               </div>
+            </div>
+            <div className="flex items-center justify-between pt-2 border-t border-white/10">
+              <span className="text-gray-200 font-medium text-sm">Completude</span>
+              <span className="text-accent-orange text-base font-bold">
+                {profileCompleteness}
+              </span>
             </div>
           </CardContent>
         </Card>

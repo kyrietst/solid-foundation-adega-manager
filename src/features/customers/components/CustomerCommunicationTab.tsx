@@ -114,10 +114,10 @@ export const CustomerCommunicationTab: React.FC<CustomerCommunicationTabProps> =
   if (isEmpty) {
     return (
       <section className={`bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-6 space-y-6 ${className}`}>
-        <Card className="bg-gray-800/30 border-gray-700/40">
+        <Card className="bg-black/70 backdrop-blur-xl border-white/20">
           <CardContent className="p-8 text-center">
-            <AlertCircle className="h-12 w-12 mx-auto mb-4 text-gray-500 opacity-50" />
-            <div className="text-gray-400">Cliente não encontrado</div>
+            <AlertCircle className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+            <div className="text-gray-200 font-medium">Cliente não encontrado</div>
           </CardContent>
         </Card>
       </section>
@@ -133,31 +133,31 @@ export const CustomerCommunicationTab: React.FC<CustomerCommunicationTabProps> =
       className={`bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-6 hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300 space-y-6 ${className}`}
       onMouseMove={handleMouseMove}
     >
-      {/* Header com informações do cliente */}
-      <Card className="bg-gray-800/30 border-gray-700/40">
+      {/* Header com informações do cliente - Redesign UX/UI v3.2.0 */}
+      <Card className="bg-black/70 backdrop-blur-xl border-white/20 hover:border-accent-orange/60 hover:shadow-xl transition-all duration-300">
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="text-white flex items-center gap-2">
-              <MessageSquare className="h-5 w-5 text-orange-400" />
+            <CardTitle className="text-white font-semibold text-lg flex items-center gap-2">
+              <MessageSquare className="h-5 w-5 text-accent-orange" />
               Centro de Comunicação & Documentos
-              <Badge variant="outline" className="ml-2 border-orange-500/30 text-orange-400">
+              <Badge variant="outline" className="ml-2 border-2 border-accent-orange/60 text-accent-orange bg-accent-orange/20 font-semibold">
                 {customer?.name || 'Cliente'}
               </Badge>
             </CardTitle>
 
             <div className="flex items-center gap-2">
               {hasContactInfo ? (
-                <Badge variant="outline" className="border-green-500/30 text-green-400">
+                <Badge variant="outline" className="border-2 border-accent-green/60 text-accent-green bg-accent-green/20 font-semibold">
                   ✅ Dados de contato
                 </Badge>
               ) : (
-                <Badge variant="outline" className="border-red-500/30 text-red-400">
+                <Badge variant="outline" className="border-2 border-accent-red/60 text-accent-red bg-accent-red/20 font-semibold">
                   ❌ Sem contato
                 </Badge>
               )}
 
               {hasInteractions && (
-                <Badge variant="outline" className="border-blue-500/30 text-blue-400">
+                <Badge variant="outline" className="border-2 border-accent-blue/60 text-accent-blue bg-accent-blue/20 font-semibold">
                   {interactions.length} interações
                 </Badge>
               )}
@@ -166,16 +166,16 @@ export const CustomerCommunicationTab: React.FC<CustomerCommunicationTabProps> =
         </CardHeader>
       </Card>
 
-      {/* Ações de Comunicação */}
+      {/* Ações de Comunicação - Redesign UX/UI v3.2.0 */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* WhatsApp */}
-        <Card className="bg-gradient-to-br from-green-900/20 to-green-800/20 border-green-700/40">
+        <Card className="bg-black/70 backdrop-blur-xl border-white/20 hover:border-accent-green/60 hover:shadow-xl hover:shadow-accent-green/20 transition-all duration-300">
           <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <Phone className="h-5 w-5 text-green-400" />
+            <CardTitle className="text-white font-semibold text-lg flex items-center gap-2">
+              <Phone className="h-5 w-5 text-accent-green" />
               WhatsApp
               {preferredChannel === 'phone' && (
-                <Badge variant="outline" className="ml-2 border-green-500/30 text-green-400 text-xs">
+                <Badge variant="outline" className="ml-2 border-2 border-accent-green/60 text-accent-green bg-accent-green/20 font-semibold text-xs">
                   Preferido
                 </Badge>
               )}
@@ -183,21 +183,21 @@ export const CustomerCommunicationTab: React.FC<CustomerCommunicationTabProps> =
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="text-sm text-gray-300">
+              <div className="text-sm">
                 {hasPhoneNumber ? (
                   <>
-                    <p className="text-green-400 mb-2">✅ Telefone cadastrado: {customer?.phone}</p>
-                    <p className="text-gray-400">Envie mensagens diretamente via WhatsApp</p>
-                    <p className="text-xs text-gray-500 mt-2">
+                    <p className="text-accent-green font-semibold mb-2">✅ Telefone cadastrado: {customer?.phone}</p>
+                    <p className="text-gray-200 font-medium">Envie mensagens diretamente via WhatsApp</p>
+                    <p className="text-xs text-gray-300 font-medium mt-2">
                       💡 Interações são registradas automaticamente
                     </p>
                   </>
                 ) : (
-                  <p className="text-red-400">❌ Telefone não cadastrado</p>
+                  <p className="text-accent-red font-semibold">❌ Telefone não cadastrado</p>
                 )}
               </div>
               <Button
-                className="w-full bg-green-600 hover:bg-green-700"
+                className="w-full bg-accent-green hover:bg-accent-green/80 font-semibold"
                 disabled={!hasPhoneNumber}
                 onClick={() => sendWhatsApp()}
               >
@@ -209,13 +209,13 @@ export const CustomerCommunicationTab: React.FC<CustomerCommunicationTabProps> =
         </Card>
 
         {/* Email */}
-        <Card className="bg-gradient-to-br from-blue-900/20 to-blue-800/20 border-blue-700/40">
+        <Card className="bg-black/70 backdrop-blur-xl border-white/20 hover:border-accent-blue/60 hover:shadow-xl hover:shadow-accent-blue/20 transition-all duration-300">
           <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <Mail className="h-5 w-5 text-blue-400" />
+            <CardTitle className="text-white font-semibold text-lg flex items-center gap-2">
+              <Mail className="h-5 w-5 text-accent-blue" />
               Email
               {preferredChannel === 'email' && (
-                <Badge variant="outline" className="ml-2 border-blue-500/30 text-blue-400 text-xs">
+                <Badge variant="outline" className="ml-2 border-2 border-accent-blue/60 text-accent-blue bg-accent-blue/20 font-semibold text-xs">
                   Preferido
                 </Badge>
               )}
@@ -223,21 +223,21 @@ export const CustomerCommunicationTab: React.FC<CustomerCommunicationTabProps> =
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="text-sm text-gray-300">
+              <div className="text-sm">
                 {hasEmailAddress ? (
                   <>
-                    <p className="text-green-400 mb-2">✅ Email cadastrado: {customer?.email}</p>
-                    <p className="text-gray-400">Envie emails promocionais e informativos</p>
-                    <p className="text-xs text-gray-500 mt-2">
+                    <p className="text-accent-green font-semibold mb-2">✅ Email cadastrado: {customer?.email}</p>
+                    <p className="text-gray-200 font-medium">Envie emails promocionais e informativos</p>
+                    <p className="text-xs text-gray-300 font-medium mt-2">
                       💡 Interações são registradas automaticamente
                     </p>
                   </>
                 ) : (
-                  <p className="text-red-400">❌ Email não cadastrado</p>
+                  <p className="text-accent-red font-semibold">❌ Email não cadastrado</p>
                 )}
               </div>
               <Button
-                className="w-full bg-blue-600 hover:bg-blue-700"
+                className="w-full bg-accent-blue hover:bg-accent-blue/80 font-semibold"
                 disabled={!hasEmailAddress}
                 onClick={() => sendEmail()}
               >
@@ -249,50 +249,50 @@ export const CustomerCommunicationTab: React.FC<CustomerCommunicationTabProps> =
         </Card>
       </div>
 
-      {/* Histórico de Interações - Real do Banco */}
-      <Card className="bg-gray-800/30 border-gray-700/40">
+      {/* Histórico de Interações - Real do Banco - Redesign UX/UI v3.2.0 */}
+      <Card className="bg-black/70 backdrop-blur-xl border-white/20 hover:border-accent-purple/60 hover:shadow-xl transition-all duration-300">
         <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
-            <Calendar className="h-5 w-5 text-purple-400" />
+          <CardTitle className="text-white font-semibold text-lg flex items-center gap-2">
+            <Calendar className="h-5 w-5 text-accent-purple" />
             Histórico de Interações
-            <Badge variant="outline" className="ml-2 border-purple-500/30 text-purple-400">
+            <Badge variant="outline" className="ml-2 border-2 border-accent-purple/60 text-accent-purple bg-accent-purple/20 font-semibold">
               {interactions.length} registros
             </Badge>
           </CardTitle>
         </CardHeader>
         <CardContent>
           {!hasInteractions ? (
-            <div className="text-center py-8 text-gray-400">
-              <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p className="text-lg mb-2">📱 Nenhuma interação registrada</p>
-              <p className="text-sm">Envie um WhatsApp ou email para começar o histórico</p>
+            <div className="text-center py-8">
+              <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+              <p className="text-lg mb-2 text-gray-200 font-medium">📱 Nenhuma interação registrada</p>
+              <p className="text-sm text-gray-300 font-medium">Envie um WhatsApp ou email para começar o histórico</p>
             </div>
           ) : (
             <div className="space-y-3 max-h-64 overflow-y-auto">
               {interactions.map((interaction) => (
-                <Card key={interaction.id} className="bg-gray-700/30 border-gray-600/40">
+                <Card key={interaction.id} className="bg-white/5 border-white/10 hover:bg-white/10 transition-all duration-200">
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
                           {interaction.interaction_type === 'whatsapp' ? (
-                            <Phone className="h-4 w-4 text-green-400" />
+                            <Phone className="h-4 w-4 text-accent-green" />
                           ) : interaction.interaction_type === 'email' ? (
-                            <Mail className="h-4 w-4 text-blue-400" />
+                            <Mail className="h-4 w-4 text-accent-blue" />
                           ) : (
-                            <MessageSquare className="h-4 w-4 text-orange-400" />
+                            <MessageSquare className="h-4 w-4 text-accent-orange" />
                           )}
-                          <span className="text-sm font-medium text-white capitalize">
+                          <span className="text-sm font-semibold text-white capitalize">
                             {interaction.interaction_type}
                           </span>
-                          <Badge variant="outline" className="text-xs border-gray-500/30 text-gray-400">
+                          <Badge variant="outline" className="text-xs border-2 border-white/30 text-gray-200 bg-white/10 font-semibold">
                             {new Date(interaction.created_at).toLocaleDateString('pt-BR')}
                           </Badge>
                         </div>
-                        <p className="text-sm text-gray-300 mb-1">
+                        <p className="text-sm text-gray-200 mb-1 font-medium">
                           {interaction.description}
                         </p>
-                        <div className="flex items-center gap-1 text-xs text-gray-500">
+                        <div className="flex items-center gap-1 text-xs text-gray-300 font-medium">
                           <Clock className="h-3 w-3" />
                           {new Date(interaction.created_at).toLocaleString('pt-BR')}
                         </div>
@@ -306,20 +306,20 @@ export const CustomerCommunicationTab: React.FC<CustomerCommunicationTabProps> =
         </CardContent>
       </Card>
 
-      {/* Documentos e Anexos - Placeholder */}
-      <Card className="bg-gray-800/30 border-gray-700/40">
+      {/* Documentos e Anexos - Placeholder - Redesign UX/UI v3.2.0 */}
+      <Card className="bg-black/70 backdrop-blur-xl border-white/20 hover:border-yellow-400/60 hover:shadow-xl transition-all duration-300">
         <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
+          <CardTitle className="text-white font-semibold text-lg flex items-center gap-2">
             <FileText className="h-5 w-5 text-yellow-400" />
             Documentos & Anexos
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-8 text-gray-400">
-            <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p className="text-lg mb-2">📄 Sistema de documentos</p>
-            <p className="text-sm">Será implementado em fase futura</p>
-            <div className="mt-4 text-xs text-gray-500">
+          <div className="text-center py-8">
+            <FileText className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+            <p className="text-lg mb-2 text-gray-200 font-medium">📄 Sistema de documentos</p>
+            <p className="text-sm text-gray-300 font-medium">Será implementado em fase futura</p>
+            <div className="mt-4 text-xs text-gray-300 font-medium">
               • Upload de documentos<br />
               • Contratos digitais<br />
               • Comprovantes de entrega<br />

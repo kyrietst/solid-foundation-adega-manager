@@ -299,34 +299,37 @@ export const CustomerProfileHeader: React.FC<CustomerProfileHeaderProps> = ({
         </div>
       </div>
 
-      {/* Customer Header Card */}
-      <Card className={`${getSegmentColor(customer.segment)} border-blue-700/30 bg-gradient-to-r from-blue-900/20 to-purple-900/20`}>
+      {/* Customer Header Card - Redesign UX/UI v3.2.0 */}
+      <Card className="bg-black/70 backdrop-blur-xl border-white/20 hover:border-white/40 hover:shadow-2xl transition-all duration-300">
         <CardContent className="p-6">
           <div className="flex items-start justify-between">
             {/* Customer Info */}
-            <div className="flex items-start gap-4">
-              {/* Avatar */}
-              <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-xl shadow-lg">
-                {customer.name?.charAt(0)?.toUpperCase() || 'C'}
+            <div className="flex items-start gap-6">
+              {/* Avatar - Gradient Adega */}
+              <div className="w-24 h-24 bg-gradient-to-br from-accent-gold-100 via-primary-yellow to-accent-gold-70 rounded-full flex items-center justify-center shadow-lg ring-4 ring-white/10">
+                <span className="text-primary-black font-bold text-3xl drop-shadow-lg">
+                  {customer.name?.charAt(0)?.toUpperCase() || 'C'}
+                </span>
               </div>
 
               {/* Basic Info */}
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <div>
-                  <h1 className="text-2xl font-bold text-white">{customer.name}</h1>
-                  <div className="flex items-center gap-2 mt-1">
+                  <h1 className="text-3xl font-bold text-white mb-2">{customer.name}</h1>
+                  <div className="flex flex-wrap items-center gap-2">
                     <Badge
-                      className={`text-xs ${
-                        customer.segment === 'high_value' ? 'bg-green-500/20 text-green-400 border-green-500/30' :
-                        customer.segment === 'regular' ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' :
-                        customer.segment === 'new' ? 'bg-purple-500/20 text-purple-400 border-purple-500/30' :
-                        customer.segment === 'at_risk' ? 'bg-red-500/20 text-red-400 border-red-500/30' :
-                        'bg-gray-500/20 text-gray-400 border-gray-500/30'
+                      variant="outline"
+                      className={`border-2 font-semibold text-sm ${
+                        customer.segment === 'high_value' ? 'bg-accent-gold-100/30 text-accent-gold-100 border-accent-gold-100/60' :
+                        customer.segment === 'regular' ? 'bg-accent-blue/30 text-accent-blue border-accent-blue/60' :
+                        customer.segment === 'new' ? 'bg-accent-green/30 text-accent-green border-accent-green/60' :
+                        customer.segment === 'at_risk' ? 'bg-accent-red/30 text-accent-red border-accent-red/60' :
+                        'bg-gray-500/30 text-gray-200 border-gray-500/60'
                       }`}
                     >
                       {getSegmentLabel(customer.segment)}
                     </Badge>
-                    <span className="text-gray-400 text-sm">
+                    <span className="text-gray-200 text-sm font-medium">
                       Cliente desde {customerSince}
                     </span>
 
@@ -337,10 +340,10 @@ export const CustomerProfileHeader: React.FC<CustomerProfileHeaderProps> = ({
                           <TooltipTrigger asChild>
                             <Badge
                               variant="outline"
-                              className={`${
+                              className={`border-2 font-semibold ${
                                 criticalMissingFields.length > 0
-                                  ? 'border-red-400/50 text-red-400 bg-red-400/10'
-                                  : 'border-yellow-400/50 text-yellow-400 bg-yellow-400/10'
+                                  ? 'border-accent-red/60 text-accent-red bg-accent-red/20'
+                                  : 'border-yellow-400/60 text-yellow-400 bg-yellow-400/20'
                               } cursor-help`}
                             >
                               {criticalMissingFields.length > 0 ? (
@@ -400,23 +403,23 @@ export const CustomerProfileHeader: React.FC<CustomerProfileHeaderProps> = ({
                   </div>
                 </div>
 
-                {/* Contact Info */}
+                {/* Contact Info - Melhor contraste e alinhamento */}
                 <div className="flex flex-wrap items-center gap-4 text-sm">
                   {customer.phone && (
-                    <div className="flex items-center gap-1 text-gray-300">
-                      <Phone className="h-4 w-4" />
+                    <div className="flex items-center gap-2 text-gray-200 font-medium">
+                      <Phone className="h-4 w-4 text-accent-green" />
                       <span>{customer.phone}</span>
                     </div>
                   )}
                   {customer.email && (
-                    <div className="flex items-center gap-1 text-gray-300">
-                      <Mail className="h-4 w-4" />
+                    <div className="flex items-center gap-2 text-gray-200 font-medium">
+                      <Mail className="h-4 w-4 text-accent-blue" />
                       <span>{customer.email}</span>
                     </div>
                   )}
                   {customer.address && (
-                    <div className="flex items-center gap-1 text-gray-300">
-                      <MapPin className="h-4 w-4" />
+                    <div className="flex items-center gap-2 text-gray-200 font-medium">
+                      <MapPin className="h-4 w-4 text-accent-purple" />
                       <span>{formatAddress(customer.address)}</span>
                     </div>
                   )}
@@ -424,8 +427,8 @@ export const CustomerProfileHeader: React.FC<CustomerProfileHeaderProps> = ({
               </div>
             </div>
 
-            {/* Key Metrics - SSoT StatCard */}
-            <div className="grid grid-cols-3 gap-4">
+            {/* Key Metrics - SSoT StatCard com melhor spacing */}
+            <div className="grid grid-cols-3 gap-4 min-w-[500px]">
               <StatCard
                 layout="crm"
                 variant={isHighValue ? "success" : "default"}
@@ -433,18 +436,18 @@ export const CustomerProfileHeader: React.FC<CustomerProfileHeaderProps> = ({
                 value={formatCurrency(realMetrics?.lifetime_value_calculated || 0)}
                 description={`💰 LTV ${realMetrics?.data_sync_status.ltv_synced ? '✅' : '⚠️'}`}
                 icon={DollarSign}
-                className="h-24"
+                className="h-28"
                 formatType="none"
               />
 
               <StatCard
                 layout="crm"
-                variant="default"
+                variant="purple"
                 title="Compras"
                 value={realMetrics?.total_purchases || 0}
                 description="🛒 Total Real"
                 icon={ShoppingBag}
-                className="h-24"
+                className="h-28"
               />
 
               <StatCard
@@ -454,7 +457,7 @@ export const CustomerProfileHeader: React.FC<CustomerProfileHeaderProps> = ({
                 value={realMetrics?.days_since_last_purchase !== undefined ? realMetrics.days_since_last_purchase : '-'}
                 description="⏱️ Última compra"
                 icon={Calendar}
-                className="h-24"
+                className="h-28"
                 formatType="none"
               />
             </div>
