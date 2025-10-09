@@ -254,10 +254,10 @@ export const useCustomerPurchaseHistory = (
     const averageTicket = purchaseCount > 0 ? totalSpent / purchaseCount : 0;
 
     return {
-      totalSpent: Math.round(totalSpent * 100) / 100,
-      totalItems,
-      averageTicket: Math.round(averageTicket * 100) / 100,
-      purchaseCount
+      totalSpent: Number(Math.round(totalSpent * 100) / 100),
+      totalItems: Number(totalItems),
+      averageTicket: Number(Math.round(averageTicket * 100) / 100),
+      purchaseCount: Number(purchaseCount)
     };
   }, [rawPurchases]);
 

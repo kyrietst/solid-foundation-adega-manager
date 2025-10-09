@@ -275,7 +275,11 @@ export const useCustomerOverviewSSoT = (
             created_at,
             sale_items (
               quantity,
-              unit_price
+              unit_price,
+              products (
+                name,
+                category
+              )
             )
           `)
           .eq('customer_id', customerId)
@@ -301,6 +305,43 @@ export const useCustomerOverviewSSoT = (
           ? Math.floor((new Date().getTime() - new Date(lastPurchaseReal).getTime()) / (1000 * 60 * 60 * 24))
           : undefined;
 
+        // Calcular categoria favorita e produto favorito baseados nos produtos mais comprados
+        let calculatedFavoriteCategory = 'Não definida';
+        let calculatedFavoriteProduct = 'Não definido';
+
+        if (sales && sales.length > 0) {
+          const categoryCounts: Record<string, number> = {};
+          const productCounts: Record<string, number> = {};
+
+          sales.forEach((sale: any) => {
+            sale.sale_items?.forEach((item: any) => {
+              const category = item.products?.category;
+              const productName = item.products?.name;
+
+              if (category) {
+                categoryCounts[category] = (categoryCounts[category] || 0) + item.quantity;
+              }
+              if (productName) {
+                productCounts[productName] = (productCounts[productName] || 0) + item.quantity;
+              }
+            });
+          });
+
+          // Encontrar categoria mais comprada
+          const categoryEntries = Object.entries(categoryCounts);
+          if (categoryEntries.length > 0) {
+            const topCategory = categoryEntries.sort(([,a], [,b]) => b - a)[0];
+            calculatedFavoriteCategory = topCategory[0];
+          }
+
+          // Encontrar produto mais comprado
+          const productEntries = Object.entries(productCounts);
+          if (productEntries.length > 0) {
+            const topProduct = productEntries.sort(([,a], [,b]) => b - a)[0];
+            calculatedFavoriteProduct = topProduct[0];
+          }
+        }
+
         return {
           total_purchases: totalPurchases,
           total_spent: totalSpent,
@@ -310,8 +351,8 @@ export const useCustomerOverviewSSoT = (
           total_products_bought: totalItems,
           last_purchase_real: lastPurchaseReal,
           days_since_last_purchase: daysSinceLastPurchase,
-          calculated_favorite_category: 'Não definida', // TODO: Implementar cálculo
-          calculated_favorite_product: 'Não definido', // TODO: Implementar cálculo
+          calculated_favorite_category: calculatedFavoriteCategory,
+          calculated_favorite_product: calculatedFavoriteProduct,
           insights_count: 0, // TODO: Buscar de customer_insights
           insights_confidence: 0,
           data_sync_status: {

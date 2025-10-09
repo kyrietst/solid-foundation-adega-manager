@@ -164,15 +164,8 @@ const CustomersLite = () => {
       </PageHeader>
 
       {/* Container principal com glassmorphism - KPIs + Tabela */}
-      <section 
-        className="flex-1 min-h-0 bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg hero-spotlight p-4 flex flex-col hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300 overflow-visible space-y-6"
-        onMouseMove={(e) => {
-          const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-          const x = ((e.clientX - rect.left) / rect.width) * 100;
-          const y = ((e.clientY - rect.top) / rect.height) * 100;
-          (e.currentTarget as HTMLElement).style.setProperty("--x", `${x}%`);
-          (e.currentTarget as HTMLElement).style.setProperty("--y", `${y}%`);
-        }}
+      <section
+        className="flex-1 min-h-0 bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-4 flex flex-col hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-colors duration-300 overflow-visible space-y-6"
       >
         {/* KPIs Resumo - Padronizados com StatCard v2.0.0 */}
         <div className="flex-shrink-0 grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -214,6 +207,7 @@ const CustomersLite = () => {
             variant={qualityMetrics.averageCompleteness >= 70 ? 'purple' : 'warning'}
             title="Qualidade de Dados"
             value={`${qualityMetrics.averageCompleteness}%`}
+            formatType="none"
             description="📊 Completude média • Clique para ver detalhes"
             icon={BarChart3}
             onClick={() => setShowQualityDashboard(!showQualityDashboard)}

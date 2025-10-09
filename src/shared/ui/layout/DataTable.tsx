@@ -165,11 +165,11 @@ export function DataTable<T = Record<string, unknown>>({
 
   const getSortIcon = (columnKey: string) => {
     if (sortKey !== columnKey) {
-      return <ArrowUpDown className="w-4 h-4 text-gray-400" />;
+      return <ArrowUpDown className="w-3 h-3 text-gray-400" />;
     }
-    return sortDirection === 'asc' 
-      ? <ArrowUp className="w-4 h-4 text-primary-yellow" />
-      : <ArrowDown className="w-4 h-4 text-primary-yellow" />;
+    return sortDirection === 'asc'
+      ? <ArrowUp className="w-3 h-3 text-primary-yellow" />
+      : <ArrowDown className="w-3 h-3 text-primary-yellow" />;
   };
 
   const renderCellValue = (column: TableColumn<T>, item: T, index: number) => {
@@ -234,7 +234,7 @@ export function DataTable<T = Record<string, unknown>>({
           // Virtualized Table for large datasets
           <div
             ref={parentRef}
-            className="h-96 overflow-auto"
+            className="h-[calc(100vh-420px)] overflow-auto"
             style={{
               contain: 'strict',
             }}
@@ -270,11 +270,15 @@ export function DataTable<T = Record<string, unknown>>({
                           className={cn(
                             tableClasses.headerCell,
                             column.className,
-                            column.width && `w-[${column.width}]`,
                             column.align === 'center' && 'text-center',
                             column.align === 'right' && 'text-right',
                             compact && 'py-2'
                           )}
+                          style={column.width ? {
+                            width: column.width,
+                            minWidth: column.width,
+                            maxWidth: column.width,
+                          } : undefined}
                         >
                           {column.sortable && onSort ? (
                             <Button
@@ -283,15 +287,15 @@ export function DataTable<T = Record<string, unknown>>({
                               className="h-auto p-0 font-medium hover:bg-gray-800/60 text-gray-300 hover:text-primary-yellow transition-colors duration-200"
                               onClick={() => handleSort(column.key)}
                             >
-                              <span>{column.title}</span>
+                              <span className="whitespace-pre-line text-xs">{column.title}</span>
                               {getSortIcon(column.key)}
                             </Button>
                           ) : (
-                            <span className="text-gray-300 font-medium">{column.title}</span>
+                            <span className="text-gray-300 font-medium whitespace-pre-line text-xs">{column.title}</span>
                           )}
                         </TableHead>
                       ))}
-                      
+
                       {/* Actions Column */}
                       {rowActions && (
                         <TableHead className="w-12">
@@ -339,7 +343,7 @@ export function DataTable<T = Record<string, unknown>>({
                         left: 0,
                         width: '100%',
                         height: `${virtualRow.size}px`,
-                        transform: `translateY(${virtualRow.start}px)`,
+                        transform: `translateY(${virtualRow.start + 60}px)`,
                       }}
                     >
                       <Table className={cn(tableClasses.container, className)}>
@@ -377,6 +381,11 @@ export function DataTable<T = Record<string, unknown>>({
                                   column.align === 'right' && 'text-right',
                                   compact && 'py-2'
                                 )}
+                                style={column.width ? {
+                                  width: column.width,
+                                  minWidth: column.width,
+                                  maxWidth: column.width,
+                                } : undefined}
                               >
                                 {renderCellValue(column, item, virtualRow.index)}
                               </TableCell>
@@ -423,11 +432,15 @@ export function DataTable<T = Record<string, unknown>>({
                     className={cn(
                       tableClasses.headerCell,
                       column.className,
-                      column.width && `w-[${column.width}]`,
                       column.align === 'center' && 'text-center',
                       column.align === 'right' && 'text-right',
                       compact && 'py-2'
                     )}
+                    style={column.width ? {
+                      width: column.width,
+                      minWidth: column.width,
+                      maxWidth: column.width,
+                    } : undefined}
                   >
                     {column.sortable && onSort ? (
                       <Button
@@ -436,15 +449,15 @@ export function DataTable<T = Record<string, unknown>>({
                         className="h-auto p-0 font-medium hover:bg-gray-800/60 text-gray-300 hover:text-primary-yellow transition-colors duration-200"
                         onClick={() => handleSort(column.key)}
                       >
-                        <span>{column.title}</span>
+                        <span className="whitespace-pre-line text-xs">{column.title}</span>
                         {getSortIcon(column.key)}
                       </Button>
                     ) : (
-                      <span className="text-gray-300 font-medium">{column.title}</span>
+                      <span className="text-gray-300 font-medium whitespace-pre-line text-xs">{column.title}</span>
                     )}
                   </TableHead>
                 ))}
-                
+
                 {/* Actions Column */}
                 {rowActions && (
                   <TableHead className="w-12">
@@ -453,7 +466,7 @@ export function DataTable<T = Record<string, unknown>>({
                 )}
               </TableRow>
             </TableHeader>
-            
+
             <TableBody>
               {loading ? (
                 <TableRow>
@@ -527,6 +540,11 @@ export function DataTable<T = Record<string, unknown>>({
                             column.align === 'right' && 'text-right',
                             compact && 'py-2'
                           )}
+                          style={column.width ? {
+                            width: column.width,
+                            minWidth: column.width,
+                            maxWidth: column.width,
+                          } : undefined}
                         >
                           {renderCellValue(column, item, index)}
                         </TableCell>

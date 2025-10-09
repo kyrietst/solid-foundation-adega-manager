@@ -2,14 +2,7 @@
 
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/shared/ui/primitives/table";
+import { DataTable, TableColumn as DataTableColumn } from "@/shared/ui/layout/DataTable";
 import {
   Tooltip,
   TooltipContent,
@@ -52,44 +45,47 @@ import {
   CUSTOMER_STATUSES
 } from "../types/customer-table.types";
 
-const InsightsBadge = ({ 
-  count, 
-  confidence 
-}: { 
-  count: number; 
-  confidence: number; 
+const InsightsBadge = React.memo(({
+  count,
+  confidence
+}: {
+  count: number;
+  confidence: number;
 }) => {
   if (count === 0) {
     return (
-      <Badge variant="outline" className="flex items-center gap-1 text-sm font-bold px-3 py-1 bg-gray-600/30 text-gray-100 border-gray-500/60">
-        <Brain className="w-3 h-3" />
-        Sem insights
-      </Badge>
+      <div className="flex justify-center items-center w-full">
+        <Badge variant="outline" className="flex items-center gap-1 text-sm font-bold px-3 py-1 bg-gray-600/30 text-gray-100 border-gray-500/60">
+          <Brain className="w-3 h-3" />
+          Sem insights
+        </Badge>
+      </div>
     );
   }
-  
+
   const level = getInsightLevel(confidence);
   const color = getInsightColor(level);
-  
+
   // Sistema de cores Adega Wine Cellar v2.1 - Insights IA
   const badgeClass = {
     green: "bg-green-500/30 text-green-100 border-green-400/60 shadow-lg shadow-green-400/20 backdrop-blur-sm font-bold",
     yellow: "bg-yellow-500/30 text-yellow-100 border-yellow-400/60 shadow-lg shadow-yellow-400/20 backdrop-blur-sm font-bold",
     red: "bg-red-500/30 text-red-100 border-red-400/60 shadow-lg shadow-red-400/20 backdrop-blur-sm lgpd-soft-pulse font-bold"
   };
-  
+
   return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Badge className={cn(
-            "flex items-center gap-1 transition-all duration-200 hover:scale-105 border cursor-pointer text-sm font-semibold px-3 py-1", 
-            badgeClass[color]
-          )}>
-            <Brain className="w-3 h-3" />
-            {count} insights ({Math.round(confidence * 100)}%)
-          </Badge>
-        </TooltipTrigger>
+    <div className="flex justify-center items-center w-full">
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Badge className={cn(
+              "flex items-center gap-1 transition-all duration-200 hover:scale-105 border cursor-pointer text-sm font-semibold px-3 py-1",
+              badgeClass[color]
+            )}>
+              <Brain className="w-3 h-3" />
+              {count} insights ({Math.round(confidence * 100)}%)
+            </Badge>
+          </TooltipTrigger>
         <TooltipPortal>
           <TooltipContent className="z-[50000] bg-black/95 backdrop-blur-xl border border-primary-yellow/30 shadow-2xl">
             <div className="space-y-2 p-1">
@@ -117,8 +113,11 @@ const InsightsBadge = ({
           </TooltipPortal>
       </Tooltip>
     </TooltipProvider>
+    </div>
   );
-};
+}, (prevProps, nextProps) =>
+  prevProps.count === nextProps.count && prevProps.confidence === nextProps.confidence
+);
 
 // Indicadores visuais para campos críticos de relatórios
 const ReportFieldIndicator = ({ 
@@ -159,12 +158,12 @@ const ReportFieldIndicator = ({
   );
 };
 
-const StatusBadge = ({ 
-  status, 
-  color 
-}: { 
-  status: CustomerTableRow['status']; 
-  color: CustomerTableRow['statusColor']; 
+const StatusBadge = React.memo(({
+  status,
+  color
+}: {
+  status: CustomerTableRow['status'];
+  color: CustomerTableRow['statusColor'];
 }) => {
   // Sistema de cores Adega Wine Cellar v2.1 - Contraste otimizado
   const statusColors = {
@@ -175,22 +174,24 @@ const StatusBadge = ({
     gray: "bg-gray-500/20 text-gray-300 border-gray-500/40 shadow-lg shadow-gray-500/10 backdrop-blur-sm",
     orange: "bg-accent-orange/20 text-orange-300 border-accent-orange/40 shadow-lg shadow-accent-orange/10 backdrop-blur-sm"
   };
-  
+
   return (
     <Badge className={cn(
-      "whitespace-nowrap transition-all duration-200 hover:scale-105 border text-sm font-semibold px-3 py-1", 
+      "whitespace-nowrap transition-all duration-200 hover:scale-105 border text-sm font-semibold px-3 py-1",
       statusColors[color] || statusColors.gray
     )}>
       {status}
     </Badge>
   );
-};
+}, (prevProps, nextProps) =>
+  prevProps.status === nextProps.status && prevProps.color === nextProps.color
+);
 
 // Componente interativo para nome do cliente com indicadores visuais
-const CustomerNameWithIndicators = ({ 
-  customer 
-}: { 
-  customer: CustomerTableRow; 
+const CustomerNameWithIndicators = React.memo(({
+  customer
+}: {
+  customer: CustomerTableRow;
 }) => {
   const reportFields = [
     { key: 'email', label: 'Email', value: customer.email, required: true },
@@ -317,25 +318,26 @@ const CustomerNameWithIndicators = ({
       </Tooltip>
     </TooltipProvider>
   );
-};
+}, (prevProps, nextProps) => prevProps.customer.id === nextProps.customer.id);
 
-const LGPDBadge = ({ hasPermission }: { hasPermission: boolean }) => {
+const LGPDBadge = React.memo(({ hasPermission }: { hasPermission: boolean }) => {
   return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Badge 
-            className={cn(
-              "flex items-center gap-1 transition-all duration-200 hover:scale-105 border backdrop-blur-sm cursor-pointer text-sm font-semibold px-3 py-1", 
-              hasPermission 
-                ? "bg-green-400/20 text-green-300 border-green-400/40 shadow-lg shadow-green-400/10" 
-                : "bg-accent-red/20 text-red-300 border-accent-red/40 shadow-lg shadow-accent-red/10 lgpd-soft-pulse"
-            )}
-          >
-            {hasPermission ? <CheckCircle2 className="w-3 h-3" /> : <XCircle className="w-3 h-3 lgpd-soft-pulse" />}
-            {hasPermission ? "LGPD ✓" : "Pendente"}
-          </Badge>
-        </TooltipTrigger>
+    <div className="flex justify-center items-center w-full">
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Badge
+              className={cn(
+                "flex items-center gap-1 transition-all duration-200 hover:scale-105 border backdrop-blur-sm cursor-pointer text-sm font-semibold px-3 py-1",
+                hasPermission
+                  ? "bg-green-400/20 text-green-300 border-green-400/40 shadow-lg shadow-green-400/10"
+                  : "bg-accent-red/20 text-red-300 border-accent-red/40 shadow-lg shadow-accent-red/10 lgpd-soft-pulse"
+              )}
+            >
+              {hasPermission ? <CheckCircle2 className="w-3 h-3" /> : <XCircle className="w-3 h-3 lgpd-soft-pulse" />}
+              {hasPermission ? "LGPD ✓" : "Pendente"}
+            </Badge>
+          </TooltipTrigger>
         <TooltipPortal>
           <TooltipContent className="z-[50000] bg-black/95 backdrop-blur-xl border border-primary-yellow/30 shadow-2xl">
             <div className="space-y-2 p-1">
@@ -376,8 +378,9 @@ const LGPDBadge = ({ hasPermission }: { hasPermission: boolean }) => {
           </TooltipPortal>
       </Tooltip>
     </TooltipProvider>
+    </div>
   );
-};
+}, (prevProps, nextProps) => prevProps.hasPermission === nextProps.hasPermission);
 
 const EnhancedProfileCompleteness = ({ 
   row, 
@@ -596,7 +599,7 @@ export default function CustomerDataTable() {
     let filtered = customers.filter((customer) => {
       const matchesSegment = !segmentFilter || customer.segmento === segmentFilter;
       const matchesStatus = !statusFilter || customer.status === statusFilter;
-      const matchesSearch = !searchTerm || 
+      const matchesSearch = !searchTerm ||
         customer.cliente.toLowerCase().includes(searchTerm.toLowerCase()) ||
         customer.categoriaFavorita?.toLowerCase().includes(searchTerm.toLowerCase());
 
@@ -606,7 +609,7 @@ export default function CustomerDataTable() {
         const daysSinceLastPurchase = Math.floor(
           (new Date().getTime() - customer.ultimaCompra.getTime()) / (1000 * 60 * 60 * 24)
         );
-        
+
         switch (lastPurchaseFilter) {
           case "7days": return daysSinceLastPurchase <= 7;
           case "30days": return daysSinceLastPurchase <= 30;
@@ -617,10 +620,10 @@ export default function CustomerDataTable() {
         }
       })();
 
-      // Filtro por proximidade do aniversário  
+      // Filtro por proximidade do aniversário
       const matchesBirthday = (() => {
         if (!birthdayFilter || customer.diasParaAniversario === null) return true;
-        
+
         switch (birthdayFilter) {
           case "today": return customer.diasParaAniversario === 0;
           case "week": return customer.diasParaAniversario <= 7;
@@ -644,19 +647,19 @@ export default function CustomerDataTable() {
           aValue = a.ultimaCompra ? new Date(a.ultimaCompra).getTime() : 0;
           bValue = b.ultimaCompra ? new Date(b.ultimaCompra).getTime() : 0;
         }
-        
+
         // Tratamento especial para dias até aniversário
         if (sortField === 'diasParaAniversario') {
           aValue = a.diasParaAniversario ?? 999; // Coloca sem aniversário por último
           bValue = b.diasParaAniversario ?? 999;
         }
-        
+
         // Tratamento especial para dias sem contato
         if (sortField === 'diasSemContato') {
           aValue = a.diasSemContato ?? 999; // Coloca sem contato por último
           bValue = b.diasSemContato ?? 999;
         }
-        
+
         // Tratamento para strings
         if (typeof aValue === 'string' && typeof bValue === 'string') {
           aValue = aValue.toLowerCase();
@@ -669,21 +672,189 @@ export default function CustomerDataTable() {
       });
     }
 
-    return filtered;
+      return filtered;
   }, [customers, segmentFilter, statusFilter, searchTerm, lastPurchaseFilter, birthdayFilter, sortField, sortDirection]);
 
-  const handleSort = (field: SortField) => {
-    if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortDirection('desc'); // Default to descending for new fields
-    }
-  };
+  // Define as colunas para o DataTable SSoT
+  const columns = React.useMemo<DataTableColumn<CustomerTableRow>[]>(() => {
+    const allColumns: DataTableColumn<CustomerTableRow>[] = [
+      {
+        key: 'cliente',
+        title: 'Cliente',
+        sortable: true,
+        width: '200px',
+        render: (value, customer) => (
+          <div className="flex items-center gap-3">
+            {/* Avatar com gradient Adega Wine Cellar */}
+            <div className="w-8 h-8 bg-gradient-to-br from-primary-yellow/30 to-yellow-400/20 rounded-full flex items-center justify-center border border-primary-yellow/30 shadow-sm flex-shrink-0">
+              <span className="text-sm font-bold text-primary-yellow">
+                {customer.cliente.charAt(0).toUpperCase()}
+              </span>
+            </div>
+            {/* Link para perfil com indicadores visuais */}
+            <Link
+              to={`/customer/${customer.id}`}
+              className="block hover:no-underline"
+              title={`Ver perfil completo de ${customer.cliente}`}
+            >
+              <CustomerNameWithIndicators customer={customer} />
+            </Link>
+          </div>
+        ),
+      },
+      {
+        key: 'categoriaFavorita',
+        title: 'Categoria Favorita',
+        sortable: false,
+        width: '130px',
+        align: 'center',
+        render: (value) => (
+          <span className="text-gray-100">{value || "Não definida"}</span>
+        ),
+      },
+      {
+        key: 'segmento',
+        title: 'Segmento',
+        sortable: false,
+        width: '120px',
+        align: 'center',
+        render: (value) => (
+          <Badge variant="outline" className="bg-gray-700/50 text-gray-100 border-gray-600/50 text-sm font-medium px-3 py-1">
+            {value}
+          </Badge>
+        ),
+      },
+      {
+        key: 'metodoPreferido',
+        title: 'Método Preferido',
+        sortable: false,
+        width: '125px',
+        align: 'center',
+        render: (value) => (
+          <span className="text-gray-100">{formatPaymentMethod(value)}</span>
+        ),
+      },
+      {
+        key: 'ultimaCompra',
+        title: 'Última Compra',
+        sortable: true,
+        width: '140px',
+        align: 'center',
+        render: (value) => (
+          <span className="text-gray-100">{formatLastPurchase(value as Date | null)}</span>
+        ),
+      },
+      {
+        key: 'insightsCount',
+        title: 'Insights de IA',
+        sortable: true,
+        width: '135px',
+        align: 'center',
+        render: (value, customer) => (
+          <InsightsBadge
+            count={customer.insightsCount}
+            confidence={customer.insightsConfidence}
+          />
+        ),
+      },
+      {
+        key: 'status',
+        title: 'Status',
+        sortable: false,
+        width: '110px',
+        align: 'center',
+        render: (value, customer) => (
+          <StatusBadge
+            status={customer.status}
+            color={customer.statusColor}
+          />
+        ),
+      },
+      {
+        key: 'cidade',
+        title: 'Cidade',
+        sortable: true,
+        width: '115px',
+        align: 'center',
+        render: (value) => (
+          <span className="text-gray-100">{value || "Não informada"}</span>
+        ),
+      },
+      {
+        key: 'proximoAniversario',
+        title: 'PRÓXIMO\nANIVERSÁRIO',
+        sortable: true,
+        width: '150px',
+        align: 'center',
+        render: (value, customer) => (
+          <div className={cn("flex items-center gap-1 justify-center",
+            customer.diasParaAniversario !== null && customer.diasParaAniversario <= 7
+              ? "text-yellow-400 font-medium"
+              : "text-gray-100"
+          )}>
+            {formatNextBirthday(customer.proximoAniversario, customer.diasParaAniversario)}
+          </div>
+        ),
+      },
+      {
+        key: 'contactPermission',
+        title: 'LGPD',
+        sortable: false,
+        width: '90px',
+        align: 'center',
+        render: (value) => (
+          <LGPDBadge hasPermission={value as boolean} />
+        ),
+      },
+      {
+        key: 'profileCompleteness',
+        title: 'Completude',
+        sortable: true,
+        width: '120px',
+        align: 'center',
+        render: (value, customer) => (
+          <EnhancedProfileCompleteness
+            row={customer}
+            onEditClick={(customerId) => {
+              console.log(`Editando cliente: ${customerId}`);
+            }}
+          />
+        ),
+      },
+      {
+        key: 'ultimoContato',
+        title: 'Último Contato',
+        sortable: true,
+        width: '130px',
+        align: 'center',
+        render: (value, customer) => (
+          <LastContactBadge
+            date={customer.ultimoContato}
+            daysAgo={customer.diasSemContato}
+          />
+        ),
+      },
+      {
+        key: 'valorEmAberto',
+        title: 'Valor em Aberto',
+        sortable: true,
+        width: '130px',
+        align: 'center',
+        render: (value) => (
+          <OutstandingAmountBadge amount={value as number} />
+        ),
+      },
+    ];
 
-  const getSortIcon = (field: SortField) => {
-    if (sortField !== field) return <ArrowUpDown className="w-4 h-4" />;
-    return sortDirection === 'asc' ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />;
+    // Filter columns based on visibility
+    return allColumns.filter(col =>
+      visibleColumns.includes(col.title as TableColumn)
+    );
+  }, [visibleColumns]);
+
+  const handleSort = (key: string, direction: 'asc' | 'desc') => {
+    setSortField(key as SortField);
+    setSortDirection(direction);
   };
 
   const toggleColumn = (col: TableColumn) => {
@@ -692,31 +863,6 @@ export default function CustomerDataTable() {
     );
   };
 
-  if (isLoading) {
-    return (
-      <div className="my-6 space-y-4 p-4">
-        <div className="flex items-center justify-center py-8">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-400 mx-auto"></div>
-            <p className="text-gray-400 mt-2">Carregando dados dos clientes...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="my-6 space-y-4 p-4">
-        <div className="flex items-center justify-center py-8">
-          <div className="text-center text-red-400">
-            <p>Erro ao carregar dados dos clientes</p>
-            <p className="text-sm text-gray-400 mt-1">{error.message}</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-4 h-full flex flex-col overflow-visible relative z-[1] w-full min-w-0">
@@ -812,321 +958,31 @@ export default function CustomerDataTable() {
         </div>
       </div>
 
-      <div className="bg-black/40 rounded-lg border border-white/10 flex-1 min-h-0 overflow-visible relative w-full">
-        <div className="h-full overflow-y-auto overflow-x-visible max-h-[60vh] scrollbar-thin scrollbar-track-gray-900 scrollbar-thumb-gray-600 hover:scrollbar-thumb-gray-500 w-full">
-          <Table className="w-full table-fixed">
-          <TableHeader className="sticky top-0 z-[50] bg-black/90 backdrop-blur-xl border-b border-primary-yellow/20">
-            <TableRow className="border-b border-primary-yellow/30 bg-gradient-to-r from-black/40 via-black/60 to-black/40 hover:from-black/50 hover:via-black/70 hover:to-black/50 transition-all duration-200">
-            {visibleColumns.includes("Cliente") && (
-              <TableHead className="w-[200px] text-gray-100 font-bold text-left px-4 py-4 shadow-sm">
-                <div className="flex justify-start">
-                  <Button
-                    variant="ghost"
-                    onClick={() => handleSort('cliente')}
-                    className="flex items-center justify-center gap-1 px-2 py-1 bg-black/20 border border-gray-700/50 hover:bg-gray-800/60 text-gray-300 hover:text-yellow-400 rounded-md transition-colors duration-200 text-xs"
-                  >
-                    Cliente
-                    {getSortIcon('cliente')}
-                  </Button>
-                </div>
-              </TableHead>
-            )}
-            {visibleColumns.includes("Categoria Favorita") && (
-              <TableHead className="w-[130px] text-gray-100 font-bold text-center px-3 py-4 shadow-sm">
-                <div className="flex justify-center">
-                  <Button
-                    variant="ghost"
-                    className="flex items-center justify-center gap-1 px-2 py-1 bg-black/20 border border-gray-700/50 hover:bg-gray-800/60 text-gray-300 hover:text-yellow-400 rounded-md transition-colors duration-200 cursor-default text-xs"
-                  >
-                    Categoria
-                  </Button>
-                </div>
-              </TableHead>
-            )}
-            {visibleColumns.includes("Segmento") && (
-              <TableHead className="w-[120px] text-gray-100 font-bold text-center px-3 py-4 shadow-sm">
-                <div className="flex justify-center">
-                  <Button
-                    variant="ghost"
-                    className="flex items-center justify-center gap-1 px-3 py-2 bg-black/30 border border-gray-600/50 hover:bg-primary-yellow/10 text-gray-300 hover:text-primary-yellow rounded-lg transition-all duration-200 cursor-default text-sm font-medium"
-                  >
-                    Segmento
-                  </Button>
-                </div>
-              </TableHead>
-            )}
-            {visibleColumns.includes("Método Preferido") && (
-              <TableHead className="w-[125px] text-gray-100 font-bold text-center px-3 py-4 shadow-sm">
-                <div className="flex justify-center">
-                  <Button
-                    variant="ghost"
-                    className="flex items-center justify-center gap-1 px-3 py-2 bg-black/30 border border-gray-600/50 hover:bg-primary-yellow/10 text-gray-300 hover:text-primary-yellow rounded-lg transition-all duration-200 cursor-default text-sm font-medium"
-                  >
-                    Método
-                  </Button>
-                </div>
-              </TableHead>
-            )}
-            {visibleColumns.includes("Última Compra") && (
-              <TableHead className="w-[140px] text-gray-100 font-bold text-center px-3 py-4 shadow-sm">
-                <div className="flex justify-center">
-                  <Button
-                    variant="ghost"
-                    onClick={() => handleSort('ultimaCompra')}
-                    className="flex items-center justify-center gap-1 px-3 py-2 bg-black/30 border border-gray-600/50 hover:bg-primary-yellow/10 text-gray-300 hover:text-primary-yellow rounded-lg transition-all duration-200 text-sm font-medium"
-                  >
-                    Última Compra
-                    {getSortIcon('ultimaCompra')}
-                  </Button>
-                </div>
-              </TableHead>
-            )}
-            {visibleColumns.includes("Insights de IA") && (
-              <TableHead className="w-[135px] text-gray-100 font-bold text-center px-3 py-4 shadow-sm">
-                <div className="flex justify-center">
-                  <Button
-                    variant="ghost"
-                    onClick={() => handleSort('insightsCount')}
-                    className="flex items-center justify-center gap-1 px-3 py-2 bg-black/30 border border-gray-600/50 hover:bg-primary-yellow/10 text-gray-300 hover:text-primary-yellow rounded-lg transition-all duration-200 text-sm font-medium"
-                  >
-                    Insights
-                    {getSortIcon('insightsCount')}
-                  </Button>
-                </div>
-              </TableHead>
-            )}
-            {visibleColumns.includes("Status") && (
-              <TableHead className="w-[110px] text-gray-100 font-bold text-center px-3 py-4 shadow-sm">
-                <div className="flex justify-center">
-                  <Button
-                    variant="ghost"
-                    className="flex items-center justify-center gap-1 px-3 py-2 bg-black/30 border border-gray-600/50 hover:bg-primary-yellow/10 text-gray-300 hover:text-primary-yellow rounded-lg transition-all duration-200 cursor-default text-sm font-medium"
-                  >
-                    Status
-                  </Button>
-                </div>
-              </TableHead>
-            )}
-            {visibleColumns.includes("Cidade") && (
-              <TableHead className="w-[115px] text-gray-100 font-bold text-center px-3 py-4 shadow-sm">
-                <div className="flex justify-center">
-                  <Button
-                    variant="ghost"
-                    onClick={() => handleSort('cidade')}
-                    className="flex items-center justify-center gap-1 px-2 py-1 bg-black/20 border border-gray-700/50 hover:bg-gray-800/60 text-gray-300 hover:text-yellow-400 rounded-md transition-colors duration-200 text-xs"
-                  >
-                    Cidade
-                    {getSortIcon('cidade')}
-                  </Button>
-                </div>
-              </TableHead>
-            )}
-            {visibleColumns.includes("Próximo Aniversário") && (
-              <TableHead className="w-[150px] text-gray-100 font-bold text-center px-3 py-4 shadow-sm">
-                <div className="flex justify-center">
-                  <Button
-                    variant="ghost"
-                    onClick={() => handleSort('diasParaAniversario')}
-                    className="flex items-center justify-center gap-1 px-2 py-1 bg-black/20 border border-gray-700/50 hover:bg-gray-800/60 text-gray-300 hover:text-yellow-400 rounded-md transition-colors duration-200 text-xs"
-                  >
-                    Aniversário
-                    {getSortIcon('diasParaAniversario')}
-                  </Button>
-                </div>
-              </TableHead>
-            )}
-            {visibleColumns.includes("LGPD") && (
-              <TableHead className="w-[90px] text-gray-100 font-bold text-center px-3 py-4 shadow-sm">
-                <div className="flex justify-center">
-                  <Button
-                    variant="ghost"
-                    className="flex items-center justify-center gap-1 px-2 py-1 bg-black/20 border border-gray-700/50 hover:bg-gray-800/60 text-gray-300 hover:text-yellow-400 rounded-md transition-colors duration-200 cursor-default text-xs"
-                  >
-                    LGPD
-                  </Button>
-                </div>
-              </TableHead>
-            )}
-            {visibleColumns.includes("Completude") && (
-              <TableHead className="w-[120px] text-gray-100 font-bold text-center px-3 py-4 shadow-sm">
-                <div className="flex justify-center">
-                  <Button
-                    variant="ghost"
-                    onClick={() => handleSort('profileCompleteness')}
-                    className="flex items-center justify-center gap-1 px-2 py-1 bg-black/20 border border-gray-700/50 hover:bg-gray-800/60 text-gray-300 hover:text-yellow-400 rounded-md transition-colors duration-200 text-xs"
-                  >
-                    Completude
-                    {getSortIcon('profileCompleteness')}
-                  </Button>
-                </div>
-              </TableHead>
-            )}
-            {visibleColumns.includes("Último Contato") && (
-              <TableHead className="w-[130px] text-gray-100 font-bold text-center px-3 py-4 shadow-sm">
-                <div className="flex justify-center">
-                  <Button
-                    variant="ghost"
-                    onClick={() => handleSort('diasSemContato')}
-                    className="flex items-center justify-center gap-1 px-2 py-1 bg-black/20 border border-gray-700/50 hover:bg-gray-800/60 text-gray-300 hover:text-yellow-400 rounded-md transition-colors duration-200 text-xs"
-                  >
-                    Último Contato
-                    {getSortIcon('diasSemContato')}
-                  </Button>
-                </div>
-              </TableHead>
-            )}
-            {visibleColumns.includes("Valor em Aberto") && (
-              <TableHead className="w-[130px] text-gray-100 font-bold text-center px-3 py-4 shadow-sm">
-                <div className="flex justify-center">
-                  <Button
-                    variant="ghost"
-                    onClick={() => handleSort('valorEmAberto')}
-                    className="flex items-center justify-center gap-1 px-2 py-1 bg-black/20 border border-gray-700/50 hover:bg-gray-800/60 text-gray-300 hover:text-yellow-400 rounded-md transition-colors duration-200 text-xs"
-                  >
-                    Valor em Aberto
-                    {getSortIcon('valorEmAberto')}
-                  </Button>
-                </div>
-              </TableHead>
-            )}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {filteredAndSortedData.length ? (
-            filteredAndSortedData.map((customer, index) => (
-              <TableRow 
-                key={customer.id}
-                className={cn(
-                  "border-b border-primary-yellow/20 transition-all duration-300 group cursor-pointer relative",
-                  "hover:bg-gradient-to-r hover:from-primary-yellow/10 hover:via-primary-yellow/5 hover:to-primary-yellow/10",
-                  "hover:border-primary-yellow/40 hover:shadow-lg hover:shadow-primary-yellow/10",
-                  "hover:scale-[1.01] hover:z-10",
-                  index % 2 === 0 ? 'bg-black/30 backdrop-blur-sm' : 'bg-black/50 backdrop-blur-sm'
-                )}
-              >
-                {visibleColumns.includes("Cliente") && (
-                  <TableCell className="font-medium whitespace-nowrap py-4 px-4">
-                    <div className="flex items-center gap-3">
-                      {/* Avatar com gradient Adega Wine Cellar */}
-                      <div className="w-8 h-8 bg-gradient-to-br from-primary-yellow/30 to-yellow-400/20 rounded-full flex items-center justify-center border border-primary-yellow/30 shadow-sm">
-                        <span className="text-sm font-bold text-primary-yellow">
-                          {customer.cliente.charAt(0).toUpperCase()}
-                        </span>
-                      </div>
-                      
-                      {/* Link para perfil com indicadores visuais */}
-                      <Link 
-                        to={`/customer/${customer.id}`} 
-                        className="block hover:no-underline"
-                        title={`Ver perfil completo de ${customer.cliente}`}
-                      >
-                        <CustomerNameWithIndicators customer={customer} />
-                      </Link>
-                    </div>
-                  </TableCell>
-                )}
-                {visibleColumns.includes("Categoria Favorita") && (
-                  <TableCell className="whitespace-nowrap text-gray-100 py-4 px-3 text-center">
-                    {customer.categoriaFavorita || "Não definida"}
-                  </TableCell>
-                )}
-                {visibleColumns.includes("Segmento") && (
-                  <TableCell className="whitespace-nowrap py-4 px-3 text-center">
-                    <Badge variant="outline" className="bg-gray-700/50 text-gray-100 border-gray-600/50 text-sm font-medium px-3 py-1">{customer.segmento}</Badge>
-                  </TableCell>
-                )}
-                {visibleColumns.includes("Método Preferido") && (
-                  <TableCell className="whitespace-nowrap text-gray-100 py-4 px-3 text-center">
-                    {formatPaymentMethod(customer.metodoPreferido)}
-                  </TableCell>
-                )}
-                {visibleColumns.includes("Última Compra") && (
-                  <TableCell className="whitespace-nowrap text-gray-100 py-4 px-3 text-center">
-                    {formatLastPurchase(customer.ultimaCompra)}
-                  </TableCell>
-                )}
-                {visibleColumns.includes("Insights de IA") && (
-                  <TableCell className="py-4 px-3 text-center">
-                    <InsightsBadge 
-                      count={customer.insightsCount}
-                      confidence={customer.insightsConfidence}
-                    />
-                  </TableCell>
-                )}
-                {visibleColumns.includes("Status") && (
-                  <TableCell className="whitespace-nowrap py-4 px-3 text-center">
-                    <StatusBadge 
-                      status={customer.status}
-                      color={customer.statusColor}
-                    />
-                  </TableCell>
-                )}
-                {visibleColumns.includes("Cidade") && (
-                  <TableCell className="whitespace-nowrap text-gray-100 py-4 px-3 text-center">
-                    {customer.cidade || "Não informada"}
-                  </TableCell>
-                )}
-                {visibleColumns.includes("Próximo Aniversário") && (
-                  <TableCell className="whitespace-nowrap py-4 px-3 text-center">
-                    <div className={cn("flex items-center gap-1", 
-                      customer.diasParaAniversario !== null && customer.diasParaAniversario <= 7 
-                        ? "text-yellow-400 font-medium" 
-                        : "text-gray-100"
-                    )}>
-                      {formatNextBirthday(customer.proximoAniversario, customer.diasParaAniversario)}
-                    </div>
-                  </TableCell>
-                )}
-                {visibleColumns.includes("LGPD") && (
-                  <TableCell className="py-4 px-3 text-center">
-                    <LGPDBadge hasPermission={customer.contactPermission} />
-                  </TableCell>
-                )}
-                {visibleColumns.includes("Completude") && (
-                  <TableCell className="py-4 px-3 text-center">
-                    <EnhancedProfileCompleteness 
-                      row={customer} 
-                      onEditClick={(customerId) => {
-                        // TODO: Implementar navegação para edição do cliente
-                        console.log(`Editando cliente: ${customerId}`);
-                      }}
-                    />
-                  </TableCell>
-                )}
-                {visibleColumns.includes("Último Contato") && (
-                  <TableCell className="whitespace-nowrap py-4 px-3 text-center">
-                    <LastContactBadge 
-                      date={customer.ultimoContato}
-                      daysAgo={customer.diasSemContato}
-                    />
-                  </TableCell>
-                )}
-                {visibleColumns.includes("Valor em Aberto") && (
-                  <TableCell className="whitespace-nowrap py-4 px-3 text-center">
-                    <OutstandingAmountBadge amount={customer.valorEmAberto} />
-                  </TableCell>
-                )}
-              </TableRow>
-            ))
-          ) : (
-            <TableRow className="border-b border-white/10">
-              <TableCell colSpan={visibleColumns.length} className="text-center py-6">
-                <div className="flex flex-col items-center gap-2">
-                  <User className="w-8 h-8 text-gray-400" />
-                  <p className="text-gray-300">Nenhum cliente encontrado.</p>
-                  {(segmentFilter || statusFilter || searchTerm || lastPurchaseFilter || birthdayFilter) && (
-                    <p className="text-sm text-gray-400">
-                      Tente ajustar os filtros de busca.
-                    </p>
-                  )}
-                </div>
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
-        </div>
-      </div>
+      {/* DataTable SSoT Component */}
+      <DataTable<CustomerTableRow>
+        data={filteredAndSortedData}
+        columns={columns}
+        loading={isLoading}
+        error={error}
+        variant="premium"
+        glassEffect={true}
+        virtualization={true}
+        virtualizationThreshold={50}
+        rowHeight={100}
+        overscan={5}
+        sortKey={sortField || undefined}
+        sortDirection={sortDirection}
+        onSort={handleSort}
+        emptyTitle="Nenhum cliente encontrado"
+        emptyDescription={
+          (segmentFilter || statusFilter || searchTerm || lastPurchaseFilter || birthdayFilter)
+            ? "Tente ajustar os filtros de busca."
+            : "Não há clientes cadastrados no momento."
+        }
+        striped={true}
+        hoverable={true}
+        compact={false}
+      />
     </div>
   );
 }

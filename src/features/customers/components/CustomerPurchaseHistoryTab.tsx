@@ -251,6 +251,7 @@ export const CustomerPurchaseHistoryTab: React.FC<CustomerPurchaseHistoryTabProp
                 variant="success"
                 title="Total Gasto"
                 value={formatCurrency(summary.totalSpent)}
+                formatType="none"
                 description="💰 Valor total"
                 icon={DollarSign}
                 className="h-20"
@@ -271,6 +272,7 @@ export const CustomerPurchaseHistoryTab: React.FC<CustomerPurchaseHistoryTabProp
                 variant="purple"
                 title="Ticket Médio"
                 value={formatCurrency(summary.averageTicket)}
+                formatType="none"
                 description="🎟️ Média por compra"
                 icon={BarChart3}
                 className="h-20"
