@@ -112,7 +112,7 @@ export const getInsightColor = (level: CustomerInsightBadge['level']): CustomerI
 };
 
 export const formatPaymentMethod = (method: string | null): string => {
-  if (!method) return 'N/A';
+  if (!method) return 'Sem histórico';
   
   const methodMap: Record<string, string> = {
     'PIX': 'PIX',
