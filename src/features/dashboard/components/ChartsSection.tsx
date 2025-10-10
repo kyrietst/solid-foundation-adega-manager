@@ -72,10 +72,14 @@ export const ChartsSection: React.FC<ChartsSectionProps> = ({
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
               <XAxis dataKey="month" stroke="rgba(229,231,235,0.6)" />
               <YAxis stroke="rgba(229,231,235,0.6)" />
-              <Tooltip 
+              <Tooltip
                 formatter={(value, name) => [value, 'Vendas']}
                 labelFormatter={(label) => `Mês: ${label}`}
                 contentStyle={tooltipStyle}
+                labelStyle={{
+                  color: '#E5E7EB',
+                  fontWeight: '600'
+                }}
               />
               <Bar dataKey="vendas" fill="url(#amberGradient)" radius={[8,8,0,0]} />
               <defs>
@@ -110,15 +114,19 @@ export const ChartsSection: React.FC<ChartsSectionProps> = ({
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
               <XAxis dataKey="month" stroke="rgba(229,231,235,0.6)" />
               <YAxis stroke="rgba(229,231,235,0.6)" />
-              <Tooltip 
+              <Tooltip
                 formatter={(value, name) => [value, 'Vendas']}
                 labelFormatter={(label) => `Mês: ${label}`}
                 contentStyle={tooltipStyle}
+                labelStyle={{
+                  color: '#E5E7EB',
+                  fontWeight: '600'
+                }}
               />
-              <Line 
-                type="monotone" 
-                dataKey="vendas" 
-                stroke="#F59E0B" 
+              <Line
+                type="monotone"
+                dataKey="vendas"
+                stroke="#F59E0B"
                 strokeWidth={4}
                 dot={{ fill: '#F59E0B', strokeWidth: 3, r: 5 }}
                 activeDot={{ r: 8, stroke: '#F59E0B', strokeWidth: 3, fill: '#F59E0B' }}

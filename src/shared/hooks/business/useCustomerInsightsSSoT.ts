@@ -253,6 +253,43 @@ export const useCustomerInsightsSSoT = (
   });
 
   // ============================================================================
+  // SERVER-SIDE DATA FETCHING - TOTAL REVENUE (FOR REVENUE CONTRIBUTION)
+  // ============================================================================
+
+  const {
+    data: totalRevenue = 0,
+    isLoading: isLoadingTotalRevenue,
+  } = useQuery({
+    queryKey: ['total-revenue-all-customers'],
+    queryFn: async (): Promise<number> => {
+      try {
+        // Buscar soma total de todas as vendas de todos os clientes
+        const { data, error } = await supabase
+          .from('sales')
+          .select('total_amount');
+
+        if (error) {
+          console.error('❌ Erro ao buscar revenue total:', error);
+          return 0;
+        }
+
+        if (!data || data.length === 0) return 0;
+
+        // Calcular soma total
+        const total = data.reduce((sum, sale) => sum + Number(sale.total_amount), 0);
+        return total;
+
+      } catch (error) {
+        console.error('❌ Erro crítico ao calcular revenue total:', error);
+        return 0;
+      }
+    },
+    staleTime: 10 * 60 * 1000, // 10 min cache para total revenue (dado agregado estável)
+    refetchInterval: false, // Não precisa auto-refresh para métrica agregada
+    refetchOnWindowFocus: false,
+  });
+
+  // ============================================================================
   // SALES CHART DATA - REAL-TIME CALCULATION
   // ============================================================================
 
@@ -294,10 +331,12 @@ export const useCustomerInsightsSSoT = (
       return acc;
     }, {} as Record<string, number>);
 
-    return Object.entries(productCount)
+    const chartData = Object.entries(productCount)
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 10); // Top 10 produtos
+
+    return chartData;
   }, [rawPurchases]);
 
   // ============================================================================
@@ -392,6 +431,11 @@ export const useCustomerInsightsSSoT = (
       engagementLevel = 'medium';
     }
 
+    // Revenue Contribution - Cálculo real baseado no total da base
+    const revenueContribution = totalRevenue > 0
+      ? Math.round((totalSpent / totalRevenue) * 100)
+      : 0;
+
     return {
       segmentRecommendation,
       nextBestAction,
@@ -404,17 +448,17 @@ export const useCustomerInsightsSSoT = (
         averageTicket > 100 ? 'Alto ticket médio' : 'Ticket médio padrão',
         daysSinceLastPurchase <= 30 ? 'Recentemente ativo' : 'Inativo há mais de 30 dias'
       ],
-      revenueContribution: Math.round((totalSpent / Math.max(totalSpent, 1000)) * 100), // % da base
+      revenueContribution, // Agora usa cálculo real baseado no total da base
       growthPotential,
       engagementLevel
     };
-  }, [rawPurchases, customer]); // Otimizado: removida dependência redundante productsChartData
+  }, [rawPurchases, customer, totalRevenue, productsChartData]);
 
   // ============================================================================
   // ESTADO DERIVADO
   // ============================================================================
 
-  const isLoading = isLoadingCustomer || isLoadingPurchases;
+  const isLoading = isLoadingCustomer || isLoadingPurchases || isLoadingTotalRevenue;
   const error = customerError || purchasesError;
   const hasAnalyticsData = rawPurchases && rawPurchases.length > 0;
   const hasFrequencyData = frequencyChartData.length > 0;

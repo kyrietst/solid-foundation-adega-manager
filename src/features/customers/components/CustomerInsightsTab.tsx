@@ -370,6 +370,7 @@ export const CustomerInsightsTab: React.FC<CustomerInsightsTabProps> = React.mem
                 value={`${insights.revenueContribution}%`}
                 description="💰 % da base total"
                 icon={DollarSign}
+                formatType="none"
               />
 
               <StatCard
@@ -379,6 +380,7 @@ export const CustomerInsightsTab: React.FC<CustomerInsightsTabProps> = React.mem
                 value={`${insights.opportunityScore}/100`}
                 description="🎯 Potencial calculado"
                 icon={Target}
+                formatType="none"
               />
 
               <StatCard
@@ -388,6 +390,7 @@ export const CustomerInsightsTab: React.FC<CustomerInsightsTabProps> = React.mem
                 value={insights.engagementLevel === 'high' ? 'Alto' : insights.engagementLevel === 'medium' ? 'Médio' : 'Baixo'}
                 description="⚡ Atividade atual"
                 icon={Zap}
+                formatType="none"
               />
 
               <StatCard
@@ -432,6 +435,10 @@ export const CustomerInsightsTab: React.FC<CustomerInsightsTabProps> = React.mem
                           border: '1px solid #374151',
                           borderRadius: '8px'
                         }}
+                        labelStyle={{
+                          color: '#E5E7EB',
+                          fontWeight: '600'
+                        }}
                         formatter={(value: number, name: string) => [
                           name === 'total' ? formatCurrency(value) : value,
                           name === 'total' ? 'Vendas' : 'Compras'
@@ -461,19 +468,22 @@ export const CustomerInsightsTab: React.FC<CustomerInsightsTabProps> = React.mem
               <CardContent>
                 <div style={{ width: '100%', height: 300 }}>
                   <ResponsiveContainer>
-                    <BarChart data={productsChartData} layout="horizontal">
+                    <BarChart
+                      data={productsChartData}
+                      margin={{ top: 5, right: 20, left: 10, bottom: 20 }}
+                    >
                       <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                       <XAxis
-                        type="number"
+                        dataKey="name"
                         stroke="#9CA3AF"
                         fontSize={12}
                       />
                       <YAxis
-                        type="category"
-                        dataKey="name"
                         stroke="#9CA3AF"
-                        fontSize={10}
-                        width={120}
+                        fontSize={12}
+                        allowDecimals={false}
+                        domain={[0, 'dataMax']}
+                        label={{ value: 'Quantidade (un)', angle: -90, position: 'insideLeft' }}
                       />
                       <RechartsTooltip
                         contentStyle={{
@@ -481,12 +491,17 @@ export const CustomerInsightsTab: React.FC<CustomerInsightsTabProps> = React.mem
                           border: '1px solid #374151',
                           borderRadius: '8px'
                         }}
+                        labelStyle={{
+                          color: '#E5E7EB',
+                          fontWeight: '600'
+                        }}
                         formatter={(value: number) => [`${value} unidades`, 'Quantidade']}
                       />
                       <Bar
                         dataKey="count"
                         fill="#3B82F6"
-                        radius={[0, 4, 4, 0]}
+                        radius={[4, 4, 0, 0]}
+                        barSize={40}
                       />
                     </BarChart>
                   </ResponsiveContainer>
@@ -523,6 +538,10 @@ export const CustomerInsightsTab: React.FC<CustomerInsightsTabProps> = React.mem
                             backgroundColor: '#1F2937',
                             border: '1px solid #374151',
                             borderRadius: '8px'
+                          }}
+                          labelStyle={{
+                            color: '#E5E7EB',
+                            fontWeight: '600'
                           }}
                           formatter={(value: number, _name: string, props: { payload: { date: string } }) => [
                             `${value} dias`,

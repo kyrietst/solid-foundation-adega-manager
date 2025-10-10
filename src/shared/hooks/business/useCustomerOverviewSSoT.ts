@@ -20,6 +20,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
 import { useMemo, useCallback } from 'react';
+import { calculateCompleteness } from '@/features/customers/utils/completeness-calculator';
 
 // ============================================================================
 // TYPES E INTERFACES
@@ -31,6 +32,7 @@ export interface CustomerOverviewData {
   email?: string;
   phone?: string;
   address?: string;
+  birthday?: string;
   notes?: string;
   created_at: string;
   updated_at: string;
@@ -223,6 +225,7 @@ export const useCustomerOverviewSSoT = (
             email,
             phone,
             address,
+            birthday,
             notes,
             created_at,
             updated_at,
@@ -290,6 +293,22 @@ export const useCustomerOverviewSSoT = (
           throw salesError;
         }
 
+        // Buscar insights do cliente
+        const { data: insightsData, error: insightsError } = await supabase
+          .from('customer_insights')
+          .select('confidence')
+          .eq('customer_id', customerId)
+          .eq('is_active', true);
+
+        if (insightsError) {
+          console.error('⚠️ Erro ao buscar insights (não crítico):', insightsError);
+        }
+
+        const insightsCount = insightsData?.length || 0;
+        const avgConfidence = insightsData && insightsData.length > 0
+          ? insightsData.reduce((sum, insight) => sum + (insight.confidence || 0), 0) / insightsData.length
+          : 0;
+
         const purchases = sales || [];
         const totalPurchases = purchases.length;
         const totalSpent = purchases.reduce((sum, sale) => sum + parseFloat(sale.total_amount || '0'), 0);
@@ -353,8 +372,8 @@ export const useCustomerOverviewSSoT = (
           days_since_last_purchase: daysSinceLastPurchase,
           calculated_favorite_category: calculatedFavoriteCategory,
           calculated_favorite_product: calculatedFavoriteProduct,
-          insights_count: 0, // TODO: Buscar de customer_insights
-          insights_confidence: 0,
+          insights_count: insightsCount,
+          insights_confidence: avgConfidence,
           data_sync_status: {
             ltv_synced: true,
             dates_synced: true,
@@ -594,26 +613,27 @@ export const useCustomerOverviewSSoT = (
   const profileCompleteness = useMemo((): number => {
     if (!customer) return 0;
 
-    let completeness = 0;
-    const weights = {
-      email: 25,
-      phone: 25,
-      address: 20,
-      hasRealPurchases: 20,
-      hasInsights: 10
+    // Usar o cálculo unificado do completeness-calculator.ts
+    // para garantir consistência entre tabela e perfil
+    const customerData = {
+      id: customer.id,
+      name: customer.name,
+      email: customer.email,
+      phone: customer.phone,
+      address: customer.address,
+      birthday: customer.birthday,
+      first_purchase_date: undefined, // Não disponível no momento
+      last_purchase_date: metrics?.last_purchase_real,
+      purchase_frequency: undefined, // TODO: Derivar de métricas ou adicionar ao banco
+      favorite_category: metrics?.calculated_favorite_category,
+      favorite_product: metrics?.calculated_favorite_product,
+      notes: customer.notes,
+      contact_permission: customer.contact_permission,
+      created_at: customer.created_at,
     };
 
-    if (customer.email) completeness += weights.email;
-    if (customer.phone) completeness += weights.phone;
-    if (customer.address) completeness += weights.address;
-    if (metrics?.total_purchases && metrics.total_purchases > 0) {
-      completeness += weights.hasRealPurchases;
-    }
-    if (metrics?.insights_count && metrics.insights_count > 0) {
-      completeness += weights.hasInsights;
-    }
-
-    return completeness;
+    const result = calculateCompleteness(customerData);
+    return result.percentage;
   }, [customer, metrics]);
 
   const customerStatus = useMemo((): CustomerStatus => {

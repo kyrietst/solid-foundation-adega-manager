@@ -377,12 +377,16 @@ export const CrmReportsSection: React.FC<CrmReportsSectionProps> = ({ period = 3
                   <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                   <XAxis dataKey="segment" stroke="#9ca3af" fontSize={12} />
                   <YAxis stroke="#9ca3af" fontSize={12} />
-                  <Tooltip 
+                  <Tooltip
                     contentStyle={{
                       backgroundColor: '#1f2937',
                       border: '1px solid #374151',
                       borderRadius: '8px',
                       color: '#ffffff'
+                    }}
+                    labelStyle={{
+                      color: '#E5E7EB',
+                      fontWeight: '600'
                     }}
                   />
                   <Bar dataKey="count" fill="#8b5cf6" name="Clientes" />
@@ -404,25 +408,29 @@ export const CrmReportsSection: React.FC<CrmReportsSectionProps> = ({ period = 3
                   <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                   <XAxis dataKey="period" stroke="#9ca3af" fontSize={12} />
                   <YAxis stroke="#9ca3af" fontSize={12} />
-                  <Tooltip 
+                  <Tooltip
                     contentStyle={{
                       backgroundColor: '#1f2937',
                       border: '1px solid #374151',
                       borderRadius: '8px',
                       color: '#ffffff'
                     }}
+                    labelStyle={{
+                      color: '#E5E7EB',
+                      fontWeight: '600'
+                    }}
                   />
-                  <Line 
-                    type="monotone" 
-                    dataKey="retained" 
-                    stroke="#10b981" 
+                  <Line
+                    type="monotone"
+                    dataKey="retained"
+                    stroke="#10b981"
                     strokeWidth={2}
                     name="Retidos"
                   />
-                  <Line 
-                    type="monotone" 
-                    dataKey="lost" 
-                    stroke="#ef4444" 
+                  <Line
+                    type="monotone"
+                    dataKey="lost"
+                    stroke="#ef4444"
                     strokeWidth={2}
                     name="Perdidos"
                   />

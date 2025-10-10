@@ -439,15 +439,19 @@ export const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
                             stroke="#6B7280"
                             tickFormatter={(value) => `R$ ${value}`}
                           />
-                          <Tooltip 
-                            contentStyle={{ 
-                              backgroundColor: '#1F2937', 
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: '#1F2937',
                               border: '1px solid #374151',
                               borderRadius: '8px',
                               color: '#F3F4F6'
                             }}
+                            labelStyle={{
+                              color: '#E5E7EB',
+                              fontWeight: '600'
+                            }}
                             formatter={(value, name) => [
-                              formatCurrency(Number(value)), 
+                              formatCurrency(Number(value)),
                               name === 'ltv' ? 'LTV Acumulado' : name
                             ]}
                           />

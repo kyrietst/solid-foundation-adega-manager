@@ -1,6 +1,8 @@
 export interface CustomerTableRow {
   id: string;
   cliente: string;
+  email: string | null;
+  phone: string | null;
   categoriaFavorita: string | null;
   segmento: string;
   metodoPreferido: string | null;

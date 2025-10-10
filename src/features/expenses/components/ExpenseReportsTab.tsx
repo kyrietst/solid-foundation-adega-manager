@@ -332,13 +332,17 @@ export const ExpenseReportsTab: React.FC = () => {
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
-                    <Tooltip 
+                    <Tooltip
                       formatter={(value: any) => [formatCurrency(Number(value)), 'Valor']}
                       contentStyle={{
                         backgroundColor: '#374151',
                         border: '1px solid #4B5563',
                         borderRadius: '8px',
                         color: '#F9FAFB'
+                      }}
+                      labelStyle={{
+                        color: '#E5E7EB',
+                        fontWeight: '600'
                       }}
                     />
                   </PieChart>
@@ -356,7 +360,7 @@ export const ExpenseReportsTab: React.FC = () => {
                       height={80}
                     />
                     <YAxis stroke="#9CA3AF" fontSize={12} />
-                    <Tooltip 
+                    <Tooltip
                       formatter={(value: any, name: string) => [
                         name === 'realizado' ? formatCurrency(Number(value)) : value,
                         name === 'realizado' ? 'Valor' : 'Transações'
@@ -366,6 +370,10 @@ export const ExpenseReportsTab: React.FC = () => {
                         border: '1px solid #4B5563',
                         borderRadius: '8px',
                         color: '#F9FAFB'
+                      }}
+                      labelStyle={{
+                        color: '#E5E7EB',
+                        fontWeight: '600'
                       }}
                     />
                     <Legend />
@@ -386,13 +394,17 @@ export const ExpenseReportsTab: React.FC = () => {
                       height={80}
                     />
                     <YAxis stroke="#9CA3AF" fontSize={12} />
-                    <Tooltip 
+                    <Tooltip
                       formatter={(value: any) => [formatCurrency(Number(value)), '']}
                       contentStyle={{
                         backgroundColor: '#374151',
                         border: '1px solid #4B5563',
                         borderRadius: '8px',
                         color: '#F9FAFB'
+                      }}
+                      labelStyle={{
+                        color: '#E5E7EB',
+                        fontWeight: '600'
                       }}
                     />
                     <Legend />

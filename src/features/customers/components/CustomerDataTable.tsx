@@ -195,8 +195,8 @@ const CustomerNameWithIndicators = React.memo(({
 }) => {
   const reportFields = [
     { key: 'email', label: 'Email', value: customer.email, required: true },
-    { key: 'phone', label: 'Telefone', value: customer.telefone, required: true },
-    { key: 'birthday', label: 'Aniversário', value: customer.aniversario, required: false },
+    { key: 'phone', label: 'Telefone', value: customer.phone, required: true },
+    { key: 'birthday', label: 'Aniversário', value: customer.proximoAniversario, required: false },
     { key: 'address', label: 'Endereço', value: customer.cidade, required: false },
     { key: 'category', label: 'Categoria Favorita', value: customer.categoriaFavorita, required: false }
   ];
@@ -393,10 +393,10 @@ const EnhancedProfileCompleteness = ({
   const customerData = {
     id: row.id,
     name: row.cliente,
-    email: null, // Será atualizado quando tivermos este campo
-    phone: null, // Será atualizado quando tivermos este campo  
+    email: row.email,
+    phone: row.phone,
     address: row.cidade ? { city: row.cidade } : null,
-    birthday: row.proximoAniversario,
+    birthday: row.proximoAniversario ? row.proximoAniversario.toISOString() : null,
     first_purchase_date: null,
     last_purchase_date: row.ultimaCompra,
     purchase_frequency: null,

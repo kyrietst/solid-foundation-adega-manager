@@ -567,12 +567,16 @@ export const CrmDashboard: React.FC = () => {
                           <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                           <XAxis dataKey="month" tick={{ fill: '#9CA3AF' }} stroke="#6B7280" />
                           <YAxis tick={{ fill: '#9CA3AF' }} stroke="#6B7280" />
-                          <Tooltip 
-                            contentStyle={{ 
-                              backgroundColor: '#1F2937', 
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: '#1F2937',
                               border: '1px solid #374151',
                               borderRadius: '8px',
                               color: '#F3F4F6'
+                            }}
+                            labelStyle={{
+                              color: '#E5E7EB',
+                              fontWeight: '600'
                             }}
                             formatter={(value, name) => [
                               `${value}${name === 'LTV Médio' ? '' : ' clientes'}`,
@@ -692,13 +696,17 @@ export const CrmDashboard: React.FC = () => {
                               />
                             ))}
                           </Pie>
-                          <Tooltip 
-                            contentStyle={{ 
-                              backgroundColor: '#1F2937', 
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: '#1F2937',
                               border: '1px solid #374151',
                               borderRadius: '8px',
                               color: '#F3F4F6',
                               boxShadow: '0 10px 25px rgba(0,0,0,0.3)'
+                            }}
+                            labelStyle={{
+                              color: '#E5E7EB',
+                              fontWeight: '600'
                             }}
                             formatter={(value, name) => [
                               `${value} clientes`,

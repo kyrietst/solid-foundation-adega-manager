@@ -309,11 +309,15 @@ export const DeliveryVsPresencialReport = ({ className }: DeliveryVsPresencialRe
                     <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                     <XAxis dataKey="channel" stroke="#9ca3af" />
                     <YAxis stroke="#9ca3af" />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: '#1f2937', 
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#1f2937',
                         border: '1px solid #374151',
                         borderRadius: '8px'
+                      }}
+                      labelStyle={{
+                        color: '#E5E7EB',
+                        fontWeight: '600'
                       }}
                     />
                     <Bar dataKey="orders" fill="#3b82f6" name="Pedidos" />
@@ -346,7 +350,16 @@ export const DeliveryVsPresencialReport = ({ className }: DeliveryVsPresencialRe
                       <Cell fill="#3b82f6" />
                       <Cell fill="#10b981" />
                     </Pie>
-                    <Tooltip 
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#1f2937',
+                        border: '1px solid #374151',
+                        borderRadius: '8px'
+                      }}
+                      labelStyle={{
+                        color: '#E5E7EB',
+                        fontWeight: '600'
+                      }}
                       formatter={(value: any) => [`R$ ${value.toFixed(2)}`, 'Receita']}
                     />
                   </PieChart>
@@ -499,24 +512,28 @@ export const DeliveryVsPresencialReport = ({ className }: DeliveryVsPresencialRe
                     <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                     <XAxis dataKey="date" stroke="#9ca3af" />
                     <YAxis stroke="#9ca3af" />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: '#1f2937', 
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#1f2937',
                         border: '1px solid #374151',
                         borderRadius: '8px'
                       }}
+                      labelStyle={{
+                        color: '#E5E7EB',
+                        fontWeight: '600'
+                      }}
                     />
-                    <Line 
-                      type="monotone" 
-                      dataKey="delivery_orders" 
-                      stroke="#3b82f6" 
+                    <Line
+                      type="monotone"
+                      dataKey="delivery_orders"
+                      stroke="#3b82f6"
                       strokeWidth={2}
                       name="Delivery"
                     />
-                    <Line 
-                      type="monotone" 
-                      dataKey="instore_orders" 
-                      stroke="#10b981" 
+                    <Line
+                      type="monotone"
+                      dataKey="instore_orders"
+                      stroke="#10b981"
                       strokeWidth={2}
                       name="Presencial"
                     />
@@ -549,26 +566,30 @@ export const DeliveryVsPresencialReport = ({ className }: DeliveryVsPresencialRe
                     <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                     <XAxis dataKey="date" stroke="#9ca3af" />
                     <YAxis stroke="#9ca3af" />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: '#1f2937', 
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#1f2937',
                         border: '1px solid #374151',
                         borderRadius: '8px'
                       }}
+                      labelStyle={{
+                        color: '#E5E7EB',
+                        fontWeight: '600'
+                      }}
                     />
-                    <Area 
-                      type="monotone" 
-                      dataKey="delivery_revenue" 
+                    <Area
+                      type="monotone"
+                      dataKey="delivery_revenue"
                       stackId="1"
-                      stroke="#3b82f6" 
+                      stroke="#3b82f6"
                       fill="url(#deliveryGradient)"
                       name="Delivery"
                     />
-                    <Area 
-                      type="monotone" 
-                      dataKey="instore_revenue" 
+                    <Area
+                      type="monotone"
+                      dataKey="instore_revenue"
                       stackId="1"
-                      stroke="#10b981" 
+                      stroke="#10b981"
                       fill="url(#instoreGradient)"
                       name="Presencial"
                     />
@@ -615,7 +636,17 @@ export const DeliveryVsPresencialReport = ({ className }: DeliveryVsPresencialRe
                       fillOpacity={0.1}
                       strokeWidth={2}
                     />
-                    <Tooltip />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#1f2937',
+                        border: '1px solid #374151',
+                        borderRadius: '8px'
+                      }}
+                      labelStyle={{
+                        color: '#E5E7EB',
+                        fontWeight: '600'
+                      }}
+                    />
                   </RadarChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -638,12 +669,21 @@ export const DeliveryVsPresencialReport = ({ className }: DeliveryVsPresencialRe
                       stroke="#9ca3af"
                       label={{ value: 'Pedidos', position: 'insideBottom', offset: -10 }}
                     />
-                    <YAxis 
-                      dataKey="avgTicket" 
+                    <YAxis
+                      dataKey="avgTicket"
                       stroke="#9ca3af"
                       label={{ value: 'Ticket Médio (R$)', angle: -90, position: 'insideLeft' }}
                     />
-                    <Tooltip 
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#1f2937',
+                        border: '1px solid #374151',
+                        borderRadius: '8px'
+                      }}
+                      labelStyle={{
+                        color: '#E5E7EB',
+                        fontWeight: '600'
+                      }}
                       formatter={(value: any, name: string) => {
                         if (name === 'avgTicket') return [`R$ ${value.toFixed(2)}`, 'Ticket Médio'];
                         return [value, name];

@@ -302,11 +302,15 @@ export const ZoneAnalysisReport = ({ className }: ZoneAnalysisReportProps) => {
                         <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                         <XAxis dataKey="zone" stroke="#9ca3af" />
                         <YAxis stroke="#9ca3af" />
-                        <Tooltip 
-                          contentStyle={{ 
-                            backgroundColor: '#1f2937', 
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: '#1f2937',
                             border: '1px solid #374151',
                             borderRadius: '8px'
+                          }}
+                          labelStyle={{
+                            color: '#E5E7EB',
+                            fontWeight: '600'
                           }}
                         />
                         <Bar dataKey="revenue" fill="#10b981" name="Receita (R$)" />
@@ -338,7 +342,16 @@ export const ZoneAnalysisReport = ({ className }: ZoneAnalysisReportProps) => {
                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                           ))}
                         </Pie>
-                        <Tooltip 
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: '#1f2937',
+                            border: '1px solid #374151',
+                            borderRadius: '8px'
+                          }}
+                          labelStyle={{
+                            color: '#E5E7EB',
+                            fontWeight: '600'
+                          }}
                           formatter={(value: any) => [`R$ ${value.toFixed(2)}`, 'Receita']}
                         />
                       </PieChart>
@@ -456,11 +469,15 @@ export const ZoneAnalysisReport = ({ className }: ZoneAnalysisReportProps) => {
                         stroke="#9ca3af"
                         label={{ value: 'Receita (R$)', angle: -90, position: 'insideLeft' }}
                       />
-                      <Tooltip 
-                        contentStyle={{ 
-                          backgroundColor: '#1f2937', 
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: '#1f2937',
                           border: '1px solid #374151',
                           borderRadius: '8px'
+                        }}
+                        labelStyle={{
+                          color: '#E5E7EB',
+                          fontWeight: '600'
                         }}
                         formatter={(value: any, name: string) => {
                           if (name === 'revenue') return [`R$ ${value.toFixed(2)}`, 'Receita'];

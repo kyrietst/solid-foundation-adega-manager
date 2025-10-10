@@ -224,8 +224,7 @@ const fetchCustomerTableDataFallback = async (): Promise<CustomerTableRow[]> => 
       segment,
       last_purchase_date,
       created_at,
-      updated_at,
-      customer_insights!inner(confidence)
+      updated_at
     `)
     .gte('lifetime_value', 0)
     .order('lifetime_value', { ascending: false });
@@ -254,11 +253,16 @@ const fetchCustomerTableDataFallback = async (): Promise<CustomerTableRow[]> => 
       const mostUsedMethod = Object.entries(methodCount)
         .sort(([,a], [,b]) => b - a)[0]?.[0] || null;
 
-      // Contar insights
-      const customerInsights = customer.customer_insights as Array<{ confidence: number }> || [];
-      const insightsCount = customerInsights.length || 0;
-      const avgConfidence = customerInsights.length > 0 
-        ? customerInsights.reduce((sum: number, insight) => sum + (insight.confidence || 0), 0) / customerInsights.length
+      // Buscar TODOS os insights do cliente
+      const { data: insightsData } = await supabase
+        .from('customer_insights')
+        .select('confidence')
+        .eq('customer_id', customer.id)
+        .eq('is_active', true);
+
+      const insightsCount = insightsData?.length || 0;
+      const avgConfidence = insightsData && insightsData.length > 0
+        ? insightsData.reduce((sum, insight) => sum + (insight.confidence || 0), 0) / insightsData.length
         : 0;
 
       const { status, color } = getCustomerStatus(customer.segment as string, customer.last_purchase_date as string);
@@ -273,6 +277,8 @@ const fetchCustomerTableDataFallback = async (): Promise<CustomerTableRow[]> => 
       return {
         id: customer.id as string,
         cliente: (customer.name as string) || 'N/A',
+        email: (customer.email as string) || null,
+        phone: (customer.phone as string) || null,
         categoriaFavorita: (customer.favorite_category as string) || 'Não definida',
         segmento: (customer.segment as string) || 'Novo',
         metodoPreferido: mostUsedMethod,
@@ -304,14 +310,9 @@ export const useCustomerTableData = () => {
   return useQuery({
     queryKey: ['customer-table-data'],
     queryFn: async () => {
-      try {
-        // Tentar usar a RPC function primeiro
-        return await fetchCustomerTableData();
-      } catch (error) {
-        console.warn('RPC function not available, using fallback query');
-        // Se falhar, usar a query de fallback
-        return await fetchCustomerTableDataFallback();
-      }
+      // Usar sempre a query de fallback corrigida
+      console.log('🔄 Usando query de fallback corrigida (forçada)');
+      return await fetchCustomerTableDataFallback();
     },
     staleTime: 1000 * 30, // 30 segundos para dados mais atualizados
     gcTime: 1000 * 60 * 5, // 5 minutos para garbage collection

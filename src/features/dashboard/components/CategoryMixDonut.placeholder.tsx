@@ -57,6 +57,10 @@ export function CategoryMixDonut(): JSX.Element {
                   border: '1px solid rgba(255,255,255,0.15)',
                   borderRadius: 12,
                 }}
+                labelStyle={{
+                  color: '#E5E7EB',
+                  fontWeight: '600'
+                }}
               />
             </PieChart>
           </ResponsiveContainer>

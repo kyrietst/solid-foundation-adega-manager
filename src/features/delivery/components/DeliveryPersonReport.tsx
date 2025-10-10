@@ -338,11 +338,15 @@ export const DeliveryPersonReport = ({ className }: DeliveryPersonReportProps) =
                       <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                       <XAxis dataKey="name" stroke="#9ca3af" />
                       <YAxis stroke="#9ca3af" />
-                      <Tooltip 
-                        contentStyle={{ 
-                          backgroundColor: '#1f2937', 
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: '#1f2937',
                           border: '1px solid #374151',
                           borderRadius: '8px'
+                        }}
+                        labelStyle={{
+                          color: '#E5E7EB',
+                          fontWeight: '600'
                         }}
                       />
                       <Bar dataKey="deliveries" fill="#3b82f6" name="Entregas" />
@@ -386,7 +390,17 @@ export const DeliveryPersonReport = ({ className }: DeliveryPersonReportProps) =
                         fillOpacity={0.1}
                         strokeWidth={2}
                       />
-                      <Tooltip />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: '#1f2937',
+                          border: '1px solid #374151',
+                          borderRadius: '8px'
+                        }}
+                        labelStyle={{
+                          color: '#E5E7EB',
+                          fontWeight: '600'
+                        }}
+                      />
                     </RadarChart>
                   </ResponsiveContainer>
                 </CardContent>

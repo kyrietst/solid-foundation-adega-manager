@@ -472,15 +472,19 @@ export const SalesReportsSection: React.FC<SalesReportsSectionProps> = ({ period
                         tick={{ fontSize: 10 }}
                       />
                       <YAxis stroke="#9ca3af" fontSize={12} />
-                      <Tooltip 
+                      <Tooltip
                         contentStyle={{
                           backgroundColor: '#1f2937',
                           border: '1px solid #374151',
                           borderRadius: '8px',
                           color: '#ffffff'
                         }}
+                        labelStyle={{
+                          color: '#E5E7EB',
+                          fontWeight: '600'
+                        }}
                         formatter={(value, name, props) => [
-                          formatCurrency(Number(value)), 
+                          formatCurrency(Number(value)),
                           'Receita'
                         ]}
                         labelFormatter={(label, payload) => {

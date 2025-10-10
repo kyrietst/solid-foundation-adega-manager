@@ -354,6 +354,10 @@ export const DeliveryPersonPerformance = ({
                     borderRadius: '8px',
                     color: '#fff'
                   }}
+                  labelStyle={{
+                    color: '#E5E7EB',
+                    fontWeight: '600'
+                  }}
                   formatter={(value: any) => [`${value}%`, 'Performance']}
                 />
               </RadarChart>

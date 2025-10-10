@@ -433,12 +433,16 @@ export const FinancialReportsSection: React.FC<FinancialReportsSectionProps> = (
                   <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                   <XAxis dataKey="period" stroke="#9ca3af" fontSize={12} />
                   <YAxis stroke="#9ca3af" fontSize={12} />
-                  <Tooltip 
+                  <Tooltip
                     contentStyle={{
                       backgroundColor: '#1f2937',
                       border: '1px solid #374151',
                       borderRadius: '8px',
                       color: '#ffffff'
+                    }}
+                    labelStyle={{
+                      color: '#E5E7EB',
+                      fontWeight: '600'
                     }}
                     formatter={(value) => [formatCurrency(Number(value)), 'Valor']}
                   />
@@ -475,12 +479,16 @@ export const FinancialReportsSection: React.FC<FinancialReportsSectionProps> = (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip 
+                  <Tooltip
                     contentStyle={{
                       backgroundColor: '#1f2937',
                       border: '1px solid #374151',
                       borderRadius: '8px',
                       color: '#ffffff'
+                    }}
+                    labelStyle={{
+                      color: '#E5E7EB',
+                      fontWeight: '600'
                     }}
                     formatter={(value) => [formatCurrency(Number(value)), 'Total']}
                   />
