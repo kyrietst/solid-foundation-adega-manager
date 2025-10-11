@@ -127,6 +127,7 @@ export const CustomerPurchaseHistoryTab: React.FC<CustomerPurchaseHistoryTabProp
     isLoading,
     error,
     summary,
+    behavioralMetrics,
     formatPurchaseDate,
     formatPurchaseId,
     hasData,
@@ -386,39 +387,60 @@ export const CustomerPurchaseHistoryTab: React.FC<CustomerPurchaseHistoryTabProp
         )}
       </div>
 
-      {/* Resumo de performance financeira - Redesign UX/UI v3.2.0 */}
-      {hasData && (
-        <Card className="bg-black/70 backdrop-blur-xl border-white/20 hover:border-accent-green/60 hover:shadow-xl transition-all duration-300">
+      {/* Análise de Comportamento - v3.2.0 Behavioral Metrics */}
+      {hasData && purchases.length >= 2 && (
+        <Card className="bg-black/70 backdrop-blur-xl border-white/20 hover:border-accent-purple/60 hover:shadow-xl transition-all duration-300">
           <CardHeader>
             <CardTitle className="text-white font-semibold text-lg flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-accent-green" />
-              Performance Financeira
+              <TrendingUp className="h-5 w-5 text-accent-purple" />
+              Análise de Comportamento
+              <Badge variant="outline" className="ml-2 border-2 border-accent-purple/60 text-accent-purple bg-accent-purple/20 font-semibold">
+                Métricas Preditivas
+              </Badge>
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="text-center p-4 bg-white/5 rounded-lg border border-white/10">
-                <div className="text-3xl font-bold text-accent-green">
-                  {formatCurrency(summary.totalSpent)}
-                </div>
-                <div className="text-sm text-gray-200 font-medium mt-1">Receita Total</div>
-              </div>
-              <div className="text-center p-4 bg-white/5 rounded-lg border border-white/10">
+              {/* KPI 1: Frequência de Compra */}
+              <div className="text-center p-4 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all duration-200">
                 <div className="text-3xl font-bold text-accent-blue">
-                  {formatCurrency(summary.averageTicket)}
+                  {behavioralMetrics.purchaseIntervalText}
                 </div>
-                <div className="text-sm text-gray-200 font-medium mt-1">Ticket Médio</div>
+                <div className="text-sm text-gray-200 font-medium mt-1">Frequência de Compra</div>
+                <div className="text-xs text-gray-400 mt-2">
+                  Média: {behavioralMetrics.avgPurchaseInterval} dias
+                </div>
               </div>
-              <div className="text-center p-4 bg-white/5 rounded-lg border border-white/10">
-                <div className="text-3xl font-bold text-accent-purple">
-                  {summary.purchaseCount}
+
+              {/* KPI 2: Tendência de Gastos */}
+              <div className="text-center p-4 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all duration-200">
+                <div className={`text-3xl font-bold ${behavioralMetrics.spendingTrend.color}`}>
+                  {behavioralMetrics.spendingTrend.text}
                 </div>
-                <div className="text-sm text-gray-200 font-medium mt-1">Total de Compras</div>
+                <div className="text-sm text-gray-200 font-medium mt-1">Tendência de Gastos</div>
+                {behavioralMetrics.spendingTrend.percentage !== 0 && (
+                  <div className="text-xs text-gray-400 mt-2">
+                    {behavioralMetrics.spendingTrend.percentage > 0 ? '+' : ''}
+                    {behavioralMetrics.spendingTrend.percentage}% vs período anterior
+                  </div>
+                )}
+              </div>
+
+              {/* KPI 3: Próxima Compra Esperada */}
+              <div className="text-center p-4 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all duration-200">
+                <div className={`text-3xl font-bold ${behavioralMetrics.nextPurchaseExpected.color}`}>
+                  {behavioralMetrics.nextPurchaseExpected.text}
+                </div>
+                <div className="text-sm text-gray-200 font-medium mt-1">Próxima Compra</div>
+                <div className="text-xs text-gray-400 mt-2">
+                  {behavioralMetrics.nextPurchaseExpected.status === 'overdue' ? '⚠️ Ação recomendada' : '✓ No prazo'}
+                </div>
               </div>
             </div>
+
             <div className="mt-4 pt-4 border-t border-white/10">
               <div className="text-center text-xs text-gray-300 font-medium">
-                📊 Dados financeiros integrados com histórico de compras
+                🤖 Análise preditiva baseada em padrão de compras • {purchases.length} compras analisadas
               </div>
             </div>
           </CardContent>

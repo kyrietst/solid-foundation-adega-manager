@@ -51,6 +51,23 @@ export interface PurchaseSummary {
   purchaseCount: number;
 }
 
+export interface BehavioralMetrics {
+  avgPurchaseInterval: number;           // Média de dias entre compras
+  purchaseIntervalText: string;          // "A cada 15 dias"
+  spendingTrend: {
+    direction: 'up' | 'stable' | 'down';
+    text: string;                        // "↑ Crescendo"
+    percentage: number;                  // 15.5
+    color: string;                       // Cor para display
+  };
+  nextPurchaseExpected: {
+    daysUntil: number;                   // 5 ou -3 (negativo = atrasada)
+    text: string;                        // "Esperada em 5 dias"
+    status: 'on-time' | 'soon' | 'overdue';
+    color: string;                       // Cor para display
+  };
+}
+
 export interface PaginationOptions {
   page: number;
   limit: number;
@@ -67,6 +84,9 @@ export interface PurchaseHistoryOperations {
 
   // Resumo estatístico (real-time)
   summary: PurchaseSummary;
+
+  // Métricas comportamentais (v3.2.0 - NEW)
+  behavioralMetrics: BehavioralMetrics;
 
   // Paginação
   pagination: PaginationOptions;
@@ -262,6 +282,147 @@ export const useCustomerPurchaseHistory = (
   }, [rawPurchases]);
 
   // ============================================================================
+  // BEHAVIORAL METRICS CALCULATION (v3.2.0 - NEW)
+  // ============================================================================
+
+  const behavioralMetrics = useMemo((): BehavioralMetrics => {
+    // Default values para quando não há dados suficientes
+    const defaultMetrics: BehavioralMetrics = {
+      avgPurchaseInterval: 0,
+      purchaseIntervalText: 'Dados insuficientes',
+      spendingTrend: {
+        direction: 'stable',
+        text: '→ Sem dados',
+        percentage: 0,
+        color: 'text-gray-400'
+      },
+      nextPurchaseExpected: {
+        daysUntil: 0,
+        text: 'Aguardando mais compras',
+        status: 'on-time',
+        color: 'text-gray-400'
+      }
+    };
+
+    // Precisa de pelo menos 2 compras para calcular intervalo
+    if (!rawPurchases || rawPurchases.length < 2) {
+      return defaultMetrics;
+    }
+
+    // ============================================================================
+    // 1. FREQUÊNCIA DE COMPRA (Average Purchase Interval)
+    // ============================================================================
+
+    const intervals: number[] = [];
+    for (let i = 1; i < rawPurchases.length; i++) {
+      const date1 = new Date(rawPurchases[i - 1].date);
+      const date2 = new Date(rawPurchases[i].date);
+      const daysDiff = Math.floor((date1.getTime() - date2.getTime()) / (1000 * 60 * 60 * 24));
+      intervals.push(Math.abs(daysDiff));
+    }
+
+    const avgInterval = Math.round(intervals.reduce((a, b) => a + b, 0) / intervals.length);
+
+    // Formatar texto de intervalo
+    let intervalText: string;
+    if (avgInterval < 7) {
+      intervalText = `A cada ${avgInterval} dias`;
+    } else if (avgInterval < 30) {
+      const weeks = Math.round(avgInterval / 7);
+      intervalText = weeks === 1 ? 'Semanalmente' : `A cada ${weeks} semanas`;
+    } else if (avgInterval < 365) {
+      const months = Math.round(avgInterval / 30);
+      intervalText = months === 1 ? 'Mensalmente' : `A cada ${months} meses`;
+    } else {
+      const years = Math.round(avgInterval / 365);
+      intervalText = years === 1 ? 'Anualmente' : `A cada ${years} anos`;
+    }
+
+    // ============================================================================
+    // 2. TENDÊNCIA DE GASTOS (Spending Trend)
+    // ============================================================================
+
+    let spendingTrend = defaultMetrics.spendingTrend;
+
+    // Precisa de pelo menos 6 compras para comparar 3 vs 3
+    if (rawPurchases.length >= 6) {
+      const recent3 = rawPurchases.slice(0, 3).reduce((sum, p) => sum + p.total, 0);
+      const previous3 = rawPurchases.slice(3, 6).reduce((sum, p) => sum + p.total, 0);
+
+      const changePercentage = previous3 > 0
+        ? ((recent3 - previous3) / previous3) * 100
+        : 0;
+
+      if (changePercentage > 10) {
+        spendingTrend = {
+          direction: 'up',
+          text: '↑ Crescendo',
+          percentage: Math.round(changePercentage * 10) / 10,
+          color: 'text-accent-green'
+        };
+      } else if (changePercentage < -10) {
+        spendingTrend = {
+          direction: 'down',
+          text: '↓ Declinando',
+          percentage: Math.round(changePercentage * 10) / 10,
+          color: 'text-red-400'
+        };
+      } else {
+        spendingTrend = {
+          direction: 'stable',
+          text: '→ Estável',
+          percentage: Math.round(changePercentage * 10) / 10,
+          color: 'text-accent-blue'
+        };
+      }
+    }
+
+    // ============================================================================
+    // 3. PRÓXIMA COMPRA ESPERADA (Next Purchase Expected)
+    // ============================================================================
+
+    const lastPurchaseDate = new Date(rawPurchases[0].date);
+    const today = new Date();
+    const daysSinceLastPurchase = Math.floor(
+      (today.getTime() - lastPurchaseDate.getTime()) / (1000 * 60 * 60 * 24)
+    );
+
+    const daysUntilExpected = avgInterval - daysSinceLastPurchase;
+
+    let nextPurchaseExpected = defaultMetrics.nextPurchaseExpected;
+
+    if (daysUntilExpected > 5) {
+      nextPurchaseExpected = {
+        daysUntil: daysUntilExpected,
+        text: `Em ${daysUntilExpected} dias`,
+        status: 'on-time',
+        color: 'text-accent-green'
+      };
+    } else if (daysUntilExpected > 0) {
+      nextPurchaseExpected = {
+        daysUntil: daysUntilExpected,
+        text: `Em ${daysUntilExpected} dias`,
+        status: 'soon',
+        color: 'text-amber-400'
+      };
+    } else {
+      nextPurchaseExpected = {
+        daysUntil: daysUntilExpected,
+        text: `Atrasada ${Math.abs(daysUntilExpected)} dias`,
+        status: 'overdue',
+        color: 'text-red-400'
+      };
+    }
+
+    return {
+      avgPurchaseInterval: avgInterval,
+      purchaseIntervalText: intervalText,
+      spendingTrend,
+      nextPurchaseExpected
+    };
+  }, [rawPurchases]);
+
+  // ============================================================================
   // PAGINATION LOGIC
   // ============================================================================
 
@@ -315,6 +476,9 @@ export const useCustomerPurchaseHistory = (
 
     // Resumo estatístico (real-time)
     summary,
+
+    // Métricas comportamentais (v3.2.0 - NEW)
+    behavioralMetrics,
 
     // Paginação
     pagination,
