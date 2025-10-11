@@ -25,10 +25,19 @@ const calculateProfileCompleteness = (customer: Record<string, unknown>): number
   if (customer.phone && String(customer.phone).trim()) totalPoints += weights.phone;
   if (customer.contact_permission === true) totalPoints += weights.contact_permission;
   if (customer.email && String(customer.email).trim()) totalPoints += weights.email;
-  if (customer.address && typeof customer.address === 'object' && customer.address !== null) {
-    const addr = customer.address as Record<string, unknown>;
-    if (addr.city && addr.street) totalPoints += weights.address;
+
+  // ✅ CORRIGIDO: Aceitar endereço como string ou objeto
+  if (customer.address) {
+    if (typeof customer.address === 'string' && customer.address.trim()) {
+      // Endereço é string (formato atual)
+      totalPoints += weights.address;
+    } else if (typeof customer.address === 'object' && customer.address !== null) {
+      // Endereço é objeto JSON (formato novo)
+      const addr = customer.address as Record<string, unknown>;
+      if (addr.city && addr.street) totalPoints += weights.address;
+    }
   }
+
   if (customer.birthday) totalPoints += weights.birthday;
   if (customer.contact_preference && String(customer.contact_preference).trim()) totalPoints += weights.contact_preference;
   if (customer.notes && String(customer.notes).trim()) totalPoints += weights.notes;
@@ -60,9 +69,25 @@ const calculateNextBirthday = (birthday: string | null): { nextBirthday: Date | 
 
 // Função para extrair cidade do endereço
 const extractCityFromAddress = (address: unknown): string | null => {
-  if (!address || typeof address !== 'object') return null;
-  const addr = address as Record<string, unknown>;
-  return (addr.city as string) || null;
+  if (!address) return null;
+
+  // Se for objeto JSON (formato novo), extrair city
+  if (typeof address === 'object' && address !== null) {
+    const addr = address as Record<string, unknown>;
+    return (addr.city as string) || null;
+  }
+
+  // Se for string (formato atual), extrair cidade usando regex
+  if (typeof address === 'string') {
+    // Padrão: "... - Centro - São Paulo/SP - CEP ..." ou "... - São Paulo/SP"
+    // Extrai: "São Paulo/SP" ou "São Paulo-SP"
+    const match = address.match(/([A-Za-zÀ-ÿ\s]+)[\/-]([A-Z]{2})/);
+    if (match && match[1]) {
+      return match[1].trim(); // Retorna "São Paulo"
+    }
+  }
+
+  return null;
 };
 
 // Função para calcular último contato

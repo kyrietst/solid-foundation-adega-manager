@@ -383,7 +383,10 @@ export const useCustomerPurchaseHistory = (
 
     const lastPurchaseDate = new Date(rawPurchases[0].date);
     const today = new Date();
-    const daysSinceLastPurchase = Math.floor(
+    // ✅ CORRIGIDO v3.2.1: Usar Math.ceil para arredondar para cima
+    // Math.floor arredondava para baixo (5.54 dias → 5), causando "Atrasada 0 dias"
+    // Math.ceil arredonda para cima (5.54 dias → 6), corrigindo para "Atrasada 1 dia"
+    const daysSinceLastPurchase = Math.ceil(
       (today.getTime() - lastPurchaseDate.getTime()) / (1000 * 60 * 60 * 24)
     );
 

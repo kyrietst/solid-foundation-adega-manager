@@ -17,7 +17,7 @@
  * @version 3.1.0 - SSoT Server-Side Implementation
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/primitives/tabs';
 import { LoadingScreen } from '@/shared/ui/composite/loading-spinner';
@@ -74,6 +74,24 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
     isLoading,
     error
   } = useCustomer(id || '');
+
+  // ============================================================================
+  // CUSTOM EVENT LISTENER - SSoT v3.1.0 Integration Fix
+  // ============================================================================
+
+  // Escutar evento personalizado disparado pelo CustomerProfileHeader
+  useEffect(() => {
+    const handleOpenEditModal = () => {
+      console.log('🔧 Custom Event received: openCustomerEditModal');
+      setIsEditModalOpen(true);
+    };
+
+    window.addEventListener('openCustomerEditModal', handleOpenEditModal as EventListener);
+
+    return () => {
+      window.removeEventListener('openCustomerEditModal', handleOpenEditModal as EventListener);
+    };
+  }, []);
 
   // ============================================================================
   // HANDLERS
