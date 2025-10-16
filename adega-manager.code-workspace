@@ -1,0 +1,60 @@
+{
+  "folders": [
+    {
+      "name": "Adega Manager",
+      "path": "."
+    }
+  ],
+  "settings": {
+    "typescript.preferences.includePackageJsonAutoImports": "on",
+    "typescript.suggest.autoImports": true,
+    "typescript.updateImportsOnFileMove.enabled": "always",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": "explicit",
+      "source.organizeImports": "explicit"
+    },
+    "emmet.includeLanguages": {
+      "typescript": "html",
+      "typescriptreact": "html"
+    },
+    "tailwindCSS.includeLanguages": {
+      "typescript": "html",
+      "typescriptreact": "html"
+    },
+    "tailwindCSS.experimental.classRegex": [
+      ["cva\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"],
+      ["cx\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"]
+    ],
+    "files.associations": {
+      "*.css": "tailwindcss"
+    },
+    "search.exclude": {
+      "**/node_modules": true,
+      "**/coverage": true,
+      "**/dist": true,
+      "**/.git": true
+    },
+    "files.watcherExclude": {
+      "**/node_modules/**": true,
+      "**/coverage/**": true
+    }
+  },
+  "extensions": {
+    "recommendations": [
+      "bradlc.vscode-tailwindcss",
+      "ms-vscode.vscode-typescript-next",
+      "esbenp.prettier-vscode",
+      "dbaeumer.vscode-eslint",
+      "ms-vscode.vscode-json",
+      "formulahendry.auto-rename-tag",
+      "christian-kohler.path-intellisense",
+      "ms-vscode.vscode-typescript-next",
+      "bradlc.vscode-tailwindcss",
+      "ms-vscode.vscode-json",
+      "formulahendry.auto-close-tag",
+      "ms-vscode.vscode-typescript-next",
+      "bradlc.vscode-tailwindcss"
+    ]
+  }
+}

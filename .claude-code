@@ -1,0 +1,34 @@
+{
+  "project": {
+    "name": "Adega Manager - Sistema Enterprise",
+    "description": "Sistema completo de gerenciamento de adegas com CRM avançado, POS inteligente e analytics em tempo real",
+    "type": "react-typescript-enterprise",
+    "framework": "vite-react",
+    "database": "supabase-postgresql"
+  },
+  "architecture": {
+    "pattern": "feature-first",
+    "components": "container-presentation",
+    "state": "zustand-react-query",
+    "styling": "tailwindcss-shadcn"
+  },
+  "development": {
+    "port": 8080,
+    "build": "vite",
+    "testing": "vitest-manual",
+    "linting": "eslint-typescript"
+  },
+  "features": {
+    "pos": "sistema-completo",
+    "crm": "segmentacao-automatica",
+    "inventory": "analise-giro",
+    "delivery": "tracking-tempo-real",
+    "analytics": "dashboards-interativos"
+  },
+  "quality": {
+    "typescript": "strict-mode",
+    "accessibility": "wcag-2.1-aa",
+    "security": "rls-policies",
+    "performance": "83-percent-optimized"
+  }
+}

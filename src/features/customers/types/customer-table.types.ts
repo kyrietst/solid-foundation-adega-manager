@@ -176,12 +176,14 @@ export const getProfileCompletenessBarColor = (percentage: number): string => {
 
 export const formatLastContact = (date: Date | null, daysAgo: number | null): string => {
   if (!date || daysAgo === null) return 'Nunca';
-  
+
+  // Usar mesma lógica de formatLastPurchase para consistência
   if (daysAgo === 0) return 'Hoje';
   if (daysAgo === 1) return 'Ontem';
-  if (daysAgo <= 7) return `${daysAgo} dias atrás`;
-  if (daysAgo <= 30) return `${daysAgo} dias atrás`;
-  
+  if (daysAgo < 7) return `${daysAgo} dias atrás`;
+  if (daysAgo < 30) return `${Math.floor(daysAgo / 7)} semanas atrás`;
+  if (daysAgo < 365) return `${Math.floor(daysAgo / 30)} meses atrás`;
+
   return date.toLocaleDateString('pt-BR');
 };
 

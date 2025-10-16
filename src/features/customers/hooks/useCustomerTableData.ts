@@ -81,7 +81,7 @@ const extractCityFromAddress = (address: unknown): string | null => {
   if (typeof address === 'string') {
     // Padrão: "... - Centro - São Paulo/SP - CEP ..." ou "... - São Paulo/SP"
     // Extrai: "São Paulo/SP" ou "São Paulo-SP"
-    const match = address.match(/([A-Za-zÀ-ÿ\s]+)[\/-]([A-Z]{2})/);
+    const match = address.match(/([A-Za-zÀ-ÿ\s]+)[/-]([A-Z]{2})/);
     if (match && match[1]) {
       return match[1].trim(); // Retorna "São Paulo"
     }
@@ -246,6 +246,8 @@ const fetchCustomerTableDataFallback = async (): Promise<CustomerTableRow[]> => 
       contact_permission,
       notes,
       favorite_category,
+      favorite_product,
+      purchase_frequency,
       segment,
       last_purchase_date,
       created_at,
@@ -266,6 +268,7 @@ const fetchCustomerTableDataFallback = async (): Promise<CustomerTableRow[]> => 
         .from('sales')
         .select('payment_method')
         .eq('customer_id', customer.id)
+        .eq('status', 'completed')
         .not('payment_method', 'is', null);
 
       // Contar métodos de pagamento e pegar o mais usado
