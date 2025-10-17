@@ -40,7 +40,8 @@ const Index = () => {
   const { user, userRole, loading, hasPermission } = useAuth();
 
   // Extrai o nome da aba da URL (ex: /sales -> 'sales')
-  const activeTab = location.pathname.split('/')[1] || 'dashboard';
+  // Padrão: abre em 'sales' ao invés de 'dashboard'
+  const activeTab = location.pathname.split('/')[1] || 'sales';
 
   // Redireciona entregadores para a aba delivery
   useEffect(() => {

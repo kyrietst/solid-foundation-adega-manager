@@ -58,10 +58,10 @@ const calculateRealCOGS = async (salesIds: string[]): Promise<number> => {
       .from('sale_items')
       .select(`
         quantity,
-        products!inner(cost_price),
-        sales!inner(id)
+        sale_id,
+        products!inner(cost_price)
       `)
-      .in('sales.id', salesIds);
+      .in('sale_id', salesIds);
 
     if (error) {
       console.error('❌ Erro ao calcular COGS:', error);

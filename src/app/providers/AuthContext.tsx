@@ -150,7 +150,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setLoading(false);
     }, 6000);
 
-    const fetchProfileOperation = async () => {
+    // ✅ CORREÇÃO: Adicionar retry logic para erros de JWT
+    const fetchProfileOperation = async (retryCount = 0): Promise<void> => {
       try {
         // Se é o admin principal, define o role diretamente
         if (currentUser.email === 'adm@adega.com') {
@@ -172,7 +173,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
 
         // First try to get from profiles table
-        console.log('🔍 AuthProvider - Tentando buscar perfil para usuário ID:', currentUser.id);
+        console.log('🔍 AuthProvider - Buscando perfil (tentativa', retryCount + 1, ')');
 
         const profilePromise = supabase
           .from('profiles')
@@ -180,11 +181,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           .eq('id', currentUser.id)
           .single();
 
-        // Adicionar timeout na Promise da consulta (5s para a query específica)
+        // Adicionar timeout na Promise da consulta (10s para a query específica)
         const profilePromiseWithTimeout = Promise.race([
           profilePromise,
           new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Profile query timeout')), 5000)
+            setTimeout(() => reject(new Error('Profile query timeout')), 10000)
           )
         ]);
 
@@ -199,6 +200,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         });
 
         if (profileError) {
+          // ✅ RETRY LOGIC: Se erro é de JWT e ainda não tentou retry
+          const isJWTError =
+            profileError.code === 'PGRST301' ||
+            profileError.message?.toLowerCase().includes('jwt') ||
+            profileError.message?.toLowerCase().includes('token') ||
+            profileError.message?.toLowerCase().includes('authenticated');
+
+          if (isJWTError && retryCount === 0) {
+            console.warn('⏳ AuthProvider - Erro de JWT detectado, aguardando 2s para retry...');
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            return fetchProfileOperation(1); // Retry uma vez
+          }
+
+          // Se não é erro de JWT ou já tentou retry, tentar users table
           console.log('⚠️ AuthProvider - Erro na tabela profiles, tentando users table:', profileError);
 
           const { data: userData, error: userError } = await supabase
@@ -232,9 +247,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           setFeatureFlags(profileData.feature_flags || {});
         }
       } catch (error) {
-        console.error('💥 AuthProvider - Erro inesperado na busca do perfil:', error);
-        // Fallback baseado no email conhecido
+        console.warn('⚠️ AuthProvider - Timeout ou erro na busca do perfil, usando fallback:', error);
+        // Fallback baseado no email conhecido - sistema continua funcionando normalmente
         if (currentUser.email === 'funcionario@adega.com') {
+          console.log('✅ AuthProvider - Aplicando configuração de fallback para funcionario@adega.com');
           setUserRole('employee');
           setFeatureFlags({
             sales_enabled: true,
@@ -248,6 +264,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             suppliers_enabled: false
           });
         } else {
+          console.log('✅ AuthProvider - Aplicando configuração de fallback padrão (employee)');
           setUserRole('employee'); // fallback seguro
           setFeatureFlags({});
         }
@@ -278,7 +295,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Reset flag para permitir nova busca do perfil
     fetchingProfileRef.current = false;
 
-    // Forçar atualização do status de senha temporária
+    // ✅ OTIMIZADO: Atualização otimista do estado (assume que senha foi trocada)
     setHasTemporaryPassword(false);
 
     // Buscar usuário atual do Supabase para garantir dados atualizados
@@ -286,22 +303,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (latestUser) {
       console.log('🔍 AuthProvider - Buscando perfil atualizado após mudança de senha');
       await fetchUserProfile(latestUser);
-    }
-
-    // Verificação adicional direta do banco de dados
-    try {
-      const { data: profileData, error } = await supabase
-        .from('profiles')
-        .select('is_temporary_password')
-        .eq('id', currentUser)
-        .single();
-
-      if (!error && profileData) {
-        console.log('🔍 AuthProvider - Status real no banco:', profileData.is_temporary_password);
-        setHasTemporaryPassword(profileData.is_temporary_password || false);
-      }
-    } catch (error) {
-      console.error('Erro ao verificar status de senha temporária:', error);
+      // ✅ fetchUserProfile já buscou is_temporary_password, role e feature_flags
+      // Não precisa de query adicional redundante
     }
   }, []); // Remover dependências
 
@@ -312,7 +315,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       return;
     }
 
-    console.log('🔍 AuthProvider - useEffect iniciado (primeira vez), buscando sessão...');
+    console.log('🔍 AuthProvider - Iniciando autenticação...');
     isInitialized.current = true;
 
     // Timeout de segurança para evitar loading infinito (aumentado para 12s)
@@ -326,54 +329,83 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     }, 12000);
 
-    // Check active sessions and sets the user
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-      console.log('📡 AuthProvider - Resposta getSession:', {
-        hasSession: !!session,
-        email: session?.user?.email || 'sem usuário',
-        userId: session?.user?.id || 'sem ID',
-        error: error
-      });
-      clearTimeout(timeoutId);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        console.log('👤 AuthProvider - Usuário encontrado, buscando perfil...');
-        fetchUserProfile(session.user);
-      } else {
-        console.log('❌ AuthProvider - Nenhuma sessão ativa');
-        // Chrome-specific cleanup for corrupted session data
-        const clearedKeys = clearChromeAuthData();
-        console.log(`🧹 AuthProvider - Limpou ${clearedKeys} chaves específicas do Chrome`);
+    // ✅ CORREÇÃO: Aguardar renovação de sessão ANTES de buscar perfil
+    const initAuth = async () => {
+      try {
+        // 1. VERIFICAR se existe sessão ANTES de tentar renovar (previne warning desnecessário)
+        console.log('🔍 AuthProvider - Verificando sessão existente...');
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+
+        if (currentSession) {
+          // Só renovar se sessão existe
+          console.log('🔄 AuthProvider - Renovando sessão existente para garantir JWT válido...');
+          const { error: refreshError } = await supabase.auth.refreshSession();
+
+          if (refreshError) {
+            console.warn('⚠️ AuthProvider - Erro ao renovar sessão:', refreshError.message);
+          } else {
+            console.log('✅ AuthProvider - Sessão renovada com sucesso');
+          }
+        } else {
+          console.log('ℹ️ AuthProvider - Nenhuma sessão ativa (primeira visita ou após logout)');
+        }
+
+        // 2. Buscar sessão novamente (agora renovada se existia)
+        const { data: { session }, error } = await supabase.auth.getSession();
+
+        console.log('📡 AuthProvider - Sessão obtida:', {
+          hasSession: !!session,
+          email: session?.user?.email || 'sem usuário',
+          userId: session?.user?.id || 'sem ID'
+        });
+
+        clearTimeout(timeoutId);
+        setUser(session?.user ?? null);
+
+        if (session?.user) {
+          console.log('👤 AuthProvider - Usuário encontrado, buscando perfil...');
+          await fetchUserProfile(session.user);
+        } else {
+          console.log('❌ AuthProvider - Nenhuma sessão ativa');
+          // Chrome-specific cleanup for corrupted session data
+          const clearedKeys = clearChromeAuthData();
+          console.log(`🧹 AuthProvider - Limpou ${clearedKeys} chaves específicas do Chrome`);
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('💥 AuthProvider - Erro ao inicializar auth:', error);
+        clearTimeout(timeoutId);
         setLoading(false);
       }
-    }).catch((error) => {
-      console.error('💥 AuthProvider - Erro ao buscar sessão:', error);
-      clearTimeout(timeoutId);
-      setLoading(false);
-    });
+    };
+
+    initAuth();
 
     // Listen for changes on auth state (sign in, sign out, etc.)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      console.log('🔄 AuthProvider - onAuthStateChange:', _event, !!session);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('🔄 AuthProvider - Auth state changed:', event, !!session);
 
       // Limpar timeout principal quando auth state muda
       clearTimeout(timeoutId);
 
       setUser(session?.user ?? null);
-      if (session?.user) {
-        console.log('👤 AuthProvider - onAuthStateChange: buscando perfil do usuário...');
-        console.log('🔍 AuthProvider - Tentando buscar perfil para usuário ID:', session.user.id);
+
+      // ✅ CORREÇÃO: Só buscar perfil em eventos específicos (não em TOKEN_REFRESHED)
+      // Isso evita buscar perfil durante renovação automática de token
+      if (session?.user && (event === 'SIGNED_IN' || event === 'USER_UPDATED')) {
+        console.log('👤 AuthProvider - Buscando perfil após', event);
         await fetchUserProfile(session.user);
-      } else {
-        console.log('❌ AuthProvider - onAuthStateChange: sem sessão, limpando dados');
+      } else if (!session) {
+        console.log('❌ AuthProvider - Limpando dados após', event);
         setUserRole(null);
         setFeatureFlags(null);
         setHasTemporaryPassword(false);
         currentUserIdRef.current = null;
         fetchingProfileRef.current = false;
       }
+
       setLoading(false);
-      console.log('✅ AuthProvider - onAuthStateChange: loading=false definido');
+      console.log('✅ AuthProvider - Auth state change processado');
     });
 
     return () => {
