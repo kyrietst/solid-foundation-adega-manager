@@ -580,7 +580,7 @@ const OutstandingAmountBadge = ({ amount }: { amount: number }) => {
   );
 };
 
-type SortField = 'cliente' | 'ultimaCompra' | 'insightsCount' | 'status' | 'cidade' | 'diasParaAniversario' | 'profileCompleteness' | 'diasSemContato' | 'valorEmAberto' | null;
+type SortField = 'cliente' | 'ultimaCompra' | 'insightsCount' | 'status' | 'diasParaAniversario' | 'profileCompleteness' | 'diasSemContato' | 'valorEmAberto' | null;
 type SortDirection = 'asc' | 'desc';
 
 export default function CustomerDataTable() {
@@ -768,16 +768,6 @@ export default function CustomerDataTable() {
             status={customer.status}
             color={customer.statusColor}
           />
-        ),
-      },
-      {
-        key: 'cidade',
-        title: 'Cidade',
-        sortable: true,
-        width: '115px',
-        align: 'center',
-        render: (value) => (
-          <span className="text-gray-100">{value || "Não informada"}</span>
         ),
       },
       {

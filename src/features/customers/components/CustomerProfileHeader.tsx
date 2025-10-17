@@ -38,7 +38,8 @@ import {
   ShoppingBag,
   Calendar,
   AlertTriangle,
-  Info
+  Info,
+  Trash2
 } from 'lucide-react';
 import { useCustomerProfileHeaderSSoT } from '@/shared/hooks/business/useCustomerProfileHeaderSSoT';
 import {
@@ -137,6 +138,7 @@ export const CustomerProfileHeader: React.FC<CustomerProfileHeaderProps> = ({
     isLoading,
     error,
     handleEdit,
+    handleDelete,
     handleNewSale,
     handleWhatsApp,
     handleEmail,
@@ -296,6 +298,26 @@ export const CustomerProfileHeader: React.FC<CustomerProfileHeaderProps> = ({
             <Plus className="h-4 w-4" />
             Nova Venda
           </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2 border-red-600/50 text-red-400 hover:bg-red-900/20 hover:border-red-500"
+                  onClick={handleDelete}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  <span className="hidden sm:inline">Excluir</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipPortal>
+                <TooltipContent className="z-[50000] bg-black/95 backdrop-blur-xl border border-red-400/30">
+                  <p className="text-xs text-red-200">Excluir cliente (reversível)</p>
+                </TooltipContent>
+              </TooltipPortal>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </div>
 

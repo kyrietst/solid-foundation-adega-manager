@@ -78,6 +78,7 @@ export interface CustomerProfileHeaderOperations {
 
   // Handlers centralizados
   handleEdit: () => void;
+  handleDelete: () => void;
   handleNewSale: () => void;
   handleWhatsApp: () => void;
   handleEmail: () => void;
@@ -334,6 +335,13 @@ export const useCustomerProfileHeaderSSoT = (
     }));
   }, [customerId]);
 
+  const handleDelete = useCallback(() => {
+    // Dispatch evento personalizado para abrir modal de exclusão
+    window.dispatchEvent(new CustomEvent('openCustomerDeleteModal', {
+      detail: { customerId }
+    }));
+  }, [customerId]);
+
   const handleNewSale = useCallback(() => {
     if (!customer) {
       alert('Cliente não encontrado');
@@ -446,6 +454,7 @@ export const useCustomerProfileHeaderSSoT = (
 
     // Handlers centralizados
     handleEdit,
+    handleDelete,
     handleNewSale,
     handleWhatsApp,
     handleEmail,

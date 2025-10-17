@@ -91,7 +91,6 @@ export const TABLE_COLUMNS = [
   'Última Compra',
   'Insights de IA',
   'Status',
-  'Cidade',
   'PRÓXIMO\nANIVERSÁRIO',
   'LGPD',
   'Completude',

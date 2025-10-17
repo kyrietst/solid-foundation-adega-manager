@@ -51,7 +51,6 @@ export const CustomerTableColumns: React.FC<CustomerTableColumnsProps> = ({
       ultimaCompra: '📅',
       insightsCount: '🧠',
       status: '✅',
-      cidade: '📍',
       diasParaAniversario: '🎂',
       profileCompleteness: '📊',
       diasSemContato: '💬',

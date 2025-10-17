@@ -18,7 +18,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { useParams, Navigate } from 'react-router-dom';
+import { useParams, Navigate, useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/primitives/tabs';
 import { LoadingScreen } from '@/shared/ui/composite/loading-spinner';
 import { Button } from '@/shared/ui/primitives/button';
@@ -39,6 +39,7 @@ import { CustomerInsightsTab } from './CustomerInsightsTab';
 import { CustomerCommunicationTab } from './CustomerCommunicationTab';
 import { CustomerActionsTab } from './CustomerActionsTab';
 import { EditCustomerModal } from './EditCustomerModal';
+import { DeleteCustomerModal } from './DeleteCustomerModal';
 
 // Hooks e dados
 import { useCustomer } from '@/features/customers/hooks/use-crm';
@@ -61,8 +62,10 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
   // ============================================================================
 
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   // ============================================================================
   // DATA FETCHING - Mínimo necessário para validação
@@ -79,17 +82,24 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
   // CUSTOM EVENT LISTENER - SSoT v3.1.0 Integration Fix
   // ============================================================================
 
-  // Escutar evento personalizado disparado pelo CustomerProfileHeader
+  // Escutar eventos personalizados disparados pelo CustomerProfileHeader
   useEffect(() => {
     const handleOpenEditModal = () => {
       console.log('🔧 Custom Event received: openCustomerEditModal');
       setIsEditModalOpen(true);
     };
 
+    const handleOpenDeleteModal = () => {
+      console.log('🗑️ Custom Event received: openCustomerDeleteModal');
+      setIsDeleteModalOpen(true);
+    };
+
     window.addEventListener('openCustomerEditModal', handleOpenEditModal as EventListener);
+    window.addEventListener('openCustomerDeleteModal', handleOpenDeleteModal as EventListener);
 
     return () => {
       window.removeEventListener('openCustomerEditModal', handleOpenEditModal as EventListener);
+      window.removeEventListener('openCustomerDeleteModal', handleOpenDeleteModal as EventListener);
     };
   }, []);
 
@@ -104,6 +114,11 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
   const handleNewSale = () => {
     const salesUrl = `/sales?customer_id=${id}&customer_name=${encodeURIComponent(customer?.cliente || '')}`;
     window.open(salesUrl, '_blank');
+  };
+
+  const handleDeleteSuccess = () => {
+    // Redirecionar para lista de clientes após exclusão bem-sucedida
+    navigate('/customers');
   };
 
   // ============================================================================
@@ -236,6 +251,16 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
         customer={customer}
+      />
+
+      {/* Modal de Exclusão - Sistema de Soft Delete */}
+      <DeleteCustomerModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        customerId={id || null}
+        customerName={customer?.name || ''}
+        mode="soft"
+        onSuccess={handleDeleteSuccess}
       />
     </div>
   );
