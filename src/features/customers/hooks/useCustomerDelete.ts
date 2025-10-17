@@ -85,6 +85,10 @@ export const useCustomerDelete = () => {
         refetchType: 'none' // Apenas marca como stale, não faz refetch
       });
 
+      // Aguardar limpeza de queries individuais antes do refetch (evita 404)
+      // Delay permite que React Query limpe queries do cliente deletado antes de refetch da lista
+      await new Promise(resolve => setTimeout(resolve, 100));
+
       // Fazer refetch manual apenas da query principal da tabela
       await queryClient.refetchQueries({
         queryKey: ['customer-table-data'],
@@ -227,6 +231,9 @@ export const useCustomerDelete = () => {
         queryKey: ['deleted-customers'],
         refetchType: 'none'
       });
+
+      // Aguardar limpeza de queries individuais antes do refetch (evita 404)
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       // Fazer refetch manual apenas da query principal da tabela
       await queryClient.refetchQueries({
