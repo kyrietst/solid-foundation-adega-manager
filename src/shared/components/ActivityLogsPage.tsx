@@ -23,25 +23,25 @@ export interface ActivityLogRow {
 
 // Badge para perfil do usuário
 const RoleBadge = ({ role }: { role: string | null }) => {
-  if (!role) return <span className="text-gray-400">—</span>;
-  
+  if (!role) return <span className="text-gray-200">—</span>;
+
   const roleColors = {
-    admin: "bg-red-500/20 text-red-400 border-red-500/30",
-    employee: "bg-blue-500/20 text-blue-400 border-blue-500/30", 
-    delivery: "bg-green-500/20 text-green-400 border-green-500/30",
-    system: "bg-purple-500/20 text-purple-400 border-purple-500/30"
+    admin: "bg-accent-red/20 text-accent-red border-accent-red/30",
+    employee: "bg-accent-blue/20 text-accent-blue border-accent-blue/30",
+    delivery: "bg-accent-green/20 text-accent-green border-accent-green/30",
+    system: "bg-accent-purple/20 text-accent-purple border-accent-purple/30"
   };
-  
+
   const roleName = {
     admin: "Admin",
-    employee: "Vendedor", 
+    employee: "Vendedor",
     delivery: "Delivery",
     system: "Sistema"
   };
-  
-  const colorClass = roleColors[role as keyof typeof roleColors] || "bg-gray-500/20 text-gray-400 border-gray-500/30";
+
+  const colorClass = roleColors[role as keyof typeof roleColors] || "bg-gray-500/20 text-gray-200 border-gray-500/30";
   const displayName = roleName[role as keyof typeof roleName] || role;
-  
+
   return (
     <Badge className={cn("text-xs", colorClass)}>
       {displayName}
@@ -52,20 +52,20 @@ const RoleBadge = ({ role }: { role: string | null }) => {
 // Badge para tipo de ação
 const ActionBadge = ({ action }: { action: string }) => {
   const actionColors = {
-    login: "bg-green-500/20 text-green-400 border-green-500/30",
-    create: "bg-blue-500/20 text-blue-400 border-blue-500/30",
-    update: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
-    delete: "bg-red-500/20 text-red-400 border-red-500/30",
-    system: "bg-purple-500/20 text-purple-400 border-purple-500/30"
+    login: "bg-accent-green/20 text-accent-green border-accent-green/30",
+    create: "bg-accent-blue/20 text-accent-blue border-accent-blue/30",
+    update: "bg-accent-gold-100/20 text-accent-gold-100 border-accent-gold-100/30",
+    delete: "bg-accent-red/20 text-accent-red border-accent-red/30",
+    system: "bg-accent-purple/20 text-accent-purple border-accent-purple/30"
   };
-  
-  let colorClass = "bg-gray-500/20 text-gray-400 border-gray-500/30";
+
+  let colorClass = "bg-gray-500/20 text-gray-200 border-gray-500/30";
   if (action.includes('login')) colorClass = actionColors.login;
   else if (action.includes('create')) colorClass = actionColors.create;
   else if (action.includes('update')) colorClass = actionColors.update;
   else if (action.includes('delete')) colorClass = actionColors.delete;
   else if (action.includes('system')) colorClass = actionColors.system;
-  
+
   return (
     <Badge className={cn("text-xs font-mono", colorClass)}>
       {action}
@@ -73,26 +73,26 @@ const ActionBadge = ({ action }: { action: string }) => {
   );
 };
 
-// Badge para entidade 
+// Badge para entidade
 const EntityBadge = ({ entity, entityId }: { entity: string | null; entityId: string | null }) => {
-  if (!entity) return <span className="text-gray-400">—</span>;
-  
+  if (!entity) return <span className="text-gray-200">—</span>;
+
   const entityColors = {
-    sales: "bg-green-500/10 text-green-400 border-green-500/30",
-    products: "bg-blue-500/10 text-blue-400 border-blue-500/30",
-    customers: "bg-purple-500/10 text-purple-400 border-purple-500/30",
-    auth: "bg-orange-500/10 text-orange-400 border-orange-500/30",
-    system: "bg-gray-500/10 text-gray-400 border-gray-500/30"
+    sales: "bg-accent-green/10 text-accent-green border-accent-green/30",
+    products: "bg-accent-blue/10 text-accent-blue border-accent-blue/30",
+    customers: "bg-accent-purple/10 text-accent-purple border-accent-purple/30",
+    auth: "bg-accent-orange/10 text-accent-orange border-accent-orange/30",
+    system: "bg-gray-500/10 text-gray-200 border-gray-500/30"
   };
-  
-  const colorClass = entityColors[entity as keyof typeof entityColors] || "bg-gray-500/10 text-gray-400 border-gray-500/30";
-  
+
+  const colorClass = entityColors[entity as keyof typeof entityColors] || "bg-gray-500/10 text-gray-200 border-gray-500/30";
+
   return (
     <div className="flex items-center gap-1">
       <Badge variant="outline" className={cn("text-xs", colorClass)}>
         {entity}
       </Badge>
-      {entityId && <span className="text-xs text-gray-500 font-mono">#{entityId.slice(-8)}</span>}
+      {entityId && <span className="text-xs text-gray-300 font-mono">#{entityId.slice(-8)}</span>}
     </div>
   );
 };
@@ -165,10 +165,10 @@ export default function ActivityLogsPage() {
     return (
       <div className="container my-6 space-y-4 p-4 border border-border rounded-lg bg-background shadow-sm">
         <div className="flex items-center justify-center py-8">
-          <div className="text-center text-red-400">
+          <div className="text-center text-accent-red">
             <Activity className="w-8 h-8 mx-auto mb-2" />
             <p>Erro ao carregar atividades</p>
-            <p className="text-sm text-gray-400 mt-1">{error.message}</p>
+            <p className="text-sm text-gray-200 mt-1">{error.message}</p>
           </div>
         </div>
       </div>
@@ -182,7 +182,7 @@ export default function ActivityLogsPage() {
           <Activity className="w-6 h-6" />
           Atividades do Sistema
         </h1>
-        <p className="text-sm text-gray-400">Auditoria completa de ações de usuários e sistema.</p>
+        <p className="text-sm text-gray-200">Auditoria completa de ações de usuários e sistema.</p>
       </div>
 
       {/* Filtros */}
@@ -232,9 +232,9 @@ export default function ActivityLogsPage() {
             <option value={200}>200 registros</option>
           </select>
         </div>
-        
+
         <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">
+          <span className="text-sm text-gray-200">
             {rows.length} atividade{rows.length !== 1 ? 's' : ''}
           </span>
         </div>
@@ -249,7 +249,7 @@ export default function ActivityLogsPage() {
                 <Button
                   variant="ghost"
                   onClick={() => handleSort('created_at')}
-                  className="flex items-center gap-2 p-0 hover:bg-transparent text-gray-400 hover:text-white"
+                  className="flex items-center gap-2 p-0 hover:bg-transparent text-gray-200 hover:text-white"
                 >
                   <Clock className="w-4 h-4" />
                   Quando
@@ -260,7 +260,7 @@ export default function ActivityLogsPage() {
                 <Button
                   variant="ghost"
                   onClick={() => handleSort('actor')}
-                  className="flex items-center gap-2 p-0 hover:bg-transparent text-gray-400 hover:text-white"
+                  className="flex items-center gap-2 p-0 hover:bg-transparent text-gray-200 hover:text-white"
                 >
                   <User className="w-4 h-4" />
                   Usuário
@@ -271,7 +271,7 @@ export default function ActivityLogsPage() {
                 <Button
                   variant="ghost"
                   onClick={() => handleSort('role')}
-                  className="flex items-center gap-2 p-0 hover:bg-transparent text-gray-400 hover:text-white"
+                  className="flex items-center gap-2 p-0 hover:bg-transparent text-gray-200 hover:text-white"
                 >
                   <Shield className="w-4 h-4" />
                   Perfil
@@ -282,7 +282,7 @@ export default function ActivityLogsPage() {
                 <Button
                   variant="ghost"
                   onClick={() => handleSort('action')}
-                  className="flex items-center gap-2 p-0 hover:bg-transparent text-gray-400 hover:text-white"
+                  className="flex items-center gap-2 p-0 hover:bg-transparent text-gray-200 hover:text-white"
                 >
                   <Activity className="w-4 h-4" />
                   Ação
@@ -293,7 +293,7 @@ export default function ActivityLogsPage() {
                 <Button
                   variant="ghost"
                   onClick={() => handleSort('entity')}
-                  className="flex items-center gap-2 p-0 hover:bg-transparent text-gray-400 hover:text-white"
+                  className="flex items-center gap-2 p-0 hover:bg-transparent text-gray-200 hover:text-white"
                 >
                   <Database className="w-4 h-4" />
                   Entidade
@@ -301,7 +301,7 @@ export default function ActivityLogsPage() {
                 </Button>
               </TableHead>
               <TableHead>
-                <div className="flex items-center gap-2 text-gray-400">
+                <div className="flex items-center gap-2 text-gray-200">
                   <FileText className="w-4 h-4" />
                   Detalhes
                 </div>
@@ -312,10 +312,10 @@ export default function ActivityLogsPage() {
             {rows.length ? (
               rows.map((row) => (
                 <TableRow key={row.id}>
-                  <TableCell className="font-mono text-xs whitespace-nowrap">
+                  <TableCell className="font-mono text-xs whitespace-nowrap text-gray-200">
                     {new Date(row.created_at).toLocaleString('pt-BR', {
                       day: '2-digit',
-                      month: '2-digit', 
+                      month: '2-digit',
                       hour: '2-digit',
                       minute: '2-digit'
                     })}
@@ -327,7 +327,7 @@ export default function ActivityLogsPage() {
                           {(row.actor || 'S').charAt(0).toUpperCase()}
                         </span>
                       </div>
-                      <span className="text-sm">{row.actor || 'Sistema'}</span>
+                      <span className="text-sm text-white">{row.actor || 'Sistema'}</span>
                     </div>
                   </TableCell>
                   <TableCell>
@@ -339,7 +339,7 @@ export default function ActivityLogsPage() {
                   <TableCell>
                     <EntityBadge entity={row.entity} entityId={row.entity_id} />
                   </TableCell>
-                  <TableCell className="max-w-[300px]">
+                  <TableCell className="max-w-[300px] text-gray-200">
                     <div className="truncate" title={row.details || ''}>
                       {row.details || '—'}
                     </div>
@@ -350,10 +350,10 @@ export default function ActivityLogsPage() {
               <TableRow>
                 <TableCell colSpan={6} className="text-center py-8">
                   <div className="flex flex-col items-center gap-2">
-                    <Activity className="w-8 h-8 text-gray-400" />
-                    <p className="text-gray-400">Nenhuma atividade encontrada.</p>
+                    <Activity className="w-8 h-8 text-gray-200" />
+                    <p className="text-gray-200">Nenhuma atividade encontrada.</p>
                     {(search || role !== 'all' || entity !== 'all') && (
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-gray-300">
                         Tente ajustar os filtros de busca.
                       </p>
                     )}
