@@ -43,7 +43,8 @@ import {
   BarChart3,
   CreditCard,
   TrendingUp,
-  Calendar
+  Calendar,
+  Trash2
 } from 'lucide-react';
 import { formatCurrency } from '@/core/config/utils';
 import { LoadingSpinner } from '@/shared/ui/composite/loading-spinner';
@@ -52,6 +53,8 @@ import {
   type Purchase,
   type PurchaseFilters
 } from '@/shared/hooks/business/useCustomerPurchaseHistory';
+import { useDeleteSale } from '@/features/sales/hooks/use-sales';
+import { DeleteSaleModal } from '@/features/sales/components/DeleteSaleModal';
 
 // ============================================================================
 // TYPES
@@ -96,6 +99,13 @@ export const CustomerPurchaseHistoryTab: React.FC<CustomerPurchaseHistoryTabProp
   });
 
   // ============================================================================
+  // ESTADO LOCAL - Delete Sale
+  // ============================================================================
+
+  const [saleToDelete, setSaleToDelete] = useState<{ id: string; orderNumber: number } | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
+  // ============================================================================
   // DEBOUNCE IMPLEMENTATION
   // ============================================================================
 
@@ -136,6 +146,8 @@ export const CustomerPurchaseHistoryTab: React.FC<CustomerPurchaseHistoryTabProp
     refetch
   } = useCustomerPurchaseHistory(customerId, filters);
 
+  const { mutate: deleteSale, isPending: isDeleting } = useDeleteSale();
+
   // ============================================================================
   // HANDLERS
   // ============================================================================
@@ -161,6 +173,29 @@ export const CustomerPurchaseHistoryTab: React.FC<CustomerPurchaseHistoryTabProp
       periodFilter: 'all',
       productSearchTerm: ''
     });
+  }, []);
+
+  const handleDeleteClick = useCallback((saleId: string, orderNumber: number) => {
+    setSaleToDelete({ id: saleId, orderNumber });
+    setIsDeleteDialogOpen(true);
+  }, []);
+
+  const handleConfirmDelete = useCallback(() => {
+    if (!saleToDelete) return;
+
+    deleteSale(saleToDelete.id, {
+      onSuccess: () => {
+        setIsDeleteDialogOpen(false);
+        setSaleToDelete(null);
+        // Refetch purchase history after successful deletion
+        refetch();
+      }
+    });
+  }, [saleToDelete, deleteSale, refetch]);
+
+  const handleCloseDeleteDialog = useCallback(() => {
+    setIsDeleteDialogOpen(false);
+    setSaleToDelete(null);
   }, []);
 
   // ============================================================================
@@ -334,21 +369,32 @@ export const CustomerPurchaseHistoryTab: React.FC<CustomerPurchaseHistoryTabProp
             <Card key={purchase.id} className="bg-black/70 backdrop-blur-xl border-white/20 hover:border-accent-green/60 hover:scale-[1.01] hover:shadow-xl transition-all duration-300">
               <CardContent className="p-5">
                 <div className="flex justify-between items-start mb-4">
-                  <div>
+                  <div className="flex-1">
                     <div className="text-white font-semibold text-base">
-                      Compra {formatPurchaseId(purchase.id)}
+                      Compra #{purchase.order_number}
                     </div>
                     <div className="text-sm text-gray-200 font-medium">
                       {formatPurchaseDate(purchase.date)}
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-xl font-bold text-accent-green">
-                      {formatCurrency(purchase.total)}
+                  <div className="flex items-start gap-3">
+                    <div className="text-right">
+                      <div className="text-xl font-bold text-accent-green">
+                        {formatCurrency(purchase.total)}
+                      </div>
+                      <div className="text-xs text-gray-300 font-medium">
+                        {purchase.items.length} {purchase.items.length === 1 ? 'item' : 'itens'}
+                      </div>
                     </div>
-                    <div className="text-xs text-gray-300 font-medium">
-                      {purchase.items.length} {purchase.items.length === 1 ? 'item' : 'itens'}
-                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDeleteClick(purchase.id, purchase.order_number)}
+                      className="h-9 w-9 text-red-400 hover:text-red-300 hover:bg-red-900/20"
+                      title="Excluir venda"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
 
@@ -446,6 +492,15 @@ export const CustomerPurchaseHistoryTab: React.FC<CustomerPurchaseHistoryTabProp
           </CardContent>
         </Card>
       )}
+
+      {/* Delete Sale Modal */}
+      <DeleteSaleModal
+        isOpen={isDeleteDialogOpen}
+        onClose={handleCloseDeleteDialog}
+        onConfirm={handleConfirmDelete}
+        saleOrderNumber={saleToDelete?.orderNumber || 0}
+        isDeleting={isDeleting}
+      />
     </section>
   );
 };

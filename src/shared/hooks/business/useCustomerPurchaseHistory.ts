@@ -33,6 +33,7 @@ export interface PurchaseItem {
 
 export interface Purchase {
   id: string;
+  order_number: number; // Sequential sale number for confirmation
   date: string;
   total: number;
   items: PurchaseItem[];
@@ -168,6 +169,7 @@ export const useCustomerPurchaseHistory = (
           .from('sales')
           .select(`
             id,
+            order_number,
             total_amount,
             created_at,
             sale_items (
@@ -218,6 +220,7 @@ export const useCustomerPurchaseHistory = (
 
           return {
             id: sale.id,
+            order_number: sale.order_number,
             date: sale.created_at,
             total: Number(sale.total_amount),
             items
