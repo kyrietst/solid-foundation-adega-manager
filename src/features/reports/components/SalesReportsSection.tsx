@@ -3,7 +3,7 @@
  * Comprehensive sales analysis with filters and metrics
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/primitives/card';
 import { Button } from '@/shared/ui/primitives/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/primitives/select';
@@ -12,10 +12,8 @@ import { LoadingSpinner } from '@/shared/ui/composite/loading-spinner';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { TrendingUp, Package, CreditCard, Download, Filter, History, BarChart3 } from 'lucide-react';
+import { TrendingUp, Package, CreditCard, Download, Filter, BarChart3 } from 'lucide-react';
 import { cn } from '@/core/config/utils';
-import { SalesHistoryTable } from './SalesHistoryTable';
-import { useLocation } from 'react-router-dom';
 import { chartTheme } from '@/shared/ui/composite/ChartTheme';
 
 interface SalesFilters {
@@ -28,26 +26,13 @@ interface SalesReportsSectionProps {
 }
 
 export const SalesReportsSection: React.FC<SalesReportsSectionProps> = ({ period = 90 }) => {
-  const location = useLocation();
   const [filters, setFilters] = useState<SalesFilters>({
     category: 'all',
     paymentMethod: 'all'
   });
 
   const [showFilters, setShowFilters] = useState(false);
-  const [activeSubTab, setActiveSubTab] = useState('analytics');
-
-  // Detecta parâmetro subtab da URL
-  useEffect(() => {
-    const searchParams = new URLSearchParams(location.search);
-    const subtab = searchParams.get('subtab');
-    
-    if (subtab === 'history') {
-      setActiveSubTab('history');
-    } else {
-      setActiveSubTab('analytics');
-    }
-  }, [location.search]);
+  const [activeSubTab] = useState('analytics'); // Sempre 'analytics' (única aba restante)
 
   // Sales Metrics Query
   const { data: salesMetrics, isLoading: loadingMetrics } = useQuery({
@@ -373,21 +358,14 @@ export const SalesReportsSection: React.FC<SalesReportsSectionProps> = ({ period
 
   return (
     <div className="space-y-6">
-      <Tabs value={activeSubTab} onValueChange={setActiveSubTab} className="space-y-6">
+      <Tabs value={activeSubTab} className="space-y-6">
         <TabsList className="bg-black/80 border border-white/10 backdrop-blur-sm">
-          <TabsTrigger 
+          <TabsTrigger
             value="analytics"
             className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300 data-[state=active]:border data-[state=active]:border-blue-400/30 transition-all duration-300"
           >
             <BarChart3 className="h-4 w-4 mr-2" />
             Analytics & Métricas
-          </TabsTrigger>
-          <TabsTrigger 
-            value="history"
-            className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-300 data-[state=active]:border data-[state=active]:border-purple-400/30 transition-all duration-300"
-          >
-            <History className="h-4 w-4 mr-2" />
-            Histórico Completo
           </TabsTrigger>
         </TabsList>
 
@@ -580,10 +558,6 @@ export const SalesReportsSection: React.FC<SalesReportsSectionProps> = ({ period
               </CardContent>
             </Card>
           </div>
-        </TabsContent>
-
-        <TabsContent value="history" className="space-y-6">
-          <SalesHistoryTable />
         </TabsContent>
       </Tabs>
     </div>

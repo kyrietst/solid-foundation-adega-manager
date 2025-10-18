@@ -115,8 +115,8 @@ export function RecentSales() {
   };
 
   const handleViewFullHistory = () => {
-    // Navega para relatórios, aba de vendas, sub-aba de histórico
-    navigate('/reports?tab=sales&subtab=history');
+    // Navega para página de atividades, aba de histórico de vendas
+    navigate('/activities?tab=sales');
   };
 
   if (isLoading) {

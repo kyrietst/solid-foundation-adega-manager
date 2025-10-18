@@ -31,7 +31,7 @@ const Reports = lazy(() =>
 const AdvancedReports = lazy(() =>
   import('@/features/reports/components/AdvancedReports').then((m) => ({ default: m.AdvancedReports }))
 );
-const ActivitiesPage = lazy(() => import('@/shared/components/ActivityLogsPage'));
+const ActivitiesPage = lazy(() => import('@/pages/ActivitiesPage'));
 const ExpensesPage = lazy(() => import('@/features/expenses/components/ExpensesPage'));
 
 const Index = () => {
