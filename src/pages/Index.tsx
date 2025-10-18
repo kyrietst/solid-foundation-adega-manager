@@ -182,7 +182,7 @@ const Index = () => {
           </Suspense>
         ) : <AccessDenied />;
       case 'activities':
-        return hasPermission(['admin']) ? (
+        return hasPermission(['admin', 'employee']) ? (
           <Suspense fallback={<LoadingScreen text="Carregando atividades..." />}>
             <WhitePageShell>
               <ActivitiesPage />
