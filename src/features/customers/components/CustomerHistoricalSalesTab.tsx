@@ -130,6 +130,16 @@ export const CustomerHistoricalSalesTab: React.FC<CustomerHistoricalSalesTabProp
   const [unitPrice, setUnitPrice] = useState('');
   const [saleType, setSaleType] = useState<'unit' | 'package'>('unit');
 
+  // ✅ FILTRO: Produtos disponíveis baseado no tipo de venda
+  const availableProducts = useMemo(() => {
+    if (saleType === 'package') {
+      // Quando pacote selecionado, mostrar apenas produtos com pacote cadastrado
+      return products.filter(p => p.package_price && p.package_units);
+    }
+    // Quando unidade selecionada, mostrar todos os produtos
+    return products;
+  }, [products, saleType]);
+
   // ============================================================================
   // COMPUTED VALUES
   // ============================================================================
@@ -168,6 +178,7 @@ export const CustomerHistoricalSalesTab: React.FC<CustomerHistoricalSalesTabProp
       return;
     }
 
+    // ✅ CORREÇÃO: Incluir package_units quando sale_type = 'package'
     const newItem: SaleItemForm = {
       tempId: Date.now().toString(),
       product_id: selectedProductId,
@@ -175,6 +186,7 @@ export const CustomerHistoricalSalesTab: React.FC<CustomerHistoricalSalesTabProp
       quantity: parseInt(quantity),
       unit_price: parseFloat(unitPrice),
       sale_type: saleType,
+      package_units: saleType === 'package' ? product.package_units || 1 : undefined,
     };
 
     setSaleItems([...saleItems, newItem]);
@@ -196,10 +208,11 @@ export const CustomerHistoricalSalesTab: React.FC<CustomerHistoricalSalesTabProp
   const handleProductChange = (productId: string) => {
     setSelectedProductId(productId);
 
-    // Auto-preencher preço
+    // ✅ AUTO-FILL CONDICIONAL: usar package_price quando pacote, price quando unidade
     const product = products?.find(p => p.id === productId);
     if (product) {
-      setUnitPrice(product.price.toString());
+      const price = saleType === 'package' ? product.package_price : product.price;
+      setUnitPrice(price.toString());
     }
   };
 
@@ -406,9 +419,14 @@ export const CustomerHistoricalSalesTab: React.FC<CustomerHistoricalSalesTabProp
                   <SelectValue placeholder="Buscar produto..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {products?.map(product => (
+                  {availableProducts?.map(product => (
                     <SelectItem key={product.id} value={product.id}>
-                      {product.name} - {formatCurrency(product.price)}
+                      {product.name} - {formatCurrency(saleType === 'package' ? product.package_price : product.price)}
+                      {saleType === 'package' && product.package_units && (
+                        <span className="text-xs text-gray-400 ml-2">
+                          ({product.package_units} un)
+                        </span>
+                      )}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -454,7 +472,12 @@ export const CustomerHistoricalSalesTab: React.FC<CustomerHistoricalSalesTabProp
                 <Button
                   type="button"
                   variant={saleType === 'unit' ? 'default' : 'outline'}
-                  onClick={() => setSaleType('unit')}
+                  onClick={() => {
+                    setSaleType('unit');
+                    // Limpar seleção ao trocar tipo para evitar confusão
+                    setSelectedProductId('');
+                    setUnitPrice('');
+                  }}
                   className="flex-1"
                   aria-pressed={saleType === 'unit'}
                 >
@@ -463,7 +486,12 @@ export const CustomerHistoricalSalesTab: React.FC<CustomerHistoricalSalesTabProp
                 <Button
                   type="button"
                   variant={saleType === 'package' ? 'default' : 'outline'}
-                  onClick={() => setSaleType('package')}
+                  onClick={() => {
+                    setSaleType('package');
+                    // Limpar seleção ao trocar tipo para evitar confusão
+                    setSelectedProductId('');
+                    setUnitPrice('');
+                  }}
                   className="flex-1"
                   aria-pressed={saleType === 'package'}
                 >

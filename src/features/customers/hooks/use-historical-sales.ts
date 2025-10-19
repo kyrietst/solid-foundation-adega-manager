@@ -33,6 +33,7 @@ export const HistoricalSaleItemSchema = z.object({
   quantity: z.number().int().positive('Quantidade deve ser maior que zero'),
   unit_price: z.number().positive('Preço unitário deve ser maior que zero'),
   sale_type: z.enum(['unit', 'package']).default('unit'),
+  package_units: z.number().int().positive().optional(), // Usado quando sale_type = 'package'
 });
 
 /**
