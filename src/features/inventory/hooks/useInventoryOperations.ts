@@ -10,6 +10,7 @@ import { supabase } from '@/core/api/supabase/client';
 import { useToast } from '@/shared/hooks/common/use-toast';
 import { ProductFormData } from '@/types/inventory.types';
 import { InventoryOperations } from '@/components/inventory/types';
+import { getSaoPauloTimestamp } from '@/shared/utils/timezone-saopaulo';
 
 export const useInventoryOperations = (): InventoryOperations => {
   const queryClient = useQueryClient();
@@ -27,8 +28,8 @@ export const useInventoryOperations = (): InventoryOperations => {
         .insert({
           ...productDataWithoutStock,
           stock_quantity: 0, // Always start with 0, then use RPC for initial stock
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
+          created_at: getSaoPauloTimestamp(),
+          updated_at: getSaoPauloTimestamp(),
         })
         .select()
         .single();

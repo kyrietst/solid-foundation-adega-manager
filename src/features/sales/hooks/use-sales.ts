@@ -5,7 +5,7 @@ import { useToast } from "@/shared/hooks/common/use-toast";
 import { DeliveryAddress } from "@/core/types/sales.types";
 import type { SaleType } from "@/features/sales/components/SalesPage";
 import type { DeliveryData } from "@/features/sales/components/DeliveryOptionsModal";
-import { getSaoPauloTimestamp } from "@/shared/hooks/common/use-brasil-timezone";
+import { getSaoPauloTimestamp, convertToSaoPaulo } from "@/shared/utils/timezone-saopaulo";
 
 // Interfaces para dados de query
 interface RawSaleItem {
@@ -141,11 +141,15 @@ export const useSales = (params?: {
         .order('created_at', { ascending: false });
 
       if (params?.startDate) {
-        baseQuery = baseQuery.gte("created_at", params.startDate.toISOString());
+        // Converter startDate para horário de São Paulo antes de comparar
+        const spDate = convertToSaoPaulo(params.startDate);
+        baseQuery = baseQuery.gte("created_at", spDate.toISOString());
       }
-      
+
       if (params?.endDate) {
-        const nextDay = new Date(params.endDate);
+        // Converter endDate para horário de São Paulo antes de comparar
+        const spDate = convertToSaoPaulo(params.endDate);
+        const nextDay = new Date(spDate);
         nextDay.setDate(nextDay.getDate() + 1);
         baseQuery = baseQuery.lt("created_at", nextDay.toISOString());
       }

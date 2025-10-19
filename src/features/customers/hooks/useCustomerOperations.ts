@@ -7,6 +7,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
 import { useToast } from '@/shared/hooks/common/use-toast';
 import { CustomerOperations } from '@/features/customers/types/types';
+import { getSaoPauloTimestamp } from '@/shared/utils/timezone-saopaulo';
 
 export const useCustomerOperations = (): CustomerOperations => {
   const queryClient = useQueryClient();
@@ -19,8 +20,8 @@ export const useCustomerOperations = (): CustomerOperations => {
         .from('customers')
         .insert({
           ...customerData,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
+          created_at: getSaoPauloTimestamp(),
+          updated_at: getSaoPauloTimestamp(),
         })
         .select()
         .single();
@@ -51,7 +52,7 @@ export const useCustomerOperations = (): CustomerOperations => {
         .from('customers')
         .update({
           ...updateData,
-          updated_at: new Date().toISOString(),
+          updated_at: getSaoPauloTimestamp(),
         })
         .eq('id', id)
         .select()

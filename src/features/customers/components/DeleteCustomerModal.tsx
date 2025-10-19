@@ -51,7 +51,7 @@ export const DeleteCustomerModal: React.FC<DeleteCustomerModalProps> = ({
   onClose,
   customerId,
   customerName,
-  mode = 'soft',
+  mode = 'hard',
   onSuccess,
 }) => {
   const [confirmationText, setConfirmationText] = useState('');

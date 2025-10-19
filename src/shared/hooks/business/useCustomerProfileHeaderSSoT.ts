@@ -20,6 +20,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
 import { useMemo, useCallback } from 'react';
+import { useCustomerMetrics } from './useCustomerMetrics';
 
 // ============================================================================
 // TYPES E INTERFACES
@@ -192,88 +193,16 @@ export const useCustomerProfileHeaderSSoT = (
   });
 
   // ============================================================================
-  // SERVER-SIDE DATA FETCHING - REAL METRICS
+  // SERVER-SIDE DATA FETCHING - REAL METRICS (SSoT Centralizado)
   // ============================================================================
 
+  // ✅ USO DO HOOK CENTRALIZADO - SINGLE SOURCE OF TRUTH
   const {
     data: rawRealMetrics = null,
     isLoading: isLoadingMetrics,
     error: metricsError,
     refetch: refetchMetrics
-  } = useQuery({
-    queryKey: ['customer-profile-header-metrics', customerId],
-    queryFn: async (): Promise<CustomerRealMetrics | null> => {
-      if (!customerId) return null;
-
-      try {
-        // Cálculo manual das métricas (RPC get_customer_metrics não disponível)
-
-        const { data: sales, error: salesError } = await supabase
-          .from('sales')
-          .select(`
-            id,
-            total_amount,
-            created_at,
-            sale_items (
-              quantity,
-              unit_price
-            )
-          `)
-          .eq('customer_id', customerId)
-          .order('created_at', { ascending: false });
-
-        if (salesError) {
-          console.error('❌ Erro no fallback de vendas:', salesError);
-          throw salesError;
-        }
-
-        // Cálculos manuais
-        const totalPurchases = sales?.length || 0;
-        const totalSpent = sales?.reduce((sum, sale) => sum + (parseFloat(sale.total_amount) || 0), 0) || 0;
-        const avgPurchaseValue = totalPurchases > 0 ? totalSpent / totalPurchases : 0;
-
-        const totalItems = sales?.reduce((sum, sale) => {
-          return sum + (sale.sale_items?.reduce((itemSum, item) => itemSum + (item.quantity || 0), 0) || 0);
-        }, 0) || 0;
-
-        const avgItemsPerPurchase = totalPurchases > 0 ? totalItems / totalPurchases : 0;
-        const lastPurchaseReal = sales?.[0]?.created_at;
-
-        let daysSinceLastPurchase = null;
-        if (lastPurchaseReal) {
-          const lastDate = new Date(lastPurchaseReal);
-          const today = new Date();
-          daysSinceLastPurchase = Math.floor((today.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
-        }
-
-        return {
-          total_purchases: totalPurchases,
-          total_spent: totalSpent,
-          lifetime_value_calculated: totalSpent, // Simplificado
-          avg_purchase_value: avgPurchaseValue,
-          avg_items_per_purchase: avgItemsPerPurchase,
-          total_products_bought: totalItems,
-          last_purchase_real: lastPurchaseReal,
-          days_since_last_purchase: daysSinceLastPurchase,
-          purchase_frequency: totalPurchases > 0 ? (totalPurchases / 365) : 0, // Simplificado
-          loyalty_score: Math.min(totalSpent / 1000, 10), // Simplificado
-          data_sync_status: {
-            ltv_synced: true, // Calculado manualmente com dados reais
-            dates_synced: true, // Calculado manualmente com dados reais
-            preferences_synced: false, // TODO: Implementar cálculo de preferências
-          }
-        };
-
-      } catch (error) {
-        console.error('❌ Erro crítico ao buscar métricas para header:', error);
-        throw error;
-      }
-    },
-    enabled: !!customerId,
-    staleTime: 2 * 60 * 1000, // 2 min cache para métricas (dados dinâmicos)
-    refetchInterval: 5 * 60 * 1000, // Auto-refresh a cada 5 min
-    refetchOnWindowFocus: true,
-  });
+  } = useCustomerMetrics(customerId);
 
   // ============================================================================
   // PROFILE COMPLETENESS CALCULATION

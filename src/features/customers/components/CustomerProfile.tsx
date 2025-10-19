@@ -28,7 +28,8 @@ import {
   Brain,
   MessageSquare,
   Zap,
-  ArrowLeft
+  ArrowLeft,
+  History
 } from 'lucide-react';
 
 // Importar componentes SSoT v3.0.0
@@ -38,11 +39,13 @@ import { CustomerPurchaseHistoryTab } from './CustomerPurchaseHistoryTab';
 import { CustomerInsightsTab } from './CustomerInsightsTab';
 import { CustomerCommunicationTab } from './CustomerCommunicationTab';
 import { CustomerActionsTab } from './CustomerActionsTab';
+import { CustomerHistoricalSalesTab } from './CustomerHistoricalSalesTab';
 import { EditCustomerModal } from './EditCustomerModal';
 import { DeleteCustomerModal } from './DeleteCustomerModal';
 
 // Hooks e dados
 import { useCustomer } from '@/features/customers/hooks/use-crm';
+import { useAuth } from '@/app/providers/AuthContext';
 
 // ============================================================================
 // TYPES
@@ -63,9 +66,13 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
 
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { userRole } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
+  // Check if user is admin
+  const isAdmin = userRole === 'admin';
 
   // ============================================================================
   // DATA FETCHING - Mínimo necessário para validação
@@ -163,9 +170,9 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
         customerId={id || ''}
       />
 
-      {/* Sistema de Tabs - Nova Estrutura 5 Tabs */}
+      {/* Sistema de Tabs - Nova Estrutura 6 Tabs (admin tem acesso a Importar Vendas) */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-5 bg-gray-800/50">
+        <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-6' : 'grid-cols-5'} bg-gray-800/50`}>
           {/* Tab 1: Visão Geral (Dashboard + Timeline) */}
           <TabsTrigger value="overview" className="data-[state=active]:bg-blue-500 data-[state=active]:text-white">
             <div className="flex items-center gap-1">
@@ -198,13 +205,23 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
             </div>
           </TabsTrigger>
 
-          {/* Tab 5: Ações Rápidas (NOVA - Ferramentas de Vendas) */}
+          {/* Tab 5: Ações Rápidas (Ferramentas de Vendas) */}
           <TabsTrigger value="actions" className="data-[state=active]:bg-blue-500 data-[state=active]:text-white">
             <div className="flex items-center gap-1">
               <Zap className="h-4 w-4" />
               <span className="hidden sm:inline">Ações Rápidas</span>
             </div>
           </TabsTrigger>
+
+          {/* Tab 6: Importar Vendas Históricas (ADMIN ONLY) */}
+          {isAdmin && (
+            <TabsTrigger value="historical" className="data-[state=active]:bg-orange-500 data-[state=active]:text-white">
+              <div className="flex items-center gap-1">
+                <History className="h-4 w-4" />
+                <span className="hidden sm:inline">Importar Vendas</span>
+              </div>
+            </TabsTrigger>
+          )}
         </TabsList>
 
         {/* Conteúdo das Tabs - Componentes SSoT */}
@@ -243,6 +260,15 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
               customerId={id || ''}
             />
           </TabsContent>
+
+          {/* Tab 6: Importar Vendas Históricas - ADMIN ONLY */}
+          {isAdmin && (
+            <TabsContent value="historical">
+              <CustomerHistoricalSalesTab
+                customerId={id || ''}
+              />
+            </TabsContent>
+          )}
         </div>
       </Tabs>
 
@@ -253,13 +279,12 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
         customer={customer}
       />
 
-      {/* Modal de Exclusão - Sistema de Soft Delete */}
+      {/* Modal de Exclusão - Sistema de Hard Delete (v3.3.0) */}
       <DeleteCustomerModal
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
         customerId={id || null}
         customerName={customer?.name || ''}
-        mode="soft"
         onSuccess={handleDeleteSuccess}
       />
     </div>
