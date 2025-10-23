@@ -35,7 +35,9 @@ export interface Purchase {
   id: string;
   order_number: number; // Sequential sale number for confirmation
   date: string;
-  total: number;
+  subtotal: number; // Valor dos produtos (total_amount sem delivery_fee)
+  delivery_fee: number; // Taxa de entrega
+  total: number; // Total final (subtotal + delivery_fee)
   items: PurchaseItem[];
 }
 
@@ -171,6 +173,7 @@ export const useCustomerPurchaseHistory = (
             id,
             order_number,
             total_amount,
+            delivery_fee,
             created_at,
             sale_items (
               product_id,
@@ -218,11 +221,17 @@ export const useCustomerPurchaseHistory = (
             unit_price: item.unit_price
           })) || [];
 
+          const subtotal = Number(sale.total_amount);
+          const deliveryFee = Number(sale.delivery_fee || 0);
+          const total = subtotal + deliveryFee;
+
           return {
             id: sale.id,
             order_number: sale.order_number,
             date: sale.created_at,
-            total: Number(sale.total_amount),
+            subtotal,
+            delivery_fee: deliveryFee,
+            total,
             items
           };
         });

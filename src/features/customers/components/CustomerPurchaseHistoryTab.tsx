@@ -379,9 +379,23 @@ export const CustomerPurchaseHistoryTab: React.FC<CustomerPurchaseHistoryTabProp
                   </div>
                   <div className="flex items-start gap-3">
                     <div className="text-right">
+                      {/* Subtotal (produtos) */}
+                      <div className="text-sm text-gray-300">
+                        Produtos: {formatCurrency(purchase.subtotal)}
+                      </div>
+
+                      {/* Taxa de entrega (se houver) */}
+                      {purchase.delivery_fee > 0 && (
+                        <div className="text-xs text-blue-300">
+                          + Entrega: {formatCurrency(purchase.delivery_fee)}
+                        </div>
+                      )}
+
+                      {/* Total final */}
                       <div className="text-xl font-bold text-accent-green">
                         {formatCurrency(purchase.total)}
                       </div>
+
                       <div className="text-xs text-gray-300 font-medium">
                         {purchase.items.length} {purchase.items.length === 1 ? 'item' : 'itens'}
                       </div>

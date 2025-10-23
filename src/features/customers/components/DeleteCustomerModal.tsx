@@ -236,7 +236,7 @@ export const DeleteCustomerModal: React.FC<DeleteCustomerModalProps> = ({
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription className="text-red-200">
                 <strong>ATENÇÃO:</strong> Esta operação é IRREVERSÍVEL e só deve ser usada em casos excepcionais.
-                O cliente será removido permanentemente do banco de dados, mas vendas serão mantidas para fins fiscais.
+                O cliente e TODOS os dados relacionados (vendas, histórico, interações) serão PERMANENTEMENTE DELETADOS do banco de dados.
               </AlertDescription>
             </Alert>
           )}

@@ -42,10 +42,15 @@ export interface CustomerMetrics {
 
   // Métricas de recência
   last_purchase_real?: string;
+  last_purchase_date?: Date | null;
   days_since_last_purchase?: number;
 
   // Métricas de frequência
   purchase_frequency: number;
+
+  // Preferências do cliente
+  favorite_category?: string | null;
+  favorite_product?: string | null;
 
   // Scores
   loyalty_score: number;
@@ -76,6 +81,18 @@ export const useCustomerMetrics = (customerId: string) => {
       if (!customerId) return null;
 
       try {
+        // ✅ Buscar dados do cliente (preferências)
+        const { data: customer, error: customerError } = await supabase
+          .from('customers')
+          .select('favorite_category, favorite_product, last_purchase_date')
+          .eq('id', customerId)
+          .single();
+
+        if (customerError) {
+          console.error('❌ Erro ao buscar dados do cliente:', customerError);
+          throw customerError;
+        }
+
         // ✅ ÚNICA query SQL que busca todas as vendas do cliente
         const { data: sales, error: salesError } = await supabase
           .from('sales')
@@ -106,8 +123,11 @@ export const useCustomerMetrics = (customerId: string) => {
             avg_items_per_purchase: 0,
             total_products_bought: 0,
             last_purchase_real: undefined,
+            last_purchase_date: customer?.last_purchase_date ? new Date(customer.last_purchase_date) : null,
             days_since_last_purchase: undefined,
             purchase_frequency: 0,
+            favorite_category: customer?.favorite_category || null,
+            favorite_product: customer?.favorite_product || null,
             loyalty_score: 0,
             data_sync_status: {
               ltv_synced: true,
@@ -206,8 +226,11 @@ export const useCustomerMetrics = (customerId: string) => {
           avg_items_per_purchase: avgItemsPerPurchase,
           total_products_bought: totalProductsBought,
           last_purchase_real: lastPurchaseReal,
+          last_purchase_date: customer?.last_purchase_date ? new Date(customer.last_purchase_date) : null,
           days_since_last_purchase: daysSinceLastPurchase,
           purchase_frequency: purchaseFrequency,
+          favorite_category: customer?.favorite_category || null,
+          favorite_product: customer?.favorite_product || null,
           loyalty_score: loyaltyScore,
           data_sync_status: {
             ltv_synced: true,

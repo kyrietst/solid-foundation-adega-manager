@@ -21,6 +21,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
 import { useMemo, useCallback } from 'react';
 import { calculateCompleteness } from '@/features/customers/utils/completeness-calculator';
+import { useCustomerMetrics } from './useCustomerMetrics';
 
 // ============================================================================
 // TYPES E INTERFACES
@@ -254,142 +255,41 @@ export const useCustomerOverviewSSoT = (
   });
 
   // ============================================================================
-  // SERVER-SIDE DATA FETCHING - METRICS DATA
+  // SERVER-SIDE DATA FETCHING - METRICS DATA (SSoT v3.3.1)
   // ============================================================================
 
+  // ✅ SSoT: Usar hook centralizado useCustomerMetrics
   const {
-    data: metrics = null,
+    data: metricsData,
     isLoading: isLoadingMetrics,
     error: metricsError,
     refetch: refetchMetrics
-  } = useQuery({
-    queryKey: ['customer-overview-metrics', customerId],
-    queryFn: async (): Promise<CustomerMetricsData | null> => {
-      if (!customerId) return null;
+  } = useCustomerMetrics(customerId);
 
-      try {
-        // Buscar métricas calculadas (implementar RPC ou cálculo manual)
-        // Por enquanto, implementação básica com cálculos manuais
-        const { data: sales, error: salesError } = await supabase
-          .from('sales')
-          .select(`
-            id,
-            total_amount,
-            created_at,
-            sale_items (
-              quantity,
-              unit_price,
-              products (
-                name,
-                category
-              )
-            )
-          `)
-          .eq('customer_id', customerId)
-          .order('created_at', { ascending: false });
+  // Mapear dados do useCustomerMetrics para o formato esperado por este hook
+  const metrics = useMemo((): CustomerMetricsData | null => {
+    if (!metricsData) return null;
 
-        if (salesError) {
-          console.error('❌ Erro ao buscar vendas para métricas:', salesError);
-          throw salesError;
-        }
-
-        // Buscar insights do cliente
-        const { data: insightsData, error: insightsError } = await supabase
-          .from('customer_insights')
-          .select('confidence')
-          .eq('customer_id', customerId)
-          .eq('is_active', true);
-
-        if (insightsError) {
-          console.error('⚠️ Erro ao buscar insights (não crítico):', insightsError);
-        }
-
-        const insightsCount = insightsData?.length || 0;
-        const avgConfidence = insightsData && insightsData.length > 0
-          ? insightsData.reduce((sum, insight) => sum + (insight.confidence || 0), 0) / insightsData.length
-          : 0;
-
-        const purchases = sales || [];
-        const totalPurchases = purchases.length;
-        const totalSpent = purchases.reduce((sum, sale) => sum + parseFloat(sale.total_amount || '0'), 0);
-        const avgPurchaseValue = totalPurchases > 0 ? totalSpent / totalPurchases : 0;
-
-        const totalItems = purchases.reduce((sum, sale) =>
-          sum + (sale.sale_items?.reduce((itemSum, item) => itemSum + item.quantity, 0) || 0), 0
-        );
-        const avgItemsPerPurchase = totalPurchases > 0 ? totalItems / totalPurchases : 0;
-
-        const lastPurchaseReal = purchases.length > 0 ? purchases[0].created_at : undefined;
-        const daysSinceLastPurchase = lastPurchaseReal
-          ? Math.floor((new Date().getTime() - new Date(lastPurchaseReal).getTime()) / (1000 * 60 * 60 * 24))
-          : undefined;
-
-        // Calcular categoria favorita e produto favorito baseados nos produtos mais comprados
-        let calculatedFavoriteCategory = 'Não definida';
-        let calculatedFavoriteProduct = 'Não definido';
-
-        if (sales && sales.length > 0) {
-          const categoryCounts: Record<string, number> = {};
-          const productCounts: Record<string, number> = {};
-
-          sales.forEach((sale: any) => {
-            sale.sale_items?.forEach((item: any) => {
-              const category = item.products?.category;
-              const productName = item.products?.name;
-
-              if (category) {
-                categoryCounts[category] = (categoryCounts[category] || 0) + item.quantity;
-              }
-              if (productName) {
-                productCounts[productName] = (productCounts[productName] || 0) + item.quantity;
-              }
-            });
-          });
-
-          // Encontrar categoria mais comprada
-          const categoryEntries = Object.entries(categoryCounts);
-          if (categoryEntries.length > 0) {
-            const topCategory = categoryEntries.sort(([,a], [,b]) => b - a)[0];
-            calculatedFavoriteCategory = topCategory[0];
-          }
-
-          // Encontrar produto mais comprado
-          const productEntries = Object.entries(productCounts);
-          if (productEntries.length > 0) {
-            const topProduct = productEntries.sort(([,a], [,b]) => b - a)[0];
-            calculatedFavoriteProduct = topProduct[0];
-          }
-        }
-
-        return {
-          total_purchases: totalPurchases,
-          total_spent: totalSpent,
-          lifetime_value_calculated: totalSpent, // Simplificado por agora
-          avg_purchase_value: avgPurchaseValue,
-          avg_items_per_purchase: avgItemsPerPurchase,
-          total_products_bought: totalItems,
-          last_purchase_real: lastPurchaseReal,
-          days_since_last_purchase: daysSinceLastPurchase,
-          calculated_favorite_category: calculatedFavoriteCategory,
-          calculated_favorite_product: calculatedFavoriteProduct,
-          insights_count: insightsCount,
-          insights_confidence: avgConfidence,
-          data_sync_status: {
-            ltv_synced: true,
-            dates_synced: true,
-            preferences_synced: false, // TODO: Implementar sincronização
-          },
-        };
-      } catch (error) {
-        console.error('❌ Erro crítico ao calcular métricas:', error);
-        throw error;
-      }
-    },
-    enabled: !!customerId,
-    staleTime: 2 * 60 * 1000, // 2 min cache para métricas
-    refetchInterval: 5 * 60 * 1000, // Auto-refresh a cada 5 min
-    refetchOnWindowFocus: true,
-  });
+    return {
+      total_purchases: metricsData.total_purchases,
+      total_spent: metricsData.total_spent,
+      lifetime_value_calculated: metricsData.total_spent,
+      avg_purchase_value: metricsData.avg_purchase_value,
+      avg_items_per_purchase: metricsData.avg_items_per_purchase,
+      total_products_bought: metricsData.total_products_bought,
+      last_purchase_real: metricsData.last_purchase_date,
+      days_since_last_purchase: metricsData.days_since_last_purchase,
+      calculated_favorite_category: metricsData.favorite_category ?? undefined,
+      calculated_favorite_product: metricsData.favorite_product ?? undefined,
+      insights_count: 0, // TODO: Implementar insights se necessário
+      insights_confidence: 0,
+      data_sync_status: {
+        ltv_synced: true,
+        dates_synced: true,
+        preferences_synced: true, // ✅ Agora preferences vêm do SSoT
+      },
+    };
+  }, [metricsData]);
 
   // ============================================================================
   // SERVER-SIDE DATA FETCHING - PURCHASES DATA

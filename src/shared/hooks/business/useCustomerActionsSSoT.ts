@@ -22,6 +22,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
 import { useMemo, useCallback } from 'react';
+import { useCustomerMetrics } from './useCustomerMetrics';
 
 // ============================================================================
 // TYPES E INTERFACES
@@ -432,55 +433,38 @@ export const useCustomerActionsSSoT = (
   });
 
   // ============================================================================
-  // SERVER-SIDE DATA FETCHING - METRICS
+  // SERVER-SIDE DATA FETCHING - METRICS (SSoT v3.3.1)
   // ============================================================================
 
+  // ✅ SSoT: Usar hook centralizado useCustomerMetrics
   const {
-    data: realMetrics = null,
+    data: metricsData,
     isLoading: isLoadingMetrics,
     error: metricsError,
     refetch: refetchMetrics
-  } = useQuery({
-    queryKey: ['customer-actions-metrics', customerId],
-    queryFn: async (): Promise<CustomerRealMetrics | null> => {
-      if (!customerId) return null;
+  } = useCustomerMetrics(customerId);
 
-      try {
-        const { data, error } = await supabase
-          .rpc('get_customer_real_metrics', { p_customer_id: parseInt(customerId) });
+  // Mapear dados do useCustomerMetrics para o formato esperado por este hook
+  const realMetrics = useMemo((): CustomerRealMetrics | null => {
+    if (!metricsData) return null;
 
-        if (error) {
-          console.error('❌ Erro ao buscar métricas para ações:', error);
-          // Fallback manual se RPC falhar
-          return {
-            total_purchases: 0,
-            lifetime_value_calculated: 0,
-            avg_purchase_value: 0,
-            days_since_last_purchase: undefined,
-            last_purchase_real: undefined,
-            calculated_favorite_category: undefined,
-            calculated_favorite_product: undefined,
-            insights_count: 0,
-            insights_confidence: 0,
-            data_sync_status: {
-              ltv_synced: false,
-              dates_synced: false,
-              preferences_synced: false
-            }
-          };
-        }
-
-        return data;
-      } catch (error) {
-        console.error('❌ Erro crítico ao buscar métricas para ações:', error);
-        throw error;
-      }
-    },
-    enabled: !!customerId,
-    staleTime: 2 * 60 * 1000, // 2 min cache
-    refetchInterval: 5 * 60 * 1000, // Auto-refresh 5 min
-    refetchOnWindowFocus: true,
-  });
+    return {
+      total_purchases: metricsData.total_purchases,
+      lifetime_value_calculated: metricsData.total_spent,
+      avg_purchase_value: metricsData.avg_purchase_value,
+      days_since_last_purchase: metricsData.days_since_last_purchase,
+      last_purchase_real: metricsData.last_purchase_date,
+      calculated_favorite_category: metricsData.favorite_category ?? undefined,
+      calculated_favorite_product: metricsData.favorite_product ?? undefined,
+      insights_count: 0, // TODO: Implementar insights se necessário
+      insights_confidence: 0,
+      data_sync_status: {
+        ltv_synced: true,
+        dates_synced: true,
+        preferences_synced: true, // ✅ Agora preferences vêm do SSoT
+      },
+    };
+  }, [metricsData]);
 
   // ============================================================================
   // MUTATIONS PARA REGISTRAR AÇÕES

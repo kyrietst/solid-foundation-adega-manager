@@ -243,7 +243,7 @@ export const useCustomerDelete = () => {
 
       toast({
         title: '⚠️ Cliente excluído permanentemente',
-        description: `${data.customer_name} foi removido permanentemente. ${data.sales_count} vendas preservadas para fins fiscais.`,
+        description: `${data.customer_name} foi removido permanentemente do sistema. TODOS os dados foram deletados (${data.sales_count} vendas, histórico, interações). Esta ação é IRREVERSÍVEL.`,
         variant: 'destructive',
       });
 
