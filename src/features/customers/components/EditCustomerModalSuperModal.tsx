@@ -34,6 +34,7 @@ import { SwitchAnimated } from '@/shared/ui/primitives/switch-animated';
 import { useUpsertCustomer } from '@/features/customers/hooks/use-crm';
 import { useToast } from '@/shared/hooks/common/use-toast';
 import { User, Phone, Mail, MapPin } from 'lucide-react';
+import { isValidBrazilianPhone, formatPhoneInput, PHONE_PLACEHOLDER, PHONE_ERROR_MESSAGE } from '@/shared/utils/phone';
 
 // ============================================================================
 // SCHEMA DE VALIDAÇÃO (Mesma do original)
@@ -47,8 +48,8 @@ const editCustomerSchema = z.object({
 
   telefone: z
     .string()
-    .regex(/^(\(\d{2}\)\s\d{5}-\d{4}|\(\d{2}\)\s\d{4}-\d{4}|)$/, {
-      message: 'Formato inválido. Use (11) 99999-9999 ou (11) 9999-9999'
+    .refine((val) => !val || isValidBrazilianPhone(val), {
+      message: PHONE_ERROR_MESSAGE
     })
     .optional()
     .or(z.literal('')),
@@ -193,10 +194,11 @@ export const EditCustomerModalSuperModal: React.FC<EditCustomerModalSuperModalPr
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
+          <label htmlFor="edit-customer-name" className="block text-sm font-medium text-gray-300 mb-2">
             Nome Completo *
           </label>
           <Input
+            id="edit-customer-name"
             value={data.cliente || ''}
             onChange={(e) => updateField('cliente', e.target.value)}
             placeholder="Ex: João Silva Santos"
@@ -209,14 +211,15 @@ export const EditCustomerModalSuperModal: React.FC<EditCustomerModalSuperModalPr
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label htmlFor="edit-customer-phone" className="block text-sm font-medium text-gray-300 mb-2">
               <Phone className="h-4 w-4 inline mr-1" />
               Telefone
             </label>
             <Input
+              id="edit-customer-phone"
               value={data.telefone || ''}
-              onChange={(e) => updateField('telefone', e.target.value)}
-              placeholder="(11) 99999-9999"
+              onChange={(e) => updateField('telefone', formatPhoneInput(e.target.value))}
+              placeholder={PHONE_PLACEHOLDER}
               className={hasFieldError('telefone') ? 'border-red-500' : ''}
             />
             {hasFieldError('telefone') && (
@@ -225,11 +228,12 @@ export const EditCustomerModalSuperModal: React.FC<EditCustomerModalSuperModalPr
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label htmlFor="edit-customer-email" className="block text-sm font-medium text-gray-300 mb-2">
               <Mail className="h-4 w-4 inline mr-1" />
               Email
             </label>
             <Input
+              id="edit-customer-email"
               type="email"
               value={data.email || ''}
               onChange={(e) => updateField('email', e.target.value)}
@@ -251,10 +255,11 @@ export const EditCustomerModalSuperModal: React.FC<EditCustomerModalSuperModalPr
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
+          <label htmlFor="edit-customer-address" className="block text-sm font-medium text-gray-300 mb-2">
             Endereço Completo
           </label>
           <Input
+            id="edit-customer-address"
             value={data.endereco || ''}
             onChange={(e) => updateField('endereco', e.target.value)}
             placeholder="Rua, Número, Complemento"
@@ -267,10 +272,11 @@ export const EditCustomerModalSuperModal: React.FC<EditCustomerModalSuperModalPr
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label htmlFor="edit-customer-neighborhood" className="block text-sm font-medium text-gray-300 mb-2">
               Bairro
             </label>
             <Input
+              id="edit-customer-neighborhood"
               value={data.bairro || ''}
               onChange={(e) => updateField('bairro', e.target.value)}
               placeholder="Centro"
@@ -278,10 +284,11 @@ export const EditCustomerModalSuperModal: React.FC<EditCustomerModalSuperModalPr
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label htmlFor="edit-customer-city" className="block text-sm font-medium text-gray-300 mb-2">
               Cidade
             </label>
             <Input
+              id="edit-customer-city"
               value={data.cidade || ''}
               onChange={(e) => updateField('cidade', e.target.value)}
               placeholder="São Paulo"
@@ -289,10 +296,11 @@ export const EditCustomerModalSuperModal: React.FC<EditCustomerModalSuperModalPr
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label htmlFor="edit-customer-zipcode" className="block text-sm font-medium text-gray-300 mb-2">
               CEP
             </label>
             <Input
+              id="edit-customer-zipcode"
               value={data.cep || ''}
               onChange={(e) => updateField('cep', e.target.value)}
               placeholder="12345-678"
@@ -308,10 +316,11 @@ export const EditCustomerModalSuperModal: React.FC<EditCustomerModalSuperModalPr
       {/* Observações e Status */}
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
+          <label htmlFor="edit-customer-notes" className="block text-sm font-medium text-gray-300 mb-2">
             Observações
           </label>
           <Textarea
+            id="edit-customer-notes"
             value={data.observacoes || ''}
             onChange={(e) => updateField('observacoes', e.target.value)}
             placeholder="Informações adicionais sobre o cliente..."

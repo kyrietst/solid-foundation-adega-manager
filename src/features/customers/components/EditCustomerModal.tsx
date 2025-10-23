@@ -34,17 +34,18 @@ import { SwitchAnimated } from '@/shared/ui/primitives/switch-animated';
 import { Label } from '@/shared/ui/primitives/label';
 import { useUpsertCustomer } from '@/features/customers/hooks/use-crm';
 import { useToast } from '@/shared/hooks/common/use-toast';
-import { 
-  User, 
-  Phone, 
-  Mail, 
-  MapPin, 
+import {
+  User,
+  Phone,
+  Mail,
+  MapPin,
   Calendar,
   MessageSquare,
   Save,
   X,
   Edit
 } from 'lucide-react';
+import { isValidBrazilianPhone, formatPhoneInput, PHONE_PLACEHOLDER, PHONE_ERROR_MESSAGE } from '@/shared/utils/phone';
 
 // Schema de validação com Zod (mesmo do NewCustomerModal)
 const editCustomerSchema = z.object({
@@ -62,9 +63,9 @@ const editCustomerSchema = z.object({
   
   phone: z
     .string()
-    .min(10, 'Telefone deve ter pelo menos 10 dígitos')
-    .max(15, 'Telefone deve ter no máximo 15 dígitos')
-    .regex(/^[\d\s()-+]+$/, 'Formato de telefone inválido')
+    .refine((val) => !val || isValidBrazilianPhone(val), {
+      message: PHONE_ERROR_MESSAGE
+    })
     .optional()
     .or(z.literal('')),
   
@@ -362,8 +363,9 @@ export const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
                       <FormLabel className="text-gray-300">Telefone</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder="(11) 99999-9999"
+                          placeholder={PHONE_PLACEHOLDER}
                           {...field}
+                          onChange={(e) => field.onChange(formatPhoneInput(e.target.value))}
                           className="bg-gray-800/50 border-gray-600 text-white"
                         />
                       </FormControl>

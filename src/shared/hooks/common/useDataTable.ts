@@ -176,13 +176,14 @@ export const useDataTable = <T extends Record<string, unknown>>({
   
   // Virtualization setup
   const parentRef = useRef<HTMLDivElement>(null);
-  
-  const virtualizer = enableVirtualization ? useVirtualizer({
-    count: processedData.length,
+
+  // Always call useVirtualizer to comply with Rules of Hooks
+  const virtualizer = useVirtualizer({
+    count: enableVirtualization ? processedData.length : 0,
     getScrollElement: () => parentRef.current,
     estimateSize: () => virtualRowHeight,
     overscan: 5,
-  }) : null;
+  });
   
   return {
     // Data

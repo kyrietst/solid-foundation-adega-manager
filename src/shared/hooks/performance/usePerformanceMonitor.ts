@@ -13,7 +13,7 @@
  * @version 1.0.0 - Performance Monitor Implementation (Context7)
  */
 
-import { useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 
 interface PerformanceMetrics {
   renderCount: number;
@@ -228,7 +228,7 @@ export const useAdvancedPerformanceMonitor = (
 /**
  * HOC para adicionar performance monitoring automaticamente
  */
-export const withPerformanceMonitor = <P extends object>(
+export const withPerformanceMonitor = <P extends object,>(
   Component: React.ComponentType<P>,
   options: PerformanceMonitorOptions & { componentName?: string } = {}
 ) => {
@@ -237,9 +237,7 @@ export const withPerformanceMonitor = <P extends object>(
   const WrappedComponent = (props: P) => {
     const { logPerformance, measureRender } = usePerformanceMonitor(componentName, options);
 
-    return measureRender(() => (
-      <Component {...props} />
-    ));
+    return measureRender(() => React.createElement(Component, props));
   };
 
   WrappedComponent.displayName = `withPerformanceMonitor(${componentName})`;

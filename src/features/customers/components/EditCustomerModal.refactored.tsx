@@ -51,6 +51,7 @@ import {
   X,
   Edit
 } from 'lucide-react';
+import { isValidBrazilianPhone, formatPhoneInput, PHONE_PLACEHOLDER, PHONE_ERROR_MESSAGE } from '@/shared/utils/phone';
 
 // Schema de validação com Zod (reutilizado)
 const editCustomerSchema = z.object({
@@ -68,9 +69,9 @@ const editCustomerSchema = z.object({
 
   phone: z
     .string()
-    .min(10, 'Telefone deve ter pelo menos 10 dígitos')
-    .max(15, 'Telefone deve ter no máximo 15 dígitos')
-    .regex(/^[\d\s()-+]+$/, 'Formato de telefone inválido')
+    .refine((val) => !val || isValidBrazilianPhone(val), {
+      message: PHONE_ERROR_MESSAGE
+    })
     .optional()
     .or(z.literal('')),
 
@@ -331,9 +332,9 @@ export const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
             <div>
               <Label className="text-gray-300">Telefone</Label>
               <Input
-                placeholder="(11) 99999-9999"
+                placeholder={PHONE_PLACEHOLDER}
                 value={data.phone}
-                onChange={(e) => updateField('phone', e.target.value)}
+                onChange={(e) => updateField('phone', formatPhoneInput(e.target.value))}
                 className="bg-gray-800/50 border-gray-600 text-white"
               />
               {getError('phone') && (

@@ -394,7 +394,10 @@ export function DataTable<T = Record<string, unknown>>({
                             {/* Row Actions */}
                             {rowActions && (
                               <TableCell className="w-12">
-                                <div onClick={(e) => e.stopPropagation()}>
+                                <div
+                                  role="presentation"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
                                   {rowActions(item)}
                                 </div>
                               </TableCell>
@@ -553,7 +556,10 @@ export function DataTable<T = Record<string, unknown>>({
                       {/* Row Actions */}
                       {rowActions && (
                         <TableCell className="w-12">
-                          <div onClick={(e) => e.stopPropagation()}>
+                          <div
+                            role="presentation"
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             {rowActions(item)}
                           </div>
                         </TableCell>
