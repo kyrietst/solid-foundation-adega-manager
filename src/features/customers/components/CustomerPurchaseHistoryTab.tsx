@@ -44,7 +44,8 @@ import {
   CreditCard,
   TrendingUp,
   Calendar,
-  Trash2
+  Trash2,
+  Loader2
 } from 'lucide-react';
 import { formatCurrency } from '@/core/config/utils';
 import { LoadingSpinner } from '@/shared/ui/composite/loading-spinner';
@@ -143,6 +144,8 @@ export const CustomerPurchaseHistoryTab: React.FC<CustomerPurchaseHistoryTabProp
     hasData,
     isEmpty,
     isFiltered,
+    pagination,
+    loadMore,
     refetch
   } = useCustomerPurchaseHistory(customerId, filters);
 
@@ -446,6 +449,26 @@ export const CustomerPurchaseHistoryTab: React.FC<CustomerPurchaseHistoryTabProp
           ))
         )}
       </div>
+
+      {/* Botão Carregar Mais */}
+      {pagination.hasMore && !isLoading && purchases.length > 0 && (
+        <div className="flex justify-center">
+          <Button
+            onClick={loadMore}
+            variant="outline"
+            className="bg-black/50 border-accent-green/30 hover:bg-accent-green/10 hover:border-accent-green/60 text-white transition-all duration-300"
+          >
+            Carregar mais vendas
+          </Button>
+        </div>
+      )}
+
+      {/* Loading indicator para páginas subsequentes */}
+      {isLoading && purchases.length > 0 && (
+        <div className="flex justify-center">
+          <Loader2 className="h-6 w-6 animate-spin text-accent-green" />
+        </div>
+      )}
 
       {/* Análise de Comportamento - v3.2.0 Behavioral Metrics */}
       {hasData && purchases.length >= 2 && (

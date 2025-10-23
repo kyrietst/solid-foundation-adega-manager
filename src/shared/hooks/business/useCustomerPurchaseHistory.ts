@@ -19,7 +19,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
-import { useMemo } from 'react';
+import { useMemo, useState, useCallback, useEffect } from 'react';
 
 // ============================================================================
 // TYPES E INTERFACES
@@ -145,8 +145,13 @@ const calculatePeriodDate = (periodFilter: string): string | null => {
 export const useCustomerPurchaseHistory = (
   customerId: string,
   filters: PurchaseFilters,
-  pagination: PaginationOptions = { page: 1, limit: 20, hasMore: true }
+  pagination: PaginationOptions = { page: 1, limit: 100, hasMore: true }
 ): PurchaseHistoryOperations => {
+
+  // Estado interno para paginação
+  const [currentPage, setCurrentPage] = useState(1);
+  const [accumulatedPurchases, setAccumulatedPurchases] = useState<Purchase[]>([]);
+  const [hasMoreData, setHasMoreData] = useState(true);
 
   // Extrair valores individuais do filters para evitar problemas de dependência
   const { searchTerm, periodFilter, productSearchTerm } = filters;
@@ -161,7 +166,7 @@ export const useCustomerPurchaseHistory = (
     error,
     refetch
   } = useQuery({
-    queryKey: ['customer-purchase-history', customerId, { searchTerm, periodFilter, productSearchTerm, page: pagination.page }],
+    queryKey: ['customer-purchase-history', customerId, { searchTerm, periodFilter, productSearchTerm, page: currentPage }],
     queryFn: async (): Promise<Purchase[]> => {
       if (!customerId) return [];
 
@@ -201,7 +206,7 @@ export const useCustomerPurchaseHistory = (
         }
 
         // Aplicar paginação
-        const offset = (pagination.page - 1) * pagination.limit;
+        const offset = (currentPage - 1) * pagination.limit;
         query = query.range(offset, offset + pagination.limit - 1);
 
         const { data: sales, error: salesError } = await query;
@@ -265,11 +270,42 @@ export const useCustomerPurchaseHistory = (
   });
 
   // ============================================================================
+  // PAGINAÇÃO: ACUMULAÇÃO E RESET
+  // ============================================================================
+
+  // Acumular dados quando nova página é carregada
+  useEffect(() => {
+    if (rawPurchases && rawPurchases.length > 0) {
+      if (currentPage === 1) {
+        // Primeira página - substituir tudo
+        setAccumulatedPurchases(rawPurchases);
+      } else {
+        // Páginas subsequentes - adicionar ao final
+        setAccumulatedPurchases(prev => [...prev, ...rawPurchases]);
+      }
+
+      // Calcular se há mais dados
+      setHasMoreData(rawPurchases.length === pagination.limit);
+    } else if (currentPage === 1) {
+      // Primeira página sem dados - limpar
+      setAccumulatedPurchases([]);
+      setHasMoreData(false);
+    }
+  }, [rawPurchases, currentPage, pagination.limit]);
+
+  // Resetar paginação quando filtros mudarem
+  useEffect(() => {
+    setCurrentPage(1);
+    setAccumulatedPurchases([]);
+    setHasMoreData(true);
+  }, [searchTerm, periodFilter, productSearchTerm, customerId]);
+
+  // ============================================================================
   // REAL-TIME SUMMARY CALCULATION
   // ============================================================================
 
   const summary = useMemo((): PurchaseSummary => {
-    if (!rawPurchases || rawPurchases.length === 0) {
+    if (!accumulatedPurchases || accumulatedPurchases.length === 0) {
       return {
         totalSpent: 0,
         totalItems: 0,
@@ -278,11 +314,11 @@ export const useCustomerPurchaseHistory = (
       };
     }
 
-    const totalSpent = rawPurchases.reduce((sum, purchase) => sum + purchase.total, 0);
-    const totalItems = rawPurchases.reduce((sum, purchase) =>
+    const totalSpent = accumulatedPurchases.reduce((sum, purchase) => sum + purchase.total, 0);
+    const totalItems = accumulatedPurchases.reduce((sum, purchase) =>
       sum + purchase.items.reduce((itemSum, item) => itemSum + item.quantity, 0), 0
     );
-    const purchaseCount = rawPurchases.length;
+    const purchaseCount = accumulatedPurchases.length;
     const averageTicket = purchaseCount > 0 ? totalSpent / purchaseCount : 0;
 
     return {
@@ -291,7 +327,7 @@ export const useCustomerPurchaseHistory = (
       averageTicket: Number(Math.round(averageTicket * 100) / 100),
       purchaseCount: Number(purchaseCount)
     };
-  }, [rawPurchases]);
+  }, [accumulatedPurchases]);
 
   // ============================================================================
   // BEHAVIORAL METRICS CALCULATION (v3.2.0 - NEW)
@@ -317,7 +353,7 @@ export const useCustomerPurchaseHistory = (
     };
 
     // Precisa de pelo menos 2 compras para calcular intervalo
-    if (!rawPurchases || rawPurchases.length < 2) {
+    if (!accumulatedPurchases || accumulatedPurchases.length < 2) {
       return defaultMetrics;
     }
 
@@ -326,9 +362,9 @@ export const useCustomerPurchaseHistory = (
     // ============================================================================
 
     const intervals: number[] = [];
-    for (let i = 1; i < rawPurchases.length; i++) {
-      const date1 = new Date(rawPurchases[i - 1].date);
-      const date2 = new Date(rawPurchases[i].date);
+    for (let i = 1; i < accumulatedPurchases.length; i++) {
+      const date1 = new Date(accumulatedPurchases[i - 1].date);
+      const date2 = new Date(accumulatedPurchases[i].date);
       const daysDiff = Math.floor((date1.getTime() - date2.getTime()) / (1000 * 60 * 60 * 24));
       intervals.push(Math.abs(daysDiff));
     }
@@ -357,9 +393,9 @@ export const useCustomerPurchaseHistory = (
     let spendingTrend = defaultMetrics.spendingTrend;
 
     // Precisa de pelo menos 6 compras para comparar 3 vs 3
-    if (rawPurchases.length >= 6) {
-      const recent3 = rawPurchases.slice(0, 3).reduce((sum, p) => sum + p.total, 0);
-      const previous3 = rawPurchases.slice(3, 6).reduce((sum, p) => sum + p.total, 0);
+    if (accumulatedPurchases.length >= 6) {
+      const recent3 = accumulatedPurchases.slice(0, 3).reduce((sum, p) => sum + p.total, 0);
+      const previous3 = accumulatedPurchases.slice(3, 6).reduce((sum, p) => sum + p.total, 0);
 
       const changePercentage = previous3 > 0
         ? ((recent3 - previous3) / previous3) * 100
@@ -393,7 +429,7 @@ export const useCustomerPurchaseHistory = (
     // 3. PRÓXIMA COMPRA ESPERADA (Next Purchase Expected)
     // ============================================================================
 
-    const lastPurchaseDate = new Date(rawPurchases[0].date);
+    const lastPurchaseDate = new Date(accumulatedPurchases[0].date);
     const today = new Date();
     // ✅ CORRIGIDO v3.2.1: Usar Math.ceil para arredondar para cima
     // Math.floor arredondava para baixo (5.54 dias → 5), causando "Atrasada 0 dias"
@@ -435,16 +471,17 @@ export const useCustomerPurchaseHistory = (
       spendingTrend,
       nextPurchaseExpected
     };
-  }, [rawPurchases]);
+  }, [accumulatedPurchases]);
 
   // ============================================================================
   // PAGINATION LOGIC
   // ============================================================================
 
-  const loadMore = () => {
-    // Esta função será implementada quando necessário
-    console.log('📄 Load more purchases - implement when needed');
-  };
+  const loadMore = useCallback(() => {
+    if (hasMoreData && !isLoading) {
+      setCurrentPage(prev => prev + 1);
+    }
+  }, [hasMoreData, isLoading]);
 
   // ============================================================================
   // FUNÇÕES UTILITÁRIAS
@@ -473,7 +510,7 @@ export const useCustomerPurchaseHistory = (
   // ESTADO DERIVADO
   // ============================================================================
 
-  const hasData = rawPurchases && rawPurchases.length > 0;
+  const hasData = accumulatedPurchases && accumulatedPurchases.length > 0;
   const isEmpty = !hasData;
   const isFiltered = searchTerm !== '' || periodFilter !== 'all';
 
@@ -482,8 +519,8 @@ export const useCustomerPurchaseHistory = (
   // ============================================================================
 
   return {
-    // Dados do servidor
-    purchases: rawPurchases,
+    // Dados do servidor (acumulados)
+    purchases: accumulatedPurchases,
 
     // Estados de carregamento
     isLoading,
@@ -496,7 +533,11 @@ export const useCustomerPurchaseHistory = (
     behavioralMetrics,
 
     // Paginação
-    pagination,
+    pagination: {
+      ...pagination,
+      page: currentPage,
+      hasMore: hasMoreData
+    },
     loadMore,
 
     // Funções utilitárias
