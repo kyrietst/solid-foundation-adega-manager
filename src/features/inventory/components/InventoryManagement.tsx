@@ -12,12 +12,18 @@ import { PageHeader } from '@/shared/ui/composite/PageHeader';
 import { ProductsGridContainer } from './ProductsGridContainer';
 import { ProductsTitle, ProductsHeader } from './ProductsHeader';
 import { useProductsGridLogic } from '@/shared/hooks/products/useProductsGridLogic';
+import { Button } from '@/shared/ui/primitives/button';
+import { Trash2, Package } from 'lucide-react';
 // Imports dos modais refatorados - Força HMR refresh para carregar logs de diagnóstico
 import { NewProductModal } from './NewProductModal';
 import { SimpleProductViewModal } from './SimpleProductViewModal'; // Modal simplificado v2.0
 import { SimpleEditProductModal } from './SimpleEditProductModal'; // Modal simplificado v2.0
 import { StockAdjustmentModal } from './StockAdjustmentModal';
 import { StockHistoryModal } from './StockHistoryModal';
+import { DeletedProductsGrid } from './DeletedProductsGrid';
+import { useDeletedProducts } from '../hooks/useDeletedProducts';
+import useProductDelete from '../hooks/useProductDelete';
+import { useAuth } from '@/app/providers/AuthContext';
 import type { ProductFormData } from '@/core/types/inventory.types';
 
 // Interface simplificada para edição de produtos (v2.0)
@@ -58,9 +64,25 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isStockAdjustmentOpen, setIsStockAdjustmentOpen] = useState(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'active' | 'deleted'>('active');
+  const [restoringProductId, setRestoringProductId] = useState<string | null>(null);
+
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { handleMouseMove } = useGlassmorphismEffect();
+  const { user, userRole, loading } = useAuth();
+
+  // Hook para produtos deletados
+  const { data: deletedProducts = [], isLoading: isLoadingDeleted } = useDeletedProducts();
+  const { restore } = useProductDelete();
+
+  // Verificar se usuário é admin - aguardar carregamento do profile
+  const isAdmin = !loading && userRole === 'admin';
+
+  // DEBUG: Verificar role do usuário
+  console.log('[InventoryManagement] Loading:', loading);
+  console.log('[InventoryManagement] User Role:', userRole);
+  console.log('[InventoryManagement] isAdmin:', isAdmin);
 
 
   const handleAddProduct = () => {
@@ -376,6 +398,21 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
     return Number.isFinite(margin) ? Math.min(Math.max(margin, 0), maxMargin) : null;
   };
 
+  // Handler para restaurar produto deletado
+  const handleRestoreProduct = async (product: any) => {
+    setRestoringProductId(product.id);
+    try {
+      await restore(product.id);
+      // Invalidar queries para atualizar listas
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['products', 'deleted'] });
+    } catch (error) {
+      console.error('Erro ao restaurar produto:', error);
+    } finally {
+      setRestoringProductId(null);
+    }
+  };
+
   // Hook para obter dados dos produtos usando o hook existente
   const productsGridData = useProductsGridLogic({
     showSearch: false,
@@ -392,23 +429,65 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
       />
 
       {/* Container com background glass morphism - ocupa altura restante */}
-      <div 
+      <div
         className="flex-1 min-h-0 bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg hero-spotlight p-4 flex flex-col hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300"
         onMouseMove={handleMouseMove}
       >
-        {/* Grid de produtos com controles dentro do box */}
-        <ProductsGridContainer
-          showSearch={showSearch}
-          showFilters={showFilters}
-          showAddButton={showAddButton}
-          showHeader={false}
-          mode="inventory"
-          onAddToCart={onProductSelect}
-          onAddProduct={showAddButton ? handleAddProduct : undefined}
-          onViewDetails={handleViewDetails}
-          onEdit={handleEditProduct}
-          onAdjustStock={handleAdjustStock}
-        />
+        {/* Tab Switcher - Apenas para admins */}
+        {isAdmin && (
+          <div className="flex gap-2 mb-4 pb-4 border-b border-white/10">
+            <Button
+              variant={viewMode === 'active' ? 'default' : 'outline'}
+              onClick={() => setViewMode('active')}
+              className="flex items-center gap-2"
+              size="sm"
+            >
+              <Package className="h-4 w-4" />
+              Produtos Ativos
+              <span className="ml-1 px-2 py-0.5 bg-green-500/20 text-green-400 rounded-full text-xs font-bold">
+                {productsGridData.totalProducts}
+              </span>
+            </Button>
+
+            <Button
+              variant={viewMode === 'deleted' ? 'default' : 'outline'}
+              onClick={() => setViewMode('deleted')}
+              className="flex items-center gap-2"
+              size="sm"
+            >
+              <Trash2 className="h-4 w-4" />
+              Produtos Deletados
+              <span className="ml-1 px-2 py-0.5 bg-red-500/20 text-red-400 rounded-full text-xs font-bold">
+                {deletedProducts.length}
+              </span>
+            </Button>
+          </div>
+        )}
+
+        {/* Renderização condicional baseada no modo de visualização */}
+        {viewMode === 'active' ? (
+          /* Grid de produtos ativos com controles */
+          <ProductsGridContainer
+            showSearch={showSearch}
+            showFilters={showFilters}
+            showAddButton={showAddButton}
+            showHeader={false}
+            mode="inventory"
+            onAddToCart={onProductSelect}
+            onAddProduct={showAddButton ? handleAddProduct : undefined}
+            onViewDetails={handleViewDetails}
+            onEdit={handleEditProduct}
+            onAdjustStock={handleAdjustStock}
+          />
+        ) : (
+          /* Grid de produtos deletados (admin only) */
+          <DeletedProductsGrid
+            products={deletedProducts}
+            isLoading={isLoadingDeleted}
+            onRestore={handleRestoreProduct}
+            restoringProductId={restoringProductId}
+          />
+        )}
       </div>
 
       {/* Modal para adicionar produto */}

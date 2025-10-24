@@ -47,6 +47,7 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
       const { data, error } = await supabase
         .from('products')
         .select('id, name, price, stock_quantity, image_url, barcode, unit_barcode, package_barcode, category, package_units, package_price, has_package_tracking, units_per_package, stock_packages, stock_units_loose, expiry_date, has_expiry_tracking')
+        .is('deleted_at', null)
         .order('name', { ascending: true });
 
       if (error) {

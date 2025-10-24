@@ -44,9 +44,11 @@ import {
   ScanLine,
   ChevronDown,
   ChevronUp,
-  TrendingUp
+  TrendingUp,
+  Trash2
 } from 'lucide-react';
 import type { Product } from '@/core/types/inventory.types';
+import { DeleteProductModal } from './DeleteProductModal';
 
 // Schema simplificado - apenas campos essenciais
 const simpleEditProductSchema = z.object({
@@ -146,6 +148,7 @@ export const SimpleEditProductModal: React.FC<SimpleEditProductModalProps> = ({
   const [suppliers, setSuppliers] = useState<string[]>([]);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [activeScanner, setActiveScanner] = useState<'main' | 'package' | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const form = useForm<SimpleEditProductFormData>({
     resolver: zodResolver(simpleEditProductSchema),
@@ -352,31 +355,41 @@ export const SimpleEditProductModal: React.FC<SimpleEditProductModalProps> = ({
   if (!product) return null;
 
   return (
-    <EnhancedBaseModal
-      isOpen={isOpen}
-      onClose={handleClose}
-      modalType="edit"
-      title="Editar Produto"
-      subtitle={`Edite rapidamente "${product.name}"`}
-      customIcon={Edit}
-      loading={isLoading}
-      size="2xl" // Tamanho ajustado para melhor layout
-      className="max-h-[90vh] overflow-y-auto"
-      showCloseButton={false}
-      primaryAction={{
-        label: isLoading ? "Salvando..." : "Salvar",
-        icon: isLoading ? undefined : Save,
-        onClick: form.handleSubmit(handleFormSubmit),
-        disabled: isLoading,
-        loading: isLoading
-      }}
-      secondaryAction={{
-        label: "Cancelar",
-        icon: X,
-        onClick: handleClose,
-        disabled: isLoading
-      }}
-    >
+    <>
+      <EnhancedBaseModal
+        isOpen={isOpen}
+        onClose={handleClose}
+        modalType="edit"
+        title="Editar Produto"
+        subtitle={`Edite rapidamente "${product.name}"`}
+        customIcon={Edit}
+        loading={isLoading}
+        size="2xl" // Tamanho ajustado para melhor layout
+        className="max-h-[90vh] overflow-y-auto"
+        showCloseButton={false}
+        primaryAction={{
+          label: isLoading ? "Salvando..." : "Salvar",
+          icon: isLoading ? undefined : Save,
+          onClick: form.handleSubmit(handleFormSubmit),
+          disabled: isLoading,
+          loading: isLoading
+        }}
+        secondaryAction={{
+          label: "Cancelar",
+          icon: X,
+          onClick: handleClose,
+          disabled: isLoading
+        }}
+        additionalActions={[
+          {
+            label: "Excluir",
+            icon: Trash2,
+            variant: "danger" as const,
+            onClick: () => setIsDeleteModalOpen(true),
+            disabled: isLoading
+          }
+        ]}
+      >
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
           {/* Hidden submit button for form submission */}
@@ -809,6 +822,20 @@ export const SimpleEditProductModal: React.FC<SimpleEditProductModalProps> = ({
         </form>
       </Form>
     </EnhancedBaseModal>
+
+      {/* Modal de Confirmação de Exclusão */}
+      <DeleteProductModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        productId={product.id}
+        productName={product.name}
+        onSuccess={() => {
+          setIsDeleteModalOpen(false);
+          handleClose();
+          onSuccess?.();
+        }}
+      />
+    </>
   );
 };
 

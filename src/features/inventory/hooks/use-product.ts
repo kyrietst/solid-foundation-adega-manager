@@ -16,6 +16,7 @@ export function useProduct(productId?: string | null) {
       .from('products')
       .select('*')
       .eq('id', productId)
+      .is('deleted_at', null)
       .single();
     if (error) throw error;
     return data;
@@ -57,6 +58,7 @@ export function useProductByBarcode(barcode?: string | null) {
       .from('products')
       .select('*')
       .eq('barcode', barcode)
+      .is('deleted_at', null)
       .single();
 
     if (error) {
