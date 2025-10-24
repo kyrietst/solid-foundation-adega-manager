@@ -432,6 +432,7 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
       title="Ajustar Estoque"
       subtitle={`${product.name} - Contagem Física`}
       size="5xl"
+      className="max-h-[90vh] overflow-y-auto"
       customIcon={ClipboardList}
       loading={adjustStockMutation.isPending}
       primaryAction={{
