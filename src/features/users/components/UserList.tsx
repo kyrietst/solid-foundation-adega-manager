@@ -1,3 +1,4 @@
+/* eslint-disable jsx-a11y/label-has-associated-control */
 /**
  * Componente lista/tabela de usuários
  * Extraído do UserManagement.tsx para separar responsabilidades

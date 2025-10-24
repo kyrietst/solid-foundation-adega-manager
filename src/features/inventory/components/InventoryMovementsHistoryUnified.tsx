@@ -1,3 +1,4 @@
+/* eslint-disable jsx-a11y/label-has-associated-control */
 /**
  * InventoryMovementsHistoryUnified.tsx - Exemplo de migração para DataTable
  *

@@ -230,10 +230,10 @@ export interface FilterFunctions<T = unknown> {
   filteredCount: number;
 }
 
-// Context7 Pattern: Enhanced generic hook with unknown extends for TSX compatibility
-export function useAdvancedFilters<T extends unknown>(
+// Context7 Pattern: Enhanced generic hook for TSX compatibility
+export function useAdvancedFilters<T>(
   data: T[],
-  configs: FilterConfig[],
+  configs: FilterConfig<unknown>[],
   options: {
     persistKey?: string;
     customFilterFn?: (item: T, filters: FilterState) => boolean;
@@ -425,10 +425,11 @@ export function useAdvancedFilters<T extends unknown>(
           }
           return true;
 
-        case 'date':
+        case 'date': {
           const itemDate = new Date(itemValue);
           const filterDate = new Date(filterValue as Date);
           return itemDate.toDateString() === filterDate.toDateString();
+        }
 
         case 'daterange':
           if (Array.isArray(filterValue) && filterValue.length === 2) {

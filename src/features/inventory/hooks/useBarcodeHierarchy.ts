@@ -163,7 +163,7 @@ export const useBarcodeHierarchy = () => {
         }
         break;
         
-      default:
+      default: {
         // Para outros formatos, simplesmente incrementar último dígito
         const lastChar = packageBarcode[packageBarcode.length - 1];
         if (/\d/.test(lastChar)) {
@@ -172,6 +172,7 @@ export const useBarcodeHierarchy = () => {
           return packageBarcode.substring(0, packageBarcode.length - 1) + newDigit;
         }
         break;
+      }
     }
 
     return null;

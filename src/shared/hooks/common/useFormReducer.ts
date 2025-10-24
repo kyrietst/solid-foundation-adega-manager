@@ -60,7 +60,7 @@ interface UseFormReducerOptions<T> {
 // Reducer function
 function formReducer<T>(state: FormState<T>, action: FormAction<T>): FormState<T> {
   switch (action.type) {
-    case 'SET_FIELD':
+    case 'SET_FIELD': {
       const newData = {
         ...state.data,
         [action.payload.field]: action.payload.value,
@@ -74,6 +74,7 @@ function formReducer<T>(state: FormState<T>, action: FormAction<T>): FormState<T
           [action.payload.field as string]: '', // Limpar erro do campo
         },
       };
+    }
 
     case 'SET_MULTIPLE_FIELDS':
       return {
@@ -98,7 +99,7 @@ function formReducer<T>(state: FormState<T>, action: FormAction<T>): FormState<T
         },
       };
 
-    case 'TOUCH_MULTIPLE_FIELDS':
+    case 'TOUCH_MULTIPLE_FIELDS': {
       const newTouched = { ...state.touched };
       action.payload.forEach(field => {
         newTouched[field as string] = true;
@@ -107,6 +108,7 @@ function formReducer<T>(state: FormState<T>, action: FormAction<T>): FormState<T
         ...state,
         touched: newTouched,
       };
+    }
 
     case 'SET_SUBMITTING':
       return {
@@ -138,7 +140,7 @@ function formReducer<T>(state: FormState<T>, action: FormAction<T>): FormState<T
         step: Math.max(0, state.step - 1),
       };
 
-    case 'SAVE_TO_HISTORY':
+    case 'SAVE_TO_HISTORY': {
       const newHistory = [
         ...state.history.slice(0, state.historyIndex + 1),
         { ...state.data },
@@ -148,6 +150,7 @@ function formReducer<T>(state: FormState<T>, action: FormAction<T>): FormState<T
         history: newHistory.slice(-10), // Limitar histórico
         historyIndex: Math.min(newHistory.length - 1, 9),
       };
+    }
 
     case 'UNDO':
       if (state.historyIndex > 0) {
@@ -173,7 +176,7 @@ function formReducer<T>(state: FormState<T>, action: FormAction<T>): FormState<T
       }
       return state;
 
-    case 'RESET_FORM':
+    case 'RESET_FORM': {
       const resetData = action.payload || state.history[0] || state.data;
       return {
         ...state,
@@ -185,6 +188,7 @@ function formReducer<T>(state: FormState<T>, action: FormAction<T>): FormState<T
         isDirty: false,
         step: 0,
       };
+    }
 
     default:
       return state;

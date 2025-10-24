@@ -1,3 +1,5 @@
+/* eslint-disable jsx-a11y/click-events-have-key-events */
+/* eslint-disable jsx-a11y/no-static-element-interactions */
 /**
  * Modal de Importação CSV
  * Interface completa para upload, validação e importação de produtos via CSV

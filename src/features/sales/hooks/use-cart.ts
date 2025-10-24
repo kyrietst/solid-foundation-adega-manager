@@ -8,10 +8,8 @@ import type {
   VariantType
 } from '@/core/types/variants.types';
 
-// Interface do item do carrinho atualizada para variantes
-interface CartItem extends CartItemWithVariant {
-  // Herda todos os campos de CartItemWithVariant
-}
+// Type alias para item do carrinho (herda todos os campos de CartItemWithVariant)
+type CartItem = CartItemWithVariant;
 
 interface CartState {
   items: CartItem[];

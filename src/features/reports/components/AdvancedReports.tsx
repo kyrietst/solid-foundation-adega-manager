@@ -73,7 +73,7 @@ export const AdvancedReports: React.FC = () => {
       let filename = '';
 
       switch (reportType) {
-        case 'vendas':
+        case 'vendas': {
           const { data: salesData } = await supabase
             .from('sales')
             .select(`
@@ -88,29 +88,33 @@ export const AdvancedReports: React.FC = () => {
           data = salesData || [];
           filename = 'vendas.csv';
           break;
+        }
 
-        case 'produtos':
+        case 'produtos': {
           const { data: productsData } = await supabase
             .from('products')
             .select('*');
           data = productsData || [];
           filename = 'produtos.csv';
           break;
+        }
 
-        case 'clientes':
+        case 'clientes': {
           const { data: customersData } = await supabase
             .from('customers')
             .select('*');
           data = customersData || [];
           filename = 'clientes.csv';
           break;
+        }
 
-        case 'estoque':
+        case 'estoque': {
           const { data: inventoryData } = await supabase
             .rpc('get_inventory_kpis', { window_days: 90 });
           data = inventoryData || [];
           filename = 'estoque.csv';
           break;
+        }
 
         default:
           throw new Error('Tipo de relatório não suportado');

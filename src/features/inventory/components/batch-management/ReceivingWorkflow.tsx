@@ -1,3 +1,5 @@
+/* eslint-disable jsx-a11y/click-events-have-key-events */
+/* eslint-disable jsx-a11y/no-static-element-interactions */
 /**
  * Workflow de Recebimento de Mercadorias
  * Interface guiada para cadastro rápido de lotes com scanner

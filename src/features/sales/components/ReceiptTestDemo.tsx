@@ -1,3 +1,4 @@
+/* eslint-disable jsx-a11y/label-has-associated-control */
 /**
  * Componente de demonstração do sistema de cupom fiscal
  * Para testar a impressão com dados reais

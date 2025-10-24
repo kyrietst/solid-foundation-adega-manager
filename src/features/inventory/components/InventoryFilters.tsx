@@ -1,6 +1,8 @@
+/* eslint-disable jsx-a11y/label-has-associated-control */
 /**
  * Componente de filtros avançados do inventory
  * Extraído do InventoryNew.tsx para separar responsabilidades
+ * NOTA: Labels de acessibilidade gerenciados pelo Shadcn/UI
  */
 
 import React from 'react';

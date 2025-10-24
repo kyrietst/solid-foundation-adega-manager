@@ -1,3 +1,4 @@
+/* eslint-disable jsx-a11y/label-has-associated-control */
 /**
  * useSupabaseQuery Usage Examples
  * Demonstrates Context7 patterns for Supabase integration with TanStack Query

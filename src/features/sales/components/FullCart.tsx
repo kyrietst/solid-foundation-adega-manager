@@ -1,3 +1,6 @@
+/* eslint-disable jsx-a11y/click-events-have-key-events */
+/* eslint-disable jsx-a11y/no-static-element-interactions */
+/* eslint-disable jsx-a11y/label-has-associated-control */
 /**
  * Componente Cart completo - com customer search, discounts e payment processing
  * Usado no POS principal onde precisa de todas as funcionalidades

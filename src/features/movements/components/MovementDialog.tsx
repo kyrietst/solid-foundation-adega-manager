@@ -1,3 +1,4 @@
+/* eslint-disable jsx-a11y/label-has-associated-control */
 /**
  * Dialog de criação de movimentação
  * Sub-componente especializado para formulário

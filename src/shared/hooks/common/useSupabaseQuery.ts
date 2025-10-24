@@ -65,8 +65,8 @@ export interface SupabaseMutationConfig<TData, TVariables> {
   invalidateQueries?: string[][];
 }
 
-// Context7 Pattern: Generic hook with unknown extends for TSX compatibility
-export function useSupabaseQuery<T extends unknown>(
+// Context7 Pattern: Generic hook for TSX compatibility
+export function useSupabaseQuery<T>(
   config: SupabaseQueryConfig<T>,
   options?: Omit<UseQueryOptions<T[], SupabaseQueryError>, 'queryKey' | 'queryFn' | 'select'>
 ) {
@@ -159,7 +159,7 @@ export function useSupabaseQuery<T extends unknown>(
 }
 
 // Context7 Pattern: Generic mutation hook
-export function useSupabaseMutation<TData extends unknown, TVariables = void>(
+export function useSupabaseMutation<TData, TVariables = void>(
   config: SupabaseMutationConfig<TData, TVariables>,
   options?: Omit<UseMutationOptions<TData, SupabaseMutationError, TVariables>, 'mutationFn' | 'onSuccess' | 'onError'>
 ) {

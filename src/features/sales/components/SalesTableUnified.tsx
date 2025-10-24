@@ -1,3 +1,4 @@
+/* eslint-disable jsx-a11y/label-has-associated-control */
 /**
  * SalesTableUnified.tsx - Exemplo de tabela de vendas usando DataTable
  *

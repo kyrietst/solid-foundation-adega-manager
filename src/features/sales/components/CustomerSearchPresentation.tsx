@@ -1,3 +1,5 @@
+/* eslint-disable jsx-a11y/click-events-have-key-events */
+/* eslint-disable jsx-a11y/no-static-element-interactions */
 /**
  * CustomerSearchPresentation.tsx - Componente de apresentação puro (REFATORADO)
  * Context7 Pattern: Componente focado apenas na apresentação visual

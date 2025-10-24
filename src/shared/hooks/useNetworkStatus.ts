@@ -74,7 +74,7 @@ export const useNetworkStatusOLD = (config: NetworkConfig = {}) => {
 
   // Obter informações de conexão detalhadas
   const getConnectionInfo = useCallback((): Partial<NetworkStatus> => {
-    // @ts-ignore - navigator.connection pode não estar disponível em todos os browsers
+    // @ts-expect-error - navigator.connection pode não estar disponível em todos os browsers
     const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
     
     if (!connection) {
@@ -188,8 +188,8 @@ export const useNetworkStatusOLD = (config: NetworkConfig = {}) => {
     // Event listeners
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
-    
-    // @ts-ignore - navigator.connection pode não estar disponível
+
+    // @ts-expect-error - navigator.connection pode não estar disponível
     const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
     if (connection) {
       connection.addEventListener('change', handleConnectionChange);
