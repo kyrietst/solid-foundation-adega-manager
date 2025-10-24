@@ -435,6 +435,7 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
       className="max-h-[90vh] overflow-y-auto"
       customIcon={ClipboardList}
       loading={adjustStockMutation.isPending}
+      showCloseButton={false}
       primaryAction={{
         label: adjustStockMutation.isPending ? "Ajustando..." : "Confirmar Ajuste",
         icon: adjustStockMutation.isPending ? Loader2 : CheckCircle,
