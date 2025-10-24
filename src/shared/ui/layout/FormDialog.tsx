@@ -160,8 +160,8 @@ export const FormDialog: React.FC<FormDialogProps> = ({
       )}
       <AnimatePresence mode="wait">
         {open && (
-          <DialogContent 
-            className="bg-black/95 backdrop-blur-sm border border-white/10"
+          <DialogContent
+            className={cn("bg-black/95 backdrop-blur-sm border border-white/10", dialogClasses)}
             onInteractOutside={(e) => {
               if (!closeOnClickOutside || (preventClose && loading)) {
                 e.preventDefault();

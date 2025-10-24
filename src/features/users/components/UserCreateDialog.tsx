@@ -58,8 +58,8 @@ export const UserCreateDialog: React.FC<UserCreateDialogProps> = ({
       onClose={handleCancel}
       title="Criar Novo Usuário"
       description="Preencha as informações abaixo para criar um novo usuário no sistema."
-      size="md"
-      className="shadow-2xl"
+      size="xl"
+      className="max-h-[90vh] overflow-y-auto shadow-2xl"
     >
       <div className="text-accent-gold-100 or bg-accent-gold-100"></div>
 

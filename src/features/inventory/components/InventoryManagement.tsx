@@ -79,11 +79,6 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
   // Verificar se usuário é admin - aguardar carregamento do profile
   const isAdmin = !loading && userRole === 'admin';
 
-  // DEBUG: Verificar role do usuário
-  console.log('[InventoryManagement] Loading:', loading);
-  console.log('[InventoryManagement] User Role:', userRole);
-  console.log('[InventoryManagement] isAdmin:', isAdmin);
-
 
   const handleAddProduct = () => {
     setIsAddProductOpen(true);

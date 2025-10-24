@@ -80,9 +80,10 @@ export const MovementsPresentation: React.FC<MovementsPresentationProps> = ({
             submitLabel="Salvar Movimentação"
             cancelLabel="Cancelar"
             loading={isCreating}
-            size="lg"
+            size="xl"
             variant="premium"
             glassEffect={true}
+            className="max-h-[90vh] overflow-y-auto"
             trigger={
               <Button
                 className="bg-gradient-to-r from-primary-yellow to-yellow-500 text-black hover:from-yellow-300 hover:to-yellow-400 font-semibold shadow-lg hover:shadow-yellow-400/30 transition-all duration-200 hover:scale-105"
