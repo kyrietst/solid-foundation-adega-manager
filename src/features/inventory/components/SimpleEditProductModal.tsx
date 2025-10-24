@@ -362,6 +362,7 @@ export const SimpleEditProductModal: React.FC<SimpleEditProductModalProps> = ({
       loading={isLoading}
       size="2xl" // Tamanho ajustado para melhor layout
       className="max-h-[90vh] overflow-y-auto"
+      showCloseButton={false}
       primaryAction={{
         label: isLoading ? "Salvando..." : "Salvar",
         icon: isLoading ? undefined : Save,
