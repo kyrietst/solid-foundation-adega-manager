@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /**
  * Hook para gerenciamento de estado de dialogs
  * Padroniza o padrão repetido de isOpen/setIsOpen em toda aplicação

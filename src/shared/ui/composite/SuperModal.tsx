@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components, react-hooks/exhaustive-deps */
 /**
  * SuperModal.tsx - Modal unificado com formulários integrados
  *

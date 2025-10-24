@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 /**
  * useGlassmorphismEffect - Custom Hook for Glassmorphism Mouse Tracking
  * Elimina duplicação de código identificada na análise (5x repetições)

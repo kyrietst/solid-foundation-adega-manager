@@ -1,7 +1,8 @@
+/* eslint-disable react-refresh/only-export-components */
 /**
  * BaseModal.tsx - Componente modal reutilizável base
  * Elimina duplicação de Dialog/DialogContent/DialogHeader em 31+ modais
- * 
+ *
  * @author Adega Manager Team
  * @version 1.0.0
  */

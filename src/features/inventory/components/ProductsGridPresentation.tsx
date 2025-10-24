@@ -159,7 +159,6 @@ export const ProductsGridPresentation: React.FC<ProductsGridPresentationProps> =
             <BarcodeInput
               onScan={onBarcodeScanned}
               placeholder="Escaneie o código para adicionar ao carrinho"
-              autoFocus={false}
             />
           </div>
           

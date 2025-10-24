@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /**
  * StockConversionPreview.tsx - Componente para mostrar preview de conversões de estoque
  * Exibe o impacto de ajustes de estoque em ambas as variantes

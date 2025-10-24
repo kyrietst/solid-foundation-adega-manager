@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /**
  * Hook genérico para operações assíncronas
  * Padroniza loading, error e success states

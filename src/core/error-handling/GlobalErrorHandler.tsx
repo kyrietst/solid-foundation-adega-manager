@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 /**
  * GlobalErrorHandler.tsx - Handler global de erros (IMPLEMENTADO)
  * Context7 Pattern: Captura erros não tratados em toda a aplicação

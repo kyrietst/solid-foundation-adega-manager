@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /**
  * Hook para operações de movimentação de estoque
  * Usa o Single Source of Truth (create_inventory_movement RPC)

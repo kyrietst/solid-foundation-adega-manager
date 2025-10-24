@@ -213,7 +213,6 @@ export const ReceivingWorkflow: React.FC = () => {
                     <BarcodeInput
                       onScan={handleProductScanned}
                       placeholder="Escaneie o código do produto..."
-                      autoFocus={true}
                       variant="default"
                       glassEffect={true}
                     />

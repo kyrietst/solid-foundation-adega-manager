@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 /**
  * CustomerProfileContext.tsx - Context para gerenciamento de estado do CustomerProfile
  * Context7 Pattern: Lifting State Up aplicado

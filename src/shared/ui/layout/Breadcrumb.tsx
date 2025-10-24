@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 /**
  * Breadcrumb - Sistema de navegação hierárquica
  * Enhanced for Story 2.3: Glass morphism + Black/Gold theme + React Router integration

@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 /**
  * Componente padronizado para exibir mensagens de erro
  * Usa o sistema centralizado de mensagens

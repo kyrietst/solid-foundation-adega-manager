@@ -126,7 +126,6 @@ export const BarcodeHierarchySection: React.FC<BarcodeHierarchySectionProps> = (
                   <BarcodeInput
                     onScan={(code) => handleBarcodeScanned(code, 'package')}
                     placeholder="Escaneie o código do fardo..."
-                    autoFocus={true}
                     variant="default"
                     glassEffect={true}
                   />
@@ -208,7 +207,6 @@ export const BarcodeHierarchySection: React.FC<BarcodeHierarchySectionProps> = (
                   <BarcodeInput
                     onScan={(code) => handleBarcodeScanned(code, 'unit')}
                     placeholder="Escaneie o código da unidade..."
-                    autoFocus={true}
                     variant="default"
                     glassEffect={true}
                   />

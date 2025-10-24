@@ -74,7 +74,6 @@ export function DeleteSaleModal({
                   placeholder={`Digite ${saleOrderNumber} para confirmar`}
                   className="bg-black/50 border-red-500/30 text-white placeholder:text-gray-500 focus:border-red-400"
                   disabled={isDeleting}
-                  autoFocus
                 />
                 {confirmationInput && confirmationInput !== saleOrderNumber.toString() && (
                   <p className="text-xs text-red-400">

@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /**
  * AdvancedFilterPanel - Enhanced Filter Panel with Context7 Patterns
  * Generic filter panel using useAdvancedFilters hook

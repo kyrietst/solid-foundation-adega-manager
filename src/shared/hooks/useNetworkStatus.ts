@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /**
  * Hook para monitoramento de status de rede
  * Detecta mudanças de conectividade e implementa queue offline

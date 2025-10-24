@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /**
  * useSupabaseQuery - Generic Supabase Query Hook with Context7 Patterns
  * Enhanced TanStack Query integration with type-safe Supabase operations

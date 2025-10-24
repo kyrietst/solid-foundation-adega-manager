@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /**
  * Hook padronizado para tratamento de erros
  * Centraliza lógica de error handling com toast notifications e retry

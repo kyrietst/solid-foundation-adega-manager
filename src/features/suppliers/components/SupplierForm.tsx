@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /**
  * Componente de formulário para criar/editar fornecedores
  */

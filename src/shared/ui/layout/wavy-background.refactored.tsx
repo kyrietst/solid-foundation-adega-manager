@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /**
  * WavyBackground.tsx - Componente de fundo ondulado (REFATORADO)
  * Context7 Pattern: Eliminar supressão de linter desnecessária

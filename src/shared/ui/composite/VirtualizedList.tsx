@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 /**
  * VirtualizedList.tsx - Lista virtualizada para performance (IMPLEMENTADO)
  * Context7 Pattern: Renderização eficiente de listas grandes

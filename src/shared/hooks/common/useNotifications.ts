@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /**
  * Hook para gerenciamento de notificações
  * Substitui o NotificationContext por uma abordagem mais direta

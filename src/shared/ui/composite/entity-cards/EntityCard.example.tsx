@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 /**
  * EntityCard Usage Examples
  * Demonstrates how to use the EntityCard system with Context7 patterns

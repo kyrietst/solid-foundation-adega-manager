@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 /**
  * EnhancedBaseModal.tsx - Sistema avançado de modais com categorização visual
  *

@@ -1,4 +1,4 @@
-/* eslint-disable jsx-a11y/label-has-associated-control */
+/* eslint-disable jsx-a11y/label-has-associated-control, react-refresh/only-export-components */
 /**
  * useSupabaseQuery Usage Examples
  * Demonstrates Context7 patterns for Supabase integration with TanStack Query

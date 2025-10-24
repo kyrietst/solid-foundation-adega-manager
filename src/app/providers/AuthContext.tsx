@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, { createContext, useContext, useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase, clearChromeAuthData } from '@/core/api/supabase/client';

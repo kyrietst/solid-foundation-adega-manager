@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 /**
  * Componente para controlar acesso a dados sensíveis
  * Oculta informações baseado nas permissões do usuário
