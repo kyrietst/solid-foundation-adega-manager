@@ -29,8 +29,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
 import { useToast } from '@/shared/hooks/common/use-toast';
 import { useAuth } from '@/app/providers/AuthContext';
-import type { Product } from '@/core/types/inventory.types';
+import type { Product, StoreLocation } from '@/core/types/inventory.types';
 import { getSaoPauloTimestamp } from '@/shared/hooks/common/use-brasil-timezone';
+import { getStoreStock } from '../hooks/useStoreInventory';
 
 // Schema de validação para o formulário
 const stockAdjustmentSchema = z.object({
@@ -46,13 +47,15 @@ interface StockAdjustmentModalProps {
   onClose: () => void;
   productId: string;
   onSuccess?: () => void;
+  storeFilter?: StoreLocation; // 🏪 v3.4.0 - Qual loja está sendo ajustada
 }
 
 export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
   isOpen,
   onClose,
   productId,
-  onSuccess
+  onSuccess,
+  storeFilter // 🏪 v3.4.0 - Filtro de loja
 }) => {
   // Log de diagnóstico para verificar renderização
   React.useEffect(() => {
@@ -134,10 +137,16 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
   // Configurar valores iniciais quando o produto for carregado
   React.useEffect(() => {
     if (product) {
-      setValue('newPackages', product.stock_packages || 0);
-      setValue('newUnitsLoose', product.stock_units_loose || 0);
+      // 🏪 v3.4.0 - Ler do estoque correto baseado na loja selecionada
+      const storeStock = storeFilter ? getStoreStock(product, storeFilter) : {
+        packages: product.stock_packages || 0,
+        units: product.stock_units_loose || 0
+      };
+
+      setValue('newPackages', storeStock.packages);
+      setValue('newUnitsLoose', storeStock.units);
     }
-  }, [product, setValue]);
+  }, [product, storeFilter, setValue]);
 
   // Mutation para ajuste de estoque usando estado absoluto
   const adjustStockMutation = useMutation({
@@ -224,16 +233,23 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
         throw new Error('Motivo deve ter pelo menos 3 caracteres');
       }
 
-      // 🚀 CHAMAR RPC COM TODOS OS 5 PARÂMETROS OBRIGATÓRIOS
-      console.log('🚀 EXECUTANDO RPC set_product_stock_absolute com parâmetros validados...');
+      // 🚀 CHAMAR RPC MULTISTORE COM PARÂMETRO DE LOJA
+      // 🏪 v3.4.2 - Usar função multistore com p_store
+      const storeNumber = storeFilter === 'store1' ? 1 : storeFilter === 'store2' ? 2 : null;
+
+      console.log('🚀 EXECUTANDO RPC set_product_stock_absolute_multistore com parâmetros validados...', {
+        store: storeFilter,
+        storeNumber
+      });
 
       const { data: result, error } = await supabase
-        .rpc('set_product_stock_absolute', {
+        .rpc('set_product_stock_absolute_multistore', {
           p_product_id: productId,
           p_new_packages: newPackages,
           p_new_units_loose: newUnitsLoose,
           p_reason: reason,
-          p_user_id: user.id
+          p_user_id: user.id,
+          p_store: storeNumber // 🏪 1 = Loja 1, 2 = Loja 2, null = legacy
         });
 
       if (error) {
@@ -279,6 +295,12 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
         queryClient.invalidateQueries({ queryKey: ['product', productId] }),
         queryClient.invalidateQueries({ queryKey: ['product-dual-stock', productId] }),
         queryClient.invalidateQueries({ queryKey: ['product-ssot', productId] }),
+
+        // 🏪 v3.4.2 - Multi-store queries
+        queryClient.invalidateQueries({ queryKey: ['products', 'store'] }),
+        queryClient.invalidateQueries({ queryKey: ['products', 'store', 'store1'] }),
+        queryClient.invalidateQueries({ queryKey: ['products', 'store', 'store2'] }),
+        queryClient.invalidateQueries({ queryKey: ['products', 'store-counts'] }),
 
         // SSoT product queries
         queryClient.invalidateQueries({ queryKey: ['products-ssot'] }),
@@ -343,8 +365,14 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
   const calculations = useMemo(() => {
     if (!product) return null;
 
-    const currentPackages = Number(product.stock_packages || 0);
-    const currentUnitsLoose = Number(product.stock_units_loose || 0);
+    // 🏪 v3.4.0 - Ler do estoque correto baseado na loja selecionada
+    const storeStock = storeFilter ? getStoreStock(product, storeFilter) : {
+      packages: product.stock_packages || 0,
+      units: product.stock_units_loose || 0
+    };
+
+    const currentPackages = Number(storeStock.packages);
+    const currentUnitsLoose = Number(storeStock.units);
     const newPackages = Number(watchedValues.newPackages || 0);
     const newUnitsLoose = Number(watchedValues.newUnitsLoose || 0);
 
@@ -365,7 +393,7 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
       unitsLooseChange,
       hasChanges: newPackages !== currentPackages || newUnitsLoose !== currentUnitsLoose
     };
-  }, [product, watchedValues]);
+  }, [product, storeFilter, watchedValues]);
 
   const handleClose = () => {
     reset();
@@ -564,7 +592,7 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
                 <div className="text-center">
                   <div className="text-sm text-gray-400 mb-1">Pacotes</div>
                   <div className="flex items-center justify-center gap-2">
-                    <span className="text-gray-300">{product.stock_packages || 0}</span>
+                    <span className="text-gray-300">{calculations.currentPackages || 0}</span>
                     <span className="text-gray-500">→</span>
                     <span className="text-blue-400 font-semibold">{watchedValues.newPackages || 0}</span>
                     <span className={cn(
@@ -583,7 +611,7 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
                 <div className="text-center">
                   <div className="text-sm text-gray-400 mb-1">Unidades Soltas</div>
                   <div className="flex items-center justify-center gap-2">
-                    <span className="text-gray-300">{product.stock_units_loose || 0}</span>
+                    <span className="text-gray-300">{calculations.currentUnitsLoose || 0}</span>
                     <span className="text-gray-500">→</span>
                     <span className="text-green-400 font-semibold">{watchedValues.newUnitsLoose || 0}</span>
                     <span className={cn(

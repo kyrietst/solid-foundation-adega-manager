@@ -61,10 +61,10 @@ export function useProductSSoT(productId: string) {
       if (error) throw error;
       if (!product) return null;
 
-      // ✅ ULTRA-SIMPLIFICAÇÃO: Usar apenas campos diretos (SEM SOMA)
-      const stockPackages = product.stock_packages || 0;
-      const stockUnitsLoose = product.stock_units_loose || 0;
-      // ✅ CORREÇÃO: Não somar tipos diferentes de estoque
+      // 🏪 v3.4.2 - Usar estoque da LOJA 1 (vendas sempre da Loja 1)
+      const stockPackages = product.store1_stock_packages || 0;
+      const stockUnitsLoose = product.store1_stock_units_loose || 0;
+      // ✅ CORREÇÃO: Ler apenas da Loja 1 (fonte de vendas)
 
       // ✅ ESPELHO DA PRATELEIRA: O que você vê é o que tem (SEPARADAMENTE)
       const stockDisplay = {

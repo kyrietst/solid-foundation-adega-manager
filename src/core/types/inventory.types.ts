@@ -14,6 +14,8 @@ import type {
 
 export type UnitType = 'un' | 'pct';
 export type TurnoverRate = 'fast' | 'medium' | 'slow';
+export type StoreLocation = 'store1' | 'store2';
+export type StoreNumber = 1 | 2;
 
 export interface Product {
   id: string;
@@ -69,6 +71,12 @@ export interface Product {
   stock_units_loose: NonNegativeInteger; // Quantidade de unidades soltas em estoque
 
   // NOTA: stock_quantity é DEPRECATED - usar apenas os 2 campos acima
+
+  // 🏪 CAMPOS DO SISTEMA MULTI-STORE (v3.4.0)
+  store1_stock_packages: NonNegativeInteger; // Pacotes em estoque na Loja 1
+  store1_stock_units_loose: NonNegativeInteger; // Unidades soltas na Loja 1
+  store2_stock_packages: NonNegativeInteger; // Pacotes em estoque na Loja 2
+  store2_stock_units_loose: NonNegativeInteger; // Unidades soltas na Loja 2
 }
 
 export interface ProductFormData {
@@ -231,7 +239,7 @@ export interface InventoryMovement {
   date: string;
   created_at: string;
   updated_at: string;
-  
+
   // Relacionamentos opcionais (quando fazemos JOIN)
   product?: {
     name: string;
@@ -245,4 +253,38 @@ export interface InventoryMovement {
   user?: {
     name: string;
   };
+}
+
+// 🏪 Interface para transferências entre lojas (v3.4.0)
+export interface StoreTransfer {
+  id: string;
+  product_id: string;
+  from_store: StoreNumber;
+  to_store: StoreNumber;
+  packages: NonNegativeInteger;
+  units_loose: NonNegativeInteger;
+  user_id: string;
+  notes?: string;
+  created_at: string;
+
+  // Relacionamentos opcionais (quando fazemos JOIN)
+  product?: {
+    name: string;
+    category: string;
+    unit_type: UnitType;
+  };
+  user?: {
+    name: string;
+    email?: string;
+  };
+}
+
+// Interface para input de transferência
+export interface StoreTransferInput {
+  product_id: string;
+  from_store: StoreNumber;
+  to_store: StoreNumber;
+  packages: number;
+  units_loose: number;
+  notes?: string;
 }

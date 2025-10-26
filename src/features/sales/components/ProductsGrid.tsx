@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import type { Product } from '@/types/inventory.types';
+import type { Product, StoreLocation } from '@/types/inventory.types';
 import { ProductsGridContainer } from '../../inventory/components/ProductsGridContainer';
 
 export interface ProductsGridProps {
@@ -14,6 +14,7 @@ export interface ProductsGridProps {
   initialCategory?: string;
   onProductSelect?: (product: Product) => void;
   mode?: 'sales' | 'inventory';
+  storeFilter?: StoreLocation; // 🏪 v3.4.2 - Filtrar produtos por loja
   gridColumns?: {
     mobile: number;
     tablet: number;

@@ -197,6 +197,7 @@ function SalesPage({
                   <div className="flex-1 min-h-0 overflow-hidden">
                     <ProductsGrid
                       mode="sales"
+                      storeFilter="store1" // 🏪 v3.4.2 - Mostrar apenas estoque Loja 1
                       variant={variant}
                       glassEffect={glassEffect}
                       showHeader={false}
@@ -226,6 +227,7 @@ function SalesPage({
                 <div className="flex-1 min-h-0 overflow-hidden">
                   <ProductsGrid
                     mode="sales"
+                    storeFilter="store1" // 🏪 v3.4.2 - Mostrar apenas estoque Loja 1
                     variant={variant}
                     glassEffect={glassEffect}
                     showHeader={false}

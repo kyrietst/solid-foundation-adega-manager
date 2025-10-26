@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import type { Product } from '@/types/inventory.types';
+import type { Product, StoreLocation } from '@/types/inventory.types';
 import { useProductsGridLogic, ProductsGridConfig } from '@/shared/hooks/products/useProductsGridLogic';
 import { ProductsGridPresentation } from './ProductsGridPresentation';
 import { ProductSelectionModal } from '@/features/sales/components/ProductSelectionModal';
@@ -13,10 +13,12 @@ export interface ProductsGridContainerProps extends ProductsGridConfig {
   showAddButton?: boolean;
   showHeader?: boolean;
   mode?: 'sales' | 'inventory';
+  storeFilter?: StoreLocation; // 🏪 Nova prop para filtrar por loja
   onAddProduct?: () => void;
   onViewDetails?: (product: Product) => void;
   onEdit?: (product: Product) => void;
   onAdjustStock?: (product: Product) => void;
+  onTransfer?: (product: Product) => void; // 🏪 v3.4.0 - Transferência entre lojas
   variant?: 'default' | 'premium' | 'success' | 'warning' | 'error';
   glassEffect?: boolean;
 }
@@ -25,10 +27,12 @@ export const ProductsGridContainer: React.FC<ProductsGridContainerProps> = ({
   showAddButton,
   showHeader = true,
   mode = 'sales',
+  storeFilter, // 🏪 Filtro de loja
   onAddProduct,
   onViewDetails,
   onEdit,
   onAdjustStock,
+  onTransfer, // 🏪 v3.4.0
   variant = 'default',
   glassEffect = true,
   ...config
@@ -80,7 +84,7 @@ export const ProductsGridContainer: React.FC<ProductsGridContainerProps> = ({
     openProductSelection,
     closeProductSelection,
     handleProductSelectionConfirm,
-  } = useProductsGridLogic(config);
+  } = useProductsGridLogic({ ...config, storeFilter });
 
   // Preparar props para apresentação
   const presentationProps = {
@@ -130,6 +134,8 @@ export const ProductsGridContainer: React.FC<ProductsGridContainerProps> = ({
     onViewDetails,
     onEdit,
     onAdjustStock,
+    onTransfer, // 🏪 v3.4.0
+    storeFilter, // 🏪 v3.4.0
   };
 
   return (

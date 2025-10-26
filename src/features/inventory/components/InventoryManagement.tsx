@@ -13,7 +13,7 @@ import { ProductsGridContainer } from './ProductsGridContainer';
 import { ProductsTitle, ProductsHeader } from './ProductsHeader';
 import { useProductsGridLogic } from '@/shared/hooks/products/useProductsGridLogic';
 import { Button } from '@/shared/ui/primitives/button';
-import { Trash2, Package } from 'lucide-react';
+import { Trash2, Package, Store } from 'lucide-react';
 // Imports dos modais refatorados - Força HMR refresh para carregar logs de diagnóstico
 import { NewProductModal } from './NewProductModal';
 import { SimpleProductViewModal } from './SimpleProductViewModal'; // Modal simplificado v2.0
@@ -24,7 +24,9 @@ import { DeletedProductsGrid } from './DeletedProductsGrid';
 import { useDeletedProducts } from '../hooks/useDeletedProducts';
 import useProductDelete from '../hooks/useProductDelete';
 import { useAuth } from '@/app/providers/AuthContext';
-import type { ProductFormData } from '@/core/types/inventory.types';
+import { useStoreProductCounts } from '../hooks/useStoreInventory';
+import { StoreTransferModal } from './StoreTransferModal';
+import type { ProductFormData, StoreLocation } from '@/core/types/inventory.types';
 
 // Interface simplificada para edição de produtos (v2.0)
 interface SimpleEditProductFormData {
@@ -64,6 +66,8 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isStockAdjustmentOpen, setIsStockAdjustmentOpen] = useState(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [isTransferModalOpen, setIsTransferModalOpen] = useState(false); // Nova: controla modal de transferência
+  const [storeView, setStoreView] = useState<StoreLocation>('store1'); // Nova: controla qual loja está selecionada
   const [viewMode, setViewMode] = useState<'active' | 'deleted'>('active');
   const [restoringProductId, setRestoringProductId] = useState<string | null>(null);
 
@@ -75,6 +79,9 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
   // Hook para produtos deletados
   const { data: deletedProducts = [], isLoading: isLoadingDeleted } = useDeletedProducts();
   const { restore } = useProductDelete();
+
+  // Hook para contar produtos por loja
+  const { data: storeCounts = { store1: 0, store2: 0 } } = useStoreProductCounts();
 
   // Verificar se usuário é admin - aguardar carregamento do profile
   const isAdmin = !loading && userRole === 'admin';
@@ -144,6 +151,11 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
   const handleViewHistory = (product: Product) => {
     setSelectedProduct(product);
     setIsHistoryModalOpen(true);
+  };
+
+  const handleTransferProduct = (product: Product) => {
+    setSelectedProduct(product);
+    setIsTransferModalOpen(true);
   };
 
   // REMOVIDO: Mutação antiga substituída pelo novo StockAdjustmentModal
@@ -428,8 +440,43 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
         className="flex-1 min-h-0 bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg hero-spotlight p-4 flex flex-col hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300"
         onMouseMove={handleMouseMove}
       >
-        {/* Tab Switcher - Apenas para admins */}
-        {isAdmin && (
+        {/* Tabs de Lojas - Sempre visíveis */}
+        <div className="flex gap-2 mb-4 pb-4 border-b border-white/10">
+          <Button
+            variant={storeView === 'store1' ? 'default' : 'outline'}
+            onClick={() => {
+              setStoreView('store1');
+              setViewMode('active'); // Reset para active ao mudar de loja
+            }}
+            className="flex items-center gap-2"
+            size="sm"
+          >
+            <Store className="h-4 w-4" />
+            Loja 1
+            <span className="ml-1 px-2 py-0.5 bg-blue-500/20 text-blue-400 rounded-full text-xs font-bold">
+              {storeCounts.store1}
+            </span>
+          </Button>
+
+          <Button
+            variant={storeView === 'store2' ? 'default' : 'outline'}
+            onClick={() => {
+              setStoreView('store2');
+              setViewMode('active'); // Reset para active ao mudar de loja
+            }}
+            className="flex items-center gap-2"
+            size="sm"
+          >
+            <Store className="h-4 w-4" />
+            Loja 2
+            <span className="ml-1 px-2 py-0.5 bg-purple-500/20 text-purple-400 rounded-full text-xs font-bold">
+              {storeCounts.store2}
+            </span>
+          </Button>
+        </div>
+
+        {/* Tab Switcher Active/Deleted - Apenas para admins e apenas em Loja 1 */}
+        {isAdmin && storeView === 'store1' && (
           <div className="flex gap-2 mb-4 pb-4 border-b border-white/10">
             <Button
               variant={viewMode === 'active' ? 'default' : 'outline'}
@@ -459,30 +506,47 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
           </div>
         )}
 
-        {/* Renderização condicional baseada no modo de visualização */}
-        {viewMode === 'active' ? (
-          /* Grid de produtos ativos com controles */
+        {/* Renderização condicional baseada na loja e modo de visualização */}
+        {storeView === 'store1' && viewMode === 'active' ? (
+          /* Grid de produtos ativos Loja 1 com controles */
           <ProductsGridContainer
             showSearch={showSearch}
             showFilters={showFilters}
             showAddButton={showAddButton}
             showHeader={false}
             mode="inventory"
+            storeFilter="store1"
             onAddToCart={onProductSelect}
             onAddProduct={showAddButton ? handleAddProduct : undefined}
             onViewDetails={handleViewDetails}
             onEdit={handleEditProduct}
             onAdjustStock={handleAdjustStock}
+            onTransfer={handleTransferProduct}
           />
-        ) : (
-          /* Grid de produtos deletados (admin only) */
+        ) : storeView === 'store1' && viewMode === 'deleted' ? (
+          /* Grid de produtos deletados Loja 1 (admin only) */
           <DeletedProductsGrid
             products={deletedProducts}
             isLoading={isLoadingDeleted}
             onRestore={handleRestoreProduct}
             restoringProductId={restoringProductId}
           />
-        )}
+        ) : storeView === 'store2' ? (
+          /* Grid de produtos ativos Loja 2 */
+          <ProductsGridContainer
+            showSearch={showSearch}
+            showFilters={showFilters}
+            showAddButton={false}
+            showHeader={false}
+            mode="inventory"
+            storeFilter="store2"
+            onAddToCart={onProductSelect}
+            onViewDetails={handleViewDetails}
+            onEdit={handleEditProduct}
+            onAdjustStock={handleAdjustStock}
+            onTransfer={handleTransferProduct}
+          />
+        ) : null}
       </div>
 
       {/* Modal para adicionar produto */}
@@ -512,6 +576,7 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
       <StockAdjustmentModal
         productId={selectedProduct?.id || ''}
         isOpen={isStockAdjustmentOpen}
+        storeFilter={storeView} // 🏪 v3.4.2 - Passar loja selecionada
         onClose={() => {
           setIsStockAdjustmentOpen(false);
           setSelectedProduct(null);
@@ -556,6 +621,17 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
           setIsHistoryModalOpen(false);
           // CORREÇÃO: Não limpar selectedProduct - deixar que o modal pai gerencie
         }}
+      />
+
+      {/* Modal de transferência entre lojas (v3.4.0) */}
+      <StoreTransferModal
+        isOpen={isTransferModalOpen}
+        onClose={() => {
+          setIsTransferModalOpen(false);
+          setSelectedProduct(null);
+        }}
+        product={selectedProduct}
+        fromStore={storeView}
       />
     </div>
   );

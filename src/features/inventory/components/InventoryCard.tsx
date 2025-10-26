@@ -7,17 +7,20 @@
 import React from 'react';
 import { Button } from '@/shared/ui/primitives/button';
 import { Badge } from '@/shared/ui/primitives/badge';
-import { Eye, Edit, Package, Box, AlertTriangle } from 'lucide-react';
+import { Eye, Edit, Package, Box, AlertTriangle, ArrowRightLeft } from 'lucide-react';
 import { cn } from '@/core/config/utils';
 import { getHoverTransformClasses } from '@/core/config/theme-utils';
 import { useGlassmorphismEffect } from '@/shared/hooks/ui/useGlassmorphismEffect';
-import type { Product } from '@/types/inventory.types';
+import { getStoreStock } from '../hooks/useStoreInventory'; // 🏪 Helper para obter estoque por loja
+import type { Product, StoreLocation } from '@/types/inventory.types';
 
 interface InventoryCardProps {
   product: Product;
   onViewDetails: (product: Product) => void;
   onEdit: (product: Product) => void;
   onAdjustStock?: (product: Product) => void;
+  onTransfer?: (product: Product) => void; // 🏪 v3.4.0 - Transferência entre lojas
+  storeFilter?: StoreLocation; // 🏪 v3.4.0 - Qual loja está sendo exibida
   variant?: 'default' | 'premium' | 'success' | 'warning' | 'error';
   glassEffect?: boolean;
 }
@@ -35,12 +38,19 @@ export const InventoryCard: React.FC<InventoryCardProps> = ({
   onViewDetails,
   onEdit,
   onAdjustStock,
+  onTransfer, // 🏪 v3.4.0
+  storeFilter, // 🏪 v3.4.0
   variant = 'default',
   glassEffect = true,
 }) => {
-  // SISTEMA ULTRA SIMPLIFICADO - apenas 2 números
-  const stockPackages = product.stock_packages || 0;
-  const stockUnitsLoose = product.stock_units_loose || 0;
+  // 🏪 MULTI-STORE: Obter estoque correto baseado na loja selecionada
+  const storeStock = storeFilter ? getStoreStock(product, storeFilter) : {
+    packages: product.stock_packages || 0,
+    units: product.stock_units_loose || 0
+  };
+
+  const stockPackages = storeStock.packages;
+  const stockUnitsLoose = storeStock.units;
 
   const stockStatus = getSimpleStockStatus(stockPackages, stockUnitsLoose, product.minimum_stock || 10);
   const { handleMouseMove } = useGlassmorphismEffect();
@@ -156,6 +166,19 @@ export const InventoryCard: React.FC<InventoryCardProps> = ({
             className="w-full text-gray-400 hover:text-gray-100 hover:bg-gray-800/60 transition-all duration-200 text-xs"
           >
             📦 Ajustar
+          </Button>
+        )}
+
+        {/* Botão de transferência entre lojas - v3.4.0 Multi-Store */}
+        {onTransfer && (
+          <Button
+            onClick={() => onTransfer(product)}
+            size="sm"
+            variant="ghost"
+            className="w-full bg-gradient-to-r from-blue-500/20 to-purple-500/20 hover:from-blue-500/30 hover:to-purple-500/30 text-blue-400 hover:text-blue-300 transition-all duration-200 text-xs"
+          >
+            <ArrowRightLeft className="h-3 w-3 mr-1" />
+            Transferir
           </Button>
         )}
       </div>

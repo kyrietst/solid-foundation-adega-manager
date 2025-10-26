@@ -3,21 +3,22 @@
  * Combina todos os hooks especializados em uma interface única
  */
 
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useState, useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
 import { useCart } from '@/features/sales/hooks/use-cart';
 import { useBarcode } from '@/features/inventory/hooks/use-barcode';
 import { usePagination } from '@/shared/hooks/common/use-pagination';
 import { useProductFilters } from './useProductFilters';
 import { useProductCategories } from './useProductCategories';
-import type { Product } from '@/types/inventory.types';
+import type { Product, StoreLocation } from '@/types/inventory.types';
 import type { ProductSelectionData } from '@/features/sales/components/ProductSelectionModal';
 
 export interface ProductsGridConfig {
   showSearch?: boolean;
   showFilters?: boolean;
   initialCategory?: string;
+  storeFilter?: StoreLocation; // 🏪 Filtro de loja (v3.4.0)
   onProductSelect?: (product: Product) => void;
   gridColumns?: {
     mobile: number;
@@ -32,6 +33,7 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
     showSearch = true,
     showFilters = true,
     initialCategory = 'all',
+    storeFilter, // 🏪 Filtro de loja
     onProductSelect,
     gridColumns = { mobile: 1, tablet: 2, desktop: 3 },
     className
@@ -39,16 +41,27 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
 
   const { addItem, addFromVariantSelection } = useCart();
   const { searchByBarcode } = useBarcode();
+  const queryClient = useQueryClient();
 
-  // Query para buscar produtos incluindo campos da Dupla Contagem
+  // Query para buscar produtos incluindo campos da Dupla Contagem e Multi-Store
   const { data: products = [], isLoading } = useQuery({
-    queryKey: ['products', 'available'],
+    queryKey: ['products', 'available', storeFilter],
     queryFn: async (): Promise<Product[]> => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('products')
-        .select('id, name, price, stock_quantity, image_url, barcode, unit_barcode, package_barcode, category, package_units, package_price, has_package_tracking, units_per_package, stock_packages, stock_units_loose, expiry_date, has_expiry_tracking')
-        .is('deleted_at', null)
-        .order('name', { ascending: true });
+        .select('id, name, price, stock_quantity, image_url, barcode, unit_barcode, package_barcode, category, package_units, package_price, has_package_tracking, units_per_package, stock_packages, stock_units_loose, store1_stock_packages, store1_stock_units_loose, store2_stock_packages, store2_stock_units_loose, expiry_date, has_expiry_tracking')
+        .is('deleted_at', null);
+
+      // 🏪 Filtrar por loja se especificado
+      if (storeFilter === 'store1') {
+        query = query.or('store1_stock_packages.gt.0,store1_stock_units_loose.gt.0');
+      } else if (storeFilter === 'store2') {
+        query = query.or('store2_stock_packages.gt.0,store2_stock_units_loose.gt.0');
+      }
+
+      query = query.order('name', { ascending: true });
+
+      const { data, error } = await query;
 
       if (error) {
         console.error('Error fetching products:', error);
@@ -58,6 +71,15 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
       return data;
     },
   });
+
+  // 🏪 v3.4.2 - Invalidar cache quando storeFilter muda (forçar atualização dos cards)
+  useEffect(() => {
+    if (storeFilter) {
+      queryClient.invalidateQueries({ queryKey: ['products', 'available'] });
+      queryClient.invalidateQueries({ queryKey: ['products', 'store'] });
+      queryClient.invalidateQueries({ queryKey: ['product-ssot'] });
+    }
+  }, [storeFilter, queryClient]);
 
   // Estados do modal de seleção de produto
   const [isModalOpen, setIsModalOpen] = useState(false);

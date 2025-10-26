@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import type { Product } from '@/types/inventory.types';
+import type { Product, StoreLocation } from '@/types/inventory.types';
 import { cn } from '@/core/config/utils';
 import { InventoryCard } from './InventoryCard';
 
@@ -18,6 +18,8 @@ interface InventoryGridProps {
   onViewDetails: (product: Product) => void;
   onEdit: (product: Product) => void;
   onAdjustStock?: (product: Product) => void;
+  onTransfer?: (product: Product) => void; // 🏪 v3.4.0 - Transferência entre lojas
+  storeFilter?: StoreLocation; // 🏪 v3.4.0 - Qual loja está sendo exibida
   variant?: 'default' | 'premium' | 'success' | 'warning' | 'error';
   glassEffect?: boolean;
   className?: string;
@@ -29,6 +31,8 @@ export const InventoryGrid: React.FC<InventoryGridProps> = ({
   onViewDetails,
   onEdit,
   onAdjustStock,
+  onTransfer, // 🏪 v3.4.0
+  storeFilter, // 🏪 v3.4.0
   variant = 'default',
   glassEffect = true,
   className = '',
@@ -52,11 +56,13 @@ export const InventoryGrid: React.FC<InventoryGridProps> = ({
             animationDelay: `${index * 50}ms`
           }}
         >
-          <InventoryCard 
-            product={product} 
+          <InventoryCard
+            product={product}
             onViewDetails={onViewDetails}
             onEdit={onEdit}
             onAdjustStock={onAdjustStock}
+            onTransfer={onTransfer}
+            storeFilter={storeFilter}
             variant={variant}
             glassEffect={glassEffect}
           />

@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import type { Product } from '@/types/inventory.types';
+import type { Product, StoreLocation } from '@/types/inventory.types';
 import { LoadingScreen } from '@/shared/ui/composite/loading-spinner';
 import { EmptySearchResults } from '@/shared/ui/composite/empty-state';
 import { PaginationControls } from '@/shared/ui/composite/pagination-controls';
@@ -67,6 +67,8 @@ export interface ProductsGridPresentationProps {
   onViewDetails?: (product: Product) => void;
   onEdit?: (product: Product) => void;
   onAdjustStock?: (product: Product) => void;
+  onTransfer?: (product: Product) => void; // 🏪 v3.4.0 - Transferência entre lojas
+  storeFilter?: StoreLocation; // 🏪 v3.4.0 - Qual loja está sendo exibida
 }
 
 export const ProductsGridPresentation: React.FC<ProductsGridPresentationProps> = ({
@@ -107,6 +109,8 @@ export const ProductsGridPresentation: React.FC<ProductsGridPresentationProps> =
   onViewDetails,
   onEdit,
   onAdjustStock,
+  onTransfer, // 🏪 v3.4.0
+  storeFilter, // 🏪 v3.4.0
 }) => {
   if (isLoading) {
     return <LoadingScreen text="Carregando produtos..." />;
@@ -211,6 +215,8 @@ export const ProductsGridPresentation: React.FC<ProductsGridPresentationProps> =
                   onViewDetails={onViewDetails || ((product) => console.log('View details:', product))}
                   onEdit={onEdit || ((product) => console.log('Edit product:', product))}
                   onAdjustStock={onAdjustStock || ((product) => console.log('Adjust stock:', product))}
+                  onTransfer={onTransfer}
+                  storeFilter={storeFilter}
                   variant={variant}
                   glassEffect={glassEffect}
                 />
