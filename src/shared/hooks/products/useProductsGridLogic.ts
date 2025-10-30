@@ -44,31 +44,66 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
   const queryClient = useQueryClient();
 
   // Query para buscar produtos incluindo campos da Dupla Contagem e Multi-Store
+  // v3.4.3 - FILTRO INTELIGENTE LOJA 2: Mostra apenas produtos transferidos
   const { data: products = [], isLoading } = useQuery({
     queryKey: ['products', 'available', storeFilter],
     queryFn: async (): Promise<Product[]> => {
-      let query = supabase
-        .from('products')
-        .select('id, name, price, stock_quantity, image_url, barcode, unit_barcode, package_barcode, category, package_units, package_price, has_package_tracking, units_per_package, stock_packages, stock_units_loose, store1_stock_packages, store1_stock_units_loose, store2_stock_packages, store2_stock_units_loose, expiry_date, has_expiry_tracking')
-        .is('deleted_at', null);
+      if (storeFilter === 'store2') {
+        // LOJA 2: Mostrar APENAS produtos transferidos
+        // v3.4.3 - Usa histórico de transferências para determinar visibilidade
 
-      // 🏪 Filtrar por loja se especificado
-      if (storeFilter === 'store1') {
-        query = query.or('store1_stock_packages.gt.0,store1_stock_units_loose.gt.0');
-      } else if (storeFilter === 'store2') {
-        query = query.or('store2_stock_packages.gt.0,store2_stock_units_loose.gt.0');
+        // Passo 1: Buscar IDs de produtos transferidos para store2
+        const { data: transfers, error: transferError } = await supabase
+          .from('store_transfers')
+          .select('product_id')
+          .eq('to_store', 2);
+
+        if (transferError) {
+          console.error('Error fetching transfers:', transferError);
+          throw transferError;
+        }
+
+        // Passo 2: Extrair IDs únicos
+        const productIds = [...new Set(transfers?.map(t => t.product_id) || [])];
+
+        // Se não houver transferências, retornar array vazio
+        if (productIds.length === 0) {
+          return [];
+        }
+
+        // Passo 3: Buscar produtos transferidos
+        const { data, error } = await supabase
+          .from('products')
+          .select('id, name, price, stock_quantity, image_url, barcode, unit_barcode, package_barcode, category, package_units, package_price, has_package_tracking, units_per_package, stock_packages, stock_units_loose, store1_stock_packages, store1_stock_units_loose, store2_stock_packages, store2_stock_units_loose, expiry_date, has_expiry_tracking')
+          .is('deleted_at', null)
+          .in('id', productIds)  // ← FILTRO: Apenas produtos transferidos
+          .order('name', { ascending: true });
+
+        if (error) {
+          console.error('Error fetching products:', error);
+          throw error;
+        }
+
+        return data;
+
+      } else {
+        // LOJA 1 ou SEM FILTRO: Mostrar TODOS os produtos (comportamento atual)
+        let query = supabase
+          .from('products')
+          .select('id, name, price, stock_quantity, image_url, barcode, unit_barcode, package_barcode, category, package_units, package_price, has_package_tracking, units_per_package, stock_packages, stock_units_loose, store1_stock_packages, store1_stock_units_loose, store2_stock_packages, store2_stock_units_loose, expiry_date, has_expiry_tracking')
+          .is('deleted_at', null);
+
+        query = query.order('name', { ascending: true });
+
+        const { data, error } = await query;
+
+        if (error) {
+          console.error('Error fetching products:', error);
+          throw error;
+        }
+
+        return data;
       }
-
-      query = query.order('name', { ascending: true });
-
-      const { data, error } = await query;
-
-      if (error) {
-        console.error('Error fetching products:', error);
-        throw error;
-      }
-
-      return data;
     },
   });
 

@@ -53,7 +53,7 @@ const checkStockAvailability = async (productId: string, quantity: number = 1, v
     // Buscar dados atuais do produto
     const { data: product, error } = await supabase
       .from('products')
-      .select('stock_packages, stock_units_loose, has_package_tracking, name')
+      .select('store1_stock_packages, store1_stock_units_loose, has_package_tracking, name')
       .eq('id', productId)
       .single();
 
@@ -64,8 +64,8 @@ const checkStockAvailability = async (productId: string, quantity: number = 1, v
       };
     }
 
-    const stockPackages = product.stock_packages || 0;
-    const stockUnitsLoose = product.stock_units_loose || 0;
+    const stockPackages = product.store1_stock_packages || 0;
+    const stockUnitsLoose = product.store1_stock_units_loose || 0;
     const hasPackageTracking = product.has_package_tracking;
 
     // Verificar disponibilidade baseada no tipo de variante
@@ -77,12 +77,10 @@ const checkStockAvailability = async (productId: string, quantity: number = 1, v
         };
       }
     } else if (variantType === 'package') {
-      if (!hasPackageTracking) {
-        return {
-          canAdd: false,
-          message: 'Este produto não possui rastreamento de pacotes.'
-        };
-      }
+      // Validação de has_package_tracking REMOVIDA (bugfix v3.4.2)
+      // Este campo é apenas configuração para rastreamento de lotes/validade
+      // Não deve bloquear a venda de pacotes se houver estoque disponível
+
       if (stockPackages < quantity) {
         return {
           canAdd: false,

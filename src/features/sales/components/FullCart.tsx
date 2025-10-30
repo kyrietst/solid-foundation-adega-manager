@@ -447,10 +447,11 @@ export function FullCart({
         </ScrollArea>
       </div>
 
-      {/* Footer com Formulários - Colapsável por seção */}
-      <div className="flex-shrink-0">
-        {/* Seção Pagamento - Colapsável */}
-        <div className="border-b border-white/20">
+      {/* Footer com Formulários - Colapsável por seção - Scrollável quando necessário */}
+      <ScrollArea className="flex-shrink-0 max-h-[400px]">
+        <div>
+          {/* Seção Pagamento - Colapsável */}
+          <div className="border-b border-white/20">
           <div
             className="flex items-center justify-between p-3 cursor-pointer hover:bg-white/5 transition-colors"
             onClick={() => setIsPaymentSectionExpanded(!isPaymentSectionExpanded)}
@@ -647,7 +648,8 @@ export function FullCart({
             )}
           </Button>
         </div>
-      </div>
+        </div>
+      </ScrollArea>
     </div>
   );
 }

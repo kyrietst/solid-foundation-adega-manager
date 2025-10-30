@@ -47,7 +47,7 @@ const useProductDelete = (): UseProductDeleteReturn => {
       // Buscar dados do produto
       const { data: product, error: productError } = await supabase
         .from('products')
-        .select('id, name, barcode, category, stock_packages, stock_units_loose, price')
+        .select('id, name, barcode, category, store1_stock_packages, store1_stock_units_loose, store2_stock_packages, store2_stock_units_loose, price')
         .eq('id', productId)
         .is('deleted_at', null)
         .single();
@@ -82,8 +82,8 @@ const useProductDelete = (): UseProductDeleteReturn => {
         name: product.name,
         barcode: product.barcode,
         category: product.category,
-        stockPackages: product.stock_packages || 0,
-        stockUnitsLoose: product.stock_units_loose || 0,
+        stockPackages: (product.store1_stock_packages || 0) + (product.store2_stock_packages || 0),
+        stockUnitsLoose: (product.store1_stock_units_loose || 0) + (product.store2_stock_units_loose || 0),
         salesCount: salesCount || 0,
         movementsCount: movementsCount || 0,
         price: product.price || 0,
