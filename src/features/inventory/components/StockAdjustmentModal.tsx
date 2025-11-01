@@ -90,7 +90,13 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
         .eq('id', productId)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        // PGRST116 = produto deletado/não encontrado, retornar null ao invés de throw
+        if (error.code === 'PGRST116') {
+          return null;
+        }
+        throw error;
+      }
 
       // 🔍 LOG: Dados do produto obtidos
       console.log('🔍 PRODUCT DATA FETCHED:', {
@@ -112,6 +118,13 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
     refetchOnReconnect: true, // Refetch ao reconectar
     cacheTime: 0, // Não manter cache (React Query v4) / gcTime: 0 (v5)
     gcTime: 0, // Garbage collection imediato (React Query v5)
+    retry: (failureCount, error) => {
+      // Não fazer retry para produtos deletados/não encontrados
+      if (failureCount < 3 && error.code !== 'PGRST116' && !error.message?.includes('not found')) {
+        return true;
+      }
+      return false;
+    },
   });
 
   // Configuração do formulário com React Hook Form + Zod

@@ -57,10 +57,24 @@ const checkStockAvailability = async (productId: string, quantity: number = 1, v
       .eq('id', productId)
       .single();
 
-    if (error || !product) {
+    if (error) {
+      // PGRST116 = produto deletado, mensagem específica
+      if (error.code === 'PGRST116') {
+        return {
+          canAdd: false,
+          message: 'Produto foi deletado e não está mais disponível.'
+        };
+      }
       return {
         canAdd: false,
-        message: 'Produto não encontrado ou indisponível.'
+        message: 'Erro ao verificar disponibilidade do produto.'
+      };
+    }
+
+    if (!product) {
+      return {
+        canAdd: false,
+        message: 'Produto não encontrado.'
       };
     }
 

@@ -58,7 +58,13 @@ export function useProductSSoT(productId: string) {
         .eq('id', productId)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        // PGRST116 = produto deletado/não encontrado, retornar null ao invés de throw
+        if (error.code === 'PGRST116') {
+          return null;
+        }
+        throw error;
+      }
       if (!product) return null;
 
       // 🏪 v3.4.2 - Usar estoque da LOJA 1 (vendas sempre da Loja 1)
@@ -104,6 +110,13 @@ export function useProductSSoT(productId: string) {
     enabled: !!productId,
     staleTime: 30000, // 30 segundos
     refetchOnWindowFocus: true,
+    retry: (failureCount, error) => {
+      // Não fazer retry para produtos deletados/não encontrados
+      if (failureCount < 3 && error.code !== 'PGRST116' && !error.message?.includes('not found')) {
+        return true;
+      }
+      return false;
+    },
   });
 }
 

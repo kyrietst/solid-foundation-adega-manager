@@ -26,7 +26,13 @@ export function useProductVariants(productId: string, options?: UseProductVarian
         .eq('id', productId)
         .single();
 
-      if (productError) throw productError;
+      if (productError) {
+        // PGRST116 = produto deletado/não encontrado, retornar null ao invés de throw
+        if (productError.code === 'PGRST116') {
+          return null;
+        }
+        throw productError;
+      }
 
 
       // Buscar variantes do produto
@@ -140,6 +146,13 @@ export function useProductVariants(productId: string, options?: UseProductVarian
     enabled: !!productId,
     staleTime: 0, // Sempre buscar dados atualizados para garantir que variantes virtuais funcionem
     refetchOnWindowFocus: true, // Refetch quando voltar ao foco
+    retry: (failureCount, error) => {
+      // Não fazer retry para produtos deletados/não encontrados
+      if (failureCount < 3 && error.code !== 'PGRST116' && !error.message?.includes('not found')) {
+        return true;
+      }
+      return false;
+    },
   });
 }
 

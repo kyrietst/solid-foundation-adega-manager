@@ -41,8 +41,15 @@ const queryClient = new QueryClient({
         // Context7: Smart retry logic
         if (failureCount < 3) {
           const errorMsg = error?.message?.toLowerCase() || '';
-          // Don't retry on auth errors or not found errors
-          if (errorMsg.includes('unauthorized') || errorMsg.includes('not found') || errorMsg.includes('forbidden')) {
+          const errorCode = error?.code;
+          // Don't retry on auth errors, not found errors, or PGRST116 (deleted/missing products)
+          if (
+            errorCode === 'PGRST116' ||
+            errorMsg.includes('unauthorized') ||
+            errorMsg.includes('not found') ||
+            errorMsg.includes('forbidden') ||
+            errorMsg.includes('contains 0 rows')
+          ) {
             return false;
           }
           return true;
