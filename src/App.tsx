@@ -1,3 +1,4 @@
+// v3.4.3 - PGRST116 infinite loop fix (force rebuild)
 import { Toaster } from "@/shared/ui/primitives/toaster";
 import { TooltipProvider } from "@/shared/ui/primitives/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
