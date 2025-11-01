@@ -123,9 +123,24 @@ const useProductDelete = (): UseProductDeleteReturn => {
 
       return productId;
     },
-    onSuccess: () => {
-      // Invalidar queries relacionadas
-      queryClient.invalidateQueries({ queryKey: ['products'] });
+    onSuccess: async (productId) => {
+      // 🚨 FIX PGRST116 LOOP: Cancelar e remover queries do produto deletado
+      // Cancelar queries em andamento do produto específico
+      await queryClient.cancelQueries({ queryKey: ['product', productId] });
+      await queryClient.cancelQueries({ queryKey: ['product-dual-stock', productId] });
+      await queryClient.cancelQueries({ queryKey: ['product-ssot', productId] });
+      await queryClient.cancelQueries({ queryKey: ['product-variants', productId] });
+
+      // Remover do cache (não apenas invalidar) - evita refetch automático
+      queryClient.removeQueries({ queryKey: ['product', productId] });
+      queryClient.removeQueries({ queryKey: ['product-dual-stock', productId] });
+      queryClient.removeQueries({ queryKey: ['product-ssot', productId] });
+      queryClient.removeQueries({ queryKey: ['product-variants', productId] });
+      queryClient.removeQueries({ queryKey: ['stock-availability-ssot', productId] });
+      queryClient.removeQueries({ queryKey: ['batches', productId] });
+
+      // Invalidar apenas LISTAS de produtos (não produtos individuais)
+      queryClient.invalidateQueries({ queryKey: ['products'], exact: false });
       queryClient.invalidateQueries({ queryKey: ['inventory'] });
 
       toast({
