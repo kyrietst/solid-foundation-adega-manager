@@ -246,23 +246,16 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
         throw new Error('Motivo deve ter pelo menos 3 caracteres');
       }
 
-      // 🚀 CHAMAR RPC MULTISTORE COM PARÂMETRO DE LOJA
-      // 🏪 v3.4.2 - Usar função multistore com p_store
-      const storeNumber = storeFilter === 'store1' ? 1 : storeFilter === 'store2' ? 2 : null;
-
-      console.log('🚀 EXECUTANDO RPC set_product_stock_absolute_multistore com parâmetros validados...', {
-        store: storeFilter,
-        storeNumber
-      });
+      // 🚀 CHAMAR RPC COM ESTADO ABSOLUTO
+      console.log('🚀 EXECUTANDO RPC set_product_stock_absolute com parâmetros validados...');
 
       const { data: result, error } = await supabase
-        .rpc('set_product_stock_absolute_multistore', {
+        .rpc('set_product_stock_absolute', {
           p_product_id: productId,
           p_new_packages: newPackages,
           p_new_units_loose: newUnitsLoose,
           p_reason: reason,
-          p_user_id: user.id,
-          p_store: storeNumber // 🏪 1 = Loja 1, 2 = Loja 2, null = legacy
+          p_user_id: user.id
         });
 
       if (error) {
