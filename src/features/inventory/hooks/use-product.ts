@@ -32,8 +32,8 @@ export function useProduct(productId?: string | null) {
     staleTime: 1000 * 60 * 5, // 5 min
     gcTime: 1000 * 60 * 10, // Context7: Better cache management
     retry: (failureCount, error) => {
-      // Context7: Smart retry logic
-      if (failureCount < 3 && error.message && !error.message.includes('not found')) {
+      // Context7: Smart retry for network issues, not for missing/deleted products
+      if (failureCount < 3 && error.code !== 'PGRST116' && !error.message.includes('not found')) {
         return true;
       }
       return false;

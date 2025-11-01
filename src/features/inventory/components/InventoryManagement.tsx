@@ -100,22 +100,40 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
         .from('products')
         .select('*')
         .eq('id', product.id)
+        .is('deleted_at', null)
         .single();
 
       if (error) {
         console.error('Erro ao buscar produto atualizado para visualização:', error);
-        // Fallback para produto original se houver erro
-        setSelectedProduct(product);
-      } else {
-        // Usar dados atualizados do banco
-        setSelectedProduct(updatedProduct);
+        // PGRST116 = produto deletado ou não encontrado
+        if (error.code === 'PGRST116') {
+          toast({
+            title: 'Produto não disponível',
+            description: 'Este produto foi deletado ou não está mais disponível.',
+            variant: 'destructive',
+          });
+          return;
+        }
+        // Para outros erros, mostrar mensagem genérica
+        toast({
+          title: 'Erro ao carregar produto',
+          description: 'Não foi possível carregar os dados do produto.',
+          variant: 'destructive',
+        });
+        return;
       }
+
+      // Usar dados atualizados do banco
+      setSelectedProduct(updatedProduct);
+      setIsDetailsModalOpen(true);
     } catch (error) {
       console.error('Erro na busca do produto para visualização:', error);
-      setSelectedProduct(product);
+      toast({
+        title: 'Erro ao carregar produto',
+        description: 'Ocorreu um erro inesperado ao carregar o produto.',
+        variant: 'destructive',
+      });
     }
-
-    setIsDetailsModalOpen(true);
   };
 
   const handleEditProduct = async (product: Product) => {
@@ -125,22 +143,40 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
         .from('products')
         .select('*')
         .eq('id', product.id)
+        .is('deleted_at', null)
         .single();
 
       if (error) {
         console.error('Erro ao buscar produto atualizado:', error);
-        // Fallback para produto original se houver erro
-        setSelectedProduct(product);
-      } else {
-        // Usar dados atualizados do banco
-        setSelectedProduct(updatedProduct);
+        // PGRST116 = produto deletado ou não encontrado
+        if (error.code === 'PGRST116') {
+          toast({
+            title: 'Produto não disponível',
+            description: 'Este produto foi deletado ou não está mais disponível para edição.',
+            variant: 'destructive',
+          });
+          return;
+        }
+        // Para outros erros, mostrar mensagem genérica
+        toast({
+          title: 'Erro ao carregar produto',
+          description: 'Não foi possível carregar os dados do produto.',
+          variant: 'destructive',
+        });
+        return;
       }
+
+      // Usar dados atualizados do banco
+      setSelectedProduct(updatedProduct);
+      setIsEditProductOpen(true);
     } catch (error) {
       console.error('Erro na busca do produto:', error);
-      setSelectedProduct(product);
+      toast({
+        title: 'Erro ao carregar produto',
+        description: 'Ocorreu um erro inesperado ao carregar o produto.',
+        variant: 'destructive',
+      });
     }
-
-    setIsEditProductOpen(true);
   };
 
   const handleAdjustStock = (product: Product) => {
