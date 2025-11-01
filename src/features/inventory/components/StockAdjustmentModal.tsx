@@ -246,20 +246,27 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
         throw new Error('Motivo deve ter pelo menos 3 caracteres');
       }
 
-      // 🚀 CHAMAR RPC COM ESTADO ABSOLUTO
-      console.log('🚀 EXECUTANDO RPC set_product_stock_absolute com parâmetros validados...');
+      // 🚀 CHAMAR RPC MULTISTORE COM PARÂMETRO DE LOJA
+      // 🏪 v3.4.3 - Usar função multistore com p_store
+      const storeNumber = storeFilter === 'store1' ? 1 : storeFilter === 'store2' ? 2 : 1; // Default Loja 1
+
+      console.log('🚀 EXECUTANDO RPC set_product_stock_absolute_multistore com parâmetros validados...', {
+        store: storeFilter,
+        storeNumber
+      });
 
       const { data: result, error } = await supabase
-        .rpc('set_product_stock_absolute', {
+        .rpc('set_product_stock_absolute_multistore', {
           p_product_id: productId,
           p_new_packages: newPackages,
           p_new_units_loose: newUnitsLoose,
           p_reason: reason,
-          p_user_id: user.id
+          p_user_id: user.id,
+          p_store: storeNumber // 🏪 1 = Loja 1, 2 = Loja 2
         });
 
       if (error) {
-        console.error('❌ ERRO RPC set_product_stock_absolute:', {
+        console.error('❌ ERRO RPC set_product_stock_absolute_multistore:', {
           error,
           message: error.message,
           details: error.details,
@@ -270,13 +277,14 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
             p_new_packages: newPackages,
             p_new_units_loose: newUnitsLoose,
             p_reason: reason,
-            p_user_id: user.id
+            p_user_id: user.id,
+            p_store: storeNumber
           }
         });
         throw error;
       }
 
-      console.log('✅ RESPOSTA RPC set_product_stock_absolute:', result);
+      console.log('✅ RESPOSTA RPC set_product_stock_absolute_multistore:', result);
 
       // Verificar se a RPC retornou sucesso
       if (!result?.success) {
