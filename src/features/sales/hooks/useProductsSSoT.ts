@@ -251,10 +251,10 @@ export function useStockAvailabilitySSoT(productId: string, quantity: number, ty
         };
       }
 
-      // ✅ ULTRA-SIMPLIFICAÇÃO: Buscar apenas campos diretos
+      // ✅ ULTRA-SIMPLIFICAÇÃO: Buscar apenas campos diretos (multistore)
       const { data: product, error } = await supabase
         .from('products')
-        .select('stock_packages, stock_units_loose')
+        .select('store1_stock_packages, store1_stock_units_loose')
         .eq('id', productId)
         .single();
 
@@ -268,9 +268,9 @@ export function useStockAvailabilitySSoT(productId: string, quantity: number, ty
         };
       }
 
-      // ✅ ESPELHO DA PRATELEIRA: O que tem na prateleira
-      const stockPackages = product.stock_packages || 0;
-      const stockUnitsLoose = product.stock_units_loose || 0;
+      // ✅ ESPELHO DA PRATELEIRA: O que tem na prateleira (Loja 1)
+      const stockPackages = product.store1_stock_packages || 0;
+      const stockUnitsLoose = product.store1_stock_units_loose || 0;
 
       // ✅ CAPACIDADE DIRETA: Sem conversões
       const maxPackages = stockPackages;
