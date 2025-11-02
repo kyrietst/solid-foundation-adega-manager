@@ -344,7 +344,8 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
         volume_ml: productData.volume_ml || null,
         supplier: productData.supplier || null,
         // minimum_stock removido - coluna não existe na tabela products
-        cost_price: productData.cost_price !== undefined ? productData.cost_price : null,
+        // ✅ CORREÇÃO: Só incluir cost_price se foi fornecido (evita trigger com NULL)
+        ...(productData.cost_price !== undefined && { cost_price: productData.cost_price }),
         // Sistema de códigos simplificado
         barcode: productData.barcode || null,
         package_barcode: productData.package_barcode || null,
@@ -352,7 +353,8 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
         units_per_package: productData.package_units || 1,
         has_package_tracking: productData.has_package_tracking || false,
         has_unit_tracking: true, // Sempre ativado no sistema simplificado
-        package_price: productData.package_price !== undefined ? productData.package_price : null,
+        // ✅ CORREÇÃO: Só incluir package_price se foi fornecido
+        ...(productData.package_price !== undefined && { package_price: productData.package_price }),
         // Auto-calcular margens de forma segura (evita overflow numérico)
         margin_percent: safeCalculateMargin(productData.price, productData.cost_price),
         package_margin: safeCalculatePackageMargin(
