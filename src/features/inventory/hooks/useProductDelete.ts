@@ -26,9 +26,8 @@ export interface ProductDeleteInfo {
 }
 
 export interface UseProductDeleteReturn {
-  softDelete: (productId: string) => Promise<void>;
-  restore: (productId: string) => Promise<void>;
-  getProductInfo: (productId: string) => Promise<ProductDeleteInfo | null>;
+  softDelete: (params: { productId: string; productName: string }) => Promise<void>;
+  restore: (params: { productId: string; productName: string }) => Promise<void>;
   isDeleting: boolean;
   isRestoring: boolean;
 }
@@ -39,66 +38,16 @@ const useProductDelete = (): UseProductDeleteReturn => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  /**
-   * Busca informações detalhadas do produto para exibir no modal de confirmação
-   */
-  const getProductInfo = async (productId: string): Promise<ProductDeleteInfo | null> => {
-    try {
-      // Buscar dados do produto
-      const { data: product, error: productError } = await supabase
-        .from('products')
-        .select('id, name, barcode, category, store1_stock_packages, store1_stock_units_loose, store2_stock_packages, store2_stock_units_loose, price')
-        .eq('id', productId)
-        .is('deleted_at', null)
-        .single();
-
-      if (productError || !product) {
-        console.error('Erro ao buscar produto:', productError);
-        return null;
-      }
-
-      // Contar vendas relacionadas (sale_items)
-      const { count: salesCount, error: salesError } = await supabase
-        .from('sale_items')
-        .select('*', { count: 'exact', head: true })
-        .eq('product_id', productId);
-
-      if (salesError) {
-        console.error('Erro ao contar vendas:', salesError);
-      }
-
-      // Contar movimentos de estoque
-      const { count: movementsCount, error: movementsError } = await supabase
-        .from('inventory_movements')
-        .select('*', { count: 'exact', head: true })
-        .eq('product_id', productId);
-
-      if (movementsError) {
-        console.error('Erro ao contar movimentos:', movementsError);
-      }
-
-      return {
-        id: product.id,
-        name: product.name,
-        barcode: product.barcode,
-        category: product.category,
-        stockPackages: (product.store1_stock_packages || 0) + (product.store2_stock_packages || 0),
-        stockUnitsLoose: (product.store1_stock_units_loose || 0) + (product.store2_stock_units_loose || 0),
-        salesCount: salesCount || 0,
-        movementsCount: movementsCount || 0,
-        price: product.price || 0,
-      };
-    } catch (error) {
-      console.error('Erro ao buscar informações do produto:', error);
-      return null;
-    }
-  };
+  // ❌ REMOVIDO: getProductInfo
+  // NUNCA fazer fetch de dados que acabamos de deletar!
+  // Os dados necessários devem ser passados como argumentos
 
   /**
    * Mutation para soft delete de produto
+   * ✅ REFATORADO: Recebe productName como argumento (não faz fetch!)
    */
   const softDeleteMutation = useMutation({
-    mutationFn: async (productId: string) => {
+    mutationFn: async ({ productId }: { productId: string; productName: string }) => {
       // Buscar usuário atual
       const { data: { user }, error: userError } = await supabase.auth.getUser();
 
@@ -123,29 +72,18 @@ const useProductDelete = (): UseProductDeleteReturn => {
 
       return productId;
     },
-    onSuccess: async (productId) => {
-      // 🚨 FIX PGRST116 LOOP: Cancelar e remover queries do produto deletado
-      // Cancelar queries em andamento do produto específico
-      await queryClient.cancelQueries({ queryKey: ['product', productId] });
-      await queryClient.cancelQueries({ queryKey: ['product-dual-stock', productId] });
-      await queryClient.cancelQueries({ queryKey: ['product-ssot', productId] });
-      await queryClient.cancelQueries({ queryKey: ['product-variants', productId] });
-
-      // Remover do cache (não apenas invalidar) - evita refetch automático
+    onSuccess: (productId, { productName }) => {
+      // ✅ Remover query do cache (evita PGRST116)
       queryClient.removeQueries({ queryKey: ['product', productId] });
-      queryClient.removeQueries({ queryKey: ['product-dual-stock', productId] });
-      queryClient.removeQueries({ queryKey: ['product-ssot', productId] });
-      queryClient.removeQueries({ queryKey: ['product-variants', productId] });
-      queryClient.removeQueries({ queryKey: ['stock-availability-ssot', productId] });
-      queryClient.removeQueries({ queryKey: ['batches', productId] });
 
-      // Invalidar apenas LISTAS de produtos (não produtos individuais)
-      queryClient.invalidateQueries({ queryKey: ['products'], exact: false });
+      // Invalidar listas para atualizar abas "Ativos" e "Deletados"
+      queryClient.invalidateQueries({ queryKey: ['products'] });
       queryClient.invalidateQueries({ queryKey: ['inventory'] });
 
+      // ✅ Usar productName que foi passado como argumento
       toast({
         title: 'Produto excluído',
-        description: 'O produto foi excluído com sucesso.',
+        description: `"${productName}" foi excluído com sucesso.`,
         variant: 'success',
       });
     },
@@ -160,9 +98,10 @@ const useProductDelete = (): UseProductDeleteReturn => {
 
   /**
    * Mutation para restaurar produto deletado
+   * ✅ REFATORADO: Recebe productName como argumento
    */
   const restoreMutation = useMutation({
-    mutationFn: async (productId: string) => {
+    mutationFn: async ({ productId }: { productId: string; productName: string }) => {
       const { error } = await supabase
         .from('products')
         .update({
@@ -178,14 +117,18 @@ const useProductDelete = (): UseProductDeleteReturn => {
 
       return productId;
     },
-    onSuccess: () => {
-      // Invalidar queries relacionadas
+    onSuccess: (productId, { productName }) => {
+      // ✅ Remover query do cache para forçar refetch com dados atualizados
+      queryClient.removeQueries({ queryKey: ['product', productId] });
+
+      // Invalidar listas para atualizar abas "Ativos" e "Deletados"
       queryClient.invalidateQueries({ queryKey: ['products'] });
       queryClient.invalidateQueries({ queryKey: ['inventory'] });
 
+      // ✅ Usar productName que foi passado como argumento
       toast({
         title: 'Produto restaurado',
-        description: 'O produto foi restaurado com sucesso.',
+        description: `"${productName}" foi restaurado com sucesso.`,
         variant: 'success',
       });
     },
@@ -200,11 +143,12 @@ const useProductDelete = (): UseProductDeleteReturn => {
 
   /**
    * Função pública para soft delete
+   * ✅ REFATORADO: Recebe objeto com productId e productName
    */
-  const softDelete = async (productId: string): Promise<void> => {
+  const softDelete = async (params: { productId: string; productName: string }): Promise<void> => {
     setIsDeleting(true);
     try {
-      await softDeleteMutation.mutateAsync(productId);
+      await softDeleteMutation.mutateAsync(params);
     } finally {
       setIsDeleting(false);
     }
@@ -212,11 +156,12 @@ const useProductDelete = (): UseProductDeleteReturn => {
 
   /**
    * Função pública para restaurar produto
+   * ✅ REFATORADO: Recebe objeto com productId e productName
    */
-  const restore = async (productId: string): Promise<void> => {
+  const restore = async (params: { productId: string; productName: string }): Promise<void> => {
     setIsRestoring(true);
     try {
-      await restoreMutation.mutateAsync(productId);
+      await restoreMutation.mutateAsync(params);
     } finally {
       setIsRestoring(false);
     }
@@ -225,7 +170,6 @@ const useProductDelete = (): UseProductDeleteReturn => {
   return {
     softDelete,
     restore,
-    getProductInfo,
     isDeleting,
     isRestoring,
   };

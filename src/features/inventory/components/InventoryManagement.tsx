@@ -445,7 +445,8 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
   const handleRestoreProduct = async (product: any) => {
     setRestoringProductId(product.id);
     try {
-      await restore(product.id);
+      // ✅ Passar objeto completo para nova arquitetura (nunca fetch após restaurar)
+      await restore({ productId: product.id, productName: product.name });
       // Invalidar queries para atualizar listas
       queryClient.invalidateQueries({ queryKey: ['products'] });
       queryClient.invalidateQueries({ queryKey: ['products', 'deleted'] });
