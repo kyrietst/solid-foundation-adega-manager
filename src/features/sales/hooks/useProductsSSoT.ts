@@ -108,7 +108,7 @@ export function useProductSSoT(productId: string) {
       return result;
     },
     enabled: !!productId,
-    staleTime: 30000, // 30 segundos
+    staleTime: 0, // ✅ Sempre buscar dados frescos quando invalidado (fix: cache antigo bloqueava vendas)
     refetchOnWindowFocus: true,
     retry: (failureCount, error) => {
       // Não fazer retry para produtos deletados/não encontrados
@@ -294,7 +294,7 @@ export function useStockAvailabilitySSoT(productId: string, quantity: number, ty
       };
     },
     enabled: !!productId && quantity > 0,
-    staleTime: 5000, // 5 segundos
+    staleTime: 0, // ✅ Sempre buscar dados frescos quando invalidado (fix: cache antigo limitava quantidade no carrinho)
   });
 }
 
