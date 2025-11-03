@@ -217,9 +217,9 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
 
   // Handler para adicionar produto ao carrinho - CORRIGIDO PARA ULTRA-SIMPLIFICAÇÃO
   const handleAddToCart = async (product: Product) => {
-    // ✅ CORREÇÃO: Verificar disponibilidade usando ambos os campos
-    const stockUnitsLoose = product.stock_units_loose || 0;
-    const stockPackages = product.stock_packages || 0;
+    // ✅ CORREÇÃO v3.4.2: Usar campos MULTISTORE (store1_*) ao invés de legacy
+    const stockUnitsLoose = product.store1_stock_units_loose || 0;
+    const stockPackages = product.store1_stock_packages || 0;
 
     // ✅ LÓGICA ULTRA-SIMPLES:
     // 1. Se tem unidades soltas E pacotes: abrir modal para escolher
