@@ -170,9 +170,9 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
     if (result && result.product) {
       const { product, type } = result;
 
-      // Verificar disponibilidade usando campos da Dupla Contagem
-      const stockUnitsLoose = product.stock_units_loose || 0;
-      const stockPackages = product.stock_packages || 0;
+      // ✅ CORREÇÃO v3.4.5: Usar campos MULTISTORE (store1_*) ao invés de legacy (fix: produtos novos não adicionavam via barcode)
+      const stockUnitsLoose = product.store1_stock_units_loose || 0;
+      const stockPackages = product.store1_stock_packages || 0;
 
       console.log('[DEBUG] useProductsGridLogic - produto encontrado:', {
         productId: product.id,
