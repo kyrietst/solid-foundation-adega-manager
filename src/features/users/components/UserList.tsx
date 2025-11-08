@@ -131,26 +131,40 @@ export const UserList: React.FC<UserListProps> = ({
     const tempPassword = generateTempPassword();
 
     try {
-      // Reset password using custom stored procedure
-      const { data, error } = await supabase.rpc('admin_reset_user_password', {
-        target_user_id: userId,
-        new_password: tempPassword
-      });
+      // ✅ ARQUITETURA MODERNA: Chamar Edge Function ao invés de RPC obsoleta
+      // A Edge Function usa supabase.auth.admin.updateUserById() de forma segura
+      const { data: { session } } = await supabase.auth.getSession();
 
-      if (error) {
+      if (!session) {
         toast({
-          title: "Erro ao resetar senha",
-          description: error.message,
+          title: "Erro de autenticação",
+          description: "Sessão expirada. Faça login novamente.",
           variant: "destructive",
         });
         return;
       }
 
-      // Check if the procedure returned an error
-      if (data && !data.success) {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-reset-password`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId: userId,
+            newPassword: tempPassword,
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
         toast({
           title: "Erro ao resetar senha",
-          description: data.error || "Erro desconhecido",
+          description: result.error || "Erro desconhecido",
           variant: "destructive",
         });
         return;
@@ -171,6 +185,7 @@ export const UserList: React.FC<UserListProps> = ({
       });
 
     } catch (error) {
+      console.error('Error resetting password:', error);
       toast({
         title: "Erro ao resetar senha",
         description: "Ocorreu um erro inesperado ao resetar a senha.",
