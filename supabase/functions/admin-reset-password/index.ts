@@ -124,7 +124,21 @@ Deno.serve(async (req) => {
       )
     }
 
-    // 9. Retornar sucesso
+    // 9. CRÍTICO: Marcar senha como temporária na tabela profiles
+    // Isto garante que o modal de troca de senha seja exibido no próximo login
+    const { error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .update({ is_temporary_password: true })
+      .eq('id', userId)
+
+    if (profileError) {
+      console.error('Error setting temporary password flag:', profileError)
+      // ⚠️ Não falhar a operação inteira se apenas a flag falhar
+      // A senha já foi resetada com sucesso
+      console.warn('Password was reset but temporary flag could not be set')
+    }
+
+    // 10. Retornar sucesso
     return new Response(
       JSON.stringify({
         success: true,
