@@ -99,13 +99,13 @@ export interface PurchaseHistoryOperations {
   formatPurchaseDate: (date: string) => string;
   formatPurchaseId: (id: string) => string;
 
-  // Refresh manual
-  refetch: () => void;
-
-  // Estado derivado
+  // Estados derivados
   hasData: boolean;
   isEmpty: boolean;
   isFiltered: boolean;
+
+  // Refresh manual
+  refetch: () => void;
 }
 
 // ============================================================================
@@ -155,6 +155,9 @@ export const useCustomerPurchaseHistory = (
 
   // Extrair valores individuais do filters para evitar problemas de dependência
   const { searchTerm, periodFilter, productSearchTerm } = filters;
+
+  // Constante de paginação (evita re-renders desnecessários)
+  const PAGINATION_LIMIT = 100;
 
   // ============================================================================
   // SERVER-SIDE DATA FETCHING
@@ -275,6 +278,9 @@ export const useCustomerPurchaseHistory = (
 
   // Acumular dados quando nova página é carregada
   useEffect(() => {
+    // Evitar setState durante loading para prevenir loops
+    if (isLoading) return;
+
     if (rawPurchases && rawPurchases.length > 0) {
       if (currentPage === 1) {
         // Primeira página - substituir tudo
@@ -285,20 +291,13 @@ export const useCustomerPurchaseHistory = (
       }
 
       // Calcular se há mais dados
-      setHasMoreData(rawPurchases.length === pagination.limit);
+      setHasMoreData(rawPurchases.length === PAGINATION_LIMIT);
     } else if (currentPage === 1) {
       // Primeira página sem dados - limpar
       setAccumulatedPurchases([]);
       setHasMoreData(false);
     }
-  }, [rawPurchases, currentPage, pagination.limit]);
-
-  // Resetar paginação quando filtros mudarem
-  useEffect(() => {
-    setCurrentPage(1);
-    setAccumulatedPurchases([]);
-    setHasMoreData(true);
-  }, [searchTerm, periodFilter, productSearchTerm, customerId]);
+  }, [rawPurchases, currentPage, isLoading]);
 
   // ============================================================================
   // REAL-TIME SUMMARY CALCULATION
@@ -512,7 +511,7 @@ export const useCustomerPurchaseHistory = (
 
   const hasData = accumulatedPurchases && accumulatedPurchases.length > 0;
   const isEmpty = !hasData;
-  const isFiltered = searchTerm !== '' || periodFilter !== 'all';
+  const isFiltered = searchTerm !== '' || periodFilter !== 'all' || (productSearchTerm !== '' && productSearchTerm !== undefined);
 
   // ============================================================================
   // RETURN SSoT v3.1.0

@@ -161,9 +161,12 @@ export const CustomerPurchaseHistoryTab: React.FC<CustomerPurchaseHistoryTabProp
   // }, []);
 
   const handlePeriodChange = useCallback((value: string) => {
+    setSearchInput(''); // Limpar input de busca
+    setDebouncedSearchTerm(''); // Limpar busca debounced
     setFilters(prev => ({
       ...prev,
-      periodFilter: value as PurchaseFilters['periodFilter']
+      periodFilter: value as PurchaseFilters['periodFilter'],
+      productSearchTerm: '' // Limpar filtro de produto ao mudar período
     }));
   }, []);
 
