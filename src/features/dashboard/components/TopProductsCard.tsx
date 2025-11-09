@@ -21,7 +21,7 @@ interface TopProductsCardProps {
   cardHeight?: number; // altura fixa do card (para alinhar com outros cards)
 }
 
-export const TopProductsCard = React.memo(function TopProductsCard({ className, period = 30, limit = 5, useCurrentMonth = true, cardHeight }: TopProductsCardProps) {
+export const TopProductsCard = React.memo(function TopProductsCard({ className, period = 30, limit = 5, useCurrentMonth = false, cardHeight }: TopProductsCardProps) {
   const { data: topProducts, isLoading, error } = useQuery({
     queryKey: ['top-products', period, limit, useCurrentMonth],
     queryFn: async (): Promise<TopProduct[]> => {

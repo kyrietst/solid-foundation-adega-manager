@@ -4,8 +4,12 @@ import { Button } from '@/shared/ui/primitives/button';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
-import { Calendar, TrendingUp, BarChart3 } from 'lucide-react';
+import { Calendar, TrendingUp, BarChart3, ExternalLink } from 'lucide-react';
 import { cn } from '@/core/config/utils';
+
+// Dashboard sempre mostra últimos 30 dias (período fixo)
+// Para análise com períodos customizados, use a página de Reports
+const DASHBOARD_PERIOD = 30;
 
 interface SalesChartData {
   period: string;
@@ -20,29 +24,22 @@ interface SalesChartSectionProps {
   cardHeight?: number; // altura fixa do card (para alinhar com outros cards)
 }
 
-const periodOptions = [
-  { value: 30, label: '30d' },
-  { value: 60, label: '60d' },
-  { value: 90, label: '90d' }
-];
-
 const chartTypes = [
   { value: 'line', label: 'Linha', icon: TrendingUp },
   { value: 'bar', label: 'Barras', icon: BarChart3 }
 ];
 
 export function SalesChartSection({ className, contentHeight = 360, cardHeight }: SalesChartSectionProps) {
-  const [selectedPeriod, setSelectedPeriod] = useState(30);
   const [chartType, setChartType] = useState<'line' | 'bar'>('line');
 
-  const { data: salesData, isLoading, error } = useQuery({
-    queryKey: ['sales-trends', selectedPeriod],
+  const { data: salesData, isLoading, error} = useQuery({
+    queryKey: ['sales-trends', DASHBOARD_PERIOD],
     queryFn: async (): Promise<SalesChartData[]> => {
-      console.log(`📈 Sales Trends Chart - Calculando dados reais para ${selectedPeriod} dias`);
-      
+      console.log(`📈 Sales Trends Chart - Calculando dados reais para ${DASHBOARD_PERIOD} dias`);
+
       const endDate = new Date();
       const startDate = new Date();
-      startDate.setDate(endDate.getDate() - selectedPeriod);
+      startDate.setDate(endDate.getDate() - DASHBOARD_PERIOD);
 
       // Buscar vendas do período
       const { data: salesData, error } = await supabase
@@ -63,9 +60,9 @@ export function SalesChartSection({ className, contentHeight = 360, cardHeight }
       const dailyData = new Map<string, { revenue: number; orders: number }>();
 
       // Inicializar todos os dias do período com valores zerados
-      for (let i = 0; i < selectedPeriod; i++) {
+      for (let i = 0; i < DASHBOARD_PERIOD; i++) {
         const date = new Date();
-        date.setDate(endDate.getDate() - (selectedPeriod - 1 - i));
+        date.setDate(endDate.getDate() - (DASHBOARD_PERIOD - 1 - i));
         const dateKey = date.toISOString().split('T')[0];
         dailyData.set(dateKey, { revenue: 0, orders: 0 });
       }
@@ -165,29 +162,18 @@ export function SalesChartSection({ className, contentHeight = 360, cardHeight }
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg tracking-tight flex items-center gap-2 text-amber-400 font-bold">
             <TrendingUp className="h-5 w-5" />
-            Tendência de Vendas
+            Tendência de Vendas (30d)
           </CardTitle>
-          
+
           <div className="flex items-center gap-2">
-            {/* Period selector */}
-            <div className="flex bg-white/5 rounded-lg p-1">
-              {periodOptions.map((option) => (
-                <Button
-                  key={option.value}
-                  variant={selectedPeriod === option.value ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setSelectedPeriod(option.value)}
-                  className={cn(
-                    "text-xs h-7",
-                    selectedPeriod === option.value 
-                      ? "bg-amber-500 text-white hover:bg-amber-600 font-semibold" 
-                      : "hover:text-white hover:bg-white/15 font-medium text-gray-300"
-                  )}
-                >
-                  {option.label}
-                </Button>
-              ))}
-            </div>
+            {/* Link para Reports para análise detalhada */}
+            <a
+              href="/reports?tab=sales&period=30"
+              className="text-gray-300 hover:text-amber-400 transition-colors"
+              title="Ver análise completa em Reports"
+            >
+              <ExternalLink className="h-4 w-4" />
+            </a>
 
             {/* Chart type selector */}
             <div className="flex bg-white/5 rounded-lg p-1">

@@ -6,16 +6,19 @@
  * @version 1.0.0
  */
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/primitives/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/primitives/select';
-import { 
+import {
   Truck, Store, TrendingUp, DollarSign
 } from 'lucide-react';
 import { cn } from '@/core/config/utils';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
 import { KpiCards } from './KpiCards';
+
+// Dashboard sempre mostra últimos 30 dias (período fixo)
+// Para análise com períodos customizados, use a página de Reports
+const DASHBOARD_PERIOD = 30;
 
 interface DeliveryVsInstoreComparisonProps {
   className?: string;
@@ -33,20 +36,17 @@ interface ComparisonData {
 }
 
 export const DeliveryVsInstoreComparison = ({ className }: DeliveryVsInstoreComparisonProps) => {
-  const [selectedPeriod, setSelectedPeriod] = useState<'7d' | '30d' | '90d'>('30d');
-
-  const days = selectedPeriod === '7d' ? 7 : selectedPeriod === '30d' ? 30 : 90;
 
   // Query para dados comparativos básicos para dashboard com fallback
   const { data: comparison, isLoading } = useQuery({
-    queryKey: ['delivery-vs-instore-dashboard', selectedPeriod],
+    queryKey: ['delivery-vs-instore-dashboard', DASHBOARD_PERIOD],
     queryFn: async (): Promise<ComparisonData> => {
-      console.log('📊 Carregando comparativo básico para dashboard...');
-      
+      console.log('📊 Carregando comparativo básico para dashboard (30 dias)...');
+
       try {
         // Tentar usar RPC primeiro
         const { data, error } = await supabase.rpc('get_delivery_vs_instore_comparison', {
-          p_days: days
+          p_days: DASHBOARD_PERIOD
         });
 
         if (error) {
@@ -67,15 +67,15 @@ export const DeliveryVsInstoreComparison = ({ className }: DeliveryVsInstoreComp
         };
       } catch (rpcError) {
         // Fallback: cálculo manual direto
-        console.log('🔄 Executando fallback manual para comparativo delivery vs presencial...');
-        
+        console.log('🔄 Executando fallback manual para comparativo delivery vs presencial (30 dias)...');
+
         const endDate = new Date();
         const startDate = new Date();
-        startDate.setDate(endDate.getDate() - days);
-        
+        startDate.setDate(endDate.getDate() - DASHBOARD_PERIOD);
+
         // Período anterior para crescimento
         const prevStartDate = new Date();
-        prevStartDate.setDate(startDate.getDate() - days);
+        prevStartDate.setDate(startDate.getDate() - DASHBOARD_PERIOD);
         
         // Buscar vendas atuais
         const { data: currentSales, error: currentError } = await supabase
@@ -213,7 +213,7 @@ export const DeliveryVsInstoreComparison = ({ className }: DeliveryVsInstoreComp
       valueType: 'positive' as const,
       isLoading: false,
       href: '/reports?tab=delivery&section=revenue-analysis',
-      subLabel: `${selectedPeriod === '7d' ? '7 dias' : selectedPeriod === '30d' ? '30 dias' : '90 dias'}`
+      subLabel: '30 dias'
     },
     {
       id: 'melhor-ticket',
@@ -250,7 +250,7 @@ export const DeliveryVsInstoreComparison = ({ className }: DeliveryVsInstoreComp
         }}
       />
       
-      {/* Header com seletor de período */}
+      {/* Header sem seletor (período fixo em 30 dias) */}
       <div className="flex items-center justify-between p-6 pb-3 relative z-10">
         <h3 className="text-white flex items-center gap-2 text-lg font-semibold">
           <div className="flex items-center gap-2">
@@ -259,17 +259,8 @@ export const DeliveryVsInstoreComparison = ({ className }: DeliveryVsInstoreComp
             <Store className="h-5 w-5 text-green-400" />
           </div>
         </h3>
-        
-        <Select value={selectedPeriod} onValueChange={(value) => setSelectedPeriod(value as '7d' | '30d' | '90d')}>
-          <SelectTrigger className="w-32 bg-black/40 border-white/30 text-white hover:bg-black/60 hover:border-purple-400/50 transition-all duration-300">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent className="bg-gray-900/95 border-white/20 backdrop-blur-xl">
-            <SelectItem value="7d" className="text-white hover:bg-white/10">7 dias</SelectItem>
-            <SelectItem value="30d" className="text-white hover:bg-white/10">30 dias</SelectItem>
-            <SelectItem value="90d" className="text-white hover:bg-white/10">90 dias</SelectItem>
-          </SelectContent>
-        </Select>
+
+        <span className="text-gray-400 text-sm font-medium">30 dias</span>
       </div>
       
       {/* KPIs usando exatamente o mesmo padrão dos KPIs originais */}
