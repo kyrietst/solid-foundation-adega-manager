@@ -90,7 +90,7 @@ if (process.env.NODE_ENV !== 'production') {
       'fieldset': { enabled: true },
       'legend': { enabled: true },
 
-      // Regras para tabelas (importante para CustomerTable, InventoryTable)
+      // Regras para tabelas (importante para DataTable components)
       'table-duplicate-name': { enabled: true },
       'table-fake-caption': { enabled: true },
       'scope-attr-valid': { enabled: true },

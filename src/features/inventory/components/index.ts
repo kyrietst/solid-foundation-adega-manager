@@ -4,7 +4,6 @@ export { InventoryFilters } from './InventoryFilters';
 export { InventoryGrid } from './InventoryGrid';
 export { InventoryHeader } from './InventoryHeader';
 export { InventoryStats } from './InventoryStats';
-export { InventoryTable } from './InventoryTable';
 export { ProductCard } from './ProductCard';
 export { ProductDialog } from './ProductDialog';
 export { ProductFilters } from './ProductFilters';

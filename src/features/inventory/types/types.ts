@@ -39,14 +39,6 @@ export interface InventoryGridProps {
   isLoading?: boolean;
 }
 
-export interface InventoryTableProps {
-  products: Product[];
-  onEditProduct: (product: Product) => void;
-  onDeleteProduct: (id: string) => void;
-  canDeleteProduct: boolean;
-  isLoading?: boolean;
-}
-
 export interface ProductDialogProps {
   isOpen: boolean;
   onClose: () => void;
