@@ -22,7 +22,6 @@ export { CustomerProfile } from './CustomerProfile';
 
 // UI Components moved from /ui/
 export { CustomerActivity } from './customer-activity';
-export { CustomerDetail } from './customer-detail';
 export { CustomerList } from './customer-list';
 export { CustomerOpportunities } from './customer-opportunities';
 export { CustomerSegments } from './customer-segments';
