@@ -7,17 +7,19 @@ import React, { useState, useMemo } from 'react';
 import { useSales } from '@/features/sales/hooks/use-sales';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { DateRange } from 'react-day-picker';
 import { DataTable } from '@/shared/ui/composite/DataTable';
 import { DataTableColumn } from '@/shared/hooks/common/useDataTable';
 import { CurrencyDisplay, DateDisplay } from '@/shared/ui/composite/FormatDisplay';
 import { Button } from '@/shared/ui/primitives/button';
 import { Input } from '@/shared/ui/primitives/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/primitives/select';
-import { 
-  FileText, 
-  Search, 
-  Filter, 
-  Eye, 
+import { DateRangePicker } from '@/shared/ui/primitives/date-range-picker';
+import {
+  FileText,
+  Search,
+  Filter,
+  Eye,
   Download,
   Calendar,
   CreditCard,
@@ -53,10 +55,20 @@ export const SalesHistoryTable: React.FC<SalesHistoryTableProps> = ({ onViewSale
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [paymentFilter, setPaymentFilter] = useState('all');
-  const [limitFilter, setLimitFilter] = useState('50');
 
-  const { data: sales, isLoading } = useSales({ 
-    limit: parseInt(limitFilter)
+  // Estado do filtro de data (padrão: últimos 30 dias)
+  const getDefaultDateRange = (): DateRange => {
+    const today = new Date();
+    const thirtyDaysAgo = new Date(today);
+    thirtyDaysAgo.setDate(today.getDate() - 30);
+    return { from: thirtyDaysAgo, to: today };
+  };
+
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(getDefaultDateRange());
+
+  const { data: sales, isLoading } = useSales({
+    startDate: dateRange?.from,
+    endDate: dateRange?.to,
   });
 
   // Filtrar vendas baseado nos filtros aplicados (agora usando lógica externa à DataTable)
@@ -246,7 +258,11 @@ export const SalesHistoryTable: React.FC<SalesHistoryTableProps> = ({ onViewSale
             Histórico Completo de Vendas
           </h2>
           <p className={cn(text.h6, shadows.subtle, "text-sm")}>
-            Visualize todas as transações do sistema ({filteredSales.length} de {sales?.length || 0} vendas)
+            {dateRange?.from && dateRange?.to ? (
+              <>Período: {format(dateRange.from, "dd/MM/yyyy", { locale: ptBR })} - {format(dateRange.to, "dd/MM/yyyy", { locale: ptBR })} ({filteredSales.length} vendas)</>
+            ) : (
+              <>Visualize todas as transações do sistema ({filteredSales.length} vendas)</>
+            )}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -262,7 +278,7 @@ export const SalesHistoryTable: React.FC<SalesHistoryTableProps> = ({ onViewSale
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
-            placeholder="Buscar por ID, cliente, vendedor, PIX, cartão, valor..."
+            placeholder="Buscar por ID, cliente, vendedor..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10 bg-black/50 border-white/20 text-white placeholder:text-gray-400"
@@ -295,27 +311,21 @@ export const SalesHistoryTable: React.FC<SalesHistoryTableProps> = ({ onViewSale
           </SelectContent>
         </Select>
 
-        <Select value={limitFilter} onValueChange={setLimitFilter}>
-          <SelectTrigger className="bg-black/50 border-white/20 text-white">
-            <SelectValue placeholder="Quantidade" />
-          </SelectTrigger>
-          <SelectContent className="bg-gray-900/95 backdrop-blur-sm border border-white/20 shadow-2xl">
-            <SelectItem value="25" className="text-white hover:bg-white/10 focus:bg-white/10 focus:text-white cursor-pointer">25 vendas</SelectItem>
-            <SelectItem value="50" className="text-white hover:bg-white/10 focus:bg-white/10 focus:text-white cursor-pointer">50 vendas</SelectItem>
-            <SelectItem value="100" className="text-white hover:bg-white/10 focus:bg-white/10 focus:text-white cursor-pointer">100 vendas</SelectItem>
-            <SelectItem value="200" className="text-white hover:bg-white/10 focus:bg-white/10 focus:text-white cursor-pointer">200 vendas</SelectItem>
-          </SelectContent>
-        </Select>
+        <DateRangePicker
+          dateRange={dateRange}
+          onDateRangeChange={setDateRange}
+          placeholder="Selecione o período"
+        />
 
-        <Button 
-          variant="outline" 
-          size="sm" 
+        <Button
+          variant="outline"
+          size="sm"
           className="gap-2 bg-black/50 border-white/20 text-white hover:bg-white/10"
           onClick={() => {
             setSearchTerm('');
             setStatusFilter('all');
             setPaymentFilter('all');
-            setLimitFilter('50');
+            setDateRange(getDefaultDateRange());
           }}
         >
           <Filter className="h-4 w-4" />
@@ -332,7 +342,6 @@ export const SalesHistoryTable: React.FC<SalesHistoryTableProps> = ({ onViewSale
         searchFields={['id', 'customer.name', 'seller.name', 'payment_method', 'status']}
         defaultSortField="created_at"
         defaultSortDirection="desc"
-        maxRows={parseInt(limitFilter)}
         empty={{
           title: 'Nenhuma venda encontrada',
           description: 'Ajuste os filtros para encontrar as vendas desejadas.',
