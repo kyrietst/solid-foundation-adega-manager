@@ -274,63 +274,69 @@ export const SalesHistoryTable: React.FC<SalesHistoryTableProps> = ({ onViewSale
       </div>
 
       {/* Filtros */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 p-4 bg-black/70 backdrop-blur-xl border border-white/20 rounded-lg">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Input
-            placeholder="Buscar por ID, cliente, vendedor..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 bg-black/50 border-white/20 text-white placeholder:text-gray-400"
-          />
+      <div className="space-y-4 p-4 bg-black/70 backdrop-blur-xl border border-white/20 rounded-lg">
+        {/* Linha 1: Filtros principais (Search + Dropdowns) */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Buscar por ID, cliente, vendedor..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 bg-black/50 border-white/20 text-white placeholder:text-gray-400 hover:bg-yellow-500/10 hover:border-yellow-500/50 focus:border-yellow-500/50 focus:ring-yellow-500/20 transition-colors"
+            />
+          </div>
+
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="bg-black/50 border-white/20 text-white hover:bg-yellow-500/20 hover:border-yellow-500/50 hover:text-yellow-400 transition-colors">
+              <SelectValue placeholder="Status da venda" />
+            </SelectTrigger>
+            <SelectContent className="bg-black/95 backdrop-blur-sm border border-white/20 shadow-2xl">
+              <SelectItem value="all" className="text-white hover:bg-yellow-500/20 hover:text-yellow-300 focus:bg-white/10 focus:text-white cursor-pointer">Todos os status</SelectItem>
+              <SelectItem value="completed" className="text-white hover:bg-yellow-500/20 hover:text-yellow-300 focus:bg-green-500/20 focus:text-green-300 cursor-pointer">Concluído</SelectItem>
+              <SelectItem value="pending" className="text-white hover:bg-yellow-500/20 hover:text-yellow-300 focus:bg-amber-500/20 focus:text-amber-300 cursor-pointer">Pendente</SelectItem>
+              <SelectItem value="cancelled" className="text-white hover:bg-yellow-500/20 hover:text-yellow-300 focus:bg-red-500/20 focus:text-red-300 cursor-pointer">Cancelado</SelectItem>
+              <SelectItem value="returned" className="text-white hover:bg-yellow-500/20 hover:text-yellow-300 focus:bg-purple-500/20 focus:text-purple-300 cursor-pointer">Devolvido</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={paymentFilter} onValueChange={setPaymentFilter}>
+            <SelectTrigger className="bg-black/50 border-white/20 text-white hover:bg-yellow-500/20 hover:border-yellow-500/50 hover:text-yellow-400 transition-colors">
+              <SelectValue placeholder="Método de pagamento" />
+            </SelectTrigger>
+            <SelectContent className="bg-black/95 backdrop-blur-sm border border-white/20 shadow-2xl">
+              <SelectItem value="all" className="text-white hover:bg-yellow-500/20 hover:text-yellow-300 focus:bg-white/10 focus:text-white cursor-pointer">Todos os métodos</SelectItem>
+              <SelectItem value="PIX" className="text-white hover:bg-yellow-500/20 hover:text-yellow-300 focus:bg-blue-500/20 focus:text-blue-300 cursor-pointer">PIX</SelectItem>
+              <SelectItem value="Cartão de Crédito" className="text-white hover:bg-yellow-500/20 hover:text-yellow-300 focus:bg-purple-500/20 focus:text-purple-300 cursor-pointer">Cartão de Crédito</SelectItem>
+              <SelectItem value="Débito" className="text-white hover:bg-yellow-500/20 hover:text-yellow-300 focus:bg-orange-500/20 focus:text-orange-300 cursor-pointer">Débito</SelectItem>
+              <SelectItem value="Dinheiro" className="text-white hover:bg-yellow-500/20 hover:text-yellow-300 focus:bg-green-500/20 focus:text-green-300 cursor-pointer">Dinheiro</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="bg-black/50 border-white/20 text-white">
-            <SelectValue placeholder="Status da venda" />
-          </SelectTrigger>
-          <SelectContent className="bg-gray-900/95 backdrop-blur-sm border border-white/20 shadow-2xl">
-            <SelectItem value="all" className="text-white hover:bg-white/10 focus:bg-white/10 focus:text-white cursor-pointer">Todos os status</SelectItem>
-            <SelectItem value="completed" className="text-white hover:bg-green-500/20 focus:bg-green-500/20 focus:text-green-300 cursor-pointer">Concluído</SelectItem>
-            <SelectItem value="pending" className="text-white hover:bg-amber-500/20 focus:bg-amber-500/20 focus:text-amber-300 cursor-pointer">Pendente</SelectItem>
-            <SelectItem value="cancelled" className="text-white hover:bg-red-500/20 focus:bg-red-500/20 focus:text-red-300 cursor-pointer">Cancelado</SelectItem>
-            <SelectItem value="returned" className="text-white hover:bg-purple-500/20 focus:bg-purple-500/20 focus:text-purple-300 cursor-pointer">Devolvido</SelectItem>
-          </SelectContent>
-        </Select>
+        {/* Linha 2: Filtros de data e ação (mais espaço) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <DateRangePicker
+            dateRange={dateRange}
+            onDateRangeChange={setDateRange}
+            placeholder="Selecione o período"
+          />
 
-        <Select value={paymentFilter} onValueChange={setPaymentFilter}>
-          <SelectTrigger className="bg-black/50 border-white/20 text-white">
-            <SelectValue placeholder="Método de pagamento" />
-          </SelectTrigger>
-          <SelectContent className="bg-gray-900/95 backdrop-blur-sm border border-white/20 shadow-2xl">
-            <SelectItem value="all" className="text-white hover:bg-white/10 focus:bg-white/10 focus:text-white cursor-pointer">Todos os métodos</SelectItem>
-            <SelectItem value="PIX" className="text-white hover:bg-blue-500/20 focus:bg-blue-500/20 focus:text-blue-300 cursor-pointer">PIX</SelectItem>
-            <SelectItem value="Cartão de Crédito" className="text-white hover:bg-purple-500/20 focus:bg-purple-500/20 focus:text-purple-300 cursor-pointer">Cartão de Crédito</SelectItem>
-            <SelectItem value="Débito" className="text-white hover:bg-orange-500/20 focus:bg-orange-500/20 focus:text-orange-300 cursor-pointer">Débito</SelectItem>
-            <SelectItem value="Dinheiro" className="text-white hover:bg-green-500/20 focus:bg-green-500/20 focus:text-green-300 cursor-pointer">Dinheiro</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <DateRangePicker
-          dateRange={dateRange}
-          onDateRangeChange={setDateRange}
-          placeholder="Selecione o período"
-        />
-
-        <Button
-          variant="outline"
-          size="sm"
-          className="gap-2 bg-black/50 border-white/20 text-white hover:bg-white/10"
-          onClick={() => {
-            setSearchTerm('');
-            setStatusFilter('all');
-            setPaymentFilter('all');
-            setDateRange(getDefaultDateRange());
-          }}
-        >
-          <Filter className="h-4 w-4" />
-          Limpar
-        </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2 bg-black/50 border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/20 hover:border-yellow-500/50 transition-colors"
+            onClick={() => {
+              setSearchTerm('');
+              setStatusFilter('all');
+              setPaymentFilter('all');
+              setDateRange(getDefaultDateRange());
+            }}
+          >
+            <Filter className="h-4 w-4" />
+            Limpar Filtros
+          </Button>
+        </div>
       </div>
 
       {/* DataTable - Substitui toda a implementação manual da tabela */}

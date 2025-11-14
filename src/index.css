@@ -1,4 +1,5 @@
 @import url('./assets/fonts/sf-pro-display.css');
+@import "react-day-picker/style.css";
 
 @tailwind base;
 @tailwind components;
@@ -94,6 +95,115 @@
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 }
+
+/* ============================================================================ */
+/* REACT DAY PICKER - OVERRIDE COMPLETO ADEGA THEME v1.0.0 */
+/* Correção: Remover azul padrão (#3b82f6) e aplicar paleta Black to Yellow */
+/* Data: 2025-11-13 */
+/* Issue: Calendário exibindo azul ao invés de yellow (#FFD700) */
+/* ============================================================================ */
+
+/**
+ * PROBLEMA RAIZ:
+ * - react-day-picker/style.css define --rdp-accent-color: blue em .rdp-root
+ * - Variáveis anteriores estavam em .dark (escopo errado, sem efeito)
+ * - Solução: Override direto em .rdp-root com !important para garantir especificidade
+ */
+
+.rdp-root {
+  /* ========================================================================== */
+  /* CORES PRIMÁRIAS - Substituir azul padrão por amarelo Adega */
+  /* ========================================================================== */
+  --rdp-accent-color: #FFD700 !important; /* primary-yellow */
+  --rdp-accent-color-dark: #FFD700 !important;
+  --rdp-accent-background-color: rgba(255, 215, 0, 0.1) !important; /* yellow/10 glass */
+
+  /* ========================================================================== */
+  /* CORES DE RANGE - Início e fim da seleção */
+  /* ========================================================================== */
+  --rdp-range_start-date-background-color: #FFD700 !important; /* yellow solid */
+  --rdp-range_start-color: #000000 !important; /* texto preto sobre yellow */
+  --rdp-range_end-date-background-color: #FFD700 !important;
+  --rdp-range_end-color: #000000 !important;
+
+  /* ========================================================================== */
+  /* CORES DE RANGE MIDDLE - Dias intermediários da seleção */
+  /* ========================================================================== */
+  --rdp-range_middle-background-color: rgba(255, 215, 0, 0.1) !important; /* yellow/10 */
+  --rdp-range_middle-color: #FFD700 !important; /* texto yellow */
+
+  /* ========================================================================== */
+  /* TODAY INDICATOR - Dia atual */
+  /* ========================================================================== */
+  --rdp-today-color: #FFD700 !important; /* yellow text */
+
+  /* ========================================================================== */
+  /* SELECTED BORDER - Borda do dia selecionado */
+  /* ========================================================================== */
+  --rdp-selected-border: 2px solid rgba(255, 215, 0, 0.5) !important; /* yellow/50 */
+
+  /* ========================================================================== */
+  /* OUTLINE - Estados de foco (acessibilidade) */
+  /* ========================================================================== */
+  --rdp-outline: 2px solid rgba(255, 215, 0, 0.5) !important;
+  --rdp-outline-selected: 2px solid #FFD700 !important;
+
+  /* ========================================================================== */
+  /* BACKGROUND - Fundo do calendário (glass morphism) */
+  /* ========================================================================== */
+  --rdp-background-color: rgba(17, 24, 39, 0.8) !important; /* gray-900/80 */
+}
+
+/* ============================================================================ */
+/* OVERRIDE ADICIONAL COM SELETORES ESPECÍFICOS */
+/* Garante especificidade máxima para sobrescrever estilos inline */
+/* ============================================================================ */
+
+/* Range Start/End - Fundo amarelo sólido com texto preto */
+.rdp-root .rdp-range_start .rdp-day_button,
+.rdp-root .rdp-range_end .rdp-day_button {
+  background-color: #FFD700 !important; /* yellow solid */
+  color: #000000 !important; /* texto preto legível - WCAG AAA */
+  border: 2px solid rgba(255, 215, 0, 0.5) !important; /* yellow border */
+  font-weight: 600 !important; /* destaque visual */
+}
+
+/* Range Middle - Fundo amarelo transparente com texto yellow */
+.rdp-root .rdp-range_middle {
+  background-color: rgba(255, 215, 0, 0.1) !important; /* yellow/10 glass */
+}
+
+.rdp-root .rdp-range_middle .rdp-day_button {
+  color: #FFD700 !important; /* texto yellow */
+  background-color: transparent !important; /* sem fundo no button */
+}
+
+/* Today Indicator - Texto amarelo para dia atual */
+.rdp-root .rdp-today:not(.rdp-outside) {
+  color: #FFD700 !important; /* texto yellow */
+  font-weight: 600 !important; /* destaque sutil */
+}
+
+/* Selected Day - Borda amarela para dia selecionado */
+.rdp-root .rdp-selected .rdp-day_button {
+  border: 2px solid rgba(255, 215, 0, 0.5) !important; /* yellow border */
+  background-color: rgba(255, 215, 0, 0.2) !important; /* yellow/20 glass */
+}
+
+/* Hover State - Amarelo transparente no hover */
+.rdp-root .rdp-day_button:hover:not(:disabled) {
+  background-color: rgba(255, 215, 0, 0.1) !important; /* yellow/10 */
+  border-color: rgba(255, 215, 0, 0.3) !important; /* yellow/30 */
+}
+
+/* Chevron Icons - Navegação amarela */
+.rdp-root .rdp-chevron {
+  fill: #FFD700 !important; /* yellow */
+}
+
+/* ============================================================================ */
+/* FIM DO OVERRIDE - REACT DAY PICKER ADEGA THEME */
+/* ============================================================================ */
 
 @layer base {
   * {

@@ -120,7 +120,7 @@ export function DateRangePicker({
             variant="outline"
             disabled={disabled}
             className={cn(
-              "w-full justify-start text-left font-normal bg-black/50 border-white/20 text-white hover:bg-white/10",
+              "w-full justify-start text-left font-normal bg-black/50 border-white/20 text-white hover:bg-yellow-500/20 hover:border-yellow-500/50 hover:text-yellow-400 transition-colors",
               !date && "text-muted-foreground"
             )}
           >
@@ -129,13 +129,13 @@ export function DateRangePicker({
           </Button>
         </PopoverTrigger>
         <PopoverContent
-          className="w-auto p-0 bg-gray-900/95 backdrop-blur-sm border border-white/20"
+          className="w-auto p-0 bg-black/95 backdrop-blur-xl border border-white/30 shadow-2xl"
           align="start"
         >
           <div className="flex">
             {/* Presets sidebar */}
-            <div className="flex flex-col gap-2 p-3 border-r border-white/10">
-              <div className="text-xs font-medium text-gray-400 mb-1">
+            <div className="flex flex-col gap-1 p-4 border-r border-white/20 bg-black/30 min-w-[140px]">
+              <div className="text-xs font-semibold text-yellow-400 mb-2 uppercase tracking-wider">
                 Períodos
               </div>
               {presets.map((preset) => (
@@ -143,24 +143,25 @@ export function DateRangePicker({
                   key={preset.label}
                   variant="ghost"
                   size="sm"
-                  className="justify-start text-white hover:bg-white/10 text-xs"
+                  className="justify-start text-gray-300 hover:bg-yellow-500/20 hover:text-yellow-300 text-xs font-medium transition-colors"
                   onClick={() => handleSelect(preset.getValue())}
                 >
                   {preset.label}
                 </Button>
               ))}
+              <div className="border-t border-white/10 my-2" />
               <Button
                 variant="ghost"
                 size="sm"
-                className="justify-start text-red-400 hover:bg-red-500/10 text-xs mt-2"
+                className="justify-start text-red-400 hover:bg-yellow-500/20 hover:text-yellow-300 text-xs font-medium transition-colors"
                 onClick={() => handleSelect(undefined)}
               >
-                Limpar
+                Limpar filtro
               </Button>
             </div>
 
             {/* Calendar */}
-            <div className="p-3">
+            <div className="p-4">
               <Calendar
                 initialFocus
                 mode="range"
