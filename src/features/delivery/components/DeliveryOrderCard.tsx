@@ -12,11 +12,11 @@ import { Button } from '@/shared/ui/primitives/button';
 import { Badge } from '@/shared/ui/primitives/badge';
 import { Separator } from '@/shared/ui/primitives/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shared/ui/primitives/dialog';
-import { 
-  User, 
-  MapPin, 
-  Clock, 
-  DollarSign, 
+import {
+  User,
+  MapPin,
+  Clock,
+  DollarSign,
   Package,
   Truck,
   CheckCircle,
@@ -24,7 +24,9 @@ import {
   Phone,
   FileText,
   Calendar,
-  ArrowRight
+  ArrowRight,
+  Map,
+  MessageCircle
 } from 'lucide-react';
 import { cn } from '@/core/config/utils';
 import { format } from 'date-fns';
@@ -32,6 +34,7 @@ import { ptBR } from 'date-fns/locale';
 import type { DeliveryOrder } from '@/features/delivery/hooks/useDeliveryOrders';
 import { DeliveryTimeline } from './DeliveryTimeline';
 import { DeliveryAssignmentModal } from './DeliveryAssignmentModal';
+import { formatDeliveryAddress, formatPhoneForWhatsApp } from '@/shared/utils/addressHelpers';
 
 interface DeliveryOrderCardProps {
   delivery: DeliveryOrder;
@@ -106,9 +109,9 @@ export const DeliveryOrderCard = React.memo(({
     }
   }, [getNextStatus]);
 
+  // Usar helper defensivo para lidar com formatos inconsistentes
   const formatAddress = useCallback((address: any) => {
-    if (!address) return 'Endereço não informado';
-    return `${address.street} ${address.number}${address.complement ? `, ${address.complement}` : ''}, ${address.neighborhood}`;
+    return formatDeliveryAddress(address);
   }, []);
 
   const formatTime = (timeString?: string) => {
@@ -212,9 +215,21 @@ export const DeliveryOrderCard = React.memo(({
               {delivery.customer?.name || 'Cliente não informado'}
             </p>
             {delivery.customer?.phone && (
-              <div className="flex items-center gap-2 text-gray-400 text-sm">
-                <Phone className="h-3 w-3" />
-                {delivery.customer.phone}
+              <div className="flex items-center gap-3 text-gray-400 text-sm">
+                <div className="flex items-center gap-1">
+                  <Phone className="h-3 w-3" />
+                  <span>{delivery.customer.phone}</span>
+                </div>
+                <a
+                  href={`https://wa.me/${formatPhoneForWhatsApp(delivery.customer.phone)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1 text-green-400 hover:text-green-300 transition-colors"
+                  title="Abrir WhatsApp"
+                >
+                  <MessageCircle className="h-3 w-3" />
+                  <span className="text-xs">WhatsApp</span>
+                </a>
               </div>
             )}
           </div>
@@ -228,16 +243,29 @@ export const DeliveryOrderCard = React.memo(({
             <MapPin className="h-4 w-4 text-green-400" />
             Endereço de Entrega
           </div>
-          <div className="ml-6">
+          <div className="ml-6 space-y-2">
             <p className="text-gray-300 text-sm">
               {formatAddress(delivery.delivery_address)}
             </p>
             {delivery.delivery_instructions && (
-              <div className="flex items-start gap-2 mt-2 text-gray-400 text-sm">
+              <div className="flex items-start gap-2 text-gray-400 text-sm">
                 <FileText className="h-3 w-3 mt-0.5 flex-shrink-0" />
                 <span>{delivery.delivery_instructions}</span>
               </div>
             )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const addressText = formatAddress(delivery.delivery_address);
+                const encoded = encodeURIComponent(addressText);
+                window.open(`https://www.google.com/maps/search/?api=1&query=${encoded}`, '_blank');
+              }}
+              className="border-green-400/50 text-green-400 hover:bg-green-400/10 hover:border-green-400"
+            >
+              <Map className="h-3 w-3 mr-1" />
+              Abrir no Maps
+            </Button>
           </div>
         </div>
 

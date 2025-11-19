@@ -47,7 +47,8 @@ export interface CustomerKpis {
 
 export interface InventoryKpis {
   totalProducts: number;
-  totalValue: number;
+  totalCostValue: number; // Renamed for clarity: capital investido
+  potentialRevenue: number; // NEW: receita potencial se todo estoque for vendido
   lowStockCount: number; // Ultra-simplificação: representa produtos SEM estoque (stock = 0)
 }
 
@@ -67,62 +68,57 @@ export function useSalesKpis(windowDays: number = 30) {
   return useQuery({
     queryKey: ['kpis-sales', windowDays],
     queryFn: async (): Promise<SalesKpis> => {
-      console.log(`📊 Sales KPIs - Calculando dados reais para ${windowDays} dias (timezone São Paulo)`);
+      console.log(`📊 Sales KPIs - Usando RPC otimizada para ${windowDays} dias (timezone São Paulo)`);
 
-      // Usar ranges de data em horário de São Paulo
+      // Usar ranges de data em horário de São Paulo (consistente com tela de Vendas)
       const dateRange = getSaoPauloDateRange(windowDays);
 
-      // Buscar vendas do período atual
-      const { data: currentSales, error: currentError } = await supabase
-        .from('sales')
-        .select('final_amount')
-        .eq('status', 'completed')
-        .gte('created_at', dateRange.current.start)
-        .lte('created_at', dateRange.current.end)
-        .not('final_amount', 'is', null);
+      // ✅ SSoT: Buscar dados do período atual usando RPC
+      const { data: currentData, error: currentError } = await supabase
+        .rpc('get_dashboard_financials', {
+          p_start_date: dateRange.current.start,
+          p_end_date: dateRange.current.end
+        })
+        .single();
 
       if (currentError) {
-        console.error('❌ Erro ao buscar vendas atuais:', currentError);
+        console.error('❌ Erro ao buscar KPIs atuais:', currentError);
         throw currentError;
       }
 
-      // Buscar vendas do período anterior
-      const { data: prevSales, error: prevError } = await supabase
-        .from('sales')
-        .select('final_amount')
-        .eq('status', 'completed')
-        .gte('created_at', dateRange.previous.start)
-        .lt('created_at', dateRange.previous.end)
-        .not('final_amount', 'is', null);
+      // ✅ SSoT: Buscar dados do período anterior usando RPC
+      const { data: prevData, error: prevError } = await supabase
+        .rpc('get_dashboard_financials', {
+          p_start_date: dateRange.previous.start,
+          p_end_date: dateRange.previous.end
+        })
+        .single();
 
       if (prevError) {
-        console.error('❌ Erro ao buscar vendas anteriores:', prevError);
+        console.error('❌ Erro ao buscar KPIs anteriores:', prevError);
         // Não falhar se não houver dados anteriores
       }
 
-      // Calcular KPIs atuais com proteção anti-NaN
-      const revenue = safeNumber((currentSales || []).reduce((sum, sale) => sum + safeNumber(sale.final_amount), 0));
-      const orders = safeNumber((currentSales || []).length);
-      // ✅ Correção: avgTicket é divisão simples, não percentual
-      const avgTicket = orders > 0 ? safeNumber(revenue / orders) : 0;
+      // ✅ SSoT: Dados já vêm calculados do banco
+      const revenue = safeNumber(currentData?.total_revenue || 0);
+      const orders = safeNumber(currentData?.sales_count || 0);
+      const avgTicket = safeNumber(currentData?.average_ticket || 0);
 
-      // Calcular KPIs anteriores com proteção anti-NaN
-      const revenuePrev = safeNumber((prevSales || []).reduce((sum, sale) => sum + safeNumber(sale.final_amount), 0));
-      const ordersPrev = safeNumber((prevSales || []).length);
-      // ✅ Correção: avgTicketPrev é divisão simples, não percentual
-      const avgTicketPrev = ordersPrev > 0 ? safeNumber(revenuePrev / ordersPrev) : 0;
+      const revenuePrev = safeNumber(prevData?.total_revenue || 0);
+      const ordersPrev = safeNumber(prevData?.sales_count || 0);
+      const avgTicketPrev = safeNumber(prevData?.average_ticket || 0);
 
       // Calcular deltas com proteção anti-NaN
       const revenueDelta = debugNaN(safeDelta(revenue, revenuePrev), 'revenueDelta');
       const ordersDelta = debugNaN(safeDelta(orders, ordersPrev), 'ordersDelta');
       const avgTicketDelta = debugNaN(safeDelta(avgTicket, avgTicketPrev), 'avgTicketDelta');
 
-      console.log(`📊 Sales KPIs calculados - Receita: R$ ${revenue.toFixed(2)}, Pedidos: ${orders}, Ticket Médio: R$ ${avgTicket.toFixed(2)}`);
+      console.log(`📊 Sales KPIs (RPC) - Receita: R$ ${revenue.toFixed(2)}, Pedidos: ${orders}, Ticket Médio: R$ ${avgTicket.toFixed(2)}`);
 
-      return { 
-        revenue, 
-        orders, 
-        avgTicket, 
+      return {
+        revenue,
+        orders,
+        avgTicket,
         revenuePrev,
         revenueDelta: safeNumber(Math.round(revenueDelta * 100) / 100),
         ordersDelta: safeNumber(Math.round(ordersDelta * 100) / 100),
@@ -200,42 +196,38 @@ export function useInventoryKpis() {
   return useQuery({
     queryKey: ['kpis-inventory'],
     queryFn: async (): Promise<InventoryKpis> => {
-      console.log('📦 Inventory KPIs - Calculando dados ultra-simplificados do estoque');
+      console.log('📦 Inventory KPIs - Usando RPC otimizada (CORRIGIDO: usando cost_price)');
 
-      // Buscar produtos com campos ultra-simplificados
-      const { data: products, error: productsError } = await supabase
-        .from('products')
-        .select('stock_packages, stock_units_loose, price');
+      // ✅ SSoT: Buscar valuation do estoque usando RPC
+      const { data, error } = await supabase
+        .rpc('get_inventory_valuation')
+        .single();
 
-      if (productsError) {
-        console.error('❌ Erro ao buscar produtos:', productsError);
-        throw productsError;
+      if (error) {
+        console.error('❌ Erro ao buscar inventory valuation:', error);
+        throw error;
       }
 
-      const totalProducts = (products || []).length;
+      // ✅ SSoT: Dados já vêm calculados do banco
+      // CRÍTICO: totalCostValue usa cost_price (patrimônio investido real)
+      const totalProducts = safeNumber(data?.total_products || 0);
+      const totalCostValue = safeNumber(data?.total_cost_value || 0);
+      const potentialRevenue = safeNumber(data?.potential_revenue_value || 0);
+      const lowStockCount = safeNumber(data?.out_of_stock_count || 0);
 
-      // Calcular valor total do estoque com proteção anti-NaN
-      const totalValue = safeNumber((products || []).reduce((sum, product) => {
-        const stockPackages = safeNumber(product.stock_packages);
-        const stockUnitsLoose = safeNumber(product.stock_units_loose);
-        const totalStock = stockPackages + stockUnitsLoose;
-        const price = safeNumber(product.price);
-        return sum + (totalStock * price);
-      }, 0));
+      // Calcular margem potencial
+      const marginPercent = totalCostValue > 0
+        ? ((potentialRevenue - totalCostValue) / totalCostValue) * 100
+        : 0;
 
-      // Ultra-simplificação: Contar apenas produtos SEM ESTOQUE (packages = 0 E units = 0)
-      const lowStockCount = (products || []).filter(product => {
-        const stockPackages = safeNumber(product.stock_packages);
-        const stockUnitsLoose = safeNumber(product.stock_units_loose);
-        return stockPackages === 0 && stockUnitsLoose === 0;
-      }).length;
-
-      console.log(`📦 Inventory KPIs ultra-simplificados - Produtos: ${totalProducts}, Valor: R$ ${totalValue.toFixed(2)}, Sem Estoque: ${lowStockCount}`);
+      console.log(`📦 Inventory KPIs (RPC) - Produtos: ${totalProducts}, Valor Investido: R$ ${totalCostValue.toFixed(2)}, Sem Estoque: ${lowStockCount}`);
+      console.log(`💡 Potencial de Faturamento: R$ ${potentialRevenue.toFixed(2)} (+${marginPercent.toFixed(0)}% margem)`);
 
       return {
         totalProducts,
-        totalValue,
-        lowStockCount // Agora representa produtos sem estoque
+        totalCostValue, // Capital investido (cost_price)
+        potentialRevenue, // ✅ NOVO: Receita potencial (price)
+        lowStockCount
       };
     },
     staleTime: 5 * 60 * 1000,

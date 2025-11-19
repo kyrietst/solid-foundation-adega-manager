@@ -16,11 +16,9 @@ export const DashboardContainer: React.FC = () => {
   const {
     counts,
     salesData,
-    recentActivities,
     isLoading,
     isLoadingCounts,
-    isLoadingSales,
-    isLoadingActivities
+    isLoadingSales
   } = useDashboardData();
 
   // Processar métricas para apresentação (apenas métricas públicas)
@@ -31,14 +29,12 @@ export const DashboardContainer: React.FC = () => {
     // Dados processados
     publicMetrics,
     salesData: salesData || [],
-    recentActivities: recentActivities || [],
-    
+
     // Estados de loading
     isLoading,
     isLoadingCounts,
     isLoadingSales,
-    isLoadingActivities,
-    
+
     // Configuração de apresentação
     userRole,
     showEmployeeNote: userRole === 'employee',

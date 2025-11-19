@@ -5,7 +5,6 @@ import { ProductsGrid } from "./ProductsGrid";
 import { Cart } from "./Cart";
 import { RecentSales } from "./RecentSales";
 import { ReceiptModal } from "./ReceiptModal";
-import { ReceiptTestDemo } from "./ReceiptTestDemo";
 import { useState } from "react";
 import { ShoppingCart, Store, Truck, Package, Printer } from "lucide-react";
 import { useCart, useCartItemCount } from "@/features/sales/hooks/use-cart";
@@ -267,20 +266,19 @@ function SalesPage({
 
           {activeTab === 'print-test' && (
             <div className="h-full flex flex-col min-h-0 p-2">
-              <div className="text-center mb-6">
+              <div className="text-center">
                 <h2 className={cn(
                   getSFProTextClasses('h2', 'accent'),
                   "text-transparent bg-clip-text bg-gradient-to-r from-[#FF2400] via-[#FFDA04] to-[#FF2400]"
                 )}>
                   🖨️ TESTE DE IMPRESSÃO TÉRMICA
                 </h2>
-                <p className={cn(getSFProTextClasses('body', 'secondary'), "mt-2")}>
-                  ZPrinter Paper (58x90mm) - ULTRA COMPACTO - Zero Desperdício
+                <p className={cn(getSFProTextClasses('body', 'secondary'), "mt-4")}>
+                  Funcionalidade de teste de impressão removida.
                 </p>
-              </div>
-
-              <div className="flex-1 flex items-center justify-center min-h-0">
-                <ReceiptTestDemo />
+                <p className={cn(getSFProTextClasses('body', 'secondary'), "mt-2")}>
+                  Use "Vendas Recentes" → "Imprimir Cupom" para testar a impressora.
+                </p>
               </div>
             </div>
           )}

@@ -39,9 +39,10 @@ O Adega Manager é uma aplicação web moderna construída para gerenciamento co
 - **Performance Monitoring** - Monitoramento de performance automatizado
 - **Security Audit** - 57 políticas RLS + audit logs
 
-### Backend & Infraestrutura  
+### Backend & Infraestrutura
 - **Supabase** - Plataforma BaaS enterprise-grade
-- **PostgreSQL 15+** - 16 tabelas, 48 stored procedures, 57 políticas RLS
+- **PostgreSQL 15+** - 16 tabelas, 50 stored procedures (RPCs), 57 políticas RLS
+- **Database RPCs** - Business logic centralizada (Dashboard financials, Inventory valuation)
 - **Row Level Security** - Segurança multi-camada com audit trail
 - **Real-time Subscriptions** - Atualizações em tempo real
 - **Automated Backups** - Sistema robusto com rotação
@@ -239,6 +240,27 @@ NODE_ENV=development
 - **Análise de estoque** - Giro, níveis, reposição
 - **Comportamento de clientes** - Segmentação, LTV, frequência
 - **Operações** - Entregas, movimentações, usuários
+
+### Database RPCs para Analytics (SSoT)
+**🎯 Business Logic Centralizada no Banco de Dados**
+
+- **`get_dashboard_financials(start_date, end_date)`**
+  - Retorna: receita total, COGS, lucro bruto, ticket médio, quantidade de vendas
+  - **Performance**: 10-100x mais rápido que cálculos no frontend
+  - **Uso**: Dashboard financeiro, relatórios de vendas
+
+- **`get_inventory_valuation()`**
+  - Retorna: valor investido (cost_price), potencial de faturamento (price)
+  - **Correção crítica**: Agora usa `cost_price` para patrimônio real
+  - **Uso**: Dashboard de estoque, relatórios financeiros
+
+**Benefícios:**
+- ✅ Single Source of Truth (lógica em um único lugar)
+- ✅ Performance otimizada (agregações no PostgreSQL)
+- ✅ Versionamento via migrations
+- ✅ Timezone consistente (São Paulo)
+
+**Ver**: `docs/07-changelog/DASHBOARD_SSOT_REFACTORING_2025-11-18.md`
 
 ### Sistema de Notificações
 - **Estoque baixo** - Alertas automáticos

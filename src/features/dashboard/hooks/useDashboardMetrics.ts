@@ -56,57 +56,7 @@ export const useDashboardMetrics = (
     ];
   }, [counts]);
 
-  // Métricas sensíveis (apenas admin)
-  const sensitiveMetrics = useMemo((): MetricCard[] => {
-    if (!financials) return [];
-
-    const formatCurrency = (value: number) => 
-      new Intl.NumberFormat('pt-BR', {
-        style: 'currency',
-        currency: 'BRL'
-      }).format(value);
-
-    const formatPercentage = (value: number) => 
-      `${value.toFixed(1)}%`;
-
-    return [
-      {
-        title: 'Faturamento Total',
-        value: formatCurrency(financials.totalRevenue),
-        icon: DollarSign,
-        description: `${formatCurrency(financials.totalRevenue)} em receitas`,
-        variant: financials.totalRevenue > 0 ? 'success' : 'warning',
-        accent: 'amber' as const
-      },
-      {
-        title: 'Lucro Bruto',
-        value: formatCurrency(financials.grossProfit || financials.netProfit),
-        icon: TrendingUp,
-        description: `${formatPercentage(financials.grossMargin || financials.profitMargin)} de margem bruta`,
-        variant: (financials.grossProfit || financials.netProfit) > 0 ? 'success' : 'error',
-        accent: 'green' as const
-      },
-      {
-        title: 'COGS',
-        value: formatCurrency(financials.cogs || 0),
-        icon: Percent,
-        description: `${formatCurrency(financials.cogs || 0)} em custos de produtos`,
-        variant: 'default',
-        accent: 'blue' as const
-      },
-      {
-        title: 'Despesas Operacionais',
-        value: formatCurrency(financials.operationalExpenses || financials.operationalCosts),
-        icon: TrendingDown,
-        description: `${formatCurrency(financials.operationalExpenses || financials.operationalCosts)} em despesas`,
-        variant: 'default',
-        accent: 'red' as const
-      }
-    ];
-  }, [financials]);
-
   return {
     publicMetrics,
-    sensitiveMetrics,
   };
 };
