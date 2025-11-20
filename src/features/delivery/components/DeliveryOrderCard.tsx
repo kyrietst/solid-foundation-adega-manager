@@ -100,12 +100,26 @@ export const DeliveryOrderCard = React.memo(({
   const getNextStatusText = useCallback((currentStatus: string) => {
     const nextStatus = getNextStatus(currentStatus);
     if (!nextStatus) return null;
-    
+
     switch (nextStatus) {
       case 'preparing': return 'Preparar';
       case 'out_for_delivery': return 'Iniciar Entrega';
       case 'delivered': return 'Marcar Entregue';
       default: return null;
+    }
+  }, [getNextStatus]);
+
+  const getActionButtonColor = useCallback((currentStatus: string) => {
+    const nextStatus = getNextStatus(currentStatus);
+    switch (nextStatus) {
+      case 'preparing':
+        return 'bg-yellow-600 hover:bg-yellow-700 hover:shadow-yellow-500/25';
+      case 'out_for_delivery':
+        return 'bg-blue-600 hover:bg-blue-700 hover:shadow-blue-500/25';
+      case 'delivered':
+        return 'bg-green-600 hover:bg-green-700 hover:shadow-green-500/25';
+      default:
+        return 'bg-gray-600 hover:bg-black/40';
     }
   }, [getNextStatus]);
 
@@ -173,8 +187,8 @@ export const DeliveryOrderCard = React.memo(({
 
   return (
     <Card className={cn(
-      "bg-black/60 border border-white/10 backdrop-blur-sm shadow-xl transition-all duration-300",
-      "hover:shadow-2xl hover:shadow-yellow-500/20 hover:border-yellow-400/40 hover:scale-[1.02]",
+      "bg-black/80 backdrop-blur-xl border border-white/10 shadow-lg rounded-xl transition-all duration-300",
+      "hover:border-white/20 hover:shadow-xl",
       className
     )}>
       {/* Header do Card */}
@@ -244,7 +258,7 @@ export const DeliveryOrderCard = React.memo(({
             Endereço de Entrega
           </div>
           <div className="ml-6 space-y-2">
-            <p className="text-gray-300 text-sm">
+            <p className="text-gray-200 text-sm font-medium">
               {formatAddress(delivery.delivery_address)}
             </p>
             {delivery.delivery_instructions && (
@@ -388,10 +402,10 @@ export const DeliveryOrderCard = React.memo(({
               onClick={handleUpdateStatus}
               disabled={isUpdating}
               className={cn(
-                "transition-all duration-300 text-white font-medium",
-                isUpdating 
-                  ? "bg-gray-500 cursor-not-allowed opacity-75" 
-                  : "bg-blue-600 hover:bg-blue-700 hover:scale-105 shadow-lg hover:shadow-blue-500/25"
+                "transition-all duration-300 text-white font-medium hover:scale-105 shadow-lg",
+                isUpdating
+                  ? "bg-gray-500 cursor-not-allowed opacity-75"
+                  : getActionButtonColor(delivery.delivery_status)
               )}
             >
               {isUpdating ? (
@@ -421,7 +435,7 @@ export const DeliveryOrderCard = React.memo(({
             variant="outline"
             size="sm"
             onClick={handleOpenTimeline}
-            className="border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white"
+            className="border-white/10 text-gray-300 hover:bg-black/40 hover:text-white"
           >
             <Calendar className="h-3 w-3 mr-1" />
             Timeline
@@ -433,7 +447,7 @@ export const DeliveryOrderCard = React.memo(({
               variant="outline"
               size="sm"
               onClick={handleViewDetails}
-              className="border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white"
+              className="border-white/10 text-gray-300 hover:bg-black/40 hover:text-white"
             >
               Ver Detalhes
             </Button>

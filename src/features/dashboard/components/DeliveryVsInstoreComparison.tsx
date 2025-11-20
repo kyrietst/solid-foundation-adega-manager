@@ -165,13 +165,13 @@ export const DeliveryVsInstoreComparison = ({ className }: DeliveryVsInstoreComp
   const instoreOrders = Number(comparison.instore_orders) || 0;
   const deliveryRevenue = Number(comparison.delivery_revenue) || 0;
   const instoreRevenue = Number(comparison.instore_revenue) || 0;
-  
+
   const totalOrders = deliveryOrders + instoreOrders;
   const totalRevenue = deliveryRevenue + instoreRevenue;
-  
-  // Percentuais com validação de NaN
-  const deliveryOrdersPercent = totalOrders > 0 && !isNaN(deliveryOrders) ? (deliveryOrders / totalOrders) * 100 : 0;
-  const instoreOrdersPercent = totalOrders > 0 && !isNaN(instoreOrders) ? (instoreOrders / totalOrders) * 100 : 0;
+
+  // ✅ FIX: Percentuais baseados em RECEITA (não em contagem de pedidos)
+  const deliveryRevenuePercent = totalRevenue > 0 && !isNaN(deliveryRevenue) ? (deliveryRevenue / totalRevenue) * 100 : 0;
+  const instoreRevenuePercent = totalRevenue > 0 && !isNaN(instoreRevenue) ? (instoreRevenue / totalRevenue) * 100 : 0;
   
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -180,29 +180,31 @@ export const DeliveryVsInstoreComparison = ({ className }: DeliveryVsInstoreComp
     }).format(value);
   };
 
-  // Estrutura de dados idêntica aos KPIs originais
+  // ✅ FIX: Cards mostram RECEITA (R$) e % de receita, não contagem de pedidos
   const kpiItems = [
     {
       id: 'delivery',
       label: 'Delivery',
-      value: comparison.delivery_orders,
+      value: formatCurrency(deliveryRevenue),
       delta: undefined,
       icon: Truck,
       valueType: 'positive' as const,
       isLoading: false,
       href: '/reports?tab=delivery&section=delivery-overview',
-      subLabel: `${!isNaN(deliveryOrdersPercent) ? deliveryOrdersPercent.toFixed(1) : '0.0'}%`
+      subLabel: `${!isNaN(deliveryRevenuePercent) ? deliveryRevenuePercent.toFixed(1) : '0.0'}%`,
+      formatType: 'text' as const // Já formatado manualmente
     },
     {
       id: 'presencial',
-      label: 'Presencial', 
-      value: comparison.instore_orders,
+      label: 'Presencial',
+      value: formatCurrency(instoreRevenue),
       delta: undefined,
       icon: Store,
       valueType: 'positive' as const,
       isLoading: false,
       href: '/reports?tab=delivery&section=instore-overview',
-      subLabel: `${!isNaN(instoreOrdersPercent) ? instoreOrdersPercent.toFixed(1) : '0.0'}%`
+      subLabel: `${!isNaN(instoreRevenuePercent) ? instoreRevenuePercent.toFixed(1) : '0.0'}%`,
+      formatType: 'text' as const // Já formatado manualmente
     },
     {
       id: 'receita-total',

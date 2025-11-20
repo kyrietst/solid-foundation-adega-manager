@@ -4,6 +4,5 @@ export { default as DeliveryOrderCard } from './DeliveryOrderCard';
 export { default as DeliveryTimeline } from './DeliveryTimeline';
 export { default as DeliveryAssignmentModal } from './DeliveryAssignmentModal';
 export { default as NotificationCenter } from './NotificationCenter';
-export { default as DeliveryAnalytics } from './DeliveryAnalytics';
-export { default as DeliveryPersonReport } from './DeliveryPersonReport';
-export { default as ZoneAnalysisReport } from './ZoneAnalysisReport';
+export { default as DeliveryStatsGrid } from './DeliveryStatsGrid';
+export { default as KanbanColumn } from './KanbanColumn';
