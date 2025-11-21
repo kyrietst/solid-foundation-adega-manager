@@ -8,6 +8,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
 import { useDashboardErrorHandling } from './useDashboardErrorHandling';
 import { useDashboardExpenses } from './useDashboardExpenses';
+import { getMonthStartDate, getNowSaoPaulo } from '../utils/dateHelpers';
 
 export interface DashboardCounts {
   totalCustomers: number;
@@ -45,8 +46,8 @@ export const useDashboardData = (periodDays: number = 30) => {
     retryDelay: 1000
   });
 
-  // Buscar despesas operacionais reais
-  const { data: expensesData, isLoading: isLoadingExpenses } = useDashboardExpenses(periodDays);
+  // Buscar despesas operacionais reais (MTD)
+  const { data: expensesData, isLoading: isLoadingExpenses } = useDashboardExpenses();
 
   // Query para contadores públicos com dados reais
   const { data: counts, isLoading: isLoadingCounts, error: countsError, refetch: refetchCounts } = useQuery({
@@ -86,13 +87,14 @@ export const useDashboardData = (periodDays: number = 30) => {
   const { data: financials, isLoading: isLoadingFinancials, error: financialsError, refetch: refetchFinancials } = useQuery({
     queryKey: ['dashboard', 'financials', periodDays, expensesData?.total_expenses],
     queryFn: errorHandler.withErrorHandling('sales', async (): Promise<DashboardFinancials> => {
-      console.log(`💰 Dashboard - Usando RPC otimizada para ${periodDays} dias (timezone São Paulo)`);
+      console.log(`💰 Dashboard - Usando RPC otimizada para MTD (Month-to-Date) - timezone São Paulo`);
 
-      // Calcular date range em horário de São Paulo (consistente com outras telas)
-      const nowSP = new Date(new Date().toLocaleString("en-US", {timeZone: "America/Sao_Paulo"}));
-      const endDate = new Date(nowSP);
-      const startDate = new Date(nowSP);
-      startDate.setDate(endDate.getDate() - periodDays);
+      // ✅ MTD Strategy: Sempre do dia 01 do mês atual até hoje (timezone São Paulo)
+      // Ignora o parâmetro periodDays - Dashboard mostra "fechamento de caixa" mensal
+      const endDate = getNowSaoPaulo();
+      const startDate = getMonthStartDate();
+
+      console.log(`📅 Período MTD: ${startDate.toLocaleDateString('pt-BR')} até ${endDate.toLocaleDateString('pt-BR')}`);
 
       // ✅ SSoT: Buscar dados financeiros via RPC (receita, COGS, lucro bruto já calculados)
       const { data: rpcData, error: rpcError } = await supabase
@@ -156,10 +158,10 @@ export const useDashboardData = (periodDays: number = 30) => {
       const startDate = new Date();
       startDate.setDate(endDate.getDate() - periodDays);
       
-      const { data: sales, error } = await supabase
+      // ✅ FIX: Buscar TODAS as vendas do período (incluir delivery_type e delivery_status)
+      const { data: allSales, error } = await supabase
         .from('sales')
-        .select('final_amount, created_at')
-        .eq('status', 'completed')
+        .select('final_amount, created_at, status, delivery_type, delivery_status, delivery')
         .gte('created_at', startDate.toISOString())
         .lte('created_at', endDate.toISOString())
         .not('final_amount', 'is', null);
@@ -169,10 +171,33 @@ export const useDashboardData = (periodDays: number = 30) => {
         throw error;
       }
 
+      // ✅ FIX: Aplicar lógica híbrida de status (mesma de get_dashboard_financials)
+      const sales = (allSales || []).filter(sale => {
+        // Excluir vendas canceladas ou devolvidas
+        if (sale.status === 'cancelled' || sale.status === 'returned') {
+          return false;
+        }
+
+        // Lógica Híbrida:
+        // - Presencial: status = 'completed' (venda paga)
+        const isPresencialCompleted =
+          (sale.status === 'completed') &&
+          (sale.delivery_type === 'presencial' || sale.delivery === false);
+
+        // - Delivery: delivery_status = 'delivered' (entrega concluída)
+        const isDeliveryDelivered =
+          (sale.delivery_type === 'delivery') &&
+          (sale.delivery_status === 'delivered');
+
+        return isPresencialCompleted || isDeliveryDelivered;
+      });
+
+      console.log(`✅ Gráfico - Vendas válidas (lógica híbrida): ${sales.length} de ${allSales?.length || 0} vendas totais`);
+
       // Agrupar vendas por mês
       const monthlyData = new Map<string, number>();
       const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-      
+
       // Inicializar todos os meses com 0
       for (let i = 0; i < 12; i++) {
         const date = new Date();
@@ -181,8 +206,8 @@ export const useDashboardData = (periodDays: number = 30) => {
         monthlyData.set(monthKey, 0);
       }
 
-      // Somar vendas por mês
-      (sales || []).forEach(sale => {
+      // Somar vendas por mês (agora com filtro híbrido aplicado)
+      sales.forEach(sale => {
         const saleDate = new Date(sale.created_at);
         const monthKey = `${saleDate.getFullYear()}-${String(saleDate.getMonth() + 1).padStart(2, '0')}`;
         const currentValue = monthlyData.get(monthKey) || 0;

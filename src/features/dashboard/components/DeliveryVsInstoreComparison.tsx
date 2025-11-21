@@ -15,10 +15,10 @@ import { cn } from '@/core/config/utils';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
 import { KpiCards } from './KpiCards';
+import { getCurrentMonthLabel, getMonthStartDate, getNowSaoPaulo } from '../utils/dateHelpers';
 
-// Dashboard sempre mostra últimos 30 dias (período fixo)
+// ✅ MTD Strategy: Dashboard sempre mostra mês atual (dia 01 até hoje)
 // Para análise com períodos customizados, use a página de Reports
-const DASHBOARD_PERIOD = 30;
 
 interface DeliveryVsInstoreComparisonProps {
   className?: string;
@@ -37,16 +37,23 @@ interface ComparisonData {
 
 export const DeliveryVsInstoreComparison = ({ className }: DeliveryVsInstoreComparisonProps) => {
 
-  // Query para dados comparativos básicos para dashboard com fallback
+  // Query para dados comparativos básicos para dashboard com fallback (MTD)
   const { data: comparison, isLoading } = useQuery({
-    queryKey: ['delivery-vs-instore-dashboard', DASHBOARD_PERIOD],
+    queryKey: ['delivery-vs-instore-dashboard', 'mtd'],
     queryFn: async (): Promise<ComparisonData> => {
-      console.log('📊 Carregando comparativo básico para dashboard (30 dias)...');
+      console.log('📊 Carregando comparativo básico para dashboard (MTD - Month-to-Date)...');
+
+      // ✅ MTD: Calcular período do mês atual
+      const startDate = getMonthStartDate();
+      const endDate = getNowSaoPaulo();
+      const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+
+      console.log(`📅 Período MTD: ${startDate.toLocaleDateString('pt-BR')} até ${endDate.toLocaleDateString('pt-BR')} (${daysDiff} dias)`);
 
       try {
-        // Tentar usar RPC primeiro
+        // Tentar usar RPC primeiro (passa dias do mês para compatibilidade)
         const { data, error } = await supabase.rpc('get_delivery_vs_instore_comparison', {
-          p_days: DASHBOARD_PERIOD
+          p_days: daysDiff
         });
 
         if (error) {
@@ -66,16 +73,16 @@ export const DeliveryVsInstoreComparison = ({ className }: DeliveryVsInstoreComp
           instore_growth_rate: 0
         };
       } catch (rpcError) {
-        // Fallback: cálculo manual direto
-        console.log('🔄 Executando fallback manual para comparativo delivery vs presencial (30 dias)...');
+        // Fallback: cálculo manual direto (MTD)
+        console.log('🔄 Executando fallback manual para comparativo delivery vs presencial (MTD)...');
 
-        const endDate = new Date();
-        const startDate = new Date();
-        startDate.setDate(endDate.getDate() - DASHBOARD_PERIOD);
+        const endDate = getNowSaoPaulo();
+        const startDate = getMonthStartDate();
 
-        // Período anterior para crescimento
-        const prevStartDate = new Date();
-        prevStartDate.setDate(startDate.getDate() - DASHBOARD_PERIOD);
+        // Período anterior para crescimento (mês anterior completo)
+        const prevEndDate = new Date(startDate);
+        prevEndDate.setDate(prevEndDate.getDate() - 1); // Último dia do mês anterior
+        const prevStartDate = new Date(prevEndDate.getFullYear(), prevEndDate.getMonth(), 1);
         
         // Buscar vendas atuais
         const { data: currentSales, error: currentError } = await supabase
@@ -215,18 +222,20 @@ export const DeliveryVsInstoreComparison = ({ className }: DeliveryVsInstoreComp
       valueType: 'positive' as const,
       isLoading: false,
       href: '/reports?tab=delivery&section=revenue-analysis',
-      subLabel: '30 dias'
+      subLabel: getCurrentMonthLabel(),
+      formatType: 'text' as const
     },
     {
-      id: 'melhor-ticket',
-      label: 'Melhor Ticket',
+      id: 'ticket-medio',
+      label: 'Ticket Médio',
       value: comparison.delivery_avg_ticket > comparison.instore_avg_ticket ? 'Delivery' : 'Presencial',
       delta: undefined,
       icon: TrendingUp,
       valueType: 'neutral' as const,
       isLoading: false,
       href: '/reports?tab=delivery&section=ticket-analysis',
-      subLabel: formatCurrency(Math.max(comparison.delivery_avg_ticket, comparison.instore_avg_ticket))
+      subLabel: `${formatCurrency(Math.max(comparison.delivery_avg_ticket, comparison.instore_avg_ticket))} vs ${formatCurrency(Math.min(comparison.delivery_avg_ticket, comparison.instore_avg_ticket))}`,
+      formatType: 'text' as const
     }
   ];
 
@@ -252,7 +261,7 @@ export const DeliveryVsInstoreComparison = ({ className }: DeliveryVsInstoreComp
         }}
       />
       
-      {/* Header sem seletor (período fixo em 30 dias) */}
+      {/* Header - Período MTD (mês atual) */}
       <div className="flex items-center justify-between p-6 pb-3 relative z-10">
         <h3 className="text-white flex items-center gap-2 text-lg font-semibold">
           <div className="flex items-center gap-2">
@@ -262,7 +271,7 @@ export const DeliveryVsInstoreComparison = ({ className }: DeliveryVsInstoreComp
           </div>
         </h3>
 
-        <span className="text-gray-400 text-sm font-medium">30 dias</span>
+        <span className="text-gray-400 text-sm font-medium">{getCurrentMonthLabel()}</span>
       </div>
       
       {/* KPIs usando exatamente o mesmo padrão dos KPIs originais */}

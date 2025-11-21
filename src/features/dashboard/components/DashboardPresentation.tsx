@@ -22,6 +22,7 @@ import { DashboardHeader } from './DashboardHeader';
 import { DeliveryVsInstoreComparison } from './DeliveryVsInstoreComparison';
 import { DollarSign, ShoppingCart, TrendingUp, AlertTriangle, CreditCard, Target, Calculator, Truck } from 'lucide-react';
 import { PageHeader } from '@/shared/ui/composite/PageHeader';
+import { getCurrentMonthLabel } from '../utils/dateHelpers';
 
 export interface DashboardPresentationProps {
   // Dados processados
@@ -71,7 +72,6 @@ export const DashboardPresentation: React.FC<DashboardPresentationProps> = ({
           </div>
           <div className="lg:col-span-4">
             <TopProductsCard
-              period={30}
               limit={5}
               cardHeight={530}
             />
@@ -124,17 +124,17 @@ function KpiSection() {
       subLabel: 'aguardando retirada',
       formatType: 'number' as const
     },
-    // 2. Faturamento Total - Métrica principal de vendas
+    // 2. Faturamento Total - Métrica principal de vendas (MTD)
     {
       id: 'revenue',
       label: 'Faturamento Total',
-      value: safeValue(s?.revenue, 0),
+      value: safeValue(financials?.totalRevenue, 0),
       delta: safeValue(s?.revenueDelta),
       icon: DollarSign,
       valueType: 'positive' as const,
-      isLoading: l1,
+      isLoading: isLoadingFinancials,
       href: '/reports?tab=financial&period=30d',
-      subLabel: 'Últimos 30 dias',
+      subLabel: getCurrentMonthLabel(),
       formatType: 'currency' as const
     },
     // 3. Lucro Estimado - Valor monetário real (R$) com margem no subtítulo

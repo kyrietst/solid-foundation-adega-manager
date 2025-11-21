@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
 import { TrendingUp, Package, ExternalLink } from 'lucide-react';
 import { cn } from '@/core/config/utils';
+import { getMonthStartDate, getNowSaoPaulo, getCurrentMonthLabel } from '@/features/dashboard/utils/dateHelpers';
 
 interface TopProduct {
   product_id: string;
@@ -15,29 +16,20 @@ interface TopProduct {
 
 interface TopProductsCardProps {
   className?: string;
-  period?: number; // days
   limit?: number;
-  useCurrentMonth?: boolean; // Use current month instead of last N days
   cardHeight?: number; // altura fixa do card (para alinhar com outros cards)
 }
 
-export const TopProductsCard = React.memo(function TopProductsCard({ className, period = 30, limit = 5, useCurrentMonth = false, cardHeight }: TopProductsCardProps) {
+export const TopProductsCard = React.memo(function TopProductsCard({ className, limit = 5, cardHeight }: TopProductsCardProps) {
   const { data: topProducts, isLoading, error } = useQuery({
-    queryKey: ['top-products', period, limit, useCurrentMonth],
+    queryKey: ['top-products', 'mtd', limit],
     queryFn: async (): Promise<TopProduct[]> => {
-      console.log(`🏆 Top Products - Calculando top ${limit} produtos reais para ${useCurrentMonth ? 'mês atual' : period + ' dias'}`);
-      
-      let startDate: Date;
-      const endDate = new Date();
-      
-      if (useCurrentMonth) {
-        // Primeiro dia do mês atual
-        startDate = new Date(endDate.getFullYear(), endDate.getMonth(), 1);
-      } else {
-        // Últimos N dias
-        startDate = new Date();
-        startDate.setDate(endDate.getDate() - period);
-      }
+      // ✅ MTD Strategy: Sempre do dia 01 do mês atual até hoje (timezone São Paulo)
+      const startDate = getMonthStartDate();
+      const endDate = getNowSaoPaulo();
+
+      console.log(`🏆 Top Products - Calculando top ${limit} produtos MTD (Month-to-Date)`);
+      console.log(`📅 Período MTD: ${startDate.toLocaleDateString('pt-BR')} até ${endDate.toLocaleDateString('pt-BR')}`);
 
       // Buscar top produtos baseado nas vendas
       const { data: salesData, error: salesError } = await supabase
@@ -158,7 +150,7 @@ export const TopProductsCard = React.memo(function TopProductsCard({ className, 
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg font-bold text-amber-400 tracking-tight flex items-center gap-2">
             <TrendingUp className="h-5 w-5 text-amber-400" />
-            Top {limit} Produtos {useCurrentMonth ? '(Mês Atual)' : `(${period}d)`}
+            Top {limit} Produtos ({getCurrentMonthLabel()})
           </CardTitle>
           <a 
             href="/reports?tab=sales&period=30" 
@@ -229,7 +221,7 @@ export const TopProductsCard = React.memo(function TopProductsCard({ className, 
             <Package className="h-12 w-12 text-gray-600 mx-auto mb-3" />
             <div className="text-sm text-gray-400 mb-2">Nenhuma venda no período</div>
             <div className="text-xs text-gray-500">
-              {useCurrentMonth ? 'Dados do mês atual' : `Dados dos últimos ${period} dias`}
+              Dados de {getCurrentMonthLabel()}
             </div>
           </div>
         )}

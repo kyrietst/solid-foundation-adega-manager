@@ -6,6 +6,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
 import { safeNumber, safePercentage, debugNaN } from '@/shared/utils/number-utils';
+import { getMonthStartDate, getNowSaoPaulo } from '../utils/dateHelpers';
 
 export interface DashboardExpense {
   category_id: string;
@@ -25,20 +26,20 @@ export interface ExpenseSummary {
 }
 
 /**
- * Buscar despesas operacionais reais para um período específico
- * @param periodDays Número de dias para buscar (padrão: 30)
+ * Buscar despesas operacionais reais para o mês atual (MTD - Month-to-Date)
+ * Dashboard sempre mostra mês atual. Para períodos customizados, use a página de Reports.
  */
-export const useDashboardExpenses = (periodDays: number = 30) => {
+export const useDashboardExpenses = () => {
   return useQuery({
-    queryKey: ['dashboard', 'expenses', periodDays],
+    queryKey: ['dashboard', 'expenses', 'mtd'],
     queryFn: async (): Promise<ExpenseSummary> => {
-      console.log(`💸 Dashboard - Calculando despesas operacionais reais para ${periodDays} dias`);
-      
-      // Calcular período
-      const endDate = new Date();
-      const startDate = new Date();
-      startDate.setDate(endDate.getDate() - periodDays);
-      
+      // ✅ MTD Strategy: Sempre do dia 01 do mês atual até hoje (timezone São Paulo)
+      const startDate = getMonthStartDate();
+      const endDate = getNowSaoPaulo();
+
+      console.log(`💸 Dashboard - Calculando despesas MTD (Month-to-Date)`);
+      console.log(`📅 Período MTD: ${startDate.toLocaleDateString('pt-BR')} até ${endDate.toLocaleDateString('pt-BR')}`);
+
       const startDateStr = startDate.toISOString().split('T')[0];
       const endDateStr = endDate.toISOString().split('T')[0];
 

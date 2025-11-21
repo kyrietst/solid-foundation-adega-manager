@@ -6,10 +6,10 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
 import { Calendar, TrendingUp, BarChart3, ExternalLink } from 'lucide-react';
 import { cn } from '@/core/config/utils';
+import { getMonthStartDate, getNowSaoPaulo, getCurrentMonthLabel } from '@/features/dashboard/utils/dateHelpers';
 
-// Dashboard sempre mostra últimos 30 dias (período fixo)
+// ✅ MTD Strategy: Dashboard sempre mostra mês atual (dia 01 até hoje)
 // Para análise com períodos customizados, use a página de Reports
-const DASHBOARD_PERIOD = 30;
 
 interface SalesChartData {
   period: string;
@@ -33,19 +33,19 @@ export function SalesChartSection({ className, contentHeight = 360, cardHeight }
   const [chartType, setChartType] = useState<'line' | 'bar'>('line');
 
   const { data: salesData, isLoading, error} = useQuery({
-    queryKey: ['sales-trends', DASHBOARD_PERIOD],
+    queryKey: ['sales-trends', 'mtd'],
     queryFn: async (): Promise<SalesChartData[]> => {
-      console.log(`📈 Sales Trends Chart - Calculando dados reais para ${DASHBOARD_PERIOD} dias`);
+      // ✅ MTD Strategy: Sempre do dia 01 do mês atual até hoje (timezone São Paulo)
+      const startDate = getMonthStartDate();
+      const endDate = getNowSaoPaulo();
 
-      const endDate = new Date();
-      const startDate = new Date();
-      startDate.setDate(endDate.getDate() - DASHBOARD_PERIOD);
+      console.log(`📈 Sales Trends Chart - Calculando dados MTD (Month-to-Date)`);
+      console.log(`📅 Período MTD: ${startDate.toLocaleDateString('pt-BR')} até ${endDate.toLocaleDateString('pt-BR')}`);
 
-      // Buscar vendas do período
-      const { data: salesData, error } = await supabase
+      // ✅ FIX: Buscar TODAS as vendas do período (incluir delivery_type e delivery_status)
+      const { data: allSalesData, error } = await supabase
         .from('sales')
-        .select('final_amount, created_at')
-        .eq('status', 'completed')
+        .select('final_amount, created_at, status, delivery_type, delivery_status, delivery')
         .gte('created_at', startDate.toISOString())
         .lte('created_at', endDate.toISOString())
         .not('final_amount', 'is', null)
@@ -56,37 +56,77 @@ export function SalesChartSection({ className, contentHeight = 360, cardHeight }
         throw error;
       }
 
+      // ✅ FIX: Aplicar lógica híbrida de status (mesma de useDashboardData)
+      const validSales = (allSalesData || []).filter(sale => {
+        // Excluir vendas canceladas ou devolvidas
+        if (sale.status === 'cancelled' || sale.status === 'returned') {
+          return false;
+        }
+
+        // Lógica Híbrida:
+        // - Presencial: status = 'completed' (venda paga)
+        const isPresencialCompleted =
+          (sale.status === 'completed') &&
+          (sale.delivery_type === 'presencial' || sale.delivery === false);
+
+        // - Delivery: delivery_status = 'delivered' (entrega concluída)
+        const isDeliveryDelivered =
+          (sale.delivery_type === 'delivery') &&
+          (sale.delivery_status === 'delivered');
+
+        return isPresencialCompleted || isDeliveryDelivered;
+      });
+
+      console.log(`✅ SalesChartSection - Vendas válidas (lógica híbrida): ${validSales.length} de ${allSalesData?.length || 0} vendas totais`);
+
       // Agrupar vendas por dia
       const dailyData = new Map<string, { revenue: number; orders: number }>();
 
-      // Inicializar todos os dias do período com valores zerados
-      for (let i = 0; i < DASHBOARD_PERIOD; i++) {
-        const date = new Date();
-        date.setDate(endDate.getDate() - (DASHBOARD_PERIOD - 1 - i));
-        const dateKey = date.toISOString().split('T')[0];
+      // ✅ FIX TIMEZONE: Helper para converter data para YYYY-MM-DD em timezone SP
+      const toSaoPauloDateKey = (date: Date): string => {
+        return date.toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+      };
+
+      // ✅ MTD: Inicializar todos os dias do mês atual até hoje (timezone SP)
+      const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      for (let i = 0; i < daysDiff; i++) {
+        const date = new Date(startDate);
+        date.setDate(startDate.getDate() + i);
+        const dateKey = toSaoPauloDateKey(date);  // ✅ Agora usa timezone SP
         dailyData.set(dateKey, { revenue: 0, orders: 0 });
       }
 
-      // Processar vendas reais
-      (salesData || []).forEach(sale => {
+      console.log(`📅 Gráfico - Dias inicializados (SP): ${Array.from(dailyData.keys()).join(', ')}`);
+
+      // Processar vendas válidas (agora com filtro híbrido aplicado)
+      validSales.forEach(sale => {
         const saleDate = new Date(sale.created_at);
-        const dateKey = saleDate.toISOString().split('T')[0];
+        const dateKey = toSaoPauloDateKey(saleDate);  // ✅ Agora usa timezone SP
         const revenue = Number(sale.final_amount) || 0;
 
         if (dailyData.has(dateKey)) {
           const existing = dailyData.get(dateKey)!;
           existing.revenue += revenue;
           existing.orders += 1;
+        } else {
+          // ⚠️ Venda fora do período MTD (edge case)
+          console.warn(`⚠️ Venda ${sale.id} (${dateKey}) fora do período MTD - ignorada`);
         }
       });
 
       // Converter para formato do gráfico
-      const chartData: SalesChartData[] = Array.from(dailyData.entries()).map(([dateKey, data]) => ({
-        period: dateKey,
-        period_label: new Date(dateKey).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
-        revenue: Math.round(data.revenue * 100) / 100,
-        orders: data.orders
-      }));
+      const chartData: SalesChartData[] = Array.from(dailyData.entries()).map(([dateKey, data]) => {
+        // ✅ FIX TIMEZONE: Criar data com timezone explícito para evitar deslocamento
+        const [year, month, day] = dateKey.split('-').map(Number);
+        const displayDate = new Date(year, month - 1, day);  // Mês é 0-indexed
+
+        return {
+          period: dateKey,
+          period_label: displayDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+          revenue: Math.round(data.revenue * 100) / 100,
+          orders: data.orders
+        };
+      });
 
       console.log(`📈 Gráfico calculado - ${chartData.length} dias, Total receita: R$ ${chartData.reduce((sum, d) => sum + d.revenue, 0).toFixed(2)}`);
 
@@ -105,7 +145,9 @@ export function SalesChartSection({ className, contentHeight = 360, cardHeight }
 
   const formatDate = (dateStr: string) => {
     try {
-      const date = new Date(dateStr);
+      // ✅ FIX TIMEZONE: Parsear YYYY-MM-DD sem deslocamento
+      const [year, month, day] = dateStr.split('-').map(Number);
+      const date = new Date(year, month - 1, day);  // Mês é 0-indexed
       return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
     } catch {
       return dateStr;
@@ -162,7 +204,7 @@ export function SalesChartSection({ className, contentHeight = 360, cardHeight }
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg tracking-tight flex items-center gap-2 text-amber-400 font-bold">
             <TrendingUp className="h-5 w-5" />
-            Tendência de Vendas (30d)
+            Tendência de Vendas ({getCurrentMonthLabel()})
           </CardTitle>
 
           <div className="flex items-center gap-2">

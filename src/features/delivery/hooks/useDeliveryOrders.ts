@@ -385,11 +385,22 @@ export const useUpdateDeliveryStatus = () => {
         exact: false 
       });
       
-      queryClient.invalidateQueries({ 
-        queryKey: ['delivery-metrics'], 
-        exact: false 
+      queryClient.invalidateQueries({
+        queryKey: ['delivery-metrics'],
+        exact: false
       });
-      
+
+      // ✅ Invalidar dashboard para sincronização imediata após conclusão de delivery
+      queryClient.invalidateQueries({
+        queryKey: ['dashboard'],
+        exact: false
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: ['delivery-vs-instore-dashboard'],
+        exact: false
+      });
+
       // Invalidar queries relacionadas apenas após 500ms para permitir UI atualizar
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: ['sales'] });
