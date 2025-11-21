@@ -146,7 +146,8 @@ export const DeliveryVsInstoreComparison = ({ className }: DeliveryVsInstoreComp
         };
       }
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: 2 * 60 * 1000, // ✅ SSoT: 2 minutos (sincronizado com SalesChartSection)
+    refetchOnWindowFocus: true, // ✅ SSoT: Atualiza ao voltar para a aba
   });
 
   if (isLoading || !comparison) {
