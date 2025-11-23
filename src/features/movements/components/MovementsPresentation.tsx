@@ -3,7 +3,7 @@
  * Componente sem lógica de negócio, apenas renderização
  */
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/shared/ui/primitives/card';
 import { Button } from '@/shared/ui/primitives/button';
 import { Plus } from 'lucide-react';
@@ -62,6 +62,14 @@ export const MovementsPresentation: React.FC<MovementsPresentationProps> = ({
   onFormDataChange,
   onFormSubmit,
 }) => {
+  // Criar mapa de vendas para lookup rápido de delivery_type
+  const salesMap = useMemo(() => {
+    return salesList.reduce((acc, sale) => {
+      acc[sale.id] = { delivery_type: (sale as any).delivery_type };
+      return acc;
+    }, {} as Record<string, { delivery_type?: string }>);
+  }, [salesList]);
+
   return (
     <div className="w-full h-full flex flex-col p-4">
       {/* Header padronizado com PageHeader */}
@@ -131,6 +139,7 @@ export const MovementsPresentation: React.FC<MovementsPresentationProps> = ({
             usersMap={usersMap}
             typeInfo={typeInfo}
             customers={customers}
+            salesMap={salesMap}
             maxRows={50}
             isLoading={isLoading}
           />

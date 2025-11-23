@@ -231,7 +231,8 @@ export const SimpleProductViewModal: React.FC<SimpleProductViewModalProps> = ({
     return null;
   }
 
-  const stockStatus = getStockStatus(product.stock_quantity, product.minimum_stock || 10);
+  // ✅ SSoT: minimum_stock agora vem do banco
+  const stockStatus = getStockStatus(product.stock_quantity, product.minimum_stock);
 
   // Usar dados reais ou fallback para análise de giro (ESSENCIAL PARA MARKETING)
   const turnoverAnalysis = analytics && !analyticsError

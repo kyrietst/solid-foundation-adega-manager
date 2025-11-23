@@ -17,6 +17,7 @@ import {
   IconBuilding,
   IconReceipt,
   IconLock,
+  IconHistory,
 } from "@tabler/icons-react";
 import { motion } from "motion/react";
 import { cn } from "@/core/config/utils";
@@ -125,6 +126,15 @@ export function AppSidebar() {
         <IconReceipt className="h-5 w-5 shrink-0 text-primary-yellow" />
       ),
       isEnabled: permissions.canAccessAdmin, // Apenas admin por enquanto
+    },
+    {
+      id: "activities",
+      label: "Logs do Sistema",
+      href: "activities",
+      icon: (
+        <IconHistory className="h-5 w-5 shrink-0 text-primary-yellow" />
+      ),
+      isEnabled: permissions.canAccessAdmin, // Apenas admin
     },
     {
       id: "users",

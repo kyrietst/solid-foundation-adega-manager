@@ -20,6 +20,7 @@ import { useSalesKpis, useInventoryKpis, useExpenseKpis } from '../hooks/useDash
 import { useDashboardData } from '../hooks/useDashboardData';
 import { DashboardHeader } from './DashboardHeader';
 import { DeliveryVsInstoreComparison } from './DeliveryVsInstoreComparison';
+import { LowStockAlertCard } from './LowStockAlertCard';
 import { DollarSign, ShoppingCart, TrendingUp, AlertTriangle, CreditCard, Target, Calculator, Truck } from 'lucide-react';
 import { PageHeader } from '@/shared/ui/composite/PageHeader';
 import { getCurrentMonthLabel } from '../utils/dateHelpers';
@@ -66,15 +67,17 @@ export const DashboardPresentation: React.FC<DashboardPresentationProps> = ({
             <KpiSection />
           </div>
 
-          {/* Linha: Gráfico de Vendas (66%) + Top Produtos (33%) */}
+          {/* Linha: Gráfico de Vendas (66%) + Top Produtos + Alertas (33%) */}
           <div className="lg:col-span-8">
-            <SalesChartSection className="h-full" contentHeight={450} cardHeight={530} />
+            <SalesChartSection className="h-full" contentHeight={380} cardHeight={460} />
           </div>
-          <div className="lg:col-span-4">
+          <div className="lg:col-span-4 space-y-4">
             <TopProductsCard
-              limit={5}
-              cardHeight={530}
+              limit={3}
+              cardHeight={220}
             />
+            {/* Card de Alerta de Estoque Baixo */}
+            <LowStockAlertCard limit={3} />
           </div>
 
           {/* Nota para funcionários, quando aplicável */}

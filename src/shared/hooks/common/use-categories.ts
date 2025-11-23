@@ -18,6 +18,8 @@ export interface Category {
   created_at: string;
   updated_at: string;
   created_by?: string;
+  /** Estoque mínimo padrão para produtos desta categoria */
+  default_min_stock?: number;
 }
 
 export interface CategoryFormData {
@@ -26,6 +28,8 @@ export interface CategoryFormData {
   color?: string;
   icon?: string;
   display_order?: number;
+  /** Estoque mínimo padrão para produtos desta categoria */
+  default_min_stock?: number;
 }
 
 /**
@@ -147,7 +151,8 @@ export const useCreateCategory = () => {
           color: categoryData.color || '#6B7280',
           icon: categoryData.icon || 'Package',
           display_order: displayOrder,
-          created_by: user.id
+          created_by: user.id,
+          default_min_stock: categoryData.default_min_stock ?? 10
         }])
         .select()
         .single();
@@ -168,7 +173,9 @@ export const useCreateCategory = () => {
       queryClient.invalidateQueries({ queryKey: ['category-mix'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       queryClient.invalidateQueries({ queryKey: ['products-by-category'] });
-      
+      // Invalidar alertas de estoque baixo (usa default_min_stock)
+      queryClient.invalidateQueries({ queryKey: ['low-stock-products'] });
+
       toast({
         title: 'Categoria criada',
         description: `A categoria "${data.name}" foi criada com sucesso.`,
@@ -218,6 +225,8 @@ export const useUpdateCategory = () => {
       if (categoryData.color) updateData.color = categoryData.color;
       if (categoryData.icon) updateData.icon = categoryData.icon;
       if (categoryData.display_order !== undefined) updateData.display_order = categoryData.display_order;
+      // Campo de estoque mínimo padrão para alertas
+      if (categoryData.default_min_stock !== undefined) updateData.default_min_stock = categoryData.default_min_stock;
 
       const { data, error } = await supabase
         .from('categories')
@@ -242,7 +251,9 @@ export const useUpdateCategory = () => {
       queryClient.invalidateQueries({ queryKey: ['category-mix'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       queryClient.invalidateQueries({ queryKey: ['products-by-category'] });
-      
+      // Invalidar alertas de estoque baixo (usa default_min_stock)
+      queryClient.invalidateQueries({ queryKey: ['low-stock-products'] });
+
       toast({
         title: 'Categoria atualizada',
         description: `A categoria "${data.name}" foi atualizada com sucesso.`,

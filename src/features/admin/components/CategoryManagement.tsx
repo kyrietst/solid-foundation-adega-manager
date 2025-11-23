@@ -22,16 +22,17 @@ import { Input } from '@/shared/ui/primitives/input';
 import { Textarea } from '@/shared/ui/primitives/textarea';
 import { SwitchAnimated } from '@/shared/ui/primitives/switch-animated';
 import { Skeleton } from '@/shared/ui/composite/skeleton';
-import { 
-  Plus, 
-  Edit2, 
-  Trash2, 
-  GripVertical, 
-  Eye, 
+import {
+  Plus,
+  Edit2,
+  Trash2,
+  GripVertical,
+  Eye,
   EyeOff,
   Save,
   X,
-  Package
+  Package,
+  AlertTriangle
 } from 'lucide-react';
 import { cn } from '@/core/config/utils';
 
@@ -52,7 +53,8 @@ export const CategoryManagement: React.FC = () => {
     name: '',
     description: '',
     color: '#6B7280',
-    icon: 'Package'
+    icon: 'Package',
+    default_min_stock: 10
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
@@ -80,7 +82,8 @@ export const CategoryManagement: React.FC = () => {
         name: category.name,
         description: category.description || '',
         color: category.color || '#6B7280',
-        icon: category.icon || 'Package'
+        icon: category.icon || 'Package',
+        default_min_stock: category.default_min_stock ?? 10
       });
     } else {
       setEditingCategory(null);
@@ -88,7 +91,8 @@ export const CategoryManagement: React.FC = () => {
         name: '',
         description: '',
         color: '#6B7280',
-        icon: 'Package'
+        icon: 'Package',
+        default_min_stock: 10
       });
     }
     setFormErrors({});
@@ -102,7 +106,8 @@ export const CategoryManagement: React.FC = () => {
       name: '',
       description: '',
       color: '#6B7280',
-      icon: 'Package'
+      icon: 'Package',
+      default_min_stock: 10
     });
     setFormErrors({});
   };
@@ -137,7 +142,8 @@ export const CategoryManagement: React.FC = () => {
           name: formData.name.trim(),
           description: formData.description?.trim() || undefined,
           color: formData.color,
-          icon: formData.icon
+          icon: formData.icon,
+          default_min_stock: formData.default_min_stock ?? 10
         }
       }, {
         onSuccess: () => handleCloseDialog()
@@ -148,7 +154,8 @@ export const CategoryManagement: React.FC = () => {
         name: formData.name.trim(),
         description: formData.description?.trim() || undefined,
         color: formData.color,
-        icon: formData.icon
+        icon: formData.icon,
+        default_min_stock: formData.default_min_stock ?? 10
       }, {
         onSuccess: () => handleCloseDialog()
       });
@@ -230,7 +237,7 @@ export const CategoryManagement: React.FC = () => {
                   
                   {/* Categoria info */}
                   <div className="flex items-center gap-3">
-                    <div 
+                    <div
                       className="w-4 h-4 rounded-full"
                       style={{ backgroundColor: category.color || '#6B7280' }}
                     />
@@ -238,11 +245,17 @@ export const CategoryManagement: React.FC = () => {
                       <h3 className="font-medium text-white">
                         {category.name}
                       </h3>
-                      {category.description && (
-                        <p className="text-sm text-gray-400">
-                          {category.description}
-                        </p>
-                      )}
+                      <div className="flex items-center gap-3">
+                        {category.description && (
+                          <p className="text-sm text-gray-400">
+                            {category.description}
+                          </p>
+                        )}
+                        <span className="text-xs text-yellow-400/80 flex items-center gap-1">
+                          <AlertTriangle className="h-3 w-3" />
+                          Mín: {category.default_min_stock ?? 10}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -344,6 +357,47 @@ export const CategoryManagement: React.FC = () => {
                     rows={3}
                     className="bg-black/70 border-white/30 text-white placeholder:text-gray-400 resize-none"
                   />
+                </div>
+              </div>
+            </div>
+
+            {/* Configuração de Estoque */}
+            <div className="bg-black/70 backdrop-blur-xl border border-yellow-500/30 rounded-lg p-4">
+              <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-yellow-400" />
+                Alerta de Estoque
+              </h3>
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label htmlFor="category-min-stock" className="text-sm font-medium text-gray-300">
+                    Estoque Mínimo Padrão
+                  </label>
+                  <Input
+                    id="category-min-stock"
+                    type="number"
+                    min="0"
+                    value={formData.default_min_stock ?? 10}
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      default_min_stock: e.target.value ? Number(e.target.value) : 10
+                    }))}
+                    placeholder="10"
+                    className="bg-black/70 border-white/30 text-white placeholder:text-gray-400"
+                  />
+                  <p className="text-xs text-gray-400">
+                    Produtos desta categoria usarão este valor como limite de alerta, a menos que tenham um valor específico definido.
+                  </p>
+                </div>
+
+                {/* Preview do alerta */}
+                <div className="p-3 bg-yellow-500/10 rounded-lg border border-yellow-500/20">
+                  <div className="flex items-center gap-2 text-yellow-400 text-sm">
+                    <AlertTriangle className="h-4 w-4" />
+                    <span>
+                      Alerta quando estoque ≤ <strong>{formData.default_min_stock ?? 10}</strong> unidades
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>

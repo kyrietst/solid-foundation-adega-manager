@@ -16,7 +16,7 @@ import { getSFProTextClasses } from '@/core/config/theme-utils';
 import { FirstAdminSetup } from './FirstAdminSetup';
 import { UserList } from './UserList';
 import { UserCreateDialog } from './UserCreateDialog';
-// import { CategoryManagement } from '@/features/admin/components/CategoryManagement';
+import { CategoryManagement } from '@/features/admin/components/CategoryManagement';
 
 // Hooks customizados
 import { useFirstAdminSetup } from '@/features/users/hooks/useFirstAdminSetup';
@@ -141,9 +141,8 @@ const UserManagement = () => {
           </>
         ) : (
           /* Gerenciamento de categorias */
-          <div className="p-4 text-center text-white">
-            <h2 className="text-xl font-bold mb-2">Categorias</h2>
-            <p className="text-gray-400">Funcionalidade de categorias temporariamente indisponível</p>
+          <div className="flex-1 overflow-auto">
+            <CategoryManagement />
           </div>
         )}
       </div>

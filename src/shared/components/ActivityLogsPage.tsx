@@ -5,7 +5,8 @@ import { Badge } from '@/shared/ui/primitives/badge';
 import { Button } from '@/shared/ui/primitives/button';
 import { SearchBar21st } from '@/shared/ui/thirdparty/search-bar-21st';
 import { LoadingSpinner } from '@/shared/ui/composite/loading-spinner';
-import { Clock, User, Shield, Activity, Database, FileText, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/shared/ui/primitives/dialog';
+import { Clock, User, Shield, Activity, Database, FileText, ArrowUpDown, ArrowUp, ArrowDown, Eye, X, Copy, Check } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
 import { cn } from '@/core/config/utils';
@@ -107,6 +108,24 @@ export default function ActivityLogsPage() {
   const [limit, setLimit] = useState(50);
   const [sortField, setSortField] = useState<SortField>('created_at');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+
+  // Estado para modal de detalhes
+  const [selectedLog, setSelectedLog] = useState<ActivityLogRow | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const handleViewDetails = (log: ActivityLogRow) => {
+    setSelectedLog(log);
+    setIsDetailModalOpen(true);
+  };
+
+  const handleCopyJson = () => {
+    if (selectedLog) {
+      navigator.clipboard.writeText(JSON.stringify(selectedLog, null, 2));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['activity-logs', { search, role, entity, limit, sortField, sortDirection }],
@@ -306,6 +325,11 @@ export default function ActivityLogsPage() {
                   Detalhes
                 </div>
               </TableHead>
+              <TableHead className="w-[60px]">
+                <div className="flex items-center gap-2 text-gray-200">
+                  <Eye className="w-4 h-4" />
+                </div>
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -339,16 +363,27 @@ export default function ActivityLogsPage() {
                   <TableCell>
                     <EntityBadge entity={row.entity} entityId={row.entity_id} />
                   </TableCell>
-                  <TableCell className="max-w-[300px] text-gray-200">
+                  <TableCell className="max-w-[250px] text-gray-200">
                     <div className="truncate" title={row.details || ''}>
                       {row.details || '—'}
                     </div>
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleViewDetails(row)}
+                      className="h-8 w-8 p-0 text-gray-400 hover:text-white hover:bg-white/10"
+                      title="Ver detalhes completos"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8">
+                <TableCell colSpan={7} className="text-center py-8">
                   <div className="flex flex-col items-center gap-2">
                     <Activity className="w-8 h-8 text-gray-200" />
                     <p className="text-gray-200">Nenhuma atividade encontrada.</p>
@@ -364,6 +399,86 @@ export default function ActivityLogsPage() {
           </TableBody>
         </Table>
       </div>
+
+      {/* Modal de Detalhes do Log */}
+      <Dialog open={isDetailModalOpen} onOpenChange={setIsDetailModalOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden bg-black/95 backdrop-blur-xl border-purple-500/30 shadow-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-xl font-bold text-white">
+              <FileText className="h-5 w-5 text-purple-400" />
+              Detalhes do Log
+            </DialogTitle>
+            <DialogDescription className="text-gray-400">
+              Informações completas do registro de atividade para auditoria.
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedLog && (
+            <div className="space-y-4">
+              {/* Informações resumidas */}
+              <div className="grid grid-cols-2 gap-4 p-4 bg-black/50 rounded-lg border border-white/10">
+                <div>
+                  <span className="text-xs text-gray-500 uppercase">Usuário</span>
+                  <p className="text-white font-medium">{selectedLog.actor || 'Sistema'}</p>
+                </div>
+                <div>
+                  <span className="text-xs text-gray-500 uppercase">Perfil</span>
+                  <div className="mt-1"><RoleBadge role={selectedLog.role} /></div>
+                </div>
+                <div>
+                  <span className="text-xs text-gray-500 uppercase">Ação</span>
+                  <div className="mt-1"><ActionBadge action={selectedLog.action} /></div>
+                </div>
+                <div>
+                  <span className="text-xs text-gray-500 uppercase">Entidade</span>
+                  <div className="mt-1"><EntityBadge entity={selectedLog.entity} entityId={selectedLog.entity_id} /></div>
+                </div>
+                <div className="col-span-2">
+                  <span className="text-xs text-gray-500 uppercase">Data/Hora</span>
+                  <p className="text-white font-mono text-sm">
+                    {new Date(selectedLog.created_at).toLocaleString('pt-BR', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      second: '2-digit'
+                    })}
+                  </p>
+                </div>
+              </div>
+
+              {/* JSON completo */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-400">JSON Completo (Dev/Suporte)</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleCopyJson}
+                    className="h-8 text-xs text-gray-400 hover:text-white"
+                  >
+                    {copied ? (
+                      <>
+                        <Check className="h-3 w-3 mr-1 text-green-400" />
+                        Copiado!
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-3 w-3 mr-1" />
+                        Copiar JSON
+                      </>
+                    )}
+                  </Button>
+                </div>
+                <pre className="p-4 bg-black/70 rounded-lg border border-white/10 text-xs text-gray-300 overflow-auto max-h-[300px] font-mono">
+                  {JSON.stringify(selectedLog, null, 2)}
+                </pre>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

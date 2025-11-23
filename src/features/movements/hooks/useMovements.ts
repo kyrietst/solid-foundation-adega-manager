@@ -36,11 +36,12 @@ export const useMovements = () => {
           ),
           sales:sale_id (
             id,
-            created_at
+            created_at,
+            delivery_type
           ),
-          profiles:user_id (
+          users:user_id (
             id,
-            name
+            full_name
           )
         `)
         .order('date', { ascending: false });
@@ -88,11 +89,12 @@ export const useMovement = (id: string) => {
           ),
           sales:sale_id (
             id,
-            created_at
+            created_at,
+            delivery_type
           ),
-          profiles:user_id (
+          users:user_id (
             id,
-            name
+            full_name
           )
         `)
         .eq('id', id)

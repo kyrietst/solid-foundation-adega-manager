@@ -72,9 +72,9 @@ const mockSales: Sale[] = [
 
 // Mock data para usuários
 const mockUsers: UserProfile[] = [
-  { id: 'user_1', name: 'Admin Principal' },
-  { id: 'user_2', name: 'Funcionário José' },
-  { id: 'user_3', name: 'Supervisora Ana' }
+  { id: 'user_1', full_name: 'Admin Principal', email: 'admin@adega.com' },
+  { id: 'user_2', full_name: 'Funcionário José', email: 'jose@adega.com' },
+  { id: 'user_3', full_name: 'Supervisora Ana', email: 'ana@adega.com' }
 ];
 
 /**
@@ -141,9 +141,9 @@ export const useMovementSupportData = () => {
       try {
         const { data, error } = await supabase
           .from('sales')
-          .select('id, created_at')
+          .select('id, created_at, delivery_type')
           .order('created_at', { ascending: false })
-          .limit(100);
+          .limit(500); // Aumentado para cobrir mais movimentações
 
         if (error) throw error;
         return data || mockSales;
@@ -165,9 +165,9 @@ export const useMovementSupportData = () => {
     queryFn: async (): Promise<UserProfile[]> => {
       try {
         const { data, error } = await supabase
-          .from('profiles')
-          .select('id, name')
-          .order('name');
+          .from('users')
+          .select('id, full_name, email')
+          .order('full_name');
 
         if (error) throw error;
         return data || mockUsers;

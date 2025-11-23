@@ -12,12 +12,12 @@ import { useMovementMutation } from './useMovementMutation';
 export const useMovementsLogic = () => {
   // Buscar dados
   const { movements, isLoadingMovements } = useMovements();
-  const { 
-    products, 
-    customers, 
-    salesList, 
-    users, 
-    isLoading: isLoadingSupportData 
+  const {
+    products,
+    customers,
+    sales,
+    users,
+    isLoadingSupportData
   } = useMovementSupportData();
 
   // Formulário
@@ -27,11 +27,11 @@ export const useMovementsLogic = () => {
   const { createMovement, isCreating } = useMovementMutation();
 
   // Maps para exibição
-  const usersMap = useMemo(() => 
+  const usersMap = useMemo(() =>
     users.reduce((acc, u) => {
-      acc[u.id] = u.name;
+      acc[u.id] = u.full_name || u.email || 'Desconhecido';
       return acc;
-    }, {} as Record<string, string>), 
+    }, {} as Record<string, string>),
     [users]
   );
 
@@ -57,7 +57,7 @@ export const useMovementsLogic = () => {
     movements,
     products,
     customers,
-    salesList,
+    salesList: sales,
     users,
     productsMap,
     usersMap,

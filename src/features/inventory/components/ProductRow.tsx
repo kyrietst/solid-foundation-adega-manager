@@ -49,9 +49,14 @@ export const ProductRow: React.FC<ProductRowProps> = ({
     }
   };
 
+  // ✅ SSoT: Divisão segura - minimum_stock agora vem do banco
   const getStockInfo = () => {
-    const ratio = product.stock_quantity / product.minimum_stock;
-    if (ratio <= 1) {
+    const minStock = product.minimum_stock || 1; // Proteção contra divisão por zero
+    const currentStock = product.stock_quantity || 0;
+    const ratio = currentStock / minStock;
+
+    // Estoque crítico: atual <= mínimo
+    if (currentStock <= minStock) {
       return {
         status: 'Baixo',
         color: 'bg-red-500/20 text-red-400 border-red-500/30',
@@ -60,6 +65,7 @@ export const ProductRow: React.FC<ProductRowProps> = ({
         label: 'Estoque crítico - requer reposição urgente'
       };
     }
+    // Estoque adequado: até 3x o mínimo
     if (ratio <= 3) {
       return {
         status: 'Adequado',
@@ -69,6 +75,7 @@ export const ProductRow: React.FC<ProductRowProps> = ({
         label: 'Estoque adequado - monitorar'
       };
     }
+    // Estoque alto: > 3x o mínimo
     return {
       status: 'Alto',
       color: 'bg-green-500/20 text-green-400 border-green-500/30',

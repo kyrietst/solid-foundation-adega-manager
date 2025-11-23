@@ -45,7 +45,8 @@ import {
   ChevronDown,
   ChevronUp,
   TrendingUp,
-  Trash2
+  Trash2,
+  AlertTriangle
 } from 'lucide-react';
 import type { Product } from '@/core/types/inventory.types';
 import { DeleteProductModal } from './DeleteProductModal';
@@ -122,6 +123,14 @@ const simpleEditProductSchema = z.object({
     .optional()
     .or(z.literal(0))
     .or(z.literal(undefined)),
+
+  // Estoque mínimo para alertas (herda da categoria se não definido)
+  minimum_stock: z
+    .number({ invalid_type_error: 'Estoque mínimo deve ser um número' })
+    .min(0, 'Estoque mínimo deve ser maior ou igual a 0')
+    .optional()
+    .or(z.literal(0))
+    .or(z.literal(undefined)),
 });
 
 type SimpleEditProductFormData = z.infer<typeof simpleEditProductSchema>;
@@ -164,6 +173,7 @@ export const SimpleEditProductModal: React.FC<SimpleEditProductModalProps> = ({
       package_price: undefined, // Permitir undefined para campos opcionais
       cost_price: undefined,    // Permitir undefined para campos opcionais
       volume_ml: undefined,     // Permitir undefined para campos opcionais
+      minimum_stock: undefined, // Herda da categoria se não definido
     },
   });
 
@@ -222,6 +232,7 @@ export const SimpleEditProductModal: React.FC<SimpleEditProductModalProps> = ({
         package_price: product.package_price ? Number(product.package_price) : undefined,
         cost_price: product.cost_price ? Number(product.cost_price) : undefined,
         volume_ml: product.volume_ml ? Number(product.volume_ml) : undefined,
+        minimum_stock: product.minimum_stock ? Number(product.minimum_stock) : undefined,
       });
 
       // Se tem preço de custo, mostrar seção avançada automaticamente
@@ -518,32 +529,73 @@ export const SimpleEditProductModal: React.FC<SimpleEditProductModalProps> = ({
               />
             </div>
 
-            {/* Fornecedor */}
-            <FormField
-              control={form.control}
-              name="supplier"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-gray-300 text-base">Fornecedor</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value || ""}>
+            {/* Fornecedor e Estoque Mínimo */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="supplier"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-gray-300 text-base">Fornecedor</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value || ""}>
+                      <FormControl>
+                        <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white h-12 text-base">
+                          <SelectValue placeholder="Selecione ou deixe vazio..." />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="none">Sem fornecedor</SelectItem>
+                        {suppliers.map((supplier) => (
+                          <SelectItem key={supplier} value={supplier}>
+                            {supplier}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Estoque Mínimo (Alerta) */}
+              <FormField
+                control={form.control}
+                name="minimum_stock"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-gray-300 text-base flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4 text-yellow-400" />
+                      Estoque Mínimo (Alerta)
+                    </FormLabel>
                     <FormControl>
-                      <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white h-12 text-base">
-                        <SelectValue placeholder="Selecione ou deixe vazio..." />
-                      </SelectTrigger>
+                      <Input
+                        type="number"
+                        min="0"
+                        placeholder="Padrão da Categoria"
+                        {...field}
+                        value={field.value ?? ''}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          if (value === '' || value === null) {
+                            field.onChange(undefined);
+                          } else {
+                            const numValue = Number(value);
+                            if (numValue >= 0) {
+                              field.onChange(numValue);
+                            }
+                          }
+                        }}
+                        className="bg-gray-800/50 border-gray-600 text-white h-12 text-base"
+                      />
                     </FormControl>
-                    <SelectContent>
-                      <SelectItem value="none">Sem fornecedor</SelectItem>
-                      {suppliers.map((supplier) => (
-                        <SelectItem key={supplier} value={supplier}>
-                          {supplier}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Deixe vazio para usar o padrão da categoria
+                    </p>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             {/* Toggle para Embalagem Fechada */}
             <div className="flex items-center justify-between rounded-lg border border-yellow-400/30 p-4 bg-yellow-400/5">

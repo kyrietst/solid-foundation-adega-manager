@@ -52,7 +52,8 @@ export const InventoryCard: React.FC<InventoryCardProps> = ({
   const stockPackages = storeStock.packages;
   const stockUnitsLoose = storeStock.units;
 
-  const stockStatus = getSimpleStockStatus(stockPackages, stockUnitsLoose, product.minimum_stock || 10);
+  // ✅ SSoT: minimum_stock agora vem do banco (coluna criada em 2025-11-21)
+  const stockStatus = getSimpleStockStatus(stockPackages, stockUnitsLoose, product.minimum_stock);
   const { handleMouseMove } = useGlassmorphismEffect();
 
   // Classes para glass morphism
@@ -130,7 +131,7 @@ export const InventoryCard: React.FC<InventoryCardProps> = ({
         {stockStatus.status === 'low' && (
           <div className="flex items-center gap-1 text-xs text-yellow-400">
             <AlertTriangle className="h-3 w-3" />
-            <span>Estoque baixo (Mín: {product.minimum_stock || 10})</span>
+            <span>Estoque baixo (Mín: {product.minimum_stock})</span>
           </div>
         )}
 
