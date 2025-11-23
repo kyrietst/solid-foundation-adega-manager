@@ -1,6 +1,6 @@
 /**
  * Container de Movimentações - Coordena dados e lógica
- * Implementa padrão Container/Presentational
+ * Implementa padrão Container/Presentational com PAGINAÇÃO
  */
 
 import React, { useState } from 'react';
@@ -12,7 +12,7 @@ export const MovementsContainer: React.FC = () => {
   const { userRole } = useAuth();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  // Lógica centralizada
+  // Lógica centralizada COM PAGINAÇÃO
   const {
     // Dados
     movements,
@@ -22,6 +22,14 @@ export const MovementsContainer: React.FC = () => {
     productsMap,
     usersMap,
     typeInfo,
+
+    // Paginação
+    page,
+    pageSize,
+    totalCount,
+    totalPages,
+    setPage,
+    setPageSize,
 
     // Estados
     isLoading,
@@ -58,6 +66,14 @@ export const MovementsContainer: React.FC = () => {
     productsMap,
     usersMap,
     typeInfo,
+
+    // Paginação
+    page,
+    pageSize,
+    totalCount,
+    totalPages,
+    onPageChange: setPage,
+    onPageSizeChange: setPageSize,
 
     // Estados
     isLoading,

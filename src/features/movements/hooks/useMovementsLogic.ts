@@ -1,6 +1,7 @@
 /**
  * Hook coordenador para lógica de movimentações
  * Combina todos os hooks especializados em uma interface única
+ * Inclui suporte a PAGINAÇÃO para performance
  */
 
 import { useMemo } from 'react';
@@ -10,8 +11,20 @@ import { useMovementForm } from './useMovementForm';
 import { useMovementMutation } from './useMovementMutation';
 
 export const useMovementsLogic = () => {
-  // Buscar dados
-  const { movements, isLoadingMovements } = useMovements();
+  // Buscar dados COM PAGINAÇÃO
+  const {
+    movements,
+    isLoadingMovements,
+    // Paginação
+    page,
+    pageSize,
+    totalCount,
+    totalPages,
+    setPage,
+    setPageSize,
+    refetchMovements
+  } = useMovements({ initialPageSize: 50 });
+
   const {
     products,
     customers,
@@ -50,6 +63,7 @@ export const useMovementsLogic = () => {
 
   const handleSuccess = () => {
     resetForm();
+    refetchMovements(); // Refresh após criação
   };
 
   return {
@@ -62,6 +76,14 @@ export const useMovementsLogic = () => {
     productsMap,
     usersMap,
     typeInfo,
+
+    // Paginação
+    page,
+    pageSize,
+    totalCount,
+    totalPages,
+    setPage,
+    setPageSize,
 
     // Estados
     isLoadingMovements,
