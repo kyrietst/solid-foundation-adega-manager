@@ -190,7 +190,6 @@ export const useCustomers = (params?: {
         }
         
         // Retornar apenas dados reais do banco (pode ser array vazio)
-        console.log(`📊 CRM - Encontrados ${data?.length || 0} clientes reais no Supabase`);
         return (data as CustomerProfile[]) || [];
         
       } catch (error) {

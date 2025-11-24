@@ -51,7 +51,6 @@ export const DeliveryTimeline = ({ saleId, className }: DeliveryTimelineProps) =
   const { data: timeline = [], isLoading, error } = useQuery({
     queryKey: ['delivery-timeline', saleId],
     queryFn: async (): Promise<DeliveryTimelineEvent[]> => {
-      console.log(`📅 Buscando timeline para entrega ${saleId}...`);
 
       const { data, error } = await supabase.rpc('get_delivery_timeline', {
         p_sale_id: saleId
@@ -62,7 +61,6 @@ export const DeliveryTimeline = ({ saleId, className }: DeliveryTimelineProps) =
         throw error;
       }
 
-      console.log(`✅ Timeline carregada: ${data?.length || 0} eventos`);
       return data || [];
     },
     staleTime: 30 * 1000, // 30 segundos

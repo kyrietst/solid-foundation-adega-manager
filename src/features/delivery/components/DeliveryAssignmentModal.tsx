@@ -61,7 +61,6 @@ export const DeliveryAssignmentModal = ({
   const { data: deliveryPersons = [], isLoading } = useQuery({
     queryKey: ['available-delivery-persons'],
     queryFn: async (): Promise<DeliveryPerson[]> => {
-      console.log('🚚 Buscando entregadores disponíveis...');
 
       const { data, error } = await supabase.rpc('get_available_delivery_persons');
 
@@ -70,7 +69,6 @@ export const DeliveryAssignmentModal = ({
         throw error;
       }
 
-      console.log(`✅ ${data?.length || 0} entregadores encontrados`);
       return data || [];
     },
     enabled: isOpen,
@@ -80,7 +78,6 @@ export const DeliveryAssignmentModal = ({
   // Mutation para atribuir entregador
   const assignDeliveryPerson = useMutation({
     mutationFn: async ({ deliveryPersonId, autoAssign }: { deliveryPersonId?: string; autoAssign?: boolean }) => {
-      console.log(`🎯 Atribuindo entregador para venda ${saleId}...`);
 
       const { data, error } = await supabase.rpc('assign_delivery_person', {
         p_sale_id: saleId,
@@ -93,7 +90,6 @@ export const DeliveryAssignmentModal = ({
         throw error;
       }
 
-      console.log('✅ Entregador atribuído com sucesso:', data);
       return data;
     },
     onSuccess: (data) => {

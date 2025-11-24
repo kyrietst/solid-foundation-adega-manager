@@ -168,7 +168,6 @@ export const InventoryMovementsHistory: React.FC<InventoryMovementsHistoryProps>
   // Handler para export (placeholder)
   const handleExport = () => {
     // TODO: Implementar export de relatórios
-    console.log('Export functionality to be implemented');
   };
 
   return (

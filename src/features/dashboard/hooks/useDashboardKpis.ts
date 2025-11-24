@@ -68,7 +68,6 @@ export function useSalesKpis(windowDays: number = 30) {
   return useQuery({
     queryKey: ['kpis-sales', windowDays],
     queryFn: async (): Promise<SalesKpis> => {
-      console.log(`📊 Sales KPIs - Usando RPC otimizada para ${windowDays} dias (timezone São Paulo)`);
 
       // Usar ranges de data em horário de São Paulo (consistente com tela de Vendas)
       const dateRange = getSaoPauloDateRange(windowDays);
@@ -113,7 +112,6 @@ export function useSalesKpis(windowDays: number = 30) {
       const ordersDelta = debugNaN(safeDelta(orders, ordersPrev), 'ordersDelta');
       const avgTicketDelta = debugNaN(safeDelta(avgTicket, avgTicketPrev), 'avgTicketDelta');
 
-      console.log(`📊 Sales KPIs (RPC) - Receita: R$ ${revenue.toFixed(2)}, Pedidos: ${orders}, Ticket Médio: R$ ${avgTicket.toFixed(2)}`);
 
       return {
         revenue,
@@ -134,7 +132,6 @@ export function useCustomerKpis(windowDays: number = 30) {
   return useQuery({
     queryKey: ['kpis-customers', windowDays],
     queryFn: async (): Promise<CustomerKpis> => {
-      console.log(`👥 Customer KPIs - Calculando dados reais para ${windowDays} dias (timezone São Paulo)`);
 
       // Usar ranges de data em horário de São Paulo
       const dateRange = getSaoPauloDateRange(windowDays);
@@ -179,7 +176,6 @@ export function useCustomerKpis(windowDays: number = 30) {
       const newCustomers = newCustomersData?.count || 0;
       const activeCustomers = activeCustomersData?.count || 0;
 
-      console.log(`👥 Customer KPIs calculados - Total: ${totalCustomers}, Novos: ${newCustomers}, Ativos: ${activeCustomers}`);
 
       return {
         totalCustomers,
@@ -196,7 +192,6 @@ export function useInventoryKpis() {
   return useQuery({
     queryKey: ['kpis-inventory'],
     queryFn: async (): Promise<InventoryKpis> => {
-      console.log('📦 Inventory KPIs - Usando RPC otimizada (CORRIGIDO: usando cost_price)');
 
       // ✅ SSoT: Buscar valuation do estoque usando RPC
       const { data, error } = await supabase
@@ -220,8 +215,6 @@ export function useInventoryKpis() {
         ? ((potentialRevenue - totalCostValue) / totalCostValue) * 100
         : 0;
 
-      console.log(`📦 Inventory KPIs (RPC) - Produtos: ${totalProducts}, Valor Investido: R$ ${totalCostValue.toFixed(2)}, Sem Estoque: ${lowStockCount}`);
-      console.log(`💡 Potencial de Faturamento: R$ ${potentialRevenue.toFixed(2)} (+${marginPercent.toFixed(0)}% margem)`);
 
       return {
         totalProducts,
@@ -239,7 +232,6 @@ export function useOutOfStockProducts(limit: number = 10) {
   return useQuery({
     queryKey: ['out-of-stock-products', limit],
     queryFn: async () => {
-      console.log(`⚠️ Out of Stock Products - Buscando ${limit} produtos sem estoque`);
 
       // Ultra-simplificação: Apenas produtos com estoque zero
       const { data: products, error } = await supabase
@@ -265,7 +257,6 @@ export function useOutOfStockProducts(limit: number = 10) {
           price: safeNumber(product.price)
         }));
 
-      console.log(`⚠️ Encontrados ${outOfStockProducts.length} produtos sem estoque`);
 
       return outOfStockProducts;
     },
@@ -286,7 +277,6 @@ export function useExpenseKpis(windowDays: number = 30) {
   return useQuery({
     queryKey: ['kpis-expenses', windowDays],
     queryFn: async (): Promise<ExpenseKpis> => {
-      console.log(`💸 Expense KPIs - Calculando dados para ${windowDays} dias`);
       
       const totalExpenses = safeNumber(expenses?.total_expenses);
       const avgExpense = safeNumber(expenses?.avg_expense);
@@ -304,7 +294,6 @@ export function useExpenseKpis(windowDays: number = 30) {
       // Calcular variação de despesas (para implementar depois com dados históricos)
       const expensesDelta = 0; // Placeholder por enquanto
       
-      console.log(`💸 Expense KPIs calculados - Total: R$ ${totalExpenses.toFixed(2)}, Categoria Top: ${topCategory}, Margem Líquida: ${netMargin.toFixed(1)}%`);
       
       return {
         totalExpenses: safeNumber(totalExpenses),

@@ -10,7 +10,6 @@ export { CustomerSegmentBadge } from './CustomerSegmentBadge';
 export { CustomerStats } from './CustomerStats';
 export { CustomerTable } from './CustomerTable';
 export { Customers } from './Customers';
-export { CustomersNew } from './CustomersNew';
 export { CrmDashboard } from './CrmDashboard';
 export { CustomerTagManager } from './CustomerTagManager';
 export { CustomerTagDisplay } from './CustomerTagDisplay';

@@ -243,9 +243,6 @@ export const useUpsertSale = () => {
 
   return useMutation({
     mutationFn: async (saleData: UpsertSaleInput) => {
-      console.log('🔥 INÍCIO: processando venda com sistema de variantes');
-      console.log('📦 Dados da venda completos:', JSON.stringify(saleData, null, 2));
-      console.log('🔑 Payment Method ID recebido:', saleData.payment_method_id);
       
       // 1. Verifica se o usuário está autenticado
       const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -293,8 +290,6 @@ export const useUpsertSale = () => {
 
       const totalWithDeliveryFee = saleData.total_amount + deliveryFee;
 
-      console.log('🚚 DEBUG: deliveryFee usado no cálculo:', deliveryFee);
-      console.log('🚚 DEBUG: totalWithDeliveryFee calculado:', totalWithDeliveryFee);
 
       // 5. Valida os itens da venda
       if (!saleData.items || saleData.items.length === 0) {
@@ -302,7 +297,6 @@ export const useUpsertSale = () => {
       }
 
       // 6. Processa a venda usando o procedimento process_sale (COM SUBTRAÇÃO DE ESTOQUE)
-      console.log('🔥 USANDO PROCEDIMENTO process_sale para subtração automática de estoque');
 
       // Prepara os itens no formato esperado pelo procedimento
       const processedItems = saleData.items.map(item => ({
@@ -314,7 +308,6 @@ export const useUpsertSale = () => {
         sale_type: item.sale_type // ✅ CORREÇÃO CRÍTICA: Incluir sale_type no processamento
       }));
 
-      console.log('📦 Itens processados para process_sale:', JSON.stringify(processedItems, null, 2));
 
       // Chama o procedimento process_sale que faz TUDO: cria venda + itens + subtrai estoque
       // CORREÇÃO: Ordem correta dos parâmetros conforme assinatura do procedimento
@@ -340,19 +333,12 @@ export const useUpsertSale = () => {
       }
 
       const saleId = saleResult.sale_id;
-      console.log('✅ Venda processada com sucesso via process_sale, ID:', saleId);
 
       // 7. SEMPRE atualizar o delivery_type para todas as vendas (presencial/delivery/pickup)
-      console.log('🚚 DEBUG: saleData.saleType recebido:', saleData.saleType);
-      console.log('🚚 DEBUG: saleData.delivery_address:', saleData.delivery_address);
-      console.log('🚚 DEBUG: saleData.delivery_fee:', saleData.delivery_fee);
-      console.log('🚚 DEBUG: saleData.delivery_person_id:', saleData.delivery_person_id);
-      console.log('🚚 DEBUG: isDeliveryOrder:', isDeliveryOrder);
 
       const baseUpdate: any = {
         delivery_type: saleData.saleType
       };
-      console.log('🚚 DEBUG: baseUpdate inicial:', JSON.stringify(baseUpdate, null, 2));
 
       // 8. Se for uma venda com delivery, adiciona os campos específicos
       if (isDeliveryOrder) {
@@ -389,12 +375,9 @@ export const useUpsertSale = () => {
         }
 
         Object.assign(baseUpdate, deliveryUpdate);
-        console.log('🚚 DEBUG: baseUpdate final com delivery:', JSON.stringify(baseUpdate, null, 2));
       } else {
-        console.log('🚚 DEBUG: Não é delivery order, usando apenas baseUpdate');
       }
 
-      console.log('🚚 DEBUG: Update que será enviado ao Supabase:', JSON.stringify(baseUpdate, null, 2));
       const { error: updateError } = await supabase
         .from('sales')
         .update(baseUpdate)
@@ -406,7 +389,6 @@ export const useUpsertSale = () => {
         console.error('❌ Sale ID:', saleId);
         throw new Error(`Falha ao atualizar dados de delivery: ${updateError.message}`);
       } else {
-        console.log('✅ Update executado com sucesso no Supabase');
 
         // VERIFICAÇÃO ADICIONAL: Confirmar se dados foram realmente persistidos
         const { data: verifyData, error: verifyError } = await supabase
@@ -415,7 +397,6 @@ export const useUpsertSale = () => {
           .eq('id', saleId)
           .single();
 
-        console.log('🔍 VERIFICAÇÃO: Dados após UPDATE:', verifyData);
 
         if (verifyError) {
           console.error('❌ ERRO na verificação pós-UPDATE:', verifyError);
@@ -476,7 +457,6 @@ export const useUpsertSale = () => {
               notes: 'Pedido criado - aguardando preparação',
               created_by: user.id
             });
-          console.log('Tracking de delivery criado com sucesso');
         } catch (trackingError) {
           console.warn('Erro ao criar tracking de delivery (não crítico):', trackingError);
         }
@@ -492,7 +472,6 @@ export const useUpsertSale = () => {
             value: totalWithDeliveryFee - (saleData.discount_amount || 0),
             description: isDeliveryOrder ? 'Venda delivery registrada' : 'Venda registrada'
           });
-          console.log('Evento do cliente registrado com sucesso');
         } catch (customerEventError: any) {
           console.warn('Erro ao registrar evento do cliente (não crítico):', customerEventError);
           
@@ -551,7 +530,6 @@ export const useDeleteSale = () => {
 
   return useMutation({
     mutationFn: async (saleId: string) => {
-      console.log('Iniciando exclusão da venda:', saleId);
       
       // 1. Verifica se o usuário está autenticado
       const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -561,7 +539,6 @@ export const useDeleteSale = () => {
         throw new Error("Usuário não autenticado");
       }
 
-      console.log('Usuário autenticado:', user.id);
 
       // 2. Verifica se o usuário tem permissão de administrador
       const { data: profile, error: profileError } = await supabase
@@ -582,7 +559,6 @@ export const useDeleteSale = () => {
         throw new Error("Apenas administradores e funcionários podem excluir vendas");
       }
 
-      console.log('Permissões validadas. Executando exclusão...');
 
       // 3. Executa a função de exclusão melhorada
       const { data: result, error: deleteError } = await supabase.rpc('delete_sale_with_items', {
@@ -602,11 +578,9 @@ export const useDeleteSale = () => {
         }
       }
 
-      console.log('Venda excluída com sucesso:', result);
       return result || { success: true };
     },
     onSuccess: (data) => {
-      console.log('Exclusão concluída, invalidando queries...');
 
       // ✅ CORREÇÃO: Verificar se realmente houve sucesso
       if (data && (data.success || data.message)) {

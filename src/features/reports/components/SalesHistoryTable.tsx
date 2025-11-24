@@ -30,21 +30,32 @@ import { cn } from '@/core/config/utils';
 import { text, shadows } from '@/core/config/theme';
 
 // Types
+interface SaleItem {
+  id: string;
+  product_id: string;
+  quantity: number;
+  unit_price: number;
+  product?: {
+    name: string;
+    barcode?: string;
+  };
+}
+
 interface SaleWithRelations {
   id: string;
   created_at: string;
   total_amount: number;
   final_amount: number | null;
-  status: string;
+  status: 'pending' | 'completed' | 'cancelled' | 'delivering' | 'delivered' | 'returned';
   payment_method: string;
-  payment_status: string;
+  payment_status: 'pending' | 'paid' | 'cancelled';
   customer?: {
     name: string;
-  };
+  } | null;
   seller?: {
     name: string;
-  };
-  items?: unknown[];
+  } | null;
+  items?: SaleItem[];
 }
 
 interface SalesHistoryTableProps {

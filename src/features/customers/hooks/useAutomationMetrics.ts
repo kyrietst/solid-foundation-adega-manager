@@ -46,7 +46,6 @@ export const useAutomationMetrics = () => {
   return useQuery({
     queryKey: ['automation-metrics'],
     queryFn: async (): Promise<AutomationMetrics> => {
-      console.log('📊 Calculando métricas reais de automação...');
 
       try {
         // 1. Buscar dados de automation_logs
@@ -136,7 +135,6 @@ export const useAutomationMetrics = () => {
 
         const upcomingTasks = upcomingBirthdays + Math.floor(totalCustomers * 0.1);
 
-        console.log(`✅ Métricas calculadas - Workflows: ${activeWorkflows}, Execuções: ${totalExecutions}, Taxa: ${successRate.toFixed(1)}%`);
 
         return {
           activeWorkflows,
@@ -173,7 +171,6 @@ export const useWorkflowSuggestions = () => {
   return useQuery({
     queryKey: ['workflow-suggestions'],
     queryFn: async (): Promise<WorkflowSuggestion[]> => {
-      console.log('🤖 Gerando sugestões de workflows baseadas em dados reais...');
 
       try {
         // Buscar dados para análise
@@ -290,7 +287,6 @@ export const useWorkflowSuggestions = () => {
           });
         }
 
-        console.log(`✅ ${suggestions.length} sugestões de workflow geradas baseadas em dados reais`);
         
         return suggestions.sort((a, b) => {
           const priorityOrder = { high: 3, medium: 2, low: 1 };
@@ -313,7 +309,6 @@ export const useRecentExecutions = (limit: number = 10) => {
   return useQuery({
     queryKey: ['recent-executions', limit],
     queryFn: async (): Promise<AutomationExecution[]> => {
-      console.log(`📋 Buscando ${limit} execuções recentes de automação...`);
 
       try {
         // Buscar dados de automation_logs

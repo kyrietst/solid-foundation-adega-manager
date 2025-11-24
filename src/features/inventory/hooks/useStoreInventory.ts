@@ -94,8 +94,6 @@ export const useStoreInventory = ({ store, enabled = true }: UseStoreInventoryOp
  *
  * @example
  * const { data: counts } = useStoreProductCounts();
- * console.log(counts.store1); // 150
- * console.log(counts.store2); // 25
  */
 export const useStoreProductCounts = () => {
   return useQuery<{ store1: number; store2: number }>({

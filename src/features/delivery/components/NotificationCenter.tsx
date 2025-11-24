@@ -97,7 +97,6 @@ export const NotificationCenter = ({ className }: NotificationCenterProps) => {
 
     // Navegar para o contexto da notificação se for de delivery
     if (notification.category === 'delivery' && notification.data?.sale_id) {
-      console.log('Navegar para entrega:', notification.data.sale_id);
       // Aqui poderia abrir o modal da entrega ou navegar para a página
     }
   };

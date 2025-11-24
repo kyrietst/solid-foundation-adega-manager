@@ -28,8 +28,6 @@ export const TopProductsCard = React.memo(function TopProductsCard({ className, 
       const startDate = getMonthStartDate();
       const endDate = getNowSaoPaulo();
 
-      console.log(`🏆 Top Products - Calculando top ${limit} produtos MTD (Month-to-Date)`);
-      console.log(`📅 Período MTD: ${startDate.toLocaleDateString('pt-BR')} até ${endDate.toLocaleDateString('pt-BR')}`);
 
       // Buscar top produtos baseado nas vendas
       const { data: salesData, error: salesError } = await supabase
@@ -83,7 +81,6 @@ export const TopProductsCard = React.memo(function TopProductsCard({ className, 
         .sort((a, b) => b.revenue - a.revenue)
         .slice(0, limit);
 
-      console.log(`🏆 Top ${topProducts.length} produtos calculados - Total receita: R$ ${topProducts.reduce((sum, p) => sum + p.revenue, 0).toFixed(2)}`);
 
       return topProducts;
     },

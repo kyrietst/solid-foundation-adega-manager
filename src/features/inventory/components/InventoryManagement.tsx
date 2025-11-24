@@ -621,7 +621,6 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
           setSelectedProduct(null);
         }}
         onSuccess={(data) => {
-          console.log('Ajuste realizado:', data);
 
           // Forçar atualização do cache manualmente
           queryClient.invalidateQueries({ queryKey: ['products'] });

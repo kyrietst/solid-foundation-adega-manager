@@ -77,7 +77,6 @@ export const useInventoryOperations = (): InventoryOperations => {
     mutationFn: createProductFn,
     onSuccess: (data) => {
       invalidateProductsCache();
-      console.log('[DEBUG] useInventoryOperations - Cache invalidado após criar produto:', data.name);
 
       toast({
         title: "Produto criado!",
@@ -159,7 +158,6 @@ export const useInventoryOperations = (): InventoryOperations => {
     mutationFn: updateProductFn,
     onSuccess: (data) => {
       invalidateProductsCache();
-      console.log('[DEBUG] useInventoryOperations - Cache invalidado após atualizar produto:', data.name);
 
       toast({
         title: "Produto atualizado!",

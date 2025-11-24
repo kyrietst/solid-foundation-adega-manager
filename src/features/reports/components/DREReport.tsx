@@ -55,7 +55,6 @@ export function DREReport({ className }: DREReportProps) {
   const { data: dreData, isLoading, error } = useQuery({
     queryKey: ['dre-report', selectedPeriod, expensesData?.total_expenses],
     queryFn: async (): Promise<DREData> => {
-      console.log(`📊 DRE Report - Calculando dados para ${selectedPeriod} dias`);
       
       const endDate = new Date();
       const startDate = new Date();
@@ -133,12 +132,6 @@ export function DREReport({ className }: DREReportProps) {
       const lucro_liquido = resultado_antes_imposto - impostos_sobre_lucro;
       const margem_liquida_percent = receita_liquida > 0 ? (lucro_liquido / receita_liquida) * 100 : 0;
 
-      console.log(`📊 DRE calculado:`);
-      console.log(`💰 Receita Líquida: R$ ${receita_liquida.toFixed(2)}`);
-      console.log(`📦 COGS: R$ ${cogs.toFixed(2)}`);
-      console.log(`📈 Lucro Bruto: R$ ${lucro_bruto.toFixed(2)} (${margem_bruta_percent.toFixed(1)}%)`);
-      console.log(`💸 Despesas OpEx: R$ ${total_despesas_operacionais.toFixed(2)}`);
-      console.log(`💎 Lucro Líquido: R$ ${lucro_liquido.toFixed(2)} (${margem_liquida_percent.toFixed(1)}%)`);
 
       return {
         receita_bruta,

@@ -92,12 +92,10 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
   // Escutar eventos personalizados disparados pelo CustomerProfileHeader
   useEffect(() => {
     const handleOpenEditModal = () => {
-      console.log('🔧 Custom Event received: openCustomerEditModal');
       setIsEditModalOpen(true);
     };
 
     const handleOpenDeleteModal = () => {
-      console.log('🗑️ Custom Event received: openCustomerDeleteModal');
       setIsDeleteModalOpen(true);
     };
 

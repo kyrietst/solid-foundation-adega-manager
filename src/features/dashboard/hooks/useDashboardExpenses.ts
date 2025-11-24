@@ -37,8 +37,6 @@ export const useDashboardExpenses = () => {
       const startDate = getMonthStartDate();
       const endDate = getNowSaoPaulo();
 
-      console.log(`💸 Dashboard - Calculando despesas MTD (Month-to-Date)`);
-      console.log(`📅 Período MTD: ${startDate.toLocaleDateString('pt-BR')} até ${endDate.toLocaleDateString('pt-BR')}`);
 
       const startDateStr = startDate.toISOString().split('T')[0];
       const endDateStr = endDate.toISOString().split('T')[0];
@@ -85,10 +83,6 @@ export const useDashboardExpenses = () => {
         avg_amount: Number(expense.avg_amount)
       }));
 
-      console.log(`💸 Despesas operacionais calculadas:`);
-      console.log(`💰 Total: R$ ${Number(summary.total_expenses).toFixed(2)}`);
-      console.log(`📋 Transações: ${summary.total_transactions}`);
-      console.log(`📊 Categorias: ${categories_breakdown.length}`);
 
       return {
         total_expenses: Number(summary.total_expenses),
@@ -115,7 +109,6 @@ export const useDashboardBudgetVariance = () => {
   return useQuery({
     queryKey: ['dashboard', 'budget-variance', currentMonth, currentYear],
     queryFn: async () => {
-      console.log(`🎯 Dashboard - Calculando variação orçamentária para ${currentMonth}/${currentYear}`);
       
       const { data, error } = await supabase
         .rpc('calculate_budget_variance', {
@@ -148,8 +141,6 @@ export const useDashboardBudgetVariance = () => {
       const warningCount = variances.filter(v => v.status === 'WARNING').length;
       const overBudgetCount = variances.filter(v => v.status === 'OVER_BUDGET').length;
 
-      console.log(`🎯 Variação orçamentária: ${totalVariancePercent.toFixed(1)}%`);
-      console.log(`📊 Status: ${onTrackCount} OK, ${warningCount} atenção, ${overBudgetCount} estourado`);
 
       return {
         variances,

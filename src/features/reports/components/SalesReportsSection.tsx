@@ -25,6 +25,53 @@ interface SalesReportsSectionProps {
   period?: number;
 }
 
+// Tipos para dados das RPCs e queries
+interface SaleItemWithRelations {
+  product_id: string;
+  quantity: number;
+  unit_price: string | number;
+  products?: {
+    id: string;
+    name: string;
+    category: string;
+  } | null;
+  sales?: {
+    created_at: string;
+    status: string;
+  } | null;
+}
+
+interface CategoryRpcResult {
+  category_name?: string;
+  category?: string;
+  total_revenue?: number;
+}
+
+interface PaymentMethodRpcResult {
+  payment_method: string;
+  total_sales?: number;
+  total_revenue?: number;
+  avg_ticket?: number;
+}
+
+interface TopProductResult {
+  id?: string;
+  name: string;
+  revenue: number;
+  quantity?: number;
+  fullName?: string;
+}
+
+// Tipos para Recharts PieChart
+interface PieLabelProps {
+  cx: number;
+  cy: number;
+  midAngle: number;
+  innerRadius: number;
+  outerRadius: number;
+  percent: number;
+}
+
 export const SalesReportsSection: React.FC<SalesReportsSectionProps> = ({ period = 90 }) => {
   const [filters, setFilters] = useState<SalesFilters>({
     category: 'all',
@@ -62,11 +109,9 @@ export const SalesReportsSection: React.FC<SalesReportsSectionProps> = ({ period
       const startDate = new Date();
       startDate.setDate(endDate.getDate() - period);
 
-      console.log('🔍 Buscando top produtos...');
 
       try {
         // Usar RPC corrigida first
-        console.log('🚀 Usando RPC get_top_products corrigida...');
         
         const { data, error } = await supabase
           .rpc('get_top_products', {
@@ -87,10 +132,8 @@ export const SalesReportsSection: React.FC<SalesReportsSectionProps> = ({ period
           fullName: product.name // Manter nome completo para tooltip
         }));
 
-        console.log('✅ Top produtos from RPC corrigida:', topProductsArray);
         return topProductsArray;
       } catch (error) {
-        console.log('📊 Executando cálculo manual de top produtos...');
         
         // Fallback manual: query direta com JOIN para garantir nomes reais
         const { data: salesData, error: salesError } = await supabase
@@ -121,10 +164,10 @@ export const SalesReportsSection: React.FC<SalesReportsSectionProps> = ({ period
         // Agrupar por produto e calcular receita
         const productRevenues = new Map();
         
-        (salesData || []).forEach((item: any) => {
+        (salesData || []).forEach((item: SaleItemWithRelations) => {
           const productId = item.product_id;
           const productName = item.products?.name || `Produto ${productId.slice(-8)}`;
-          const revenue = item.quantity * parseFloat(item.unit_price || 0);
+          const revenue = item.quantity * parseFloat(String(item.unit_price || 0));
           
           if (productRevenues.has(productId)) {
             const current = productRevenues.get(productId);
@@ -153,7 +196,6 @@ export const SalesReportsSection: React.FC<SalesReportsSectionProps> = ({ period
             fullName: product.name // Manter nome completo para tooltip
           }));
 
-        console.log('✅ Top produtos calculados manualmente:', topProductsArray);
         return topProductsArray;
       }
     },
@@ -168,11 +210,9 @@ export const SalesReportsSection: React.FC<SalesReportsSectionProps> = ({ period
       const startDate = new Date();
       startDate.setDate(endDate.getDate() - period);
 
-      console.log('🔍 Buscando vendas por categoria...');
 
       try {
         // Usar RPC corrigida para categorias de produtos
-        console.log('🚀 Usando RPC get_sales_by_category corrigida...');
         
         const { data, error } = await supabase
           .rpc('get_sales_by_category', {
@@ -185,15 +225,13 @@ export const SalesReportsSection: React.FC<SalesReportsSectionProps> = ({ period
           throw error;
         }
 
-        const result = (data || []).map((item: any) => ({
+        const result = (data || []).map((item: CategoryRpcResult) => ({
           category: item.category_name || item.category || 'Sem categoria',
           revenue: Number(item.total_revenue || 0)
         }));
 
-        console.log('✅ Categorias from RPC corrigida:', result);
         return result;
       } catch (error) {
-        console.log('📊 Executando cálculo manual de vendas por categoria...');
         
         // Fallback manual: query direta por categorias de produtos (não payment_method)
         const { data: salesData, error: salesError } = await supabase
@@ -221,9 +259,9 @@ export const SalesReportsSection: React.FC<SalesReportsSectionProps> = ({ period
         // Agrupar por categoria de produto e calcular receita
         const categoryRevenues = new Map();
         
-        (salesData || []).forEach((item: any) => {
+        (salesData || []).forEach((item: SaleItemWithRelations) => {
           const category = item.products?.category || 'Sem categoria';
-          const revenue = item.quantity * parseFloat(item.unit_price || 0);
+          const revenue = item.quantity * parseFloat(String(item.unit_price || 0));
           
           if (categoryRevenues.has(category)) {
             categoryRevenues.set(category, categoryRevenues.get(category) + revenue);
@@ -240,7 +278,6 @@ export const SalesReportsSection: React.FC<SalesReportsSectionProps> = ({ period
           }))
           .sort((a, b) => b.revenue - a.revenue);
 
-        console.log('✅ Categorias calculadas manualmente:', categoryArray);
         return categoryArray;
       }
     },
@@ -262,7 +299,7 @@ export const SalesReportsSection: React.FC<SalesReportsSectionProps> = ({ period
         });
 
       if (error) throw error;
-      return (data || []).map((item: any) => ({
+      return (data || []).map((item: PaymentMethodRpcResult) => ({
         method: translatePaymentMethod(item.payment_method),
         count: Number(item.total_sales || 0),
         revenue: Number(item.total_revenue || 0),
@@ -328,7 +365,7 @@ export const SalesReportsSection: React.FC<SalesReportsSectionProps> = ({ period
   }, [categoryData]);
 
   // Custom label renderer for pie chart
-  const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any, data: any) => {
+  const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: PieLabelProps) => {
     if (percent < 0.02) return null; // Hide labels for slices smaller than 2% (to show more categories)
     
     const RADIAN = Math.PI / 180;
@@ -496,7 +533,7 @@ export const SalesReportsSection: React.FC<SalesReportsSectionProps> = ({ period
                             cx="50%"
                             cy="50%"
                             labelLine={false}
-                            label={(props) => renderCustomLabel(props, processedCategoryData)}
+                            label={renderCustomLabel}
                             outerRadius={120}
                             innerRadius={60}
                             fill="#8884d8"

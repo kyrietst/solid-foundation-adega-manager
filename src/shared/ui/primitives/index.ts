@@ -1,6 +1,5 @@
 // UI Primitives Barrel Export
 export { Button } from './button';
-export { IconButton, IconOnlyButton } from './icon-button';
 export { Input } from './input';
 export { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from './dialog';
 export { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './card';

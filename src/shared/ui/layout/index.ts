@@ -1,11 +1,5 @@
 // UI Layout Components Barrel Export
-export { DataGrid } from './DataGrid';
 export { DataTable } from './DataTable';
-export { FilterPanel } from './FilterPanel';
 export { FormDialog } from './FormDialog';
-export { LoadingGrid } from './LoadingGrid';
-export { LoadingTable } from './LoadingTable';
 export { PageContainer } from './PageContainer';
 export { SectionHeader } from './SectionHeader';
-export { PageAccordion } from './page-accordion';
-export { WavyBackground } from './wavy-background';

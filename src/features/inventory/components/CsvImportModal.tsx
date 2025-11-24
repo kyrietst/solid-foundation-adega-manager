@@ -336,7 +336,6 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({
                 onReset={handleReset}
                 onExportReport={() => {
                   // TODO: Implementar exportação do relatório
-                  console.log('Exportar relatório', importResult);
                 }}
               />
             </TabsContent>

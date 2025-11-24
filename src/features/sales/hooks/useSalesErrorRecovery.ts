@@ -93,7 +93,6 @@ export const useSalesErrorRecovery = (config: SalesErrorConfig = {}) => {
   // Rollback de operação de venda
   const rollbackSale = useCallback(async (saleId: string): Promise<boolean> => {
     try {
-      console.log(`Iniciando rollback da venda ${saleId}...`);
 
       // 1. Buscar itens da venda para reverter estoque
       const { data: saleItems, error: itemsError } = await supabase
@@ -146,7 +145,6 @@ export const useSalesErrorRecovery = (config: SalesErrorConfig = {}) => {
         return false;
       }
 
-      console.log(`Rollback da venda ${saleId} concluído com sucesso`);
       return true;
     } catch (error) {
       console.error('Erro inesperado durante rollback:', error);
@@ -182,7 +180,6 @@ export const useSalesErrorRecovery = (config: SalesErrorConfig = {}) => {
       error.message.includes('integrity');
 
     if (requiresRollback && enableAutoRollback && operationData?.saleId) {
-      console.log('Erro crítico detectado, iniciando rollback automático...');
       
       setErrorState(prev => ({ ...prev, isRecovering: true }));
 
@@ -254,7 +251,6 @@ export const useSalesErrorRecovery = (config: SalesErrorConfig = {}) => {
           lastError = error instanceof Error ? error : new Error(String(error));
           
           if (attempt < maxRetryAttempts) {
-            console.log(`Tentativa ${attempt + 1} falhou para ${context}, tentando novamente...`);
             await new Promise(resolve => setTimeout(resolve, retryDelay * Math.pow(2, attempt)));
             attempt++;
           } else {

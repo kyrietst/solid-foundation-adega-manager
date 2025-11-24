@@ -15,7 +15,6 @@ export const useReceiptData = (saleId: string | null) => {
     queryFn: async (): Promise<ReceiptData | null> => {
       if (!saleId) return null;
 
-      console.log(`🧾 Buscando dados da venda ${saleId} para cupom...`);
 
       // Buscar dados principais da venda
       const { data: saleData, error: saleError } = await supabase
@@ -104,7 +103,6 @@ export const useReceiptData = (saleId: string | null) => {
         delivery_fee: saleData.delivery_fee ? Number(saleData.delivery_fee) : undefined
       };
 
-      console.log(`✅ Dados do cupom preparados: ${items.length} itens, total ${receiptData.final_amount}`);
       return receiptData;
     },
     enabled: !!saleId,

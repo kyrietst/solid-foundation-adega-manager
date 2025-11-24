@@ -86,7 +86,6 @@ export const useDeliveryOrders = (params?: {
   return useQuery({
     queryKey: ['delivery-orders', params],
     queryFn: async (): Promise<DeliveryOrder[]> => {
-      console.log('📦 Buscando pedidos de delivery...');
 
       try {
         // Query base para vendas de delivery
@@ -176,7 +175,6 @@ export const useDeliveryOrders = (params?: {
         }
 
         if (!salesData || salesData.length === 0) {
-          console.log('📦 Nenhum pedido de delivery encontrado');
           return [];
         }
 
@@ -225,7 +223,6 @@ export const useDeliveryOrders = (params?: {
           updated_at: sale.updated_at
         }));
 
-        console.log(`✅ ${deliveryOrders.length} pedidos de delivery carregados`);
         return deliveryOrders;
 
       } catch (error) {
@@ -246,7 +243,6 @@ export const useDeliveryMetrics = (period: number = 7) => {
   return useQuery({
     queryKey: ['delivery-metrics', period],
     queryFn: async (): Promise<DeliveryMetrics> => {
-      console.log(`📊 Buscando métricas de delivery via RPC (${period} dias)...`);
 
       try {
         const endDate = new Date();
@@ -280,7 +276,6 @@ export const useDeliveryMetrics = (period: number = 7) => {
           return acc;
         }, {} as Record<string, number>);
 
-        console.log(`✅ Métricas obtidas via RPC:`, rpcData);
 
         return {
           totalOrders: Number(rpcData?.total_deliveries || 0),
@@ -327,7 +322,6 @@ export const useUpdateDeliveryStatus = () => {
       notes?: string;
       deliveryPersonId?: string;
     }) => {
-      console.log(`🚚 Atualizando status de delivery: ${saleId} → ${newStatus}`);
 
       // Usar stored procedure para atualização com tracking
       const { data, error } = await supabase.rpc('update_delivery_status', {
@@ -377,7 +371,6 @@ export const useUpdateDeliveryStatus = () => {
       return { previousDeliveries };
     },
     onSuccess: (data, variables) => {
-      console.log(`✅ Status atualizado com sucesso: ${variables.saleId} → ${variables.newStatus}`);
       
       // Invalidação específica para garantir dados frescos
       queryClient.invalidateQueries({ 

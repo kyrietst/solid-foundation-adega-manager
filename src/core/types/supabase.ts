@@ -193,6 +193,47 @@ export interface Database {
           updated_at?: string
         }
       }
+      categories: {
+        Row: {
+          id: string
+          name: string
+          description: string | null
+          color: string | null
+          icon: string | null
+          is_active: boolean
+          display_order: number
+          created_at: string
+          updated_at: string
+          created_by: string | null
+          default_min_stock: number | null
+        }
+        Insert: {
+          id?: string
+          name: string
+          description?: string | null
+          color?: string | null
+          icon?: string | null
+          is_active?: boolean
+          display_order?: number
+          created_at?: string
+          updated_at?: string
+          created_by?: string | null
+          default_min_stock?: number | null
+        }
+        Update: {
+          id?: string
+          name?: string
+          description?: string | null
+          color?: string | null
+          icon?: string | null
+          is_active?: boolean
+          display_order?: number
+          created_at?: string
+          updated_at?: string
+          created_by?: string | null
+          default_min_stock?: number | null
+        }
+      }
       customer_insights: {
         Row: {
           id: string

@@ -339,7 +339,6 @@ export const useCustomerTableData = () => {
     queryKey: ['customer-table-data'],
     queryFn: async () => {
       // Usar sempre a query de fallback corrigida
-      console.log('🔄 Usando query de fallback corrigida (forçada)');
       return await fetchCustomerTableDataFallback();
     },
     staleTime: 1000 * 30, // 30 segundos para dados mais atualizados

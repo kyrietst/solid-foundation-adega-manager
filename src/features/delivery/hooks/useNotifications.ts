@@ -36,7 +36,6 @@ export const useNotifications = (params?: {
   return useQuery({
     queryKey: ['notifications', params],
     queryFn: async (): Promise<Notification[]> => {
-      console.log('🔔 Buscando notificações...');
 
       let query = supabase
         .from('notifications')
@@ -66,7 +65,6 @@ export const useNotifications = (params?: {
         throw error;
       }
 
-      console.log(`✅ ${data?.length || 0} notificações carregadas`);
       return data || [];
     },
     staleTime: 30 * 1000, // 30 segundos
@@ -107,7 +105,6 @@ export const useMarkNotificationAsRead = () => {
 
   return useMutation({
     mutationFn: async (notificationId: string) => {
-      console.log(`📖 Marcando notificação ${notificationId} como lida...`);
 
       const { error } = await supabase
         .from('notifications')
@@ -122,7 +119,6 @@ export const useMarkNotificationAsRead = () => {
         throw error;
       }
 
-      console.log('✅ Notificação marcada como lida');
       return true;
     },
     onSuccess: () => {
@@ -141,7 +137,6 @@ export const useMarkAllNotificationsAsRead = () => {
 
   return useMutation({
     mutationFn: async () => {
-      console.log('📖 Marcando todas as notificações como lidas...');
 
       const { error } = await supabase
         .from('notifications')
@@ -156,7 +151,6 @@ export const useMarkAllNotificationsAsRead = () => {
         throw error;
       }
 
-      console.log('✅ Todas as notificações marcadas como lidas');
       return true;
     },
     onSuccess: () => {
@@ -174,7 +168,6 @@ export const useRealtimeNotifications = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    console.log('🔔 Configurando subscription de notificações em tempo real...');
 
     // Subscription para novas notificações
     const subscription = supabase
@@ -188,7 +181,6 @@ export const useRealtimeNotifications = () => {
           filter: `user_id=eq.${supabase.auth.getUser().then(r => r.data.user?.id)}`
         },
         (payload) => {
-          console.log('🔔 Nova notificação recebida:', payload.new);
           
           const notification = payload.new as Notification;
           
@@ -207,7 +199,6 @@ export const useRealtimeNotifications = () => {
       .subscribe();
 
     return () => {
-      console.log('🔔 Removendo subscription de notificações...');
       subscription.unsubscribe();
     };
   }, [queryClient, toast]);
@@ -247,7 +238,6 @@ export const useCreateNotification = () => {
       data?: any;
       expiresHours?: number;
     }) => {
-      console.log(`🔔 Criando notificação para usuário ${userId}...`);
 
       const { data: result, error } = await supabase.rpc('create_notification', {
         p_user_id: userId,
@@ -264,7 +254,6 @@ export const useCreateNotification = () => {
         throw error;
       }
 
-      console.log('✅ Notificação criada:', result);
       return result;
     },
     onSuccess: () => {

@@ -145,7 +145,6 @@ export const ExpenseReportsTab: React.FC = () => {
 
   const handleExport = (format: 'pdf' | 'excel') => {
     // TODO: Implementar exportação
-    console.log(`Exportar relatório em ${format}`);
   };
 
   if (loadingMonthly || loadingSummary || loadingBudget) {

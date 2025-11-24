@@ -20,7 +20,6 @@ export const useBarcode = () => {
       return null;
     }
 
-    console.log('[DEBUG] useBarcode - Iniciando busca por código:', barcode);
 
     try {
       // Buscar por código principal primeiro
@@ -31,29 +30,14 @@ export const useBarcode = () => {
       
       const mainProduct = mainProducts?.[0] || null;
 
-      console.log('[DEBUG] useBarcode - Busca por barcode principal:', {
-        found: !!mainProduct,
-        error: mainError,
-        productName: mainProduct?.name,
-        stockQuantity: mainProduct?.stock_quantity
-      });
-
       if (mainProduct && !mainError) {
         setLastScannedCode(barcode);
         
         const hasPackage = !!mainProduct.package_barcode;
-        const typeLabel = hasPackage 
-          ? 'código da unidade' 
+        const typeLabel = hasPackage
+          ? 'código da unidade'
           : 'código principal';
-        
-        console.log('[DEBUG] useBarcode - Produto encontrado por barcode principal, retornando:', {
-          productId: mainProduct.id,
-          productName: mainProduct.name,
-          stockQuantity: mainProduct.stock_quantity,
-          hasPackage: hasPackage,
-          type: 'main'
-        });
-        
+
         toast({
           title: "✅ Produto encontrado",
           description: `${mainProduct.name} - ${typeLabel}`,
@@ -71,24 +55,9 @@ export const useBarcode = () => {
       
       const packageProduct = packageProducts?.[0] || null;
 
-      console.log('[DEBUG] useBarcode - Busca por package_barcode:', {
-        found: !!packageProduct,
-        error: packageError,
-        productName: packageProduct?.name,
-        stockQuantity: packageProduct?.stock_quantity
-      });
-
       if (packageProduct && !packageError) {
         setLastScannedCode(barcode);
-        
-        console.log('[DEBUG] useBarcode - Produto encontrado por package_barcode, retornando:', {
-          productId: packageProduct.id,
-          productName: packageProduct.name,
-          stockQuantity: packageProduct.stock_quantity,
-          packageUnits: packageProduct.package_units,
-          type: 'package'
-        });
-        
+
         toast({
           title: "📦 Produto encontrado",
           description: `${packageProduct.name} - código do fardo (${packageProduct.package_units || 1} unidades)`,
@@ -99,7 +68,6 @@ export const useBarcode = () => {
       }
 
       // Não encontrado
-      console.log('[DEBUG] useBarcode - Nenhum produto encontrado com código:', barcode);
       toast({
         title: "Produto não encontrado",
         description: `Nenhum produto encontrado com o código ${barcode}`,
@@ -196,7 +164,6 @@ export const useBarcode = () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
       queryClient.invalidateQueries({ queryKey: ['products', 'available'] });
       queryClient.invalidateQueries({ queryKey: ['product'] });
-      console.log('[DEBUG] useBarcode - Cache invalidado após atualizar código do produto:', data.name);
       
       toast({
         title: "Código atualizado",

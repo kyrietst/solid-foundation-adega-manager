@@ -44,8 +44,6 @@ export function SalesChartSection({ className, contentHeight = 360, cardHeight }
       const startDate = getMonthStartDate();
       const endDate = getNowSaoPaulo();
 
-      console.log(`📈 Sales Chart - Usando RPC SSoT get_sales_chart_data`);
-      console.log(`📅 Período MTD: ${startDate.toLocaleDateString('pt-BR')} até ${endDate.toLocaleDateString('pt-BR')}`);
 
       // ✅ SSoT: Chamar RPC que usa mesma lógica híbrida dos KPIs
       const { data: rpcData, error } = await supabase
@@ -100,7 +98,6 @@ export function SalesChartSection({ className, contentHeight = 360, cardHeight }
       // Converter para array ordenado
       const chartData = Array.from(dailyData.values());
 
-      console.log(`✅ Gráfico SSoT - ${chartData.length} dias, Total: R$ ${chartData.reduce((sum, d) => sum + d.revenue, 0).toFixed(2)}`);
 
       return chartData;
     },

@@ -87,14 +87,12 @@ export const useDashboardData = (periodDays: number = 30) => {
   const { data: financials, isLoading: isLoadingFinancials, error: financialsError, refetch: refetchFinancials } = useQuery({
     queryKey: ['dashboard', 'financials', periodDays, expensesData?.total_expenses],
     queryFn: errorHandler.withErrorHandling('sales', async (): Promise<DashboardFinancials> => {
-      console.log(`💰 Dashboard - Usando RPC otimizada para MTD (Month-to-Date) - timezone São Paulo`);
 
       // ✅ MTD Strategy: Sempre do dia 01 do mês atual até hoje (timezone São Paulo)
       // Ignora o parâmetro periodDays - Dashboard mostra "fechamento de caixa" mensal
       const endDate = getNowSaoPaulo();
       const startDate = getMonthStartDate();
 
-      console.log(`📅 Período MTD: ${startDate.toLocaleDateString('pt-BR')} até ${endDate.toLocaleDateString('pt-BR')}`);
 
       // ✅ SSoT: Buscar dados financeiros via RPC (receita, COGS, lucro bruto já calculados)
       const { data: rpcData, error: rpcError } = await supabase
@@ -122,12 +120,6 @@ export const useDashboardData = (periodDays: number = 30) => {
       const netProfit = Math.max(0, grossProfit - operationalExpenses);
       const netMargin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
 
-      console.log(`📊 Métricas financeiras (RPC + Despesas REAIS):`);
-      console.log(`💰 Receita: R$ ${totalRevenue.toFixed(2)}`);
-      console.log(`📦 COGS: R$ ${cogs.toFixed(2)}`);
-      console.log(`📈 Lucro Bruto: R$ ${grossProfit.toFixed(2)} (${grossMargin.toFixed(1)}%)`);
-      console.log(`💸 Despesas OpEx REAIS: R$ ${operationalExpenses.toFixed(2)} (${expensesData?.total_transactions || 0} transações)`);
-      console.log(`💎 Lucro Líquido: R$ ${netProfit.toFixed(2)} (${netMargin.toFixed(1)}%)`);
 
       return {
         totalRevenue,
@@ -151,7 +143,6 @@ export const useDashboardData = (periodDays: number = 30) => {
   const { data: salesData, isLoading: isLoadingSales } = useQuery({
     queryKey: ['dashboard', 'sales-data', periodDays],
     queryFn: async (): Promise<SalesDataPoint[]> => {
-      console.log(`📊 Dashboard - Calculando vendas por período de ${periodDays} dias`);
       
       // Buscar vendas no período especificado
       const endDate = new Date();
@@ -192,7 +183,6 @@ export const useDashboardData = (periodDays: number = 30) => {
         return isPresencialCompleted || isDeliveryDelivered;
       });
 
-      console.log(`✅ Gráfico - Vendas válidas (lógica híbrida): ${sales.length} de ${allSales?.length || 0} vendas totais`);
 
       // Agrupar vendas por mês
       const monthlyData = new Map<string, number>();
@@ -233,7 +223,6 @@ export const useDashboardData = (periodDays: number = 30) => {
         });
       });
 
-      console.log(`📊 Vendas mensais calculadas: ${result.length} meses`);
       return result;
     },
     staleTime: 10 * 60 * 1000, // 10 minutos

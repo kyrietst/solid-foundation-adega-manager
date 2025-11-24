@@ -1,11 +1,9 @@
 // Sales Feature Components Barrel Export
-export { Cart } from './Cart';
+export { Cart, FullCart } from './Cart'; // FullCart is alias for backward compatibility
 export { CustomerSearch } from './CustomerSearch';
-export { FullCart } from './FullCart';
 export { ProductsGrid } from './ProductsGrid';
 export { RecentSales } from './RecentSales';
 export { SalesPage } from './SalesPage';
-export { SimpleCart } from './SimpleCart';
 
 // Receipt/Print Components
 export { ReceiptPrint } from './ReceiptPrint';

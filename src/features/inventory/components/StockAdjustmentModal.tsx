@@ -60,7 +60,6 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
   // Log de diagnóstico para verificar renderização
   React.useEffect(() => {
     if (isOpen) {
-      console.log('✅ RENDERIZANDO: Novo StockAdjustmentModal (Dupla Contagem)');
     }
   }, [isOpen]);
 
@@ -78,12 +77,6 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
     queryFn: async (): Promise<Product | null> => {
       if (!productId) return null;
 
-      // 🔍 LOG: Buscar produto sempre com dados mais recentes
-      console.log('🔍 FETCHING PRODUCT DATA - StockAdjustmentModal:', {
-        productId,
-        timestamp: getSaoPauloTimestamp() // Horário de São Paulo
-      });
-
       const { data, error } = await supabase
         .from('products')
         .select('*')
@@ -97,16 +90,6 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
         }
         throw error;
       }
-
-      // 🔍 LOG: Dados do produto obtidos
-      console.log('🔍 PRODUCT DATA FETCHED:', {
-        id: data?.id,
-        name: data?.name,
-        stock_packages: data?.stock_packages,
-        stock_units_loose: data?.stock_units_loose,
-        package_units: data?.package_units,
-        units_per_package: data?.units_per_package
-      });
 
       return data;
     },
@@ -190,40 +173,6 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
       const newUnitsLoose = Number(formData.newUnitsLoose || 0);
       const reason = (formData.reason || '').trim();
 
-      // 🔍 LOG DETALHADO - MODELO ABSOLUTO COM VALIDAÇÃO
-      console.log('🔍 PAYLOAD ABSOLUTO - StockAdjustmentModal (VALIDADO):', {
-        user_info: {
-          id: user.id,
-          email: user.email,
-          authenticated: !!user
-        },
-        product_info: {
-          id: productId,
-          name: product.name
-        },
-        form_data: {
-          newPackages,
-          newUnitsLoose,
-          reason: reason
-        },
-        rpc_parameters: {
-          p_product_id: productId,
-          p_new_packages: newPackages,
-          p_new_units_loose: newUnitsLoose,
-          p_reason: reason,
-          p_user_id: user.id
-        },
-        validation_checks: {
-          has_product: !!product,
-          has_user: !!user,
-          has_user_id: !!user?.id,
-          has_product_id: !!productId,
-          packages_valid: !isNaN(newPackages) && newPackages >= 0,
-          units_valid: !isNaN(newUnitsLoose) && newUnitsLoose >= 0,
-          reason_valid: reason.length >= 3
-        }
-      });
-
       // Validações antes de enviar
       if (isNaN(newPackages) || isNaN(newUnitsLoose)) {
         console.error('❌ VALIDAÇÃO: Valores inválidos (NaN detectado)', {
@@ -249,11 +198,6 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
       // 🚀 CHAMAR RPC MULTISTORE COM PARÂMETRO DE LOJA
       // 🏪 v3.4.3 - Usar função multistore com p_store
       const storeNumber = storeFilter === 'store1' ? 1 : storeFilter === 'store2' ? 2 : 1; // Default Loja 1
-
-      console.log('🚀 EXECUTANDO RPC set_product_stock_absolute_multistore com parâmetros validados...', {
-        store: storeFilter,
-        storeNumber
-      });
 
       const { data: result, error } = await supabase
         .rpc('set_product_stock_absolute_multistore', {
@@ -284,7 +228,6 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
         throw error;
       }
 
-      console.log('✅ RESPOSTA RPC set_product_stock_absolute_multistore:', result);
 
       // Verificar se a RPC retornou sucesso
       if (!result?.success) {
@@ -295,13 +238,6 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
       return result;
     },
     onSuccess: async (result, variables) => {
-      console.log('✅ STOCK ADJUSTMENT SUCCESS - Invalidating all caches:', {
-        productId,
-        result,
-        variables,
-        timestamp: getSaoPauloTimestamp() // Horário de São Paulo
-      });
-
       // 🚨 INVALIDAÇÃO AGRESSIVA DE CACHE - Garantir que todos os dados sejam atualizados
       await Promise.all([
         // Core product queries
@@ -350,11 +286,6 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
       await queryClient.refetchQueries({
         queryKey: ['product-dual-stock', productId],
         type: 'active'
-      });
-
-      console.log('✅ CACHE INVALIDATION COMPLETED:', {
-        productId,
-        timestamp: getSaoPauloTimestamp() // Horário de São Paulo
       });
 
       toast({
@@ -416,11 +347,6 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
 
   // Função simplificada - apenas envia valores absolutos
   const onSubmit = (data: StockAdjustmentFormData) => {
-    console.log('🚀 ENVIANDO VALORES ABSOLUTOS:', {
-      newPackages: data.newPackages,
-      newUnitsLoose: data.newUnitsLoose,
-      reason: data.reason
-    });
     adjustStockMutation.mutate(data);
   };
 

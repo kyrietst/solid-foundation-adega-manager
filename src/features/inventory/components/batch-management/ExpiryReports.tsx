@@ -191,7 +191,6 @@ export const ExpiryReports: React.FC = () => {
   // Handler para exportar relatório
   const handleExportReport = () => {
     // TODO: Implementar exportação para Excel/PDF
-    console.log('Exportar relatório:', reportData);
   };
 
   const valueClasses = getValueClasses('sm', 'gold');

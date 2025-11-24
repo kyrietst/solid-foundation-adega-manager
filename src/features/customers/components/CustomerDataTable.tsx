@@ -807,7 +807,6 @@ export default function CustomerDataTable() {
           <EnhancedProfileCompleteness
             row={customer}
             onEditClick={(customerId) => {
-              console.log(`Editando cliente: ${customerId}`);
             }}
           />
         ),

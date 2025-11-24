@@ -48,7 +48,6 @@ interface StockMovement {
 // Buscar histórico real de movimentações do banco de dados
 const fetchRealStockHistory = async (productId: string): Promise<StockMovement[]> => {
   try {
-    console.log('Buscando movimentações para produto ID:', productId);
 
     // Buscar as movimentações primeiro usando nossa nova estrutura
     const { data: movements, error: movementsError } = await supabase
@@ -72,12 +71,9 @@ const fetchRealStockHistory = async (productId: string): Promise<StockMovement[]
     }
 
     if (!movements || movements.length === 0) {
-      console.log('Nenhuma movimentação encontrada para o produto');
       return [];
     }
 
-    console.log('Movimentações encontradas:', movements.length);
-    console.log('Primeira movimentação:', movements[0]);
 
     // Buscar nomes dos usuários para os user_ids únicos
     const userIds = [...new Set(movements.map(m => m.user_id).filter(Boolean))];

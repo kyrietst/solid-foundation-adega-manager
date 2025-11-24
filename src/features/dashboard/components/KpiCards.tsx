@@ -59,7 +59,6 @@ export function KpiCards({ items, className, showAnimation = true }: KpiCardsPro
 
   const handleKpiClick = (href?: string) => {
     if (href) {
-      console.log('🔗 KpiCards - Navegando para:', href);
       navigate(href);
     }
   };

@@ -124,12 +124,6 @@ export const ChangeTemporaryPasswordModal: React.FC<ChangeTemporaryPasswordModal
         new_password: newPassword
       });
 
-      console.log('🔐 ChangeTemporaryPasswordModal - Resultado da alteração:', {
-        success: changeResult?.success,
-        wasTemporary: changeResult?.was_temporary,
-        error: changeError?.message
-      });
-
       if (changeError) {
         toast({
           title: "Erro ao alterar senha",

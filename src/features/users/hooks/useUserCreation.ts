@@ -46,7 +46,6 @@ export const useUserCreation = (): UserCreationOperations => {
         const hasError = false;
 
         // 2. O trigger automático handle_new_user_simple cria registros em users e profiles
-        console.log('User and profile creation handled by trigger handle_new_user_simple');
         
         // 3. Aguardar mais tempo para o trigger processar completamente
         await new Promise(resolve => setTimeout(resolve, 2000));
@@ -140,7 +139,6 @@ export const useUserCreation = (): UserCreationOperations => {
         }
 
         // O trigger handle_new_user_simple cuida da criação do profile
-        console.log('Admin profile creation handled by trigger handle_new_user_simple');
       }
 
       toast({

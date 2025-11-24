@@ -234,7 +234,6 @@ export const CustomerOverviewTab: React.FC<CustomerOverviewTabProps> = ({
 
   // Placeholder para edição do perfil - será implementado no futuro
   const handleEdit = () => {
-    console.log('📝 Editar perfil - implementar quando necessário');
   };
 
   // ============================================================================

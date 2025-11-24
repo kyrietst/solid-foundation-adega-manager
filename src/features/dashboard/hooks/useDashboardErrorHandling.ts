@@ -104,7 +104,6 @@ export const useDashboardErrorHandling = (config: DashboardErrorConfig = {}) => 
           clearError(section);
           
           if (attempt > 0) {
-            console.log(`Seção ${section} recuperada após ${attempt} tentativas`);
             if (showToastOnError) {
               toast({
                 title: 'Recuperado',
@@ -119,7 +118,6 @@ export const useDashboardErrorHandling = (config: DashboardErrorConfig = {}) => 
           lastError = error instanceof Error ? error : new Error(String(error));
           
           if (attempt < retryAttempts) {
-            console.log(`Tentativa ${attempt + 1} falhou para ${section}, tentando novamente em ${retryDelay}ms...`);
             await new Promise(resolve => setTimeout(resolve, retryDelay * Math.pow(2, attempt)));
           }
         }

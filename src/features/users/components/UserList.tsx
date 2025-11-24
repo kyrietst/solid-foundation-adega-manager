@@ -457,7 +457,6 @@ export const UserList: React.FC<UserListProps> = ({
                       <td className="p-4">
                         <UserActions
                           user={user}
-                          onEdit={(user) => console.log('Edit user:', user.id)}
                           onDelete={handleDeleteUser}
                           onResetPassword={handleResetPassword}
                           canEdit={canManageUsers}

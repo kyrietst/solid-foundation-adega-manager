@@ -131,33 +131,22 @@ export const useCart = create<CartState>()(
         ...calculateComputedValues([]), // Initial computed values
 
         addItem: async (item) => {
-          console.log('[DEBUG] use-cart - addItem iniciado com:', item);
 
           // NOVA GUARDA: Verificar estoque antes de adicionar
           const variantType = item.variant_type === 'package' ? 'package' : 'unit';
           const stockCheck = await checkStockAvailability(item.id, item.quantity || 1, variantType);
 
-          console.log('[DEBUG] use-cart - stockCheck resultado:', stockCheck);
 
           if (!stockCheck.canAdd) {
-            console.log('[DEBUG] use-cart - estoque insuficiente, aborting addItem');
             toastHelpers.error('Estoque Insuficiente', stockCheck.message);
             return;
           }
 
-          console.log('[DEBUG] use-cart - estoque OK, procedendo com addItem');
-
           set((state) => {
-            console.log('[DEBUG] use-cart - estado atual do carrinho:', {
-              itemsCount: state.items.length,
-              items: state.items.map(i => ({ id: i.id, variant_id: i.variant_id, name: i.name }))
-            });
-
             const existingItem = state.items.find((i) =>
               i.id === item.id && i.variant_id === item.variant_id
             );
 
-            console.log('[DEBUG] use-cart - item existente encontrado:', !!existingItem);
 
             let newItems: CartItem[];
             if (existingItem) {
@@ -167,7 +156,6 @@ export const useCart = create<CartState>()(
                 existingItem.maxQuantity
               );
 
-              console.log('[DEBUG] use-cart - atualizando quantidade:', { existingQuantity: existingItem.quantity, newQuantity });
 
               newItems = state.items.map((i) =>
                 i.id === item.id && i.variant_id === item.variant_id
@@ -188,32 +176,18 @@ export const useCart = create<CartState>()(
                 displayName
               };
 
-              console.log('[DEBUG] use-cart - adicionando novo item:', newItem);
 
               newItems = [...state.items, newItem];
             }
 
-            console.log('[DEBUG] use-cart - newItems array:', {
-              count: newItems.length,
-              items: newItems.map(i => ({ id: i.id, variant_id: i.variant_id, name: i.name }))
-            });
-
             const newState = updateState(newItems);
-            console.log('[DEBUG] use-cart - novo estado:', {
-              itemsCount: newState.items.length,
-              total: newState.total,
-              itemCount: newState.itemCount
-            });
-
             return newState;
           });
 
-          console.log('[DEBUG] use-cart - set() executado, mostrando toast de sucesso');
 
           // Mostrar confirmação de sucesso
           toastHelpers.pos.productAdded(item.name);
 
-          console.log('[DEBUG] use-cart - addItem finalizado com sucesso');
         },
 
         addFromVariantSelection: async (selection, product) => {

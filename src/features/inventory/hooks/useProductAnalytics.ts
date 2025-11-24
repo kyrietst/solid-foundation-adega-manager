@@ -32,18 +32,15 @@ export const useProductAnalytics = (productId: string | null) => {
       setError(null);
 
       try {
-        console.log('📈 BUSCANDO ANALYTICS para produto:', productId);
         // Usar função RPC otimizada para buscar resumo de movimentações
         const { data: summaryData, error: summaryError } = await supabase
           .rpc('get_product_movement_summary', { p_product_id: productId });
 
         if (summaryError) {
           console.warn('⚠️ Erro ao buscar resumo via RPC:', summaryError.message);
-          console.log('🔄 Continuando com query manual...');
         }
 
         // Buscar movimentações detalhadas para datas
-        console.log('📊 Buscando movimentações do produto...');
         const { data: movementData, error: movementError } = await supabase
           .from('inventory_movements')
           .select('id, date, type, quantity')
@@ -55,7 +52,6 @@ export const useProductAnalytics = (productId: string | null) => {
           throw movementError;
         }
 
-        console.log('✅ Movimentações encontradas:', movementData?.length || 0);
 
         // Processar dados manualmente
         const movements = movementData || [];
@@ -126,13 +122,6 @@ export const useProductAnalytics = (productId: string | null) => {
           turnoverRate,
           salesPerMonth: Math.round(salesPerMonth)
         };
-
-        console.log('✅ ANALYTICS PROCESSADOS:', {
-          productId,
-          ...finalAnalytics,
-          effectiveSales,
-          totalSaidas
-        });
 
         setAnalytics(finalAnalytics);
 

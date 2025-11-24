@@ -28,8 +28,8 @@ export {
   type FormFieldProps,
   type UseSuperModalConfig
 } from './SuperModal';
-export { 
-  FormatDisplay, 
+export {
+  FormatDisplay,
   CurrencyDisplay,
   DateDisplay,
   DateTimeDisplay,
@@ -45,27 +45,3 @@ export {
 export { DataTable, type DataTableProps } from './DataTable';
 // DEPRECATED: PageTitle has been replaced by PageHeader
 // export { PageTitle, type PageTitleProps } from './PageTitle';
-
-// Context7 Pattern: Enhanced Components (New DRY Refactoring)
-export {
-  EntityCard,
-  MemoizedEntityCard,
-  type EntityCardProps,
-  type EntityCardAction,
-  type EntityCardBadge,
-  type EntityCardField,
-  type EntityVariant,
-  type EntitySize,
-  type BaseEntityProps
-} from './EntityCard';
-
-export {
-  ProductEntityCard,
-  CustomerEntityCard,
-  SupplierEntityCard
-} from './entity-cards/index';
-
-export {
-  AdvancedFilterPanel,
-  MemoizedAdvancedFilterPanel
-} from './AdvancedFilterPanel';

@@ -179,7 +179,6 @@ export const DeliveryOrderCard = React.memo(({
     if (onUpdateStatus) {
       const nextStatus = getNextStatus(delivery.delivery_status);
       if (nextStatus) {
-        console.log(`🔄 Iniciando atualização de status: ${delivery.delivery_status} → ${nextStatus}`);
         onUpdateStatus(delivery.id, nextStatus);
       }
     }

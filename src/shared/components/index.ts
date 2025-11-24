@@ -7,7 +7,6 @@ export { ErrorFallback } from './ErrorFallback';
 export { InventoryErrorStates } from './InventoryErrorStates';
 export { RouteErrorBoundary } from './RouteErrorBoundary';
 export { SalesErrorBoundary } from './SalesErrorBoundary';
-export { NetworkTestUtility } from './NetworkTestUtility';
 export { NetworkStatus } from './network-status';
 export { ErrorMessage } from './error-message';
 export { FormLoading } from './form-loading';

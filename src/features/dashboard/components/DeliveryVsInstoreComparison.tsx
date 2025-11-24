@@ -41,14 +41,12 @@ export const DeliveryVsInstoreComparison = ({ className }: DeliveryVsInstoreComp
   const { data: comparison, isLoading } = useQuery({
     queryKey: ['delivery-vs-instore-dashboard', 'mtd'],
     queryFn: async (): Promise<ComparisonData> => {
-      console.log('📊 Carregando comparativo básico para dashboard (MTD - Month-to-Date)...');
 
       // ✅ MTD: Calcular período do mês atual
       const startDate = getMonthStartDate();
       const endDate = getNowSaoPaulo();
       const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
 
-      console.log(`📅 Período MTD: ${startDate.toLocaleDateString('pt-BR')} até ${endDate.toLocaleDateString('pt-BR')} (${daysDiff} dias)`);
 
       try {
         // Tentar usar RPC primeiro (passa dias do mês para compatibilidade)
@@ -61,7 +59,6 @@ export const DeliveryVsInstoreComparison = ({ className }: DeliveryVsInstoreComp
           throw error;
         }
 
-        console.log('✅ RPC funcionou, usando dados:', data[0]);
         return data[0] || {
           delivery_orders: 0,
           delivery_revenue: 0,
@@ -74,7 +71,6 @@ export const DeliveryVsInstoreComparison = ({ className }: DeliveryVsInstoreComp
         };
       } catch (rpcError) {
         // Fallback: cálculo manual direto (MTD)
-        console.log('🔄 Executando fallback manual para comparativo delivery vs presencial (MTD)...');
 
         const endDate = getNowSaoPaulo();
         const startDate = getMonthStartDate();
@@ -132,7 +128,6 @@ export const DeliveryVsInstoreComparison = ({ className }: DeliveryVsInstoreComp
         const instoreGrowthRate = prevInstoreRevenue > 0 ? 
           ((instoreRevenue - prevInstoreRevenue) / prevInstoreRevenue) * 100 : 0;
 
-        console.log('✅ Fallback concluído:', { deliveryOrders, instoreOrders, instoreRevenue });
 
         return {
           delivery_orders: deliveryOrders,

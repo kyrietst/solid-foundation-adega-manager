@@ -131,7 +131,6 @@ export const useInventoryErrorHandler = (config: InventoryErrorConfig = {}) => {
   // Corrigir estoque automaticamente quando possível
   const autoCorrectStock = useCallback(async (productId: string): Promise<boolean> => {
     try {
-      console.log(`Tentando correção automática de estoque para produto ${productId}...`);
 
       // Recalcular estoque baseado nos movimentos
       const { data: movements, error: movementsError } = await supabase
@@ -165,7 +164,6 @@ export const useInventoryErrorHandler = (config: InventoryErrorConfig = {}) => {
         return false;
       }
 
-      console.log(`Estoque do produto ${productId} corrigido para ${calculatedStock}`);
       return true;
     } catch (error) {
       console.error('Erro na correção automática de estoque:', error);
@@ -281,7 +279,6 @@ export const useInventoryErrorHandler = (config: InventoryErrorConfig = {}) => {
           clearErrors(operationName);
           
           if (attempt > 0) {
-            console.log(`Operação ${operationName} recuperada após ${attempt} tentativas`);
             onRecovery?.(`${operationName}${context ? ` - ${context}` : ''}`);
             
             if (showToast) {
@@ -297,7 +294,6 @@ export const useInventoryErrorHandler = (config: InventoryErrorConfig = {}) => {
           lastError = error instanceof Error ? error : new Error(String(error));
           
           if (attempt < retryAttempts) {
-            console.log(`Tentativa ${attempt + 1} falhou para ${operationName}, tentando novamente...`);
             await new Promise(resolve => setTimeout(resolve, retryDelay * Math.pow(2, attempt)));
             attempt++;
           }

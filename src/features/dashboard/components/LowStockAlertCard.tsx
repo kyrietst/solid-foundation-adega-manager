@@ -44,7 +44,6 @@ export const LowStockAlertCard: React.FC<LowStockAlertCardProps> = ({
   const { data: products, isLoading, error, refetch } = useQuery({
     queryKey: ['low-stock-products', limit],
     queryFn: async (): Promise<LowStockProduct[]> => {
-      console.log(`⚠️ LowStockAlertCard - Buscando ${limit} produtos com estoque crítico`);
 
       const { data, error } = await supabase
         .rpc('get_low_stock_products', { p_limit: limit });
@@ -54,7 +53,6 @@ export const LowStockAlertCard: React.FC<LowStockAlertCardProps> = ({
         throw error;
       }
 
-      console.log(`✅ Encontrados ${data?.length || 0} produtos com estoque crítico`);
       return data || [];
     },
     staleTime: 2 * 60 * 1000, // 2 minutos

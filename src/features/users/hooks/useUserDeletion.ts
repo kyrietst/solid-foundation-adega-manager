@@ -84,7 +84,6 @@ export const useUserDeletion = (): UseUserDeletionReturn => {
       }
 
       // 4. Auth.users permanece (sem acesso admin) - comportamento esperado
-      console.log(`✅ Usuário removido das tabelas principais: ${userId}`);
 
       toast({
         title: "Usuário removido",
