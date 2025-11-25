@@ -31,3 +31,15 @@ export const getMonthStartDate = (): Date => {
 export const getNowSaoPaulo = (): Date => {
   return new Date(new Date().toLocaleString("en-US", {timeZone: "America/Sao_Paulo"}));
 };
+
+/**
+ * Returns a formatted date range string for the current MTD period
+ * Example: "01/11 até 24/11"
+ */
+export const getDataPeriodLabel = (): string => {
+  const nowSP = getNowSaoPaulo();
+  const startDay = '01';
+  const currentDay = nowSP.getDate().toString().padStart(2, '0');
+  const month = (nowSP.getMonth() + 1).toString().padStart(2, '0');
+  return `${startDay}/${month} até ${currentDay}/${month}`;
+};

@@ -212,6 +212,9 @@ export const ProductsGridPresentation: React.FC<ProductsGridPresentationProps> =
                 <InventoryGrid
                   products={currentProducts}
                   gridColumns={gridColumns}
+                  onViewDetails={onViewDetails!}
+                  onEdit={onEdit!}
+                  onAdjustStock={onAdjustStock}
                   onTransfer={onTransfer}
                   storeFilter={storeFilter}
                   variant={variant}

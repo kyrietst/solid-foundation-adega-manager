@@ -1,8 +1,10 @@
 import React, { useMemo, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/primitives/card';
+import { useNavigate } from 'react-router-dom';
+import { CardContent, CardHeader, CardTitle } from '@/shared/ui/primitives/card';
+import { Button } from '@/shared/ui/primitives/button';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
-import { TrendingUp, Package, ExternalLink } from 'lucide-react';
+import { TrendingUp, Package, RefreshCw, ArrowRight } from 'lucide-react';
 import { cn } from '@/core/config/utils';
 import { getMonthStartDate, getNowSaoPaulo, getCurrentMonthLabel } from '@/features/dashboard/utils/dateHelpers';
 
@@ -21,7 +23,9 @@ interface TopProductsCardProps {
 }
 
 export const TopProductsCard = React.memo(function TopProductsCard({ className, limit = 5, cardHeight }: TopProductsCardProps) {
-  const { data: topProducts, isLoading, error } = useQuery({
+  const navigate = useNavigate();
+
+  const { data: topProducts, isLoading, error, refetch } = useQuery({
     queryKey: ['top-products', 'mtd', limit],
     queryFn: async (): Promise<TopProduct[]> => {
       // ✅ MTD Strategy: Sempre do dia 01 do mês atual até hoje (timezone São Paulo)
@@ -115,55 +119,53 @@ export const TopProductsCard = React.memo(function TopProductsCard({ className, 
     };
   }, [topProducts]);
 
+  const handleViewAll = () => {
+    navigate('/reports?tab=sales');
+  };
+
+  const handleRefresh = () => {
+    refetch();
+  };
+
   if (error) {
     return (
-      <Card className={cn("border-red-500/40 bg-black/80 backdrop-blur-xl shadow-lg", className)}>
-        <CardHeader>
-          <CardTitle className="text-red-300 font-bold flex items-center gap-2">
-            <Package className="h-5 w-5" />
-            Erro - Top Produtos
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-gray-200 text-sm font-medium">Não foi possível carregar os dados.</p>
-        </CardContent>
-      </Card>
+      <div className={cn(
+        "flex flex-col h-full bg-black/60 backdrop-blur-sm border border-red-500/40 rounded-xl shadow-lg p-4",
+        className
+      )}>
+        <p className="text-red-400 text-sm">Erro ao carregar top produtos</p>
+      </div>
     );
   }
 
   return (
-    <Card 
-      className={cn("bg-black/70 backdrop-blur-xl border border-white/20 shadow-lg hero-spotlight", className)}
-      style={cardHeight ? { height: cardHeight } : undefined}
-      onMouseMove={(e) => {
-        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-        const x = ((e.clientX - rect.left) / rect.width) * 100;
-        const y = ((e.clientY - rect.top) / rect.height) * 100;
-        (e.currentTarget as HTMLElement).style.setProperty("--x", `${x}%`);
-        (e.currentTarget as HTMLElement).style.setProperty("--y", `${y}%`);
-      }}
+    <div
+      className={cn(
+        "flex flex-col h-full bg-black/60 backdrop-blur-sm border border-white/20 rounded-xl shadow-lg transition-all duration-300",
+        className
+      )}
     >
-      <CardHeader className="pb-4">
+      <CardHeader className="pb-2 pt-4 px-4">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg font-bold text-amber-400 tracking-tight flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-amber-400" />
+          <CardTitle className="text-base font-semibold text-amber-400 flex items-center gap-2">
+            <TrendingUp className="h-5 w-5" />
             Top {limit} Produtos ({getCurrentMonthLabel()})
           </CardTitle>
-          <a 
-            href="/reports?tab=sales&period=30" 
-            className="text-gray-300 hover:text-amber-400 transition-colors"
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleRefresh}
+            className="h-7 w-7 p-0 text-gray-400 hover:text-white"
+            title="Atualizar"
           >
-            <ExternalLink className="h-4 w-4" />
-          </a>
+            <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
+          </Button>
         </div>
       </CardHeader>
 
-      <CardContent 
-        className="space-y-2 text-sm text-gray-200 pb-6" 
-        style={cardHeight ? { maxHeight: cardHeight - 80, overflowY: 'auto' } : undefined}
-      >
+      <CardContent className="pt-0 px-4 pb-4 flex-1 overflow-auto">
         {isLoading ? (
-          <div className="space-y-3 h-[380px]">
+          <div className="space-y-2">
             {Array.from({ length: limit }).map((_, i) => (
               <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-white/5 animate-pulse">
                 <div className="flex-1">
@@ -214,38 +216,26 @@ export const TopProductsCard = React.memo(function TopProductsCard({ className, 
             ))}
           </div>
         ) : (
-          <div className="text-center py-8">
-            <Package className="h-12 w-12 text-gray-600 mx-auto mb-3" />
-            <div className="text-sm text-gray-400 mb-2">Nenhuma venda no período</div>
-            <div className="text-xs text-gray-500">
-              Dados de {getCurrentMonthLabel()}
-            </div>
+          <div className="flex flex-col items-center justify-center py-4 text-center">
+            <Package className="h-8 w-8 text-gray-600 mb-2" />
+            <p className="text-sm text-gray-400">Nenhuma venda no período</p>
+            <p className="text-xs text-gray-500">Dados de {getCurrentMonthLabel()}</p>
           </div>
         )}
 
+        {/* Botão Ver Todos - navega para Relatórios de Vendas */}
         {topProducts && topProducts.length > 0 && (
-          <div className="pt-4 mt-3 border-t border-white/10">
-            <div className="flex justify-between items-center">
-              <div>
-                <div className="text-sm font-semibold text-white">
-                  Total: {formatCurrency(totalStats.totalRevenue)}
-                </div>
-                <div className="text-xs text-gray-500 mt-0.5">
-                  Receita combinada
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="text-sm font-semibold text-amber-400">
-                  {totalStats.totalQuantity} itens
-                </div>
-                <div className="text-xs text-gray-500 mt-0.5">
-                  vendidos
-                </div>
-              </div>
-            </div>
-          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleViewAll}
+            className="w-full mt-2 text-gray-400 hover:text-white hover:bg-white/10"
+          >
+            Ver Todos
+            <ArrowRight className="h-4 w-4 ml-1" />
+          </Button>
         )}
       </CardContent>
-    </Card>
+    </div>
   );
 });

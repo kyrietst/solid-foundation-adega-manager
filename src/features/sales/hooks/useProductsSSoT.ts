@@ -67,10 +67,9 @@ export function useProductSSoT(productId: string) {
       }
       if (!product) return null;
 
-      // 🏪 v3.4.2 - Usar estoque da LOJA 1 (vendas sempre da Loja 1)
-      const stockPackages = product.store1_stock_packages || 0;
-      const stockUnitsLoose = product.store1_stock_units_loose || 0;
-      // ✅ CORREÇÃO: Ler apenas da Loja 1 (fonte de vendas)
+      // ✅ v3.5.4 - Sistema unificado de estoque (colunas legacy)
+      const stockPackages = product.stock_packages || 0;
+      const stockUnitsLoose = product.stock_units_loose || 0;
 
       // ✅ ESPELHO DA PRATELEIRA: O que você vê é o que tem (SEPARADAMENTE)
       const stockDisplay = {
@@ -251,10 +250,10 @@ export function useStockAvailabilitySSoT(productId: string, quantity: number, ty
         };
       }
 
-      // ✅ ULTRA-SIMPLIFICAÇÃO: Buscar apenas campos diretos (multistore)
+      // ✅ v3.5.4 - Sistema unificado de estoque (colunas legacy)
       const { data: product, error } = await supabase
         .from('products')
-        .select('store1_stock_packages, store1_stock_units_loose')
+        .select('stock_packages, stock_units_loose')
         .eq('id', productId)
         .single();
 
@@ -268,9 +267,9 @@ export function useStockAvailabilitySSoT(productId: string, quantity: number, ty
         };
       }
 
-      // ✅ ESPELHO DA PRATELEIRA: O que tem na prateleira (Loja 1)
-      const stockPackages = product.store1_stock_packages || 0;
-      const stockUnitsLoose = product.store1_stock_units_loose || 0;
+      // ✅ v3.5.4 - Sistema unificado de estoque
+      const stockPackages = product.stock_packages || 0;
+      const stockUnitsLoose = product.stock_units_loose || 0;
 
       // ✅ CAPACIDADE DIRETA: Sem conversões
       const maxPackages = stockPackages;

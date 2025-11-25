@@ -71,12 +71,7 @@ export interface Product {
   stock_units_loose: NonNegativeInteger; // Quantidade de unidades soltas em estoque
 
   // NOTA: stock_quantity é DEPRECATED - usar apenas os 2 campos acima
-
-  // 🏪 CAMPOS DO SISTEMA MULTI-STORE (v3.4.0)
-  store1_stock_packages: NonNegativeInteger; // Pacotes em estoque na Loja 1
-  store1_stock_units_loose: NonNegativeInteger; // Unidades soltas na Loja 1
-  store2_stock_packages: NonNegativeInteger; // Pacotes em estoque na Loja 2
-  store2_stock_units_loose: NonNegativeInteger; // Unidades soltas na Loja 2
+  // v3.5.4 - Sistema multistore removido, consolidado em colunas legacy
 }
 
 export interface ProductFormData {
@@ -255,7 +250,8 @@ export interface InventoryMovement {
   };
 }
 
-// 🏪 Interface para transferências entre lojas (v3.4.0)
+// 🏪 Interface para transferências entre lojas
+// @deprecated v3.5.4 - Sistema multi-store removido, tabela store_transfers dropada
 export interface StoreTransfer {
   id: string;
   product_id: string;
@@ -280,6 +276,7 @@ export interface StoreTransfer {
 }
 
 // Interface para input de transferência
+// @deprecated v3.5.4 - Sistema multi-store removido
 export interface StoreTransferInput {
   product_id: string;
   from_store: StoreNumber;

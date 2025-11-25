@@ -70,6 +70,9 @@ export const useInventoryOperations = (): InventoryOperations => {
       queryClient.invalidateQueries({ queryKey: ['product'] }),
       queryClient.invalidateQueries({ queryKey: ['inventory_movements'] }),
       queryClient.invalidateQueries({ queryKey: ['movements'] }),
+      // ✅ v3.5.4 - Invalidar KPIs de inventário para Dashboard atualizar
+      queryClient.invalidateQueries({ queryKey: ['kpis-inventory'] }),
+      queryClient.invalidateQueries({ queryKey: ['out-of-stock-products'] }),
     ]);
   }, [queryClient]);
 

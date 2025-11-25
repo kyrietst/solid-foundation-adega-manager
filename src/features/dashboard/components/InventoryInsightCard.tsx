@@ -1,16 +1,13 @@
 /**
- * InventoryInsightCard - Specialized dashboard card showing inventory cost vs potential revenue
+ * InventoryInsightCard - Card de Estoque Atual
+ * Mostra fluxo visual: Custo → Potencial de Venda com margem
  *
- * Part of Dashboard SSoT Refactoring (2025-11-18)
- * Shows capital efficiency: invested cost → potential revenue
- *
- * @see docs/07-changelog/DASHBOARD_SSOT_REFACTORING_2025-11-18.md
+ * @version 1.0.0 - Design Original
  */
 
 import React from 'react';
 import { Package } from 'lucide-react';
 import { Card, CardContent } from '@/shared/ui/primitives/card';
-import { FormatDisplay } from '@/shared/ui/composite/FormatDisplay';
 import { cn } from '@/core/config/utils';
 
 export interface InventoryInsightCardProps {
@@ -20,33 +17,46 @@ export interface InventoryInsightCardProps {
   potentialRevenue: number;
   /** Número total de produtos em estoque */
   productCount: number;
-  /** Produtos sem estoque (stock = 0) */
-  outOfStockCount: number;
+  /** Produtos sem estoque (stock = 0) - não usado neste design */
+  outOfStockCount?: number;
   /** Loading state */
   isLoading?: boolean;
   /** Click handler (navigate to /inventory) */
   onClick?: () => void;
+  /** Additional className */
+  className?: string;
 }
 
 export const InventoryInsightCard: React.FC<InventoryInsightCardProps> = ({
   totalCost,
   potentialRevenue,
   productCount,
-  outOfStockCount,
   isLoading = false,
-  onClick
+  onClick,
+  className
 }) => {
-  // Calculate margin percentage
-  const marginPercent = totalCost > 0
+  // Calcular margem percentual
+  const margemPercent = totalCost > 0
     ? ((potentialRevenue - totalCost) / totalCost) * 100
     : 0;
+
+  // Formatação de moeda
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(value);
+  };
 
   return (
     <Card
       className={cn(
-        "border-white/20 bg-black/80 backdrop-blur-xl shadow-lg",
-        "h-[120px] transition-all duration-200",
-        onClick && "cursor-pointer hover:border-accent-purple/60 hover:transform hover:-translate-y-1"
+        "border-white/10 bg-black/40 backdrop-blur-sm",
+        "h-full transition-all duration-300",
+        onClick && "cursor-pointer hover:bg-black/50 hover:border-white/20",
+        className
       )}
       onClick={onClick}
       role={onClick ? "button" : undefined}
@@ -58,69 +68,49 @@ export const InventoryInsightCard: React.FC<InventoryInsightCardProps> = ({
         }
       } : undefined}
     >
-      <CardContent className="p-6 h-full flex items-center">
+      <CardContent className="p-4 h-full flex flex-col justify-center">
         {isLoading ? (
           // Loading skeleton
-          <div className="flex items-center gap-3 w-full animate-pulse">
-            <div className="h-8 w-8 bg-gray-700 rounded" />
-            <div className="flex-1">
-              <div className="h-3 w-24 bg-gray-700 rounded mb-2" />
-              <div className="h-6 w-full bg-gray-700 rounded mb-1" />
-              <div className="h-2 w-32 bg-gray-700 rounded" />
-            </div>
+          <div className="flex flex-col gap-2 w-full animate-pulse">
+            <div className="h-3 w-20 bg-gray-700/50 rounded" />
+            <div className="h-6 w-full bg-gray-700/50 rounded" />
+            <div className="h-3 w-32 bg-gray-700/50 rounded" />
           </div>
         ) : (
-          <div className="flex items-center gap-3 w-full">
-            {/* Icon */}
-            <Package className="h-8 w-8 text-accent-purple flex-shrink-0" aria-hidden="true" />
+          <>
+            {/* Header: Título */}
+            <span className="text-xs font-medium text-purple-400 mb-2">
+              Estoque Atual
+            </span>
 
-            <div className="flex-1 min-w-0">
-              {/* Title */}
-              <p className="text-xs font-medium text-gray-300 mb-1">
-                Estoque Atual
-              </p>
-
-              {/* Main Value: Cost → Revenue */}
-              <div
-                className="text-2xl font-bold flex items-center gap-1 flex-wrap"
-                role="region"
-                aria-label={`Custo investido ${totalCost.toFixed(2)} reais, receita potencial ${potentialRevenue.toFixed(2)} reais, margem de ${marginPercent.toFixed(0)} porcento`}
-              >
-                <span className="text-gray-100">
-                  <FormatDisplay
-                    value={totalCost}
-                    type="currency"
-                    variant="inherit"
-                  />
-                </span>
-                <span className="text-gray-500 text-lg" aria-hidden="true">→</span>
-                <span className="text-accent-green">
-                  <FormatDisplay
-                    value={potentialRevenue}
-                    type="currency"
-                    variant="inherit"
-                  />
-                </span>
+            {/* Main Row: Icon + Cost → Potential */}
+            <div className="flex items-center gap-3">
+              {/* Icon */}
+              <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500/20 to-purple-600/10 flex items-center justify-center">
+                <Package className="h-5 w-5 text-purple-400" />
               </div>
 
-              {/* Description: Margin + Product Count */}
-              <div className="text-xs text-gray-400 mt-1 flex items-center gap-2 flex-wrap">
-                <span className="text-accent-green font-medium">
-                  +{marginPercent.toFixed(0)}% margem
+              {/* Values: Cost → Potential */}
+              <div className="flex items-baseline gap-2 flex-wrap">
+                <span className="text-lg font-bold text-white">
+                  {formatCurrency(totalCost)}
                 </span>
-                <span aria-hidden="true">•</span>
-                <span>{productCount} produto{productCount !== 1 ? 's' : ''}</span>
-                {outOfStockCount > 0 && (
-                  <>
-                    <span aria-hidden="true">•</span>
-                    <span className="text-accent-red">
-                      {outOfStockCount} sem estoque
-                    </span>
-                  </>
-                )}
+                <span className="text-gray-500">→</span>
+                <span className="text-lg font-bold text-emerald-400">
+                  {formatCurrency(potentialRevenue)}
+                </span>
               </div>
             </div>
-          </div>
+
+            {/* Footer: Margin + Product Count */}
+            <div className="flex items-center gap-2 mt-2 text-xs text-gray-500">
+              <span className="text-emerald-400 font-medium">
+                +{margemPercent.toFixed(0)}% margem
+              </span>
+              <span>•</span>
+              <span>{productCount} produtos</span>
+            </div>
+          </>
         )}
       </CardContent>
     </Card>

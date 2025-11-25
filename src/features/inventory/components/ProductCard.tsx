@@ -29,9 +29,9 @@ export const ProductCard = React.memo<ProductCardProps>(({
 }) => {
   const glassClasses = glassEffect ? getGlassCardClasses(variant) : '';
 
-  // 🏪 v3.4.2 - VENDAS SEMPRE DA LOJA 1 (requisito do cliente)
-  const stockPackages = product.store1_stock_packages || 0;
-  const stockUnitsLoose = product.store1_stock_units_loose || 0;
+  // ✅ v3.5.4 - Sistema unificado de estoque (colunas legacy)
+  const stockPackages = product.stock_packages || 0;
+  const stockUnitsLoose = product.stock_units_loose || 0;
 
   const isOutOfStock = stockPackages === 0 && stockUnitsLoose === 0;
   const hasMultipleOptions = stockPackages > 0 && stockUnitsLoose > 0;

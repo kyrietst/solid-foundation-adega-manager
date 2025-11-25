@@ -498,6 +498,15 @@ export const useUpsertSale = () => {
         queryClient.invalidateQueries({ queryKey: ["reports"] });
         queryClient.invalidateQueries({ queryKey: ["customer-table-data"] }); // CORREÇÃO: Invalidar tabela de clientes para refletir última compra
 
+        // ✅ v3.5.4 - Invalidar Dashboard para refletir nova venda sem F5
+        queryClient.invalidateQueries({ queryKey: ["dashboard"] }); // Financials, counts, sales-data
+        queryClient.invalidateQueries({ queryKey: ["kpis-sales"] }); // Revenue, orders, ticket médio
+        queryClient.invalidateQueries({ queryKey: ["kpis-inventory"] }); // Estoque atualizado
+        queryClient.invalidateQueries({ queryKey: ["kpis-customers"] }); // Clientes ativos
+        queryClient.invalidateQueries({ queryKey: ["channel-breakdown"] }); // Delivery vs presencial
+        queryClient.invalidateQueries({ queryKey: ["delivery-vs-instore-dashboard"] }); // Comparação de canais
+        queryClient.invalidateQueries({ queryKey: ["low-stock-products"] }); // Alertas de estoque
+
         // ✅ CORREÇÃO: Toast de sucesso apenas com dados válidos
         toast({
           title: "Venda registrada com sucesso!",

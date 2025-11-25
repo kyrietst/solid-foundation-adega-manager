@@ -277,6 +277,10 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
         queryClient.invalidateQueries({ queryKey: ['reports'] }),
         queryClient.invalidateQueries({ queryKey: ['top-products'] }),
 
+        // ✅ v3.5.4 - KPIs de inventário para Dashboard atualizar
+        queryClient.invalidateQueries({ queryKey: ['kpis-inventory'] }),
+        queryClient.invalidateQueries({ queryKey: ['out-of-stock-products'] }),
+
         // Categories and batch data
         queryClient.invalidateQueries({ queryKey: ['products-by-category'] }),
         queryClient.invalidateQueries({ queryKey: ['batches', productId] }),

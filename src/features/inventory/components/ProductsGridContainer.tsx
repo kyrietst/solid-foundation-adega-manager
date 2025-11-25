@@ -6,6 +6,7 @@
 import React from 'react';
 import type { Product, StoreLocation } from '@/types/inventory.types';
 import { useProductsGridLogic, ProductsGridConfig } from '@/shared/hooks/products/useProductsGridLogic';
+import type { StockFilterType } from '@/shared/hooks/products/useProductFilters';
 import { ProductsGridPresentation } from './ProductsGridPresentation';
 import { ProductSelectionModal } from '@/features/sales/components/ProductSelectionModal';
 
@@ -14,6 +15,7 @@ export interface ProductsGridContainerProps extends ProductsGridConfig {
   showHeader?: boolean;
   mode?: 'sales' | 'inventory';
   storeFilter?: StoreLocation; // 🏪 Nova prop para filtrar por loja
+  stockFilter?: StockFilterType; // 📦 Filtro de estoque (low-stock)
   onAddProduct?: () => void;
   onViewDetails?: (product: Product) => void;
   onEdit?: (product: Product) => void;
@@ -28,6 +30,7 @@ export const ProductsGridContainer: React.FC<ProductsGridContainerProps> = ({
   showHeader = true,
   mode = 'sales',
   storeFilter, // 🏪 Filtro de loja
+  stockFilter, // 📦 Filtro de estoque
   onAddProduct,
   onViewDetails,
   onEdit,
@@ -84,7 +87,7 @@ export const ProductsGridContainer: React.FC<ProductsGridContainerProps> = ({
     openProductSelection,
     closeProductSelection,
     handleProductSelectionConfirm,
-  } = useProductsGridLogic({ ...config, storeFilter });
+  } = useProductsGridLogic({ ...config, storeFilter, stockFilter });
 
   // Preparar props para apresentação
   const presentationProps = {

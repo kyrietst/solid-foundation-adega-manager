@@ -53,7 +53,7 @@ const checkStockAvailability = async (productId: string, quantity: number = 1, v
     // Buscar dados atuais do produto
     const { data: product, error } = await supabase
       .from('products')
-      .select('store1_stock_packages, store1_stock_units_loose, has_package_tracking, name')
+      .select('stock_packages, stock_units_loose, has_package_tracking, name')
       .eq('id', productId)
       .single();
 
@@ -78,8 +78,8 @@ const checkStockAvailability = async (productId: string, quantity: number = 1, v
       };
     }
 
-    const stockPackages = product.store1_stock_packages || 0;
-    const stockUnitsLoose = product.store1_stock_units_loose || 0;
+    const stockPackages = product.stock_packages || 0;
+    const stockUnitsLoose = product.stock_units_loose || 0;
     const hasPackageTracking = product.has_package_tracking;
 
     // Verificar disponibilidade baseada no tipo de variante

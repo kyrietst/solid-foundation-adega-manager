@@ -4,7 +4,8 @@
  */
 
 import React, { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
 import { useToast } from '@/shared/hooks/common/use-toast';
 import { useGlassmorphismEffect } from '@/shared/hooks/ui/useGlassmorphismEffect';
@@ -13,7 +14,7 @@ import { ProductsGridContainer } from './ProductsGridContainer';
 import { ProductsTitle, ProductsHeader } from './ProductsHeader';
 import { useProductsGridLogic } from '@/shared/hooks/products/useProductsGridLogic';
 import { Button } from '@/shared/ui/primitives/button';
-import { Trash2, Package, Store } from 'lucide-react';
+import { Trash2, Package, Store, AlertTriangle } from 'lucide-react';
 // Imports dos modais refatorados - Força HMR refresh para carregar logs de diagnóstico
 import { NewProductModal } from './NewProductModal';
 import { SimpleProductViewModal } from './SimpleProductViewModal'; // Modal simplificado v2.0
@@ -60,6 +61,10 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
   onProductSelect,
   className,
 }) => {
+  // 📦 Ler tab da URL (ex: /inventory?tab=alerts)
+  const [searchParams] = useSearchParams();
+  const urlTab = searchParams.get('tab');
+
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);
   const [isEditProductOpen, setIsEditProductOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -68,7 +73,10 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [isTransferModalOpen, setIsTransferModalOpen] = useState(false); // Nova: controla modal de transferência
   const [storeView, setStoreView] = useState<StoreLocation>('store1'); // Nova: controla qual loja está selecionada
-  const [viewMode, setViewMode] = useState<'active' | 'deleted'>('active');
+  // 📦 viewMode agora inclui 'alerts' para sub-aba de estoque baixo
+  const [viewMode, setViewMode] = useState<'active' | 'deleted' | 'alerts'>(
+    urlTab === 'alerts' ? 'alerts' : 'active'
+  );
   const [restoringProductId, setRestoringProductId] = useState<string | null>(null);
 
   const queryClient = useQueryClient();
@@ -465,6 +473,20 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
     showFilters: false
   });
 
+  // 📦 SSoT v3.5.4: Contar produtos com estoque baixo usando RPC (mesma fonte do Dashboard)
+  // Isso garante consistência entre o badge do botão "Alertas" e o conteúdo da aba
+  const { data: lowStockData } = useQuery({
+    queryKey: ['low-stock-count'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .rpc('get_low_stock_products', { p_limit: 100 });
+      if (error) throw error;
+      return data || [];
+    },
+    staleTime: 2 * 60 * 1000, // 2 minutos (igual ao Dashboard)
+  });
+  const lowStockCount = lowStockData?.length || 0;
+
   return (
     <div className={`w-full h-full flex flex-col ${className || ''}`}>
       {/* Header padronizado com contador de produtos */}
@@ -542,6 +564,24 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
                 {deletedProducts.length}
               </span>
             </Button>
+
+            {/* 📦 Nova sub-aba: Alertas de Estoque Baixo */}
+            <Button
+              variant={viewMode === 'alerts' ? 'default' : 'outline'}
+              onClick={() => setViewMode('alerts')}
+              className="flex items-center gap-2"
+              size="sm"
+            >
+              <AlertTriangle className="h-4 w-4" />
+              Alertas
+              <span className={`ml-1 px-2 py-0.5 rounded-full text-xs font-bold ${
+                lowStockCount > 0
+                  ? 'bg-amber-500/20 text-amber-400'
+                  : 'bg-green-500/20 text-green-400'
+              }`}>
+                {lowStockCount}
+              </span>
+            </Button>
           </div>
         )}
 
@@ -569,6 +609,22 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
             isLoading={isLoadingDeleted}
             onRestore={handleRestoreProduct}
             restoringProductId={restoringProductId}
+          />
+        ) : storeView === 'store1' && viewMode === 'alerts' ? (
+          /* 📦 Grid de produtos com estoque baixo (Alertas) */
+          <ProductsGridContainer
+            showSearch={showSearch}
+            showFilters={showFilters}
+            showAddButton={false}
+            showHeader={false}
+            mode="inventory"
+            storeFilter="store1"
+            stockFilter="low-stock"
+            onAddToCart={onProductSelect}
+            onViewDetails={handleViewDetails}
+            onEdit={handleEditProduct}
+            onAdjustStock={handleAdjustStock}
+            onTransfer={handleTransferProduct}
           />
         ) : storeView === 'store2' ? (
           /* Grid de produtos ativos Loja 2 */

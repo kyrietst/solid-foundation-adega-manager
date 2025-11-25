@@ -12,7 +12,7 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, Package, ArrowRight, RefreshCw } from 'lucide-react';
+import { AlertTriangle, Package, RefreshCw, ArrowRight } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/primitives/card';
 import { Button } from '@/shared/ui/primitives/button';
 import { Badge } from '@/shared/ui/primitives/badge';
@@ -61,7 +61,7 @@ export const LowStockAlertCard: React.FC<LowStockAlertCardProps> = ({
   });
 
   const handleViewAll = () => {
-    navigate('/inventory?filter=low-stock');
+    navigate('/inventory?tab=alerts');
   };
 
   const handleRefresh = () => {
@@ -102,24 +102,24 @@ export const LowStockAlertCard: React.FC<LowStockAlertCardProps> = ({
 
   if (error) {
     return (
-      <Card className={cn("border-red-500/40 bg-black/80 backdrop-blur-xl", className)}>
-        <CardContent className="p-4">
-          <p className="text-red-400 text-sm">Erro ao carregar alertas de estoque</p>
-        </CardContent>
-      </Card>
+      <div className={cn(
+        "flex flex-col h-full bg-black/60 backdrop-blur-sm border border-red-500/40 rounded-xl shadow-lg p-4",
+        className
+      )}>
+        <p className="text-red-400 text-sm">Erro ao carregar alertas de estoque</p>
+      </div>
     );
   }
 
   return (
-    <Card
+    <div
       className={cn(
-        "bg-black/80 backdrop-blur-xl shadow-lg transition-all duration-300",
+        "flex flex-col h-full bg-black/60 backdrop-blur-sm border rounded-xl shadow-lg transition-all duration-300",
         config.borderColor,
-        config.bgColor,
         className
       )}
     >
-      <CardHeader className="pb-2">
+      <CardHeader className="pb-2 pt-4 px-4">
         <div className="flex items-center justify-between">
           <CardTitle className={cn("text-base font-semibold flex items-center gap-2", config.iconColor)}>
             <AlertTriangle className="h-5 w-5" />
@@ -151,7 +151,7 @@ export const LowStockAlertCard: React.FC<LowStockAlertCardProps> = ({
         </div>
       </CardHeader>
 
-      <CardContent className="pt-0">
+      <CardContent className="pt-0 px-4 pb-4 flex-1 overflow-auto">
         {isLoading ? (
           <div className="space-y-2">
             {[1, 2, 3].map((i) => (
@@ -226,7 +226,7 @@ export const LowStockAlertCard: React.FC<LowStockAlertCardProps> = ({
               </div>
             ))}
 
-            {/* Ver Todos */}
+            {/* Ver Todos - navega para aba Alertas no Inventário */}
             <Button
               variant="ghost"
               size="sm"
@@ -245,7 +245,7 @@ export const LowStockAlertCard: React.FC<LowStockAlertCardProps> = ({
           </div>
         )}
       </CardContent>
-    </Card>
+    </div>
   );
 };
 

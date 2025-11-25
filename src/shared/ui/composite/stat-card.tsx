@@ -6,7 +6,7 @@ import { FormatDisplay } from './FormatDisplay';
 export interface StatCardProps {
   title: string;
   value: string | number;
-  description?: string;
+  description?: React.ReactNode;
   icon?: LucideIcon;
   emoji?: string; // Novo: suporte para emoji no padrão CRM
   variant?: 'default' | 'success' | 'warning' | 'error' | 'purple' | 'premium';

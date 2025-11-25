@@ -9,7 +9,7 @@ import { supabase } from '@/core/api/supabase/client';
 import { useCart } from '@/features/sales/hooks/use-cart';
 import { useBarcode } from '@/features/inventory/hooks/use-barcode';
 import { usePagination } from '@/shared/hooks/common/use-pagination';
-import { useProductFilters } from './useProductFilters';
+import { useProductFilters, StockFilterType } from './useProductFilters';
 import { useProductCategories } from './useProductCategories';
 import type { Product, StoreLocation } from '@/types/inventory.types';
 import type { ProductSelectionData } from '@/features/sales/components/ProductSelectionModal';
@@ -19,6 +19,7 @@ export interface ProductsGridConfig {
   showFilters?: boolean;
   initialCategory?: string;
   storeFilter?: StoreLocation; // 🏪 Filtro de loja (v3.4.0)
+  stockFilter?: StockFilterType; // 📦 Filtro de estoque (low-stock)
   onProductSelect?: (product: Product) => void;
   gridColumns?: {
     mobile: number;
@@ -34,6 +35,7 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
     showFilters = true,
     initialCategory = 'all',
     storeFilter, // 🏪 Filtro de loja
+    stockFilter = 'all', // 📦 Filtro de estoque
     onProductSelect,
     gridColumns = { mobile: 1, tablet: 2, desktop: 3 },
     className
@@ -44,10 +46,46 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
   const queryClient = useQueryClient();
 
   // Query para buscar produtos incluindo campos da Dupla Contagem e Multi-Store
-  // v3.4.3 - FILTRO INTELIGENTE LOJA 2: Mostra apenas produtos transferidos
+  // v3.5.4 - SSoT: Usa RPC para low-stock (herança de categoria)
   const { data: products = [], isLoading } = useQuery({
-    queryKey: ['products', 'available', storeFilter],
+    queryKey: ['products', 'available', storeFilter, stockFilter],
     queryFn: async (): Promise<Product[]> => {
+      // ✅ SSoT v3.5.4: Quando filtro é 'low-stock', usar RPC server-side
+      // Isso garante consistência com o Dashboard (mesma lógica de threshold)
+      if (stockFilter === 'low-stock') {
+        const { data, error } = await supabase
+          .rpc('get_low_stock_products', { p_limit: 100 }); // Limite alto para lista completa
+
+        if (error) {
+          console.error('Error fetching low stock products:', error);
+          throw error;
+        }
+
+        // Mapear resultado da RPC para formato Product
+        // A RPC retorna: id, name, current_stock, minimum_stock, stock_packages, stock_units_loose, price, category
+        return (data || []).map((item: any) => ({
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          category: item.category,
+          stock_packages: item.stock_packages,
+          stock_units_loose: item.stock_units_loose,
+          stock_quantity: item.current_stock, // Mapeado de current_stock
+          minimum_stock: item.minimum_stock,
+          // Campos opcionais não retornados pela RPC (null/defaults)
+          image_url: null,
+          barcode: null,
+          unit_barcode: null,
+          package_barcode: null,
+          package_units: null,
+          package_price: null,
+          has_package_tracking: false,
+          units_per_package: 1,
+          expiry_date: null,
+          has_expiry_tracking: false,
+        })) as Product[];
+      }
+
       if (storeFilter === 'store2') {
         // LOJA 2: Mostrar APENAS produtos transferidos
         // v3.4.3 - Usa histórico de transferências para determinar visibilidade
@@ -74,9 +112,9 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
         // Passo 3: Buscar produtos transferidos
         const { data, error } = await supabase
           .from('products')
-          .select('id, name, price, stock_quantity, image_url, barcode, unit_barcode, package_barcode, category, package_units, package_price, has_package_tracking, units_per_package, stock_packages, stock_units_loose, store1_stock_packages, store1_stock_units_loose, store2_stock_packages, store2_stock_units_loose, expiry_date, has_expiry_tracking')
+          .select('id, name, price, stock_quantity, image_url, barcode, unit_barcode, package_barcode, category, package_units, package_price, has_package_tracking, units_per_package, stock_packages, stock_units_loose, minimum_stock, expiry_date, has_expiry_tracking')
           .is('deleted_at', null)
-          .in('id', productIds)  // ← FILTRO: Apenas produtos transferidos
+          .in('id', productIds)
           .order('name', { ascending: true });
 
         if (error) {
@@ -90,7 +128,7 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
         // LOJA 1 ou SEM FILTRO: Mostrar TODOS os produtos (comportamento atual)
         let query = supabase
           .from('products')
-          .select('id, name, price, stock_quantity, image_url, barcode, unit_barcode, package_barcode, category, package_units, package_price, has_package_tracking, units_per_package, stock_packages, stock_units_loose, store1_stock_packages, store1_stock_units_loose, store2_stock_packages, store2_stock_units_loose, expiry_date, has_expiry_tracking')
+          .select('id, name, price, stock_quantity, image_url, barcode, unit_barcode, package_barcode, category, package_units, package_price, has_package_tracking, units_per_package, stock_packages, stock_units_loose, minimum_stock, expiry_date, has_expiry_tracking')
           .is('deleted_at', null);
 
         query = query.order('name', { ascending: true });
@@ -135,7 +173,7 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
     clearFilters,
     totalProducts,
     filteredCount,
-  } = useProductFilters(products, initialCategory);
+  } = useProductFilters(products, initialCategory, stockFilter);
 
   // Lógica de categorias
   const {
@@ -171,8 +209,8 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
       const { product, type } = result;
 
       // ✅ CORREÇÃO v3.4.5: Usar campos MULTISTORE (store1_*) ao invés de legacy (fix: produtos novos não adicionavam via barcode)
-      const stockUnitsLoose = product.store1_stock_units_loose || 0;
-      const stockPackages = product.store1_stock_packages || 0;
+      const stockUnitsLoose = product.stock_units_loose || 0;
+      const stockPackages = product.stock_packages || 0;
 
       console.log('[DEBUG] useProductsGridLogic - produto encontrado:', {
         productId: product.id,
@@ -218,8 +256,8 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
   // Handler para adicionar produto ao carrinho - CORRIGIDO PARA ULTRA-SIMPLIFICAÇÃO
   const handleAddToCart = async (product: Product) => {
     // ✅ CORREÇÃO v3.4.2: Usar campos MULTISTORE (store1_*) ao invés de legacy
-    const stockUnitsLoose = product.store1_stock_units_loose || 0;
-    const stockPackages = product.store1_stock_packages || 0;
+    const stockUnitsLoose = product.stock_units_loose || 0;
+    const stockPackages = product.stock_packages || 0;
 
     // ✅ LÓGICA ULTRA-SIMPLES:
     // 1. Se tem unidades soltas E pacotes: abrir modal para escolher

@@ -155,17 +155,16 @@ export const useRecentTransfers = () => {
 
 /**
  * Helper para validar se tem estoque suficiente para transferência
+ * v3.5.4 - Sistema unificado (colunas legacy)
  */
 export const validateTransferStock = (
   product: any,
-  fromStore: 1 | 2,
+  _fromStore: 1 | 2,
   packages: number,
   unitsLoose: number
 ): { valid: boolean; error?: string } => {
-  const availablePackages =
-    fromStore === 1 ? product.store1_stock_packages : product.store2_stock_packages;
-  const availableUnits =
-    fromStore === 1 ? product.store1_stock_units_loose : product.store2_stock_units_loose;
+  const availablePackages = product.stock_packages || 0;
+  const availableUnits = product.stock_units_loose || 0;
 
   if (packages > availablePackages) {
     return {

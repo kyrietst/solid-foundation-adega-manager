@@ -57,7 +57,7 @@ export const useStoreInventory = ({ store, enabled = true }: UseStoreInventoryOp
           .from('products')
           .select('*')
           .is('deleted_at', null)
-          .in('id', productIds);  // ← FILTRO: Apenas produtos transferidos
+          .in('id', productIds);
 
         if (error) {
           console.error(`Erro ao buscar produtos da ${store}:`, error);
@@ -156,28 +156,23 @@ export const useStoreProductCounts = () => {
 };
 
 /**
- * Helper para calcular estoque total de um produto somando ambas as lojas
+ * Helper para obter estoque total do produto
+ * v3.5.4 - Sistema unificado (colunas legacy)
  */
 export const getTotalStock = (product: Product) => {
   return {
-    packages: (product.store1_stock_packages || 0) + (product.store2_stock_packages || 0),
-    units: (product.store1_stock_units_loose || 0) + (product.store2_stock_units_loose || 0),
+    packages: product.stock_packages || 0,
+    units: product.stock_units_loose || 0,
   };
 };
 
 /**
- * Helper para obter estoque de uma loja específica
+ * Helper para obter estoque (mantido para compatibilidade)
+ * v3.5.4 - Sistema unificado, retorna sempre o mesmo valor
  */
-export const getStoreStock = (product: Product, store: StoreLocation) => {
-  if (store === 'store1') {
-    return {
-      packages: product.store1_stock_packages || 0,
-      units: product.store1_stock_units_loose || 0,
-    };
-  } else {
-    return {
-      packages: product.store2_stock_packages || 0,
-      units: product.store2_stock_units_loose || 0,
-    };
-  }
+export const getStoreStock = (product: Product, _store: StoreLocation) => {
+  return {
+    packages: product.stock_packages || 0,
+    units: product.stock_units_loose || 0,
+  };
 };
