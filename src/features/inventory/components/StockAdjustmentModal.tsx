@@ -268,7 +268,6 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
         queryClient.invalidateQueries({ queryKey: ['products', 'lowStock'] }),
 
         // Inventory and movements
-        queryClient.invalidateQueries({ queryKey: ['inventory'] }),
         queryClient.invalidateQueries({ queryKey: ['inventory_movements'] }),
         queryClient.invalidateQueries({ queryKey: ['movements'] }),
 
