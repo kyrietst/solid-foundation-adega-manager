@@ -375,7 +375,6 @@ export const useUpsertSale = () => {
         }
 
         Object.assign(baseUpdate, deliveryUpdate);
-      } else {
       }
 
       const { error: updateError } = await supabase

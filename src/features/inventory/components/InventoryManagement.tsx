@@ -14,7 +14,7 @@ import { ProductsGridContainer } from './ProductsGridContainer';
 import { ProductsTitle, ProductsHeader } from './ProductsHeader';
 import { useProductsGridLogic } from '@/shared/hooks/products/useProductsGridLogic';
 import { Button } from '@/shared/ui/primitives/button';
-import { Trash2, Package, Store, AlertTriangle } from 'lucide-react';
+import { Trash2, Package, Store, AlertTriangle, Loader2 } from 'lucide-react';
 // Imports dos modais refatorados - Força HMR refresh para carregar logs de diagnóstico
 import { NewProductModal } from './NewProductModal';
 import { SimpleProductViewModal } from './SimpleProductViewModal'; // Modal simplificado v2.0
@@ -22,11 +22,15 @@ import { SimpleEditProductModal } from './SimpleEditProductModal'; // Modal simp
 import { StockAdjustmentModal } from './StockAdjustmentModal';
 import { StockHistoryModal } from './StockHistoryModal';
 import { DeletedProductsGrid } from './DeletedProductsGrid';
+import { InventoryGrid } from './InventoryGrid';
+import { LoadingScreen } from '@/shared/ui/composite/loading-spinner';
+import { EmptySearchResults } from '@/shared/ui/composite/empty-state';
 import { useDeletedProducts } from '../hooks/useDeletedProducts';
 import useProductDelete from '../hooks/useProductDelete';
 import { useAuth } from '@/app/providers/AuthContext';
 import { useStoreProductCounts } from '../hooks/useStoreInventory';
 import { StoreTransferModal } from './StoreTransferModal';
+import { useLowStockProducts } from '../hooks/useLowStockProducts';
 import type { ProductFormData, StoreLocation } from '@/core/types/inventory.types';
 
 // Interface simplificada para edição de produtos (v2.0)
@@ -473,19 +477,10 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
     showFilters: false
   });
 
-  // 📦 SSoT v3.5.4: Contar produtos com estoque baixo usando RPC (mesma fonte do Dashboard)
-  // Isso garante consistência entre o badge do botão "Alertas" e o conteúdo da aba
-  const { data: lowStockData } = useQuery({
-    queryKey: ['low-stock-count'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .rpc('get_low_stock_products', { p_limit: 100 });
-      if (error) throw error;
-      return data || [];
-    },
-    staleTime: 2 * 60 * 1000, // 2 minutos (igual ao Dashboard)
-  });
-  const lowStockCount = lowStockData?.length || 0;
+  // 📦 SSoT v3.5.5: Usar hook dedicado com useInfiniteQuery para alertas
+  // Permite carregamento progressivo ("Load More") de 100+ produtos
+  const lowStockQuery = useLowStockProducts();
+  const lowStockCount = lowStockQuery.totalLoaded;
 
   return (
     <div className={`w-full h-full flex flex-col ${className || ''}`}>
@@ -611,21 +606,69 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
             restoringProductId={restoringProductId}
           />
         ) : storeView === 'store1' && viewMode === 'alerts' ? (
-          /* 📦 Grid de produtos com estoque baixo (Alertas) */
-          <ProductsGridContainer
-            showSearch={showSearch}
-            showFilters={showFilters}
-            showAddButton={false}
-            showHeader={false}
-            mode="inventory"
-            storeFilter="store1"
-            stockFilter="low-stock"
-            onAddToCart={onProductSelect}
-            onViewDetails={handleViewDetails}
-            onEdit={handleEditProduct}
-            onAdjustStock={handleAdjustStock}
-            onTransfer={handleTransferProduct}
-          />
+          /* 📦 v3.5.5: Grid de produtos com estoque baixo (Alertas) com Load More */
+          <div className="flex-1 min-h-0 flex flex-col">
+            {lowStockQuery.isLoading ? (
+              <LoadingScreen text="Carregando alertas de estoque..." />
+            ) : lowStockQuery.error ? (
+              <div className="text-red-400 p-4 bg-red-500/10 rounded-lg border border-red-500/20">
+                ❌ Erro ao carregar alertas: {lowStockQuery.error.message}
+              </div>
+            ) : lowStockQuery.products.length === 0 ? (
+              <EmptySearchResults
+                searchTerm="produtos com estoque baixo"
+                onClearSearch={() => setViewMode('active')}
+              />
+            ) : (
+              <>
+                {/* Grid de produtos com scroll */}
+                <div className="flex-1 overflow-y-auto">
+                  <InventoryGrid
+                    products={lowStockQuery.products}
+                    gridColumns={{ mobile: 1, tablet: 2, desktop: 3 }}
+                    onViewDetails={handleViewDetails}
+                    onEdit={handleEditProduct}
+                    onAdjustStock={handleAdjustStock}
+                    onTransfer={handleTransferProduct}
+                    storeFilter="store1"
+                    variant="warning"
+                    glassEffect={true}
+                  />
+                </div>
+
+                {/* Botão "Carregar Mais" */}
+                {lowStockQuery.hasMore && (
+                  <div className="mt-4 flex justify-center">
+                    <Button
+                      onClick={() => lowStockQuery.loadMore()}
+                      disabled={lowStockQuery.isLoadingMore}
+                      variant="outline"
+                      size="lg"
+                      className="w-64 bg-amber-500/10 hover:bg-amber-500/20 border-amber-500/30 text-amber-300 hover:text-amber-200"
+                    >
+                      {lowStockQuery.isLoadingMore ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Carregando...
+                        </>
+                      ) : (
+                        <>
+                          Carregar Mais ({lowStockQuery.totalLoaded} carregados)
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
+
+                {/* Info footer */}
+                {!lowStockQuery.hasMore && (
+                  <div className="mt-4 text-center text-sm text-white/50">
+                    ✅ Todos os {lowStockQuery.totalLoaded} produtos com estoque baixo foram carregados
+                  </div>
+                )}
+              </>
+            )}
+          </div>
         ) : storeView === 'store2' ? (
           /* Grid de produtos ativos Loja 2 */
           <ProductsGridContainer

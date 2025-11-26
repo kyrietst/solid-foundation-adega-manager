@@ -57,12 +57,6 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
   onSuccess,
   storeFilter // 🏪 v3.4.0 - Filtro de loja
 }) => {
-  // Log de diagnóstico para verificar renderização
-  React.useEffect(() => {
-    if (isOpen) {
-    }
-  }, [isOpen]);
-
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -279,6 +273,8 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
         // ✅ v3.5.4 - KPIs de inventário para Dashboard atualizar
         queryClient.invalidateQueries({ queryKey: ['kpis-inventory'] }),
         queryClient.invalidateQueries({ queryKey: ['out-of-stock-products'] }),
+        // ✅ v3.5.5 - Invalidar infinite query de low-stock (Load More pattern)
+        queryClient.invalidateQueries({ queryKey: ['low-stock-products-infinite'] }),
 
         // Categories and batch data
         queryClient.invalidateQueries({ queryKey: ['products-by-category'] }),

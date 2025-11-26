@@ -73,6 +73,8 @@ export const useInventoryOperations = (): InventoryOperations => {
       // ✅ v3.5.4 - Invalidar KPIs de inventário para Dashboard atualizar
       queryClient.invalidateQueries({ queryKey: ['kpis-inventory'] }),
       queryClient.invalidateQueries({ queryKey: ['out-of-stock-products'] }),
+      // ✅ v3.5.5 - Invalidar infinite query de low-stock (Load More pattern)
+      queryClient.invalidateQueries({ queryKey: ['low-stock-products-infinite'] }),
     ]);
   }, [queryClient]);
 
