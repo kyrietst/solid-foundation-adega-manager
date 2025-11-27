@@ -167,12 +167,19 @@ export const getTotalStock = (product: Product) => {
 };
 
 /**
- * Helper para obter estoque (mantido para compatibilidade)
- * v3.5.4 - Sistema unificado, retorna sempre o mesmo valor
+ * Helper para obter estoque por loja
+ * v3.6.0 - Sistema multi-store com estoque dividido
  */
-export const getStoreStock = (product: Product, _store: StoreLocation) => {
-  return {
-    packages: product.stock_packages || 0,
-    units: product.stock_units_loose || 0,
-  };
+export const getStoreStock = (product: Product, store: StoreLocation) => {
+  if (store === 'store1') {
+    return {
+      packages: (product as any).store1_stock_packages || 0,
+      units: (product as any).store1_stock_units_loose || 0,
+    };
+  } else {
+    return {
+      packages: (product as any).store2_stock_packages || 0,
+      units: (product as any).store2_stock_units_loose || 0,
+    };
+  }
 };

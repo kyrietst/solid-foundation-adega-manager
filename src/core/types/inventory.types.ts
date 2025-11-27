@@ -251,7 +251,8 @@ export interface InventoryMovement {
 }
 
 // 🏪 Interface para transferências entre lojas
-// @deprecated v3.5.4 - Sistema multi-store removido, tabela store_transfers dropada
+// v3.6.0 - Sistema multi-store ATIVO (restaurado)
+// Tabela store_transfers registra histórico de transferências
 export interface StoreTransfer {
   id: string;
   product_id: string;
@@ -276,7 +277,7 @@ export interface StoreTransfer {
 }
 
 // Interface para input de transferência
-// @deprecated v3.5.4 - Sistema multi-store removido
+// v3.6.0 - Sistema multi-store ATIVO (restaurado)
 export interface StoreTransferInput {
   product_id: string;
   from_store: StoreNumber;

@@ -170,9 +170,14 @@ export const NewProductModal: React.FC<NewProductModalProps> = ({
         // Outros campos
         supplier: data.supplier === 'none' ? null : data.supplier,
         volume_ml: data.volume_ml > 0 ? data.volume_ml : null,
-        // Estoque inicial v2.0
+        // Estoque inicial v2.0 (legacy - mantido para compatibilidade)
         stock_packages: 0,
         stock_units_loose: 0,
+        // ✅ v3.6.0: Sistema multi-store - Novos produtos começam na Loja 1
+        store1_stock_packages: 0,
+        store1_stock_units_loose: 0,
+        store2_stock_packages: 0,
+        store2_stock_units_loose: 0,
         // Valores padrão
         turnover_rate: 'medium',
         created_at: getSaoPauloTimestamp(), // Data de criação em horário de São Paulo
@@ -188,7 +193,11 @@ export const NewProductModal: React.FC<NewProductModalProps> = ({
       return result;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['products'] });
+      // ✅ FIX Multi-Store: Invalidar TODAS as queries de produtos (lojas + contadores)
+      queryClient.invalidateQueries({ queryKey: ['products'] }); // Legacy
+      queryClient.invalidateQueries({ queryKey: ['products', 'available'] }); // useProductsGridLogic
+      queryClient.invalidateQueries({ queryKey: ['products', 'store'] }); // useStoreInventory
+      queryClient.invalidateQueries({ queryKey: ['products', 'store-counts'] }); // Contadores das lojas
       toast({
         title: "✅ Produto adicionado!",
         description: "Produto cadastrado com sucesso",
