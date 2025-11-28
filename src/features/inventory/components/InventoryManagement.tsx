@@ -17,6 +17,7 @@ import { useProductsGridLogic } from '@/shared/hooks/products/useProductsGridLog
 import { Button } from '@/shared/ui/primitives/button';
 import { Trash2, Package, Store, AlertTriangle, Loader2, ClipboardList, Warehouse } from 'lucide-react';
 import { PaginationControls } from '@/shared/ui/composite/pagination-controls';
+import { SearchInput } from '@/shared/ui/composite/search-input';
 // Imports dos modais refatorados - Força HMR refresh para carregar logs de diagnóstico
 import { NewProductModal } from './NewProductModal';
 import { SimpleProductViewModal } from './SimpleProductViewModal'; // Modal simplificado v2.0
@@ -91,6 +92,7 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
   // 📄 v3.6.2 - Paginação client-side para performance (500+ produtos)
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 24; // Grid otimizado (3 colunas x 8 linhas)
+  const [searchQuery, setSearchQuery] = useState(''); // 🔍 Busca por nome/código de barras
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -510,7 +512,7 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
   });
 
   // 🏪 v3.6.1 - Mapear produtos baseado na loja selecionada (Active vs Holding)
-  const displayProducts = React.useMemo(() => {
+  const storeFilteredProducts = React.useMemo(() => {
     if (selectedStore === 1) {
       // Loja 1 (Active Stock): Mostrar TODOS os produtos (catálogo mestre)
       return allProducts;
@@ -529,6 +531,20 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
     }
   }, [allProducts, selectedStore]);
 
+  // 🔍 v3.6.2 - Filtro de Busca (ANTES da paginação)
+  const displayProducts = React.useMemo(() => {
+    if (!searchQuery.trim()) {
+      return storeFilteredProducts;
+    }
+
+    const query = searchQuery.toLowerCase().trim();
+    return storeFilteredProducts.filter(product =>
+      product.name?.toLowerCase().includes(query) ||
+      product.barcode?.toLowerCase().includes(query) ||
+      product.package_barcode?.toLowerCase().includes(query)
+    );
+  }, [storeFilteredProducts, searchQuery]);
+
   // 📄 v3.6.2 - Paginação: Calcular páginas e produtos paginados
   const totalPages = Math.ceil(displayProducts.length / itemsPerPage);
   const paginatedProducts = React.useMemo(() => {
@@ -540,7 +556,7 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
   // 📄 v3.6.2 - Reset inteligente: Voltar para página 1 quando filtros mudarem
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedStore, viewMode]);
+  }, [selectedStore, viewMode, searchQuery]); // 🔍 Adicionado searchQuery
 
   return (
     <div className={`w-full h-full flex flex-col ${className || ''}`}>
@@ -620,6 +636,16 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
         {viewMode === 'active' ? (
           /* 🏪 v3.6.1 - Grid de produtos com toggle Loja 1/Loja 2 */
           <div className="flex-1 min-h-0 flex flex-col">
+            {/* 🔍 v3.6.2 - Barra de Busca */}
+            <div className="mb-4">
+              <SearchInput
+                value={searchQuery}
+                onChange={setSearchQuery}
+                placeholder="Buscar por nome ou código de barras..."
+                className="w-full"
+              />
+            </div>
+
             {/* Toggle Loja 1 (Active) / Loja 2 (Holding) */}
             <div className="flex gap-2 mb-4 pb-4 border-b border-white/10">
               <Button
