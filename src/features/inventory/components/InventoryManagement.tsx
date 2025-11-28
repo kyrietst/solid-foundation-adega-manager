@@ -1,9 +1,10 @@
 /**
  * Componente principal de gerenciamento de inventário
  * Inclui listagem de produtos e funcionalidade para adicionar novos produtos
+ * v3.6.2: Paginação client-side para otimizar renderização de 500+ produtos
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
@@ -15,6 +16,7 @@ import { ProductsTitle, ProductsHeader } from './ProductsHeader';
 import { useProductsGridLogic } from '@/shared/hooks/products/useProductsGridLogic';
 import { Button } from '@/shared/ui/primitives/button';
 import { Trash2, Package, Store, AlertTriangle, Loader2, ClipboardList, Warehouse } from 'lucide-react';
+import { PaginationControls } from '@/shared/ui/composite/pagination-controls';
 // Imports dos modais refatorados - Força HMR refresh para carregar logs de diagnóstico
 import { NewProductModal } from './NewProductModal';
 import { SimpleProductViewModal } from './SimpleProductViewModal'; // Modal simplificado v2.0
@@ -85,6 +87,10 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
   const [selectedStore, setSelectedStore] = useState<1 | 2>(1);
   const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
   const [productToTransfer, setProductToTransfer] = useState<Product | null>(null);
+
+  // 📄 v3.6.2 - Paginação client-side para performance (500+ produtos)
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 24; // Grid otimizado (3 colunas x 8 linhas)
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -523,6 +529,19 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
     }
   }, [allProducts, selectedStore]);
 
+  // 📄 v3.6.2 - Paginação: Calcular páginas e produtos paginados
+  const totalPages = Math.ceil(displayProducts.length / itemsPerPage);
+  const paginatedProducts = React.useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return displayProducts.slice(startIndex, endIndex);
+  }, [displayProducts, currentPage, itemsPerPage]);
+
+  // 📄 v3.6.2 - Reset inteligente: Voltar para página 1 quando filtros mudarem
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedStore, viewMode]);
+
   return (
     <div className={`w-full h-full flex flex-col ${className || ''}`}>
       {/* Header padronizado com contador de produtos */}
@@ -633,18 +652,37 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
                 onClearSearch={() => {}}
               />
             ) : (
-              <div className="flex-1 overflow-y-auto">
-                <InventoryGrid
-                  products={displayProducts}
-                  gridColumns={{ mobile: 1, tablet: 2, desktop: 3 }}
-                  onViewDetails={handleViewDetails}
-                  onEdit={handleEditProduct}
-                  onAdjustStock={handleAdjustStock}
-                  onTransfer={selectedStore === 1 ? handleTransferToHolding : undefined}
-                  variant="default"
-                  glassEffect={true}
-                />
-              </div>
+              <>
+                {/* 📄 v3.6.2 - Grid paginado (renderiza apenas 24 produtos por vez) */}
+                <div className="flex-1 overflow-y-auto">
+                  <InventoryGrid
+                    products={paginatedProducts}
+                    gridColumns={{ mobile: 1, tablet: 2, desktop: 3 }}
+                    onViewDetails={handleViewDetails}
+                    onEdit={handleEditProduct}
+                    onAdjustStock={handleAdjustStock}
+                    onTransfer={selectedStore === 1 ? handleTransferToHolding : undefined}
+                    variant="default"
+                    glassEffect={true}
+                  />
+                </div>
+
+                {/* 📄 v3.6.2 - Controles de paginação */}
+                {totalPages > 1 && (
+                  <div className="mt-4 flex justify-center">
+                    <PaginationControls
+                      currentPage={currentPage}
+                      totalPages={totalPages}
+                      onPageChange={setCurrentPage}
+                    />
+                  </div>
+                )}
+
+                {/* Info de contagem */}
+                <div className="mt-2 text-center text-sm text-white/50">
+                  Mostrando {paginatedProducts.length} de {displayProducts.length} produtos
+                </div>
+              </>
             )}
           </div>
         ) : viewMode === 'deleted' ? (
