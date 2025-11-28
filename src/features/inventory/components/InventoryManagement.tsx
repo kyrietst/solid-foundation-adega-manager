@@ -14,13 +14,14 @@ import { ProductsGridContainer } from './ProductsGridContainer';
 import { ProductsTitle, ProductsHeader } from './ProductsHeader';
 import { useProductsGridLogic } from '@/shared/hooks/products/useProductsGridLogic';
 import { Button } from '@/shared/ui/primitives/button';
-import { Trash2, Package, Store, AlertTriangle, Loader2 } from 'lucide-react';
+import { Trash2, Package, Store, AlertTriangle, Loader2, ClipboardList, Warehouse } from 'lucide-react';
 // Imports dos modais refatorados - Força HMR refresh para carregar logs de diagnóstico
 import { NewProductModal } from './NewProductModal';
 import { SimpleProductViewModal } from './SimpleProductViewModal'; // Modal simplificado v2.0
 import { SimpleEditProductModal } from './SimpleEditProductModal'; // Modal simplificado v2.0
 import { StockAdjustmentModal } from './StockAdjustmentModal';
 import { StockHistoryModal } from './StockHistoryModal';
+import { TransferToHoldingModal } from './TransferToHoldingModal'; // v3.6.1 - Transfer Loja 1 → Loja 2
 import { DeletedProductsGrid } from './DeletedProductsGrid';
 import { InventoryGrid } from './InventoryGrid';
 import { LoadingScreen } from '@/shared/ui/composite/loading-spinner';
@@ -28,10 +29,9 @@ import { EmptySearchResults } from '@/shared/ui/composite/empty-state';
 import { useDeletedProducts } from '../hooks/useDeletedProducts';
 import useProductDelete from '../hooks/useProductDelete';
 import { useAuth } from '@/app/providers/AuthContext';
-import { useStoreProductCounts } from '../hooks/useStoreInventory';
-import { StoreTransferModal } from './StoreTransferModal';
 import { useLowStockProducts } from '../hooks/useLowStockProducts';
-import type { ProductFormData, StoreLocation } from '@/core/types/inventory.types';
+import { InventoryCountSheet } from './InventoryCountSheet';
+import type { ProductFormData } from '@/core/types/inventory.types';
 
 // Interface simplificada para edição de produtos (v2.0)
 interface SimpleEditProductFormData {
@@ -75,13 +75,16 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isStockAdjustmentOpen, setIsStockAdjustmentOpen] = useState(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
-  const [isTransferModalOpen, setIsTransferModalOpen] = useState(false); // Nova: controla modal de transferência
-  const [storeView, setStoreView] = useState<StoreLocation>('store1'); // Nova: controla qual loja está selecionada
-  // 📦 viewMode agora inclui 'alerts' para sub-aba de estoque baixo
-  const [viewMode, setViewMode] = useState<'active' | 'deleted' | 'alerts'>(
-    urlTab === 'alerts' ? 'alerts' : 'active'
+  // 📦 viewMode agora inclui 'alerts' e 'count-sheet' para inventário físico
+  const [viewMode, setViewMode] = useState<'active' | 'deleted' | 'alerts' | 'count-sheet'>(
+    urlTab === 'alerts' ? 'alerts' : urlTab === 'count-sheet' ? 'count-sheet' : 'active'
   );
   const [restoringProductId, setRestoringProductId] = useState<string | null>(null);
+
+  // 🏪 v3.6.1 - Active vs Holding Stock: Estado para controlar qual loja está sendo visualizada
+  const [selectedStore, setSelectedStore] = useState<1 | 2>(1);
+  const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
+  const [productToTransfer, setProductToTransfer] = useState<Product | null>(null);
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -91,9 +94,6 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
   // Hook para produtos deletados
   const { data: deletedProducts = [], isLoading: isLoadingDeleted } = useDeletedProducts();
   const { restore } = useProductDelete();
-
-  // Hook para contar produtos por loja
-  const { data: storeCounts = { store1: 0, store2: 0 } } = useStoreProductCounts();
 
   // Verificar se usuário é admin - aguardar carregamento do profile
   const isAdmin = !loading && userRole === 'admin';
@@ -201,8 +201,9 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
     setIsHistoryModalOpen(true);
   };
 
-  const handleTransferProduct = (product: Product) => {
-    setSelectedProduct(product);
+  // 🏪 v3.6.1 - Handler para abrir modal de transferência Loja 1 → Loja 2
+  const handleTransferToHolding = (product: Product) => {
+    setProductToTransfer(product);
     setIsTransferModalOpen(true);
   };
 
@@ -482,6 +483,46 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
   const lowStockQuery = useLowStockProducts();
   const lowStockCount = lowStockQuery.totalLoaded;
 
+  // 🏪 v3.6.1 - Query para produtos (usado no toggle Loja 1/Loja 2)
+  const { data: allProducts = [], isLoading: isLoadingAllProducts } = useQuery({
+    queryKey: ['products', 'for-store-toggle'],
+    queryFn: async (): Promise<Product[]> => {
+      const { data, error } = await supabase
+        .from('products')
+        .select('id, name, price, stock_quantity, image_url, barcode, unit_barcode, package_barcode, category, package_units, package_price, has_package_tracking, units_per_package, stock_packages, stock_units_loose, store2_holding_packages, store2_holding_units_loose, minimum_stock, expiry_date, has_expiry_tracking')
+        .is('deleted_at', null)
+        .order('name', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching products for store toggle:', error);
+        throw error;
+      }
+
+      return data || [];
+    },
+    enabled: viewMode === 'active', // Só buscar quando na aba "active"
+  });
+
+  // 🏪 v3.6.1 - Mapear produtos baseado na loja selecionada (Active vs Holding)
+  const displayProducts = React.useMemo(() => {
+    if (selectedStore === 1) {
+      // Loja 1 (Active Stock): Mostrar TODOS os produtos (catálogo mestre)
+      return allProducts;
+    } else {
+      // Loja 2 (Holding Stock): Filtrar apenas produtos com estoque > 0 + mapear campos
+      return allProducts
+        .filter(product =>
+          (product.store2_holding_packages || 0) > 0 ||
+          (product.store2_holding_units_loose || 0) > 0
+        )
+        .map(product => ({
+          ...product,
+          stock_packages: product.store2_holding_packages || 0,
+          stock_units_loose: product.store2_holding_units_loose || 0,
+        }));
+    }
+  }, [allProducts, selectedStore]);
+
   return (
     <div className={`w-full h-full flex flex-col ${className || ''}`}>
       {/* Header padronizado com contador de produtos */}
@@ -496,43 +537,8 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
         className="flex-1 min-h-0 bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg hero-spotlight p-4 flex flex-col hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300"
         onMouseMove={handleMouseMove}
       >
-        {/* Tabs de Lojas - Sempre visíveis */}
-        <div className="flex gap-2 mb-4 pb-4 border-b border-white/10">
-          <Button
-            variant={storeView === 'store1' ? 'default' : 'outline'}
-            onClick={() => {
-              setStoreView('store1');
-              setViewMode('active'); // Reset para active ao mudar de loja
-            }}
-            className="flex items-center gap-2"
-            size="sm"
-          >
-            <Store className="h-4 w-4" />
-            Loja 1
-            <span className="ml-1 px-2 py-0.5 bg-blue-500/20 text-blue-400 rounded-full text-xs font-bold">
-              {storeCounts.store1}
-            </span>
-          </Button>
-
-          <Button
-            variant={storeView === 'store2' ? 'default' : 'outline'}
-            onClick={() => {
-              setStoreView('store2');
-              setViewMode('active'); // Reset para active ao mudar de loja
-            }}
-            className="flex items-center gap-2"
-            size="sm"
-          >
-            <Store className="h-4 w-4" />
-            Loja 2
-            <span className="ml-1 px-2 py-0.5 bg-purple-500/20 text-purple-400 rounded-full text-xs font-bold">
-              {storeCounts.store2}
-            </span>
-          </Button>
-        </div>
-
-        {/* Tab Switcher Active/Deleted - Apenas para admins e apenas em Loja 1 */}
-        {isAdmin && storeView === 'store1' && (
+        {/* Tab Switcher Active/Deleted/Alerts/Planilha - Apenas para admins */}
+        {isAdmin && (
           <div className="flex gap-2 mb-4 pb-4 border-b border-white/10">
             <Button
               variant={viewMode === 'active' ? 'default' : 'outline'}
@@ -577,35 +583,79 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
                 {lowStockCount}
               </span>
             </Button>
+
+            {/* ✅ NOVO: Planilha de Inventário Físico */}
+            <Button
+              variant={viewMode === 'count-sheet' ? 'default' : 'outline'}
+              onClick={() => setViewMode('count-sheet')}
+              className="flex items-center gap-2"
+              size="sm"
+            >
+              <ClipboardList className="h-4 w-4" />
+              Planilha de Inventário
+            </Button>
           </div>
         )}
 
-        {/* Renderização condicional baseada na loja e modo de visualização */}
-        {storeView === 'store1' && viewMode === 'active' ? (
-          /* Grid de produtos ativos Loja 1 com controles */
-          <ProductsGridContainer
-            showSearch={showSearch}
-            showFilters={showFilters}
-            showAddButton={showAddButton}
-            showHeader={false}
-            mode="inventory"
-            storeFilter="store1"
-            onAddToCart={onProductSelect}
-            onAddProduct={showAddButton ? handleAddProduct : undefined}
-            onViewDetails={handleViewDetails}
-            onEdit={handleEditProduct}
-            onAdjustStock={handleAdjustStock}
-            onTransfer={handleTransferProduct}
-          />
-        ) : storeView === 'store1' && viewMode === 'deleted' ? (
-          /* Grid de produtos deletados Loja 1 (admin only) */
+        {/* Renderização condicional baseada no modo de visualização */}
+        {viewMode === 'active' ? (
+          /* 🏪 v3.6.1 - Grid de produtos com toggle Loja 1/Loja 2 */
+          <div className="flex-1 min-h-0 flex flex-col">
+            {/* Toggle Loja 1 (Active) / Loja 2 (Holding) */}
+            <div className="flex gap-2 mb-4 pb-4 border-b border-white/10">
+              <Button
+                variant={selectedStore === 1 ? 'default' : 'outline'}
+                onClick={() => setSelectedStore(1)}
+                className="flex items-center gap-2"
+                size="sm"
+              >
+                <Store className="h-4 w-4" />
+                Loja 1 (Vendas)
+              </Button>
+
+              <Button
+                variant={selectedStore === 2 ? 'default' : 'outline'}
+                onClick={() => setSelectedStore(2)}
+                className="flex items-center gap-2"
+                size="sm"
+              >
+                <Warehouse className="h-4 w-4" />
+                Loja 2 (Depósito)
+              </Button>
+            </div>
+
+            {/* Grid de produtos com estoque da loja selecionada */}
+            {isLoadingAllProducts ? (
+              <LoadingScreen text={`Carregando produtos da Loja ${selectedStore}...`} />
+            ) : displayProducts.length === 0 ? (
+              <EmptySearchResults
+                searchTerm="produtos"
+                onClearSearch={() => {}}
+              />
+            ) : (
+              <div className="flex-1 overflow-y-auto">
+                <InventoryGrid
+                  products={displayProducts}
+                  gridColumns={{ mobile: 1, tablet: 2, desktop: 3 }}
+                  onViewDetails={handleViewDetails}
+                  onEdit={handleEditProduct}
+                  onAdjustStock={handleAdjustStock}
+                  onTransfer={selectedStore === 1 ? handleTransferToHolding : undefined}
+                  variant="default"
+                  glassEffect={true}
+                />
+              </div>
+            )}
+          </div>
+        ) : viewMode === 'deleted' ? (
+          /* Grid de produtos deletados (admin only) */
           <DeletedProductsGrid
             products={deletedProducts}
             isLoading={isLoadingDeleted}
             onRestore={handleRestoreProduct}
             restoringProductId={restoringProductId}
           />
-        ) : storeView === 'store1' && viewMode === 'alerts' ? (
+        ) : viewMode === 'alerts' ? (
           /* 📦 v3.5.5: Grid de produtos com estoque baixo (Alertas) com Load More */
           <div className="flex-1 min-h-0 flex flex-col">
             {lowStockQuery.isLoading ? (
@@ -629,8 +679,6 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
                     onViewDetails={handleViewDetails}
                     onEdit={handleEditProduct}
                     onAdjustStock={handleAdjustStock}
-                    onTransfer={handleTransferProduct}
-                    storeFilter="store1"
                     variant="warning"
                     glassEffect={true}
                   />
@@ -669,21 +717,9 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
               </>
             )}
           </div>
-        ) : storeView === 'store2' ? (
-          /* Grid de produtos ativos Loja 2 */
-          <ProductsGridContainer
-            showSearch={showSearch}
-            showFilters={showFilters}
-            showAddButton={false}
-            showHeader={false}
-            mode="inventory"
-            storeFilter="store2"
-            onAddToCart={onProductSelect}
-            onViewDetails={handleViewDetails}
-            onEdit={handleEditProduct}
-            onAdjustStock={handleAdjustStock}
-            onTransfer={handleTransferProduct}
-          />
+        ) : viewMode === 'count-sheet' ? (
+          /* ✅ Planilha de Inventário Físico */
+          <InventoryCountSheet />
         ) : null}
       </div>
 
@@ -714,7 +750,6 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
       <StockAdjustmentModal
         productId={selectedProduct?.id || ''}
         isOpen={isStockAdjustmentOpen}
-        storeFilter={storeView} // 🏪 v3.4.2 - Passar loja selecionada
         onClose={() => {
           setIsStockAdjustmentOpen(false);
           setSelectedProduct(null);
@@ -760,15 +795,18 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
         }}
       />
 
-      {/* Modal de transferência entre lojas (v3.4.0) */}
-      <StoreTransferModal
+      {/* 🏪 v3.6.1 - Modal de transferência Loja 1 → Loja 2 */}
+      <TransferToHoldingModal
+        product={productToTransfer}
         isOpen={isTransferModalOpen}
         onClose={() => {
           setIsTransferModalOpen(false);
-          setSelectedProduct(null);
+          setProductToTransfer(null);
         }}
-        product={selectedProduct}
-        fromStore={storeView}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ['products'] });
+          queryClient.invalidateQueries({ queryKey: ['products', 'for-store-toggle'] });
+        }}
       />
     </div>
   );

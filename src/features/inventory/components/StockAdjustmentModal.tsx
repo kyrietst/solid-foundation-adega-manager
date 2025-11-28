@@ -29,15 +29,25 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
 import { useToast } from '@/shared/hooks/common/use-toast';
 import { useAuth } from '@/app/providers/AuthContext';
-import type { Product, StoreLocation } from '@/core/types/inventory.types';
+import type { Product } from '@/core/types/inventory.types';
 import { getSaoPauloTimestamp } from '@/shared/hooks/common/use-brasil-timezone';
-import { getStoreStock } from '../hooks/useStoreInventory';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/primitives/select';
+
+// ✅ MOTIVOS SIMPLIFICADOS PARA INVENTÁRIO RÁPIDO
+const ADJUSTMENT_REASONS = {
+  'inventory': 'Inventário/Correção',
+  'loss': 'Perda/Quebra',
+  'consumption': 'Consumo Próprio'
+  // 'transfer' REMOVIDO - usar TransferToHoldingModal para transferências Loja 1 → Loja 2
+} as const;
 
 // Schema de validação para o formulário
 const stockAdjustmentSchema = z.object({
   newPackages: z.number().min(0, 'Quantidade de pacotes não pode ser negativa'),
   newUnitsLoose: z.number().min(0, 'Quantidade de unidades soltas não pode ser negativa'),
-  reason: z.string().min(3, 'Motivo deve ter pelo menos 3 caracteres').max(500, 'Motivo muito longo')
+  reason: z.enum(['inventory', 'loss', 'consumption'], {
+    errorMap: () => ({ message: 'Selecione um motivo válido' })
+  })
 });
 
 type StockAdjustmentFormData = z.infer<typeof stockAdjustmentSchema>;
@@ -47,15 +57,13 @@ interface StockAdjustmentModalProps {
   onClose: () => void;
   productId: string;
   onSuccess?: () => void;
-  storeFilter?: StoreLocation; // 🏪 v3.4.0 - Qual loja está sendo ajustada
 }
 
 export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
   isOpen,
   onClose,
   productId,
-  onSuccess,
-  storeFilter // 🏪 v3.4.0 - Filtro de loja
+  onSuccess
 }) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -117,7 +125,7 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
     defaultValues: {
       newPackages: 0,
       newUnitsLoose: 0,
-      reason: ''
+      reason: 'inventory' as const // ✅ Padrão: Inventário/Correção
     }
   });
 
@@ -127,16 +135,11 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
   // Configurar valores iniciais quando o produto for carregado
   React.useEffect(() => {
     if (product) {
-      // 🏪 v3.4.0 - Ler do estoque correto baseado na loja selecionada
-      const storeStock = storeFilter ? getStoreStock(product, storeFilter) : {
-        packages: product.stock_packages || 0,
-        units: product.stock_units_loose || 0
-      };
-
-      setValue('newPackages', storeStock.packages);
-      setValue('newUnitsLoose', storeStock.units);
+      // ✅ SIMPLIFICADO: Sempre usar campos legacy consolidados
+      setValue('newPackages', product.stock_packages || 0);
+      setValue('newUnitsLoose', product.stock_units_loose || 0);
     }
-  }, [product, storeFilter, setValue]);
+  }, [product, setValue]);
 
   // Mutation para ajuste de estoque usando estado absoluto
   const adjustStockMutation = useMutation({
@@ -165,7 +168,9 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
       // Garantir valores numéricos válidos
       const newPackages = Number(formData.newPackages || 0);
       const newUnitsLoose = Number(formData.newUnitsLoose || 0);
-      const reason = (formData.reason || '').trim();
+
+      // ✅ Traduzir enum do motivo para texto legível
+      const reasonText = ADJUSTMENT_REASONS[formData.reason];
 
       // Validações antes de enviar
       if (isNaN(newPackages) || isNaN(newUnitsLoose)) {
@@ -182,29 +187,18 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
         throw new Error('Valores não podem ser negativos');
       }
 
-      if (reason.length < 3) {
-        console.error('❌ VALIDAÇÃO: Motivo muito curto', {
-          reason, length: reason.length
-        });
-        throw new Error('Motivo deve ter pelo menos 3 caracteres');
-      }
-
-      // 🚀 CHAMAR RPC MULTISTORE COM PARÂMETRO DE LOJA
-      // 🏪 v3.4.3 - Usar função multistore com p_store
-      const storeNumber = storeFilter === 'store1' ? 1 : storeFilter === 'store2' ? 2 : 1; // Default Loja 1
-
+      // ✅ SIMPLIFICADO: Usar RPC legacy (sem multistore)
       const { data: result, error } = await supabase
-        .rpc('set_product_stock_absolute_multistore', {
+        .rpc('set_product_stock_absolute', {
           p_product_id: productId,
           p_new_packages: newPackages,
           p_new_units_loose: newUnitsLoose,
-          p_reason: reason,
-          p_user_id: user.id,
-          p_store: storeNumber // 🏪 1 = Loja 1, 2 = Loja 2
+          p_reason: reasonText, // Texto legível do motivo
+          p_user_id: user.id
         });
 
       if (error) {
-        console.error('❌ ERRO RPC set_product_stock_absolute_multistore:', {
+        console.error('❌ ERRO RPC set_product_stock_absolute:', {
           error,
           message: error.message,
           details: error.details,
@@ -214,9 +208,8 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
             p_product_id: productId,
             p_new_packages: newPackages,
             p_new_units_loose: newUnitsLoose,
-            p_reason: reason,
-            p_user_id: user.id,
-            p_store: storeNumber
+            p_reason: reasonText,
+            p_user_id: user.id
           }
         });
         throw error;
@@ -309,14 +302,9 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
   const calculations = useMemo(() => {
     if (!product) return null;
 
-    // 🏪 v3.4.0 - Ler do estoque correto baseado na loja selecionada
-    const storeStock = storeFilter ? getStoreStock(product, storeFilter) : {
-      packages: product.stock_packages || 0,
-      units: product.stock_units_loose || 0
-    };
-
-    const currentPackages = Number(storeStock.packages);
-    const currentUnitsLoose = Number(storeStock.units);
+    // ✅ SIMPLIFICADO: Sempre usar campos legacy consolidados
+    const currentPackages = Number(product.stock_packages || 0);
+    const currentUnitsLoose = Number(product.stock_units_loose || 0);
     const newPackages = Number(watchedValues.newPackages || 0);
     const newUnitsLoose = Number(watchedValues.newUnitsLoose || 0);
 
@@ -337,7 +325,7 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
       unitsLooseChange,
       hasChanges: newPackages !== currentPackages || newUnitsLoose !== currentUnitsLoose
     };
-  }, [product, storeFilter, watchedValues]);
+  }, [product, watchedValues]);
 
   const handleClose = () => {
     reset();
@@ -468,6 +456,8 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
                 id="newPackages"
                 type="number"
                 min="0"
+                // eslint-disable-next-line jsx-a11y/no-autofocus -- Intencional: otimização UX para inventário físico (< 5s por produto)
+                autoFocus
                 {...register('newPackages', { valueAsNumber: true })}
                 className="bg-gray-800/50 border-gray-600 text-gray-100 text-lg font-semibold"
                 placeholder="Ex: 10"
@@ -499,13 +489,21 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
             <Label htmlFor="reason" className="text-gray-100 font-medium">
               Motivo do Ajuste <span className="text-red-400">*</span>
             </Label>
-            <Textarea
-              id="reason"
-              {...register('reason')}
-              className="bg-gray-800/50 border-gray-600 text-gray-100"
-              placeholder="Descreva o motivo do ajuste (ex: contagem física, produto danificado, etc.)"
-              rows={3}
-            />
+            <Select
+              value={watchedValues.reason}
+              onValueChange={(value) => setValue('reason', value as 'inventory' | 'loss' | 'consumption' | 'transfer')}
+            >
+              <SelectTrigger className="bg-gray-800/50 border-gray-600 text-gray-100">
+                <SelectValue placeholder="Selecione o motivo" />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(ADJUSTMENT_REASONS).map(([key, label]) => (
+                  <SelectItem key={key} value={key}>
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             {errors.reason && (
               <p className="text-red-400 text-sm">{errors.reason.message}</p>
             )}

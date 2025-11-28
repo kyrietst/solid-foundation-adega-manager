@@ -11,8 +11,7 @@ import { Eye, Edit, Package, Box, AlertTriangle, ArrowRightLeft } from 'lucide-r
 import { cn } from '@/core/config/utils';
 import { getHoverTransformClasses } from '@/core/config/theme-utils';
 import { useGlassmorphismEffect } from '@/shared/hooks/ui/useGlassmorphismEffect';
-import { getStoreStock } from '../hooks/useStoreInventory'; // 🏪 Helper para obter estoque por loja
-import type { Product, StoreLocation } from '@/types/inventory.types';
+import type { Product } from '@/types/inventory.types';
 
 interface InventoryCardProps {
   product: Product;
@@ -20,7 +19,7 @@ interface InventoryCardProps {
   onEdit: (product: Product) => void;
   onAdjustStock?: (product: Product) => void;
   onTransfer?: (product: Product) => void; // 🏪 v3.4.0 - Transferência entre lojas
-  storeFilter?: StoreLocation; // 🏪 v3.4.0 - Qual loja está sendo exibida
+  storeFilter?: string; // Legacy: não usado // 🏪 v3.4.0 - Qual loja está sendo exibida
   variant?: 'default' | 'premium' | 'success' | 'warning' | 'error';
   glassEffect?: boolean;
 }
@@ -38,19 +37,14 @@ export const InventoryCard: React.FC<InventoryCardProps> = ({
   onViewDetails,
   onEdit,
   onAdjustStock,
-  onTransfer, // 🏪 v3.4.0
-  storeFilter, // 🏪 v3.4.0
+  onTransfer, // Legacy: mantido para compatibilidade
+  storeFilter, // Legacy: não usado
   variant = 'default',
   glassEffect = true,
 }) => {
-  // 🏪 MULTI-STORE: Obter estoque correto baseado na loja selecionada
-  const storeStock = storeFilter ? getStoreStock(product, storeFilter) : {
-    packages: product.stock_packages || 0,
-    units: product.stock_units_loose || 0
-  };
-
-  const stockPackages = storeStock.packages;
-  const stockUnitsLoose = storeStock.units;
+  // ✅ Usar campos legacy consolidados
+  const stockPackages = product.stock_packages || 0;
+  const stockUnitsLoose = product.stock_units_loose || 0;
 
   // ✅ SSoT: minimum_stock agora vem do banco (coluna criada em 2025-11-21)
   const stockStatus = getSimpleStockStatus(stockPackages, stockUnitsLoose, product.minimum_stock);

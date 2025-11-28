@@ -11,14 +11,14 @@ import { useBarcode } from '@/features/inventory/hooks/use-barcode';
 import { usePagination } from '@/shared/hooks/common/use-pagination';
 import { useProductFilters, StockFilterType } from './useProductFilters';
 import { useProductCategories } from './useProductCategories';
-import type { Product, StoreLocation } from '@/types/inventory.types';
+import type { Product } from '@/types/inventory.types';
 import type { ProductSelectionData } from '@/features/sales/components/ProductSelectionModal';
 
 export interface ProductsGridConfig {
   showSearch?: boolean;
   showFilters?: boolean;
   initialCategory?: string;
-  storeFilter?: StoreLocation; // 🏪 Filtro de loja (v3.4.0)
+  storeFilter?: string; // Legacy: não usado // 🏪 Filtro de loja (v3.4.0)
   stockFilter?: StockFilterType; // 📦 Filtro de estoque (low-stock)
   onProductSelect?: (product: Product) => void;
   gridColumns?: {
@@ -51,10 +51,6 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
     // ✅ FIX: Garantir que queryKey nunca tenha undefined (causa cache compartilhado)
     queryKey: ['products', 'available', storeFilter || 'all', stockFilter || 'all'],
     queryFn: async (): Promise<Product[]> => {
-      // 🐛 DEBUG: Logs temporários para diagnóstico de multi-store
-      console.log('[DEBUG Multi-Store] storeFilter:', storeFilter);
-      console.log('[DEBUG Multi-Store] stockFilter:', stockFilter);
-      console.log('[DEBUG Multi-Store] queryKey:', ['products', 'available', storeFilter || 'all', stockFilter || 'all']);
       // ✅ SSoT v3.5.4: Quando filtro é 'low-stock', usar RPC server-side
       // Isso garante consistência com o Dashboard (mesma lógica de threshold)
       if (stockFilter === 'low-stock') {
@@ -117,7 +113,7 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
         // Passo 3: Buscar produtos transferidos
         const { data, error } = await supabase
           .from('products')
-          .select('id, name, price, stock_quantity, image_url, barcode, unit_barcode, package_barcode, category, package_units, package_price, has_package_tracking, units_per_package, stock_packages, stock_units_loose, minimum_stock, expiry_date, has_expiry_tracking, store1_stock_packages, store1_stock_units_loose, store2_stock_packages, store2_stock_units_loose')
+          .select('id, name, price, stock_quantity, image_url, barcode, unit_barcode, package_barcode, category, package_units, package_price, has_package_tracking, units_per_package, stock_packages, stock_units_loose, store2_holding_packages, store2_holding_units_loose, minimum_stock, expiry_date, has_expiry_tracking')
           .is('deleted_at', null)
           .in('id', productIds)
           .order('name', { ascending: true });
@@ -133,7 +129,7 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
         // LOJA 1 ou SEM FILTRO: Mostrar TODOS os produtos (comportamento atual)
         let query = supabase
           .from('products')
-          .select('id, name, price, stock_quantity, image_url, barcode, unit_barcode, package_barcode, category, package_units, package_price, has_package_tracking, units_per_package, stock_packages, stock_units_loose, minimum_stock, expiry_date, has_expiry_tracking, store1_stock_packages, store1_stock_units_loose, store2_stock_packages, store2_stock_units_loose')
+          .select('id, name, price, stock_quantity, image_url, barcode, unit_barcode, package_barcode, category, package_units, package_price, has_package_tracking, units_per_package, stock_packages, stock_units_loose, store2_holding_packages, store2_holding_units_loose, minimum_stock, expiry_date, has_expiry_tracking')
           .is('deleted_at', null);
 
         query = query.order('name', { ascending: true });

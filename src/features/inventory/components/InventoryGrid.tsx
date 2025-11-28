@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import type { Product, StoreLocation } from '@/types/inventory.types';
+import type { Product } from '@/types/inventory.types';
 import { cn } from '@/core/config/utils';
 import { InventoryCard } from './InventoryCard';
 
@@ -19,7 +19,7 @@ interface InventoryGridProps {
   onEdit: (product: Product) => void;
   onAdjustStock?: (product: Product) => void;
   onTransfer?: (product: Product) => void; // 🏪 v3.4.0 - Transferência entre lojas
-  storeFilter?: StoreLocation; // 🏪 v3.4.0 - Qual loja está sendo exibida
+  storeFilter?: string; // Legacy: não usado // 🏪 v3.4.0 - Qual loja está sendo exibida
   variant?: 'default' | 'premium' | 'success' | 'warning' | 'error';
   glassEffect?: boolean;
   className?: string;

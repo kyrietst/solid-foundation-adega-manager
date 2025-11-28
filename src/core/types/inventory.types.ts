@@ -14,8 +14,6 @@ import type {
 
 export type UnitType = 'un' | 'pct';
 export type TurnoverRate = 'fast' | 'medium' | 'slow';
-export type StoreLocation = 'store1' | 'store2';
-export type StoreNumber = 1 | 2;
 
 export interface Product {
   id: string;
@@ -69,6 +67,13 @@ export interface Product {
   // "O Estoque é um Espelho da Prateleira" - apenas 2 números diretos
   stock_packages: NonNegativeInteger; // Quantidade de pacotes fechados em estoque
   stock_units_loose: NonNegativeInteger; // Quantidade de unidades soltas em estoque
+
+  // 🏪 CAMPOS LOJA 2 (HOLDING STOCK) - v3.6.1+ "Active vs Holding" Architecture
+  store2_holding_packages?: NonNegativeInteger; // Estoque de pacotes na Loja 2 (depósito)
+  store2_holding_units_loose?: NonNegativeInteger; // Estoque de unidades soltas na Loja 2 (depósito)
+
+  // 📊 CAMPO DE ALERTA DE ESTOQUE BAIXO
+  minimum_stock?: NonNegativeInteger; // Limite mínimo de estoque (herdado de category.default_min_stock)
 
   // NOTA: stock_quantity é DEPRECATED - usar apenas os 2 campos acima
   // v3.5.4 - Sistema multistore removido, consolidado em colunas legacy
@@ -248,41 +253,4 @@ export interface InventoryMovement {
   user?: {
     name: string;
   };
-}
-
-// 🏪 Interface para transferências entre lojas
-// v3.6.0 - Sistema multi-store ATIVO (restaurado)
-// Tabela store_transfers registra histórico de transferências
-export interface StoreTransfer {
-  id: string;
-  product_id: string;
-  from_store: StoreNumber;
-  to_store: StoreNumber;
-  packages: NonNegativeInteger;
-  units_loose: NonNegativeInteger;
-  user_id: string;
-  notes?: string;
-  created_at: string;
-
-  // Relacionamentos opcionais (quando fazemos JOIN)
-  product?: {
-    name: string;
-    category: string;
-    unit_type: UnitType;
-  };
-  user?: {
-    name: string;
-    email?: string;
-  };
-}
-
-// Interface para input de transferência
-// v3.6.0 - Sistema multi-store ATIVO (restaurado)
-export interface StoreTransferInput {
-  product_id: string;
-  from_store: StoreNumber;
-  to_store: StoreNumber;
-  packages: number;
-  units_loose: number;
-  notes?: string;
 }

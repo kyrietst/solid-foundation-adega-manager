@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import type { Product, StoreLocation } from '@/types/inventory.types';
+import type { Product } from '@/types/inventory.types';
 import { useProductsGridLogic, ProductsGridConfig } from '@/shared/hooks/products/useProductsGridLogic';
 import type { StockFilterType } from '@/shared/hooks/products/useProductFilters';
 import { ProductsGridPresentation } from './ProductsGridPresentation';
@@ -14,7 +14,7 @@ export interface ProductsGridContainerProps extends ProductsGridConfig {
   showAddButton?: boolean;
   showHeader?: boolean;
   mode?: 'sales' | 'inventory';
-  storeFilter?: StoreLocation; // 🏪 Nova prop para filtrar por loja
+  storeFilter?: string; // Legacy: mantido para compatibilidade (não usado)
   stockFilter?: StockFilterType; // 📦 Filtro de estoque (low-stock)
   onAddProduct?: () => void;
   onViewDetails?: (product: Product) => void;
