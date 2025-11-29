@@ -173,11 +173,8 @@ export const NewProductModal: React.FC<NewProductModalProps> = ({
         // Estoque inicial v2.0 (legacy - mantido para compatibilidade)
         stock_packages: 0,
         stock_units_loose: 0,
-        // ✅ v3.6.0: Sistema multi-store - Novos produtos começam na Loja 1
-        store1_stock_packages: 0,
-        store1_stock_units_loose: 0,
-        store2_stock_packages: 0,
-        store2_stock_units_loose: 0,
+        // ✅ v3.6.0: Sistema multi-store - Novos produtos começam com estoque zerado
+        // Campos store1_ e store2_ removidos pois não existem mais no banco
         // Valores padrão
         turnover_rate: 'medium',
         created_at: getSaoPauloTimestamp(), // Data de criação em horário de São Paulo
@@ -346,7 +343,7 @@ export const NewProductModal: React.FC<NewProductModalProps> = ({
       const currentValues = form.getValues();
       const duplicateField =
         (type !== 'main' && currentValues.barcode === code) ? 'principal' :
-        (type !== 'package' && currentValues.package_barcode === code) ? 'pacote' : null;
+          (type !== 'package' && currentValues.package_barcode === code) ? 'pacote' : null;
 
       if (duplicateField) {
         toast({

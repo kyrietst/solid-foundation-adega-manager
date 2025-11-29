@@ -12,7 +12,7 @@ import { useToast } from '@/shared/hooks/common/use-toast';
 import { useGlassmorphismEffect } from '@/shared/hooks/ui/useGlassmorphismEffect';
 import { PageHeader } from '@/shared/ui/composite/PageHeader';
 import { ProductsGridContainer } from './ProductsGridContainer';
-import { ProductsTitle, ProductsHeader } from './ProductsHeader';
+import { ProductsTitle, ProductsHeader, AddProductButton } from './ProductsHeader';
 import { useProductsGridLogic } from '@/shared/hooks/products/useProductsGridLogic';
 import { Button } from '@/shared/ui/primitives/button';
 import { Trash2, Package, Store, AlertTriangle, Loader2, ClipboardList, Warehouse } from 'lucide-react';
@@ -34,6 +34,7 @@ import useProductDelete from '../hooks/useProductDelete';
 import { useAuth } from '@/app/providers/AuthContext';
 import { useLowStockProducts } from '../hooks/useLowStockProducts';
 import { InventoryCountSheet } from './InventoryCountSheet';
+import { useBarcode } from '@/features/inventory/hooks/use-barcode';
 import type { ProductFormData } from '@/core/types/inventory.types';
 
 // Interface simplificada para edição de produtos (v2.0)
@@ -106,6 +107,11 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
   // Verificar se usuário é admin - aguardar carregamento do profile
   const isAdmin = !loading && userRole === 'admin';
 
+  // 📷 v3.6.2 - Reativar leitor de código de barras
+  useBarcode((scannedCode) => {
+    setSearchQuery(scannedCode);
+    setCurrentPage(1);
+  });
 
   const handleAddProduct = () => {
     setIsAddProductOpen(true);
@@ -511,47 +517,51 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
     enabled: viewMode === 'active', // Só buscar quando na aba "active"
   });
 
-  // 🏪 v3.6.1 - Mapear produtos baseado na loja selecionada (Active vs Holding)
-  const storeFilteredProducts = React.useMemo(() => {
-    if (selectedStore === 1) {
-      // Loja 1 (Active Stock): Mostrar TODOS os produtos (catálogo mestre)
-      return allProducts;
-    } else {
-      // Loja 2 (Holding Stock): Filtrar apenas produtos com estoque > 0 + mapear campos
-      return allProducts
-        .filter(product =>
-          (product.store2_holding_packages || 0) > 0 ||
-          (product.store2_holding_units_loose || 0) > 0
-        )
-        .map(product => ({
-          ...product,
-          stock_packages: product.store2_holding_packages || 0,
-          stock_units_loose: product.store2_holding_units_loose || 0,
-        }));
-    }
-  }, [allProducts, selectedStore]);
+  // 🏪 v3.6.3 - Lógica Unificada: Contexto de Loja -> Busca -> Mapeamento
+  const filteredAndMappedProducts = React.useMemo(() => {
+    // 1. Define o Universo da Loja (Active vs Holding)
+    let scopedProducts = allProducts;
 
-  // 🔍 v3.6.2 - Filtro de Busca (ANTES da paginação)
-  const displayProducts = React.useMemo(() => {
-    if (!searchQuery.trim()) {
-      return storeFilteredProducts;
+    if (selectedStore === 2) {
+      // Na Loja 2, o universo é restrito ao que existe lá
+      scopedProducts = allProducts.filter(
+        (p) => (p.store2_holding_packages || 0) > 0 || (p.store2_holding_units_loose || 0) > 0
+      );
     }
 
-    const query = searchQuery.toLowerCase().trim();
-    return storeFilteredProducts.filter(product =>
-      product.name?.toLowerCase().includes(query) ||
-      product.barcode?.toLowerCase().includes(query) ||
-      product.package_barcode?.toLowerCase().includes(query)
-    );
-  }, [storeFilteredProducts, searchQuery]);
+    // 2. Aplica a Busca dentro desse Universo
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      scopedProducts = scopedProducts.filter(
+        (p) =>
+          p.name.toLowerCase().includes(query) ||
+          p.barcode?.toLowerCase().includes(query) ||
+          p.package_barcode?.toLowerCase().includes(query)
+      );
+    }
 
-  // 📄 v3.6.2 - Paginação: Calcular páginas e produtos paginados
-  const totalPages = Math.ceil(displayProducts.length / itemsPerPage);
+    // 3. Mapeia os dados para exibição (Visualização Correta)
+    return scopedProducts.map((product) => ({
+      ...product,
+      stock_packages:
+        selectedStore === 1
+          ? product.stock_packages || 0
+          : product.store2_holding_packages || 0,
+      stock_units_loose:
+        selectedStore === 1
+          ? product.stock_units_loose || 0
+          : product.store2_holding_units_loose || 0,
+    }));
+  }, [allProducts, selectedStore, searchQuery]);
+
+  // 4. Paginação (Fatiamento final)
   const paginatedProducts = React.useMemo(() => {
+    const itemsPerPage = 24;
     const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return displayProducts.slice(startIndex, endIndex);
-  }, [displayProducts, currentPage, itemsPerPage]);
+    return filteredAndMappedProducts.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredAndMappedProducts, currentPage]);
+
+  const totalPages = Math.ceil(filteredAndMappedProducts.length / 24);
 
   // 📄 v3.6.2 - Reset inteligente: Voltar para página 1 quando filtros mudarem
   useEffect(() => {
@@ -565,7 +575,11 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
         title="GESTÃO DE ESTOQUE"
         count={productsGridData.totalProducts}
         countLabel="produtos"
-      />
+      >
+        {viewMode === 'active' && (
+          <AddProductButton onAddProduct={handleAddProduct} />
+        )}
+      </PageHeader>
 
       {/* Container com background glass morphism - ocupa altura restante */}
       <div
@@ -610,11 +624,10 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
             >
               <AlertTriangle className="h-4 w-4" />
               Alertas
-              <span className={`ml-1 px-2 py-0.5 rounded-full text-xs font-bold ${
-                lowStockCount > 0
-                  ? 'bg-amber-500/20 text-amber-400'
-                  : 'bg-green-500/20 text-green-400'
-              }`}>
+              <span className={`ml-1 px-2 py-0.5 rounded-full text-xs font-bold ${lowStockCount > 0
+                ? 'bg-amber-500/20 text-amber-400'
+                : 'bg-green-500/20 text-green-400'
+                }`}>
                 {lowStockCount}
               </span>
             </Button>
@@ -672,10 +685,10 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
             {/* Grid de produtos com estoque da loja selecionada */}
             {isLoadingAllProducts ? (
               <LoadingScreen text={`Carregando produtos da Loja ${selectedStore}...`} />
-            ) : displayProducts.length === 0 ? (
+            ) : filteredAndMappedProducts.length === 0 ? (
               <EmptySearchResults
                 searchTerm="produtos"
-                onClearSearch={() => {}}
+                onClearSearch={() => { }}
               />
             ) : (
               <>
@@ -706,7 +719,7 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
 
                 {/* Info de contagem */}
                 <div className="mt-2 text-center text-sm text-white/50">
-                  Mostrando {paginatedProducts.length} de {displayProducts.length} produtos
+                  Mostrando {paginatedProducts.length} de {filteredAndMappedProducts.length} produtos
                 </div>
               </>
             )}

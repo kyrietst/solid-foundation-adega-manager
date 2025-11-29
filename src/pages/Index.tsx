@@ -11,22 +11,19 @@ const Dashboard = lazy(() => import('@/features/dashboard/components/Dashboard')
 const Inventory = lazy(() => import('@/features/inventory/components/InventoryManagement'));
 const Suppliers = lazy(() => import('@/features/suppliers/components/SuppliersManagement'));
 const Customers = lazy(() => import('@/features/customers/components/Customers'));
-const CrmDashboard = lazy(() => 
+const CrmDashboard = lazy(() =>
   import('@/features/customers/components/CrmDashboard').then(m => ({ default: m.CrmDashboard }))
 );
-const AutomationCenter = lazy(() => 
+const AutomationCenter = lazy(() =>
   import('@/features/customers/components/AutomationCenter').then(m => ({ default: m.AutomationCenter }))
 );
-const CustomerProfile = lazy(() => 
+const CustomerProfile = lazy(() =>
   import('@/features/customers/components/CustomerProfile').then(m => ({ default: m.CustomerProfile }))
 );
 const Delivery = lazy(() => import('@/features/delivery/components/Delivery'));
 const Movements = lazy(() => import('@/features/movements/components/Movements'));
 const UserManagement = lazy(() => import('@/features/users/components/UserManagement'));
-// História 1.5: Página de Relatórios (old)
-const Reports = lazy(() =>
-  import('@/features/reports/components/Reports').then((m) => ({ default: m.Reports }))
-);
+
 // Sprint 2: Advanced Reports System
 const AdvancedReports = lazy(() =>
   import('@/features/reports/components/AdvancedReports').then((m) => ({ default: m.AdvancedReports }))
@@ -208,8 +205,8 @@ const Index = () => {
     <div className="w-full h-screen flex flex-row relative">
       {/* Sidebar */}
       <AppSidebar />
-      
-      {/* Main content area */}  
+
+      {/* Main content area */}
       <div className="flex-1 flex flex-col overflow-hidden">
         <main className="flex-1 overflow-y-auto overflow-x-hidden">
           <div className="p-2 lg:p-4 h-full w-full">

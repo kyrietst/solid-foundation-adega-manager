@@ -37,7 +37,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 const ADJUSTMENT_REASONS = {
   'inventory': 'Inventário/Correção',
   'loss': 'Perda/Quebra',
-  'consumption': 'Consumo Próprio'
+  'consumption': 'Consumo Próprio',
+  'purchase': 'Chegada de Mercadoria / Compra'
   // 'transfer' REMOVIDO - usar TransferToHoldingModal para transferências Loja 1 → Loja 2
 } as const;
 
@@ -45,7 +46,7 @@ const ADJUSTMENT_REASONS = {
 const stockAdjustmentSchema = z.object({
   newPackages: z.number().min(0, 'Quantidade de pacotes não pode ser negativa'),
   newUnitsLoose: z.number().min(0, 'Quantidade de unidades soltas não pode ser negativa'),
-  reason: z.enum(['inventory', 'loss', 'consumption'], {
+  reason: z.enum(['inventory', 'loss', 'consumption', 'purchase'], {
     errorMap: () => ({ message: 'Selecione um motivo válido' })
   })
 });
@@ -491,7 +492,7 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
             </Label>
             <Select
               value={watchedValues.reason}
-              onValueChange={(value) => setValue('reason', value as 'inventory' | 'loss' | 'consumption' | 'transfer')}
+              onValueChange={(value) => setValue('reason', value as 'inventory' | 'loss' | 'consumption' | 'purchase')}
             >
               <SelectTrigger className="bg-gray-800/50 border-gray-600 text-gray-100">
                 <SelectValue placeholder="Selecione o motivo" />
@@ -537,8 +538,8 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
                       (calculations.packagesChange || 0) > 0
                         ? "bg-green-500/20 text-green-400"
                         : (calculations.packagesChange || 0) < 0
-                        ? "bg-red-500/20 text-red-400"
-                        : "bg-gray-500/20 text-gray-400"
+                          ? "bg-red-500/20 text-red-400"
+                          : "bg-gray-500/20 text-gray-400"
                     )}>
                       {(calculations.packagesChange || 0) > 0 ? '+' : ''}{calculations.packagesChange || 0}
                     </span>
@@ -556,8 +557,8 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
                       (calculations.unitsLooseChange || 0) > 0
                         ? "bg-green-500/20 text-green-400"
                         : (calculations.unitsLooseChange || 0) < 0
-                        ? "bg-red-500/20 text-red-400"
-                        : "bg-gray-500/20 text-gray-400"
+                          ? "bg-red-500/20 text-red-400"
+                          : "bg-gray-500/20 text-gray-400"
                     )}>
                       {(calculations.unitsLooseChange || 0) > 0 ? '+' : ''}{calculations.unitsLooseChange || 0}
                     </span>

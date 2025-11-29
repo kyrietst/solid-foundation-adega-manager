@@ -5,24 +5,22 @@
 
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/primitives/card';
 import { Button } from '@/shared/ui/primitives/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/primitives/tabs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/shared/ui/primitives/dropdown-menu';
-import { CalendarIcon, FileSpreadsheet, BarChart3, Users, Package, DollarSign, ChevronDown, Calendar, Truck } from 'lucide-react';
+import { FileSpreadsheet, BarChart3, Users, Package, DollarSign, ChevronDown, Truck, TrendingUp } from 'lucide-react';
 import { PageHeader } from '@/shared/ui/composite/PageHeader';
-import { getSFProTextClasses, getHeaderTextClasses } from '@/core/config/theme-utils';
 import { supabase } from '@/core/api/supabase/client';
-import { SalesReportsSection } from './SalesReportsSection';
-import { InventoryReportsSection } from './InventoryReportsSection';
+
+// Novos Dashboards Refatorados
+import { DeliveryPerformanceDashboard } from './DeliveryPerformanceDashboard';
+import { InventoryHealthDashboard } from './InventoryHealthDashboard';
+import { FinancialCashFlowDashboard } from './FinancialCashFlowDashboard';
 import { CrmReportsSection } from './CrmReportsSection';
-import { FinancialReportsSection } from './FinancialReportsSection';
-import { ExpiryReportsSection } from './ExpiryReportsSection';
-import { DeliveryVsPresencialReport } from './DeliveryVsPresencialReport';
 
 export const AdvancedReports: React.FC = () => {
   const location = useLocation();
-  const [activeTab, setActiveTab] = useState('sales');
+  const [activeTab, setActiveTab] = useState('sales'); // Default para Vendas & Delivery
   const [globalPeriod, setGlobalPeriod] = useState(90);
 
   // Lê parâmetros da URL para navegação do dashboard
@@ -33,7 +31,7 @@ export const AdvancedReports: React.FC = () => {
     const urlSection = searchParams.get('section');
 
     // Define a aba baseada no parâmetro 'tab'
-    if (urlTab && ['sales', 'inventory', 'crm', 'financial', 'expiry', 'delivery'].includes(urlTab)) {
+    if (urlTab && ['sales', 'inventory', 'crm', 'financial'].includes(urlTab)) {
       setActiveTab(urlTab);
     }
 
@@ -55,7 +53,7 @@ export const AdvancedReports: React.FC = () => {
           // Adicionar efeito de destaque
           element.style.animation = 'pulse 3s ease-in-out';
           element.style.boxShadow = '0 0 20px rgba(59, 130, 246, 0.5)';
-          
+
           // Remover o efeito após 3 segundos
           setTimeout(() => {
             element.style.animation = '';
@@ -111,7 +109,7 @@ export const AdvancedReports: React.FC = () => {
         case 'estoque': {
           const { data: inventoryData } = await supabase
             .rpc('get_inventory_kpis', { window_days: 90 });
-          data = inventoryData || [];
+          data = (inventoryData as any[]) || [];
           filename = 'estoque.csv';
           break;
         }
@@ -129,7 +127,7 @@ export const AdvancedReports: React.FC = () => {
       const headers = Object.keys(data[0]);
       const csvContent = [
         headers.join(','),
-        ...data.map(row => 
+        ...data.map(row =>
           headers.map(header => {
             const value = row[header];
             // Tratar valores que podem conter vírgulas ou quebras de linha
@@ -163,7 +161,8 @@ export const AdvancedReports: React.FC = () => {
     <div className="w-full h-full flex flex-col">
       {/* Header - altura fixa */}
       <PageHeader
-        title="RELATÓRIOS CENTRAIS"
+        title="RELATÓRIOS ESTRATÉGICOS"
+        description="Visão unificada de Vendas, Estoque e Financeiro."
       >
         {/* Controles globais */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
@@ -264,74 +263,62 @@ export const AdvancedReports: React.FC = () => {
         }}
       >
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="bg-black/80 border border-white/10 backdrop-blur-sm w-full justify-center">
-            <TabsTrigger 
+          <TabsList className="bg-black/80 border border-white/10 backdrop-blur-sm w-full justify-center grid grid-cols-4 gap-2 h-auto p-2">
+
+            {/* 1. Vendas & Delivery */}
+            <TabsTrigger
               value="sales"
-              className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300 data-[state=active]:border data-[state=active]:border-blue-400/30 transition-all duration-300"
+              className="flex flex-col items-center gap-2 py-3 data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300 data-[state=active]:border data-[state=active]:border-blue-400/30 transition-all duration-300"
             >
-              <BarChart3 className="h-4 w-4 mr-2" />
-              Vendas & Performance
+              <Truck className="h-5 w-5" />
+              <span className="text-xs sm:text-sm font-medium">Vendas & Delivery</span>
             </TabsTrigger>
-            <TabsTrigger 
-              value="delivery"
-              className="data-[state=active]:bg-orange-500/20 data-[state=active]:text-orange-300 data-[state=active]:border data-[state=active]:border-orange-400/30 transition-all duration-300"
-            >
-              <Truck className="h-4 w-4 mr-2" />
-              Delivery vs Presencial
-            </TabsTrigger>
-            <TabsTrigger 
+
+            {/* 2. Saúde do Estoque */}
+            <TabsTrigger
               value="inventory"
-              className="data-[state=active]:bg-green-500/20 data-[state=active]:text-green-300 data-[state=active]:border data-[state=active]:border-green-400/30 transition-all duration-300"
+              className="flex flex-col items-center gap-2 py-3 data-[state=active]:bg-green-500/20 data-[state=active]:text-green-300 data-[state=active]:border data-[state=active]:border-green-400/30 transition-all duration-300"
             >
-              <Package className="h-4 w-4 mr-2" />
-              Estoque & Produtos
+              <Package className="h-5 w-5" />
+              <span className="text-xs sm:text-sm font-medium">Saúde do Estoque</span>
             </TabsTrigger>
-            <TabsTrigger 
-              value="crm"
-              className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-300 data-[state=active]:border data-[state=active]:border-purple-400/30 transition-all duration-300"
-            >
-              <Users className="h-4 w-4 mr-2" />
-              Clientes & CRM
-            </TabsTrigger>
-            <TabsTrigger 
+
+            {/* 3. Fluxo de Caixa */}
+            <TabsTrigger
               value="financial"
-              className="data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-300 data-[state=active]:border data-[state=active]:border-amber-400/30 transition-all duration-300"
+              className="flex flex-col items-center gap-2 py-3 data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-300 data-[state=active]:border data-[state=active]:border-amber-400/30 transition-all duration-300"
             >
-              <DollarSign className="h-4 w-4 mr-2" />
-              Financeiro & Fluxo
+              <DollarSign className="h-5 w-5" />
+              <span className="text-xs sm:text-sm font-medium">Fluxo de Caixa</span>
             </TabsTrigger>
-            <TabsTrigger 
-              value="expiry"
-              className="data-[state=active]:bg-red-500/20 data-[state=active]:text-red-300 data-[state=active]:border data-[state=active]:border-red-400/30 transition-all duration-300"
+
+            {/* 4. Clientes & CRM */}
+            <TabsTrigger
+              value="crm"
+              className="flex flex-col items-center gap-2 py-3 data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-300 data-[state=active]:border data-[state=active]:border-purple-400/30 transition-all duration-300"
             >
-              <Calendar className="h-4 w-4 mr-2" />
-              Vencimento & Validade
+              <Users className="h-5 w-5" />
+              <span className="text-xs sm:text-sm font-medium">Clientes & CRM</span>
             </TabsTrigger>
+
           </TabsList>
 
           <TabsContent value="sales" className="space-y-6 mt-6">
-            <SalesReportsSection period={globalPeriod} />
-          </TabsContent>
-
-          <TabsContent value="delivery" className="space-y-6 mt-6">
-            <DeliveryVsPresencialReport />
+            <DeliveryPerformanceDashboard />
           </TabsContent>
 
           <TabsContent value="inventory" className="space-y-6 mt-6">
-            <InventoryReportsSection period={globalPeriod} />
+            <InventoryHealthDashboard />
+          </TabsContent>
+
+          <TabsContent value="financial" className="space-y-6 mt-6">
+            <FinancialCashFlowDashboard />
           </TabsContent>
 
           <TabsContent value="crm" className="space-y-6 mt-6">
             <CrmReportsSection period={globalPeriod} />
           </TabsContent>
 
-          <TabsContent value="financial" className="space-y-6 mt-6">
-            <FinancialReportsSection period={globalPeriod} />
-          </TabsContent>
-
-          <TabsContent value="expiry" className="space-y-6 mt-6">
-            <ExpiryReportsSection />
-          </TabsContent>
         </Tabs>
       </div>
     </div>
