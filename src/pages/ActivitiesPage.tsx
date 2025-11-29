@@ -13,7 +13,7 @@ import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/primitives/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/primitives/card';
-import { SalesHistoryTable } from '@/features/reports/components/SalesHistoryTable';
+
 import ActivityLogsPage from '@/shared/components/ActivityLogsPage';
 import { ShoppingCart, Activity, FileText, ClipboardList } from 'lucide-react';
 import { cn } from '@/core/config/utils';
@@ -97,7 +97,13 @@ export const ActivitiesPage = () => {
                 </div>
 
                 {/* Reutiliza componente SalesHistoryTable */}
-                <SalesHistoryTable />
+                <div className="p-8 text-center bg-gray-900/50 rounded-lg border border-gray-800">
+                  <p className="text-gray-400">
+                    O histórico de vendas está sendo migrado para o novo módulo de Relatórios.
+                    <br />
+                    Por favor, acesse a aba <strong>Relatórios &gt; Vendas</strong>.
+                  </p>
+                </div>
               </TabsContent>
 
               {/* Tab: Logs do Sistema */}
