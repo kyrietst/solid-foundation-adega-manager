@@ -3,7 +3,7 @@
  * Foco na usabilidade diária com 6-8 campos essenciais
  *
  * @author Adega Manager Team
- * @version 2.0.0 - Simplificação
+ * @version 2.1.0 - Refatorado com Zona de Perigo
  */
 
 import React, { useState, useEffect } from 'react';
@@ -324,7 +324,7 @@ export const SimpleEditProductModal: React.FC<SimpleEditProductModalProps> = ({
       const currentValues = form.getValues();
       const duplicateField =
         (type !== 'main' && currentValues.barcode === code) ? 'principal' :
-        (type !== 'package' && currentValues.package_barcode === code) ? 'pacote' : null;
+          (type !== 'package' && currentValues.package_barcode === code) ? 'pacote' : null;
 
       if (duplicateField) {
         toast({
@@ -391,343 +391,181 @@ export const SimpleEditProductModal: React.FC<SimpleEditProductModalProps> = ({
           onClick: handleClose,
           disabled: isLoading
         }}
-        additionalActions={[
-          {
-            label: "Excluir",
-            icon: Trash2,
-            variant: "danger" as const,
-            onClick: () => setIsDeleteModalOpen(true),
-            disabled: isLoading
-          }
-        ]}
+        additionalActions={[]}
       >
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
-          {/* Hidden submit button for form submission */}
-          <button type="submit" className="hidden" />
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
+            {/* Hidden submit button for form submission */}
+            <button type="submit" className="hidden" />
 
-          {/* ===== SEÇÃO PRINCIPAL - SEMPRE VISÍVEL ===== */}
-          <div className="bg-gray-800/30 rounded-lg border border-gray-600/50 p-6 space-y-6">
-            <div className="flex items-center gap-3 mb-4">
-              <Package className="h-5 w-5 text-blue-400" />
-              <span className="text-lg font-medium text-gray-100">Informações Essenciais</span>
-            </div>
-
-            {/* Nome do Produto */}
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-gray-300 text-base">Nome do Produto *</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Ex: Cerveja Heineken 350ml"
-                      {...field}
-                      className="bg-gray-800/50 border-gray-600 text-white h-12 text-base"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Categoria e Preço */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FormField
-                control={form.control}
-                name="category"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-gray-300 text-base">Categoria *</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value || ""}>
-                      <FormControl>
-                        <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white h-12 text-base">
-                          <SelectValue placeholder="Selecione..." />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {categories.map((category) => (
-                          <SelectItem key={category} value={category}>
-                            {category}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="price"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-gray-300 text-base">Preço de Venda *</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        min="0.01"
-                        placeholder="0,00"
-                        {...field}
-                        onChange={(e) => field.onChange(Number(e.target.value))}
-                        className="bg-gray-800/50 border-gray-600 text-white h-12 text-base"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            {/* Código de Barras */}
-            <div className="space-y-3">
-              <FormLabel className="text-gray-300 text-base">Código de Barras</FormLabel>
-              {activeScanner !== 'main' ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setActiveScanner('main')}
-                  className="w-full h-12 border-yellow-400/50 text-yellow-400 hover:bg-yellow-400/10"
-                  disabled={isLoading}
-                >
-                  <ScanLine className="h-4 w-4 mr-2" />
-                  Escanear Código
-                </Button>
-              ) : (
-                <BarcodeInput
-                  onScan={(code) => handleBarcodeScanned(code, 'main')}
-                  placeholder="Escaneie o código..."
-                  className="w-full"
-                />
-              )}
-
-              <FormField
-                control={form.control}
-                name="barcode"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <Input
-                        placeholder="Ou digite manualmente"
-                        {...field}
-                        onChange={(e) => {
-                          const value = e.target.value.replace(/\D/g, '');
-                          if (value.length <= 14) {
-                            field.onChange(value);
-                          }
-                        }}
-                        maxLength={14}
-                        className="font-mono bg-gray-800/50 border-gray-600 text-white h-12"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            {/* Fornecedor e Estoque Mínimo */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FormField
-                control={form.control}
-                name="supplier"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-gray-300 text-base">Fornecedor</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value || ""}>
-                      <FormControl>
-                        <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white h-12 text-base">
-                          <SelectValue placeholder="Selecione ou deixe vazio..." />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="none">Sem fornecedor</SelectItem>
-                        {suppliers.map((supplier) => (
-                          <SelectItem key={supplier} value={supplier}>
-                            {supplier}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Estoque Mínimo (Alerta) */}
-              <FormField
-                control={form.control}
-                name="minimum_stock"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-gray-300 text-base flex items-center gap-2">
-                      <AlertTriangle className="h-4 w-4 text-yellow-400" />
-                      Estoque Mínimo (Alerta)
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        min="0"
-                        placeholder="Padrão da Categoria"
-                        {...field}
-                        value={field.value ?? ''}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          if (value === '' || value === null) {
-                            field.onChange(undefined);
-                          } else {
-                            const numValue = Number(value);
-                            if (numValue >= 0) {
-                              field.onChange(numValue);
-                            }
-                          }
-                        }}
-                        className="bg-gray-800/50 border-gray-600 text-white h-12 text-base"
-                      />
-                    </FormControl>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Deixe vazio para usar o padrão da categoria
-                    </p>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            {/* Toggle para Embalagem Fechada */}
-            <div className="flex items-center justify-between rounded-lg border border-yellow-400/30 p-4 bg-yellow-400/5">
-              <div className="space-y-1">
-                <FormLabel className="text-base text-gray-300 font-medium">
-                  Este produto tem embalagem fechada?
-                </FormLabel>
-                <p className="text-sm text-gray-500">
-                  Ative para produtos vendidos em pacotes/fardos com código separado
-                </p>
+            {/* ===== SEÇÃO PRINCIPAL - SEMPRE VISÍVEL ===== */}
+            <div className="bg-gray-800/30 rounded-lg border border-gray-600/50 p-6 space-y-6">
+              <div className="flex items-center gap-3 mb-4">
+                <Package className="h-5 w-5 text-blue-400" />
+                <span className="text-lg font-medium text-gray-100">Informações Essenciais</span>
               </div>
+
+              {/* Nome do Produto */}
               <FormField
                 control={form.control}
-                name="has_package_tracking"
+                name="name"
                 render={({ field }) => (
-                  <FormControl>
-                    <SwitchAnimated
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                      variant="yellow"
-                      size="md"
-                    />
-                  </FormControl>
+                  <FormItem>
+                    <FormLabel className="text-gray-300 text-base">Nome do Produto *</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Ex: Cerveja Heineken 350ml"
+                        {...field}
+                        className="bg-gray-800/50 border-gray-600 text-white h-12 text-base"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
                 )}
               />
-            </div>
 
-            {/* Campos de Pacote (Condicional) */}
-            {form.watch('has_package_tracking') && (
-              <div className="space-y-6">
-                <div className="flex items-center gap-2">
-                  <Package className="h-4 w-4 text-yellow-400" />
-                  <span className="text-base font-medium text-gray-200">Configuração de Pacote</span>
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Código do Pacote */}
-                  <div className="space-y-3">
-                    <FormLabel className="text-gray-300">Código do Pacote</FormLabel>
-                    {activeScanner !== 'package' ? (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => setActiveScanner('package')}
-                        className="w-full h-12 border-yellow-400/50 text-yellow-400 hover:bg-yellow-400/10"
-                        disabled={isLoading}
-                      >
-                        <ScanLine className="h-4 w-4 mr-2" />
-                        Escanear Código
-                      </Button>
-                    ) : (
-                      <BarcodeInput
-                        onScan={(code) => handleBarcodeScanned(code, 'package')}
-                        placeholder="Escaneie o código do pacote..."
-                        className="w-full"
-                      />
-                    )}
-
-                    <FormField
-                      control={form.control}
-                      name="package_barcode"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <Input
-                              placeholder="Ou digite manualmente"
-                              {...field}
-                              onChange={(e) => {
-                                const value = e.target.value.replace(/\D/g, '');
-                                if (value.length <= 14) {
-                                  field.onChange(value);
-                                }
-                              }}
-                              maxLength={14}
-                              className="font-mono bg-gray-800/50 border-gray-600 text-white h-12"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  {/* Unidades por Pacote */}
-                  <FormField
-                    control={form.control}
-                    name="package_units"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-gray-300">Unidades por Pacote</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            min="1"
-                            max="999"
-                            placeholder="Ex: 24"
-                            {...field}
-                            onChange={(e) => field.onChange(Number(e.target.value))}
-                            onBlur={(e) => {
-                              const value = Number(e.target.value);
-                              if (value < 1) {
-                                field.onChange(1);
-                                toast({
-                                  title: "⚠️ Valor ajustado",
-                                  description: "Unidades por pacote deve ser no mínimo 1",
-                                  variant: "default",
-                                });
-                              }
-                            }}
-                            className="bg-gray-800/50 border-gray-600 text-white h-12"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                {/* Preço do Pacote */}
+              {/* Categoria e Preço */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField
                   control={form.control}
-                  name="package_price"
+                  name="category"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-gray-300">Preço do Pacote</FormLabel>
+                      <FormLabel className="text-gray-300 text-base">Categoria *</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value || ""}>
+                        <FormControl>
+                          <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white h-12 text-base">
+                            <SelectValue placeholder="Selecione..." />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {categories.map((category) => (
+                            <SelectItem key={category} value={category}>
+                              {category}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="price"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-gray-300 text-base">Preço de Venda *</FormLabel>
                       <FormControl>
                         <Input
                           type="number"
                           step="0.01"
-                          min="0"
+                          min="0.01"
                           placeholder="0,00"
                           {...field}
+                          onChange={(e) => field.onChange(Number(e.target.value))}
+                          className="bg-gray-800/50 border-gray-600 text-white h-12 text-base"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* Código de Barras */}
+              <div className="space-y-3">
+                <FormLabel className="text-gray-300 text-base">Código de Barras</FormLabel>
+                {activeScanner !== 'main' ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setActiveScanner('main')}
+                    className="w-full h-12 border-yellow-400/50 text-yellow-400 hover:bg-yellow-400/10"
+                    disabled={isLoading}
+                  >
+                    <ScanLine className="h-4 w-4 mr-2" />
+                    Escanear Código
+                  </Button>
+                ) : (
+                  <BarcodeInput
+                    onScan={(code) => handleBarcodeScanned(code, 'main')}
+                    placeholder="Escaneie o código..."
+                    className="w-full"
+                  />
+                )}
+
+                <FormField
+                  control={form.control}
+                  name="barcode"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <Input
+                          placeholder="Ou digite manualmente"
+                          {...field}
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/\D/g, '');
+                            if (value.length <= 14) {
+                              field.onChange(value);
+                            }
+                          }}
+                          maxLength={14}
+                          className="font-mono bg-gray-800/50 border-gray-600 text-white h-12"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* Fornecedor e Estoque Mínimo */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="supplier"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-gray-300 text-base">Fornecedor</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value || ""}>
+                        <FormControl>
+                          <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white h-12 text-base">
+                            <SelectValue placeholder="Selecione ou deixe vazio..." />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="none">Sem fornecedor</SelectItem>
+                          {suppliers.map((supplier) => (
+                            <SelectItem key={supplier} value={supplier}>
+                              {supplier}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Estoque Mínimo (Alerta) */}
+                <FormField
+                  control={form.control}
+                  name="minimum_stock"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-gray-300 text-base flex items-center gap-2">
+                        <AlertTriangle className="h-4 w-4 text-yellow-400" />
+                        Estoque Mínimo (Alerta)
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="0"
+                          placeholder="Padrão da Categoria"
+                          {...field}
+                          value={field.value ?? ''}
                           onChange={(e) => {
                             const value = e.target.value;
                             if (value === '' || value === null) {
@@ -739,47 +577,142 @@ export const SimpleEditProductModal: React.FC<SimpleEditProductModalProps> = ({
                               }
                             }
                           }}
-                          className="bg-gray-800/50 border-gray-600 text-white h-12"
+                          className="bg-gray-800/50 border-gray-600 text-white h-12 text-base"
                         />
                       </FormControl>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Deixe vazio para usar o padrão da categoria
+                      </p>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
               </div>
-            )}
-          </div>
 
-          {/* ===== SEÇÃO AVANÇADA - COLAPSÁVEL ===== */}
-          <div className="bg-gray-800/20 rounded-lg border border-gray-600/30">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => setShowAdvanced(!showAdvanced)}
-              className="w-full p-4 justify-between text-gray-300 hover:bg-gray-700/30"
-            >
-              <div className="flex items-center gap-3">
-                <TrendingUp className="h-5 w-5 text-green-400" />
-                <span className="text-base font-medium">Configurações Avançadas</span>
-                {calculatedMargin && (
-                  <span className="text-sm bg-green-400/20 text-green-400 px-2 py-1 rounded">
-                    Margem: {calculatedMargin}%
-                  </span>
-                )}
+              {/* Toggle para Embalagem Fechada */}
+              <div className="flex items-center justify-between rounded-lg border border-yellow-400/30 p-4 bg-yellow-400/5">
+                <div className="space-y-1">
+                  <FormLabel className="text-base text-gray-300 font-medium">
+                    Este produto tem embalagem fechada?
+                  </FormLabel>
+                  <p className="text-sm text-gray-500">
+                    Ative para produtos vendidos em pacotes/fardos com código separado
+                  </p>
+                </div>
+                <FormField
+                  control={form.control}
+                  name="has_package_tracking"
+                  render={({ field }) => (
+                    <FormControl>
+                      <SwitchAnimated
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        variant="yellow"
+                        size="md"
+                      />
+                    </FormControl>
+                  )}
+                />
               </div>
-              {showAdvanced ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
-            </Button>
 
-            {showAdvanced && (
-              <div className="p-6 space-y-6 border-t border-gray-700/30">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Preço de Custo */}
+              {/* Campos de Pacote (Condicional) */}
+              {form.watch('has_package_tracking') && (
+                <div className="space-y-6">
+                  <div className="flex items-center gap-2">
+                    <Package className="h-4 w-4 text-yellow-400" />
+                    <span className="text-base font-medium text-gray-200">Configuração de Pacote</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Código do Pacote */}
+                    <div className="space-y-3">
+                      <FormLabel className="text-gray-300">Código do Pacote</FormLabel>
+                      {activeScanner !== 'package' ? (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setActiveScanner('package')}
+                          className="w-full h-12 border-yellow-400/50 text-yellow-400 hover:bg-yellow-400/10"
+                          disabled={isLoading}
+                        >
+                          <ScanLine className="h-4 w-4 mr-2" />
+                          Escanear Código
+                        </Button>
+                      ) : (
+                        <BarcodeInput
+                          onScan={(code) => handleBarcodeScanned(code, 'package')}
+                          placeholder="Escaneie o código do pacote..."
+                          className="w-full"
+                        />
+                      )}
+
+                      <FormField
+                        control={form.control}
+                        name="package_barcode"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <Input
+                                placeholder="Ou digite manualmente"
+                                {...field}
+                                onChange={(e) => {
+                                  const value = e.target.value.replace(/\D/g, '');
+                                  if (value.length <= 14) {
+                                    field.onChange(value);
+                                  }
+                                }}
+                                maxLength={14}
+                                className="font-mono bg-gray-800/50 border-gray-600 text-white h-12"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    {/* Unidades por Pacote */}
+                    <FormField
+                      control={form.control}
+                      name="package_units"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-gray-300">Unidades por Pacote</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              min="1"
+                              max="999"
+                              placeholder="Ex: 24"
+                              {...field}
+                              onChange={(e) => field.onChange(Number(e.target.value))}
+                              onBlur={(e) => {
+                                const value = Number(e.target.value);
+                                if (value < 1) {
+                                  field.onChange(1);
+                                  toast({
+                                    title: "⚠️ Valor ajustado",
+                                    description: "Unidades por pacote deve ser no mínimo 1",
+                                    variant: "default",
+                                  });
+                                }
+                              }}
+                              className="bg-gray-800/50 border-gray-600 text-white h-12"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {/* Preço do Pacote */}
                   <FormField
                     control={form.control}
-                    name="cost_price"
+                    name="package_price"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-gray-300">Preço de Custo</FormLabel>
+                        <FormLabel className="text-gray-300">Preço do Pacote</FormLabel>
                         <FormControl>
                           <Input
                             type="number"
@@ -805,75 +738,160 @@ export const SimpleEditProductModal: React.FC<SimpleEditProductModalProps> = ({
                       </FormItem>
                     )}
                   />
-
-                  {/* Volume */}
-                  <FormField
-                    control={form.control}
-                    name="volume_ml"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-gray-300">Volume (ml)</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            min="1"
-                            placeholder="350"
-                            {...field}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              if (value === '' || value === null) {
-                                field.onChange(undefined);
-                              } else {
-                                const numValue = Number(value);
-                                if (numValue >= 1) {
-                                  field.onChange(numValue);
-                                }
-                              }
-                            }}
-                            className="bg-gray-800/50 border-gray-600 text-white h-12"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
                 </div>
+              )}
+            </div>
 
-                {/* Análise de Rentabilidade */}
-                {(calculatedMargin || calculatedPackageMargin) && (
-                  <div className="bg-green-900/20 border border-green-400/30 rounded-lg p-4">
-                    <div className="flex items-center gap-2 mb-3">
-                      <DollarSign className="h-5 w-5 text-green-400" />
-                      <span className="text-base font-medium text-green-300">Análise de Rentabilidade</span>
-                    </div>
+            {/* ===== SEÇÃO AVANÇADA - COLAPSÁVEL ===== */}
+            <div className="bg-gray-800/20 rounded-lg border border-gray-600/30">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setShowAdvanced(!showAdvanced)}
+                className="w-full p-4 justify-between text-gray-300 hover:bg-gray-700/30"
+              >
+                <div className="flex items-center gap-3">
+                  <TrendingUp className="h-5 w-5 text-green-400" />
+                  <span className="text-base font-medium">Configurações Avançadas</span>
+                  {calculatedMargin && (
+                    <span className="text-sm bg-green-400/20 text-green-400 px-2 py-1 rounded">
+                      Margem: {calculatedMargin}%
+                    </span>
+                  )}
+                </div>
+                {showAdvanced ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+              </Button>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {calculatedMargin && (
-                        <div className="text-center p-3 bg-green-500/10 rounded border border-green-400/20">
-                          <div className="text-lg font-bold text-green-400">
-                            {calculatedMargin}%
-                          </div>
-                          <div className="text-xs text-gray-400">Margem Unitária</div>
-                        </div>
+              {showAdvanced && (
+                <div className="p-6 space-y-6 border-t border-gray-700/30">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Preço de Custo */}
+                    <FormField
+                      control={form.control}
+                      name="cost_price"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-gray-300">Preço de Custo</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              placeholder="0,00"
+                              {...field}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                if (value === '' || value === null) {
+                                  field.onChange(undefined);
+                                } else {
+                                  const numValue = Number(value);
+                                  if (numValue >= 0) {
+                                    field.onChange(numValue);
+                                  }
+                                }
+                              }}
+                              className="bg-gray-800/50 border-gray-600 text-white h-12"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
                       )}
+                    />
 
-                      {calculatedPackageMargin && (
-                        <div className="text-center p-3 bg-green-500/10 rounded border border-green-400/20">
-                          <div className="text-lg font-bold text-green-400">
-                            {calculatedPackageMargin}%
-                          </div>
-                          <div className="text-xs text-gray-400">Margem do Pacote</div>
-                        </div>
+                    {/* Volume */}
+                    <FormField
+                      control={form.control}
+                      name="volume_ml"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-gray-300">Volume (ml)</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              min="1"
+                              placeholder="350"
+                              {...field}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                if (value === '' || value === null) {
+                                  field.onChange(undefined);
+                                } else {
+                                  const numValue = Number(value);
+                                  if (numValue >= 1) {
+                                    field.onChange(numValue);
+                                  }
+                                }
+                              }}
+                              className="bg-gray-800/50 border-gray-600 text-white h-12"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
                       )}
-                    </div>
+                    />
                   </div>
-                )}
+
+                  {/* Análise de Rentabilidade */}
+                  {(calculatedMargin || calculatedPackageMargin) && (
+                    <div className="bg-green-900/20 border border-green-400/30 rounded-lg p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <DollarSign className="h-5 w-5 text-green-400" />
+                        <span className="text-base font-medium text-green-300">Análise de Rentabilidade</span>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {calculatedMargin && (
+                          <div className="text-center p-3 bg-green-500/10 rounded border border-green-400/20">
+                            <div className="text-lg font-bold text-green-400">
+                              {calculatedMargin}%
+                            </div>
+                            <div className="text-xs text-gray-400">Margem Unitária</div>
+                          </div>
+                        )}
+
+                        {calculatedPackageMargin && (
+                          <div className="text-center p-3 bg-green-500/10 rounded border border-green-400/20">
+                            <div className="text-lg font-bold text-green-400">
+                              {calculatedPackageMargin}%
+                            </div>
+                            <div className="text-xs text-gray-400">Margem do Pacote</div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* ZONA DE PERIGO */}
+            <div className="mt-8 pt-6 border-t border-red-900/30">
+              <div className="bg-red-950/10 border border-red-900/30 rounded-lg p-4">
+                <h3 className="text-red-400 font-semibold flex items-center gap-2 mb-2">
+                  <AlertTriangle className="h-5 w-5" />
+                  Zona de Perigo
+                </h3>
+                <p className="text-sm text-red-300/70 mb-4">
+                  Ações destrutivas. O produto será movido para a lixeira e não aparecerá mais nas vendas.
+                </p>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={() => setIsDeleteModalOpen(true)}
+                  disabled={isLoading}
+                  className="w-full sm:w-auto bg-red-900/20 hover:bg-red-900/40 text-red-400 border border-red-900/50"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Excluir Produto
+                </Button>
               </div>
-            )}
-          </div>
-        </form>
-      </Form>
-    </EnhancedBaseModal>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-4 border-t border-gray-800">
+            </div>
+          </form>
+        </Form>
+      </EnhancedBaseModal>
 
       {/* Modal de Confirmação de Exclusão */}
       <DeleteProductModal

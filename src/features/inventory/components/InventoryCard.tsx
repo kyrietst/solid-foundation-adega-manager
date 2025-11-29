@@ -97,25 +97,25 @@ export const InventoryCard: React.FC<InventoryCardProps> = ({
         </div>
 
         {/* ESTOQUE ULTRA SIMPLIFICADO - APENAS 2 NÚMEROS */}
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-2 mt-auto">
           {/* Pacotes */}
-          <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-2">
-            <div className="flex items-center gap-1">
-              <Box className="h-3 w-3 text-blue-400" />
-              <span className="text-xs text-blue-400">Pacotes</span>
+          <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-2 flex flex-col items-center justify-center h-20 hover:bg-blue-500/20 transition-colors">
+            <div className="flex items-center gap-1 mb-1">
+              <Box className="h-3.5 w-3.5 text-blue-400" />
+              <span className="text-xs text-blue-400 font-medium">Pacotes</span>
             </div>
-            <p className="text-lg font-bold text-blue-400">
+            <p className="text-2xl font-bold text-blue-400 leading-none">
               {stockPackages}
             </p>
           </div>
 
           {/* Unidades Soltas */}
-          <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-2">
-            <div className="flex items-center gap-1">
-              <Package className="h-3 w-3 text-green-400" />
-              <span className="text-xs text-green-400">Unidades</span>
+          <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-2 flex flex-col items-center justify-center h-20 hover:bg-green-500/20 transition-colors">
+            <div className="flex items-center gap-1 mb-1">
+              <Package className="h-3.5 w-3.5 text-green-400" />
+              <span className="text-xs text-green-400 font-medium">Unidades</span>
             </div>
-            <p className="text-lg font-bold text-green-400">
+            <p className="text-2xl font-bold text-green-400 leading-none">
               {stockUnitsLoose}
             </p>
           </div>

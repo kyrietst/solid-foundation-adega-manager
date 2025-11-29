@@ -19,9 +19,8 @@ interface CustomerMetrics {
   active_customers: number;
 }
 
-interface CrmReportsSectionProps {
-  period?: number;
-}
+import { DateRange } from 'react-day-picker';
+import { startOfDay, endOfDay, subDays } from 'date-fns';
 
 // Interface para adicionar suporte aos dados de clientes
 interface Customer {
@@ -33,8 +32,11 @@ interface Customer {
   last_purchase_date?: string;
 }
 
-export const CrmReportsSection: React.FC<CrmReportsSectionProps> = ({ period = 30 }) => {
-  const windowDays = period;
+interface CrmReportsSectionProps {
+  dateRange?: DateRange;
+}
+
+export const CrmReportsSection: React.FC<CrmReportsSectionProps> = ({ dateRange }) => {
 
   // Buscar dados de clientes para análise de aniversários
   const { data: customers, isLoading: loadingCustomers } = useQuery({
@@ -43,20 +45,21 @@ export const CrmReportsSection: React.FC<CrmReportsSectionProps> = ({ period = 3
       const { data, error } = await supabase
         .from('customers')
         .select('id, name, birthday, segment, lifetime_value, last_purchase_date');
-      
+
       if (error) throw error;
-      return data || [];
+      return (data as any[]) || [];
     },
     staleTime: 5 * 60 * 1000,
   });
 
   // Customer Metrics Query
   const { data: customerMetrics, isLoading: loadingMetrics } = useQuery({
-    queryKey: ['customer-metrics', windowDays],
+    queryKey: ['customer-metrics', dateRange],
     queryFn: async (): Promise<CustomerMetrics> => {
-      const endDate = new Date();
-      const startDate = new Date();
-      startDate.setDate(endDate.getDate() - windowDays);
+      if (!dateRange?.from || !dateRange?.to) return { total_customers: 0, new_customers: 0, active_customers: 0 };
+
+      const startDate = dateRange.from.toISOString();
+      const endDate = dateRange.to.toISOString();
 
       try {
         // Cálculo manual das métricas de clientes (RPC get_customer_metrics não disponível)
@@ -70,18 +73,18 @@ export const CrmReportsSection: React.FC<CrmReportsSectionProps> = ({ period = 3
         const { count: newCustomers } = await supabase
           .from('customers')
           .select('*', { count: 'exact', head: true })
-          .gte('created_at', startDate.toISOString())
-          .lte('created_at', endDate.toISOString());
+          .gte('created_at', startDate)
+          .lte('created_at', endDate);
 
         // Clientes ativos (com compras no período)
         const { data: activeSales } = await supabase
           .from('sales')
           .select('customer_id')
-          .gte('created_at', startDate.toISOString())
-          .lte('created_at', endDate.toISOString())
+          .gte('created_at', startDate)
+          .lte('created_at', endDate)
           .not('customer_id', 'is', null);
 
-        const activeCustomers = new Set(activeSales?.map(sale => sale.customer_id)).size;
+        const activeCustomers = new Set((activeSales as any[])?.map(sale => sale.customer_id)).size;
 
         return {
           total_customers: totalCustomers || 0,
@@ -93,27 +96,30 @@ export const CrmReportsSection: React.FC<CrmReportsSectionProps> = ({ period = 3
         return { total_customers: 0, new_customers: 0, active_customers: 0 };
       }
     },
+    enabled: !!dateRange?.from,
     staleTime: 5 * 60 * 1000,
   });
 
   // Top Customers Query
   const { data: topCustomers, isLoading: loadingTopCustomers } = useQuery({
-    queryKey: ['top-customers', windowDays],
+    queryKey: ['top-customers', dateRange],
     queryFn: async () => {
-      const endDate = new Date();
-      const startDate = new Date();
-      startDate.setDate(endDate.getDate() - windowDays);
+      if (!dateRange?.from || !dateRange?.to) return [];
+
+      const startDate = dateRange.from.toISOString();
+      const endDate = dateRange.to.toISOString();
 
       const { data, error } = await supabase
         .rpc('get_top_customers', {
-          start_date: startDate.toISOString(),
-          end_date: endDate.toISOString(),
+          start_date: startDate,
+          end_date: endDate,
           limit_count: 20
         });
 
       if (error) throw error;
       return data || [];
     },
+    enabled: !!dateRange?.from,
     staleTime: 5 * 60 * 1000,
   });
 
@@ -128,7 +134,7 @@ export const CrmReportsSection: React.FC<CrmReportsSectionProps> = ({ period = 3
 
       if (error) throw error;
 
-      const segmentAnalysis = (data || []).reduce((acc: any, customer) => {
+      const segmentAnalysis = (data as any[] || []).reduce((acc: any, customer) => {
         const segment = customer.segment || 'Indefinido';
         if (!acc[segment]) {
           acc[segment] = {
@@ -140,7 +146,7 @@ export const CrmReportsSection: React.FC<CrmReportsSectionProps> = ({ period = 3
         }
         acc[segment].count += 1;
         acc[segment].total_ltv += Number(customer.lifetime_value || 0);
-        
+
         // Check if customer purchased in last 30 days
         if (customer.last_purchase_date) {
           const daysSinceLastPurchase = Math.floor(
@@ -150,7 +156,7 @@ export const CrmReportsSection: React.FC<CrmReportsSectionProps> = ({ period = 3
             acc[segment].recent_active += 1;
           }
         }
-        
+
         return acc;
       }, {});
 
@@ -165,21 +171,23 @@ export const CrmReportsSection: React.FC<CrmReportsSectionProps> = ({ period = 3
 
   // Customer Retention Data
   const { data: retentionData, isLoading: loadingRetention } = useQuery({
-    queryKey: ['customer-retention', windowDays],
+    queryKey: ['customer-retention', dateRange],
     queryFn: async () => {
-      const endDate = new Date();
-      const startDate = new Date();
-      startDate.setDate(endDate.getDate() - (windowDays * 6)); // Show 6 periods
+      if (!dateRange?.from || !dateRange?.to) return [];
+
+      const startDate = dateRange.from.toISOString();
+      const endDate = dateRange.to.toISOString();
 
       const { data, error } = await supabase
         .rpc('get_customer_retention', {
-          start_date: startDate.toISOString(),
-          end_date: endDate.toISOString()
+          start_date: startDate,
+          end_date: endDate
         });
 
       if (error) throw error;
       return data || [];
     },
+    enabled: !!dateRange?.from,
     staleTime: 5 * 60 * 1000,
   });
 
@@ -192,11 +200,11 @@ export const CrmReportsSection: React.FC<CrmReportsSectionProps> = ({ period = 3
 
   const getChurnRisk = (lastPurchase: string | null, frequency: string | null) => {
     if (!lastPurchase) return { level: 'Alto', color: 'text-red-400' };
-    
+
     const daysSinceLastPurchase = Math.floor(
       (new Date().getTime() - new Date(lastPurchase).getTime()) / (1000 * 60 * 60 * 24)
     );
-    
+
     if (daysSinceLastPurchase > 90) return { level: 'Alto', color: 'text-red-400' };
     if (daysSinceLastPurchase > 60) return { level: 'Médio', color: 'text-yellow-400' };
     if (daysSinceLastPurchase > 30) return { level: 'Baixo', color: 'text-orange-400' };
@@ -209,7 +217,7 @@ export const CrmReportsSection: React.FC<CrmReportsSectionProps> = ({ period = 3
       label: 'Cliente',
       width: 'w-[200px]',
       render: (value) => (
-        <span className="text-white font-medium">{value}</span>
+        <span className="text-white font-medium">{value as string}</span>
       ),
     },
     {
@@ -218,7 +226,7 @@ export const CrmReportsSection: React.FC<CrmReportsSectionProps> = ({ period = 3
       width: 'w-[150px]',
       render: (value) => (
         <span className="text-green-400 font-medium">
-          {formatCurrency(value)}
+          {formatCurrency(value as number)}
         </span>
       ),
     },
@@ -227,7 +235,7 @@ export const CrmReportsSection: React.FC<CrmReportsSectionProps> = ({ period = 3
       label: 'Pedidos',
       width: 'w-[100px]',
       render: (value) => (
-        <span className="text-blue-400">{value || 0}</span>
+        <span className="text-blue-400">{value as number || 0}</span>
       ),
     },
     {
@@ -236,7 +244,7 @@ export const CrmReportsSection: React.FC<CrmReportsSectionProps> = ({ period = 3
       width: 'w-[150px]',
       render: (value) => (
         <span className="text-yellow-400">
-          {formatCurrency(value || 0)}
+          {formatCurrency((value as number) || 0)}
         </span>
       ),
     },
@@ -248,7 +256,7 @@ export const CrmReportsSection: React.FC<CrmReportsSectionProps> = ({ period = 3
       label: 'Segmento',
       width: 'w-[200px]',
       render: (value) => (
-        <span className="text-white font-medium">{value}</span>
+        <span className="text-white font-medium">{value as string}</span>
       ),
     },
     {
@@ -256,7 +264,7 @@ export const CrmReportsSection: React.FC<CrmReportsSectionProps> = ({ period = 3
       label: 'Clientes',
       width: 'w-[120px]',
       render: (value) => (
-        <span className="text-blue-400 font-medium">{value}</span>
+        <span className="text-blue-400 font-medium">{value as number}</span>
       ),
     },
     {
@@ -265,7 +273,7 @@ export const CrmReportsSection: React.FC<CrmReportsSectionProps> = ({ period = 3
       width: 'w-[180px]',
       render: (value) => (
         <span className="text-green-400">
-          {formatCurrency(value)}
+          {formatCurrency(value as number)}
         </span>
       ),
     },
@@ -288,7 +296,7 @@ export const CrmReportsSection: React.FC<CrmReportsSectionProps> = ({ period = 3
       label: 'Ativos (30d)',
       width: 'w-[140px]',
       render: (value) => (
-        <span className="text-purple-400">{value || 0}</span>
+        <span className="text-purple-400">{value as number || 0}</span>
       ),
     },
   ];
@@ -296,10 +304,10 @@ export const CrmReportsSection: React.FC<CrmReportsSectionProps> = ({ period = 3
   // Calculate churn risk analysis from real customer data
   const churnAnalysis = React.useMemo(() => {
     if (!segments) return { alto: 0, medio: 0, baixo: 0, muito_baixo: 0 };
-    
+
     // Get all customers with purchase data for churn analysis
     const analysis = { alto: 0, medio: 0, baixo: 0, muito_baixo: 0 };
-    
+
     // Count customers in high-risk segments
     segments.forEach(segment => {
       if (segment.segment === 'Em Risco' || segment.segment === 'Inativo') {
@@ -312,7 +320,7 @@ export const CrmReportsSection: React.FC<CrmReportsSectionProps> = ({ period = 3
         analysis.muito_baixo += segment.count;
       }
     });
-    
+
     return analysis;
   }, [segments]);
 
@@ -327,7 +335,7 @@ export const CrmReportsSection: React.FC<CrmReportsSectionProps> = ({ period = 3
               <div>
                 <p className="text-sm text-gray-400">Total de Clientes</p>
                 <div className="text-2xl font-bold text-white">
-                  {loadingMetrics ? <LoadingSpinner size="sm" variant="blue" /> : (customerMetrics?.total_customers || 0)}
+                  {loadingMetrics ? <LoadingSpinner size="sm" /> : (customerMetrics?.total_customers || 0)}
                 </div>
               </div>
             </div>
@@ -341,7 +349,7 @@ export const CrmReportsSection: React.FC<CrmReportsSectionProps> = ({ period = 3
               <div>
                 <p className="text-sm text-gray-400">Novos Clientes</p>
                 <div className="text-2xl font-bold text-white">
-                  {loadingMetrics ? <LoadingSpinner size="sm" variant="green" /> : (customerMetrics?.new_customers || 0)}
+                  {loadingMetrics ? <LoadingSpinner size="sm" /> : (customerMetrics?.new_customers || 0)}
                 </div>
               </div>
             </div>
@@ -355,7 +363,7 @@ export const CrmReportsSection: React.FC<CrmReportsSectionProps> = ({ period = 3
               <div>
                 <p className="text-sm text-gray-400">Clientes Ativos</p>
                 <div className="text-2xl font-bold text-white">
-                  {loadingMetrics ? <LoadingSpinner size="sm" variant="purple" /> : (customerMetrics?.active_customers || 0)}
+                  {loadingMetrics ? <LoadingSpinner size="sm" /> : (customerMetrics?.active_customers || 0)}
                 </div>
               </div>
             </div>
@@ -404,7 +412,7 @@ export const CrmReportsSection: React.FC<CrmReportsSectionProps> = ({ period = 3
           <CardContent>
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={retentionData || []}>
+                <LineChart data={(retentionData as any[]) || []}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                   <XAxis dataKey="period" stroke="#9ca3af" fontSize={12} />
                   <YAxis stroke="#9ca3af" fontSize={12} />
@@ -454,11 +462,11 @@ export const CrmReportsSection: React.FC<CrmReportsSectionProps> = ({ period = 3
           <CardContent className="h-80">
             {loadingTopCustomers ? (
               <div className="flex items-center justify-center py-8">
-                <LoadingSpinner size="lg" variant="green" />
+                <LoadingSpinner size="lg" />
               </div>
             ) : (
               <StandardReportsTable
-                data={topCustomers || []}
+                data={(topCustomers as any[]) || []}
                 columns={customerColumns}
                 title="Top Clientes"
                 searchFields={['customer_name']}
@@ -479,7 +487,7 @@ export const CrmReportsSection: React.FC<CrmReportsSectionProps> = ({ period = 3
           <CardContent className="h-80">
             {loadingSegments ? (
               <div className="flex items-center justify-center py-8">
-                <LoadingSpinner size="lg" variant="purple" />
+                <LoadingSpinner size="lg" />
               </div>
             ) : (
               <StandardReportsTable
@@ -515,7 +523,7 @@ export const CrmReportsSection: React.FC<CrmReportsSectionProps> = ({ period = 3
                   permitindo campanhas direcionadas e oportunidades de marketing.
                 </p>
               </div>
-              
+
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="text-center p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
                   <p className="text-2xl font-bold text-blue-400">{customers?.filter(c => c.birthday).length || 0}</p>
@@ -560,7 +568,7 @@ export const CrmReportsSection: React.FC<CrmReportsSectionProps> = ({ period = 3
                   <p className="text-xs text-gray-400">Urgência</p>
                 </div>
               </div>
-              
+
               <div className="text-sm text-gray-400 space-y-1">
                 <p><span className="font-semibold">Campanhas:</span> Use aniversários para ofertas especiais e fidelização</p>
                 <p><span className="font-semibold">Automação:</span> Configure lembretes automáticos para equipe de vendas</p>
@@ -602,7 +610,7 @@ export const CrmReportsSection: React.FC<CrmReportsSectionProps> = ({ period = 3
               <p className="text-xs text-gray-400">{'<'} 30 dias</p>
             </div>
           </div>
-          
+
           <div className="text-sm text-gray-400 space-y-1">
             <p><span className="font-semibold">LTV:</span> Lifetime Value - Valor total gasto pelo cliente</p>
             <p><span className="font-semibold">Segmentação:</span> Baseada em LTV e frequência de compra</p>

@@ -11,8 +11,16 @@ import { Button } from '@/shared/ui/primitives/button';
 import { cn } from '@/core/config/utils';
 import { useInventoryHealth } from '../hooks/useInventoryHealth';
 
-export const InventoryHealthDashboard: React.FC = () => {
-    const { data, isLoading } = useInventoryHealth();
+import { DateRange } from 'react-day-picker';
+
+// ... imports ...
+
+interface InventoryHealthDashboardProps {
+    dateRange?: DateRange;
+}
+
+export const InventoryHealthDashboard: React.FC<InventoryHealthDashboardProps> = ({ dateRange }) => {
+    const { data, isLoading } = useInventoryHealth(dateRange);
 
     // Formatação
     const formatCurrency = (val: number) =>
@@ -32,11 +40,7 @@ export const InventoryHealthDashboard: React.FC = () => {
 
     return (
         <div className="space-y-8 pb-10">
-            {/* 1. Cabeçalho */}
-            <PageHeader
-                title="Saúde do Estoque"
-                description="Gestão inteligente de compras e queima de estoque."
-            />
+
 
             {/* 2. KPIs de Patrimônio */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -70,7 +74,7 @@ export const InventoryHealthDashboard: React.FC = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* 3. O Que Comprar? (Sugestão de Reposição) */}
-                <GlassCard className="p-6 flex flex-col h-[500px]">
+                <div className="bg-gray-800/30 border border-gray-700/40 backdrop-blur-sm shadow-lg rounded-xl p-6 flex flex-col h-[500px]">
                     <div className="flex items-center justify-between mb-4">
                         <h3 className="text-lg font-semibold text-white flex items-center gap-2">
                             <ShoppingCart className="w-5 h-5 text-blue-400" />
@@ -83,7 +87,7 @@ export const InventoryHealthDashboard: React.FC = () => {
 
                     <div className="overflow-auto flex-1 pr-2">
                         <table className="w-full text-sm text-left">
-                            <thead className="text-xs text-gray-400 uppercase bg-black/20 sticky top-0 backdrop-blur-md">
+                            <thead className="text-xs text-gray-400 uppercase bg-gray-900/50 sticky top-0 backdrop-blur-md">
                                 <tr>
                                     <th className="px-4 py-3 rounded-l-lg">Produto</th>
                                     <th className="px-4 py-3 text-center">Atual</th>
@@ -136,10 +140,10 @@ export const InventoryHealthDashboard: React.FC = () => {
                             </tbody>
                         </table>
                     </div>
-                </GlassCard>
+                </div>
 
                 {/* 4. O Que Queimar? (Dead Stock) */}
-                <GlassCard className="p-6 flex flex-col h-[500px]">
+                <div className="bg-gray-800/30 border border-gray-700/40 backdrop-blur-sm shadow-lg rounded-xl p-6 flex flex-col h-[500px]">
                     <div className="flex items-center justify-between mb-4">
                         <h3 className="text-lg font-semibold text-white flex items-center gap-2">
                             <Flame className="w-5 h-5 text-orange-400" />
@@ -152,7 +156,7 @@ export const InventoryHealthDashboard: React.FC = () => {
 
                     <div className="overflow-auto flex-1 pr-2">
                         <table className="w-full text-sm text-left">
-                            <thead className="text-xs text-gray-400 uppercase bg-black/20 sticky top-0 backdrop-blur-md">
+                            <thead className="text-xs text-gray-400 uppercase bg-gray-900/50 sticky top-0 backdrop-blur-md">
                                 <tr>
                                     <th className="px-4 py-3 rounded-l-lg">Produto</th>
                                     <th className="px-4 py-3 text-center">Qtd.</th>
@@ -196,11 +200,11 @@ export const InventoryHealthDashboard: React.FC = () => {
                             </tbody>
                         </table>
                     </div>
-                </GlassCard>
+                </div>
             </div>
 
             {/* 5. Giro Rápido (Top Movers) */}
-            <GlassCard className="p-6">
+            <div className="bg-gray-800/30 border border-gray-700/40 backdrop-blur-sm shadow-lg rounded-xl p-6">
                 <div className="flex items-center justify-between mb-6">
                     <h3 className="text-lg font-semibold text-white flex items-center gap-2">
                         <TrendingUp className="w-5 h-5 text-green-400" />
@@ -211,7 +215,7 @@ export const InventoryHealthDashboard: React.FC = () => {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
                     {topMovers.map((product, idx) => (
-                        <div key={idx} className="bg-black/20 rounded-lg p-4 border border-white/5 flex flex-col items-center text-center hover:bg-white/5 transition-colors">
+                        <div key={idx} className="bg-gray-800/50 rounded-lg p-4 border border-white/5 flex flex-col items-center text-center hover:bg-white/5 transition-colors">
                             <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center text-green-400 font-bold mb-3">
                                 #{idx + 1}
                             </div>
@@ -233,7 +237,7 @@ export const InventoryHealthDashboard: React.FC = () => {
                         </div>
                     ))}
                 </div>
-            </GlassCard>
+            </div>
         </div>
     );
 };

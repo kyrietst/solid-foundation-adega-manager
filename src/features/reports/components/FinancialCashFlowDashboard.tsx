@@ -19,6 +19,7 @@ import { LoadingSpinner } from '@/shared/ui/composite/loading-spinner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/primitives/select';
 import { Button } from '@/shared/ui/primitives/button';
 import { cn } from '@/core/config/utils';
+import { DateRange } from 'react-day-picker';
 
 // --- Types ---
 interface DailyFlow {
@@ -44,19 +45,21 @@ interface ExpenseCategory {
 // --- Hooks ---
 
 // 1. Hook de Fluxo Diário (Entradas vs Saídas)
-function useDailyCashFlow(days: number) {
+function useDailyCashFlow(dateRange: DateRange | undefined) {
     return useQuery({
-        queryKey: ['daily-cash-flow', days],
+        queryKey: ['daily-cash-flow', dateRange],
         queryFn: async (): Promise<DailyFlow[]> => {
-            const endDate = new Date();
-            const startDate = subDays(endDate, days);
+            if (!dateRange?.from || !dateRange?.to) return [];
+
+            const startDate = dateRange.from.toISOString();
+            const endDate = dateRange.to.toISOString();
 
             // Buscar Vendas (Entradas)
             const { data: salesData, error: salesError } = await supabase
                 .from('sales')
                 .select('final_amount, created_at, status, delivery_type, delivery_status, delivery')
-                .gte('created_at', startDate.toISOString())
-                .lte('created_at', endDate.toISOString())
+                .gte('created_at', startDate)
+                .lte('created_at', endDate)
                 .not('final_amount', 'is', null);
 
             if (salesError) throw salesError;
@@ -66,8 +69,8 @@ function useDailyCashFlow(days: number) {
             const { data: expensesData, error: expensesError } = await supabase
                 .from('expenses')
                 .select('amount, date')
-                .gte('date', startDate.toISOString())
-                .lte('date', endDate.toISOString());
+                .gte('date', startDate)
+                .lte('date', endDate);
 
             if (expensesError) {
                 console.warn("Erro ao buscar despesas diárias, assumindo zero para gráfico", expensesError);
@@ -77,14 +80,7 @@ function useDailyCashFlow(days: number) {
             // Processar e Agrupar por Dia
             const dailyMap = new Map<string, { income: number; outcome: number }>();
 
-            // Inicializar mapa com todos os dias
-            for (let i = 0; i <= days; i++) {
-                const d = subDays(endDate, days - i);
-                const key = format(d, 'yyyy-MM-dd');
-                dailyMap.set(key, { income: 0, outcome: 0 });
-            }
-
-            // Somar Entradas
+            // Processar Vendas
             (sales || []).forEach(sale => {
                 // Filtro de Status (Híbrido - mesmo do dashboard)
                 const isPresencialCompleted = (sale.status === 'completed') && (sale.delivery_type === 'presencial' || sale.delivery === false);
@@ -92,30 +88,31 @@ function useDailyCashFlow(days: number) {
 
                 if (isPresencialCompleted || isDeliveryDelivered) {
                     const key = format(parseISO(sale.created_at), 'yyyy-MM-dd');
-                    if (dailyMap.has(key)) {
-                        const current = dailyMap.get(key)!;
-                        current.income += Number(sale.final_amount);
-                    }
+                    const current = dailyMap.get(key) || { income: 0, outcome: 0 };
+                    current.income += Number(sale.final_amount);
+                    dailyMap.set(key, current);
                 }
             });
 
-            // Somar Saídas
+            // Processar Saídas
             (expenses || []).forEach(expense => {
                 const key = format(parseISO(expense.date), 'yyyy-MM-dd');
-                if (dailyMap.has(key)) {
-                    const current = dailyMap.get(key)!;
-                    current.outcome += Number(expense.amount);
-                }
+                const current = dailyMap.get(key) || { income: 0, outcome: 0 };
+                current.outcome += Number(expense.amount);
+                dailyMap.set(key, current);
             });
 
             // Converter para Array
-            return Array.from(dailyMap.entries()).map(([dateStr, val]) => ({
-                date: format(parseISO(dateStr), 'dd/MM'),
-                income: val.income,
-                outcome: val.outcome,
-                balance: val.income - val.outcome
-            }));
+            return Array.from(dailyMap.entries())
+                .sort((a, b) => a[0].localeCompare(b[0]))
+                .map(([dateStr, val]) => ({
+                    date: format(parseISO(dateStr), 'dd/MM'),
+                    income: val.income,
+                    outcome: val.outcome,
+                    balance: val.income - val.outcome
+                }));
         },
+        enabled: !!dateRange?.from,
         staleTime: 5 * 60 * 1000
     });
 }
@@ -153,18 +150,20 @@ function useDebtors() {
 }
 
 // 3. Hook de Top Despesas
-function useTopExpenses(days: number) {
+function useTopExpenses(dateRange: DateRange | undefined) {
     return useQuery({
-        queryKey: ['top-expenses-breakdown', days],
+        queryKey: ['top-expenses-breakdown', dateRange],
         queryFn: async (): Promise<ExpenseCategory[]> => {
-            const endDate = new Date();
-            const startDate = subDays(endDate, days);
+            if (!dateRange?.from || !dateRange?.to) return [];
+
+            const startDate = dateRange.from.toISOString();
+            const endDate = dateRange.to.toISOString();
 
             const { data, error } = await supabase
                 .from('expenses')
                 .select('amount, category:expense_categories(name)')
-                .gte('date', startDate.toISOString())
-                .lte('date', endDate.toISOString());
+                .gte('date', startDate)
+                .lte('date', endDate);
 
             if (error) throw error;
 
@@ -187,15 +186,15 @@ function useTopExpenses(days: number) {
                 .sort((a, b) => b.amount - a.amount)
                 .slice(0, 5);
         },
+        enabled: !!dateRange?.from,
         staleTime: 5 * 60 * 1000
     });
 }
 
 // 4. Hook de KPIs Financeiros (Agregado)
-function useFinancialKPIs(days: number) {
+function useFinancialKPIs(dateRange: DateRange | undefined) {
     // Reutilizando lógica dos hooks anteriores para consistência
-    const { data: flow } = useDailyCashFlow(days);
-    const { data: debtors } = useDebtors();
+    const { data: flow } = useDailyCashFlow(dateRange);
 
     const totalRevenue = flow?.reduce((acc, curr) => acc + curr.income, 0) || 0;
     const totalExpenses = flow?.reduce((acc, curr) => acc + curr.outcome, 0) || 0;
@@ -222,14 +221,15 @@ function useFinancialKPIs(days: number) {
     };
 }
 
-export const FinancialCashFlowDashboard: React.FC = () => {
-    const [period, setPeriod] = useState<'7d' | '30d' | '90d'>('30d');
-    const days = period === '7d' ? 7 : period === '30d' ? 30 : 90;
+interface FinancialCashFlowDashboardProps {
+    dateRange?: DateRange;
+}
 
-    const { data: dailyFlow, isLoading: loadingFlow } = useDailyCashFlow(days);
+export const FinancialCashFlowDashboard: React.FC<FinancialCashFlowDashboardProps> = ({ dateRange }) => {
+    const { data: dailyFlow, isLoading: loadingFlow } = useDailyCashFlow(dateRange);
     const { data: debtors, isLoading: loadingDebtors } = useDebtors();
-    const { data: topExpenses, isLoading: loadingExpenses } = useTopExpenses(days);
-    const kpis = useFinancialKPIs(days);
+    const { data: topExpenses, isLoading: loadingExpenses } = useTopExpenses(dateRange);
+    const kpis = useFinancialKPIs(dateRange);
 
     const isLoading = loadingFlow || loadingDebtors || loadingExpenses;
 
@@ -247,27 +247,6 @@ export const FinancialCashFlowDashboard: React.FC = () => {
 
     return (
         <div className="space-y-8 pb-10">
-            {/* 1. Cabeçalho */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <PageHeader
-                    title="Fluxo de Caixa & Liquidez"
-                    description="Visão simplificada da saúde financeira da adega."
-                />
-
-                <div className="flex items-center gap-2 bg-black/20 p-1 rounded-lg border border-white/5">
-                    <Calendar className="w-4 h-4 text-gray-400 ml-2" />
-                    <Select value={period} onValueChange={(v: any) => setPeriod(v)}>
-                        <SelectTrigger className="w-32 border-0 bg-transparent text-white focus:ring-0">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="7d">Últimos 7 dias</SelectItem>
-                            <SelectItem value="30d">Últimos 30 dias</SelectItem>
-                            <SelectItem value="90d">Últimos 90 dias</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-            </div>
 
             {/* 2. A Saúde do Caixa (KPIs) */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -309,7 +288,7 @@ export const FinancialCashFlowDashboard: React.FC = () => {
             </div>
 
             {/* 3. Fluxo do Mês (Gráfico) */}
-            <GlassCard className="p-6">
+            <div className="bg-gray-800/30 border border-gray-700/40 backdrop-blur-sm shadow-lg rounded-xl p-6">
                 <div className="flex items-center justify-between mb-6">
                     <h3 className="text-lg font-semibold text-white flex items-center gap-2">
                         <TrendingUp className="w-5 h-5 text-blue-400" />
@@ -323,14 +302,14 @@ export const FinancialCashFlowDashboard: React.FC = () => {
                             <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} />
                             <XAxis
                                 dataKey="date"
-                                stroke="#9ca3af"
-                                tick={{ fontSize: 12 }}
+                                stroke="#6B7280"
+                                tick={{ fill: '#9CA3AF', fontSize: 12 }}
                                 tickLine={false}
                                 axisLine={false}
                             />
                             <YAxis
-                                stroke="#9ca3af"
-                                tick={{ fontSize: 12 }}
+                                stroke="#6B7280"
+                                tick={{ fill: '#9CA3AF', fontSize: 12 }}
                                 tickLine={false}
                                 axisLine={false}
                                 tickFormatter={(val) => `R$${val / 1000}k`}
@@ -338,11 +317,13 @@ export const FinancialCashFlowDashboard: React.FC = () => {
                             <Tooltip
                                 cursor={{ fill: '#ffffff10' }}
                                 contentStyle={{
-                                    backgroundColor: '#0f172a',
-                                    borderColor: '#1e293b',
+                                    backgroundColor: '#1F2937',
+                                    borderColor: '#374151',
                                     borderRadius: '8px',
-                                    color: '#fff'
+                                    color: '#F3F4F6'
                                 }}
+                                itemStyle={{ color: '#E5E7EB' }}
+                                labelStyle={{ color: '#E5E7EB', fontWeight: '600' }}
                                 formatter={(value: number) => formatCurrency(value)}
                             />
                             <ReferenceLine y={0} stroke="#6b7280" />
@@ -351,11 +332,11 @@ export const FinancialCashFlowDashboard: React.FC = () => {
                         </BarChart>
                     </ResponsiveContainer>
                 </div>
-            </GlassCard>
+            </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* 4. Quem me deve? (Tabela de Cobrança) */}
-                <GlassCard className="p-6 flex flex-col">
+                <div className="bg-gray-800/30 border border-gray-700/40 backdrop-blur-sm shadow-lg rounded-xl p-6 flex flex-col">
                     <div className="flex items-center justify-between mb-4">
                         <h3 className="text-lg font-semibold text-white flex items-center gap-2">
                             <AlertCircle className="w-5 h-5 text-red-400" />
@@ -368,7 +349,7 @@ export const FinancialCashFlowDashboard: React.FC = () => {
 
                     <div className="overflow-auto flex-1">
                         <table className="w-full text-sm text-left">
-                            <thead className="text-xs text-gray-400 uppercase bg-black/20">
+                            <thead className="text-xs text-gray-400 uppercase bg-gray-900/50 sticky top-0 backdrop-blur-md">
                                 <tr>
                                     <th className="px-4 py-3 rounded-l-lg">Cliente</th>
                                     <th className="px-4 py-3">Valor</th>
@@ -409,49 +390,56 @@ export const FinancialCashFlowDashboard: React.FC = () => {
                                 {(!debtors || debtors.length === 0) && (
                                     <tr>
                                         <td colSpan={4} className="px-4 py-8 text-center text-gray-500">
-                                            Nenhum cliente em atraso crítico.
+                                            Nenhum devedor encontrado.
                                         </td>
                                     </tr>
                                 )}
                             </tbody>
                         </table>
                     </div>
-                </GlassCard>
+                </div>
 
                 {/* 5. Para onde foi o dinheiro? (Top Despesas) */}
-                <GlassCard className="p-6">
-                    <div className="flex items-center justify-between mb-4">
+                <div className="bg-gray-800/30 border border-gray-700/40 backdrop-blur-sm shadow-lg rounded-xl p-6">
+                    <div className="flex items-center justify-between mb-6">
                         <h3 className="text-lg font-semibold text-white flex items-center gap-2">
                             <Wallet className="w-5 h-5 text-yellow-400" />
-                            Principais Despesas
+                            Top Despesas
                         </h3>
                     </div>
 
-                    <div className="space-y-4">
-                        {topExpenses?.map((expense, idx) => (
-                            <div key={idx} className="space-y-1">
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-gray-300">{expense.name}</span>
-                                    <span className="text-white font-medium">{formatCurrency(expense.amount)}</span>
-                                </div>
-                                <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
-                                    <div
-                                        className="h-full bg-yellow-500/80 rounded-full"
-                                        style={{ width: `${expense.percentage}%` }}
-                                    />
-                                </div>
-                                <div className="text-xs text-gray-500 text-right">
-                                    {expense.percentage.toFixed(1)}% do total
-                                </div>
-                            </div>
-                        ))}
-                        {(!topExpenses || topExpenses.length === 0) && (
-                            <div className="text-center py-8 text-gray-500">
-                                Nenhuma despesa registrada no período.
-                            </div>
-                        )}
+                    <div className="h-[300px] w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart layout="vertical" data={topExpenses || []} margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#374151" horizontal={false} />
+                                <XAxis type="number" stroke="#6B7280" tick={{ fill: '#9CA3AF', fontSize: 12 }} />
+                                <YAxis
+                                    dataKey="name"
+                                    type="category"
+                                    stroke="#6B7280"
+                                    tick={{ fill: '#9CA3AF', fontSize: 12 }}
+                                    width={100}
+                                />
+                                <Tooltip
+                                    cursor={{ fill: '#ffffff10' }}
+                                    contentStyle={{
+                                        backgroundColor: '#1F2937',
+                                        borderColor: '#374151',
+                                        borderRadius: '8px',
+                                        color: '#F3F4F6'
+                                    }}
+                                    itemStyle={{ color: '#E5E7EB' }}
+                                    formatter={(value: number) => formatCurrency(value)}
+                                />
+                                <Bar dataKey="amount" name="Valor" fill="#f59e0b" radius={[0, 4, 4, 0]} barSize={20}>
+                                    {topExpenses?.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={['#f59e0b', '#ef4444', '#8b5cf6', '#3b82f6', '#10b981'][index % 5]} />
+                                    ))}
+                                </Bar>
+                            </BarChart>
+                        </ResponsiveContainer>
                     </div>
-                </GlassCard>
+                </div>
             </div>
         </div>
     );

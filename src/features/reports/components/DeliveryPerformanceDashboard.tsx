@@ -40,13 +40,31 @@ interface TrendData {
     instore_revenue: number;
 }
 
+import { DateRange } from 'react-day-picker';
+
+// ... imports ...
+
 // --- Hook Reutilizado ---
-function useDeliveryComparison(days: number) {
+function useDeliveryComparison(dateRange: DateRange | undefined) {
     return useQuery({
-        queryKey: ['delivery-vs-instore-complete', days],
+        queryKey: ['delivery-vs-instore-complete', dateRange],
         queryFn: async (): Promise<ComparisonData> => {
+            if (!dateRange?.from || !dateRange?.to) {
+                return {
+                    delivery_orders: 0,
+                    delivery_revenue: 0,
+                    delivery_avg_ticket: 0,
+                    instore_orders: 0,
+                    instore_revenue: 0,
+                    instore_avg_ticket: 0,
+                    delivery_growth_rate: 0,
+                    instore_growth_rate: 0
+                };
+            }
+
             const { data, error } = await supabase.rpc('get_delivery_vs_instore_comparison', {
-                p_days: days
+                p_start_date: dateRange.from.toISOString(),
+                p_end_date: dateRange.to.toISOString()
             });
 
             if (error) throw error;
@@ -62,37 +80,41 @@ function useDeliveryComparison(days: number) {
                 instore_growth_rate: 0
             };
         },
+        enabled: !!dateRange?.from && !!dateRange?.to,
         staleTime: 5 * 60 * 1000,
     });
 }
 
-// --- Hook de Tendências (Simulado conforme original) ---
-function useDeliveryTrends(days: number) {
+// --- Hook de Tendências ---
+function useDeliveryTrends(dateRange: DateRange | undefined) {
     return useQuery({
-        queryKey: ['delivery-vs-instore-trends', days],
+        queryKey: ['delivery-vs-instore-trends', dateRange],
         queryFn: async (): Promise<TrendData[]> => {
-            // Simulação mantida do original para consistência
-            return Array.from({ length: 14 }, (_, i) => {
-                const date = subDays(new Date(), 13 - i);
-                return {
-                    date: format(date, 'dd/MM', { locale: ptBR }),
-                    delivery_orders: Math.floor(Math.random() * 15) + 5,
-                    delivery_revenue: Math.floor(Math.random() * 2000) + 800,
-                    instore_orders: Math.floor(Math.random() * 25) + 15,
-                    instore_revenue: Math.floor(Math.random() * 3000) + 1500,
-                };
+            if (!dateRange?.from || !dateRange?.to) {
+                return [];
+            }
+
+            const { data, error } = await supabase.rpc('get_delivery_trends', {
+                p_start_date: dateRange.from.toISOString(),
+                p_end_date: dateRange.to.toISOString()
             });
+
+            if (error) throw error;
+
+            return (data as any[]) || [];
         },
+        enabled: !!dateRange?.from && !!dateRange?.to,
         staleTime: 5 * 60 * 1000,
     });
 }
 
-export const DeliveryPerformanceDashboard: React.FC = () => {
-    const [period, setPeriod] = useState<'7d' | '30d' | '90d'>('30d');
-    const days = period === '7d' ? 7 : period === '30d' ? 30 : 90;
+interface DeliveryPerformanceDashboardProps {
+    dateRange?: DateRange;
+}
 
-    const { data: comparison, isLoading: loadingComparison } = useDeliveryComparison(days);
-    const { data: trends, isLoading: loadingTrends } = useDeliveryTrends(days);
+export const DeliveryPerformanceDashboard: React.FC<DeliveryPerformanceDashboardProps> = ({ dateRange }) => {
+    const { data: comparison, isLoading: loadingComparison } = useDeliveryComparison(dateRange);
+    const { data: trends, isLoading: loadingTrends } = useDeliveryTrends(dateRange);
 
     // Dados seguros com fallback
     const safeComparison = comparison || {
@@ -109,6 +131,7 @@ export const DeliveryPerformanceDashboard: React.FC = () => {
     // Cálculos
     const totalRevenue = (safeComparison.delivery_revenue || 0) + (safeComparison.instore_revenue || 0);
     const totalOrders = (safeComparison.delivery_orders || 0) + (safeComparison.instore_orders || 0);
+    const generalAvgTicket = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
     const deliveryShare = totalRevenue > 0 ? ((safeComparison.delivery_revenue || 0) / totalRevenue) * 100 : 0;
     const instoreShare = 100 - deliveryShare;
@@ -119,33 +142,12 @@ export const DeliveryPerformanceDashboard: React.FC = () => {
 
     return (
         <div className="space-y-8 pb-10">
-            {/* 1. Cabeçalho */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <PageHeader
-                    title="Performance de Canais"
-                    description="Análise unificada: Delivery vs Loja Física"
-                />
-
-                <div className="flex items-center gap-2 bg-black/20 p-1 rounded-lg border border-white/5">
-                    <Calendar className="w-4 h-4 text-gray-400 ml-2" />
-                    <Select value={period} onValueChange={(v: any) => setPeriod(v)}>
-                        <SelectTrigger className="w-32 border-0 bg-transparent text-white focus:ring-0">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="7d">Últimos 7 dias</SelectItem>
-                            <SelectItem value="30d">Últimos 30 dias</SelectItem>
-                            <SelectItem value="90d">Últimos 90 dias</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-            </div>
 
             {/* 2. Placar do Jogo (KPIs) */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <StatCard
                     title="Receita Total"
-                    value={(safeComparison.delivery_revenue || 0) + (safeComparison.instore_revenue || 0)}
+                    value={totalRevenue}
                     description={
                         <span className="flex items-center gap-2">
                             <span className="text-blue-300">🛵 {deliveryShare.toFixed(0)}%</span>
@@ -168,6 +170,15 @@ export const DeliveryPerformanceDashboard: React.FC = () => {
                 />
 
                 <StatCard
+                    title="Ticket Médio (Geral)"
+                    value={generalAvgTicket}
+                    description="Média global por pedido"
+                    icon={DollarSign}
+                    variant="default"
+                    formatType="currency"
+                />
+
+                <StatCard
                     title="Ticket Médio (Delivery)"
                     value={safeComparison.delivery_avg_ticket || 0}
                     description={
@@ -182,7 +193,7 @@ export const DeliveryPerformanceDashboard: React.FC = () => {
             </div>
 
             {/* 3. Barra de Domínio */}
-            <GlassCard className="p-6">
+            <div className="bg-gray-800/30 border border-gray-700/40 backdrop-blur-sm shadow-lg rounded-xl p-6">
                 <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-semibold text-white flex items-center gap-2">
                         <Activity className="w-5 h-5 text-purple-400" />
@@ -227,10 +238,10 @@ export const DeliveryPerformanceDashboard: React.FC = () => {
                         <span className="text-gray-300">Loja Física ({formatCurrency(safeComparison.instore_revenue || 0)})</span>
                     </div>
                 </div>
-            </GlassCard>
+            </div>
 
             {/* 4. Gráfico de Tendência Simplificado */}
-            <GlassCard className="p-6">
+            <div className="bg-gray-800/30 border border-gray-700/40 backdrop-blur-sm shadow-lg rounded-xl p-6">
                 <div className="flex items-center justify-between mb-6">
                     <h3 className="text-lg font-semibold text-white flex items-center gap-2">
                         <TrendingUp className="w-5 h-5 text-blue-400" />
@@ -254,25 +265,27 @@ export const DeliveryPerformanceDashboard: React.FC = () => {
                             <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} />
                             <XAxis
                                 dataKey="date"
-                                stroke="#9ca3af"
-                                tick={{ fontSize: 12 }}
+                                stroke="#6B7280"
+                                tick={{ fill: '#9CA3AF', fontSize: 12 }}
                                 tickLine={false}
                                 axisLine={false}
                             />
                             <YAxis
-                                stroke="#9ca3af"
-                                tick={{ fontSize: 12 }}
+                                stroke="#6B7280"
+                                tick={{ fill: '#9CA3AF', fontSize: 12 }}
                                 tickLine={false}
                                 axisLine={false}
                                 tickFormatter={(val) => `R$${val / 1000}k`}
                             />
                             <Tooltip
                                 contentStyle={{
-                                    backgroundColor: '#0f172a',
-                                    borderColor: '#1e293b',
+                                    backgroundColor: '#1F2937',
+                                    borderColor: '#374151',
                                     borderRadius: '8px',
-                                    color: '#fff'
+                                    color: '#F3F4F6'
                                 }}
+                                itemStyle={{ color: '#E5E7EB' }}
+                                labelStyle={{ color: '#E5E7EB', fontWeight: '600' }}
                             />
                             <Area
                                 type="monotone"
@@ -295,7 +308,7 @@ export const DeliveryPerformanceDashboard: React.FC = () => {
                         </AreaChart>
                     </ResponsiveContainer>
                 </div>
-            </GlassCard>
+            </div>
 
             {/* 5. Insights Rápidos (Alertas) */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

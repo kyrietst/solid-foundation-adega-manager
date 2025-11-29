@@ -30,7 +30,9 @@ import {
   TrendingUp,
   Barcode,
   DollarSign,
-  Loader2
+  Loader2,
+  Copy,
+  Check
 } from 'lucide-react';
 import { cn } from '@/core/config/utils';
 import { formatCurrency } from '@/core/config/utils';
@@ -52,6 +54,7 @@ export const DeleteProductModal: React.FC<DeleteProductModalProps> = ({
   onSuccess,
 }) => {
   const [confirmationText, setConfirmationText] = useState('');
+  const [copied, setCopied] = useState(false);
 
   const { softDelete, isDeleting } = useProductDelete();
 
@@ -75,6 +78,12 @@ export const DeleteProductModal: React.FC<DeleteProductModalProps> = ({
     } catch (error) {
       console.error('Erro na operação:', error);
     }
+  };
+
+  const handleCopyName = () => {
+    navigator.clipboard.writeText(productName);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   // Validação do botão de confirmar - COMPARAÇÃO EXATA
@@ -121,11 +130,22 @@ export const DeleteProductModal: React.FC<DeleteProductModalProps> = ({
             </p>
 
             {/* Caixa destacada mostrando o nome exato */}
-            <div className="bg-gray-700/50 border-2 border-yellow-500/50 rounded-lg p-3">
+            <div className="bg-gray-700/50 border-2 border-yellow-500/50 rounded-lg p-3 relative group">
               <p className="text-xs text-gray-400 mb-1">Nome a ser digitado:</p>
-              <p className="text-lg font-bold text-white font-mono select-all">
-                {productName}
-              </p>
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-lg font-bold text-white font-mono select-all break-all">
+                  {productName}
+                </p>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={handleCopyName}
+                  className="h-8 w-8 p-0 text-gray-400 hover:text-white hover:bg-gray-600"
+                  title="Copiar nome"
+                >
+                  {copied ? <Check className="h-4 w-4 text-green-400" /> : <Copy className="h-4 w-4" />}
+                </Button>
+              </div>
               <p className="text-xs text-yellow-400 mt-1">
                 ⚠️ Copie ou digite exatamente como mostrado acima
               </p>
@@ -135,8 +155,12 @@ export const DeleteProductModal: React.FC<DeleteProductModalProps> = ({
               type="text"
               value={confirmationText}
               onChange={(e) => setConfirmationText(e.target.value)}
-              placeholder="Digite aqui..."
-              className="bg-gray-800 border-gray-600 text-white"
+              placeholder="Cole o nome do produto aqui..."
+              className={cn(
+                "bg-gray-800 border-gray-600 text-white transition-colors",
+                confirmationText && confirmationText !== productName && "border-red-500 focus:ring-red-500",
+                confirmationText === productName && "border-green-500 focus:ring-green-500"
+              )}
               disabled={isDeleting}
               autoComplete="off"
             />

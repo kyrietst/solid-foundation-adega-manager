@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
 import { subDays } from 'date-fns';
+import { DateRange } from 'react-day-picker';
 
 export interface InventoryHealthProduct {
     id: string;
@@ -24,11 +25,12 @@ export interface TopMoverProduct extends InventoryHealthProduct {
     units_sold_30d: number;
 }
 
-export function useInventoryHealth() {
+export function useInventoryHealth(dateRange: DateRange | undefined) {
     return useQuery({
-        queryKey: ['inventory-health'],
+        queryKey: ['inventory-health', dateRange],
         queryFn: async () => {
-            const thirtyDaysAgo = subDays(new Date(), 30).toISOString();
+            const startDate = dateRange?.from ? dateRange.from.toISOString() : subDays(new Date(), 30).toISOString();
+            const endDate = dateRange?.to ? dateRange.to.toISOString() : new Date().toISOString();
 
             // 1. Buscar todos os produtos (ativos)
             const { data: productsData, error: productsError } = await supabase
@@ -41,15 +43,24 @@ export function useInventoryHealth() {
 
             if (productsError) throw productsError;
 
-            // 2. Buscar vendas dos últimos 30 dias para cálculo de giro e dead stock
+            // 2. Buscar vendas do período para cálculo de giro e dead stock
             const { data: salesData, error: salesError } = await supabase
                 .from('sale_items')
-                .select('product_id, quantity, created_at')
-                .gte('created_at', thirtyDaysAgo);
+                .select('product_id, quantity, created_at, sales!inner(created_at)')
+                .gte('sales.created_at', startDate)
+                .lte('sales.created_at', endDate);
 
             if (salesError) throw salesError;
 
+            // 3. Buscar Valor Total do Estoque (RPC para precisão)
+            const { data: totalValuationData, error: valuationError } = await supabase
+                .rpc('get_total_inventory_valuation');
+
+            if (valuationError) console.error('Erro ao buscar valuation:', valuationError);
+            const totalStockValue = Number(totalValuationData) || 0;
+
             // --- Processamento ---
+            // ... (rest of the logic remains similar, using the filtered salesData)
 
             // Mapa de Vendas por Produto
             const salesMap = new Map<string, number>();
@@ -89,15 +100,15 @@ export function useInventoryHealth() {
                 .sort((a, b) => b.units_sold_30d - a.units_sold_30d);
 
             // 2. Dead Stock (Encalhados)
-            // Estoque > 0 E Vendas 30d = 0
+            // Estoque > 0 E Vendas no período = 0
             const deadStock = processedProducts
                 .filter(p => p.total_units > 0 && !salesMap.has(p.id))
                 .map(p => ({
                     ...p,
-                    days_without_sale: 30, // Pelo menos 30
-                    stuck_value: p.total_units * (p.cost_price / p.units_per_package) // Custo unitário aproximado
+                    days_without_sale: 30, // Placeholder, logicamente "sem vendas no período"
+                    stuck_value: p.total_units * p.cost_price // Custo unitário confirmado pelo QA
                 }))
-                .sort((a, b) => b.stuck_value - a.stuck_value);
+                .sort((a, b) => b.stuck_value - a.stuck_value); // Ordenar por valor parado (R$) decrescente
 
             // 3. Top Movers (Giro Rápido)
             const topMovers = processedProducts
@@ -114,9 +125,10 @@ export function useInventoryHealth() {
                 deadStock,
                 topMovers,
                 totalProducts: processedProducts.length,
-                totalStockValue: processedProducts.reduce((acc, p) => acc + (p.total_units * (p.cost_price / p.units_per_package)), 0)
+                totalStockValue // Usar valor da RPC
             };
         },
+        enabled: !!dateRange?.from,
         staleTime: 5 * 60 * 1000 // 5 minutos
     });
 }
