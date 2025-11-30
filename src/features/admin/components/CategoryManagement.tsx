@@ -4,11 +4,11 @@
  */
 
 import React, { useState } from 'react';
-import { 
-  useCategories, 
+import {
+  useCategories,
   useAllCategories,
-  useCreateCategory, 
-  useUpdateCategory, 
+  useCreateCategory,
+  useUpdateCategory,
   useToggleCategoryStatus,
   useReorderCategories,
   validateCategoryName,
@@ -46,7 +46,7 @@ export const CategoryManagement: React.FC = () => {
   const { mutate: createCategory, isPending: isCreating } = useCreateCategory();
   const { mutate: updateCategory, isPending: isUpdating } = useUpdateCategory();
   const { mutate: toggleStatus, isPending: isToggling } = useToggleCategoryStatus();
-  
+
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<CategoryFormState | null>(null);
   const [formData, setFormData] = useState<CategoryFormState>({
@@ -54,7 +54,8 @@ export const CategoryManagement: React.FC = () => {
     description: '',
     color: '#6B7280',
     icon: 'Package',
-    default_min_stock: 10
+    default_min_stock_packages: 0,
+    default_min_stock_units: 0
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
@@ -83,7 +84,8 @@ export const CategoryManagement: React.FC = () => {
         description: category.description || '',
         color: category.color || '#6B7280',
         icon: category.icon || 'Package',
-        default_min_stock: category.default_min_stock ?? 10
+        default_min_stock_packages: category.default_min_stock_packages ?? 0,
+        default_min_stock_units: category.default_min_stock_units ?? 0
       });
     } else {
       setEditingCategory(null);
@@ -92,7 +94,8 @@ export const CategoryManagement: React.FC = () => {
         description: '',
         color: '#6B7280',
         icon: 'Package',
-        default_min_stock: 10
+        default_min_stock_packages: 0,
+        default_min_stock_units: 0
       });
     }
     setFormErrors({});
@@ -107,7 +110,9 @@ export const CategoryManagement: React.FC = () => {
       description: '',
       color: '#6B7280',
       icon: 'Package',
-      default_min_stock: 10
+      icon: 'Package',
+      default_min_stock_packages: 0,
+      default_min_stock_units: 0
     });
     setFormErrors({});
   };
@@ -117,8 +122,8 @@ export const CategoryManagement: React.FC = () => {
 
     // Validar nome
     const nameValidation = validateCategoryName(
-      formData.name, 
-      categories, 
+      formData.name,
+      categories,
       editingCategory?.id
     );
     if (!nameValidation.isValid) {
@@ -131,7 +136,7 @@ export const CategoryManagement: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
 
     if (editingCategory) {
@@ -143,7 +148,8 @@ export const CategoryManagement: React.FC = () => {
           description: formData.description?.trim() || undefined,
           color: formData.color,
           icon: formData.icon,
-          default_min_stock: formData.default_min_stock ?? 10
+          default_min_stock_packages: formData.default_min_stock_packages ?? 0,
+          default_min_stock_units: formData.default_min_stock_units ?? 0
         }
       }, {
         onSuccess: () => handleCloseDialog()
@@ -155,7 +161,8 @@ export const CategoryManagement: React.FC = () => {
         description: formData.description?.trim() || undefined,
         color: formData.color,
         icon: formData.icon,
-        default_min_stock: formData.default_min_stock ?? 10
+        default_min_stock_packages: formData.default_min_stock_packages ?? 0,
+        default_min_stock_units: formData.default_min_stock_units ?? 0
       }, {
         onSuccess: () => handleCloseDialog()
       });
@@ -191,7 +198,7 @@ export const CategoryManagement: React.FC = () => {
             Gerencie as categorias de produtos do sistema ({categories.length} categorias)
           </p>
         </div>
-        <Button 
+        <Button
           onClick={() => handleOpenDialog()}
           disabled={isCreating}
           className="bg-gradient-to-r from-primary-yellow to-yellow-500 text-black hover:from-yellow-300 hover:to-yellow-400 font-semibold shadow-lg hover:shadow-yellow-400/30 transition-all duration-200 hover:scale-105"
@@ -212,7 +219,7 @@ export const CategoryManagement: React.FC = () => {
             <p className="text-gray-400 mb-4">
               Crie a primeira categoria para começar.
             </p>
-            <Button 
+            <Button
               onClick={() => handleOpenDialog()}
               className="bg-gradient-to-r from-primary-yellow to-yellow-500 text-black hover:from-yellow-300 hover:to-yellow-400 font-semibold shadow-lg hover:shadow-yellow-400/30 transition-all duration-200 hover:scale-105"
             >
@@ -234,7 +241,7 @@ export const CategoryManagement: React.FC = () => {
                 <div className="flex items-center gap-4">
                   {/* Drag handle */}
                   <GripVertical className="h-4 w-4 text-gray-400 cursor-grab" />
-                  
+
                   {/* Categoria info */}
                   <div className="flex items-center gap-3">
                     <div
@@ -253,7 +260,7 @@ export const CategoryManagement: React.FC = () => {
                         )}
                         <span className="text-xs text-yellow-400/80 flex items-center gap-1">
                           <AlertTriangle className="h-3 w-3" />
-                          Mín: {category.default_min_stock ?? 10}
+                          Mín: {category.default_min_stock_packages ?? 0} cx / {category.default_min_stock_units ?? 0} un
                         </span>
                       </div>
                     </div>
@@ -308,8 +315,8 @@ export const CategoryManagement: React.FC = () => {
               {editingCategory ? 'Editar Categoria' : 'Nova Categoria'}
             </DialogTitle>
             <DialogDescription className="text-gray-300">
-              {editingCategory 
-                ? 'Modifique as informações da categoria selecionada para melhor organização dos produtos.' 
+              {editingCategory
+                ? 'Modifique as informações da categoria selecionada para melhor organização dos produtos.'
                 : 'Crie uma nova categoria para organizar e classificar seus produtos no sistema.'
               }
             </DialogDescription>
@@ -322,7 +329,7 @@ export const CategoryManagement: React.FC = () => {
                 <Edit2 className="h-4 w-4 text-purple-400" />
                 Informações Básicas
               </h3>
-              
+
               <div className="space-y-4">
                 {/* Nome */}
                 <div className="space-y-2">
@@ -369,34 +376,62 @@ export const CategoryManagement: React.FC = () => {
               </h3>
 
               <div className="space-y-4">
-                <div className="space-y-2">
-                  <label htmlFor="category-min-stock" className="text-sm font-medium text-gray-300">
-                    Estoque Mínimo Padrão
-                  </label>
-                  <Input
-                    id="category-min-stock"
-                    type="number"
-                    min="0"
-                    value={formData.default_min_stock ?? 10}
-                    onChange={(e) => setFormData(prev => ({
-                      ...prev,
-                      default_min_stock: e.target.value ? Number(e.target.value) : 10
-                    }))}
-                    placeholder="10"
-                    className="bg-black/70 border-white/30 text-white placeholder:text-gray-400"
-                  />
-                  <p className="text-xs text-gray-400">
-                    Produtos desta categoria usarão este valor como limite de alerta, a menos que tenham um valor específico definido.
-                  </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label htmlFor="category-min-stock-packages" className="text-sm font-medium text-gray-300">
+                      Alerta de Estoque (Pacotes)
+                    </label>
+                    <Input
+                      id="category-min-stock-packages"
+                      type="number"
+                      min="0"
+                      value={formData.default_min_stock_packages ?? 0}
+                      onChange={(e) => setFormData(prev => ({
+                        ...prev,
+                        default_min_stock_packages: e.target.value ? Number(e.target.value) : 0
+                      }))}
+                      placeholder="0"
+                      className="bg-black/70 border-white/30 text-white placeholder:text-gray-400"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label htmlFor="category-min-stock-units" className="text-sm font-medium text-gray-300">
+                      Alerta de Estoque (Unidades)
+                    </label>
+                    <Input
+                      id="category-min-stock-units"
+                      type="number"
+                      min="0"
+                      value={formData.default_min_stock_units ?? 0}
+                      onChange={(e) => setFormData(prev => ({
+                        ...prev,
+                        default_min_stock_units: e.target.value ? Number(e.target.value) : 0
+                      }))}
+                      placeholder="0"
+                      className="bg-black/70 border-white/30 text-white placeholder:text-gray-400"
+                    />
+                  </div>
                 </div>
 
                 {/* Preview do alerta */}
                 <div className="p-3 bg-yellow-500/10 rounded-lg border border-yellow-500/20">
-                  <div className="flex items-center gap-2 text-yellow-400 text-sm">
-                    <AlertTriangle className="h-4 w-4" />
-                    <span>
-                      Alerta quando estoque ≤ <strong>{formData.default_min_stock ?? 10}</strong> unidades
-                    </span>
+                  <div className="flex flex-col gap-1 text-yellow-400 text-sm">
+                    <div className="flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4" />
+                      <span className="font-bold">Regras de Alerta:</span>
+                    </div>
+                    <ul className="list-disc list-inside pl-4 space-y-1 text-xs text-yellow-400/80">
+                      {(formData.default_min_stock_packages ?? 0) > 0 && (
+                        <li>Pacotes: ≤ {formData.default_min_stock_packages}</li>
+                      )}
+                      {(formData.default_min_stock_units ?? 0) > 0 && (
+                        <li>Unidades: ≤ {formData.default_min_stock_units}</li>
+                      )}
+                      {(formData.default_min_stock_packages ?? 0) === 0 && (formData.default_min_stock_units ?? 0) === 0 && (
+                        <li>Nenhum alerta configurado</li>
+                      )}
+                    </ul>
                   </div>
                 </div>
               </div>
@@ -408,7 +443,7 @@ export const CategoryManagement: React.FC = () => {
                 <Package className="h-4 w-4 text-purple-400" />
                 Aparência Visual
               </h3>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Cor */}
                 <div className="space-y-2">
@@ -454,7 +489,7 @@ export const CategoryManagement: React.FC = () => {
               <div className="mt-4 p-3 bg-black/50 rounded-lg border border-white/10">
                 <p className="text-xs text-gray-400 mb-2">Prévia:</p>
                 <div className="flex items-center gap-3">
-                  <div 
+                  <div
                     className="w-6 h-6 rounded-full border-2 border-white/20"
                     style={{ backgroundColor: formData.color }}
                   />

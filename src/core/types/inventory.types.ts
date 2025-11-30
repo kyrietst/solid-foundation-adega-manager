@@ -1,15 +1,15 @@
 // Tipos específicos para o módulo de estoque aprimorado
-import type { 
-  Price, 
-  StockQuantity, 
-  Volume, 
-  Year, 
-  Percentage, 
-  NonNegativeInteger 
+import type {
+  Price,
+  StockQuantity,
+  Volume,
+  Year,
+  Percentage,
+  NonNegativeInteger
 } from './branded.types';
-import type { 
-  ProducingCountry, 
-  WineRegion 
+import type {
+  ProducingCountry,
+  WineRegion
 } from './enums.types';
 
 export type UnitType = 'un' | 'pct';
@@ -133,11 +133,11 @@ export interface ProductCalculations {
   packageMargin?: Percentage;
   unitProfitAmount?: Price;
   packageProfitAmount?: Price;
-  
+
   // Conversões
   pricePerUnit?: Price;
   pricePerPackage?: Price;
-  
+
   // Métricas de giro
   daysSinceLastSale?: NonNegativeInteger;
   salesVelocity?: 'high' | 'medium' | 'low';
@@ -187,7 +187,7 @@ export interface InventoryFilters {
 }
 
 // Opções para ordenação
-export type SortOption = 
+export type SortOption =
   | 'name'
   | 'category'
   | 'price'

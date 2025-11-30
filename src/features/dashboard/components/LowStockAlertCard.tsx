@@ -5,14 +5,14 @@
  * (stock_packages + stock_units_loose) <= minimum_stock
  *
  * @author Claude Code
- * @version 1.0.0
- * @date 2025-11-21
+ * @version 1.1.0
+ * @date 2025-11-30
  */
 
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, Package, RefreshCw, ArrowRight } from 'lucide-react';
+import { AlertTriangle, Package, RefreshCw, ArrowRight, Box } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/primitives/card';
 import { Button } from '@/shared/ui/primitives/button';
 import { Badge } from '@/shared/ui/primitives/badge';
@@ -28,6 +28,9 @@ interface LowStockProduct {
   stock_units_loose: number;
   price: number;
   category: string;
+  limit_packages: number;
+  limit_units: number;
+  is_legacy_override: boolean;
 }
 
 interface LowStockAlertCardProps {
@@ -168,65 +171,83 @@ export const LowStockAlertCard: React.FC<LowStockAlertCardProps> = ({
           </div>
         ) : products && products.length > 0 ? (
           <div className="space-y-2">
-            {products.map((product) => (
-              <div
-                key={product.id}
-                role="button"
-                tabIndex={0}
-                className={cn(
-                  "flex items-center gap-3 p-2 rounded-lg transition-colors",
-                  "hover:bg-white/5 cursor-pointer focus:outline-none focus:ring-2 focus:ring-purple-500/50",
-                  product.current_stock === 0
-                    ? "bg-red-500/10 border border-red-500/20"
-                    : "bg-yellow-500/5"
-                )}
-                onClick={() => navigate(`/inventory?product=${product.id}`)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    navigate(`/inventory?product=${product.id}`);
-                  }
-                }}
-              >
-                {/* Icon */}
-                <div className={cn(
-                  "h-8 w-8 rounded flex items-center justify-center",
-                  product.current_stock === 0
-                    ? "bg-red-500/20"
-                    : "bg-yellow-500/20"
-                )}>
-                  <Package className={cn(
-                    "h-4 w-4",
-                    product.current_stock === 0 ? "text-red-400" : "text-yellow-400"
-                  )} />
-                </div>
+            {products.map((product) => {
+              // Determine which alerts to show
+              const showPackageAlert = !product.is_legacy_override && product.limit_packages > 0 && product.stock_packages <= product.limit_packages;
+              const showUnitAlert = !product.is_legacy_override && product.limit_units > 0 && product.stock_units_loose <= product.limit_units;
+              const showLegacyAlert = product.is_legacy_override;
 
-                {/* Info */}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-200 truncate">
-                    {product.name}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    {product.category}
-                  </p>
-                </div>
-
-                {/* Stock */}
-                <div className="text-right">
-                  <p className={cn(
-                    "text-sm font-bold",
+              return (
+                <div
+                  key={product.id}
+                  role="button"
+                  tabIndex={0}
+                  className={cn(
+                    "flex flex-col gap-2 p-3 rounded-lg transition-colors",
+                    "hover:bg-white/5 cursor-pointer focus:outline-none focus:ring-2 focus:ring-purple-500/50",
                     product.current_stock === 0
-                      ? "text-red-400"
-                      : "text-yellow-400"
-                  )}>
-                    {product.current_stock}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    / {product.minimum_stock}
-                  </p>
+                      ? "bg-red-500/10 border border-red-500/20"
+                      : "bg-yellow-500/5"
+                  )}
+                  onClick={() => navigate(`/inventory?product=${product.id}`)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      navigate(`/inventory?product=${product.id}`);
+                    }
+                  }}
+                >
+                  <div className="flex items-center gap-3">
+                    {/* Icon */}
+                    <div className={cn(
+                      "h-8 w-8 rounded flex items-center justify-center shrink-0",
+                      product.current_stock === 0
+                        ? "bg-red-500/20"
+                        : "bg-yellow-500/20"
+                    )}>
+                      <Package className={cn(
+                        "h-4 w-4",
+                        product.current_stock === 0 ? "text-red-400" : "text-yellow-400"
+                      )} />
+                    </div>
+
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-200 truncate">
+                        {product.name}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {product.category}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Alert Badges */}
+                  <div className="flex flex-wrap gap-2 pl-11">
+                    {showLegacyAlert && (
+                      <div className="flex items-center gap-1.5 text-xs text-yellow-400 bg-yellow-400/10 px-2 py-1 rounded border border-yellow-400/20">
+                        <AlertTriangle className="h-3 w-3" />
+                        <span>Total: {product.current_stock} / {product.minimum_stock}</span>
+                      </div>
+                    )}
+
+                    {showPackageAlert && (
+                      <div className="flex items-center gap-1.5 text-xs text-orange-400 bg-orange-400/10 px-2 py-1 rounded border border-orange-400/20">
+                        <Box className="h-3 w-3" />
+                        <span>Cx: {product.stock_packages} / {product.limit_packages}</span>
+                      </div>
+                    )}
+
+                    {showUnitAlert && (
+                      <div className="flex items-center gap-1.5 text-xs text-blue-400 bg-blue-400/10 px-2 py-1 rounded border border-blue-400/20">
+                        <Package className="h-3 w-3" />
+                        <span>Un: {product.stock_units_loose} / {product.limit_units}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
 
             {/* Ver Todos - navega para aba Alertas no Inventário */}
             <Button
@@ -234,6 +255,7 @@ export const LowStockAlertCard: React.FC<LowStockAlertCardProps> = ({
               size="sm"
               onClick={handleViewAll}
               className="w-full mt-2 text-gray-400 hover:text-white hover:bg-white/10"
+              title="Ver todos os alertas"
             >
               Ver Todos
               <ArrowRight className="h-4 w-4 ml-1" />

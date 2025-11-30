@@ -208,6 +208,8 @@ export interface Database {
           updated_at: string
           created_by: string | null
           default_min_stock: number | null
+          default_min_stock_packages: number | null
+          default_min_stock_units: number | null
         }
         Insert: {
           id?: string
@@ -221,6 +223,8 @@ export interface Database {
           updated_at?: string
           created_by?: string | null
           default_min_stock?: number | null
+          default_min_stock_packages?: number | null
+          default_min_stock_units?: number | null
         }
         Update: {
           id?: string

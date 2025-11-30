@@ -18,8 +18,10 @@ export interface Category {
   created_at: string;
   updated_at: string;
   created_by?: string;
-  /** Estoque mínimo padrão para produtos desta categoria */
-  default_min_stock?: number;
+  /** Estoque mínimo padrão para pacotes */
+  default_min_stock_packages?: number;
+  /** Estoque mínimo padrão para unidades soltas */
+  default_min_stock_units?: number;
 }
 
 export interface CategoryFormData {
@@ -28,8 +30,10 @@ export interface CategoryFormData {
   color?: string;
   icon?: string;
   display_order?: number;
-  /** Estoque mínimo padrão para produtos desta categoria */
-  default_min_stock?: number;
+  /** Estoque mínimo padrão para pacotes */
+  default_min_stock_packages?: number;
+  /** Estoque mínimo padrão para unidades soltas */
+  default_min_stock_units?: number;
 }
 
 /**
@@ -152,7 +156,8 @@ export const useCreateCategory = () => {
           icon: categoryData.icon || 'Package',
           display_order: displayOrder,
           created_by: user.id,
-          default_min_stock: categoryData.default_min_stock ?? 10
+          default_min_stock_packages: categoryData.default_min_stock_packages ?? 0,
+          default_min_stock_units: categoryData.default_min_stock_units ?? 0
         }])
         .select()
         .single();
@@ -175,6 +180,7 @@ export const useCreateCategory = () => {
       queryClient.invalidateQueries({ queryKey: ['products-by-category'] });
       // Invalidar alertas de estoque baixo (usa default_min_stock)
       queryClient.invalidateQueries({ queryKey: ['low-stock-products'] });
+      queryClient.invalidateQueries({ queryKey: ['low-stock-products-infinite'] });
 
       toast({
         title: 'Categoria criada',
@@ -226,7 +232,8 @@ export const useUpdateCategory = () => {
       if (categoryData.icon) updateData.icon = categoryData.icon;
       if (categoryData.display_order !== undefined) updateData.display_order = categoryData.display_order;
       // Campo de estoque mínimo padrão para alertas
-      if (categoryData.default_min_stock !== undefined) updateData.default_min_stock = categoryData.default_min_stock;
+      if (categoryData.default_min_stock_packages !== undefined) updateData.default_min_stock_packages = categoryData.default_min_stock_packages;
+      if (categoryData.default_min_stock_units !== undefined) updateData.default_min_stock_units = categoryData.default_min_stock_units;
 
       const { data, error } = await supabase
         .from('categories')
@@ -253,6 +260,7 @@ export const useUpdateCategory = () => {
       queryClient.invalidateQueries({ queryKey: ['products-by-category'] });
       // Invalidar alertas de estoque baixo (usa default_min_stock)
       queryClient.invalidateQueries({ queryKey: ['low-stock-products'] });
+      queryClient.invalidateQueries({ queryKey: ['low-stock-products-infinite'] });
 
       toast({
         title: 'Categoria atualizada',
@@ -296,7 +304,7 @@ export const useToggleCategoryStatus = () => {
 
       const { data, error } = await supabase
         .from('categories')
-        .update({ 
+        .update({
           is_active: isActive,
           updated_at: new Date().toISOString()
         })
@@ -314,7 +322,10 @@ export const useToggleCategoryStatus = () => {
       queryClient.invalidateQueries({ queryKey: ['category-mix'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       queryClient.invalidateQueries({ queryKey: ['products-by-category'] });
-      
+      // Invalidar alertas de estoque baixo (afetado por categorias inativas)
+      queryClient.invalidateQueries({ queryKey: ['low-stock-products'] });
+      queryClient.invalidateQueries({ queryKey: ['low-stock-products-infinite'] });
+
       toast({
         title: data.is_active ? 'Categoria ativada' : 'Categoria desativada',
         description: `A categoria "${data.name}" foi ${data.is_active ? 'ativada' : 'desativada'} com sucesso.`,
@@ -356,10 +367,10 @@ export const useReorderCategories = () => {
       }
 
       // Atualizar ordem de cada categoria
-      const updates = categories.map(category => 
+      const updates = categories.map(category =>
         supabase
           .from('categories')
-          .update({ 
+          .update({
             display_order: category.display_order,
             updated_at: new Date().toISOString()
           })
@@ -367,7 +378,7 @@ export const useReorderCategories = () => {
       );
 
       const results = await Promise.all(updates);
-      
+
       // Verificar se alguma atualização falhou
       const errors = results.filter(result => result.error);
       if (errors.length > 0) {
@@ -383,7 +394,7 @@ export const useReorderCategories = () => {
       queryClient.invalidateQueries({ queryKey: ['category-mix'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       queryClient.invalidateQueries({ queryKey: ['products-by-category'] });
-      
+
       toast({
         title: 'Ordem atualizada',
         description: 'A ordem das categorias foi atualizada com sucesso.',
@@ -427,7 +438,7 @@ export const findCategoryByName = (categories: Category[], name: string) => {
  */
 export const validateCategoryName = (name: string, existingCategories: Category[], excludeId?: string) => {
   const trimmedName = name.trim();
-  
+
   if (!trimmedName) {
     return { isValid: false, error: 'Nome da categoria é obrigatório' };
   }
@@ -441,8 +452,8 @@ export const validateCategoryName = (name: string, existingCategories: Category[
   }
 
   // Verificar duplicatas
-  const duplicate = existingCategories.find(cat => 
-    cat.name.toLowerCase() === trimmedName.toLowerCase() && 
+  const duplicate = existingCategories.find(cat =>
+    cat.name.toLowerCase() === trimmedName.toLowerCase() &&
     cat.id !== excludeId
   );
 

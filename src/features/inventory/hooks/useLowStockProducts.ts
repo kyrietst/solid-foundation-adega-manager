@@ -74,6 +74,9 @@ export const useLowStockProducts = (): LowStockProductsResult => {
           stock_units_loose: item.stock_units_loose,
           stock_quantity: item.current_stock,
           minimum_stock: item.minimum_stock,
+          limit_packages: item.limit_packages,
+          limit_units: item.limit_units,
+          is_legacy_override: item.is_legacy_override,
           // Defaults para campos não retornados pela RPC
           image_url: null,
           barcode: null,
