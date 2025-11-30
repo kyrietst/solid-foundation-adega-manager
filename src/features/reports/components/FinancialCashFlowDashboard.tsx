@@ -1,8 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
-import { format, subDays, startOfDay, endOfDay, parseISO } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+
 import {
     DollarSign, TrendingUp, TrendingDown, AlertCircle,
     Calendar, ArrowUpRight, ArrowDownRight, Users, Wallet
@@ -51,66 +50,19 @@ function useDailyCashFlow(dateRange: DateRange | undefined) {
         queryFn: async (): Promise<DailyFlow[]> => {
             if (!dateRange?.from || !dateRange?.to) return [];
 
-            const startDate = dateRange.from.toISOString();
-            const endDate = dateRange.to.toISOString();
-
-            // Buscar Vendas (Entradas)
-            const { data: salesData, error: salesError } = await supabase
-                .from('sales')
-                .select('final_amount, created_at, status, delivery_type, delivery_status, delivery')
-                .gte('created_at', startDate)
-                .lte('created_at', endDate)
-                .not('final_amount', 'is', null);
-
-            if (salesError) throw salesError;
-            const sales = salesData as any[];
-
-            // Buscar Despesas (Saídas)
-            const { data: expensesData, error: expensesError } = await supabase
-                .from('expenses')
-                .select('amount, date')
-                .gte('date', startDate)
-                .lte('date', endDate);
-
-            if (expensesError) {
-                console.warn("Erro ao buscar despesas diárias, assumindo zero para gráfico", expensesError);
-            }
-            const expenses = expensesData as any[];
-
-            // Processar e Agrupar por Dia
-            const dailyMap = new Map<string, { income: number; outcome: number }>();
-
-            // Processar Vendas
-            (sales || []).forEach(sale => {
-                // Filtro de Status (Híbrido - mesmo do dashboard)
-                const isPresencialCompleted = (sale.status === 'completed') && (sale.delivery_type === 'presencial' || sale.delivery === false);
-                const isDeliveryDelivered = (sale.delivery_type === 'delivery') && (sale.delivery_status === 'delivered');
-
-                if (isPresencialCompleted || isDeliveryDelivered) {
-                    const key = format(parseISO(sale.created_at), 'yyyy-MM-dd');
-                    const current = dailyMap.get(key) || { income: 0, outcome: 0 };
-                    current.income += Number(sale.final_amount);
-                    dailyMap.set(key, current);
-                }
+            const { data, error } = await supabase.rpc('get_daily_cash_flow', {
+                p_start_date: dateRange.from.toISOString(),
+                p_end_date: dateRange.to.toISOString()
             });
 
-            // Processar Saídas
-            (expenses || []).forEach(expense => {
-                const key = format(parseISO(expense.date), 'yyyy-MM-dd');
-                const current = dailyMap.get(key) || { income: 0, outcome: 0 };
-                current.outcome += Number(expense.amount);
-                dailyMap.set(key, current);
-            });
+            if (error) throw error;
 
-            // Converter para Array
-            return Array.from(dailyMap.entries())
-                .sort((a, b) => a[0].localeCompare(b[0]))
-                .map(([dateStr, val]) => ({
-                    date: format(parseISO(dateStr), 'dd/MM'),
-                    income: val.income,
-                    outcome: val.outcome,
-                    balance: val.income - val.outcome
-                }));
+            return (data as any[]).map(item => ({
+                date: item.date,
+                income: Number(item.income),
+                outcome: Number(item.outcome),
+                balance: Number(item.balance)
+            }));
         },
         enabled: !!dateRange?.from,
         staleTime: 5 * 60 * 1000

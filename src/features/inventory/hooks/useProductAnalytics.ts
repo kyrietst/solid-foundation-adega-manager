@@ -43,7 +43,7 @@ export const useProductAnalytics = (productId: string | null) => {
         // Buscar movimentações detalhadas para datas
         const { data: movementData, error: movementError } = await supabase
           .from('inventory_movements')
-          .select('id, date, type, quantity')
+          .select('id, date, type_enum, quantity_change')
           .eq('product_id', productId)
           .order('date', { ascending: false });
 
@@ -54,23 +54,23 @@ export const useProductAnalytics = (productId: string | null) => {
 
 
         // Processar dados manualmente
-        const movements = movementData || [];
-        
+        const movements = (movementData as any[]) || [];
+
         // Encontrar última entrada
         const lastEntry = movements
-          .filter(m => ['entrada', 'in'].includes(m.type))
+          .filter(m => ['entrada', 'in'].includes(m.type_enum))
           .map(m => new Date(m.date))[0] || null;
 
         // Encontrar última saída
         const lastExit = movements
-          .filter(m => ['saida', 'out', 'sale'].includes(m.type))
+          .filter(m => ['saida', 'out', 'sale'].includes(m.type_enum))
           .map(m => new Date(m.date))[0] || null;
 
         // Usar dados do resumo RPC se disponível
         let totalSaidas = 0;
         if (summaryData && summaryData.length > 0) {
           // Encontrar o resumo do produto específico
-          const productSummary = summaryData.find(summary => 
+          const productSummary = summaryData.find(summary =>
             summary.product_name === (summaryData[0].product_name || 'N/A')
           );
           if (productSummary) {
@@ -81,31 +81,31 @@ export const useProductAnalytics = (productId: string | null) => {
         // Calcular vendas dos últimos 30 dias
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-        
+
         const salesLast30Days = movements
-          .filter(m => 
-            ['saida', 'out', 'sale'].includes(m.type) && 
+          .filter(m =>
+            ['saida', 'out', 'sale'].includes(m.type_enum) &&
             new Date(m.date) >= thirtyDaysAgo
           )
-          .reduce((sum, m) => sum + m.quantity, 0);
+          .reduce((sum, m) => sum + Math.abs(m.quantity_change), 0);
 
         // Calcular vendas dos últimos 90 dias para análise de giro
         const ninetyDaysAgo = new Date();
         ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
-        
+
         const salesLast90Days = movements
-          .filter(m => 
-            ['saida', 'out', 'sale'].includes(m.type) && 
+          .filter(m =>
+            ['saida', 'out', 'sale'].includes(m.type_enum) &&
             new Date(m.date) >= ninetyDaysAgo
           )
-          .reduce((sum, m) => sum + m.quantity, 0);
+          .reduce((sum, m) => sum + Math.abs(m.quantity_change), 0);
 
         // Usar total de saídas como base se for maior que cálculo dos 90 dias
         const effectiveSales = Math.max(salesLast90Days, totalSaidas);
-        
+
         // Calcular taxa de giro baseada nas vendas
         const salesPerMonth = effectiveSales / 3; // Média mensal dos últimos 3 meses
-        
+
         let turnoverRate: 'alto' | 'medio' | 'baixo';
         if (salesPerMonth >= 30) {
           turnoverRate = 'alto';

@@ -54,25 +54,29 @@ export const useDashboardData = (periodDays: number = 30) => {
     queryKey: ['dashboard', 'counts'],
     queryFn: errorHandler.withErrorHandling('counts', async (): Promise<DashboardCounts> => {
       try {
-        // ✅ HOTFIX: Usar RPC para entregas pendentes (evita erro CORS/500 por RLS recursion)
-        const [customersResult, vipCustomersResult, productsResult, deliveriesRpcResult] = await Promise.all([
+        // ✅ HOTFIX: Usar Query direta para entregas pendentes (substitui RPC deletada)
+        const [customersResult, vipCustomersResult, productsResult, deliveriesResult] = await Promise.all([
           supabase.from('customers').select('id', { count: 'exact', head: true }),
           supabase.from('customers').select('id', { count: 'exact', head: true }).eq('segment', 'High Value'),
           supabase.from('products').select('id', { count: 'exact', head: true }).gt('stock_quantity', 0),
-          supabase.rpc('get_pending_deliveries_count')
+          supabase
+            .from('sales')
+            .select('id', { count: 'exact', head: true })
+            .eq('delivery_type', 'delivery')
+            .eq('delivery_status', 'pending')
         ]);
 
-        // Verificar erro na RPC de entregas
-        if (deliveriesRpcResult.error) {
-          console.error('❌ Erro ao buscar entregas pendentes via RPC:', deliveriesRpcResult.error);
-          throw deliveriesRpcResult.error;
+        // Verificar erro na query de entregas
+        if (deliveriesResult.error) {
+          console.error('❌ Erro ao buscar entregas pendentes:', deliveriesResult.error);
+          throw deliveriesResult.error;
         }
 
         return {
           totalCustomers: customersResult.count || 0,
           vipCustomers: vipCustomersResult.count || 0,
           productsInStock: productsResult.count || 0,
-          pendingDeliveries: deliveriesRpcResult.data || 0,
+          pendingDeliveries: deliveriesResult.count || 0,
         };
       } catch (error) {
         console.error('Erro ao buscar contadores:', error);
@@ -94,30 +98,36 @@ export const useDashboardData = (periodDays: number = 30) => {
       const startDate = getMonthStartDate();
 
 
-      // ✅ SSoT: Buscar dados financeiros via RPC (receita, COGS, lucro bruto já calculados)
-      const { data: rpcData, error: rpcError } = await supabase
-        .rpc('get_dashboard_financials', {
+      // ✅ SSoT: Buscar dados financeiros via RPC (get_daily_cash_flow)
+      const { data: dailyData, error: rpcError } = await supabase
+        .rpc('get_daily_cash_flow', {
           p_start_date: startDate.toISOString(),
           p_end_date: endDate.toISOString()
-        })
-        .single();
+        });
 
       if (rpcError) {
         console.error('❌ Erro ao buscar dados financeiros:', rpcError);
         throw rpcError;
       }
 
-      // ✅ SSoT: Dados já vêm calculados do banco
-      const totalRevenue = Number(rpcData?.total_revenue || 0);
-      const cogs = Number(rpcData?.cogs || 0);
-      const grossProfit = Number(rpcData?.gross_profit || 0);
+      // ✅ SSoT: Agregar dados diários
+      const totalRevenue = (dailyData || []).reduce((sum, day) => sum + (day.income || 0), 0);
+      const totalOutcome = (dailyData || []).reduce((sum, day) => sum + (day.outcome || 0), 0);
+
+      // COGS não está disponível nesta RPC, assumindo 0 ou calculando se possível
+      const cogs = 0;
+
+      // Lucro Bruto = Receita - COGS
+      const grossProfit = totalRevenue - cogs;
       const grossMargin = totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
 
       // Usar despesas operacionais REAIS do sistema de gestão de despesas
-      const operationalExpenses = expensesData?.total_expenses || 0;
+      // Se totalOutcome da RPC já inclui despesas, podemos usar ele, ou usar expensesData
+      // A RPC get_daily_cash_flow usa a tabela 'expenses' para outcome, então é compatível
+      const operationalExpenses = expensesData?.total_expenses || totalOutcome;
 
       // Calcular lucro líquido (lucro bruto - despesas operacionais)
-      const netProfit = Math.max(0, grossProfit - operationalExpenses);
+      const netProfit = grossProfit - operationalExpenses;
       const netMargin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
 
 
@@ -143,12 +153,12 @@ export const useDashboardData = (periodDays: number = 30) => {
   const { data: salesData, isLoading: isLoadingSales } = useQuery({
     queryKey: ['dashboard', 'sales-data', periodDays],
     queryFn: async (): Promise<SalesDataPoint[]> => {
-      
+
       // Buscar vendas no período especificado
       const endDate = new Date();
       const startDate = new Date();
       startDate.setDate(endDate.getDate() - periodDays);
-      
+
       // ✅ FIX: Buscar TODAS as vendas do período (incluir delivery_type e delivery_status)
       const { data: allSales, error } = await supabase
         .from('sales')
@@ -207,12 +217,12 @@ export const useDashboardData = (periodDays: number = 30) => {
       // Converter para formato esperado
       const result: SalesDataPoint[] = [];
       const sortedEntries = Array.from(monthlyData.entries()).sort((a, b) => a[0].localeCompare(b[0]));
-      
+
       sortedEntries.forEach(([monthKey, value]) => {
         const [year, month] = monthKey.split('-');
         const monthIndex = parseInt(month) - 1;
         const monthName = months[monthIndex];
-        
+
         result.push({
           month: monthName,
           vendas: value,

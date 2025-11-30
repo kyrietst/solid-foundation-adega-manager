@@ -49,9 +49,10 @@ export const DeliveryVsInstoreComparison = ({ className }: DeliveryVsInstoreComp
 
 
       try {
-        // Tentar usar RPC primeiro (passa dias do mês para compatibilidade)
+        // Tentar usar RPC primeiro (passa datas explícitas)
         const { data, error } = await supabase.rpc('get_delivery_vs_instore_comparison', {
-          p_days: daysDiff
+          p_start_date: startDate.toISOString(),
+          p_end_date: endDate.toISOString()
         });
 
         if (error) {
@@ -79,7 +80,7 @@ export const DeliveryVsInstoreComparison = ({ className }: DeliveryVsInstoreComp
         const prevEndDate = new Date(startDate);
         prevEndDate.setDate(prevEndDate.getDate() - 1); // Último dia do mês anterior
         const prevStartDate = new Date(prevEndDate.getFullYear(), prevEndDate.getMonth(), 1);
-        
+
         // Buscar vendas atuais
         const { data: currentSales, error: currentError } = await supabase
           .from('sales')
@@ -106,15 +107,15 @@ export const DeliveryVsInstoreComparison = ({ className }: DeliveryVsInstoreComp
         // Calcular métricas atuais
         const deliverySales = (currentSales || []).filter(s => s.delivery_type === 'delivery');
         const presencialSales = (currentSales || []).filter(s => s.delivery_type === 'presencial');
-        
+
         const deliveryOrders = deliverySales.length;
         const deliveryRevenue = deliverySales.reduce((sum, s) => sum + Number(s.final_amount || 0), 0);
         const deliveryAvgTicket = deliveryOrders > 0 ? deliveryRevenue / deliveryOrders : 0;
-        
+
         const instoreOrders = presencialSales.length;
         const instoreRevenue = presencialSales.reduce((sum, s) => sum + Number(s.final_amount || 0), 0);
         const instoreAvgTicket = instoreOrders > 0 ? instoreRevenue / instoreOrders : 0;
-        
+
         // Calcular crescimento (período anterior)
         const prevDeliveryRevenue = (prevSales || [])
           .filter(s => s.delivery_type === 'delivery')
@@ -122,10 +123,10 @@ export const DeliveryVsInstoreComparison = ({ className }: DeliveryVsInstoreComp
         const prevInstoreRevenue = (prevSales || [])
           .filter(s => s.delivery_type === 'presencial')
           .reduce((sum, s) => sum + Number(s.final_amount || 0), 0);
-          
-        const deliveryGrowthRate = prevDeliveryRevenue > 0 ? 
+
+        const deliveryGrowthRate = prevDeliveryRevenue > 0 ?
           ((deliveryRevenue - prevDeliveryRevenue) / prevDeliveryRevenue) * 100 : 0;
-        const instoreGrowthRate = prevInstoreRevenue > 0 ? 
+        const instoreGrowthRate = prevInstoreRevenue > 0 ?
           ((instoreRevenue - prevInstoreRevenue) / prevInstoreRevenue) * 100 : 0;
 
 
@@ -175,7 +176,7 @@ export const DeliveryVsInstoreComparison = ({ className }: DeliveryVsInstoreComp
   // ✅ FIX: Percentuais baseados em RECEITA (não em contagem de pedidos)
   const deliveryRevenuePercent = totalRevenue > 0 && !isNaN(deliveryRevenue) ? (deliveryRevenue / totalRevenue) * 100 : 0;
   const instoreRevenuePercent = totalRevenue > 0 && !isNaN(instoreRevenue) ? (instoreRevenue / totalRevenue) * 100 : 0;
-  
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -236,9 +237,9 @@ export const DeliveryVsInstoreComparison = ({ className }: DeliveryVsInstoreComp
   ];
 
   return (
-    <div 
+    <div
       className={cn(
-        "bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300 relative overflow-hidden group", 
+        "bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300 relative overflow-hidden group",
         className
       )}
       onMouseMove={(e) => {
@@ -250,13 +251,13 @@ export const DeliveryVsInstoreComparison = ({ className }: DeliveryVsInstoreComp
       }}
     >
       {/* Purple glow effect */}
-      <div 
+      <div
         className="absolute inset-0 rounded-xl bg-gradient-to-br from-purple-500/20 via-transparent to-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
         style={{
           background: `radial-gradient(600px circle at var(--x, 50%) var(--y, 50%), rgba(147, 51, 234, 0.15), transparent 40%)`
         }}
       />
-      
+
       {/* Header - Período MTD (mês atual) */}
       <div className="flex items-center justify-between p-6 pb-3 relative z-10">
         <h3 className="text-white flex items-center gap-2 text-lg font-semibold">
@@ -269,7 +270,7 @@ export const DeliveryVsInstoreComparison = ({ className }: DeliveryVsInstoreComp
 
         <span className="text-gray-400 text-sm font-medium">{getCurrentMonthLabel()}</span>
       </div>
-      
+
       {/* KPIs usando exatamente o mesmo padrão dos KPIs originais */}
       <div className="px-6 pb-6 relative z-10">
         <KpiCards items={kpiItems} showAnimation={true} />

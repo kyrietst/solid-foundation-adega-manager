@@ -66,9 +66,15 @@ export function SalesChartSection({ className, contentHeight = 360, cardHeight }
       for (let i = 0; i < daysDiff; i++) {
         const date = new Date(startDate);
         date.setDate(startDate.getDate() + i);
-        const dateKey = date.toISOString().split('T')[0]; // YYYY-MM-DD
-        const [year, month, day] = dateKey.split('-').map(Number);
-        const displayDate = new Date(year, month - 1, day);
+        // ✅ FIX TIMEZONE: Usar data local para evitar shift de UTC
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const dateKey = `${year}-${month}-${day}`;
+
+        // Usar variáveis diferentes para o displayDate para evitar conflito
+        const [y, m, d] = dateKey.split('-').map(Number);
+        const displayDate = new Date(y, m - 1, d);
 
         dailyData.set(dateKey, {
           period: dateKey,
@@ -81,7 +87,7 @@ export function SalesChartSection({ className, contentHeight = 360, cardHeight }
       }
 
       // Preencher com dados da RPC
-      (rpcData || []).forEach((row: any) => {
+      (rpcData as any[] || []).forEach((row: any) => {
         const dateKey = row.sale_date; // RPC retorna DATE como YYYY-MM-DD
         if (dailyData.has(dateKey)) {
           dailyData.set(dateKey, {
@@ -138,14 +144,14 @@ export function SalesChartSection({ className, contentHeight = 360, cardHeight }
           <p className="text-sm mb-2 text-gray-300 font-medium">{formatDate(label)}</p>
           {payload.map((entry: any, index: number) => (
             <div key={index} className="flex items-center gap-2">
-              <div 
-                className="w-3 h-3 rounded-full" 
+              <div
+                className="w-3 h-3 rounded-full"
                 style={{ backgroundColor: entry.color }}
               />
               <span className="text-sm text-white font-semibold">
                 {entry.dataKey === 'revenue' ? 'Receita: ' : 'Vendas: '}
-                {entry.dataKey === 'revenue' 
-                  ? formatCurrency(entry.value) 
+                {entry.dataKey === 'revenue'
+                  ? formatCurrency(entry.value)
                   : `${entry.value} vendas`
                 }
               </span>
@@ -212,11 +218,11 @@ export function SalesChartSection({ className, contentHeight = 360, cardHeight }
                   key={type.value}
                   variant={chartType === type.value ? "default" : "ghost"}
                   size="sm"
-                  onClick={() => setChartType(type.value)}
+                  onClick={() => setChartType(type.value as 'line' | 'bar')}
                   className={cn(
                     "text-xs h-7",
-                    chartType === type.value 
-                      ? "bg-amber-500 text-white hover:bg-amber-600 font-semibold" 
+                    chartType === type.value
+                      ? "bg-amber-500 text-white hover:bg-amber-600 font-semibold"
                       : "hover:text-white hover:bg-white/15 font-medium text-gray-300"
                   )}
                 >
@@ -239,22 +245,22 @@ export function SalesChartSection({ className, contentHeight = 360, cardHeight }
               {chartType === 'line' ? (
                 <LineChart data={salesData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.15)" />
-                  <XAxis 
+                  <XAxis
                     dataKey="period"
                     tickFormatter={formatDate}
                     stroke="#d1d5db"
                     fontSize={12}
                   />
-                  <YAxis 
+                  <YAxis
                     stroke="#d1d5db"
                     fontSize={12}
                     tickFormatter={(value) => formatCurrency(value).replace('R$', 'R$')}
                   />
                   <Tooltip content={<CustomTooltip />} />
-                  <Line 
-                    type="monotone" 
-                    dataKey="revenue" 
-                    stroke="#fbbf24" 
+                  <Line
+                    type="monotone"
+                    dataKey="revenue"
+                    stroke="#fbbf24"
                     strokeWidth={3}
                     dot={{ fill: '#fbbf24', strokeWidth: 0, r: 4 }}
                     activeDot={{ r: 6, stroke: '#fbbf24', strokeWidth: 2, fill: '#fff' }}
@@ -263,20 +269,20 @@ export function SalesChartSection({ className, contentHeight = 360, cardHeight }
               ) : (
                 <BarChart data={salesData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.15)" />
-                  <XAxis 
+                  <XAxis
                     dataKey="period"
                     tickFormatter={formatDate}
                     stroke="#d1d5db"
                     fontSize={12}
                   />
-                  <YAxis 
+                  <YAxis
                     stroke="#d1d5db"
                     fontSize={12}
                     tickFormatter={(value) => formatCurrency(value).replace('R$', 'R$')}
                   />
                   <Tooltip content={<CustomTooltip />} />
-                  <Bar 
-                    dataKey="revenue" 
+                  <Bar
+                    dataKey="revenue"
                     fill="#fbbf24"
                     radius={[4, 4, 0, 0]}
                   />

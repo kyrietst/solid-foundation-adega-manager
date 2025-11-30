@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
-import { format, subDays } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+
 import {
     Truck, Store, TrendingUp, TrendingDown,
     AlertTriangle, CheckCircle, Calendar,

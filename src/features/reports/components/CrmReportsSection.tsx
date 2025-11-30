@@ -3,34 +3,15 @@
  * Customer analysis with LTV, segmentation, and churn prediction
  */
 
-import React, { useState } from 'react';
+import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/primitives/card';
-import { Button } from '@/shared/ui/primitives/button';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
-import { Users, TrendingUp, AlertCircle, Heart, DollarSign, Download, Calendar } from 'lucide-react';
+import { Users, TrendingUp, AlertCircle, Heart, DollarSign, Calendar } from 'lucide-react';
 import { LoadingSpinner } from '@/shared/ui/composite/loading-spinner';
 import { StandardReportsTable, TableColumn } from './StandardReportsTable';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
-
-interface CustomerMetrics {
-  total_customers: number;
-  new_customers: number;
-  active_customers: number;
-}
-
 import { DateRange } from 'react-day-picker';
-import { startOfDay, endOfDay, subDays } from 'date-fns';
-
-// Interface para adicionar suporte aos dados de clientes
-interface Customer {
-  id: string;
-  name: string;
-  birthday?: string;
-  segment?: string;
-  lifetime_value: string;
-  last_purchase_date?: string;
-}
 
 interface CrmReportsSectionProps {
   dateRange?: DateRange;
@@ -38,98 +19,59 @@ interface CrmReportsSectionProps {
 
 export const CrmReportsSection: React.FC<CrmReportsSectionProps> = ({ dateRange }) => {
 
-  // Buscar dados de clientes para análise de aniversários
-  const { data: customers, isLoading: loadingCustomers } = useQuery({
-    queryKey: ['customers-data'],
-    queryFn: async (): Promise<Customer[]> => {
-      const { data, error } = await supabase
-        .from('customers')
-        .select('id, name, birthday, segment, lifetime_value, last_purchase_date');
-
-      if (error) throw error;
-      return (data as any[]) || [];
-    },
-    staleTime: 5 * 60 * 1000,
-  });
-
-  // Customer Metrics Query
-  const { data: customerMetrics, isLoading: loadingMetrics } = useQuery({
-    queryKey: ['customer-metrics', dateRange],
-    queryFn: async (): Promise<CustomerMetrics> => {
+  // 1. Customer Summary (Total & New) - Uses Timezone Safe RPC
+  const { data: summaryData, isLoading: loadingSummary } = useQuery({
+    queryKey: ['crm-summary', dateRange],
+    queryFn: async () => {
       if (!dateRange?.from || !dateRange?.to) return { total_customers: 0, new_customers: 0, active_customers: 0 };
-
-      const startDate = dateRange.from.toISOString();
-      const endDate = dateRange.to.toISOString();
-
-      try {
-        // Cálculo manual das métricas de clientes (RPC get_customer_metrics não disponível)
-
-        // Total de clientes
-        const { count: totalCustomers } = await supabase
-          .from('customers')
-          .select('*', { count: 'exact', head: true });
-
-        // Novos clientes no período
-        const { count: newCustomers } = await supabase
-          .from('customers')
-          .select('*', { count: 'exact', head: true })
-          .gte('created_at', startDate)
-          .lte('created_at', endDate);
-
-        // Clientes ativos (com compras no período)
-        const { data: activeSales } = await supabase
-          .from('sales')
-          .select('customer_id')
-          .gte('created_at', startDate)
-          .lte('created_at', endDate)
-          .not('customer_id', 'is', null);
-
-        const activeCustomers = new Set((activeSales as any[])?.map(sale => sale.customer_id)).size;
-
-        return {
-          total_customers: totalCustomers || 0,
-          new_customers: newCustomers || 0,
-          active_customers: activeCustomers || 0
-        };
-      } catch (error) {
-        console.error('❌ Erro ao calcular métricas de clientes:', error);
-        return { total_customers: 0, new_customers: 0, active_customers: 0 };
-      }
+      const { data, error } = await supabase.rpc('get_customer_summary', {
+        start_date: dateRange.from.toISOString(),
+        end_date: dateRange.to.toISOString()
+      });
+      if (error) throw error;
+      return data?.[0] || { total_customers: 0, new_customers: 0, active_customers: 0 };
     },
     enabled: !!dateRange?.from,
-    staleTime: 5 * 60 * 1000,
   });
 
-  // Top Customers Query
-  const { data: topCustomers, isLoading: loadingTopCustomers } = useQuery({
-    queryKey: ['top-customers', dateRange],
+  // 2. Customer Retention (Active) - Uses Timezone Safe RPC
+  const { data: retentionData, isLoading: loadingRetention } = useQuery({
+    queryKey: ['crm-retention', dateRange],
     queryFn: async () => {
       if (!dateRange?.from || !dateRange?.to) return [];
-
-      const startDate = dateRange.from.toISOString();
-      const endDate = dateRange.to.toISOString();
-
-      const { data, error } = await supabase
-        .rpc('get_top_customers', {
-          start_date: startDate,
-          end_date: endDate,
-          limit_count: 20
-        });
-
+      const { data, error } = await supabase.rpc('get_customer_retention', {
+        start_date: dateRange.from.toISOString(),
+        end_date: dateRange.to.toISOString()
+      });
       if (error) throw error;
       return data || [];
     },
     enabled: !!dateRange?.from,
-    staleTime: 5 * 60 * 1000,
   });
 
-  // Customer Segmentation Analysis
+  // 3. Top Customers (LTV/Period)
+  const { data: topCustomers, isLoading: loadingTopCustomers } = useQuery({
+    queryKey: ['crm-top-customers', dateRange],
+    queryFn: async () => {
+      if (!dateRange?.from || !dateRange?.to) return [];
+      const { data, error } = await supabase.rpc('get_top_customers', {
+        start_date: dateRange.from.toISOString(),
+        end_date: dateRange.to.toISOString(),
+        limit_count: 20
+      });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!dateRange?.from,
+  });
+
+  // 4. Segments (All Time)
   const { data: segments, isLoading: loadingSegments } = useQuery({
-    queryKey: ['customer-segments'],
+    queryKey: ['crm-segments'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('customers')
-        .select('segment, lifetime_value, last_purchase_date, purchase_frequency')
+        .select('segment, lifetime_value, last_purchase_date')
         .not('segment', 'is', null);
 
       if (error) throw error;
@@ -137,26 +79,15 @@ export const CrmReportsSection: React.FC<CrmReportsSectionProps> = ({ dateRange 
       const segmentAnalysis = (data as any[] || []).reduce((acc: any, customer) => {
         const segment = customer.segment || 'Indefinido';
         if (!acc[segment]) {
-          acc[segment] = {
-            segment,
-            count: 0,
-            total_ltv: 0,
-            recent_active: 0
-          };
+          acc[segment] = { segment, count: 0, total_ltv: 0, recent_active: 0 };
         }
         acc[segment].count += 1;
         acc[segment].total_ltv += Number(customer.lifetime_value || 0);
 
-        // Check if customer purchased in last 30 days
         if (customer.last_purchase_date) {
-          const daysSinceLastPurchase = Math.floor(
-            (new Date().getTime() - new Date(customer.last_purchase_date).getTime()) / (1000 * 60 * 60 * 24)
-          );
-          if (daysSinceLastPurchase <= 30) {
-            acc[segment].recent_active += 1;
-          }
+          const daysSince = Math.floor((new Date().getTime() - new Date(customer.last_purchase_date).getTime()) / (86400000));
+          if (daysSince <= 30) acc[segment].recent_active += 1;
         }
-
         return acc;
       }, {});
 
@@ -166,458 +97,227 @@ export const CrmReportsSection: React.FC<CrmReportsSectionProps> = ({ dateRange 
         retention_rate: seg.count > 0 ? (seg.recent_active / seg.count) * 100 : 0
       }));
     },
-    staleTime: 10 * 60 * 1000,
   });
 
-  // Customer Retention Data
-  const { data: retentionData, isLoading: loadingRetention } = useQuery({
-    queryKey: ['customer-retention', dateRange],
+  // 5. Birthday Analytics (All Time)
+  const { data: customersBirthday } = useQuery({
+    queryKey: ['crm-birthdays'],
     queryFn: async () => {
-      if (!dateRange?.from || !dateRange?.to) return [];
-
-      const startDate = dateRange.from.toISOString();
-      const endDate = dateRange.to.toISOString();
-
-      const { data, error } = await supabase
-        .rpc('get_customer_retention', {
-          start_date: startDate,
-          end_date: endDate
-        });
-
-      if (error) throw error;
+      const { data } = await supabase.from('customers').select('birthday').not('birthday', 'is', null);
       return data || [];
-    },
-    enabled: !!dateRange?.from,
-    staleTime: 5 * 60 * 1000,
+    }
   });
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
-  };
+  // Calculated Metrics
+  const metrics = useMemo(() => {
+    if (!summaryData) return { total: 0, new: 0, active: 0 };
 
-  const getChurnRisk = (lastPurchase: string | null, frequency: string | null) => {
-    if (!lastPurchase) return { level: 'Alto', color: 'text-red-400' };
+    // Total: From RPC
+    const total = summaryData.total_customers || 0;
 
-    const daysSinceLastPurchase = Math.floor(
-      (new Date().getTime() - new Date(lastPurchase).getTime()) / (1000 * 60 * 60 * 24)
-    );
+    // New: From RPC
+    const newCust = summaryData.new_customers || 0;
 
-    if (daysSinceLastPurchase > 90) return { level: 'Alto', color: 'text-red-400' };
-    if (daysSinceLastPurchase > 60) return { level: 'Médio', color: 'text-yellow-400' };
-    if (daysSinceLastPurchase > 30) return { level: 'Baixo', color: 'text-orange-400' };
-    return { level: 'Muito Baixo', color: 'text-green-400' };
-  };
+    // Active: From RPC (Primary source of truth for period)
+    const active = summaryData.active_customers || 0;
 
-  const customerColumns: TableColumn[] = [
-    {
-      key: 'customer_name',
-      label: 'Cliente',
-      width: 'w-[200px]',
-      render: (value) => (
-        <span className="text-white font-medium">{value as string}</span>
-      ),
-    },
-    {
-      key: 'total_spent',
-      label: 'LTV Total',
-      width: 'w-[150px]',
-      render: (value) => (
-        <span className="text-green-400 font-medium">
-          {formatCurrency(value as number)}
-        </span>
-      ),
-    },
-    {
-      key: 'total_orders',
-      label: 'Pedidos',
-      width: 'w-[100px]',
-      render: (value) => (
-        <span className="text-blue-400">{value as number || 0}</span>
-      ),
-    },
-    {
-      key: 'avg_order_value',
-      label: 'Ticket Médio',
-      width: 'w-[150px]',
-      render: (value) => (
-        <span className="text-yellow-400">
-          {formatCurrency((value as number) || 0)}
-        </span>
-      ),
-    },
-  ];
+    return { total, new: newCust, active };
+  }, [summaryData]);
 
-  const segmentColumns: TableColumn[] = [
-    {
-      key: 'segment',
-      label: 'Segmento',
-      width: 'w-[200px]',
-      render: (value) => (
-        <span className="text-white font-medium">{value as string}</span>
-      ),
-    },
-    {
-      key: 'count',
-      label: 'Clientes',
-      width: 'w-[120px]',
-      render: (value) => (
-        <span className="text-blue-400 font-medium">{value as number}</span>
-      ),
-    },
-    {
-      key: 'avg_ltv',
-      label: 'LTV Médio',
-      width: 'w-[180px]',
-      render: (value) => (
-        <span className="text-green-400">
-          {formatCurrency(value as number)}
-        </span>
-      ),
-    },
-    {
-      key: 'retention_rate',
-      label: 'Taxa Retenção',
-      width: 'w-[160px]',
-      render: (value) => {
-        const rate = value as number;
-        const color = rate > 50 ? 'text-green-400' : rate > 25 ? 'text-yellow-400' : 'text-red-400';
-        return (
-          <span className={color}>
-            {rate.toFixed(1)}%
-          </span>
-        );
-      },
-    },
-    {
-      key: 'recent_active',
-      label: 'Ativos (30d)',
-      width: 'w-[140px]',
-      render: (value) => (
-        <span className="text-purple-400">{value as number || 0}</span>
-      ),
-    },
-  ];
-
-  // Calculate churn risk analysis from real customer data
-  const churnAnalysis = React.useMemo(() => {
+  // Churn Analysis
+  const churnAnalysis = useMemo(() => {
     if (!segments) return { alto: 0, medio: 0, baixo: 0, muito_baixo: 0 };
-
-    // Get all customers with purchase data for churn analysis
     const analysis = { alto: 0, medio: 0, baixo: 0, muito_baixo: 0 };
-
-    // Count customers in high-risk segments
-    segments.forEach(segment => {
-      if (segment.segment === 'Em Risco' || segment.segment === 'Inativo') {
-        analysis.alto += segment.count;
-      } else if (segment.segment === 'Regular' && segment.retention_rate < 25) {
-        analysis.medio += Math.floor(segment.count * 0.3); // Estimate 30% medium risk from regular
-      } else if (segment.segment === 'Regular' && segment.retention_rate < 50) {
-        analysis.baixo += Math.floor(segment.count * 0.4); // Estimate 40% low risk from regular
-      } else {
-        analysis.muito_baixo += segment.count;
-      }
+    segments.forEach((s: any) => {
+      if (s.segment === 'Em Risco' || s.segment === 'Inativo') analysis.alto += s.count;
+      else if (s.segment === 'Regular' && s.retention_rate < 25) analysis.medio += Math.floor(s.count * 0.3);
+      else if (s.segment === 'Regular' && s.retention_rate < 50) analysis.baixo += Math.floor(s.count * 0.4);
+      else analysis.muito_baixo += s.count;
     });
-
     return analysis;
   }, [segments]);
 
+  const formatCurrency = (val: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+
+  // Columns
+  const customerColumns: TableColumn[] = [
+    { key: 'customer_name', label: 'Cliente', width: 'w-[200px]', render: (v) => <span className="text-white font-medium">{v as string}</span> },
+    { key: 'total_spent', label: 'Gasto no Período', width: 'w-[150px]', render: (v) => <span className="text-emerald-400 font-medium">{formatCurrency(v as number)}</span> },
+    { key: 'total_orders', label: 'Pedidos', width: 'w-[100px]', render: (v) => <span className="text-blue-400">{v as number}</span> },
+    { key: 'avg_order_value', label: 'Ticket Médio', width: 'w-[150px]', render: (v) => <span className="text-yellow-400">{formatCurrency(v as number)}</span> },
+  ];
+
+  const segmentColumns: TableColumn[] = [
+    { key: 'segment', label: 'Segmento', width: 'w-[200px]', render: (v) => <span className="text-white font-medium">{v as string}</span> },
+    { key: 'count', label: 'Clientes', width: 'w-[120px]', render: (v) => <span className="text-blue-400 font-medium">{v as number}</span> },
+    { key: 'avg_ltv', label: 'LTV Médio', width: 'w-[180px]', render: (v) => <span className="text-emerald-400">{formatCurrency(v as number)}</span> },
+    { key: 'retention_rate', label: 'Retenção', width: 'w-[160px]', render: (v) => <span className={(v as number) > 50 ? 'text-emerald-400' : 'text-red-400'}>{(v as number).toFixed(1)}%</span> },
+  ];
+
+  const cardClass = "bg-black/60 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg transition-all duration-300 hover:border-white/20";
+
   return (
     <div className="space-y-6">
-      {/* Customer Metrics Cards */}
-      <div id="total-clientes" className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/10 hover:border-blue-400/30 hover:bg-gray-700/40">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-3">
-              <Users className="h-8 w-8 text-blue-400 transition-all duration-300" />
-              <div>
-                <p className="text-sm text-gray-400">Total de Clientes</p>
-                <div className="text-2xl font-bold text-white">
-                  {loadingMetrics ? <LoadingSpinner size="sm" /> : (customerMetrics?.total_customers || 0)}
-                </div>
+      {/* Metrics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className={cardClass}>
+          <CardContent className="p-6 flex items-center gap-4">
+            <div className="p-3 rounded-full bg-blue-500/10 border border-blue-500/20">
+              <Users className="h-6 w-6 text-blue-400" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-400">Total de Clientes</p>
+              <div className="text-2xl font-bold text-white">
+                {loadingSummary ? <LoadingSpinner size="sm" /> : metrics.total}
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-green-500/10 hover:border-green-400/30 hover:bg-gray-700/40">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-3">
-              <TrendingUp className="h-8 w-8 text-green-400 transition-all duration-300" />
-              <div>
-                <p className="text-sm text-gray-400">Novos Clientes</p>
-                <div className="text-2xl font-bold text-white">
-                  {loadingMetrics ? <LoadingSpinner size="sm" /> : (customerMetrics?.new_customers || 0)}
-                </div>
+        <Card className={cardClass}>
+          <CardContent className="p-6 flex items-center gap-4">
+            <div className="p-3 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+              <TrendingUp className="h-6 w-6 text-emerald-400" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-400">Novos Clientes</p>
+              <div className="text-2xl font-bold text-white">
+                {loadingSummary ? <LoadingSpinner size="sm" /> : metrics.new}
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 hover:bg-gray-700/40">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-3">
-              <Heart className="h-8 w-8 text-purple-400 transition-all duration-300" />
-              <div>
-                <p className="text-sm text-gray-400">Clientes Ativos</p>
-                <div className="text-2xl font-bold text-white">
-                  {loadingMetrics ? <LoadingSpinner size="sm" /> : (customerMetrics?.active_customers || 0)}
-                </div>
+        <Card className={cardClass}>
+          <CardContent className="p-6 flex items-center gap-4">
+            <div className="p-3 rounded-full bg-purple-500/10 border border-purple-500/20">
+              <Heart className="h-6 w-6 text-purple-400" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-400">Clientes Ativos</p>
+              <div className="text-2xl font-bold text-white">
+                {loadingRetention ? <LoadingSpinner size="sm" /> : metrics.active}
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Charts Section */}
+      {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Customer Segments */}
-        <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 hover:bg-gray-700/40">
+        <Card className={cardClass}>
           <CardHeader>
-            <CardTitle className="text-white">Segmentação de Clientes</CardTitle>
+            <CardTitle className="text-white text-lg">Segmentação de Clientes</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={segments || []}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                  <XAxis dataKey="segment" stroke="#9ca3af" fontSize={12} />
-                  <YAxis stroke="#9ca3af" fontSize={12} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: '#1f2937',
-                      border: '1px solid #374151',
-                      borderRadius: '8px',
-                      color: '#ffffff'
-                    }}
-                    labelStyle={{
-                      color: '#E5E7EB',
-                      fontWeight: '600'
-                    }}
-                  />
-                  <Bar dataKey="count" fill="#8b5cf6" name="Clientes" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+          <CardContent className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={segments || []}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} />
+                <XAxis dataKey="segment" stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: '8px', color: '#fff' }}
+                  cursor={{ fill: '#27272a' }}
+                />
+                <Bar dataKey="count" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
 
-        {/* Customer Retention Trend */}
-        <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-green-500/10 hover:border-green-400/30 hover:bg-gray-700/40">
+        <Card className={cardClass}>
           <CardHeader>
-            <CardTitle className="text-white">Tendência de Retenção</CardTitle>
+            <CardTitle className="text-white text-lg">Tendência de Retenção</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={(retentionData as any[]) || []}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                  <XAxis dataKey="period" stroke="#9ca3af" fontSize={12} />
-                  <YAxis stroke="#9ca3af" fontSize={12} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: '#1f2937',
-                      border: '1px solid #374151',
-                      borderRadius: '8px',
-                      color: '#ffffff'
-                    }}
-                    labelStyle={{
-                      color: '#E5E7EB',
-                      fontWeight: '600'
-                    }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="retained"
-                    stroke="#10b981"
-                    strokeWidth={2}
-                    name="Retidos"
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="lost"
-                    stroke="#ef4444"
-                    strokeWidth={2}
-                    name="Perdidos"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
+          <CardContent className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={(retentionData as any[]) || []}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} />
+                <XAxis dataKey="period" stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: '8px', color: '#fff' }}
+                />
+                <Line type="monotone" dataKey="retained" stroke="#10b981" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="lost" stroke="#ef4444" strokeWidth={2} dot={false} />
+              </LineChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
       </div>
 
-      {/* Data Tables */}
-      <div className="space-y-6">
-        {/* Top Customers */}
-        <Card id="ltv" className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-green-500/10 hover:border-green-400/30 hover:bg-gray-700/40">
+      {/* Tables */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card className={cardClass}>
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-green-400" />
-              Top Clientes por LTV
+              <DollarSign className="h-5 w-5 text-emerald-400" />
+              Top Clientes (Período)
             </CardTitle>
           </CardHeader>
-          <CardContent className="h-80">
-            {loadingTopCustomers ? (
-              <div className="flex items-center justify-center py-8">
-                <LoadingSpinner size="lg" />
-              </div>
-            ) : (
-              <StandardReportsTable
-                data={(topCustomers as any[]) || []}
-                columns={customerColumns}
-                title="Top Clientes"
-                searchFields={['customer_name']}
-                initialSortField="total_spent"
-                initialSortDirection="desc"
-                height="h-full"
-                maxRows={20}
-              />
-            )}
+          <CardContent className="h-[400px] p-0">
+            <StandardReportsTable
+              data={(topCustomers as any[]) || []}
+              columns={customerColumns}
+              title=""
+              searchFields={['customer_name']}
+              initialSortField="total_spent"
+              initialSortDirection="desc"
+              height="h-full"
+              maxRows={10}
+            />
           </CardContent>
         </Card>
 
-        {/* Segment Analysis */}
-        <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 hover:bg-gray-700/40">
-          <CardHeader>
-            <CardTitle className="text-white">Análise por Segmento</CardTitle>
-          </CardHeader>
-          <CardContent className="h-80">
-            {loadingSegments ? (
-              <div className="flex items-center justify-center py-8">
-                <LoadingSpinner size="lg" />
-              </div>
-            ) : (
-              <StandardReportsTable
-                data={segments || []}
-                columns={segmentColumns}
-                title="Segmentos"
-                searchFields={['segment']}
-                initialSortField="avg_ltv"
-                initialSortDirection="desc"
-                height="h-full"
-                maxRows={15}
-              />
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Birthday Analytics */}
-        <Card id="aniversarios" className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-yellow-500/10 hover:border-yellow-400/30 hover:bg-gray-700/40">
+        <Card className={cardClass}>
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-yellow-400" />
-              Aniversários dos Clientes
+              <AlertCircle className="h-5 w-5 text-orange-400" />
+              Análise de Risco (Churn)
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              <div className="text-center p-6 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
-                <div className="text-3xl font-bold text-yellow-400 mb-2">
-                  🎂 Análise de Aniversários
-                </div>
-                <p className="text-sm text-gray-400">
-                  Esta seção mostra dados detalhados sobre aniversários de clientes,
-                  permitindo campanhas direcionadas e oportunidades de marketing.
-                </p>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-center">
+                <div className="text-2xl font-bold text-red-400">{churnAnalysis.alto}</div>
+                <div className="text-sm text-red-300">Alto Risco</div>
               </div>
-
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="text-center p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-                  <p className="text-2xl font-bold text-blue-400">{customers?.filter(c => c.birthday).length || 0}</p>
-                  <p className="text-sm text-blue-400">Com Aniversário</p>
-                  <p className="text-xs text-gray-400">Cadastrado</p>
-                </div>
-                <div className="text-center p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
-                  <p className="text-2xl font-bold text-green-400">{customers?.filter(c => {
-                    if (!c.birthday) return false;
-                    const birthDate = new Date(c.birthday);
-                    const today = new Date();
-                    const thisYear = today.getFullYear();
-                    const nextBirthday = new Date(thisYear, birthDate.getMonth(), birthDate.getDate());
-                    if (nextBirthday < today) {
-                      nextBirthday.setFullYear(thisYear + 1);
-                    }
-                    const daysUntil = Math.ceil((nextBirthday.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-                    return daysUntil <= 30;
-                  }).length || 0}</p>
-                  <p className="text-sm text-green-400">Próximos 30 dias</p>
-                  <p className="text-xs text-gray-400">Oportunidades</p>
-                </div>
-                <div className="text-center p-4 bg-purple-500/10 border border-purple-500/20 rounded-lg">
-                  <p className="text-2xl font-bold text-purple-400">{customers?.filter(c => {
-                    if (!c.birthday) return false;
-                    const birthDate = new Date(c.birthday);
-                    const today = new Date();
-                    return birthDate.getMonth() === today.getMonth();
-                  }).length || 0}</p>
-                  <p className="text-sm text-purple-400">Este Mês</p>
-                  <p className="text-xs text-gray-400">Aniversários</p>
-                </div>
-                <div className="text-center p-4 bg-orange-500/10 border border-orange-500/20 rounded-lg">
-                  <p className="text-2xl font-bold text-orange-400">{customers?.filter(c => {
-                    if (!c.birthday) return false;
-                    const birthDate = new Date(c.birthday);
-                    const today = new Date();
-                    const daysUntil = Math.ceil((new Date(today.getFullYear(), birthDate.getMonth(), birthDate.getDate()).getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-                    return Math.abs(daysUntil) <= 7;
-                  }).length || 0}</p>
-                  <p className="text-sm text-orange-400">Esta Semana</p>
-                  <p className="text-xs text-gray-400">Urgência</p>
-                </div>
+              <div className="p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/20 text-center">
+                <div className="text-2xl font-bold text-yellow-400">{churnAnalysis.medio}</div>
+                <div className="text-sm text-yellow-300">Médio Risco</div>
               </div>
-
-              <div className="text-sm text-gray-400 space-y-1">
-                <p><span className="font-semibold">Campanhas:</span> Use aniversários para ofertas especiais e fidelização</p>
-                <p><span className="font-semibold">Automação:</span> Configure lembretes automáticos para equipe de vendas</p>
-                <p><span className="font-semibold">ROI:</span> Clientes em aniversários tendem a ter maior conversão</p>
+              <div className="p-4 rounded-lg bg-orange-500/10 border border-orange-500/20 text-center">
+                <div className="text-2xl font-bold text-orange-400">{churnAnalysis.baixo}</div>
+                <div className="text-sm text-orange-300">Baixo Risco</div>
+              </div>
+              <div className="p-4 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-center">
+                <div className="text-2xl font-bold text-emerald-400">{churnAnalysis.muito_baixo}</div>
+                <div className="text-sm text-emerald-300">Seguro</div>
+              </div>
+            </div>
+            <div className="mt-6 p-4 rounded-lg bg-blue-500/5 border border-blue-500/10">
+              <h4 className="text-sm font-semibold text-blue-400 mb-2 flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                Aniversariantes
+              </h4>
+              <div className="flex justify-between text-sm text-gray-400">
+                <span>Hoje: <span className="text-white font-bold">{customersBirthday?.filter((c: any) => {
+                  if (!c.birthday) return false;
+                  const d = new Date(c.birthday);
+                  const today = new Date();
+                  return d.getDate() === today.getDate() && d.getMonth() === today.getMonth();
+                }).length || 0}</span></span>
+                <span>Este Mês: <span className="text-white font-bold">{customersBirthday?.filter((c: any) => {
+                  if (!c.birthday) return false;
+                  const d = new Date(c.birthday);
+                  const today = new Date();
+                  return d.getMonth() === today.getMonth();
+                }).length || 0}</span></span>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
-
-      {/* Churn Risk Analysis */}
-      <Card id="clientes-risco" className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-orange-500/10 hover:border-orange-400/30 hover:bg-gray-700/40">
-        <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
-            <AlertCircle className="h-5 w-5 text-orange-400 transition-all duration-300" />
-            Análise de Risco de Churn
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div className="text-center p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
-              <p className="text-2xl font-bold text-red-400">{churnAnalysis.alto}</p>
-              <p className="text-sm text-red-400">Alto Risco</p>
-              <p className="text-xs text-gray-400">{'>'} 90 dias sem comprar</p>
-            </div>
-            <div className="text-center p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
-              <p className="text-2xl font-bold text-yellow-400">{churnAnalysis.medio}</p>
-              <p className="text-sm text-yellow-400">Médio Risco</p>
-              <p className="text-xs text-gray-400">60-90 dias</p>
-            </div>
-            <div className="text-center p-4 bg-orange-500/10 border border-orange-500/20 rounded-lg">
-              <p className="text-2xl font-bold text-orange-400">{churnAnalysis.baixo}</p>
-              <p className="text-sm text-orange-400">Baixo Risco</p>
-              <p className="text-xs text-gray-400">30-60 dias</p>
-            </div>
-            <div className="text-center p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
-              <p className="text-2xl font-bold text-green-400">{churnAnalysis.muito_baixo}</p>
-              <p className="text-sm text-green-400">Muito Baixo</p>
-              <p className="text-xs text-gray-400">{'<'} 30 dias</p>
-            </div>
-          </div>
-
-          <div className="text-sm text-gray-400 space-y-1">
-            <p><span className="font-semibold">LTV:</span> Lifetime Value - Valor total gasto pelo cliente</p>
-            <p><span className="font-semibold">Segmentação:</span> Baseada em LTV e frequência de compra</p>
-            <p><span className="font-semibold">Churn Risk:</span> Probabilidade de perda do cliente baseada no último pedido</p>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 };

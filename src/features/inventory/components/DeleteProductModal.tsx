@@ -86,9 +86,9 @@ export const DeleteProductModal: React.FC<DeleteProductModalProps> = ({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Validação do botão de confirmar - COMPARAÇÃO EXATA
+  // Validação do botão de confirmar - COMPARAÇÃO FLEXÍVEL (Trim)
   const canConfirm = () => {
-    return confirmationText === productName;
+    return confirmationText.trim() === productName.trim();
   };
 
   // ❌ REMOVIDO: hasHistory (não fazemos mais fetch de productInfo)
@@ -158,8 +158,8 @@ export const DeleteProductModal: React.FC<DeleteProductModalProps> = ({
               placeholder="Cole o nome do produto aqui..."
               className={cn(
                 "bg-gray-800 border-gray-600 text-white transition-colors",
-                confirmationText && confirmationText !== productName && "border-red-500 focus:ring-red-500",
-                confirmationText === productName && "border-green-500 focus:ring-green-500"
+                confirmationText && confirmationText.trim() !== productName.trim() && "border-red-500 focus:ring-red-500",
+                confirmationText.trim() === productName.trim() && "border-green-500 focus:ring-green-500"
               )}
               disabled={isDeleting}
               autoComplete="off"

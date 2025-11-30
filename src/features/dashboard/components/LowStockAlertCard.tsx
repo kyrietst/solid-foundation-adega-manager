@@ -45,6 +45,8 @@ export const LowStockAlertCard: React.FC<LowStockAlertCardProps> = ({
     queryKey: ['low-stock-products', limit],
     queryFn: async (): Promise<LowStockProduct[]> => {
 
+      // ✅ FIX: Usar RPC unificada que considera mínimo por categoria
+      // Regra: COALESCE(p.minimum_stock, c.default_min_stock, 10)
       const { data, error } = await supabase
         .rpc('get_low_stock_products', { p_limit: limit });
 
@@ -53,7 +55,7 @@ export const LowStockAlertCard: React.FC<LowStockAlertCardProps> = ({
         throw error;
       }
 
-      return data || [];
+      return (data as unknown as LowStockProduct[]) || [];
     },
     staleTime: 2 * 60 * 1000, // 2 minutos
     refetchInterval: 5 * 60 * 1000, // Refresh a cada 5 minutos

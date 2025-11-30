@@ -82,7 +82,7 @@ export const TopProductsCard = React.memo(function TopProductsCard({ className, 
 
       // Converter para array e ordenar por receita
       const topProducts = Array.from(productMap.values())
-        .sort((a, b) => b.revenue - a.revenue)
+        .sort((a, b) => b.qty - a.qty)
         .slice(0, limit);
 
 
@@ -179,7 +179,7 @@ export const TopProductsCard = React.memo(function TopProductsCard({ className, 
         ) : topProducts && topProducts.length > 0 ? (
           <div className="space-y-2">
             {topProducts.map((product, index) => (
-              <div 
+              <div
                 key={product.product_id}
                 className="flex items-center justify-between p-4 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
               >
@@ -187,13 +187,13 @@ export const TopProductsCard = React.memo(function TopProductsCard({ className, 
                   <div className={cn(
                     "flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold",
                     index === 0 ? "bg-amber-500 text-black" :
-                    index === 1 ? "bg-gray-400 text-black" :
-                    index === 2 ? "bg-amber-600 text-white" :
-                    "bg-white/20 text-gray-300"
+                      index === 1 ? "bg-gray-400 text-black" :
+                        index === 2 ? "bg-amber-600 text-white" :
+                          "bg-white/20 text-gray-300"
                   )}>
                     {index + 1}
                   </div>
-                  
+
                   <div className="flex-1 min-w-0">
                     <div className="text-base font-semibold text-white truncate">
                       {product.name}
@@ -203,7 +203,7 @@ export const TopProductsCard = React.memo(function TopProductsCard({ className, 
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="text-right flex-shrink-0">
                   <div className="text-base font-bold text-emerald-400">
                     {formatCurrency(product.revenue)}

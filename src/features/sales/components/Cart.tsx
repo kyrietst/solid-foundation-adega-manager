@@ -21,11 +21,10 @@ import { Button } from '@/shared/ui/primitives/button';
 import { Input } from '@/shared/ui/primitives/input';
 import { ScrollArea } from '@/shared/ui/primitives/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/primitives/select';
-import { BaseModal } from '@/shared/ui/composite/BaseModal';
 import { useToast } from '@/shared/hooks/common/use-toast';
 
 import { CustomerSearch } from './CustomerSearch';
-import { CustomerForm } from '@/features/customers/components/CustomerForm';
+import { QuickCustomerCreateModal } from './QuickCustomerCreateModal';
 import { Loader2, ShoppingCart, Trash2, UserPlus, ChevronDown, ChevronUp } from 'lucide-react';
 import type { SaleType } from './SalesPage';
 
@@ -180,6 +179,16 @@ export function Cart({
         });
         return;
       }
+    }
+
+    // Aviso de Venda Anônima (Non-blocking Nudge)
+    if (!customerId) {
+      toast({
+        title: "⚠️ Venda Anônima",
+        description: "Pontos/LTV não registrados. Clique em 'Buscar/Cadastrar Cliente' para converter este Lead.",
+        className: "bg-yellow-500 border-yellow-600 text-black font-medium",
+        duration: 4000,
+      });
     }
 
     try {
@@ -353,21 +362,11 @@ export function Cart({
                   Cadastrar Cliente
                 </Button>
 
-                <BaseModal
+                <QuickCustomerCreateModal
                   isOpen={isCustomerModalOpen}
                   onClose={() => setIsCustomerModalOpen(false)}
-                  title="Novo Cliente"
-                  size="lg"
-                  maxHeight="85vh"
-                  icon={UserPlus}
-                  iconColor="text-yellow-400"
-                >
-                  <div className="min-h-0 overflow-y-auto px-2 py-1">
-                    <CustomerForm
-                      onSuccess={() => setIsCustomerModalOpen(false)}
-                    />
-                  </div>
-                </BaseModal>
+                  onSuccess={(newCustomerId) => setCustomer(newCustomerId)}
+                />
               </div>
             )}
           </div>
@@ -388,11 +387,10 @@ export function Cart({
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <h4 className="font-medium text-sm text-gray-100 truncate">{item.name}</h4>
-                    <span className={`px-2 py-0.5 text-xs font-medium rounded-full flex-shrink-0 ${
-                      item.variant_type === 'package'
-                        ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
-                        : 'bg-green-500/20 text-green-300 border border-green-500/30'
-                    }`}>
+                    <span className={`px-2 py-0.5 text-xs font-medium rounded-full flex-shrink-0 ${item.variant_type === 'package'
+                      ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                      : 'bg-green-500/20 text-green-300 border border-green-500/30'
+                      }`}>
                       {item.variant_type === 'package' ? `${item.packageUnits || 1}x` : 'Un'}
                     </span>
                   </div>
@@ -448,202 +446,202 @@ export function Cart({
         <div>
           {/* Seção Pagamento - Colapsável */}
           <div className="border-b border-white/20">
-          <div
-            className="flex items-center justify-between p-3 cursor-pointer hover:bg-white/5 transition-colors"
-            onClick={() => setIsPaymentSectionExpanded(!isPaymentSectionExpanded)}
-          >
-            <h4 className="text-sm font-medium text-gray-200 flex items-center gap-2">
-              Pagamento
-              {paymentMethodId && (
-                <span className="text-xs text-green-400">
-                  ({paymentMethods.find(m => m.id === paymentMethodId)?.name})
-                </span>
-              )}
-            </h4>
-            {isPaymentSectionExpanded ? (
-              <ChevronUp className="h-4 w-4 text-gray-400" />
-            ) : (
-              <ChevronDown className="h-4 w-4 text-gray-400" />
-            )}
-          </div>
-
-          {isPaymentSectionExpanded && (
-            <div className="px-4 pb-4 space-y-4">
-              {/* Discount */}
-              {allowDiscounts && (
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-200">Desconto</label>
-                  <Input
-                    type="number"
-                    placeholder="0.00"
-                    value={discount}
-                    onChange={(e) => setDiscount(Math.max(0, Number(e.target.value)))}
-                    className="text-sm bg-gray-800/50 border-primary-yellow/30 text-gray-200 focus:border-primary-yellow"
-                  />
-                </div>
-              )}
-
-              {/* Payment Method */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-200">Método de Pagamento *</label>
-                <Select value={paymentMethodId} onValueChange={setPaymentMethodId}>
-                  <SelectTrigger className="bg-gray-800/50 border-primary-yellow/30 text-gray-200">
-                    <SelectValue placeholder="Selecione..." />
-                  </SelectTrigger>
-                  <SelectContent className="bg-gray-800 border-primary-yellow/30">
-                    {paymentMethods.map((method) => (
-                      <SelectItem key={method.id} value={method.id} className="text-gray-200 hover:bg-primary-yellow/10">
-                        {method.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Campo Valor Recebido - só aparece se for dinheiro */}
-              {showCashInput && (
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-200">Valor Recebido</label>
-                  <Input
-                    type="number"
-                    placeholder="0,00"
-                    value={cashReceived || ''}
-                    onChange={(e) => setCashReceived(Math.max(0, Number(e.target.value)))}
-                    className="text-sm bg-gray-800/50 border-primary-yellow/30 text-gray-200 focus:border-primary-yellow"
-                    step="0.01"
-                    min="0"
-                  />
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Seção Delivery - só aparece se for delivery e é colapsável */}
-        {saleType === 'delivery' && (
-          <div className="border-b border-white/20">
             <div
               className="flex items-center justify-between p-3 cursor-pointer hover:bg-white/5 transition-colors"
-              onClick={() => setIsDeliverySectionExpanded(!isDeliverySectionExpanded)}
+              onClick={() => setIsPaymentSectionExpanded(!isPaymentSectionExpanded)}
             >
               <h4 className="text-sm font-medium text-gray-200 flex items-center gap-2">
-                Entrega
-                {deliveryAddress && (
-                  <span className="text-xs text-orange-400 truncate max-w-32">
-                    ({deliveryAddress})
+                Pagamento
+                {paymentMethodId && (
+                  <span className="text-xs text-green-400">
+                    ({paymentMethods.find(m => m.id === paymentMethodId)?.name})
                   </span>
                 )}
               </h4>
-              {isDeliverySectionExpanded ? (
+              {isPaymentSectionExpanded ? (
                 <ChevronUp className="h-4 w-4 text-gray-400" />
               ) : (
                 <ChevronDown className="h-4 w-4 text-gray-400" />
               )}
             </div>
 
-            {isDeliverySectionExpanded && (
+            {isPaymentSectionExpanded && (
               <div className="px-4 pb-4 space-y-4">
+                {/* Discount */}
+                {allowDiscounts && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-200">Desconto</label>
+                    <Input
+                      type="number"
+                      placeholder="0.00"
+                      value={discount}
+                      onChange={(e) => setDiscount(Math.max(0, Number(e.target.value)))}
+                      className="text-sm bg-gray-800/50 border-primary-yellow/30 text-gray-200 focus:border-primary-yellow"
+                    />
+                  </div>
+                )}
+
+                {/* Payment Method */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-200">Endereço de Entrega *</label>
-                  <Input
-                    placeholder="Ex: Rua das Flores, 123, Bela Vista"
-                    value={deliveryAddress}
-                    onChange={(e) => setDeliveryAddress(e.target.value)}
-                    className="text-sm bg-gray-800/50 border-orange-400/30 text-gray-200 focus:border-orange-400"
-                  />
+                  <label className="text-sm font-medium text-gray-200">Método de Pagamento *</label>
+                  <Select value={paymentMethodId} onValueChange={setPaymentMethodId}>
+                    <SelectTrigger className="bg-gray-800/50 border-primary-yellow/30 text-gray-200">
+                      <SelectValue placeholder="Selecione..." />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-800 border-primary-yellow/30">
+                      {paymentMethods.map((method) => (
+                        <SelectItem key={method.id} value={method.id} className="text-gray-200 hover:bg-primary-yellow/10">
+                          {method.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                {/* Campo Valor Recebido - só aparece se for dinheiro */}
+                {showCashInput && (
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-200">Taxa</label>
+                    <label className="text-sm font-medium text-gray-200">Valor Recebido</label>
                     <Input
                       type="number"
                       placeholder="0,00"
-                      value={deliveryFee || ''}
-                      onChange={(e) => setDeliveryFee(Math.max(0, Number(e.target.value)))}
-                      className="text-sm bg-gray-800/50 border-orange-400/30 text-gray-200 focus:border-orange-400"
+                      value={cashReceived || ''}
+                      onChange={(e) => setCashReceived(Math.max(0, Number(e.target.value)))}
+                      className="text-sm bg-gray-800/50 border-primary-yellow/30 text-gray-200 focus:border-primary-yellow"
                       step="0.01"
                       min="0"
                     />
                   </div>
+                )}
+              </div>
+            )}
+          </div>
 
+          {/* Seção Delivery - só aparece se for delivery e é colapsável */}
+          {saleType === 'delivery' && (
+            <div className="border-b border-white/20">
+              <div
+                className="flex items-center justify-between p-3 cursor-pointer hover:bg-white/5 transition-colors"
+                onClick={() => setIsDeliverySectionExpanded(!isDeliverySectionExpanded)}
+              >
+                <h4 className="text-sm font-medium text-gray-200 flex items-center gap-2">
+                  Entrega
+                  {deliveryAddress && (
+                    <span className="text-xs text-orange-400 truncate max-w-32">
+                      ({deliveryAddress})
+                    </span>
+                  )}
+                </h4>
+                {isDeliverySectionExpanded ? (
+                  <ChevronUp className="h-4 w-4 text-gray-400" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 text-gray-400" />
+                )}
+              </div>
+
+              {isDeliverySectionExpanded && (
+                <div className="px-4 pb-4 space-y-4">
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-200">Entregador</label>
-                    <Select value={deliveryPersonId} onValueChange={setDeliveryPersonId}>
-                      <SelectTrigger className="bg-gray-800/50 border-orange-400/30 text-gray-200">
-                        <SelectValue placeholder="Selecione..." />
-                      </SelectTrigger>
-                      <SelectContent className="bg-gray-800 border-orange-400/30">
-                        {deliveryPersons.map((person) => (
-                          <SelectItem key={person.id} value={person.id} className="text-gray-200 hover:bg-orange-400/10">
-                            {person.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <label className="text-sm font-medium text-gray-200">Endereço de Entrega *</label>
+                    <Input
+                      placeholder="Ex: Rua das Flores, 123, Bela Vista"
+                      value={deliveryAddress}
+                      onChange={(e) => setDeliveryAddress(e.target.value)}
+                      className="text-sm bg-gray-800/50 border-orange-400/30 text-gray-200 focus:border-orange-400"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-200">Taxa</label>
+                      <Input
+                        type="number"
+                        placeholder="0,00"
+                        value={deliveryFee || ''}
+                        onChange={(e) => setDeliveryFee(Math.max(0, Number(e.target.value)))}
+                        className="text-sm bg-gray-800/50 border-orange-400/30 text-gray-200 focus:border-orange-400"
+                        step="0.01"
+                        min="0"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-200">Entregador</label>
+                      <Select value={deliveryPersonId} onValueChange={setDeliveryPersonId}>
+                        <SelectTrigger className="bg-gray-800/50 border-orange-400/30 text-gray-200">
+                          <SelectValue placeholder="Selecione..." />
+                        </SelectTrigger>
+                        <SelectContent className="bg-gray-800 border-orange-400/30">
+                          {deliveryPersons.map((person) => (
+                            <SelectItem key={person.id} value={person.id} className="text-gray-200 hover:bg-orange-400/10">
+                              {person.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Totais e Botão Final - Sempre visível */}
-        <div className="p-4 space-y-4">
-          {/* Totals */}
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-300">Subtotal:</span>
-              <span className="text-gray-200">{formatCurrency(subtotal)}</span>
+              )}
             </div>
-            {allowDiscounts && discount > 0 && (
-              <div className="flex justify-between text-sm text-accent-red">
-                <span>Desconto:</span>
-                <span>-{formatCurrency(discount)}</span>
+          )}
+
+          {/* Totais e Botão Final - Sempre visível */}
+          <div className="p-4 space-y-4">
+            {/* Totals */}
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-300">Subtotal:</span>
+                <span className="text-gray-200">{formatCurrency(subtotal)}</span>
               </div>
-            )}
-            {saleType === 'delivery' && deliveryFee > 0 && (
-              <div className="flex justify-between text-sm text-orange-400">
-                <span>Taxa de Entrega:</span>
-                <span>+{formatCurrency(deliveryFee)}</span>
+              {allowDiscounts && discount > 0 && (
+                <div className="flex justify-between text-sm text-accent-red">
+                  <span>Desconto:</span>
+                  <span>-{formatCurrency(discount)}</span>
+                </div>
+              )}
+              {saleType === 'delivery' && deliveryFee > 0 && (
+                <div className="flex justify-between text-sm text-orange-400">
+                  <span>Taxa de Entrega:</span>
+                  <span>+{formatCurrency(deliveryFee)}</span>
+                </div>
+              )}
+              <div className="flex justify-between items-center text-lg font-bold pt-2 border-t border-primary-yellow/20">
+                <span className="text-gray-100">Total:</span>
+                <span className="text-primary-yellow">{formatCurrency(total)}</span>
               </div>
-            )}
-            <div className="flex justify-between items-center text-lg font-bold pt-2 border-t border-primary-yellow/20">
-              <span className="text-gray-100">Total:</span>
-              <span className="text-primary-yellow">{formatCurrency(total)}</span>
+
+              {/* Troco - só aparece se for dinheiro e houver valor recebido */}
+              {isCashPayment && cashReceived > 0 && (
+                <>
+                  <div className="flex justify-between text-sm pt-2 border-t border-gray-600/20">
+                    <span className="text-gray-300">Valor Recebido:</span>
+                    <span className="text-gray-200">{formatCurrency(cashReceived)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm text-green-400 font-semibold">
+                    <span>Troco:</span>
+                    <span>{formatCurrency(change)}</span>
+                  </div>
+                </>
+              )}
             </div>
 
-            {/* Troco - só aparece se for dinheiro e houver valor recebido */}
-            {isCashPayment && cashReceived > 0 && (
-              <>
-                <div className="flex justify-between text-sm pt-2 border-t border-gray-600/20">
-                  <span className="text-gray-300">Valor Recebido:</span>
-                  <span className="text-gray-200">{formatCurrency(cashReceived)}</span>
-                </div>
-                <div className="flex justify-between text-sm text-green-400 font-semibold">
-                  <span>Troco:</span>
-                  <span>{formatCurrency(change)}</span>
-                </div>
-              </>
-            )}
+            {/* Finish Sale Button */}
+            <Button
+              onClick={handleFinishSale}
+              disabled={upsertSale.isPending || !paymentMethodId || total <= 0}
+              className="w-full bg-primary-yellow text-black hover:bg-primary-yellow/90 font-semibold py-3"
+            >
+              {upsertSale.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin text-black" />
+                  Finalizando...
+                </>
+              ) : (
+                'Finalizar Venda'
+              )}
+            </Button>
           </div>
-
-          {/* Finish Sale Button */}
-          <Button
-            onClick={handleFinishSale}
-            disabled={upsertSale.isPending || !paymentMethodId || total <= 0}
-            className="w-full bg-primary-yellow text-black hover:bg-primary-yellow/90 font-semibold py-3"
-          >
-            {upsertSale.isPending ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin text-black" />
-                Finalizando...
-              </>
-            ) : (
-              'Finalizar Venda'
-            )}
-          </Button>
-        </div>
         </div>
       </ScrollArea>
     </div>

@@ -7,7 +7,7 @@ import { getSaoPauloTimestamp } from '@/shared/hooks/common/use-brasil-timezone'
 // Função auxiliar para criar ranges de data em horário de São Paulo
 function getSaoPauloDateRange(windowDays: number) {
   // Obter data atual em São Paulo
-  const nowSP = new Date(new Date().toLocaleString("en-US", {timeZone: "America/Sao_Paulo"}));
+  const nowSP = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
 
   const endDate = new Date(nowSP);
   const startDate = new Date(nowSP);
@@ -72,40 +72,58 @@ export function useSalesKpis(windowDays: number = 30) {
       // Usar ranges de data em horário de São Paulo (consistente com tela de Vendas)
       const dateRange = getSaoPauloDateRange(windowDays);
 
-      // ✅ SSoT: Buscar dados do período atual usando RPC
-      const { data: currentData, error: currentError } = await supabase
-        .rpc('get_dashboard_financials', {
+      // 1. Buscar dados financeiros atuais (RPC nova: get_daily_cash_flow)
+      const { data: currentFinancials, error: currentError } = await supabase
+        .rpc('get_daily_cash_flow', {
           p_start_date: dateRange.current.start,
           p_end_date: dateRange.current.end
-        })
-        .single();
+        });
 
       if (currentError) {
         console.error('❌ Erro ao buscar KPIs atuais:', currentError);
         throw currentError;
       }
 
-      // ✅ SSoT: Buscar dados do período anterior usando RPC
-      const { data: prevData, error: prevError } = await supabase
-        .rpc('get_dashboard_financials', {
+      // 2. Buscar contagem de vendas atuais
+      const { count: currentOrders, error: currentCountError } = await supabase
+        .from('sales')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'completed')
+        .gte('created_at', dateRange.current.start)
+        .lte('created_at', dateRange.current.end);
+
+      if (currentCountError) {
+        console.error('❌ Erro ao buscar contagem de vendas atuais:', currentCountError);
+        throw currentCountError;
+      }
+
+      // 3. Buscar dados financeiros anteriores
+      const { data: prevFinancials, error: prevError } = await supabase
+        .rpc('get_daily_cash_flow', {
           p_start_date: dateRange.previous.start,
           p_end_date: dateRange.previous.end
-        })
-        .single();
+        });
 
       if (prevError) {
         console.error('❌ Erro ao buscar KPIs anteriores:', prevError);
-        // Não falhar se não houver dados anteriores
       }
 
-      // ✅ SSoT: Dados já vêm calculados do banco
-      const revenue = safeNumber(currentData?.total_revenue || 0);
-      const orders = safeNumber(currentData?.sales_count || 0);
-      const avgTicket = safeNumber(currentData?.average_ticket || 0);
+      // 4. Buscar contagem de vendas anteriores
+      const { count: prevOrders, error: prevCountError } = await supabase
+        .from('sales')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'completed')
+        .gte('created_at', dateRange.previous.start)
+        .lt('created_at', dateRange.previous.end); // Use lt to avoid overlap
 
-      const revenuePrev = safeNumber(prevData?.total_revenue || 0);
-      const ordersPrev = safeNumber(prevData?.sales_count || 0);
-      const avgTicketPrev = safeNumber(prevData?.average_ticket || 0);
+      // Calcular totais agregando os dados diários
+      const revenue = (currentFinancials || []).reduce((sum, day) => sum + (day.income || 0), 0);
+      const orders = currentOrders || 0;
+      const avgTicket = orders > 0 ? revenue / orders : 0;
+
+      const revenuePrev = (prevFinancials || []).reduce((sum, day) => sum + (day.income || 0), 0);
+      const ordersPrev = prevOrders || 0;
+      const avgTicketPrev = ordersPrev > 0 ? revenuePrev / ordersPrev : 0;
 
       // Calcular deltas com proteção anti-NaN
       const revenueDelta = debugNaN(safeDelta(revenue, revenuePrev), 'revenueDelta');
@@ -193,34 +211,46 @@ export function useInventoryKpis() {
     queryKey: ['kpis-inventory'],
     queryFn: async (): Promise<InventoryKpis> => {
 
-      // ✅ SSoT: Buscar valuation do estoque usando RPC
-      const { data, error } = await supabase
-        .rpc('get_inventory_valuation')
-        .single();
+      // 1. Buscar valuation do estoque (RPC nova: get_inventory_financials)
+      const { data: financials, error: valuationError } = await supabase
+        .rpc('get_inventory_financials');
 
-      if (error) {
-        console.error('❌ Erro ao buscar inventory valuation:', error);
-        throw error;
+      if (valuationError) {
+        console.error('❌ Erro ao buscar inventory financials:', valuationError);
+        throw valuationError;
       }
 
-      // ✅ SSoT: Dados já vêm calculados do banco
-      // CRÍTICO: totalCostValue usa cost_price (patrimônio investido real)
-      const totalProducts = safeNumber(data?.total_products || 0);
-      const totalCostValue = safeNumber(data?.total_cost_value || 0);
-      const potentialRevenue = safeNumber(data?.potential_revenue_value || 0);
-      const lowStockCount = safeNumber(data?.out_of_stock_count || 0);
+      // 2. Buscar contagem total de produtos
+      const { count: totalProducts, error: countError } = await supabase
+        .from('products')
+        .select('*', { count: 'exact', head: true })
+        .is('deleted_at', null);
 
-      // Calcular margem potencial
-      const marginPercent = totalCostValue > 0
-        ? ((potentialRevenue - totalCostValue) / totalCostValue) * 100
-        : 0;
+      if (countError) {
+        console.error('❌ Erro ao buscar total de produtos:', countError);
+        throw countError;
+      }
 
+      // 3. Buscar produtos com estoque baixo (Low Stock) usando lógica unificada
+      // Regra: COALESCE(p.minimum_stock, c.default_min_stock, 10)
+      const { data: lowStockCountData, error: lowStockError } = await supabase
+        .rpc('get_low_stock_count');
+
+      if (lowStockError) {
+        console.error('❌ Erro ao buscar contagem de estoque baixo:', lowStockError);
+      }
+
+      const lowStockCount = (lowStockCountData as unknown as number) || 0;
+
+      // Parse JSON result from RPC
+      const totalCostValue = safeNumber((financials as any)?.total_cost || 0);
+      const potentialRevenue = safeNumber((financials as any)?.potential_revenue || 0);
 
       return {
-        totalProducts,
-        totalCostValue, // Capital investido (cost_price)
-        potentialRevenue, // ✅ NOVO: Receita potencial (price)
-        lowStockCount
+        totalProducts: totalProducts || 0,
+        totalCostValue,
+        potentialRevenue,
+        lowStockCount: lowStockCount || 0
       };
     },
     staleTime: 5 * 60 * 1000,
@@ -273,11 +303,11 @@ export function useExpenseKpis(windowDays: number = 30) {
   const { data: expenses, isLoading: isLoadingExpenses } = useDashboardExpenses(windowDays);
   const { data: budgetVariance, isLoading: isLoadingBudget } = useDashboardBudgetVariance();
   const { data: salesData, isLoading: isLoadingSales } = useSalesKpis(windowDays);
-  
+
   return useQuery({
     queryKey: ['kpis-expenses', windowDays],
     queryFn: async (): Promise<ExpenseKpis> => {
-      
+
       const totalExpenses = safeNumber(expenses?.total_expenses);
       const avgExpense = safeNumber(expenses?.avg_expense);
       const topCategory = expenses?.top_category || 'N/A';
@@ -285,16 +315,16 @@ export function useExpenseKpis(windowDays: number = 30) {
       const categoriesOverBudget = safeNumber(budgetVariance?.categories_over_budget);
       const budgetStatus = budgetVariance?.status || 'ON_TRACK';
       const budgetVariancePercent = safeNumber(budgetVariance?.variance_percentage);
-      
+
       // Calcular margem líquida com proteção anti-NaN
       const revenue = safeNumber(salesData?.revenue);
       // ✅ Correção: Cálculo direto da margem líquida
       const netMargin = revenue > 0 ? safeNumber(((revenue - totalExpenses) / revenue) * 100) : 0;
-      
+
       // Calcular variação de despesas (para implementar depois com dados históricos)
       const expensesDelta = 0; // Placeholder por enquanto
-      
-      
+
+
       return {
         totalExpenses: safeNumber(totalExpenses),
         expensesDelta: safeNumber(expensesDelta),

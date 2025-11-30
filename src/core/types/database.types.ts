@@ -615,6 +615,18 @@ export type Database = {
           expense_breakdown: Json
         }[]
       }
+      get_daily_cash_flow: {
+        Args: {
+          p_start_date: string
+          p_end_date: string
+        }
+        Returns: {
+          date: string
+          income: number
+          outcome: number
+          balance: number
+        }[]
+      }
       get_deleted_customers: {
         Args: {
           p_limit?: number

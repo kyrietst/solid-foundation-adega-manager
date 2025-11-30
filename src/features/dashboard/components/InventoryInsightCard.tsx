@@ -105,7 +105,7 @@ export const InventoryInsightCard: React.FC<InventoryInsightCardProps> = ({
             {/* Footer: Margin + Product Count */}
             <div className="flex items-center gap-2 mt-2 text-xs text-gray-500">
               <span className="text-emerald-400 font-medium">
-                +{margemPercent.toFixed(0)}% margem
+                {margemPercent > 0 ? '+' : ''}{margemPercent.toFixed(0)}% margem
               </span>
               <span>•</span>
               <span>{productCount} produtos</span>
