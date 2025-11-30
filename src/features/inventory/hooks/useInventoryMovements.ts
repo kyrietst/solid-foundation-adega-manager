@@ -9,6 +9,7 @@ import { useMutation, useQuery, useQueryClient, MutationFunction } from '@tansta
 import { useCallback, useMemo } from 'react';
 import { supabase } from '@/core/api/supabase/client';
 import { useToast } from '@/shared/hooks/common/use-toast';
+import { Database, Json } from '@/core/types/supabase';
 
 // Types for inventory movements
 export interface InventoryMovementParams {
@@ -31,25 +32,25 @@ export interface InventoryMovement {
   product_id: string;
   quantity_change: number;
   new_stock_quantity: number;
-  type: string;
+  type_enum: string;
   reason: string | null;
-  metadata: Record<string, any>;
+  metadata: Json;
   date: string;
   customer_id?: string | null;
   sale_id?: string | null;
   user_id?: string | null;
-  product?: {
+  product: {
     name: string;
     unit_type: string;
     price: number;
   };
-  customer?: {
+  customer: {
     name: string;
-    phone?: string;
-  };
-  user?: {
-    name: string;
-  };
+    phone: string | null;
+  } | null;
+  user: {
+    name: string | null;
+  } | null;
 }
 
 export const useInventoryMovements = () => {
@@ -69,7 +70,7 @@ export const useInventoryMovements = () => {
         });
 
       if (error) throw error;
-      return data;
+      return data as unknown as InventoryMovementResult;
     },
     []
   );
@@ -147,11 +148,11 @@ export const useInventoryMovements = () => {
           .order('date', { ascending: false });
 
         if (filters?.productId) {
-          query = query.eq('product_id', filters.productId);
+          query = query.eq('product_id', filters.productId as any);
         }
 
         if (filters?.type) {
-          query = query.eq('type', filters.type);
+          query = query.eq('type_enum', filters.type as any);
         }
 
         if (filters?.startDate) {
@@ -168,7 +169,7 @@ export const useInventoryMovements = () => {
 
         const { data, error } = await query;
         if (error) throw error;
-        return data as InventoryMovement[];
+        return data as unknown as InventoryMovement[];
       },
     });
   };

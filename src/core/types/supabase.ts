@@ -84,6 +84,7 @@ export interface Database {
           region: string | null
           alcohol_content: number | null
           volume: number | null
+          unit_type: string
           image_url: string | null
           created_at: string
           updated_at: string
@@ -105,6 +106,7 @@ export interface Database {
           region?: string | null
           alcohol_content?: number | null
           volume?: number | null
+          unit_type?: string
           image_url?: string | null
           created_at?: string
           updated_at?: string
@@ -352,22 +354,34 @@ export interface Database {
         Row: {
           id: string
           date: string
-          type: 'in' | 'out'
+          type?: 'in' | 'out'
           product_id: string
-          quantity: number
+          quantity?: number
           reason: string | null
           user_id: string | null
           related_sale_id: string | null
+          quantity_change: number
+          type_enum: string
+          metadata: Json
+          new_stock_quantity: number
+          customer_id: string | null
+          sale_id: string | null
         }
         Insert: {
           id?: string
           date?: string
-          type: 'in' | 'out'
+          type?: 'in' | 'out'
           product_id: string
-          quantity: number
+          quantity?: number
           reason?: string | null
           user_id?: string | null
           related_sale_id?: string | null
+          quantity_change: number
+          type_enum: string
+          metadata?: Json
+          new_stock_quantity?: number
+          customer_id?: string | null
+          sale_id?: string | null
         }
         Update: {
           id?: string
@@ -378,7 +392,50 @@ export interface Database {
           reason?: string | null
           user_id?: string | null
           related_sale_id?: string | null
+          quantity_change?: number
+          type_enum?: string
+          metadata?: Json
+          new_stock_quantity?: number
+          customer_id?: string | null
+          sale_id?: string | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_movements_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_movements_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_movements_related_sale_id_fkey"
+            columns: ["related_sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_movements_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_movements_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       sale_items: {
         Row: {
