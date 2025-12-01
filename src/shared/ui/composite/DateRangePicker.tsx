@@ -132,6 +132,9 @@ export function DateRangePicker({
                         defaultMonth={date?.from}
                         selected={date}
                         onSelect={(newDate) => {
+                            if (newDate?.to) {
+                                newDate.to = endOfDay(newDate.to)
+                            }
                             onDateChange(newDate)
                             setPreset("custom")
                         }}
