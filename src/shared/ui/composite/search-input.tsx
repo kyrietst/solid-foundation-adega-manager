@@ -44,6 +44,7 @@ export const SearchInput: React.FC<SearchInputProps> = ({
   size = 'md'
 }) => {
   const [internalValue, setInternalValue] = useState(value);
+  const [isFocused, setIsFocused] = useState(false);
   const styles = sizeStyles[size];
 
   // Estabilizar onChange para evitar re-execuções desnecessárias do useEffect
@@ -62,10 +63,15 @@ export const SearchInput: React.FC<SearchInputProps> = ({
     }
   }, [internalValue, stableOnChange, debounceMs]);
 
-  // Sync external value changes
+  // Sync external value changes with protection against race conditions
   useEffect(() => {
+    // Se estiver focado e o valor interno já "contém" o novo valor (ex: usuário digitou mais rápido que o refresh),
+    // ignoramos a atualização externa para evitar "flicker" (cursor pular ou texto sumir).
+    if (isFocused && internalValue.startsWith(value) && internalValue.length > value.length) {
+      return;
+    }
     setInternalValue(value);
-  }, [value]);
+  }, [value]); // Removido isFocused/internalValue das deps para evitar loops, confiamos no closure atualizado pelo re-render
 
   const handleClear = useCallback(() => {
     setInternalValue('');
@@ -82,10 +88,12 @@ export const SearchInput: React.FC<SearchInputProps> = ({
         'absolute top-1/2 transform -translate-y-1/2 text-gray-400',
         styles.icon
       )} />
-      
+
       <Input
         value={internalValue}
         onChange={handleChange}
+        onFocus={() => setIsFocused(true)}
+        onBlur={() => setIsFocused(false)}
         placeholder={placeholder}
         disabled={disabled}
         className={cn(
@@ -94,7 +102,7 @@ export const SearchInput: React.FC<SearchInputProps> = ({
           'placeholder:text-gray-500'
         )}
       />
-      
+
       {showClearButton && internalValue && (
         <Button
           variant="ghost"
