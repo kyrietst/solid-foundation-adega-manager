@@ -72,53 +72,8 @@ export type CustomerEvent = {
   created_at?: string; // opcional para inserções manuais
 };
 
-/**
- * Registra evento do cliente e recalcula insights automaticamente
- * @param event - Evento do cliente (compra, movimento, etc.)
- * @returns Promise<void>
- * @example
- * ```typescript
- * await recordCustomerEvent({
- *   customer_id: 'uuid',
- *   type: 'sale',
- *   origin_id: 'sale_uuid',
- *   value: 150.00,
- *   description: 'Compra de vinhos'
- * });
- * ```
- */
-export const recordCustomerEvent = async (event: CustomerEvent) => {
-  if (!event.customer_id) {
-    console.warn('recordCustomerEvent: customer_id não fornecido');
-    return;
-  }
-  
-  try {
-    // Garante timestamp server-side
-    const payload = { ...event, created_at: event.created_at ?? new Date().toISOString() };
-    const { error } = await supabase.from('customer_history').insert(payload);
-
-    if (error) {
-      console.error('Erro ao gravar histórico do cliente:', error);
-      // Se for erro de RLS, tenta verificar se é problema de permissão
-      if (error.code === '42501') {
-        console.warn('Erro de RLS ao inserir customer_history - verificar políticas de segurança');
-      }
-      throw error; // Re-throw para que o caller possa tratar
-    }
-
-    // Tenta recalcular insights, mas não falha se der erro
-    try {
-      await supabase.rpc('recalc_customer_insights', { p_customer_id: event.customer_id });
-    } catch (insightsError) {
-      console.warn('Erro ao recalcular insights do cliente (não crítico):', insightsError);
-      // Não propaga este erro
-    }
-  } catch (error) {
-    console.error('Erro geral ao registrar evento do cliente:', error);
-    throw error; // Re-throw para que o caller possa decidir como tratar
-  }
-};
+// REMOVED: recordCustomerEvent function - customer_history table was deleted and consolidated into audit_logs/customer_interactions
+// If you need to track customer events, use customer_interactions table directly or audit_logs
 
 export interface CustomerPurchase {
   id: string;
@@ -154,13 +109,13 @@ export interface SaleData {
  * });
  * ```
  */
-export const useCustomers = (params?: { 
-  search?: string; 
+export const useCustomers = (params?: {
+  search?: string;
   limit?: number;
   enabled?: boolean;
 }) => {
   const { search, limit, enabled = true } = params || {};
-  
+
   return useQuery({
     queryKey: ['customers', { search, limit }],
     queryFn: async () => {
@@ -170,28 +125,28 @@ export const useCustomers = (params?: {
           .from('customers')
           .select('*')
           .order('name', { ascending: true });
-        
+
         // Aplicar filtro de busca se fornecido
         if (search && search.trim()) {
           const searchTerm = search.trim();
           query = query.or(`name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%`);
         }
-        
+
         // Aplicar limite se fornecido
         if (limit) {
           query = query.limit(limit);
         }
-        
+
         const { data, error } = await query;
-        
+
         if (error) {
           console.error('💥 Erro ao buscar clientes do Supabase:', error);
           throw error; // Falhar ao invés de usar dados mockados
         }
-        
+
         // Retornar apenas dados reais do banco (pode ser array vazio)
         return (data as CustomerProfile[]) || [];
-        
+
       } catch (error) {
         console.error('💥 Erro crítico ao buscar clientes:', error);
         throw error; // Propagar erro ao invés de usar dados falsos
@@ -213,7 +168,7 @@ export const useCustomer = (customerId: string) => {
         .select('*')
         .eq('id', customerId)
         .single();
-        
+
       if (error) throw error;
       return data as CustomerProfile;
     },
@@ -221,39 +176,7 @@ export const useCustomer = (customerId: string) => {
   });
 };
 
-// Hook para obter insights de um cliente
-export const useCustomerInsights = (customerId: string) => {
-  return useQuery({
-    queryKey: ['customer-insights', customerId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('customer_insights')
-        .select('*')
-        .eq('customer_id', customerId)
-        .order('created_at', { ascending: false });
-        
-      if (error) throw error;
-      return data as CustomerInsight[];
-    },
-    enabled: !!customerId
-  });
-};
-
-// Hook para obter todos os insights de clientes
-export const useAllCustomerInsights = () => {
-  return useQuery({
-    queryKey: ['all-customer-insights'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('customer_insights')
-        .select('*')
-        .order('created_at', { ascending: false });
-        
-      if (error) throw error;
-      return data as CustomerInsight[];
-    }
-  });
-};
+// ✅ REMOVED: useCustomerInsights, useAllCustomerInsights (customer_insights table deleted)
 
 // Hook para obter interações de um cliente ou todas as interações
 export const useCustomerInteractions = (customerId: string) => {
@@ -376,29 +299,29 @@ export const useCustomerPurchases = (customerId: string) => {
         `)
         .eq('customer_id', customerId)
         .order('created_at', { ascending: false });
-        
+
       if (salesError) throw salesError;
-      
+
       // Para cada venda, buscar os detalhes dos produtos
       const purchases: CustomerPurchase[] = [];
-      
+
       for (const sale of sales) {
         const purchaseItems = [];
-        
+
         for (const item of sale.sale_items) {
           const { data: product } = await supabase
             .from('products')
             .select('name')
             .eq('id', item.product_id)
             .single();
-            
+
           purchaseItems.push({
             product_name: product?.name || 'Produto não encontrado',
             quantity: item.quantity,
             unit_price: item.unit_price
           });
         }
-        
+
         purchases.push({
           id: sale.id,
           date: sale.created_at,
@@ -406,7 +329,7 @@ export const useCustomerPurchases = (customerId: string) => {
           items: purchaseItems
         });
       }
-      
+
       return purchases;
     },
     enabled: !!customerId
@@ -422,7 +345,7 @@ export const useSalesData = () => {
         .from('sales')
         .select('id, customer_id, total_amount, created_at')
         .order('created_at', { ascending: false });
-        
+
       if (error) throw error;
       return data as SaleData[];
     }
@@ -441,7 +364,7 @@ export const useAddCustomerInteraction = () => {
         .insert(interaction)
         .select()
         .single();
-        
+
       if (error) throw error;
       return data;
     },
@@ -449,7 +372,7 @@ export const useAddCustomerInteraction = () => {
       queryClient.invalidateQueries({ queryKey: ['customer-interactions', data.customer_id] });
       queryClient.invalidateQueries({ queryKey: ['customer-interactions', ''] });
       queryClient.invalidateQueries({ queryKey: ['reports'] }); // Invalidar a lista de todas as interações
-      
+
       toast({
         title: 'Interação registrada',
         description: 'A interação com o cliente foi registrada com sucesso.'
@@ -469,7 +392,7 @@ export const useAddCustomerInteraction = () => {
 // Refatorado para usar hook especializado
 export const useProfileCompleteness = (customer: CustomerProfile | undefined) => {
   const completeness = useProfileCompletenessCalculator(customer);
-  
+
   // Manter interface compatível com versão anterior
   return {
     score: completeness.score,
@@ -486,35 +409,35 @@ export const useCustomerStats = () => {
       const { count: totalCustomers, error: countError } = await supabase
         .from('customers')
         .select('*', { count: 'exact', head: true });
-        
+
       if (countError) throw countError;
-      
+
       // Clientes por segmento
       const { data: segments, error: segmentsError } = await supabase
         .from('customers')
         .select('segment')
         .not('segment', 'is', null);
-        
+
       if (segmentsError) throw segmentsError;
-      
+
       const segmentCounts: Record<string, number> = {};
       segments.forEach(item => {
         const segment = item.segment || 'Não definido';
         segmentCounts[segment] = (segmentCounts[segment] || 0) + 1;
       });
-      
+
       // Valor total de vendas
       const { data: sales, error: salesError } = await supabase
         .from('sales')
         .select('total_amount');
-        
+
       if (salesError) throw salesError;
-      
+
       const totalRevenue = sales.reduce((sum, sale) => sum + Number(sale.total_amount), 0);
-      
+
       // Ticket médio
       const averageTicket = sales.length > 0 ? totalRevenue / sales.length : 0;
-      
+
       return {
         totalCustomers,
         segmentCounts,

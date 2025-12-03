@@ -56,7 +56,7 @@ export const useCategoryExpenseSummary = (categoryId: string, startDate: string,
     queryKey: ['category-expense-summary', categoryId, startDate, endDate],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('operational_expenses')
+        .from('expenses')
         .select('amount, expense_date')
         .eq('category_id', categoryId)
         .gte('expense_date', startDate)
@@ -150,7 +150,7 @@ export const useDeleteExpenseCategory = () => {
     mutationFn: async (id: string) => {
       // Verificar se há despesas associadas
       const { data: expenses, error: checkError } = await supabase
-        .from('operational_expenses')
+        .from('expenses')
         .select('id')
         .eq('category_id', id)
         .limit(1);

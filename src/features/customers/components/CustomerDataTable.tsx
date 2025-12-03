@@ -27,8 +27,8 @@ import ProfileCompleteness from "@/shared/ui/composite/profile-completeness";
 import { useProfileCompleteness } from "../hooks/useDataQuality";
 import { calculateCompleteness } from "../utils/completeness-calculator";
 import { useCustomerTableData } from "../hooks/useCustomerTableData";
-import { 
-  CustomerTableRow, 
+import {
+  CustomerTableRow,
   TABLE_COLUMNS,
   TableColumn,
   formatPaymentMethod,
@@ -36,8 +36,6 @@ import {
   formatNextBirthday,
   formatLastContact,
   formatCurrency,
-  getInsightLevel,
-  getInsightColor,
   getProfileCompletenessColor,
   getProfileCompletenessBarColor,
   getLastContactColor,
@@ -46,94 +44,20 @@ import {
   CUSTOMER_STATUSES
 } from "../types/customer-table.types";
 
-const InsightsBadge = React.memo(({
-  count,
-  confidence
-}: {
-  count: number;
-  confidence: number;
-}) => {
-  if (count === 0) {
-    return (
-      <div className="flex justify-center items-center w-full">
-        <Badge variant="outline" className="flex items-center gap-1 text-sm font-bold px-3 py-1 bg-gray-600/30 text-gray-100 border-gray-500/60">
-          <Brain className="w-3 h-3" />
-          Sem insights
-        </Badge>
-      </div>
-    );
-  }
-
-  const level = getInsightLevel(confidence);
-  const color = getInsightColor(level);
-
-  // Sistema de cores Adega Wine Cellar v2.1 - Insights IA
-  const badgeClass = {
-    green: "bg-green-500/30 text-green-100 border-green-400/60 shadow-lg shadow-green-400/20 backdrop-blur-sm font-bold",
-    yellow: "bg-yellow-500/30 text-yellow-100 border-yellow-400/60 shadow-lg shadow-yellow-400/20 backdrop-blur-sm font-bold",
-    red: "bg-red-500/30 text-red-100 border-red-400/60 shadow-lg shadow-red-400/20 backdrop-blur-sm lgpd-soft-pulse font-bold"
-  };
-
-  return (
-    <div className="flex justify-center items-center w-full">
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Badge className={cn(
-              "flex items-center gap-1 transition-all duration-200 hover:scale-105 border cursor-pointer text-sm font-semibold px-3 py-1",
-              badgeClass[color]
-            )}>
-              <Brain className="w-3 h-3" />
-              {count} insights ({Math.round(confidence * 100)}%)
-            </Badge>
-          </TooltipTrigger>
-        <TooltipPortal>
-          <TooltipContent className="z-[50000] bg-black/95 backdrop-blur-xl border border-primary-yellow/30 shadow-2xl">
-            <div className="space-y-2 p-1">
-              <div className="flex items-center gap-2 border-b border-white/10 pb-1">
-                <Brain className="h-3 w-3 text-primary-yellow" />
-                <span className="font-semibold text-white text-xs">Insights de IA</span>
-              </div>
-              
-              <div className="bg-accent-blue/10 border border-accent-blue/20 rounded-lg p-2">
-                <p className="text-blue-300 font-medium text-xs">
-                  {count} insights disponíveis
-                </p>
-                <p className="text-blue-200 text-[10px] mt-1">
-                  Confiança média: {Math.round(confidence * 100)}%
-                </p>
-              </div>
-              
-              <div className="text-center pt-1 border-t border-white/10">
-                <p className="text-xs text-gray-300">
-                  Análises automatizadas de comportamento
-                </p>
-              </div>
-            </div>
-            </TooltipContent>
-          </TooltipPortal>
-      </Tooltip>
-    </TooltipProvider>
-    </div>
-  );
-}, (prevProps, nextProps) =>
-  prevProps.count === nextProps.count && prevProps.confidence === nextProps.confidence
-);
-
 // Indicadores visuais para campos críticos de relatórios
-const ReportFieldIndicator = ({ 
-  fieldName, 
-  value, 
-  isRequired = false 
-}: { 
-  fieldName: string; 
-  value: any; 
-  isRequired?: boolean; 
+const ReportFieldIndicator = ({
+  fieldName,
+  value,
+  isRequired = false
+}: {
+  fieldName: string;
+  value: any;
+  isRequired?: boolean;
 }) => {
   const isEmpty = !value || value === '' || value === 'Não informado' || value === 'N/A';
-  
+
   if (!isEmpty) return null;
-  
+
   return (
     <TooltipProvider>
       <Tooltip>
@@ -201,16 +125,16 @@ const CustomerNameWithIndicators = React.memo(({
     { key: 'address', label: 'Endereço', value: customer.cidade, required: false },
     { key: 'category', label: 'Categoria Favorita', value: customer.categoriaFavorita, required: false }
   ];
-  
-  const missingFields = reportFields.filter(field => 
+
+  const missingFields = reportFields.filter(field =>
     !field.value || field.value === 'Não informado' || field.value === 'N/A'
   );
-  
+
   const criticalMissing = missingFields.filter(field => field.required);
   const importantMissing = missingFields.filter(field => !field.required);
-  
+
   const hasIssues = missingFields.length > 0;
-  
+
   return (
     <TooltipProvider>
       <Tooltip>
@@ -226,7 +150,7 @@ const CustomerNameWithIndicators = React.memo(({
             )}>
               {customer.cliente}
             </span>
-            
+
             {/* Indicadores visuais */}
             {criticalMissing.length > 0 && (
               <div className="relative">
@@ -234,11 +158,11 @@ const CustomerNameWithIndicators = React.memo(({
                 <div className="absolute -top-1 -right-1 w-2 h-2 bg-accent-red rounded-full animate-ping" />
               </div>
             )}
-            
+
             {importantMissing.length > 0 && criticalMissing.length === 0 && (
               <div className="w-2 h-2 bg-accent-orange rounded-full animate-pulse" />
             )}
-            
+
             {!hasIssues && (
               <CheckCircle2 className="h-3 w-3 text-green-400 opacity-60" />
             )}
@@ -255,7 +179,7 @@ const CustomerNameWithIndicators = React.memo(({
                   <span className="text-primary-yellow text-xs font-medium">Clique para editar</span>
                 </div>
               </div>
-              
+
               {/* Campos críticos faltantes */}
               {criticalMissing.length > 0 && (
                 <div className="bg-accent-red/10 border border-accent-red/20 rounded-lg p-2">
@@ -274,7 +198,7 @@ const CustomerNameWithIndicators = React.memo(({
                   </div>
                 </div>
               )}
-              
+
               {/* Campos importantes faltantes */}
               {importantMissing.length > 0 && (
                 <div className="bg-accent-orange/10 border border-accent-orange/20 rounded-lg p-2">
@@ -293,7 +217,7 @@ const CustomerNameWithIndicators = React.memo(({
                   </div>
                 </div>
               )}
-              
+
               {/* Status completo */}
               {!hasIssues && (
                 <div className="bg-green-400/10 border border-green-400/20 rounded-lg p-2">
@@ -306,7 +230,7 @@ const CustomerNameWithIndicators = React.memo(({
                   </p>
                 </div>
               )}
-              
+
               {/* Footer */}
               <div className="text-center pt-1 border-t border-white/10">
                 <p className="text-xs text-gray-300">
@@ -339,56 +263,56 @@ const LGPDBadge = React.memo(({ hasPermission }: { hasPermission: boolean }) => 
               {hasPermission ? "LGPD ✓" : "Pendente"}
             </Badge>
           </TooltipTrigger>
-        <TooltipPortal>
-          <TooltipContent className="z-[50000] bg-black/95 backdrop-blur-xl border border-primary-yellow/30 shadow-2xl">
-            <div className="space-y-2 p-1">
-              <div className="flex items-center gap-2 border-b border-white/10 pb-1">
-                <Shield className="h-3 w-3 text-primary-yellow" />
-                <span className="font-semibold text-white text-xs">Status LGPD</span>
-              </div>
-              
-              {hasPermission ? (
-                <div className="bg-green-400/10 border border-green-400/20 rounded-lg p-2">
-                  <p className="text-green-300 font-medium text-xs flex items-center gap-1">
-                    <CheckCircle2 className="h-3 w-3" />
-                    Autorização Concedida
-                  </p>
-                  <p className="text-green-200 text-[10px] mt-1">
-                    Cliente pode receber comunicações de marketing
+          <TooltipPortal>
+            <TooltipContent className="z-[50000] bg-black/95 backdrop-blur-xl border border-primary-yellow/30 shadow-2xl">
+              <div className="space-y-2 p-1">
+                <div className="flex items-center gap-2 border-b border-white/10 pb-1">
+                  <Shield className="h-3 w-3 text-primary-yellow" />
+                  <span className="font-semibold text-white text-xs">Status LGPD</span>
+                </div>
+
+                {hasPermission ? (
+                  <div className="bg-green-400/10 border border-green-400/20 rounded-lg p-2">
+                    <p className="text-green-300 font-medium text-xs flex items-center gap-1">
+                      <CheckCircle2 className="h-3 w-3" />
+                      Autorização Concedida
+                    </p>
+                    <p className="text-green-200 text-[10px] mt-1">
+                      Cliente pode receber comunicações de marketing
+                    </p>
+                  </div>
+                ) : (
+                  <div className="bg-accent-red/10 border border-accent-red/20 rounded-lg p-2">
+                    <p className="text-red-300 font-medium text-xs flex items-center gap-1">
+                      <AlertTriangle className="h-3 w-3 lgpd-soft-pulse" />
+                      Autorização Pendente
+                    </p>
+                    <p className="text-red-200 text-[10px] mt-1">
+                      Necessário consentimento para marketing
+                    </p>
+                  </div>
+                )}
+
+                <div className="text-center pt-1 border-t border-white/10">
+                  <p className="text-xs text-gray-300">
+                    Conforme Lei Geral de Proteção de Dados
                   </p>
                 </div>
-              ) : (
-                <div className="bg-accent-red/10 border border-accent-red/20 rounded-lg p-2">
-                  <p className="text-red-300 font-medium text-xs flex items-center gap-1">
-                    <AlertTriangle className="h-3 w-3 lgpd-soft-pulse" />
-                    Autorização Pendente
-                  </p>
-                  <p className="text-red-200 text-[10px] mt-1">
-                    Necessário consentimento para marketing
-                  </p>
-                </div>
-              )}
-              
-              <div className="text-center pt-1 border-t border-white/10">
-                <p className="text-xs text-gray-300">
-                  Conforme Lei Geral de Proteção de Dados
-                </p>
               </div>
-            </div>
             </TooltipContent>
           </TooltipPortal>
-      </Tooltip>
-    </TooltipProvider>
+        </Tooltip>
+      </TooltipProvider>
     </div>
   );
 }, (prevProps, nextProps) => prevProps.hasPermission === nextProps.hasPermission);
 
-const EnhancedProfileCompleteness = ({ 
-  row, 
-  onEditClick 
-}: { 
+const EnhancedProfileCompleteness = ({
+  row,
+  onEditClick
+}: {
   row: CustomerTableRow;
-  onEditClick?: (customerId: string) => void; 
+  onEditClick?: (customerId: string) => void;
 }) => {
   // Converter CustomerTableRow para CustomerData format
   const customerData = {
@@ -399,7 +323,7 @@ const EnhancedProfileCompleteness = ({
     address: row.cidade ? { city: row.cidade } : null,
     birthday: row.proximoAniversario ? row.proximoAniversario.toISOString() : null,
     first_purchase_date: null,
-    last_purchase_date: row.ultimaCompra,
+    last_purchase_date: row.ultimaCompra ? row.ultimaCompra.toISOString() : null,
     purchase_frequency: null,
     favorite_category: row.categoriaFavorita,
     favorite_product: null,
@@ -417,7 +341,7 @@ const EnhancedProfileCompleteness = ({
       return null;
     }
   }, [customerData]);
-  
+
   if (!completeness) {
     return (
       <div className="flex items-center gap-2 min-w-[80px] text-gray-400">
@@ -443,17 +367,17 @@ const EnhancedProfileCompleteness = ({
             }}
             role="button"
             tabIndex={0}
-            aria-label={`Editar perfil de ${row.name}, completude: ${completeness.percentage}%`}
+            aria-label={`Editar perfil de ${row.cliente}, completude: ${completeness.percentage}%`}
           >
             <div className="flex-1">
               <div className="w-full bg-gray-700/50 rounded-full h-2.5">
-                <div 
+                <div
                   className={cn(
                     "h-2.5 rounded-full transition-all duration-300",
                     completeness.level === 'excellent' ? 'bg-gradient-to-r from-primary-yellow to-yellow-400' :
-                    completeness.level === 'good' ? 'bg-gradient-to-r from-green-500 to-green-400' :
-                    completeness.level === 'fair' ? 'bg-gradient-to-r from-yellow-500 to-yellow-400' :
-                    'bg-gradient-to-r from-red-500 to-red-400'
+                      completeness.level === 'good' ? 'bg-gradient-to-r from-green-500 to-green-400' :
+                        completeness.level === 'fair' ? 'bg-gradient-to-r from-yellow-500 to-yellow-400' :
+                          'bg-gradient-to-r from-red-500 to-red-400'
                   )}
                   style={{ width: `${completeness.percentage}%` }}
                 />
@@ -463,9 +387,9 @@ const EnhancedProfileCompleteness = ({
               <span className={cn(
                 "text-xs font-medium",
                 completeness.level === 'excellent' ? 'text-primary-yellow' :
-                completeness.level === 'good' ? 'text-green-400' :
-                completeness.level === 'fair' ? 'text-yellow-400' :
-                'text-red-400'
+                  completeness.level === 'good' ? 'text-green-400' :
+                    completeness.level === 'fair' ? 'text-yellow-400' :
+                      'text-red-400'
               )}>
                 {completeness.percentage}%
               </span>
@@ -478,58 +402,58 @@ const EnhancedProfileCompleteness = ({
         <TooltipPortal>
           <TooltipContent side="left" className="max-w-sm z-[50000] bg-gray-900 border-gray-700">
             <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="font-medium">Completude do Perfil</span>
-              <span className={cn(
-                "font-bold",
-                completeness.level === 'excellent' ? 'text-primary-yellow' :
-                completeness.level === 'good' ? 'text-green-400' :
-                completeness.level === 'fair' ? 'text-yellow-400' :
-                'text-red-400'
-              )}>
-                {completeness.percentage}%
-              </span>
-            </div>
-            
-            <div className="text-xs text-gray-300">
-              {completeness.presentFields.length} de {completeness.presentFields.length + completeness.missingFields.length} campos preenchidos
-            </div>
-
-            {completeness.criticalMissing.length > 0 && (
-              <div className="text-xs text-red-400">
-                ⚠️ {completeness.criticalMissing.length} campos críticos ausentes:
-                <br />
-                {completeness.criticalMissing.map(f => f.label).join(', ')}
+              <div className="flex items-center justify-between">
+                <span className="font-medium">Completude do Perfil</span>
+                <span className={cn(
+                  "font-bold",
+                  completeness.level === 'excellent' ? 'text-primary-yellow' :
+                    completeness.level === 'good' ? 'text-green-400' :
+                      completeness.level === 'fair' ? 'text-yellow-400' :
+                        'text-red-400'
+                )}>
+                  {completeness.percentage}%
+                </span>
               </div>
-            )}
 
-            {completeness.recommendations.length > 0 && (
-              <div className="text-xs text-blue-400">
-                💡 {completeness.recommendations[0]}
+              <div className="text-xs text-gray-300">
+                {completeness.presentFields.length} de {completeness.presentFields.length + completeness.missingFields.length} campos preenchidos
               </div>
-            )}
 
-            <div className="text-xs text-gray-400 border-t border-gray-600 pt-1">
-              Clique para editar perfil
+              {completeness.criticalMissing.length > 0 && (
+                <div className="text-xs text-red-400">
+                  ⚠️ {completeness.criticalMissing.length} campos críticos ausentes:
+                  <br />
+                  {completeness.criticalMissing.map(f => f.label).join(', ')}
+                </div>
+              )}
+
+              {completeness.recommendations.length > 0 && (
+                <div className="text-xs text-blue-400">
+                  💡 {completeness.recommendations[0]}
+                </div>
+              )}
+
+              <div className="text-xs text-gray-400 border-t border-gray-600 pt-1">
+                Clique para editar perfil
+              </div>
             </div>
-            </div>
-            </TooltipContent>
-          </TooltipPortal>
+          </TooltipContent>
+        </TooltipPortal>
       </Tooltip>
     </TooltipProvider>
   );
 };
 
-const LastContactBadge = ({ 
-  date, 
-  daysAgo 
-}: { 
-  date: Date | null; 
-  daysAgo: number | null; 
+const LastContactBadge = ({
+  date,
+  daysAgo
+}: {
+  date: Date | null;
+  daysAgo: number | null;
 }) => {
   const color = getLastContactColor(daysAgo);
   const text = formatLastContact(date, daysAgo);
-  
+
   return (
     <TooltipProvider>
       <Tooltip>
@@ -541,14 +465,14 @@ const LastContactBadge = ({
         </TooltipTrigger>
         <TooltipPortal>
           <TooltipContent className="z-[50000] bg-gray-900 border-gray-700">
-          <p>
-            {daysAgo === null 
-              ? "Cliente nunca teve contato registrado" 
-              : `Último contato há ${daysAgo} dia${daysAgo === 1 ? '' : 's'}`
-            }
-          </p>
-            </TooltipContent>
-          </TooltipPortal>
+            <p>
+              {daysAgo === null
+                ? "Cliente nunca teve contato registrado"
+                : `Último contato há ${daysAgo} dia${daysAgo === 1 ? '' : 's'}`
+              }
+            </p>
+          </TooltipContent>
+        </TooltipPortal>
       </Tooltip>
     </TooltipProvider>
   );
@@ -556,7 +480,7 @@ const LastContactBadge = ({
 
 const OutstandingAmountBadge = ({ amount }: { amount: number }) => {
   const color = getOutstandingAmountColor(amount);
-  
+
   return (
     <TooltipProvider>
       <Tooltip>
@@ -568,20 +492,20 @@ const OutstandingAmountBadge = ({ amount }: { amount: number }) => {
         </TooltipTrigger>
         <TooltipPortal>
           <TooltipContent className="z-[50000] bg-gray-900 border-gray-700">
-          <p>
-            {amount === 0 
-              ? "Cliente não possui valores em aberto" 
-              : `Valor total em aberto: ${formatCurrency(amount)}`
-            }
-          </p>
-            </TooltipContent>
-          </TooltipPortal>
+            <p>
+              {amount === 0
+                ? "Cliente não possui valores em aberto"
+                : `Valor total em aberto: ${formatCurrency(amount)}`
+              }
+            </p>
+          </TooltipContent>
+        </TooltipPortal>
       </Tooltip>
     </TooltipProvider>
   );
 };
 
-type SortField = 'cliente' | 'ultimaCompra' | 'insightsCount' | 'status' | 'diasParaAniversario' | 'profileCompleteness' | 'diasSemContato' | 'valorEmAberto' | null;
+type SortField = 'cliente' | 'ultimaCompra' | 'status' | 'diasParaAniversario' | 'profileCompleteness' | 'diasSemContato' | 'valorEmAberto' | null;
 type SortDirection = 'asc' | 'desc';
 
 export default function CustomerDataTable() {
@@ -673,7 +597,7 @@ export default function CustomerDataTable() {
       });
     }
 
-      return filtered;
+    return filtered;
   }, [customers, segmentFilter, statusFilter, searchTerm, lastPurchaseFilter, birthdayFilter, sortField, sortDirection]);
 
   // Define as colunas para o DataTable SSoT
@@ -710,7 +634,7 @@ export default function CustomerDataTable() {
         width: '130px',
         align: 'center',
         render: (value) => (
-          <span className="text-gray-100">{value || "Não definida"}</span>
+          <span className="text-gray-100">{(value as string) || "Não definida"}</span>
         ),
       },
       {
@@ -721,7 +645,7 @@ export default function CustomerDataTable() {
         align: 'center',
         render: (value) => (
           <Badge variant="outline" className="bg-gray-700/50 text-gray-100 border-gray-600/50 text-sm font-medium px-3 py-1">
-            {value}
+            {value as string}
           </Badge>
         ),
       },
@@ -732,7 +656,7 @@ export default function CustomerDataTable() {
         width: '125px',
         align: 'center',
         render: (value) => (
-          <span className="text-gray-100">{formatPaymentMethod(value)}</span>
+          <span className="text-gray-100">{formatPaymentMethod(value as string | null)}</span>
         ),
       },
       {
@@ -743,19 +667,6 @@ export default function CustomerDataTable() {
         align: 'center',
         render: (value) => (
           <span className="text-gray-100">{formatLastPurchase(value as Date | null)}</span>
-        ),
-      },
-      {
-        key: 'insightsCount',
-        title: 'Insights de IA',
-        sortable: true,
-        width: '135px',
-        align: 'center',
-        render: (value, customer) => (
-          <InsightsBadge
-            count={customer.insightsCount}
-            confidence={customer.insightsConfidence}
-          />
         ),
       },
       {
@@ -924,8 +835,8 @@ export default function CustomerDataTable() {
           </span>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="sm"
                 className="bg-gray-800/60 border-gray-600 text-gray-100 hover:bg-gray-700/80"
               >

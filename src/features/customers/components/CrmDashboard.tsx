@@ -93,10 +93,10 @@ export const CrmDashboard: React.FC = () => {
 
   // Buscar dados de clientes
   const { data: customers = [], isLoading } = useCustomers();
-  
+
   // Buscar métricas dinâmicas baseadas no período selecionado
   const { metrics, customersAtRisk, isLoading: isLoadingMetrics } = useCrmMetrics(selectedPeriod);
-  
+
   // Buscar dados reais de tendências com período dinâmico
   const { data: trendsData = [], isLoading: isLoadingTrends, error: trendsError } = useCrmTrends(selectedPeriod);
 
@@ -125,24 +125,17 @@ export const CrmDashboard: React.FC = () => {
 
       switch (type) {
         case 'clientes':
-          data = customers;
+          data = customers as unknown as Record<string, unknown>[];
           filename = 'clientes-crm.csv';
           break;
 
-        case 'insights': {
-          const { data: insightsData } = await supabase
-            .from('customer_insights')
-            .select('*');
-          data = insightsData || [];
-          filename = 'insights-clientes.csv';
-          break;
-        }
+        // ✅ REMOVED: 'insights' export (customer_insights table deleted)
 
         case 'interacoes': {
           const { data: interactionsData } = await supabase
             .from('customer_interactions')
             .select('*');
-          data = interactionsData || [];
+          data = (interactionsData || []) as unknown as Record<string, unknown>[];
           filename = 'interacoes-clientes.csv';
           break;
         }
@@ -152,7 +145,7 @@ export const CrmDashboard: React.FC = () => {
             .from('sales')
             .select('*')
             .not('customer_id', 'is', null);
-          data = salesData || [];
+          data = (salesData || []) as unknown as Record<string, unknown>[];
           filename = 'vendas-clientes.csv';
           break;
         }
@@ -170,7 +163,7 @@ export const CrmDashboard: React.FC = () => {
       const headers = Object.keys(data[0]);
       const csvContent = [
         headers.join(','),
-        ...data.map(row => 
+        ...data.map(row =>
           headers.map(header => {
             const value = row[header];
             // Tratar valores que podem conter vírgulas ou quebras de linha
@@ -199,13 +192,13 @@ export const CrmDashboard: React.FC = () => {
       alert('Erro ao exportar dados. Tente novamente.');
     }
   };
-  
+
   // Métricas são calculadas dinamicamente pelo hook useCrmMetrics baseado no período
 
   // Dados por segmento
   const segmentData = useMemo((): SegmentData[] => {
     const segmentMap = new Map<string, { count: number; ltv: number }>();
-    
+
     customers.forEach(customer => {
       const segment = customer.segment || 'Novo';
       const existing = segmentMap.get(segment) || { count: 0, ltv: 0 };
@@ -254,10 +247,10 @@ export const CrmDashboard: React.FC = () => {
   }, [customers]);
 
   // Componente para placeholder "Em Manutenção"
-  const MaintenancePlaceholder = ({ title, description, icon: Icon }: { 
-    title: string; 
-    description: string; 
-    icon: React.ElementType 
+  const MaintenancePlaceholder = ({ title, description, icon: Icon }: {
+    title: string;
+    description: string;
+    icon: React.ElementType
   }) => (
     <Card className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm shadow-lg hover:shadow-2xl hover:shadow-yellow-500/10 hover:border-yellow-400/30 transition-all duration-300">
       <CardHeader>
@@ -269,7 +262,7 @@ export const CrmDashboard: React.FC = () => {
       <CardContent className="flex flex-col items-center justify-center py-8 relative overflow-hidden group">
         {/* Background gradient */}
         <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/5 via-transparent to-orange-500/5"></div>
-        
+
         <div className="relative z-10 text-center">
           <div className="relative mb-4">
             <div className="absolute inset-0 bg-yellow-500/20 rounded-full blur-lg group-hover:blur-xl transition-all duration-300"></div>
@@ -280,7 +273,7 @@ export const CrmDashboard: React.FC = () => {
             🔧 Em Manutenção
           </Badge>
         </div>
-        
+
         {/* Decorative elements */}
         <div className="absolute top-4 left-4 w-2 h-2 bg-yellow-400/60 rounded-full animate-pulse"></div>
         <div className="absolute bottom-6 right-8 w-1.5 h-1.5 bg-orange-400/60 rounded-full animate-pulse delay-700"></div>
@@ -373,13 +366,7 @@ export const CrmDashboard: React.FC = () => {
               <Users className="h-4 w-4 mr-2 text-purple-400 group-hover:scale-110 transition-transform duration-200" />
               <span className="group-hover:font-medium transition-all duration-200">Exportar Clientes</span>
             </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => exportToCSV('insights')}
-              className="text-white hover:bg-blue-500/20 hover:text-blue-300 cursor-pointer transition-all duration-200 group"
-            >
-              <Sparkles className="h-4 w-4 mr-2 text-blue-400 group-hover:scale-110 transition-transform duration-200" />
-              <span className="group-hover:font-medium transition-all duration-200">Exportar Insights</span>
-            </DropdownMenuItem>
+            {/* ✅ REMOVED: Exportar Insights menu item (customer_insights table deleted) */}
             <DropdownMenuItem
               onClick={() => exportToCSV('interacoes')}
               className="text-white hover:bg-green-500/20 hover:text-green-300 cursor-pointer transition-all duration-200 group"
@@ -399,7 +386,7 @@ export const CrmDashboard: React.FC = () => {
       </PageHeader>
 
       {/* Container principal com glassmorphism */}
-      <section 
+      <section
         className="bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-4 hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300 flex-1 space-y-6"
         onMouseMove={(e) => {
           const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
@@ -504,26 +491,26 @@ export const CrmDashboard: React.FC = () => {
         {/* Tabs para diferentes visões */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-4 bg-black/40 border border-white/20 backdrop-blur-sm rounded-xl">
-            <TabsTrigger 
-              value="overview" 
+            <TabsTrigger
+              value="overview"
               className="data-[state=active]:bg-accent-gold-100 data-[state=active]:text-black data-[state=active]:shadow-lg data-[state=active]:shadow-accent-gold-100/30 text-white hover:bg-white/10 transition-all duration-200"
             >
               Visão Geral
             </TabsTrigger>
-            <TabsTrigger 
-              value="segments" 
+            <TabsTrigger
+              value="segments"
               className="data-[state=active]:bg-accent-gold-100 data-[state=active]:text-black data-[state=active]:shadow-lg data-[state=active]:shadow-accent-gold-100/30 text-white hover:bg-white/10 transition-all duration-200"
             >
               Segmentação
             </TabsTrigger>
-            <TabsTrigger 
-              value="calendar" 
+            <TabsTrigger
+              value="calendar"
               className="data-[state=active]:bg-accent-gold-100 data-[state=active]:text-black data-[state=active]:shadow-lg data-[state=active]:shadow-accent-gold-100/30 text-white hover:bg-white/10 transition-all duration-200"
             >
               Calendário
             </TabsTrigger>
-            <TabsTrigger 
-              value="maps" 
+            <TabsTrigger
+              value="maps"
               className="data-[state=active]:bg-accent-gold-100 data-[state=active]:text-black data-[state=active]:shadow-lg data-[state=active]:shadow-accent-gold-100/30 text-white hover:bg-white/10 transition-all duration-200"
             >
               Mapas & IA
@@ -583,24 +570,24 @@ export const CrmDashboard: React.FC = () => {
                               name
                             ]}
                           />
-                          <Line 
-                            type="monotone" 
-                            dataKey="novos" 
-                            stroke="#3B82F6" 
+                          <Line
+                            type="monotone"
+                            dataKey="novos"
+                            stroke="#3B82F6"
                             strokeWidth={3}
                             name="Novos Clientes"
                           />
-                          <Line 
-                            type="monotone" 
-                            dataKey="ativos" 
-                            stroke="#10B981" 
+                          <Line
+                            type="monotone"
+                            dataKey="ativos"
+                            stroke="#10B981"
                             strokeWidth={3}
                             name="Clientes Ativos"
                           />
-                          <Line 
-                            type="monotone" 
-                            dataKey="ltv" 
-                            stroke="#F59E0B" 
+                          <Line
+                            type="monotone"
+                            dataKey="ltv"
+                            stroke="#F59E0B"
                             strokeWidth={3}
                             name="LTV Médio"
                           />
@@ -626,7 +613,7 @@ export const CrmDashboard: React.FC = () => {
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
                             <p className="font-medium text-white">{customer.name}</p>
-                            <Badge 
+                            <Badge
                               variant={customer.risk_level === 'alto' ? 'destructive' : customer.risk_level === 'medio' ? 'secondary' : 'default'}
                               className="text-xs"
                             >
@@ -634,7 +621,7 @@ export const CrmDashboard: React.FC = () => {
                             </Badge>
                           </div>
                           <p className="text-sm text-gray-400 mb-1">
-                            {customer.daysSinceLastPurchase !== null 
+                            {customer.daysSinceLastPurchase !== null
                               ? `${customer.daysSinceLastPurchase} dias sem comprar`
                               : 'Nunca realizou compra'
                             }
@@ -688,8 +675,8 @@ export const CrmDashboard: React.FC = () => {
                             endAngle={450}
                           >
                             {segmentData.map((entry, index) => (
-                              <Cell 
-                                key={`cell-${index}`} 
+                              <Cell
+                                key={`cell-${index}`}
                                 fill={entry.color}
                                 stroke={entry.color}
                                 strokeWidth={2}
@@ -716,17 +703,17 @@ export const CrmDashboard: React.FC = () => {
                         </RechartsPieChart>
                       </ResponsiveContainer>
                     </div>
-                    
+
                     {/* Legenda Lateral */}
                     <div className="flex-1 space-y-3">
                       <h4 className="text-white font-medium text-sm mb-4">Segmentos de Clientes</h4>
                       {segmentData.map((segment, index) => (
-                        <div 
-                          key={segment.segment} 
+                        <div
+                          key={segment.segment}
                           className="flex items-center justify-between p-3 rounded-lg bg-black/20 border border-white/10 hover:bg-white/5 transition-all duration-200 group"
                         >
                           <div className="flex items-center gap-3">
-                            <div 
+                            <div
                               className="w-4 h-4 rounded-full border-2 border-white/20 group-hover:scale-110 transition-transform duration-200"
                               style={{ backgroundColor: segment.color }}
                             />
@@ -743,7 +730,7 @@ export const CrmDashboard: React.FC = () => {
                           </div>
                         </div>
                       ))}
-                      
+
                       {/* Resumo Total */}
                       <div className="mt-4 p-3 rounded-lg bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/30">
                         <div className="flex justify-between items-center">
@@ -775,7 +762,7 @@ export const CrmDashboard: React.FC = () => {
                     {segmentData.map((segment) => (
                       <div key={segment.segment} className="flex items-center justify-between p-3 rounded-lg bg-black/20 border border-white/10 hover:bg-white/5 transition-colors duration-200">
                         <div className="flex items-center gap-3">
-                          <div 
+                          <div
                             className="w-4 h-4 rounded-full"
                             style={{ backgroundColor: segment.color }}
                           />
@@ -798,10 +785,10 @@ export const CrmDashboard: React.FC = () => {
             </div>
           </TabsContent>
 
-        {/* Tab: Calendário de Aniversários */}
-        <TabsContent value="calendar" className="mt-6">
-          <BirthdayCalendar showActions={true} />
-        </TabsContent>
+          {/* Tab: Calendário de Aniversários */}
+          <TabsContent value="calendar" className="mt-6">
+            <BirthdayCalendar showActions={true} />
+          </TabsContent>
 
           {/* Tab: Mapas & IA */}
           <TabsContent value="maps" className="mt-6">

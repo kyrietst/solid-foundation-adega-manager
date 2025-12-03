@@ -7,7 +7,7 @@
  * Modernizado com glass morphism e nova paleta preto/dourado
  */
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useId } from 'react';
 import { useCart, useCartTotal } from '@/features/sales/hooks/use-cart';
 import { useCustomer } from '@/features/customers/hooks/use-crm';
 import { usePaymentMethods, useUpsertSale } from '@/features/sales/hooks/use-sales';
@@ -48,6 +48,8 @@ export function Cart({
   glassEffect = true,
   saleType = 'presencial'
 }: CartProps) {
+  // ✅ ACCESSIBILITY FIX: Generate unique ID prefix to prevent duplicate IDs when Cart is rendered multiple times
+  const cartId = useId();
   const { items, updateItemQuantity, removeItem, customerId, setCustomer, clearCart } = useCart();
   const { data: paymentMethods = [], isLoading: isLoadingPaymentMethods } = usePaymentMethods();
   const { data: selectedCustomer } = useCustomer(customerId || '');
@@ -470,8 +472,10 @@ export function Cart({
                 {/* Discount */}
                 {allowDiscounts && (
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-200">Desconto</label>
+                    <label htmlFor={`${cartId}-discount`} className="text-sm font-medium text-gray-200">Desconto</label>
                     <Input
+                      id={`${cartId}-discount`}
+                      name="sale_discount"
                       type="number"
                       placeholder="0.00"
                       value={discount}
@@ -501,8 +505,10 @@ export function Cart({
                 {/* Campo Valor Recebido - só aparece se for dinheiro */}
                 {showCashInput && (
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-200">Valor Recebido</label>
+                    <label htmlFor={`${cartId}-cash`} className="text-sm font-medium text-gray-200">Valor Recebido</label>
                     <Input
+                      id={`${cartId}-cash`}
+                      name="cash_received"
                       type="number"
                       placeholder="0,00"
                       value={cashReceived || ''}
@@ -542,8 +548,10 @@ export function Cart({
               {isDeliverySectionExpanded && (
                 <div className="px-4 pb-4 space-y-4">
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-200">Endereço de Entrega *</label>
+                    <label htmlFor={`${cartId}-address`} className="text-sm font-medium text-gray-200">Endereço de Entrega *</label>
                     <Input
+                      id={`${cartId}-address`}
+                      name="delivery_address"
                       placeholder="Ex: Rua das Flores, 123, Bela Vista"
                       value={deliveryAddress}
                       onChange={(e) => setDeliveryAddress(e.target.value)}
@@ -553,8 +561,10 @@ export function Cart({
 
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-200">Taxa</label>
+                      <label htmlFor={`${cartId}-fee`} className="text-sm font-medium text-gray-200">Taxa</label>
                       <Input
+                        id={`${cartId}-fee`}
+                        name="delivery_fee"
                         type="number"
                         placeholder="0,00"
                         value={deliveryFee || ''}

@@ -25,7 +25,7 @@ export const ProductCard = React.memo<ProductCardProps>(({
   onAddToCart,
   onOpenSelection,
   variant = 'default',
-  glassEffect = true,
+  glassEffect = false,  // PERFORMANCE: Desabilitado por padrão em grids
 }) => {
   const glassClasses = glassEffect ? getGlassCardClasses(variant) : '';
 
@@ -124,8 +124,8 @@ export const ProductCard = React.memo<ProductCardProps>(({
             isOutOfStock
               ? 'bg-gray-600/30 text-gray-400 cursor-not-allowed'
               : hasMultipleOptions
-              ? 'bg-orange-500 hover:bg-orange-600 text-white'
-              : 'bg-primary-yellow hover:bg-yellow-400 text-black'
+                ? 'bg-orange-500 hover:bg-orange-600 text-white'
+                : 'bg-primary-yellow hover:bg-yellow-400 text-black'
           )}
         >
           {isOutOfStock ? (

@@ -31,9 +31,9 @@ interface CustomerSearchProps {
   className?: string;
 }
 
-export function CustomerSearch({ 
-  selectedCustomer, 
-  onSelect, 
+export function CustomerSearch({
+  selectedCustomer,
+  onSelect,
   onAddNew,
   variant = 'default',
   glassEffect = true,
@@ -66,11 +66,11 @@ export function CustomerSearch({
     setOpen(false);
     setSearchTerm('');
   }, [onSelect]);
-  
+
   const glassClasses = glassEffect ? getGlassCardClasses(variant) : '';
 
   return (
-    <div 
+    <div
       className={cn(
         'flex items-center space-x-2 p-3 rounded-lg bg-black/70 backdrop-blur-xl border border-white/20 shadow-lg hero-spotlight',
         className
@@ -103,6 +103,8 @@ export function CustomerSearch({
               placeholder="Buscar por nome, email ou telefone..."
               value={searchTerm}
               onValueChange={setSearchTerm}
+              name="customer_search_query"
+              aria-label="Buscar cliente por nome, email ou telefone"
               className={cn(
                 "text-white placeholder:text-gray-400 border-amber-400/20 focus:border-amber-400/40",
                 "bg-transparent h-12 px-3"
@@ -132,8 +134,8 @@ export function CustomerSearch({
                         selectedCustomer?.id === customer.id ? 'opacity-100' : 'opacity-0'
                       )}
                     />
-                    <div 
-                      className="flex-1 min-w-0" 
+                    <div
+                      className="flex-1 min-w-0"
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
@@ -155,10 +157,10 @@ export function CustomerSearch({
         </PopoverContent>
       </Popover>
       {onAddNew && (
-        <Button 
-          size="icon" 
-          variant="outline" 
-          onClick={onAddNew} 
+        <Button
+          size="icon"
+          variant="outline"
+          onClick={onAddNew}
           aria-label="Adicionar novo cliente"
           className="border-amber-400/30 text-amber-400 hover:bg-amber-400/10 hover:border-amber-400/50 transition-all duration-200 bg-black/50 backdrop-blur-sm"
         >

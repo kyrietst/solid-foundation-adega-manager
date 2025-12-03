@@ -41,43 +41,26 @@ function useChannelData() {
     queryFn: async () => {
       const startDate = getMonthStartDate();
       const endDate = getNowSaoPaulo();
-      const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
 
-      try {
-        const { data, error } = await supabase.rpc('get_delivery_vs_instore_comparison', {
-          p_days: daysDiff
-        });
+      // ✅ REFATORADO: Query direta (RPC foi dropada)
+      const { data: sales } = await supabase
+        .from('sales')
+        .select('delivery_type, final_amount')
+        .eq('status', 'completed')
+        .gte('created_at', startDate.toISOString())
+        .lte('created_at', endDate.toISOString())
+        .not('final_amount', 'is', null);
 
-        if (error) throw error;
-        const rpcData = data?.[0];
-        return {
-          delivery_revenue: rpcData?.delivery_revenue || 0,
-          instore_revenue: rpcData?.instore_revenue || 0,
-          delivery_orders: rpcData?.delivery_orders || 0,
-          instore_orders: rpcData?.instore_orders || 0,
-          total_orders: (rpcData?.delivery_orders || 0) + (rpcData?.instore_orders || 0)
-        };
-      } catch {
-        // Fallback: cálculo manual
-        const { data: sales } = await supabase
-          .from('sales')
-          .select('delivery_type, final_amount')
-          .eq('status', 'completed')
-          .gte('created_at', startDate.toISOString())
-          .lte('created_at', endDate.toISOString())
-          .not('final_amount', 'is', null);
+      const deliverySales = (sales || []).filter(s => s.delivery_type === 'delivery');
+      const instoreSales = (sales || []).filter(s => s.delivery_type === 'presencial');
 
-        const deliverySales = (sales || []).filter(s => s.delivery_type === 'delivery');
-        const instoreSales = (sales || []).filter(s => s.delivery_type === 'presencial');
-
-        return {
-          delivery_revenue: deliverySales.reduce((sum, s) => sum + Number(s.final_amount || 0), 0),
-          instore_revenue: instoreSales.reduce((sum, s) => sum + Number(s.final_amount || 0), 0),
-          delivery_orders: deliverySales.length,
-          instore_orders: instoreSales.length,
-          total_orders: (sales || []).length
-        };
-      }
+      return {
+        delivery_revenue: deliverySales.reduce((sum, s) => sum + Number(s.final_amount || 0), 0),
+        instore_revenue: instoreSales.reduce((sum, s) => sum + Number(s.final_amount || 0), 0),
+        delivery_orders: deliverySales.length,
+        instore_orders: instoreSales.length,
+        total_orders: (sales || []).length
+      };
     },
     staleTime: 2 * 60 * 1000,
     refetchOnWindowFocus: true,
@@ -208,7 +191,7 @@ function UnifiedKpiSection() {
               description="aguardando despacho"
               icon={Truck}
               variant={(counts?.pendingDeliveries || 0) === 0 ? 'success' :
-                       (counts?.pendingDeliveries || 0) < 5 ? 'warning' : 'error'}
+                (counts?.pendingDeliveries || 0) < 5 ? 'warning' : 'error'}
               layout="crm"
               className={cn("h-full", isLoadingCounts && 'animate-pulse')}
               onClick={() => navigate('/sales?tab=deliveries')}

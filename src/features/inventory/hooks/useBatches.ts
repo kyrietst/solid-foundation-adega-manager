@@ -6,13 +6,13 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { supabase } from '@/core/api/supabase/client';
-import type { 
-  ProductBatch, 
-  BatchFormData, 
-  BatchSaleRequest, 
+import type {
+  ProductBatch,
+  BatchFormData,
+  BatchSaleRequest,
   BatchSaleResponse,
   ExpiryAlert,
-  ExpiryDashboardStats 
+  ExpiryDashboardStats
 } from '@/core/types/inventory.types';
 
 // Query Keys para React Query
@@ -49,15 +49,15 @@ export const useBatches = (filters?: {
       if (filters?.product_id) {
         query = query.eq('product_id', filters.product_id);
       }
-      
+
       if (filters?.status) {
         query = query.eq('status', filters.status);
       }
-      
+
       if (filters?.supplier) {
         query = query.ilike('supplier_name', `%${filters.supplier}%`);
       }
-      
+
       if (filters?.expiring_soon) {
         const sevenDaysFromNow = new Date();
         sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
@@ -65,7 +65,7 @@ export const useBatches = (filters?: {
       }
 
       const { data, error } = await query;
-      
+
       if (error) {
         console.error('Erro ao buscar lotes:', error);
         throw new Error(`Erro ao buscar lotes: ${error.message}`);
@@ -76,14 +76,14 @@ export const useBatches = (filters?: {
         const today = new Date();
         const expiryDate = new Date(batch.expiry_date);
         const daysUntilExpiry = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-        
+
         return {
           ...batch,
           days_until_expiry: daysUntilExpiry,
           is_expired: daysUntilExpiry < 0,
           is_expiring_soon: daysUntilExpiry <= 7 && daysUntilExpiry >= 0,
           units_sold: batch.total_units - batch.available_units,
-          sales_percentage: batch.total_units > 0 ? 
+          sales_percentage: batch.total_units > 0 ?
             ((batch.total_units - batch.available_units) / batch.total_units) * 100 : 0
         };
       });
@@ -103,12 +103,11 @@ export const useBatch = (batchId: string) => {
         .from('product_batches')
         .select(`
           *,
-          products!inner(name, category, unit_type, package_units),
-          batch_units(*)
+          products!inner(name, category, unit_type, package_units)
         `)
         .eq('id', batchId)
         .single();
-        
+
       if (error) {
         console.error('Erro ao buscar lote:', error);
         throw new Error(`Erro ao buscar lote: ${error.message}`);
@@ -118,14 +117,14 @@ export const useBatch = (batchId: string) => {
       const today = new Date();
       const expiryDate = new Date(data.expiry_date);
       const daysUntilExpiry = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-      
+
       return {
         ...data,
         days_until_expiry: daysUntilExpiry,
         is_expired: daysUntilExpiry < 0,
         is_expiring_soon: daysUntilExpiry <= 7 && daysUntilExpiry >= 0,
         units_sold: data.total_units - data.available_units,
-        sales_percentage: data.total_units > 0 ? 
+        sales_percentage: data.total_units > 0 ?
           ((data.total_units - data.available_units) / data.total_units) * 100 : 0
       } as ProductBatch;
     },
@@ -144,7 +143,7 @@ export const useBatchesByProduct = (productId: string) => {
         .eq('product_id', productId)
         .eq('status', 'active')
         .order('expiry_date', { ascending: true });
-        
+
       if (error) {
         console.error('Erro ao buscar lotes do produto:', error);
         throw new Error(`Erro ao buscar lotes: ${error.message}`);
@@ -159,7 +158,7 @@ export const useBatchesByProduct = (productId: string) => {
 // Hook: Criar novo lote
 export const useCreateBatch = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (batchData: BatchFormData) => {
       const { data, error } = await supabase.rpc('create_product_batch', {
@@ -190,7 +189,7 @@ export const useCreateBatch = () => {
     },
     onSuccess: (data, variables) => {
       toast.success(`Lote ${data.batch_code} criado com sucesso!`);
-      
+
       // Invalidar queries relacionadas
       queryClient.invalidateQueries({ queryKey: batchKeys.all });
       queryClient.invalidateQueries({ queryKey: batchKeys.byProduct(variables.product_id) });
@@ -206,7 +205,7 @@ export const useCreateBatch = () => {
 // Hook: Venda com FEFO
 export const useSellFromBatch = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (saleData: BatchSaleRequest): Promise<BatchSaleResponse> => {
       const { data, error } = await supabase.rpc('sell_from_batch_fifo', {
@@ -235,7 +234,7 @@ export const useSellFromBatch = () => {
       } else {
         toast.success(`Venda realizada: ${data.units_sold} unidades (FEFO aplicado)`);
       }
-      
+
       // Invalidar queries relacionadas
       queryClient.invalidateQueries({ queryKey: batchKeys.all });
       queryClient.invalidateQueries({ queryKey: batchKeys.byProduct(variables.product_id) });
@@ -272,17 +271,17 @@ export const useExpiryAlerts = (filters?: {
       if (filters?.status) {
         query = query.eq('status', filters.status);
       }
-      
+
       if (filters?.priority) {
         query = query.gte('priority', filters.priority);
       }
-      
+
       if (filters?.product_id) {
         query = query.eq('product_id', filters.product_id);
       }
 
       const { data, error } = await query;
-      
+
       if (error) {
         console.error('Erro ao buscar alertas:', error);
         throw new Error(`Erro ao buscar alertas: ${error.message}`);
@@ -348,7 +347,7 @@ export const useExpiryStats = () => {
 // Hook: Monitorar alertas (executar diariamente)
 export const useMonitorAlerts = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async () => {
       const { data, error } = await supabase.rpc('monitor_expiry_alerts');
@@ -362,7 +361,7 @@ export const useMonitorAlerts = () => {
     },
     onSuccess: (data) => {
       toast.success(`Monitoramento executado: ${data.alerts_created} novos alertas`);
-      
+
       // Invalidar todas as queries relacionadas
       queryClient.invalidateQueries({ queryKey: batchKeys.all });
       queryClient.invalidateQueries({ queryKey: ['products'] });

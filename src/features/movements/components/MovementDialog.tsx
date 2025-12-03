@@ -4,7 +4,7 @@
  * Sub-componente especializado para formulário
  */
 
-import React from 'react';
+import React, { useId } from 'react';
 import { Input } from '@/shared/ui/primitives/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/primitives/select';
 import { cn } from '@/core/config/utils';
@@ -32,6 +32,9 @@ export const MovementDialog: React.FC<MovementDialogProps> = ({
   onFormDataChange,
   onSubmit,
 }) => {
+  // ✅ ACCESSIBILITY FIX: Generate unique ID prefix to prevent duplicate IDs
+  const formId = useId();
+
   return (
     <div className="space-y-6">
       {/* Tipo de movimentação */}
@@ -42,8 +45,8 @@ export const MovementDialog: React.FC<MovementDialogProps> = ({
         </h3>
         <div>
           <label className="block text-sm font-medium mb-1 text-gray-300">Tipo</label>
-          <Select 
-            value={formData.type} 
+          <Select
+            value={formData.type}
             onValueChange={(value) => onFormDataChange({ type: value })}
           >
             <SelectTrigger className={cn(getGlassInputClasses('form'))}>
@@ -67,8 +70,8 @@ export const MovementDialog: React.FC<MovementDialogProps> = ({
         </h3>
         <div>
           <label className="block text-sm font-medium mb-1 text-gray-300">Produto</label>
-          <Select 
-            value={formData.product_id} 
+          <Select
+            value={formData.product_id}
             onValueChange={(value) => onFormDataChange({ product_id: value })}
           >
             <SelectTrigger className={cn(getGlassInputClasses('form'))}>
@@ -86,14 +89,14 @@ export const MovementDialog: React.FC<MovementDialogProps> = ({
 
         {/* Quantidade */}
         <div>
-          <label htmlFor="qty" className="block text-sm font-medium mb-1 text-gray-300">
+          <label htmlFor={`${formId}-qty`} className="block text-sm font-medium mb-1 text-gray-300">
             🔢 Quantidade
           </label>
-          <Input 
-            id="qty" 
-            type="number" 
-            value={formData.quantity} 
-            onChange={(e) => onFormDataChange({ quantity: e.target.value })} 
+          <Input
+            id={`${formId}-qty`}
+            type="number"
+            value={Number(formData.quantity) === 0 ? '' : formData.quantity}
+            onChange={(e) => onFormDataChange({ quantity: e.target.value === '' ? '0' : e.target.value })}
             className={cn(getGlassInputClasses('form'))}
             placeholder="Digite a quantidade..."
           />
@@ -109,10 +112,10 @@ export const MovementDialog: React.FC<MovementDialogProps> = ({
           </h3>
           <div>
             <label className="block text-sm font-medium mb-1 text-gray-300">👤 Cliente (opcional)</label>
-            <Select 
-              value={formData.customer_id} 
-              onValueChange={(value) => onFormDataChange({ 
-                customer_id: value === 'none' ? undefined : value 
+            <Select
+              value={formData.customer_id}
+              onValueChange={(value) => onFormDataChange({
+                customer_id: value === 'none' ? undefined : value
               })}
             >
               <SelectTrigger className={cn(getGlassInputClasses('form'))}>
@@ -140,8 +143,8 @@ export const MovementDialog: React.FC<MovementDialogProps> = ({
           </h3>
           <div>
             <label className="block text-sm font-medium mb-1 text-gray-300">👤 Cliente</label>
-            <Select 
-              value={formData.customer_id} 
+            <Select
+              value={formData.customer_id}
               onValueChange={(value) => onFormDataChange({ customer_id: value })}
             >
               <SelectTrigger className={cn(getGlassInputClasses('form'))}>
@@ -159,21 +162,21 @@ export const MovementDialog: React.FC<MovementDialogProps> = ({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1 text-gray-300">💰 Valor (R$)</label>
-              <Input 
-                type="number" 
-                step="0.01" 
-                value={formData.amount} 
-                readOnly 
+              <Input
+                type="number"
+                step="0.01"
+                value={formData.amount}
+                readOnly
                 className={cn(getGlassInputClasses('form'), 'bg-gray-800/60')}
                 placeholder="Valor calculado automaticamente"
               />
             </div>
             <div>
               <label className="block text-sm font-medium mb-1 text-gray-300">📅 Vencimento</label>
-              <Input 
-                type="date" 
-                value={formData.due_date} 
-                onChange={(e) => onFormDataChange({ due_date: e.target.value })} 
+              <Input
+                type="date"
+                value={formData.due_date}
+                onChange={(e) => onFormDataChange({ due_date: e.target.value })}
                 className={cn(getGlassInputClasses('form'))}
               />
             </div>
@@ -190,8 +193,8 @@ export const MovementDialog: React.FC<MovementDialogProps> = ({
           </h3>
           <div>
             <label className="block text-sm font-medium mb-1 text-gray-300">🧾 Venda Original</label>
-            <Select 
-              value={formData.sale_id} 
+            <Select
+              value={formData.sale_id}
               onValueChange={(value) => onFormDataChange({ sale_id: value })}
             >
               <SelectTrigger className={cn(getGlassInputClasses('form'))}>
@@ -218,9 +221,9 @@ export const MovementDialog: React.FC<MovementDialogProps> = ({
         </h3>
         <div>
           <label className="block text-sm font-medium mb-1 text-gray-300">📝 Motivo</label>
-          <Input 
-            value={formData.reason} 
-            onChange={(e) => onFormDataChange({ reason: e.target.value })} 
+          <Input
+            value={formData.reason}
+            onChange={(e) => onFormDataChange({ reason: e.target.value })}
             className={cn(getGlassInputClasses('form'))}
             placeholder="Descreva o motivo da movimentação..."
           />

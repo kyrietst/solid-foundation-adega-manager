@@ -6,11 +6,11 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/primitives/card';
 import { Button } from '@/shared/ui/primitives/button';
 import { Badge } from '@/shared/ui/primitives/badge';
-import { 
-  Plus, 
-  Filter, 
-  Edit, 
-  Trash2, 
+import {
+  Plus,
+  Filter,
+  Edit,
+  Trash2,
   Eye,
   Calendar,
   CreditCard,
@@ -37,7 +37,7 @@ export const ExpensesTab: React.FC = () => {
   const [filters, setFilters] = useState<ExpenseFilters>({});
 
   const pagination = usePagination();
-  
+
   const expenseFilters: ExpenseFilters = {
     ...filters,
     page: pagination.currentPage,
@@ -141,7 +141,7 @@ export const ExpensesTab: React.FC = () => {
 
       {/* Lista de despesas */}
       {expenses.length === 0 ? (
-        <ExpensesEmptyState 
+        <ExpensesEmptyState
           hasFilters={!!(filters.category_id || filters.start_date || filters.end_date || filters.payment_method)}
           onClearFilters={() => {
             setFilters({});
@@ -170,14 +170,14 @@ export const ExpensesTab: React.FC = () => {
                 </thead>
                 <tbody>
                   {expenses.map((expense) => (
-                    <tr 
-                      key={expense.id} 
+                    <tr
+                      key={expense.id}
                       className="border-b border-white/5 hover:bg-purple-500/5 transition-all duration-300 cursor-pointer group"
                     >
                       <td className="p-4">
                         <div className="flex items-center gap-2 text-white">
                           <Calendar className="h-4 w-4 text-gray-400" />
-                          {formatDate(expense.expense_date)}
+                          {expense.date ? formatDate(expense.date) : '-'}
                         </div>
                       </td>
                       <td className="p-4">
@@ -189,7 +189,7 @@ export const ExpensesTab: React.FC = () => {
                         </div>
                       </td>
                       <td className="p-4">
-                        <Badge 
+                        <Badge
                           style={{ backgroundColor: getCategoryColor(expense.expense_categories) + '20', color: getCategoryColor(expense.expense_categories) }}
                           className="border"
                         >

@@ -61,20 +61,32 @@ function useDeliveryComparison(dateRange: DateRange | undefined) {
                 };
             }
 
-            const { data, error } = await supabase.rpc('get_delivery_vs_instore_comparison', {
-                p_start_date: dateRange.from.toISOString(),
-                p_end_date: dateRange.to.toISOString()
-            });
+            const { data: salesData, error } = await supabase
+                .from('sales')
+                .select('delivery_type, total_amount, created_at')
+                .gte('created_at', dateRange.from.toISOString())
+                .lte('created_at', dateRange.to.toISOString());
 
             if (error) throw error;
 
-            return data[0] || {
-                delivery_orders: 0,
-                delivery_revenue: 0,
-                delivery_avg_ticket: 0,
-                instore_orders: 0,
-                instore_revenue: 0,
-                instore_avg_ticket: 0,
+            const deliverySales = (salesData || []).filter(s => s.delivery_type === 'delivery');
+            const instoreSales = (salesData || []).filter(s => s.delivery_type !== 'delivery');
+
+            const delivery_revenue = deliverySales.reduce((acc, curr) => acc + (curr.total_amount || 0), 0);
+            const delivery_orders = deliverySales.length;
+            const delivery_avg_ticket = delivery_orders > 0 ? delivery_revenue / delivery_orders : 0;
+
+            const instore_revenue = instoreSales.reduce((acc, curr) => acc + (curr.total_amount || 0), 0);
+            const instore_orders = instoreSales.length;
+            const instore_avg_ticket = instore_orders > 0 ? instore_revenue / instore_orders : 0;
+
+            return {
+                delivery_orders,
+                delivery_revenue,
+                delivery_avg_ticket,
+                instore_orders,
+                instore_revenue,
+                instore_avg_ticket,
                 delivery_growth_rate: 0,
                 instore_growth_rate: 0
             };

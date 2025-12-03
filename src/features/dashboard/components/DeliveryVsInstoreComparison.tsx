@@ -47,100 +47,75 @@ export const DeliveryVsInstoreComparison = ({ className }: DeliveryVsInstoreComp
       const endDate = getNowSaoPaulo();
       const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
 
+      // ✅ REFATORADO: Query direta (RPC foi dropada)
+      // Cálculo manual de métricas delivery vs presencial (MTD)
 
-      try {
-        // Tentar usar RPC primeiro (passa datas explícitas)
-        const { data, error } = await supabase.rpc('get_delivery_vs_instore_comparison', {
-          p_start_date: startDate.toISOString(),
-          p_end_date: endDate.toISOString()
-        });
+      const endDate = getNowSaoPaulo();
+      const startDate = getMonthStartDate();
 
-        if (error) {
-          console.warn('⚠️ RPC falhou, usando fallback manual:', error);
-          throw error;
-        }
+      // Período anterior para crescimento (mês anterior completo)
+      const prevEndDate = new Date(startDate);
+      prevEndDate.setDate(prevEndDate.getDate() - 1); // Último dia do mês anterior
+      const prevStartDate = new Date(prevEndDate.getFullYear(), prevEndDate.getMonth(), 1);
 
-        return data[0] || {
-          delivery_orders: 0,
-          delivery_revenue: 0,
-          delivery_avg_ticket: 0,
-          instore_orders: 0,
-          instore_revenue: 0,
-          instore_avg_ticket: 0,
-          delivery_growth_rate: 0,
-          instore_growth_rate: 0
-        };
-      } catch (rpcError) {
-        // Fallback: cálculo manual direto (MTD)
+      // Buscar vendas atuais
+      const { data: currentSales, error: currentError } = await supabase
+        .from('sales')
+        .select('delivery_type, final_amount')
+        .eq('status', 'completed')
+        .gte('created_at', startDate.toISOString())
+        .lte('created_at', endDate.toISOString())
+        .not('final_amount', 'is', null);
 
-        const endDate = getNowSaoPaulo();
-        const startDate = getMonthStartDate();
-
-        // Período anterior para crescimento (mês anterior completo)
-        const prevEndDate = new Date(startDate);
-        prevEndDate.setDate(prevEndDate.getDate() - 1); // Último dia do mês anterior
-        const prevStartDate = new Date(prevEndDate.getFullYear(), prevEndDate.getMonth(), 1);
-
-        // Buscar vendas atuais
-        const { data: currentSales, error: currentError } = await supabase
-          .from('sales')
-          .select('delivery_type, final_amount')
-          .eq('status', 'completed')
-          .gte('created_at', startDate.toISOString())
-          .lte('created_at', endDate.toISOString())
-          .not('final_amount', 'is', null);
-
-        if (currentError) {
-          console.error('❌ Erro no fallback - vendas atuais:', currentError);
-          throw currentError;
-        }
-
-        // Buscar vendas anteriores
-        const { data: prevSales } = await supabase
-          .from('sales')
-          .select('delivery_type, final_amount')
-          .eq('status', 'completed')
-          .gte('created_at', prevStartDate.toISOString())
-          .lt('created_at', startDate.toISOString())
-          .not('final_amount', 'is', null);
-
-        // Calcular métricas atuais
-        const deliverySales = (currentSales || []).filter(s => s.delivery_type === 'delivery');
-        const presencialSales = (currentSales || []).filter(s => s.delivery_type === 'presencial');
-
-        const deliveryOrders = deliverySales.length;
-        const deliveryRevenue = deliverySales.reduce((sum, s) => sum + Number(s.final_amount || 0), 0);
-        const deliveryAvgTicket = deliveryOrders > 0 ? deliveryRevenue / deliveryOrders : 0;
-
-        const instoreOrders = presencialSales.length;
-        const instoreRevenue = presencialSales.reduce((sum, s) => sum + Number(s.final_amount || 0), 0);
-        const instoreAvgTicket = instoreOrders > 0 ? instoreRevenue / instoreOrders : 0;
-
-        // Calcular crescimento (período anterior)
-        const prevDeliveryRevenue = (prevSales || [])
-          .filter(s => s.delivery_type === 'delivery')
-          .reduce((sum, s) => sum + Number(s.final_amount || 0), 0);
-        const prevInstoreRevenue = (prevSales || [])
-          .filter(s => s.delivery_type === 'presencial')
-          .reduce((sum, s) => sum + Number(s.final_amount || 0), 0);
-
-        const deliveryGrowthRate = prevDeliveryRevenue > 0 ?
-          ((deliveryRevenue - prevDeliveryRevenue) / prevDeliveryRevenue) * 100 : 0;
-        const instoreGrowthRate = prevInstoreRevenue > 0 ?
-          ((instoreRevenue - prevInstoreRevenue) / prevInstoreRevenue) * 100 : 0;
-
-
-        return {
-          delivery_orders: deliveryOrders,
-          delivery_revenue: deliveryRevenue,
-          delivery_avg_ticket: deliveryAvgTicket,
-          instore_orders: instoreOrders,
-          instore_revenue: instoreRevenue,
-          instore_avg_ticket: instoreAvgTicket,
-          delivery_growth_rate: deliveryGrowthRate,
-          instore_growth_rate: instoreGrowthRate
-        };
+      if (currentError) {
+        console.error('❌ Erro ao buscar vendas atuais:', currentError);
+        throw currentError;
       }
+
+      // Buscar vendas anteriores para cálculo de crescimento
+      const { data: prevSales } = await supabase
+        .from('sales')
+        .select('delivery_type, final_amount')
+        .eq('status', 'completed')
+        .gte('created_at', prevStartDate.toISOString())
+        .lt('created_at', startDate.toISOString())
+        .not('final_amount', 'is', null);
+
+      // Calcular métricas atuais
+      const deliverySales = (currentSales || []).filter(s => s.delivery_type === 'delivery');
+      const presencialSales = (currentSales || []).filter(s => s.delivery_type === 'presencial');
+
+      const deliveryOrders = deliverySales.length;
+      const deliveryRevenue = deliverySales.reduce((sum, s) => sum + Number(s.final_amount || 0), 0);
+      const deliveryAvgTicket = deliveryOrders > 0 ? deliveryRevenue / deliveryOrders : 0;
+
+      const instoreOrders = presencialSales.length;
+      const instoreRevenue = presencialSales.reduce((sum, s) => sum + Number(s.final_amount || 0), 0);
+      const instoreAvgTicket = instoreOrders > 0 ? instoreRevenue / instoreOrders : 0;
+
+      // Calcular crescimento (comparação com período anterior)
+      const prevDeliveryRevenue = (prevSales || [])
+        .filter(s => s.delivery_type === 'delivery')
+        .reduce((sum, s) => sum + Number(s.final_amount || 0), 0);
+      const prevInstoreRevenue = (prevSales || [])
+        .filter(s => s.delivery_type === 'presencial')
+        .reduce((sum, s) => sum + Number(s.final_amount || 0), 0);
+
+      const deliveryGrowthRate = prevDeliveryRevenue > 0 ?
+        ((deliveryRevenue - prevDeliveryRevenue) / prevDeliveryRevenue) * 100 : 0;
+      const instoreGrowthRate = prevInstoreRevenue > 0 ?
+        ((instoreRevenue - prevInstoreRevenue) / prevInstoreRevenue) * 100 : 0;
+
+      return {
+        delivery_orders: deliveryOrders,
+        delivery_revenue: deliveryRevenue,
+        delivery_avg_ticket: deliveryAvgTicket,
+        instore_orders: instoreOrders,
+        instore_revenue: instoreRevenue,
+        instore_avg_ticket: instoreAvgTicket,
+        delivery_growth_rate: deliveryGrowthRate,
+        instore_growth_rate: instoreGrowthRate
+      };
     },
     staleTime: 2 * 60 * 1000, // ✅ SSoT: 2 minutos (sincronizado com SalesChartSection)
     refetchOnWindowFocus: true, // ✅ SSoT: Atualiza ao voltar para a aba

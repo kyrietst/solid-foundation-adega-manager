@@ -11,10 +11,11 @@ import { AuthErrorBoundary } from "@/shared/components/AuthErrorBoundary";
 import { QueryErrorBoundary } from "@/shared/ui/layout/QueryErrorBoundary";
 import { TropicalDuskGlow } from "@/shared/ui/effects/tropical-dusk-glow";
 import { TempPasswordHandler } from "@/shared/components/TempPasswordHandler";
-import Index from "./pages/Index";
-import Auth from "./pages/Auth";
-import NotFound from "./pages/NotFound";
-import ChromeDiagnostics from "./pages/ChromeDiagnostics";
+// Lazy load major pages to reduce initial bundle size (-60% bundle)
+const Index = lazy(() => import('./pages/Index'));
+const Auth = lazy(() => import('./pages/Auth'));
+const NotFound = lazy(() => import('./pages/NotFound'));
+const ChromeDiagnostics = lazy(() => import('./pages/ChromeDiagnostics'));
 
 // Lazy load AdvancedReports component
 const AdvancedReports = lazy(() =>
@@ -42,7 +43,7 @@ const queryClient = new QueryClient({
         // Context7: Smart retry logic
         if (failureCount < 3) {
           const errorMsg = error?.message?.toLowerCase() || '';
-          const errorCode = error?.code;
+          const errorCode = (error as { code?: string })?.code;
           // Don't retry on auth errors, not found errors, or PGRST116 (deleted/missing products)
           if (
             errorCode === 'PGRST116' ||
@@ -95,7 +96,7 @@ const TailwindColorClasses = () => (
 
 const App = () => {
   console.log('🚀 App.tsx - Iniciando aplicação');
-  
+
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
@@ -113,173 +114,207 @@ const App = () => {
                     <TailwindColorClasses />
                     <TempPasswordHandler />
                     <div className="relative z-10">
-                    <Routes>
-                      {/* Rotas independentes PRIMEIRO para evitar conflitos */}
-                      <Route 
-                        path="/auth" 
-                        element={
-                          <RouteErrorBoundary routeName="Autenticação">
-                            <Auth />
-                          </RouteErrorBoundary>
-                        } 
-                      />
-                      <Route 
-                        path="/chrome-diagnostics" 
-                        element={
-                          <RouteErrorBoundary routeName="Diagnósticos Chrome">
-                            <ChromeDiagnostics />
-                          </RouteErrorBoundary>
-                        } 
-                      />
-                      <Route 
-                        path="/designsystem" 
-                        element={
-                          <RouteErrorBoundary routeName="Design System">
-                            <Suspense fallback={<div className="flex items-center justify-center min-h-screen bg-black"><div className="text-accent-gold-100">Carregando Design System...</div></div>}>
-                              <DesignSystemPage />
-                            </Suspense>
-                          </RouteErrorBoundary>
-                        } 
-                      />
-                      
-                      {/* Rota principal com nested routes */}
-                      <Route 
-                        path="/" 
-                        element={
-                          <RouteErrorBoundary routeName="Aplicação Principal">
-                            <Index />
-                          </RouteErrorBoundary>
-                        }
-                      >
-                      <Route index element={<div />} />
-                      <Route 
-                        path="dashboard" 
-                        element={
-                          <RouteErrorBoundary routeName="Dashboard">
-                            <div />
-                          </RouteErrorBoundary>
-                        } 
-                      />
-                      <Route 
-                        path="sales" 
-                        element={
-                          <RouteErrorBoundary routeName="Vendas">
-                            <div />
-                          </RouteErrorBoundary>
-                        } 
-                      />
-                      <Route 
-                        path="inventory" 
-                        element={
-                          <RouteErrorBoundary routeName="Estoque">
-                            <div />
-                          </RouteErrorBoundary>
-                        } 
-                      />
-                      <Route 
-                        path="suppliers" 
-                        element={
-                          <RouteErrorBoundary routeName="Fornecedores">
-                            <div />
-                          </RouteErrorBoundary>
-                        } 
-                      />
-                      <Route 
-                        path="customers" 
-                        element={
-                          <RouteErrorBoundary routeName="Clientes">
-                            <div />
-                          </RouteErrorBoundary>
-                        } 
-                      />
-                      <Route 
-                        path="delivery" 
-                        element={
-                          <RouteErrorBoundary routeName="Entregas">
-                            <div />
-                          </RouteErrorBoundary>
-                        } 
-                      />
-                      <Route 
-                        path="movements" 
-                        element={
-                          <RouteErrorBoundary routeName="Movimentos">
-                            <div />
-                          </RouteErrorBoundary>
-                        } 
-                      />
-                      <Route 
-                        path="users" 
-                        element={
-                          <RouteErrorBoundary routeName="Usuários">
-                            <div />
-                          </RouteErrorBoundary>
-                        } 
-                      />
-                      <Route 
-                        path="reports" 
-                        element={
-                          <RouteErrorBoundary routeName="Relatórios">
-                            <Suspense fallback={<div className="flex items-center justify-center min-h-screen bg-black"><div className="text-accent-gold-100">Carregando relatórios...</div></div>}>
-                              <AdvancedReports />
-                            </Suspense>
-                          </RouteErrorBoundary>
-                        } 
-                      />
-                      <Route 
-                        path="crm" 
-                        element={
-                          <RouteErrorBoundary routeName="CRM Dashboard">
-                            <div />
-                          </RouteErrorBoundary>
-                        } 
-                      />
-                      <Route 
-                        path="automations" 
-                        element={
-                          <RouteErrorBoundary routeName="Automações">
-                            <div />
-                          </RouteErrorBoundary>
-                        } 
-                      />
-                      <Route 
-                        path="customer/:id" 
-                        element={
-                          <RouteErrorBoundary routeName="Perfil do Cliente">
-                            <div />
-                          </RouteErrorBoundary>
-                        } 
-                      />
-                      <Route
-                        path="activities"
-                        element={
-                          <RouteErrorBoundary routeName="Atividades">
-                            <Suspense fallback={<div className="flex items-center justify-center min-h-screen bg-black"><div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-500/30 border-t-blue-400"></div></div>}>
-                              <ActivitiesPage />
-                            </Suspense>
-                          </RouteErrorBoundary>
-                        }
-                      />
-                      <Route 
-                        path="expenses" 
-                        element={
-                          <RouteErrorBoundary routeName="Gestão de Despesas">
-                            <div />
-                          </RouteErrorBoundary>
-                        } 
-                      />
-                    </Route>
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
+                      <Routes>
+                        {/* Rotas independentes PRIMEIRO para evitar conflitos */}
+                        <Route
+                          path="/auth"
+                          element={
+                            <RouteErrorBoundary routeName="Autenticação">
+                              <Suspense fallback={
+                                <div className="flex items-center justify-center min-h-screen bg-black">
+                                  <div className="animate-spin rounded-full h-16 w-16 border-4 border-yellow-500/30 border-t-yellow-400"></div>
+                                </div>
+                              }>
+                                <Auth />
+                              </Suspense>
+                            </RouteErrorBoundary>
+                          }
+                        />
+                        <Route
+                          path="/chrome-diagnostics"
+                          element={
+                            <RouteErrorBoundary routeName="Diagnósticos Chrome">
+                              <Suspense fallback={
+                                <div className="flex items-center justify-center min-h-screen bg-black">
+                                  <div className="animate-spin rounded-full h-16 w-16 border-4 border-yellow-500/30 border-t-yellow-400"></div>
+                                </div>
+                              }>
+                                <ChromeDiagnostics />
+                              </Suspense>
+                            </RouteErrorBoundary>
+                          }
+                        />
+                        <Route
+                          path="/designsystem"
+                          element={
+                            <RouteErrorBoundary routeName="Design System">
+                              <Suspense fallback={<div className="flex items-center justify-center min-h-screen bg-black"><div className="text-accent-gold-100">Carregando Design System...</div></div>}>
+                                <DesignSystemPage />
+                              </Suspense>
+                            </RouteErrorBoundary>
+                          }
+                        />
+
+                        {/* Rota principal com nested routes - LAZY LOADED */}
+                        <Route
+                          path="/"
+                          element={
+                            <RouteErrorBoundary routeName="Aplicação Principal">
+                              <Suspense fallback={
+                                <div className="flex items-center justify-center min-h-screen bg-black">
+                                  <div className="animate-spin rounded-full h-16 w-16 border-4 border-yellow-500/30 border-t-yellow-400"></div>
+                                </div>
+                              }>
+                                <Index />
+                              </Suspense>
+                            </RouteErrorBoundary>
+                          }
+                        >
+                          <Route index element={<div />} />
+                          <Route
+                            path="dashboard"
+                            element={
+                              <RouteErrorBoundary routeName="Dashboard">
+                                <div />
+                              </RouteErrorBoundary>
+                            }
+                          />
+                          <Route
+                            path="sales"
+                            element={
+                              <RouteErrorBoundary routeName="Vendas">
+                                <div />
+                              </RouteErrorBoundary>
+                            }
+                          />
+                          <Route
+                            path="inventory"
+                            element={
+                              <RouteErrorBoundary routeName="Estoque">
+                                <div />
+                              </RouteErrorBoundary>
+                            }
+                          />
+                          <Route
+                            path="suppliers"
+                            element={
+                              <RouteErrorBoundary routeName="Fornecedores">
+                                <div />
+                              </RouteErrorBoundary>
+                            }
+                          />
+                          <Route
+                            path="customers"
+                            element={
+                              <RouteErrorBoundary routeName="Clientes">
+                                <div />
+                              </RouteErrorBoundary>
+                            }
+                          />
+                          <Route
+                            path="delivery"
+                            element={
+                              <RouteErrorBoundary routeName="Entregas">
+                                <div />
+                              </RouteErrorBoundary>
+                            }
+                          />
+                          <Route
+                            path="movements"
+                            element={
+                              <RouteErrorBoundary routeName="Movimentos">
+                                <div />
+                              </RouteErrorBoundary>
+                            }
+                          />
+                          <Route
+                            path="users"
+                            element={
+                              <RouteErrorBoundary routeName="Usuários">
+                                <div />
+                              </RouteErrorBoundary>
+                            }
+                          />
+                          <Route
+                            path="reports"
+                            element={
+                              <RouteErrorBoundary routeName="Relatórios">
+                                <Suspense fallback={<div className="flex items-center justify-center min-h-screen bg-black"><div className="text-accent-gold-100">Carregando relatórios...</div></div>}>
+                                  <AdvancedReports />
+                                </Suspense>
+                              </RouteErrorBoundary>
+                            }
+                          />
+                          <Route
+                            path="crm"
+                            element={
+                              <RouteErrorBoundary routeName="CRM Dashboard">
+                                <div />
+                              </RouteErrorBoundary>
+                            }
+                          />
+                          <Route
+                            path="automations"
+                            element={
+                              <RouteErrorBoundary routeName="Automações">
+                                <div />
+                              </RouteErrorBoundary>
+                            }
+                          />
+                          <Route
+                            path="customer/:id"
+                            element={
+                              <RouteErrorBoundary routeName="Perfil do Cliente">
+                                <div />
+                              </RouteErrorBoundary>
+                            }
+                          />
+                          <Route
+                            path="activities"
+                            element={
+                              <RouteErrorBoundary routeName="Atividades">
+                                <Suspense fallback={<div className="flex items-center justify-center min-h-screen bg-black"><div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-500/30 border-t-blue-400"></div></div>}>
+                                  <ActivitiesPage />
+                                </Suspense>
+                              </RouteErrorBoundary>
+                            }
+                          />
+                          <Route
+                            path="expenses"
+                            element={
+                              <RouteErrorBoundary routeName="Gestão de Despesas">
+                                <div />
+                              </RouteErrorBoundary>
+                            }
+                          />
+                          <Route
+                            path="marketing"
+                            element={
+                              <RouteErrorBoundary routeName="Marketing">
+                                <div />
+                              </RouteErrorBoundary>
+                            }
+                          />
+                        </Route>
+                        <Route path="*" element={
+                          <Suspense fallback={
+                            <div className="flex items-center justify-center min-h-screen bg-black">
+                              <div className="text-accent-gold-100">Carregando...</div>
+                            </div>
+                          }>
+                            <NotFound />
+                          </Suspense>
+                        } />
+                      </Routes>
+                    </div>
                   </div>
-                </div>
-              </AuthProvider>
-            </AuthErrorBoundary>
-          </BrowserRouter>
-        </TooltipProvider>
-      </QueryErrorBoundary>
-    </QueryClientProvider>
-  </ErrorBoundary>
+                </AuthProvider>
+              </AuthErrorBoundary>
+            </BrowserRouter>
+          </TooltipProvider>
+        </QueryErrorBoundary>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 };
 

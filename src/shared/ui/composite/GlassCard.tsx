@@ -25,6 +25,8 @@ export interface GlassCardProps {
   children: React.ReactNode;
   /** Se true, renderiza sem padding interno (use CardContent manualmente) */
   noPadding?: boolean;
+  /** PERFORMANCE: Se true, usa versão lite sem blur (ideal para listas longas) */
+  lite?: boolean;
 }
 
 const variants = {
@@ -80,15 +82,21 @@ export const GlassCard: React.FC<GlassCardProps> = ({
   className,
   children,
   noPadding = false,
+  lite = false,
 }) => {
   const colors = variants[variant];
+
+  // PERFORMANCE: Use lite version for long lists
+  const baseClasses = lite
+    ? 'glass-card-lite border-2 shadow-lg transition-all duration-500'
+    : 'bg-gradient-to-br backdrop-blur-md border-2 shadow-xl transition-all duration-500';
 
   return (
     <Card
       className={cn(
         // Base styles
-        'bg-gradient-to-br backdrop-blur-md border-2 shadow-xl transition-all duration-500',
-        colors.gradient,
+        baseClasses,
+        !lite && colors.gradient,
         colors.border,
 
         // Hover effects

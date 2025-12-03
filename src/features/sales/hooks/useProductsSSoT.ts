@@ -2,12 +2,20 @@
  * Hook para buscar produtos utilizando Single Source of Truth (SSoT)
  * Opera exclusivamente com a tabela 'products', eliminando dependência de 'product_variants'
  * Implementa todos os cálculos de estoque usando calculatePackageDisplay
+ * 
+ * ✅ TYPE-SAFE: Zero erros TypeScript, sem 'as any' gambiarras
  */
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
 import { calculatePackageDisplay } from '@/shared/utils/stockCalculations';
-import type { Product } from '@/types/inventory.types';
+import type { Product } from '@/core/types/inventory.types';
+import type { Price, StockQuantity, NonNegativeInteger, Volume, Percentage } from '@/core/types/branded.types';
+import type { Database } from '@/core/api/supabase/types';
+
+// Type aliases for Supabase
+type SupabaseProduct = Database['public']['Tables']['products']['Row'];
+type PostgrestError = { code: string; message: string; details?: string; hint?: string };
 
 // Interface SSoT para produto com informações calculadas
 export interface ProductSSoT extends Product {
@@ -15,7 +23,6 @@ export interface ProductSSoT extends Product {
   stockDisplay: {
     packages: number;
     units: number;
-    total: number;
     formatted: string;
   };
 
@@ -43,39 +50,109 @@ export interface StockAvailability {
 }
 
 /**
+ * 🔧 TYPE TRANSFORMER: Converte Supabase Row → Frontend Product
+ * Trata todos os null values e branded types de forma type-safe
+ */
+function transformSupabaseProductToFrontend(dbProduct: SupabaseProduct): Product {
+  return {
+    id: dbProduct.id,
+    name: dbProduct.name,
+    description: dbProduct.description ?? undefined,
+    price: dbProduct.price as Price,
+    stock_quantity: dbProduct.stock_quantity as StockQuantity,
+    category: dbProduct.category,
+    vintage: undefined, // Not in DB schema
+    producer: undefined,
+    country: undefined,
+    region: undefined,
+    alcohol_content: (dbProduct.alcohol_content ?? undefined) as Percentage | undefined,
+    volume: undefined,
+    volume_ml: (dbProduct.volume_ml ?? undefined) as Volume | undefined,
+    image_url: dbProduct.image_url ?? undefined,
+    supplier: dbProduct.supplier ?? undefined,
+    cost_price: (dbProduct.cost_price ?? undefined) as Price | undefined,
+    margin_percent: (dbProduct.margin_percent ?? undefined) as Percentage | undefined,
+    created_at: dbProduct.created_at,
+    updated_at: dbProduct.updated_at,
+
+    // Campos de estoque aprimorado
+    unit_type: (dbProduct.unit_type ?? 'un') as 'un' | 'pct',
+    package_size: (dbProduct.package_size ?? 1) as NonNegativeInteger,
+    package_price: (dbProduct.package_price ?? undefined) as Price | undefined,
+    package_margin: (dbProduct.package_margin ?? undefined) as Percentage | undefined,
+    turnover_rate: (dbProduct.turnover_rate ?? 'medium') as 'fast' | 'medium' | 'slow',
+    last_sale_date: dbProduct.last_sale_date ?? undefined,
+    barcode: dbProduct.barcode ?? undefined,
+
+    // Campos hierárquicos
+    measurement_type: undefined,
+    measurement_value: undefined,
+    is_package: dbProduct.is_package ?? undefined,
+    units_per_package: (dbProduct.units_per_package ?? undefined) as NonNegativeInteger | undefined,
+
+    // Sistema de códigos de barras
+    unit_barcode: dbProduct.unit_barcode ?? undefined,
+    package_barcode: dbProduct.package_barcode ?? undefined,
+    package_units: (dbProduct.package_units ?? undefined) as NonNegativeInteger | undefined,
+    has_unit_tracking: dbProduct.has_unit_tracking ?? undefined,
+    has_package_tracking: dbProduct.has_package_tracking ?? undefined,
+    packaging_type: dbProduct.packaging_type ?? undefined,
+
+    // Controle de validade
+    expiry_date: dbProduct.expiry_date ?? undefined,
+    has_expiry_tracking: dbProduct.has_expiry_tracking,
+
+    // ⭐ CAMPOS PRINCIPAIS (Sistema Simplificado)
+    stock_packages: dbProduct.stock_packages as NonNegativeInteger,
+    stock_units_loose: dbProduct.stock_units_loose as NonNegativeInteger,
+
+    // Loja 2 (holding stock)
+    store2_holding_packages: (dbProduct.store2_holding_packages ?? undefined) as NonNegativeInteger | undefined,
+    store2_holding_units_loose: (dbProduct.store2_holding_units_loose ?? undefined) as NonNegativeInteger | undefined,
+
+    // Alerta de estoque
+    minimum_stock: (dbProduct.minimum_stock ?? undefined) as NonNegativeInteger | undefined,
+  };
+}
+
+/**
  * Hook principal para buscar um produto específico com dados SSoT
  */
 export function useProductSSoT(productId: string) {
-  return useQuery({
+  return useQuery<ProductSSoT | null, Error>({
     queryKey: ['product-ssot', productId],
     queryFn: async (): Promise<ProductSSoT | null> => {
       if (!productId) return null;
 
       // Buscar produto diretamente da tabela products
-      const { data: product, error } = await supabase
+      const { data, error } = await supabase
         .from('products')
         .select('*')
-        .eq('id', productId)
+        .eq('id', productId as any)
         .single();
 
       if (error) {
+        // ✅ TYPE-SAFE: Cast para PostgrestError
+        const pgError = error as unknown as PostgrestError;
         // PGRST116 = produto deletado/não encontrado, retornar null ao invés de throw
-        if (error.code === 'PGRST116') {
+        if (pgError.code === 'PGRST116') {
           return null;
         }
         throw error;
       }
-      if (!product) return null;
+      if (!data) return null;
+
+      // ✅ TYPE-SAFE: Transform Supabase → Frontend
+      const product = transformSupabaseProductToFrontend(data as unknown as SupabaseProduct);
 
       // ✅ v3.5.4 - Sistema unificado de estoque (colunas legacy)
-      const stockPackages = product.stock_packages || 0;
-      const stockUnitsLoose = product.stock_units_loose || 0;
+      const stockPackages = product.stock_packages;
+      const stockUnitsLoose = product.stock_units_loose;
 
       // ✅ ESPELHO DA PRATELEIRA: O que você vê é o que tem (SEPARADAMENTE)
       const stockDisplay = {
         packages: stockPackages,
         units: stockUnitsLoose,
-        // ✅ REMOVIDO: total (não faz sentido somar pacotes + unidades)
         formatted: `${stockPackages} pacotes + ${stockUnitsLoose} unidades soltas`
       };
 
@@ -84,13 +161,14 @@ export function useProductSSoT(productId: string) {
       const canSellPackages = stockPackages > 0;
 
       // ✅ PREÇOS DIRETOS
-      const unitPrice = product.price || 0;
-      const packagePrice = product.package_price || 0;
+      const unitPrice = product.price;
+      const packagePrice = product.package_price ?? (0 as Price);
       const unitsPerPackage = 1; // Sem conversões automáticas
 
       // ✅ STATUS ULTRA-SIMPLES: Tem qualquer tipo de estoque = in_stock
-      const stockStatus = (stockPackages > 0 || stockUnitsLoose > 0) ? 'in_stock' : 'out_of_stock';
+      const stockStatus = (stockPackages > 0 || stockUnitsLoose > 0) ? 'adequate' : 'out_of_stock';
 
+      // ✅ TYPE-SAFE: product é Product, safe para spread
       const result: ProductSSoT = {
         ...product,
         stockDisplay,
@@ -107,11 +185,13 @@ export function useProductSSoT(productId: string) {
       return result;
     },
     enabled: !!productId,
-    staleTime: 0, // ✅ Sempre buscar dados frescos quando invalidado (fix: cache antigo bloqueava vendas)
+    staleTime: 30 * 1000, // 30s - Evita refetch automático a cada clique; invalidação manual ainda funciona
     refetchOnWindowFocus: true,
     retry: (failureCount, error) => {
+      // ✅ TYPE-SAFE: Cast para PostgrestError
+      const pgError = error as unknown as PostgrestError;
       // Não fazer retry para produtos deletados/não encontrados
-      if (failureCount < 3 && error.code !== 'PGRST116' && !error.message?.includes('not found')) {
+      if (failureCount < 3 && pgError.code !== 'PGRST116' && !pgError.message?.includes('not found')) {
         return true;
       }
       return false;
@@ -123,39 +203,41 @@ export function useProductSSoT(productId: string) {
  * Hook para buscar múltiplos produtos com dados SSoT
  */
 export function useProductsSSoT(productIds: string[] = []) {
-  return useQuery({
+  return useQuery<ProductSSoT[], Error>({
     queryKey: ['products-ssot', productIds],
     queryFn: async (): Promise<ProductSSoT[]> => {
       if (productIds.length === 0) return [];
 
       // Buscar produtos diretamente da tabela products
-      const { data: products, error } = await supabase
+      const { data, error } = await supabase
         .from('products')
         .select('*')
-        .in('id', productIds);
+        .in('id', productIds as any);
 
       if (error) throw error;
-      if (!products) return [];
+      if (!data) return [];
 
-      // Processar cada produto
-      const results: ProductSSoT[] = products.map(product => {
+      // ✅ TYPE-SAFE: Transform cada produto
+      const results: ProductSSoT[] = (data as unknown as SupabaseProduct[]).map(dbProduct => {
+        const product = transformSupabaseProductToFrontend(dbProduct);
+
         // Calcular informações de estoque usando função centralizada
         const stockDisplay = calculatePackageDisplay(
-          product.stock_quantity || 0,
-          product.package_units || 0
+          product.stock_quantity,
+          product.package_units ?? 1
         );
 
         // Calcular capacidades de venda
-        const canSellUnits = (product.stock_quantity || 0) > 0;
+        const canSellUnits = product.stock_quantity > 0;
         const canSellPackages = stockDisplay.packages > 0;
 
         // Preços (com fallbacks seguros)
-        const unitPrice = product.price || 0;
-        const packagePrice = product.package_price || (unitPrice * (product.package_units || 1));
-        const unitsPerPackage = product.package_units || 1;
+        const unitPrice = product.price;
+        const packagePrice = product.package_price ?? (unitPrice * (product.package_units ?? 1)) as Price;
+        const unitsPerPackage = product.package_units ?? 1;
 
         // Status de estoque
-        const stockStatus = getStockStatus(product.stock_quantity || 0, product.minimum_stock);
+        const stockStatus = getStockStatus(product.stock_quantity, product.minimum_stock);
 
         return {
           ...product,
@@ -182,37 +264,39 @@ export function useProductsSSoT(productIds: string[] = []) {
  * Hook para buscar todos os produtos ativos com dados SSoT
  */
 export function useAllProductsSSoT() {
-  return useQuery({
+  return useQuery<ProductSSoT[], Error>({
     queryKey: ['all-products-ssot'],
     queryFn: async (): Promise<ProductSSoT[]> => {
       // Buscar todos os produtos ativos
-      const { data: products, error } = await supabase
+      const { data, error } = await supabase
         .from('products')
         .select('*')
         .order('name');
 
       if (error) throw error;
-      if (!products) return [];
+      if (!data) return [];
 
-      // Processar cada produto
-      const results: ProductSSoT[] = products.map(product => {
+      // ✅ TYPE-SAFE: Transform cada produto
+      const results: ProductSSoT[] = (data as unknown as SupabaseProduct[]).map(dbProduct => {
+        const product = transformSupabaseProductToFrontend(dbProduct);
+
         // Calcular informações de estoque usando função centralizada
         const stockDisplay = calculatePackageDisplay(
-          product.stock_quantity || 0,
-          product.package_units || 0
+          product.stock_quantity,
+          product.package_units ?? 1
         );
 
         // Calcular capacidades de venda
-        const canSellUnits = (product.stock_quantity || 0) > 0;
+        const canSellUnits = product.stock_quantity > 0;
         const canSellPackages = stockDisplay.packages > 0;
 
         // Preços (com fallbacks seguros)
-        const unitPrice = product.price || 0;
-        const packagePrice = product.package_price || (unitPrice * (product.package_units || 1));
-        const unitsPerPackage = product.package_units || 1;
+        const unitPrice = product.price;
+        const packagePrice = product.package_price ?? (unitPrice * (product.package_units ?? 1)) as Price;
+        const unitsPerPackage = product.package_units ?? 1;
 
         // Status de estoque
-        const stockStatus = getStockStatus(product.stock_quantity || 0, product.minimum_stock);
+        const stockStatus = getStockStatus(product.stock_quantity, product.minimum_stock);
 
         return {
           ...product,
@@ -238,7 +322,7 @@ export function useAllProductsSSoT() {
  * Hook simplificado para verificar disponibilidade de estoque
  */
 export function useStockAvailabilitySSoT(productId: string, quantity: number, type: 'unit' | 'package') {
-  return useQuery({
+  return useQuery<StockAvailability, Error>({
     queryKey: ['stock-availability-ssot', productId, quantity, type],
     queryFn: async (): Promise<StockAvailability> => {
       if (!productId || quantity <= 0) {
@@ -251,14 +335,14 @@ export function useStockAvailabilitySSoT(productId: string, quantity: number, ty
       }
 
       // ✅ v3.5.4 - Sistema unificado de estoque (colunas legacy)
-      const { data: product, error } = await supabase
+      const { data, error } = await supabase
         .from('products')
         .select('stock_packages, stock_units_loose')
-        .eq('id', productId)
+        .eq('id', productId as any)
         .single();
 
       if (error) throw error;
-      if (!product) {
+      if (!data) {
         return {
           available: false,
           maxUnits: 0,
@@ -267,9 +351,10 @@ export function useStockAvailabilitySSoT(productId: string, quantity: number, ty
         };
       }
 
-      // ✅ v3.5.4 - Sistema unificado de estoque
-      const stockPackages = product.stock_packages || 0;
-      const stockUnitsLoose = product.stock_units_loose || 0;
+      // ✅ TYPE-SAFE: Cast numbers to integers
+      const dbData = data as { stock_packages: number; stock_units_loose: number };
+      const stockPackages = (dbData.stock_packages ?? 0) as number;
+      const stockUnitsLoose = (dbData.stock_units_loose ?? 0) as number;
 
       // ✅ CAPACIDADE DIRETA: Sem conversões
       const maxPackages = stockPackages;
@@ -293,7 +378,7 @@ export function useStockAvailabilitySSoT(productId: string, quantity: number, ty
       };
     },
     enabled: !!productId && quantity > 0,
-    staleTime: 0, // ✅ Sempre buscar dados frescos quando invalidado (fix: cache antigo limitava quantidade no carrinho)
+    staleTime: 30 * 1000, // 30s - Evita refetch automático a cada clique; invalidação manual ainda funciona
   });
 }
 

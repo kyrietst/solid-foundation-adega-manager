@@ -18,41 +18,32 @@ export interface CustomerRealMetrics {
   segment: string | null;
   favorite_category: string | null;
   created_at: string;
-  
+
   // Métricas LTV
   lifetime_value_stored: number;
   lifetime_value_calculated: number;
   ltv_difference: number;
-  
+
   // Métricas de compras
   total_purchases: number;
   total_spent: number;
   avg_purchase_value: number;
   total_products_bought: number;
   avg_items_per_purchase: number;
-  
+
   // Datas importantes
   first_purchase_stored: string | null;
   last_purchase_stored: string | null;
   first_purchase_real: string | null;
   last_purchase_real: string | null;
   days_since_last_purchase: number;
-  
-  // Insights reais
-  insights_count: number;
-  insights_confidence: number;
-  latest_insights: Array<{
-    id: string;
-    insight_type: string;
-    insight_value: string;
-    confidence: number;
-    created_at: string;
-  }>;
-  
+
+  // ✅ REMOVED: insights_count, insights_confidence, latest_insights (customer_insights table deleted)
+
   // Categoria e produtos favoritos calculados
   calculated_favorite_category: string | null;
   calculated_favorite_product: string | null;
-  
+
   // Status de sincronização
   data_sync_status: {
     ltv_synced: boolean;
@@ -78,7 +69,7 @@ export const useCustomerRealMetrics = (customerId: string | null) => {
 
       if (error) {
         console.warn('RPC get_customer_real_metrics falhou:', error);
-        
+
         // Fallback para query manual se a função RPC falhar
         return await calculateCustomerMetricsManual(customerId);
       }
@@ -100,9 +91,9 @@ async function calculateCustomerMetricsManual(customerId: string): Promise<Custo
   const { data: customer, error: customerError } = await supabase
     .from('customers')
     .select('*')
-    .eq('id', customerId)
+    .eq('id', customerId as any)
     .single();
-    
+
   if (customerError) throw customerError;
 
   // 2. Calcular métricas de vendas
@@ -122,30 +113,30 @@ async function calculateCustomerMetricsManual(customerId: string): Promise<Custo
         )
       )
     `)
-    .eq('customer_id', customerId)
+    .eq('customer_id', customerId as any)
     .order('created_at', { ascending: false });
-    
+
   if (salesError) throw salesError;
 
   // 3. Calcular métricas agregadas
   const totalPurchases = salesData.length;
-  const totalSpent = salesData.reduce((sum, sale) => sum + parseFloat(sale.total_amount), 0);
+  const totalSpent = salesData.reduce((sum, sale) => sum + parseFloat((sale as any).total_amount), 0);
   const avgPurchaseValue = totalPurchases > 0 ? totalSpent / totalPurchases : 0;
-  
+
   let totalProductsBought = 0;
   const categoryCount: Record<string, number> = {};
   const productCount: Record<string, number> = {};
-  
+
   salesData.forEach(sale => {
-    sale.sale_items.forEach(item => {
+    (sale as any).sale_items.forEach((item: any) => {
       totalProductsBought += item.quantity;
-      
+
       // Contar categorias
       const category = item.products?.category;
       if (category) {
         categoryCount[category] = (categoryCount[category] || 0) + item.quantity;
       }
-      
+
       // Contar produtos
       const productName = item.products?.name;
       if (productName) {
@@ -153,91 +144,69 @@ async function calculateCustomerMetricsManual(customerId: string): Promise<Custo
       }
     });
   });
-  
+
   const avgItemsPerPurchase = totalPurchases > 0 ? totalProductsBought / totalPurchases : 0;
-  
+
   // Categoria e produto favoritos calculados
-  const calculatedFavoriteCategory = Object.keys(categoryCount).length > 0 
+  const calculatedFavoriteCategory = Object.keys(categoryCount).length > 0
     ? Object.keys(categoryCount).reduce((a, b) => categoryCount[a] > categoryCount[b] ? a : b)
     : null;
-    
+
   const calculatedFavoriteProduct = Object.keys(productCount).length > 0
     ? Object.keys(productCount).reduce((a, b) => productCount[a] > productCount[b] ? a : b)
     : null;
 
   // Datas reais
-  const firstPurchaseReal = salesData.length > 0 ? salesData[salesData.length - 1].created_at : null;
-  const lastPurchaseReal = salesData.length > 0 ? salesData[0].created_at : null;
-  
+  const firstPurchaseReal = salesData.length > 0 ? (salesData[salesData.length - 1] as any).created_at : null;
+  const lastPurchaseReal = salesData.length > 0 ? (salesData[0] as any).created_at : null;
+
   // Dias desde última compra
-  const daysSinceLastPurchase = lastPurchaseReal 
+  const daysSinceLastPurchase = lastPurchaseReal
     ? Math.floor((new Date().getTime() - new Date(lastPurchaseReal).getTime()) / (1000 * 60 * 60 * 24))
     : 0;
 
-  // 4. Buscar insights reais
-  const { data: insights, error: insightsError } = await supabase
-    .from('customer_insights')
-    .select('*')
-    .eq('customer_id', customerId)
-    .eq('is_active', true)
-    .order('created_at', { ascending: false })
-    .limit(5);
-    
-  if (insightsError) throw insightsError;
-
-  const insightsCount = insights.length;
-  const insightsConfidence = insights.length > 0 
-    ? insights.reduce((sum, insight) => sum + parseFloat(insight.confidence), 0) / insights.length
-    : 0;
+  // ✅ REMOVED: customer_insights query (table deleted)
 
   // 5. Status de sincronização
-  const ltv_difference = totalSpent - parseFloat(customer.lifetime_value || '0');
+  const ltv_difference = totalSpent - parseFloat((customer as any).lifetime_value || '0');
   const ltv_synced = Math.abs(ltv_difference) < 1; // Considera sincronizado se diferença < R$ 1
-  
-  const dates_synced = customer.last_purchase_date && lastPurchaseReal
-    ? new Date(customer.last_purchase_date).getTime() === new Date(lastPurchaseReal).getTime()
-    : !customer.last_purchase_date && !lastPurchaseReal;
-    
-  const preferences_synced = customer.favorite_category === calculatedFavoriteCategory;
+
+  const dates_synced = (customer as any).last_purchase_date && lastPurchaseReal
+    ? new Date((customer as any).last_purchase_date).getTime() === new Date(lastPurchaseReal).getTime()
+    : !(customer as any).last_purchase_date && !lastPurchaseReal;
+
+  const preferences_synced = (customer as any).favorite_category === calculatedFavoriteCategory;
 
   return {
-    id: customer.id,
-    name: customer.name,
-    email: customer.email,
-    phone: customer.phone,
-    segment: customer.segment,
-    favorite_category: customer.favorite_category,
-    created_at: customer.created_at,
-    
-    lifetime_value_stored: parseFloat(customer.lifetime_value || '0'),
+    id: (customer as any).id,
+    name: (customer as any).name,
+    email: (customer as any).email,
+    phone: (customer as any).phone,
+    segment: (customer as any).segment,
+    favorite_category: (customer as any).favorite_category,
+    created_at: (customer as any).created_at,
+
+    lifetime_value_stored: parseFloat((customer as any).lifetime_value || '0'),
     lifetime_value_calculated: totalSpent,
     ltv_difference,
-    
+
     total_purchases: totalPurchases,
     total_spent: totalSpent,
     avg_purchase_value: avgPurchaseValue,
     total_products_bought: totalProductsBought,
     avg_items_per_purchase: avgItemsPerPurchase,
-    
-    first_purchase_stored: customer.first_purchase_date,
-    last_purchase_stored: customer.last_purchase_date,
+
+    first_purchase_stored: (customer as any).first_purchase_date,
+    last_purchase_stored: (customer as any).last_purchase_date,
     first_purchase_real: firstPurchaseReal,
     last_purchase_real: lastPurchaseReal,
     days_since_last_purchase: daysSinceLastPurchase,
-    
-    insights_count: insightsCount,
-    insights_confidence: insightsConfidence,
-    latest_insights: insights.map(insight => ({
-      id: insight.id,
-      insight_type: insight.insight_type,
-      insight_value: insight.insight_value,
-      confidence: parseFloat(insight.confidence),
-      created_at: insight.created_at
-    })),
-    
+
+    // ✅ REMOVED: insights fields (customer_insights table deleted)
+
     calculated_favorite_category: calculatedFavoriteCategory,
     calculated_favorite_product: calculatedFavoriteProduct,
-    
+
     data_sync_status: {
       ltv_synced,
       dates_synced,

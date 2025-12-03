@@ -52,27 +52,25 @@ export const useSalesErrorRecovery = (config: SalesErrorConfig = {}) => {
         supabase
           .from('sales')
           .select('id')
-          .not('id', 'in', `(${
-            await supabase
+          .not('id', 'in', `(${await supabase
               .from('sale_items')
               .select('sale_id')
               .then(({ data }) => data?.map(item => item.sale_id).join(',') || '0')
-          })`),
-        
+            })`),
+
         // Verificar se há itens órfãos (sem venda)
         supabase
           .from('sale_items')
           .select('sale_id')
-          .not('sale_id', 'in', `(${
-            await supabase
+          .not('sale_id', 'in', `(${await supabase
               .from('sales')
               .select('id')
               .then(({ data }) => data?.map(sale => sale.id).join(',') || '0')
-          })`),
+            })`),
       ]);
 
       let hasIntegrityIssues = false;
-      
+
       checks.forEach((result, index) => {
         if (result.status === 'fulfilled') {
           const hasData = result.value.data && result.value.data.length > 0;
@@ -105,19 +103,26 @@ export const useSalesErrorRecovery = (config: SalesErrorConfig = {}) => {
         return false;
       }
 
-      // 2. Reverter estoque dos produtos
+      // 2. Reverter estoque dos produtos usando create_inventory_movement
+      // (substituído adjust_product_stock que foi dropada)
       if (saleItems && saleItems.length > 0) {
-        const stockUpdates = saleItems.map(item => 
-          supabase.rpc('adjust_product_stock', {
-            product_id: item.product_id,
-            quantity: item.quantity, // Adicionar de volta ao estoque
-            reason: 'rollback_sale'
+        const stockUpdates = saleItems.map(item =>
+          supabase.rpc('create_inventory_movement', {
+            p_product_id: item.product_id,
+            p_quantity_change: item.quantity, // Positivo = adicionar de volta
+            p_type_enum: 'return', // Tipo de movimento
+            p_reason: 'Rollback de venda devido a erro',
+            p_metadata: {
+              rollback_sale_id: saleId,
+              original_quantity: item.quantity,
+              timestamp: new Date().toISOString()
+            }
           })
         );
 
         const stockResults = await Promise.allSettled(stockUpdates);
         const failedStockUpdates = stockResults.filter(result => result.status === 'rejected');
-        
+
         if (failedStockUpdates.length > 0) {
           console.warn(`${failedStockUpdates.length} atualizações de estoque falharam durante rollback`);
         }
@@ -173,18 +178,18 @@ export const useSalesErrorRecovery = (config: SalesErrorConfig = {}) => {
     onError?.(error, context);
 
     // Verificar se é um erro crítico que requer rollback
-    const requiresRollback = 
+    const requiresRollback =
       context.includes('checkout') ||
       context.includes('payment') ||
       error.message.includes('constraint') ||
       error.message.includes('integrity');
 
     if (requiresRollback && enableAutoRollback && operationData?.saleId) {
-      
+
       setErrorState(prev => ({ ...prev, isRecovering: true }));
 
       const rollbackSuccess = await rollbackSale(operationData.saleId);
-      
+
       if (rollbackSuccess) {
         toast({
           title: 'Operação Revertida',
@@ -225,7 +230,7 @@ export const useSalesErrorRecovery = (config: SalesErrorConfig = {}) => {
       while (attempt <= maxRetryAttempts) {
         try {
           const result = await operation(...args);
-          
+
           // Validar integridade se habilitado
           if (validateIntegrity && context.includes('checkout')) {
             const isValid = await validateSystemIntegrity();
@@ -249,7 +254,7 @@ export const useSalesErrorRecovery = (config: SalesErrorConfig = {}) => {
           return result;
         } catch (error) {
           lastError = error instanceof Error ? error : new Error(String(error));
-          
+
           if (attempt < maxRetryAttempts) {
             await new Promise(resolve => setTimeout(resolve, retryDelay * Math.pow(2, attempt)));
             attempt++;
@@ -284,7 +289,7 @@ export const useSalesErrorRecovery = (config: SalesErrorConfig = {}) => {
       // Aqui seria necessário reexecutar a operação específica
       // Por ora, apenas limpar o estado de erro
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
+
       setErrorState({
         hasError: false,
         lastError: null,
@@ -309,7 +314,7 @@ export const useSalesErrorRecovery = (config: SalesErrorConfig = {}) => {
   // Rollback manual
   const manualRollback = useCallback(async (saleId?: string): Promise<boolean> => {
     const targetSaleId = saleId || (errorState.lastOperation?.includes('sale') ? 'last-sale' : undefined);
-    
+
     if (!targetSaleId || targetSaleId === 'last-sale') {
       console.warn('ID da venda não disponível para rollback manual');
       return false;
@@ -318,7 +323,7 @@ export const useSalesErrorRecovery = (config: SalesErrorConfig = {}) => {
     setErrorState(prev => ({ ...prev, isRecovering: true }));
 
     const success = await rollbackSale(targetSaleId);
-    
+
     setErrorState(prev => ({ ...prev, isRecovering: false }));
 
     if (success) {

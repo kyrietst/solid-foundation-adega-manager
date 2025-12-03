@@ -30,6 +30,7 @@ const AdvancedReports = lazy(() =>
 );
 const ActivitiesPage = lazy(() => import('@/pages/ActivitiesPage'));
 const ExpensesPage = lazy(() => import('@/features/expenses/components/ExpensesPage'));
+const MarketingPage = lazy(() => import('@/pages/MarketingPage'));
 
 const Index = () => {
   const navigate = useNavigate();
@@ -190,6 +191,12 @@ const Index = () => {
         return hasPermission(['admin']) ? (
           <Suspense fallback={<LoadingScreen text="Carregando gestão de despesas..." />}>
             <ExpensesPage />
+          </Suspense>
+        ) : <AccessDenied />;
+      case 'marketing':
+        return hasPermission(['admin']) ? (
+          <Suspense fallback={<LoadingScreen text="Carregando inteligência de marketing..." />}>
+            <MarketingPage />
           </Suspense>
         ) : <AccessDenied />;
       default:

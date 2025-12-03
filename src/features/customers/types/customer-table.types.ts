@@ -7,8 +7,7 @@ export interface CustomerTableRow {
   segmento: string;
   metodoPreferido: string | null;
   ultimaCompra: Date | null;
-  insightsCount: number;
-  insightsConfidence: number;
+  // ✅ REMOVED: insightsCount, insightsConfidence (customer_insights table deleted)
   status: CustomerStatus;
   statusColor: CustomerStatusColor;
   createdAt: Date;
@@ -25,20 +24,20 @@ export interface CustomerTableRow {
   valorEmAberto: number;
 }
 
-export type CustomerStatus = 
-  | 'VIP' 
-  | 'Ativo' 
-  | 'Regular' 
-  | 'Em Risco' 
-  | 'Inativo' 
+export type CustomerStatus =
+  | 'VIP'
+  | 'Ativo'
+  | 'Regular'
+  | 'Em Risco'
+  | 'Inativo'
   | 'Reativar';
 
-export type CustomerStatusColor = 
-  | 'gold' 
-  | 'green' 
-  | 'yellow' 
-  | 'red' 
-  | 'gray' 
+export type CustomerStatusColor =
+  | 'gold'
+  | 'green'
+  | 'yellow'
+  | 'red'
+  | 'gray'
   | 'orange';
 
 export interface CustomerTableFilters {
@@ -48,16 +47,11 @@ export interface CustomerTableFilters {
   searchTerm: string;
 }
 
-export interface CustomerInsightBadge {
-  count: number;
-  confidence: number;
-  level: 'high' | 'medium' | 'low';
-  color: 'green' | 'yellow' | 'red';
-}
+// ✅ REMOVED: CustomerInsightBadge (customer_insights table deleted)
 
 export const CUSTOMER_SEGMENTS = [
   'Fiel - Ouro',
-  'Fiel - Prata', 
+  'Fiel - Prata',
   'Regular',
   'Primeira Compra',
   'Em Risco',
@@ -68,7 +62,7 @@ export const CUSTOMER_SEGMENTS = [
 export const CUSTOMER_STATUSES = [
   'VIP',
   'Ativo',
-  'Regular', 
+  'Regular',
   'Em Risco',
   'Inativo',
   'Reativar'
@@ -89,7 +83,7 @@ export const TABLE_COLUMNS = [
   'Segmento',
   'Método Preferido',
   'Última Compra',
-  'Insights de IA',
+  // ✅ REMOVED: 'Insights de IA' (customer_insights table deleted)
   'Status',
   'PRÓXIMO\nANIVERSÁRIO',
   'LGPD',
@@ -101,20 +95,11 @@ export const TABLE_COLUMNS = [
 export type TableColumn = typeof TABLE_COLUMNS[number];
 
 // Utility functions for the table
-export const getInsightLevel = (confidence: number): CustomerInsightBadge['level'] => {
-  if (confidence >= 0.9) return 'high';
-  if (confidence >= 0.7) return 'medium';
-  return 'low';
-};
-
-export const getInsightColor = (level: CustomerInsightBadge['level']): CustomerInsightBadge['color'] => {
-  const colors = { high: 'green', medium: 'yellow', low: 'red' } as const;
-  return colors[level];
-};
+// ✅ REMOVED: getInsightLevel, getInsightColor (customer_insights table deleted)
 
 export const formatPaymentMethod = (method: string | null): string => {
   if (!method) return 'Sem histórico';
-  
+
   const methodMap: Record<string, string> = {
     'PIX': 'PIX',
     'pix': 'PIX',
@@ -124,7 +109,7 @@ export const formatPaymentMethod = (method: string | null): string => {
     'debit': 'Débito',
     'bank_transfer': 'Transferência'
   };
-  
+
   return methodMap[method] || method;
 };
 
@@ -152,12 +137,12 @@ export const formatLastPurchase = (date: Date | null): string => {
 
 export const formatNextBirthday = (date: Date | null, daysUntil: number | null): string => {
   if (!date || daysUntil === null) return 'Não informado';
-  
+
   if (daysUntil === 0) return 'Hoje! 🎉';
   if (daysUntil === 1) return 'Amanhã 🎂';
   if (daysUntil <= 7) return `${daysUntil} dias 🎈`;
   if (daysUntil <= 30) return `${daysUntil} dias`;
-  
+
   return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
 };
 

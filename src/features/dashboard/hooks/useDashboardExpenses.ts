@@ -38,58 +38,88 @@ export const useDashboardExpenses = () => {
       const endDate = getNowSaoPaulo();
 
 
-      const startDateStr = startDate.toISOString().split('T')[0];
-      const endDateStr = endDate.toISOString().split('T')[0];
+      // ✅ REFATORADO: Query direta em expenses (RPCs foram dropadas)
+      // Agregação feita em TypeScript ao invés de RPC
 
-      // Buscar resumo geral usando stored procedure
-      const { data: summaryData, error: summaryError } = await supabase
-        .rpc('get_expense_summary', {
-          start_date: startDateStr,
-          end_date: endDateStr
-        });
+      // Buscar todas as despesas do período
+      const { data: expenses, error: expensesError } = await supabase
+        .from('expenses')
+        .select(`
+          id,
+          amount,
+          date,
+          description,
+          category_id,
+          expense_categories (
+            id,
+            name
+          )
+        `)
+        .gte('date', startDateStr)
+        .lte('date', endDateStr);
 
-      if (summaryError) {
-        console.error('❌ Erro ao buscar resumo de despesas:', summaryError);
-        throw summaryError;
+      if (expensesError) {
+        console.error('❌ Erro ao buscar despesas:', expensesError);
+        throw expensesError;
       }
 
-      const summary = summaryData?.[0] || {
-        total_expenses: 0,
-        total_transactions: 0,
-        avg_expense: 0,
-        top_category: 'N/A',
-        top_category_amount: 0
-      };
+      // Agregação manual em TypeScript
+      const expensesList = expenses || [];
 
-      // Buscar breakdown por categoria usando stored procedure mensal
-      const currentMonth = endDate.getMonth() + 1;
-      const currentYear = endDate.getFullYear();
-      
-      const { data: monthlyData, error: monthlyError } = await supabase
-        .rpc('get_monthly_expenses', {
-          target_month: currentMonth,
-          target_year: currentYear
-        });
+      // Totais
+      const total_expenses = expensesList.reduce((sum, exp) => sum + Number(exp.amount || 0), 0);
+      const total_transactions = expensesList.length;
+      const avg_expense = total_transactions > 0 ? total_expenses / total_transactions : 0;
 
-      if (monthlyError) {
-        console.error('❌ Erro ao buscar despesas mensais:', monthlyError);
-      }
+      // Agrupamento por categoria
+      const categoryMap = new Map<string, {
+        category_id: string;
+        category_name: string;
+        total_amount: number;
+        expense_count: number;
+      }>();
 
-      const categories_breakdown: DashboardExpense[] = (monthlyData || []).map(expense => ({
-        category_id: expense.category_id,
-        category_name: expense.category_name,
-        total_amount: Number(expense.total_amount),
-        expense_count: expense.expense_count,
-        avg_amount: Number(expense.avg_amount)
-      }));
+      expensesList.forEach(exp => {
+        const categoryId = exp.category_id || 'uncategorized';
+        const categoryName = (exp.expense_categories as any)?.name || 'Sem Categoria';
+        const amount = Number(exp.amount || 0);
 
+        if (!categoryMap.has(categoryId)) {
+          categoryMap.set(categoryId, {
+            category_id: categoryId,
+            category_name: categoryName,
+            total_amount: 0,
+            expense_count: 0
+          });
+        }
+
+        const category = categoryMap.get(categoryId)!;
+        category.total_amount += amount;
+        category.expense_count += 1;
+      });
+
+      // Converter map para array e calcular médias
+      const categories_breakdown: DashboardExpense[] = Array.from(categoryMap.values())
+        .map(cat => ({
+          category_id: cat.category_id,
+          category_name: cat.category_name,
+          total_amount: cat.total_amount,
+          expense_count: cat.expense_count,
+          avg_amount: cat.expense_count > 0 ? cat.total_amount / cat.expense_count : 0
+        }))
+        .sort((a, b) => b.total_amount - a.total_amount); // Ordenar por maior gasto
+
+      // Top categoria
+      const topCategory = categories_breakdown[0];
+      const top_category = topCategory?.category_name || 'N/A';
+      const top_category_amount = topCategory?.total_amount || 0;
 
       return {
-        total_expenses: Number(summary.total_expenses),
-        total_transactions: summary.total_transactions,
-        avg_expense: Number(summary.avg_expense),
-        top_category: summary.top_category,
-        top_category_amount: Number(summary.top_category_amount),
+        total_expenses: Number(total_expenses),
+        total_transactions,
+        avg_expense: Number(avg_expense),
+        top_category,
+        top_category_amount: Number(top_category_amount),
         categories_breakdown
       };
     },
@@ -109,7 +139,7 @@ export const useDashboardBudgetVariance = () => {
   return useQuery({
     queryKey: ['dashboard', 'budget-variance', currentMonth, currentYear],
     queryFn: async () => {
-      
+
       const { data, error } = await supabase
         .rpc('calculate_budget_variance', {
           target_month: currentMonth,

@@ -116,10 +116,6 @@ export const useDeliveryOrders = (params?: {
               id,
               name
             ),
-            delivery_zone:delivery_zones!delivery_zone_id (
-              id,
-              name
-            ),
             sale_items (
               id,
               product_id,
@@ -157,7 +153,7 @@ export const useDeliveryOrders = (params?: {
           startDate.setHours(0, 0, 0, 0);
           const endDate = new Date(params.date);
           endDate.setHours(23, 59, 59, 999);
-          
+
           query = query
             .gte('created_at', startDate.toISOString())
             .lte('created_at', endDate.toISOString());
@@ -355,14 +351,14 @@ export const useUpdateDeliveryStatus = () => {
       // Atualização otimista
       queryClient.setQueryData(['delivery-orders'], (old: any) => {
         if (!old) return old;
-        
-        return old.map((delivery: any) => 
-          delivery.id === saleId 
-            ? { 
-                ...delivery, 
-                delivery_status: newStatus,
-                updated_at: new Date().toISOString()
-              }
+
+        return old.map((delivery: any) =>
+          delivery.id === saleId
+            ? {
+              ...delivery,
+              delivery_status: newStatus,
+              updated_at: new Date().toISOString()
+            }
             : delivery
         );
       });
@@ -371,13 +367,13 @@ export const useUpdateDeliveryStatus = () => {
       return { previousDeliveries };
     },
     onSuccess: (data, variables) => {
-      
+
       // Invalidação específica para garantir dados frescos
-      queryClient.invalidateQueries({ 
-        queryKey: ['delivery-orders'], 
-        exact: false 
+      queryClient.invalidateQueries({
+        queryKey: ['delivery-orders'],
+        exact: false
       });
-      
+
       queryClient.invalidateQueries({
         queryKey: ['delivery-metrics'],
         exact: false
@@ -399,7 +395,7 @@ export const useUpdateDeliveryStatus = () => {
         queryClient.invalidateQueries({ queryKey: ['sales'] });
         queryClient.invalidateQueries({ queryKey: ['delivery-analytics-kpis'] });
       }, 500);
-      
+
       toast({
         title: "Status atualizado!",
         description: `Status alterado para ${variables.newStatus} com sucesso.`,
@@ -407,12 +403,12 @@ export const useUpdateDeliveryStatus = () => {
     },
     onError: (error: any, variables, context) => {
       console.error('❌ Erro ao atualizar status:', error);
-      
+
       // Rollback em caso de erro
       if (context?.previousDeliveries) {
         queryClient.setQueryData(['delivery-orders'], context.previousDeliveries);
       }
-      
+
       toast({
         title: "Erro ao atualizar status",
         description: error.message || "Ocorreu um erro inesperado.",

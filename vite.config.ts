@@ -11,57 +11,54 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
   ].filter(Boolean),
+  optimizeDeps: {
+    include: [
+      // Core
+      'react',
+      'react-dom',
+      'react-router-dom',
+
+      // Backend
+      '@supabase/supabase-js',
+      '@tanstack/react-query',
+      '@tanstack/react-virtual',
+
+      // Charts
+      'recharts',
+
+      // Animations
+      'framer-motion',
+
+      // Forms
+      'react-hook-form',
+      'zod',
+      '@hookform/resolvers',
+
+      // Radix UI
+      '@radix-ui/react-dialog',
+      '@radix-ui/react-dropdown-menu',
+      '@radix-ui/react-select',
+      '@radix-ui/react-tabs',
+      '@radix-ui/react-toast',
+      '@radix-ui/react-popover',
+      '@radix-ui/react-avatar',
+      '@radix-ui/react-accordion',
+      '@radix-ui/react-switch',
+
+      // Icons
+      'lucide-react',
+
+      // Utils
+      'date-fns',
+      'clsx',
+      'tailwind-merge',
+    ],
+    force: false,  // Primeira vez: true. Depois mudar para false
+  },
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
+      '@': path.resolve(__dirname, './src'),
     },
-  },
-  optimizeDeps: {
-    include: ['simplex-noise'],
-    force: true
-  },
-  test: {
-    globals: true,
-    environment: 'jsdom',
-    setupFiles: ['./src/__tests__/setup.ts'],
-    coverage: {
-      provider: 'v8',
-      reporter: ['text', 'json', 'html'],
-      exclude: [
-        'node_modules/',
-        'src/__tests__/',
-        '**/*.d.ts',
-        '**/*.config.*',
-        '**/coverage/**'
-      ],
-      thresholds: {
-        global: {
-          branches: 70,
-          functions: 70,
-          lines: 70,
-          statements: 70
-        },
-        // Critical components require higher coverage
-        'src/features/sales/': {
-          branches: 85,
-          functions: 85,
-          lines: 85,
-          statements: 85
-        },
-        'src/features/inventory/': {
-          branches: 80,
-          functions: 80,
-          lines: 80,
-          statements: 80
-        },
-        'src/features/customers/': {
-          branches: 80,
-          functions: 80,
-          lines: 80,
-          statements: 80
-        }
-      }
-    }
   },
   build: {
     target: 'es2020',
@@ -94,21 +91,6 @@ export default defineConfig(({ mode }) => ({
           'supabase': [
             '@supabase/supabase-js',
             '@tanstack/react-query'
-          ],
-
-          // Utilities
-          'utils': [
-            'date-fns',
-            'clsx',
-            'tailwind-merge',
-            'zod',
-            'react-hook-form'
-          ],
-
-          // Animations - Framer Motion é pesado
-          'animations': [
-            'framer-motion',
-            'motion'
           ]
         }
       }

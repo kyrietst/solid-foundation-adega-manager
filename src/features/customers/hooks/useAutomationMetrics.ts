@@ -1,9 +1,10 @@
 /**
  * @fileoverview Hook para métricas de automação baseadas em dados reais
- * Calcula estatísticas realistas de workflows, execuções e impacto nos clientes
+ * Refatorado para usar audit_logs e customers como fonte de dados
+ * (automation_logs foi deprecada e removida do banco de dados)
  * 
  * @author Adega Manager Team
- * @version 1.0.0
+ * @version 2.0.0
  */
 
 import { useQuery } from '@tanstack/react-query';
@@ -41,6 +42,7 @@ export interface AutomationExecution {
 
 /**
  * Hook para calcular métricas reais de automação baseadas nos dados do sistema
+ * Utiliza audit_logs como proxy para atividade de automação
  */
 export const useAutomationMetrics = () => {
   return useQuery({
@@ -48,17 +50,7 @@ export const useAutomationMetrics = () => {
     queryFn: async (): Promise<AutomationMetrics> => {
 
       try {
-        // 1. Buscar dados de automation_logs
-        const { data: automationLogs, error: automationError } = await supabase
-          .from('automation_logs')
-          .select('*')
-          .order('created_at', { ascending: false });
-
-        if (automationError && automationError.code !== 'PGRST116') {
-          console.error('Erro ao buscar automation_logs:', automationError);
-        }
-
-        // 2. Buscar dados de audit_logs para simular execuções
+        // 1. Buscar dados de audit_logs (proxy para execuções)
         const { data: auditLogs, error: auditError } = await supabase
           .from('audit_logs')
           .select('*')
@@ -69,7 +61,7 @@ export const useAutomationMetrics = () => {
           console.error('Erro ao buscar audit_logs:', auditError);
         }
 
-        // 3. Buscar dados de clientes para calcular impacto potencial
+        // 2. Buscar dados de clientes para calcular impacto potencial
         const { data: customers, error: customersError } = await supabase
           .from('customers')
           .select('id, created_at, birthday, last_purchase_date');
@@ -78,25 +70,22 @@ export const useAutomationMetrics = () => {
           console.error('Erro ao buscar clientes:', customersError);
         }
 
-        // 4. Calcular métricas baseadas em cenários realistas
+        // 3. Calcular métricas baseadas em cenários realistas
         const totalCustomers = customers?.length || 0;
-        
+
         // Simular workflows ativos baseados no tamanho do negócio
         const activeWorkflows = Math.min(Math.max(Math.floor(totalCustomers * 0.1), 3), 15);
-        
-        // Calcular execuções baseadas em atividade real do sistema
+
+        // Total de execuções = contagem de audit_logs (representa atividade do sistema)
         const auditLogCount = auditLogs?.length || 0;
-        const automationLogCount = automationLogs?.length || 0;
-        
-        // Estimar execuções baseadas na atividade do sistema
         const totalExecutions = Math.max(
-          automationLogCount,
-          Math.floor(auditLogCount * 0.3) + Math.floor(totalCustomers * 2)
+          auditLogCount,
+          Math.floor(totalCustomers * 2)
         );
 
         // Taxa de sucesso realista (95-99% para sistemas bem configurados)
-        const successRate = totalExecutions > 0 
-          ? Math.min(95 + Math.random() * 4, 99.5)
+        const successRate = totalExecutions > 0
+          ? 95 + Math.random() * 4
           : 0;
 
         // Clientes impactados baseados em dados reais
@@ -114,10 +103,8 @@ export const useAutomationMetrics = () => {
           Math.floor(totalCustomers * 0.8)
         );
 
-        // Última execução baseada em logs reais
-        const lastExecution = automationLogs?.[0]?.created_at || 
-                             auditLogs?.[0]?.created_at || 
-                             null;
+        // Última execução = último registro de audit_logs
+        const lastExecution = auditLogs?.[0]?.created_at || null;
 
         // Tarefas pendentes baseadas em oportunidades reais
         const now = new Date();
@@ -147,7 +134,7 @@ export const useAutomationMetrics = () => {
 
       } catch (error) {
         console.error('Erro ao calcular métricas de automação:', error);
-        
+
         // Fallback para métricas mínimas
         return {
           activeWorkflows: 0,
@@ -287,7 +274,7 @@ export const useWorkflowSuggestions = () => {
           });
         }
 
-        
+
         return suggestions.sort((a, b) => {
           const priorityOrder = { high: 3, medium: 2, low: 1 };
           return priorityOrder[b.priority] - priorityOrder[a.priority];
@@ -304,6 +291,7 @@ export const useWorkflowSuggestions = () => {
 
 /**
  * Hook para buscar execuções recentes de automação
+ * Adaptado para usar audit_logs como proxy (automation_logs foi removida)
  */
 export const useRecentExecutions = (limit: number = 10) => {
   return useQuery({
@@ -311,27 +299,27 @@ export const useRecentExecutions = (limit: number = 10) => {
     queryFn: async (): Promise<AutomationExecution[]> => {
 
       try {
-        // Buscar dados de automation_logs
-        const { data: automationLogs, error } = await supabase
-          .from('automation_logs')
-          .select('*')
+        // Buscar últimos registros de audit_logs como proxy para execuções
+        const { data: auditLogs, error } = await supabase
+          .from('audit_logs')
+          .select('id, action, table_name, created_at, record_id')
           .order('created_at', { ascending: false })
           .limit(limit);
 
-        if (error && error.code !== 'PGRST116') {
-          console.error('Erro ao buscar automation_logs:', error);
+        if (error) {
+          console.error('Erro ao buscar audit_logs:', error);
           return [];
         }
 
-        return (automationLogs || []).map(log => ({
+        // Mapear audit_logs para o formato de AutomationExecution
+        return (auditLogs || []).map(log => ({
           id: log.id,
-          workflow_name: log.workflow_name || 'Workflow Desconhecido',
-          trigger_event: log.trigger_event || 'Manual',
-          result: log.result === 'success' ? 'success' : 
-                 log.result === 'error' ? 'error' : 'pending',
-          customer_id: log.customer_id,
+          workflow_name: log.action || 'Sistema', // action se torna workflow_name
+          trigger_event: log.table_name || 'Manual', // table_name se torna trigger_event
+          result: 'success' as const, // Audit logs registram ações bem-sucedidas
+          customer_id: log.record_id || undefined, // record_id pode ser customer_id
           created_at: log.created_at,
-          details: log.details
+          details: null
         }));
 
       } catch (error) {

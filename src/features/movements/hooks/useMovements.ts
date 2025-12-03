@@ -7,7 +7,7 @@
 import { useState, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
-import type { InventoryMovement } from '@/core/types/database';
+import type { InventoryMovement } from '@/core/types/inventory.types';
 
 // Re-export types para compatibilidade
 export interface Product {
@@ -81,21 +81,21 @@ export const useMovements = (options: UseMovementsOptions = {}): UseMovementsRet
         .from('inventory_movements')
         .select(`
           *,
-          products:product_id (
+          products:products (
             id,
             name,
             price
           ),
-          customers:customer_id (
+          customers:customers (
             id,
             name
           ),
-          sales:sale_id (
+          sales:sales!inventory_movements_sale_id_fkey (
             id,
             created_at,
             delivery_type
           ),
-          users:user_id (
+          users:users (
             id,
             full_name
           )
@@ -109,7 +109,7 @@ export const useMovements = (options: UseMovementsOptions = {}): UseMovementsRet
       }
 
       return {
-        movements: (data || []) as InventoryMovement[],
+        movements: (data || []) as unknown as InventoryMovement[],
         totalCount: count || 0
       };
     },
@@ -165,26 +165,26 @@ export const useMovement = (id: string) => {
         .from('inventory_movements')
         .select(`
           *,
-          products:product_id (
+          products:products (
             id,
             name,
             price
           ),
-          customers:customer_id (
+          customers:customers (
             id,
             name
           ),
-          sales:sale_id (
+          sales:sales!inventory_movements_sale_id_fkey (
             id,
             created_at,
             delivery_type
           ),
-          users:user_id (
+          users:users (
             id,
             full_name
           )
         `)
-        .eq('id', id)
+        .eq('id', id as any)
         .single();
 
       if (error) {
@@ -192,7 +192,7 @@ export const useMovement = (id: string) => {
         throw error;
       }
 
-      return data;
+      return data as unknown as InventoryMovement;
     },
     enabled: !!id,
     staleTime: 10 * 60 * 1000, // 10 minutos

@@ -7,9 +7,9 @@ import { supabase } from '@/core/api/supabase/client';
 import { toast } from 'sonner';
 import type { Database } from '@/core/api/supabase/types';
 
-type OperationalExpense = Database['public']['Tables']['operational_expenses']['Row'];
-type ExpenseInsert = Database['public']['Tables']['operational_expenses']['Insert'];
-type ExpenseUpdate = Database['public']['Tables']['operational_expenses']['Update'];
+type OperationalExpense = Database['public']['Tables']['expenses']['Row'];
+type ExpenseInsert = Database['public']['Tables']['expenses']['Insert'];
+type ExpenseUpdate = Database['public']['Tables']['expenses']['Update'];
 
 export interface ExpenseFilters {
   category_id?: string;
@@ -41,12 +41,12 @@ export const useExpenses = (filters?: ExpenseFilters) => {
     queryKey: ['expenses', filters],
     queryFn: async () => {
       let query = supabase
-        .from('operational_expenses')
+        .from('expenses')
         .select(`
           *,
           expense_categories(name, color, icon)
         `)
-        .order('expense_date', { ascending: false });
+        .order('date', { ascending: false });
 
       // Filtros
       if (filters?.category_id) {
@@ -92,7 +92,7 @@ export const useExpense = (id: string) => {
     queryKey: ['expense', id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('operational_expenses')
+        .from('expenses')
         .select(`
           *,
           expense_categories(name, color, icon)
@@ -115,24 +115,55 @@ export const useExpenseSummary = (startDate: string, endDate: string) => {
   return useQuery({
     queryKey: ['expense-summary', startDate, endDate],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .rpc('get_expense_summary', {
-          start_date: startDate,
-          end_date: endDate
-        });
+      // Query direta na tabela expenses com JOIN para categorias
+      const { data: expenses, error } = await supabase
+        .from('expenses')
+        .select(`
+          amount,
+          category_id,
+          expense_categories(name)
+        `)
+        .gte('date', startDate)
+        .lte('date', endDate);
 
       if (error) {
         console.error('Erro ao buscar resumo de despesas:', error);
         throw error;
       }
 
-      return data?.[0] as ExpenseSummary || {
-        total_expenses: 0,
-        total_transactions: 0,
-        avg_expense: 0,
-        top_category: 'N/A',
-        top_category_amount: 0
-      };
+      // Retornar valores padrão se não houver despesas
+      if (!expenses || expenses.length === 0) {
+        return {
+          total_expenses: 0,
+          total_transactions: 0,
+          avg_expense: 0,
+          top_category: 'N/A',
+          top_category_amount: 0
+        } as ExpenseSummary;
+      }
+
+      // Calcular totais no frontend
+      const total_expenses = expenses.reduce((acc, e: any) => acc + Number(e.amount), 0);
+      const total_transactions = expenses.length;
+      const avg_expense = total_expenses / total_transactions;
+
+      // Encontrar categoria com maior gasto
+      const categoryTotals = expenses.reduce((acc, e: any) => {
+        const catName = e.expense_categories?.name || 'Sem Categoria';
+        acc[catName] = (acc[catName] || 0) + Number(e.amount);
+        return acc;
+      }, {} as Record<string, number>);
+
+      const topCategoryEntry = Object.entries(categoryTotals)
+        .sort(([, a], [, b]) => b - a)[0] || ['N/A', 0];
+
+      return {
+        total_expenses,
+        total_transactions,
+        avg_expense,
+        top_category: topCategoryEntry[0],
+        top_category_amount: topCategoryEntry[1]
+      } as ExpenseSummary;
     }
   });
 };
@@ -164,7 +195,7 @@ export const useCreateExpense = () => {
   return useMutation({
     mutationFn: async (expense: ExpenseInsert) => {
       const { data, error } = await supabase
-        .from('operational_expenses')
+        .from('expenses')
         .insert([expense])
         .select(`
           *,
@@ -199,7 +230,7 @@ export const useUpdateExpense = () => {
   return useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: ExpenseUpdate }) => {
       const { data, error } = await supabase
-        .from('operational_expenses')
+        .from('expenses')
         .update(updates)
         .eq('id', id)
         .select(`
@@ -236,7 +267,7 @@ export const useDeleteExpense = () => {
   return useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
-        .from('operational_expenses')
+        .from('expenses')
         .delete()
         .eq('id', id);
 

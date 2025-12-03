@@ -96,6 +96,7 @@ export const SearchInput: React.FC<SearchInputProps> = ({
         onBlur={() => setIsFocused(false)}
         placeholder={placeholder}
         disabled={disabled}
+        aria-label={placeholder}
         className={cn(
           getGlassInputClasses('search'),
           styles.input,

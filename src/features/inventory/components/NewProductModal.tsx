@@ -140,7 +140,7 @@ export const NewProductModal: React.FC<NewProductModalProps> = ({
     defaultValues: {
       name: '',
       category: '',
-      price: 0.01,
+      price: 0,
       barcode: '',
       supplier: 'none',
       has_package_tracking: false,
@@ -475,10 +475,11 @@ export const NewProductModal: React.FC<NewProductModalProps> = ({
                       <Input
                         type="number"
                         step="0.01"
-                        min="0.01"
+                        min="0"
                         placeholder="0,00"
                         {...field}
-                        onChange={(e) => field.onChange(Number(e.target.value))}
+                        value={field.value === 0 ? '' : field.value}
+                        onChange={(e) => field.onChange(e.target.value === '' ? 0 : Number(e.target.value))}
                         className="bg-gray-800/50 border-gray-600 text-white h-12 text-base"
                       />
                     </FormControl>
@@ -693,18 +694,8 @@ export const NewProductModal: React.FC<NewProductModalProps> = ({
                           min="0"
                           placeholder="0,00"
                           {...field}
-                          value={field.value || ''}
-                          onChange={(e) => {
-                            const value = e.target.value;
-                            if (value === '' || value === null) {
-                              field.onChange(0);
-                            } else {
-                              const numValue = Number(value);
-                              if (numValue >= 0) {
-                                field.onChange(numValue);
-                              }
-                            }
-                          }}
+                          value={field.value === 0 ? '' : field.value}
+                          onChange={(e) => field.onChange(e.target.value === '' ? 0 : Number(e.target.value))}
                           className="bg-gray-800/50 border-gray-600 text-white h-12"
                         />
                       </FormControl>
@@ -753,18 +744,8 @@ export const NewProductModal: React.FC<NewProductModalProps> = ({
                             min="0"
                             placeholder="0,00"
                             {...field}
-                            value={field.value || ''}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              if (value === '' || value === null) {
-                                field.onChange(0);
-                              } else {
-                                const numValue = Number(value);
-                                if (numValue >= 0) {
-                                  field.onChange(numValue);
-                                }
-                              }
-                            }}
+                            value={field.value === 0 ? '' : field.value}
+                            onChange={(e) => field.onChange(e.target.value === '' ? 0 : Number(e.target.value))}
                             className="bg-gray-800/50 border-gray-600 text-white h-12"
                           />
                         </FormControl>
@@ -783,21 +764,11 @@ export const NewProductModal: React.FC<NewProductModalProps> = ({
                         <FormControl>
                           <Input
                             type="number"
-                            min="1"
+                            min="0"
                             placeholder="350"
                             {...field}
-                            value={field.value || ''}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              if (value === '' || value === null) {
-                                field.onChange(0);
-                              } else {
-                                const numValue = Number(value);
-                                if (numValue >= 0) {
-                                  field.onChange(numValue);
-                                }
-                              }
-                            }}
+                            value={field.value === 0 ? '' : field.value}
+                            onChange={(e) => field.onChange(e.target.value === '' ? 0 : Number(e.target.value))}
                             className="bg-gray-800/50 border-gray-600 text-white h-12"
                           />
                         </FormControl>

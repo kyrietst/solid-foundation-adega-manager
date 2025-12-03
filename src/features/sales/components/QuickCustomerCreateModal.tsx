@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useId } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
 import { BaseModal } from '@/shared/ui/composite/BaseModal';
@@ -20,6 +20,8 @@ export function QuickCustomerCreateModal({
     onClose,
     onSuccess
 }: QuickCustomerCreateModalProps) {
+    // ✅ ACCESSIBILITY FIX: Generate unique ID prefix to prevent duplicate IDs
+    const formId = useId();
     const [name, setName] = useState('');
     const [phone, setPhone] = useState('');
     const { toast } = useToast();
@@ -91,12 +93,12 @@ export function QuickCustomerCreateModal({
                 <div className="space-y-4">
                     {/* Name Input */}
                     <div className="space-y-2">
-                        <Label htmlFor="quick-name" className="text-gray-200 flex items-center gap-2">
+                        <Label htmlFor={`${formId}-quick-name`} className="text-gray-200 flex items-center gap-2">
                             <User className="h-4 w-4 text-primary-yellow" />
                             Nome do Cliente <span className="text-red-400">*</span>
                         </Label>
                         <Input
-                            id="quick-name"
+                            id={`${formId}-quick-name`}
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             placeholder="Ex: João da Silva"
@@ -107,12 +109,12 @@ export function QuickCustomerCreateModal({
 
                     {/* Phone Input */}
                     <div className="space-y-2">
-                        <Label htmlFor="quick-phone" className="text-gray-200 flex items-center gap-2">
+                        <Label htmlFor={`${formId}-quick-phone`} className="text-gray-200 flex items-center gap-2">
                             <Phone className="h-4 w-4 text-primary-yellow" />
                             Telefone / WhatsApp
                         </Label>
                         <Input
-                            id="quick-phone"
+                            id={`${formId}-quick-phone`}
                             value={phone}
                             onChange={(e) => setPhone(e.target.value)}
                             placeholder="Ex: 11 99999-9999"

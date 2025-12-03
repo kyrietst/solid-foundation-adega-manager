@@ -3,8 +3,7 @@
 import { cn } from "@/core/config/utils";
 import React, { useState, createContext, useContext } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { Menu, X } from "lucide-react";
-import { IconLock } from "@tabler/icons-react";
+import { Menu, X, Lock } from "lucide-react";
 import { getSFProTextClasses } from "@/core/config/theme-utils";
 
 interface Links {
@@ -265,7 +264,7 @@ export const SidebarLink = ({
           }}
           className="ml-auto"
         >
-          <IconLock className="h-4 w-4 text-gray-500" aria-hidden="true" />
+          <Lock className="h-4 w-4 text-gray-500" aria-hidden="true" />
         </motion.div>
       )}
     </div>

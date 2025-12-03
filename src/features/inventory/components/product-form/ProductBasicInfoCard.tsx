@@ -3,7 +3,7 @@
  * Sub-componente especializado para dados básicos
  */
 
-import React from 'react';
+import React, { useId } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/primitives/card';
 import { Input } from '@/shared/ui/primitives/input';
 import { Label } from '@/shared/ui/primitives/label';
@@ -31,6 +31,8 @@ export const ProductBasicInfoCard: React.FC<ProductBasicInfoCardProps> = React.m
   variant = 'default',
   glassEffect = true,
 }) => {
+  // ✅ ACCESSIBILITY FIX: Generate unique ID prefix to prevent duplicate IDs
+  const formId = useId();
   const glassClasses = glassEffect ? getGlassCardClasses(variant) : '';
 
   return (
@@ -45,9 +47,9 @@ export const ProductBasicInfoCard: React.FC<ProductBasicInfoCardProps> = React.m
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Nome do Produto */}
           <div>
-            <Label htmlFor="name" className="text-gray-200">Nome do Produto *</Label>
+            <Label htmlFor={`${formId}-name`} className="text-gray-200">Nome do Produto *</Label>
             <Input
-              id="name"
+              id={`${formId}-name`}
               value={formData.name || ''}
               onChange={(e) => onInputChange('name', e.target.value)}
               placeholder="Ex: Vinho Tinto Cabernet Sauvignon"
@@ -64,9 +66,9 @@ export const ProductBasicInfoCard: React.FC<ProductBasicInfoCardProps> = React.m
 
           {/* Categoria - TESTE COM INPUT SIMPLES */}
           <div>
-            <Label htmlFor="category" className="text-gray-200">Categoria *</Label>
+            <Label htmlFor={`${formId}-category`} className="text-gray-200">Categoria *</Label>
             <Input
-              id="category"
+              id={`${formId}-category`}
               value={formData.category || ''}
               onChange={(e) => onInputChange('category', e.target.value)}
               placeholder="Digite a categoria"
@@ -92,9 +94,9 @@ export const ProductBasicInfoCard: React.FC<ProductBasicInfoCardProps> = React.m
 
           {/* Tipo de Unidade - TESTE COM INPUT SIMPLES */}
           <div>
-            <Label htmlFor="unit_type" className="text-gray-200">Venda em</Label>
+            <Label htmlFor={`${formId}-unit_type`} className="text-gray-200">Venda em</Label>
             <Input
-              id="unit_type"
+              id={`${formId}-unit_type`}
               value={formData.unit_type || 'un'}
               onChange={(e) => onInputChange('unit_type', e.target.value as UnitType)}
               placeholder="un ou pct"
@@ -105,9 +107,9 @@ export const ProductBasicInfoCard: React.FC<ProductBasicInfoCardProps> = React.m
 
         {/* Descrição */}
         <div>
-          <Label htmlFor="description" className="text-gray-200">Descrição</Label>
+          <Label htmlFor={`${formId}-description`} className="text-gray-200">Descrição</Label>
           <Textarea
-            id="description"
+            id={`${formId}-description`}
             value={formData.description || ''}
             onChange={(e) => onInputChange('description', e.target.value)}
             placeholder="Descrição detalhada do produto..."

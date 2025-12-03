@@ -3,22 +3,22 @@ import React, { useState, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Sidebar, SidebarBody, SidebarLink } from "@/shared/ui/layout/sidebar";
 import {
-  IconChartBar,
-  IconShoppingCart,
-  IconPackage,
-  IconRefresh,
-  IconUsers,
-  IconTruck,
-  IconSettings,
-  IconLogout,
-  IconReportAnalytics,
-  IconChartPie,
-  IconRobot,
-  IconBuilding,
-  IconReceipt,
-  IconLock,
-  IconHistory,
-} from "@tabler/icons-react";
+  BarChart3,
+  ShoppingCart,
+  Package,
+  RefreshCw,
+  Users,
+  Truck,
+  Settings,
+  LogOut,
+  LineChart,
+  PieChart,
+  Bot,
+  Building,
+  Receipt,
+  Lock,
+  History,
+} from "lucide-react";
 import { motion } from "motion/react";
 import { cn } from "@/core/config/utils";
 import { useAuth } from "@/app/providers/AuthContext";
@@ -42,7 +42,7 @@ export function AppSidebar() {
       label: "Dashboard",
       href: "dashboard",
       icon: (
-        <IconChartBar className="h-5 w-5 shrink-0 text-primary-yellow" />
+        <BarChart3 className="h-5 w-5 shrink-0 text-primary-yellow" />
       ),
       isEnabled: permissions.canViewDashboard,
     },
@@ -51,7 +51,7 @@ export function AppSidebar() {
       label: "Vendas",
       href: "sales",
       icon: (
-        <IconShoppingCart className="h-5 w-5 shrink-0 text-primary-yellow" />
+        <ShoppingCart className="h-5 w-5 shrink-0 text-primary-yellow" />
       ),
       isEnabled: permissions.canViewSales,
     },
@@ -60,7 +60,7 @@ export function AppSidebar() {
       label: "Estoque",
       href: "inventory",
       icon: (
-        <IconPackage className="h-5 w-5 shrink-0 text-primary-yellow" />
+        <Package className="h-5 w-5 shrink-0 text-primary-yellow" />
       ),
       isEnabled: permissions.canViewProducts,
     },
@@ -69,7 +69,7 @@ export function AppSidebar() {
       label: "Clientes",
       href: "customers",
       icon: (
-        <IconUsers className="h-5 w-5 shrink-0 text-primary-yellow" />
+        <Users className="h-5 w-5 shrink-0 text-primary-yellow" />
       ),
       isEnabled: permissions.canViewCustomers,
     },
@@ -78,7 +78,7 @@ export function AppSidebar() {
       label: "CRM Dashboard",
       href: "crm",
       icon: (
-        <IconChartPie className="h-5 w-5 shrink-0 text-primary-yellow" />
+        <PieChart className="h-5 w-5 shrink-0 text-primary-yellow" />
       ),
       isEnabled: permissions.canViewCustomerInsights,
     },
@@ -87,7 +87,7 @@ export function AppSidebar() {
       label: "Entregas",
       href: "delivery",
       icon: (
-        <IconTruck className="h-5 w-5 shrink-0 text-primary-yellow" />
+        <Truck className="h-5 w-5 shrink-0 text-primary-yellow" />
       ),
       isEnabled: permissions.canViewDeliveries,
     },
@@ -96,7 +96,7 @@ export function AppSidebar() {
       label: "Fornecedores",
       href: "suppliers",
       icon: (
-        <IconBuilding className="h-5 w-5 shrink-0 text-primary-yellow" />
+        <Building className="h-5 w-5 shrink-0 text-primary-yellow" />
       ),
       isEnabled: permissions.canAccessAdmin, // Apenas admin por enquanto
     },
@@ -105,7 +105,7 @@ export function AppSidebar() {
       label: "Movimentações",
       href: "movements",
       icon: (
-        <IconRefresh className="h-5 w-5 shrink-0 text-primary-yellow" />
+        <RefreshCw className="h-5 w-5 shrink-0 text-primary-yellow" />
       ),
       isEnabled: permissions.canViewMovements,
     },
@@ -114,7 +114,7 @@ export function AppSidebar() {
       label: "Relatórios",
       href: "reports",
       icon: (
-        <IconReportAnalytics className="h-5 w-5 shrink-0 text-primary-yellow" />
+        <LineChart className="h-5 w-5 shrink-0 text-primary-yellow" />
       ),
       isEnabled: permissions.canAccessReports,
     },
@@ -123,16 +123,25 @@ export function AppSidebar() {
       label: "Despesas",
       href: "expenses",
       icon: (
-        <IconReceipt className="h-5 w-5 shrink-0 text-primary-yellow" />
+        <Receipt className="h-5 w-5 shrink-0 text-primary-yellow" />
       ),
       isEnabled: permissions.canAccessAdmin, // Apenas admin por enquanto
+    },
+    {
+      id: "marketing",
+      label: "Marketing",
+      href: "marketing",
+      icon: (
+        <LineChart className="h-5 w-5 shrink-0 text-purple-400" />
+      ),
+      isEnabled: permissions.canAccessAdmin, // Apenas admin
     },
     {
       id: "activities",
       label: "Logs do Sistema",
       href: "activities",
       icon: (
-        <IconHistory className="h-5 w-5 shrink-0 text-primary-yellow" />
+        <History className="h-5 w-5 shrink-0 text-primary-yellow" />
       ),
       isEnabled: permissions.canAccessAdmin, // Apenas admin
     },
@@ -141,7 +150,7 @@ export function AppSidebar() {
       label: "Usuários",
       href: "users",
       icon: (
-        <IconSettings className="h-5 w-5 shrink-0 text-primary-yellow" />
+        <Settings className="h-5 w-5 shrink-0 text-primary-yellow" />
       ),
       isEnabled: permissions.canViewUsers,
     },
@@ -221,7 +230,7 @@ export function AppSidebar() {
                 label: "Sair",
                 href: "#",
                 icon: (
-                  <IconLogout className="h-5 w-5 shrink-0 text-accent-red" />
+                  <LogOut className="h-5 w-5 shrink-0 text-accent-red" />
                 ),
               }}
               onClick={handleLogout}

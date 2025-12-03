@@ -4,7 +4,7 @@
  * Sistema "burro e obediente" - o que o usuário informa é o que fica
  */
 
-import React from 'react';
+import React, { useId } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/primitives/card';
 import { Input } from '@/shared/ui/primitives/input';
 import { Label } from '@/shared/ui/primitives/label';
@@ -28,6 +28,8 @@ export const ProductStockCard: React.FC<ProductStockCardProps> = ({
   variant = 'default',
   glassEffect = true,
 }) => {
+  // ✅ ACCESSIBILITY FIX: Generate unique ID prefix to prevent duplicate IDs
+  const formId = useId();
   const glassClasses = glassEffect ? getGlassCardClasses(variant) : '';
 
   return (
@@ -45,15 +47,15 @@ export const ProductStockCard: React.FC<ProductStockCardProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Pacotes */}
           <div>
-            <Label htmlFor="stock_packages" className="text-gray-200 flex items-center gap-2">
+            <Label htmlFor={`${formId}-stock_packages`} className="text-gray-200 flex items-center gap-2">
               <Box className="h-4 w-4 text-blue-400" />
               Pacotes em Estoque
             </Label>
             <Input
-              id="stock_packages"
+              id={`${formId}-stock_packages`}
               type="number"
-              value={formData.stock_packages ?? ''}
-              onChange={(e) => onInputChange('stock_packages', Number(e.target.value))}
+              value={formData.stock_packages === 0 ? '' : formData.stock_packages ?? ''}
+              onChange={(e) => onInputChange('stock_packages', e.target.value === '' ? 0 : Number(e.target.value))}
               min="0"
               placeholder="Ex: 12"
               className={cn(
@@ -69,15 +71,15 @@ export const ProductStockCard: React.FC<ProductStockCardProps> = ({
 
           {/* Unidades Soltas */}
           <div>
-            <Label htmlFor="stock_units_loose" className="text-gray-200 flex items-center gap-2">
+            <Label htmlFor={`${formId}-stock_units_loose`} className="text-gray-200 flex items-center gap-2">
               <Package className="h-4 w-4 text-green-400" />
               Unidades Soltas
             </Label>
             <Input
-              id="stock_units_loose"
+              id={`${formId}-stock_units_loose`}
               type="number"
-              value={formData.stock_units_loose ?? ''}
-              onChange={(e) => onInputChange('stock_units_loose', Number(e.target.value))}
+              value={formData.stock_units_loose === 0 ? '' : formData.stock_units_loose ?? ''}
+              onChange={(e) => onInputChange('stock_units_loose', e.target.value === '' ? 0 : Number(e.target.value))}
               min="0"
               placeholder="Ex: 300"
               className={cn(
@@ -93,12 +95,12 @@ export const ProductStockCard: React.FC<ProductStockCardProps> = ({
 
           {/* Estoque Mínimo */}
           <div>
-            <Label htmlFor="minimum_stock" className="text-gray-200">Estoque Mínimo (Alerta)</Label>
+            <Label htmlFor={`${formId}-minimum_stock`} className="text-gray-200">Estoque Mínimo (Alerta)</Label>
             <Input
-              id="minimum_stock"
+              id={`${formId}-minimum_stock`}
               type="number"
-              value={formData.minimum_stock ?? ''}
-              onChange={(e) => onInputChange('minimum_stock', Number(e.target.value))}
+              value={formData.minimum_stock === 0 ? '' : formData.minimum_stock ?? ''}
+              onChange={(e) => onInputChange('minimum_stock', e.target.value === '' ? 0 : Number(e.target.value))}
               min="0"
               placeholder="Ex: 5"
               className={cn(

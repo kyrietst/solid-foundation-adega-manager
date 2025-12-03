@@ -8,8 +8,10 @@
 @layer base {
   :root {
     /* Brand colors for spotlight effect */
-    --brand: 256 84% 54%;   /* purple */
-    --brand-2: 196 91% 48%; /* cyan/blue */
+    --brand: 256 84% 54%;
+    /* purple */
+    --brand-2: 196 91% 48%;
+    /* cyan/blue */
     --background: 0 0% 0% / 0;
     --foreground: 222.2 84% 4.9%;
 
@@ -55,6 +57,13 @@
     --glass-black: rgba(0, 0, 0, 0.8);
     --glass-yellow: rgba(255, 215, 0, 0.1);
     --glass-overlay: rgba(17, 24, 39, 0.9);
+
+    /* ========================================================================== */
+    /* PERFORMANCE VARIABLES - Responsive Glassmorphism */
+    /* ========================================================================== */
+    --glass-blur-radius: 16px;
+    /* Padrão desktop potente */
+    --glass-shadow-intensity: 0.5;
   }
 
   .dark {
@@ -114,33 +123,41 @@
   /* ========================================================================== */
   /* CORES PRIMÁRIAS - Substituir azul padrão por amarelo Adega */
   /* ========================================================================== */
-  --rdp-accent-color: #FFD700 !important; /* primary-yellow */
+  --rdp-accent-color: #FFD700 !important;
+  /* primary-yellow */
   --rdp-accent-color-dark: #FFD700 !important;
-  --rdp-accent-background-color: rgba(255, 215, 0, 0.1) !important; /* yellow/10 glass */
+  --rdp-accent-background-color: rgba(255, 215, 0, 0.1) !important;
+  /* yellow/10 glass */
 
   /* ========================================================================== */
   /* CORES DE RANGE - Início e fim da seleção */
   /* ========================================================================== */
-  --rdp-range_start-date-background-color: #FFD700 !important; /* yellow solid */
-  --rdp-range_start-color: #000000 !important; /* texto preto sobre yellow */
+  --rdp-range_start-date-background-color: #FFD700 !important;
+  /* yellow solid */
+  --rdp-range_start-color: #000000 !important;
+  /* texto preto sobre yellow */
   --rdp-range_end-date-background-color: #FFD700 !important;
   --rdp-range_end-color: #000000 !important;
 
   /* ========================================================================== */
   /* CORES DE RANGE MIDDLE - Dias intermediários da seleção */
   /* ========================================================================== */
-  --rdp-range_middle-background-color: rgba(255, 215, 0, 0.1) !important; /* yellow/10 */
-  --rdp-range_middle-color: #FFD700 !important; /* texto yellow */
+  --rdp-range_middle-background-color: rgba(255, 215, 0, 0.1) !important;
+  /* yellow/10 */
+  --rdp-range_middle-color: #FFD700 !important;
+  /* texto yellow */
 
   /* ========================================================================== */
   /* TODAY INDICATOR - Dia atual */
   /* ========================================================================== */
-  --rdp-today-color: #FFD700 !important; /* yellow text */
+  --rdp-today-color: #FFD700 !important;
+  /* yellow text */
 
   /* ========================================================================== */
   /* SELECTED BORDER - Borda do dia selecionado */
   /* ========================================================================== */
-  --rdp-selected-border: 2px solid rgba(255, 215, 0, 0.5) !important; /* yellow/50 */
+  --rdp-selected-border: 2px solid rgba(255, 215, 0, 0.5) !important;
+  /* yellow/50 */
 
   /* ========================================================================== */
   /* OUTLINE - Estados de foco (acessibilidade) */
@@ -151,7 +168,8 @@
   /* ========================================================================== */
   /* BACKGROUND - Fundo do calendário (glass morphism) */
   /* ========================================================================== */
-  --rdp-background-color: rgba(17, 24, 39, 0.8) !important; /* gray-900/80 */
+  --rdp-background-color: rgba(17, 24, 39, 0.8) !important;
+  /* gray-900/80 */
 }
 
 /* ============================================================================ */
@@ -162,43 +180,57 @@
 /* Range Start/End - Fundo amarelo sólido com texto preto */
 .rdp-root .rdp-range_start .rdp-day_button,
 .rdp-root .rdp-range_end .rdp-day_button {
-  background-color: #FFD700 !important; /* yellow solid */
-  color: #000000 !important; /* texto preto legível - WCAG AAA */
-  border: 2px solid rgba(255, 215, 0, 0.5) !important; /* yellow border */
-  font-weight: 600 !important; /* destaque visual */
+  background-color: #FFD700 !important;
+  /* yellow solid */
+  color: #000000 !important;
+  /* texto preto legível - WCAG AAA */
+  border: 2px solid rgba(255, 215, 0, 0.5) !important;
+  /* yellow border */
+  font-weight: 600 !important;
+  /* destaque visual */
 }
 
 /* Range Middle - Fundo amarelo transparente com texto yellow */
 .rdp-root .rdp-range_middle {
-  background-color: rgba(255, 215, 0, 0.1) !important; /* yellow/10 glass */
+  background-color: rgba(255, 215, 0, 0.1) !important;
+  /* yellow/10 glass */
 }
 
 .rdp-root .rdp-range_middle .rdp-day_button {
-  color: #FFD700 !important; /* texto yellow */
-  background-color: transparent !important; /* sem fundo no button */
+  color: #FFD700 !important;
+  /* texto yellow */
+  background-color: transparent !important;
+  /* sem fundo no button */
 }
 
 /* Today Indicator - Texto amarelo para dia atual */
 .rdp-root .rdp-today:not(.rdp-outside) {
-  color: #FFD700 !important; /* texto yellow */
-  font-weight: 600 !important; /* destaque sutil */
+  color: #FFD700 !important;
+  /* texto yellow */
+  font-weight: 600 !important;
+  /* destaque sutil */
 }
 
 /* Selected Day - Borda amarela para dia selecionado */
 .rdp-root .rdp-selected .rdp-day_button {
-  border: 2px solid rgba(255, 215, 0, 0.5) !important; /* yellow border */
-  background-color: rgba(255, 215, 0, 0.2) !important; /* yellow/20 glass */
+  border: 2px solid rgba(255, 215, 0, 0.5) !important;
+  /* yellow border */
+  background-color: rgba(255, 215, 0, 0.2) !important;
+  /* yellow/20 glass */
 }
 
 /* Hover State - Amarelo transparente no hover */
 .rdp-root .rdp-day_button:hover:not(:disabled) {
-  background-color: rgba(255, 215, 0, 0.1) !important; /* yellow/10 */
-  border-color: rgba(255, 215, 0, 0.3) !important; /* yellow/30 */
+  background-color: rgba(255, 215, 0, 0.1) !important;
+  /* yellow/10 */
+  border-color: rgba(255, 215, 0, 0.3) !important;
+  /* yellow/30 */
 }
 
 /* Chevron Icons - Navegação amarela */
 .rdp-root .rdp-chevron {
-  fill: #FFD700 !important; /* yellow */
+  fill: #FFD700 !important;
+  /* yellow */
 }
 
 /* ============================================================================ */
@@ -212,12 +244,16 @@
 
   body {
     @apply bg-transparent text-foreground;
-    min-width: 320px; /* iPhone SE portrait width baseline */
-    min-height: 568px; /* iPhone SE portrait height baseline */
+    min-width: 320px;
+    /* iPhone SE portrait width baseline */
+    min-height: 568px;
+    /* iPhone SE portrait height baseline */
   }
 
   /* Clamp layout width/height to improve desktop and small monitor experience */
-  #root, .app-root, .app-shell {
+  #root,
+  .app-root,
+  .app-shell {
     min-width: 320px;
     min-height: 568px;
   }
@@ -228,11 +264,14 @@
     margin-left: auto;
     margin-right: auto;
   }
+
   .container-viewport {
     min-width: 320px;
     min-height: 568px;
-    max-width: 1920px; /* Optional hard guard for ultra-wide dev monitors */
-    max-height: 1080px; /* Keep grid tiles predictable on huge screens */
+    max-width: 1920px;
+    /* Optional hard guard for ultra-wide dev monitors */
+    max-height: 1080px;
+    /* Keep grid tiles predictable on huge screens */
   }
 }
 
@@ -241,74 +280,71 @@
 /* ============================================================================ */
 
 @layer components {
+
   /* Spotlight hover effect for cards/sections */
   .hero-spotlight {
     position: relative;
     isolation: isolate;
-    overflow: hidden; /* Prevent gradient from bleeding outside card */
+    overflow: hidden;
+    /* Prevent gradient from bleeding outside card */
     background:
-      radial-gradient(
-        600px circle at var(--x, 50%) var(--y, 50%),
+      radial-gradient(600px circle at var(--x, 50%) var(--y, 50%),
         hsl(var(--brand) / 0.18),
-        transparent 40%
-      ),
-      radial-gradient(
-        1200px circle at 50% -10%,
+        transparent 40%),
+      radial-gradient(1200px circle at 50% -10%,
         hsl(var(--brand-2) / 0.12),
-        transparent 50%
-      );
+        transparent 50%);
     transition: background-position 120ms ease-out;
   }
-  
+
   /* Ensure text content is properly contained within spotlight cards */
   .hero-spotlight * {
     position: relative;
     z-index: 1;
   }
+
   /* Base Glass Card - Multi-layer fallback strategy */
   .glass-card {
     /* Base fallback for all browsers */
     background: #1f2937;
-    
+
     /* Enhanced fallback for modern browsers without backdrop-filter */
-    background: linear-gradient(135deg, 
-      rgba(17, 24, 39, 0.95), 
-      rgba(31, 41, 55, 0.85)
-    );
-    
-    /* Glass effect for supported browsers */
+    background: linear-gradient(135deg,
+        rgba(17, 24, 39, 0.95),
+        rgba(31, 41, 55, 0.85));
+
+    /* Glass effect for supported browsers - PERFORMANCE OPTIMIZED */
     background: rgba(17, 24, 39, 0.8);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px); /* Safari/Firefox fallback */
-    
+    backdrop-filter: blur(var(--glass-blur-radius));
+    -webkit-backdrop-filter: blur(var(--glass-blur-radius));
+
     /* Enhanced visual depth */
     border: 1px solid rgba(75, 85, 99, 0.2);
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-    
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, var(--glass-shadow-intensity));
+
     /* Hardware acceleration */
     transform: translateZ(0);
     will-change: backdrop-filter;
   }
 
-  /* Glass Yellow Accent */
+  /* Glass Yellow Accent - PERFORMANCE OPTIMIZED */
   .glass-yellow {
     background: rgba(255, 215, 0, 0.05);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(var(--glass-blur-radius));
+    -webkit-backdrop-filter: blur(var(--glass-blur-radius));
     border: 1px solid rgba(255, 215, 0, 0.1);
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, var(--glass-shadow-intensity));
   }
 
-  /* Glass Premium with Gradient */
+  /* Glass Premium with Gradient - PERFORMANCE OPTIMIZED */
   .glass-premium {
-    background: linear-gradient(135deg, 
-      rgba(0, 0, 0, 0.8), 
-      rgba(17, 24, 39, 0.6)
-    );
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    background: linear-gradient(135deg,
+        rgba(0, 0, 0, 0.8),
+        rgba(17, 24, 39, 0.6));
+    backdrop-filter: blur(var(--glass-blur-radius));
+    -webkit-backdrop-filter: blur(var(--glass-blur-radius));
     border: 1px solid rgba(255, 215, 0, 0.2);
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, var(--glass-shadow-intensity));
   }
 
   /* Glass utilities for different blur levels */
@@ -325,6 +361,52 @@
   }
 
   /* (removed yellow theme helper per user request) */
+
+  /* ========================================================================== */
+  /* PERFORMANCE - LITE VERSION FOR LOW-END DEVICES */
+  /* ========================================================================== */
+  .glass-card-lite {
+    background: rgba(17, 24, 39, 0.95);
+    /* Opaco, SEM blur */
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: 1px solid rgba(75, 85, 99, 0.3);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+    /* Shadow reduzido */
+    transform: translateZ(0);
+  }
+}
+
+/* ============================================================================ */
+/* RESPONSIVE PERFORMANCE - Reduce blur on smaller screens/lower-end devices */
+/* ============================================================================ */
+
+/* Medium devices - Reduce blur by 50% */
+@media (max-width: 1024px) and (prefers-reduced-motion: no-preference) {
+  :root {
+    --glass-blur-radius: 8px;
+    /* 50% de redução */
+    --glass-shadow-intensity: 0.3;
+  }
+}
+
+/* Small devices & reduced motion preference - Eliminate blur */
+@media (max-width: 768px),
+(prefers-reduced-motion: reduce) {
+  :root {
+    --glass-blur-radius: 0px;
+    /* SEM blur */
+    --glass-shadow-intensity: 0.2;
+  }
+
+  /* Force solid backgrounds on small/low-end devices */
+  .glass-card,
+  .glass-yellow,
+  .glass-premium {
+    background: rgba(17, 24, 39, 0.95) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
 }
 
 /* Feature detection with CSS supports */
@@ -333,6 +415,7 @@
     background: rgba(17, 24, 39, 0.8);
     backdrop-filter: blur(16px);
   }
+
   .glass-yellow {
     background: rgba(255, 215, 0, 0.05);
     backdrop-filter: blur(16px);
@@ -341,25 +424,26 @@
 
 @supports not (backdrop-filter: blur(16px)) {
   .glass-card {
-    background: linear-gradient(135deg, 
-      rgba(17, 24, 39, 0.95), 
-      rgba(31, 41, 55, 0.9)
-    );
+    background: linear-gradient(135deg,
+        rgba(17, 24, 39, 0.95),
+        rgba(31, 41, 55, 0.9));
   }
+
   .glass-yellow {
-    background: linear-gradient(135deg, 
-      rgba(255, 215, 0, 0.1), 
-      rgba(255, 215, 0, 0.05)
-    );
+    background: linear-gradient(135deg,
+        rgba(255, 215, 0, 0.1),
+        rgba(255, 215, 0, 0.05));
   }
 }
 
 /* Mobile Performance Optimization */
 @media (max-width: 768px) {
+
   .glass-card,
   .glass-yellow,
   .glass-premium {
-    backdrop-filter: blur(8px); /* Reduced blur for mobile */
+    backdrop-filter: blur(8px);
+    /* Reduced blur for mobile */
     -webkit-backdrop-filter: blur(8px);
   }
 }
@@ -371,6 +455,7 @@
     -webkit-backdrop-filter: none;
     background: rgba(17, 24, 39, 0.95);
   }
+
   .glass-yellow {
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
@@ -384,6 +469,7 @@
     transform: translateX(-2%) translateY(-2%) scale(1.02);
     filter: hue-rotate(0deg);
   }
+
   100% {
     transform: translateX(2%) translateY(2%) scale(1.05);
     filter: hue-rotate(10deg);
@@ -396,6 +482,7 @@
     opacity: 0;
     transform: translateY(30px) scale(0.95);
   }
+
   100% {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -406,15 +493,19 @@
   0% {
     transform: translateY(0) scale(1);
   }
+
   100% {
     transform: translateY(-8px) scale(1.03);
   }
 }
 
 @keyframes pulse-glow {
-  0%, 100% {
+
+  0%,
+  100% {
     box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
   }
+
   50% {
     box-shadow: 0 0 30px rgba(255, 215, 0, 0.5), 0 0 40px rgba(255, 215, 0, 0.2);
   }
@@ -435,10 +526,13 @@
 
 /* LGPD Soft Pulse Animation */
 @keyframes lgpd-soft-pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 1;
     transform: scale(1);
   }
+
   50% {
     opacity: 0.7;
     transform: scale(1.02);
@@ -454,6 +548,7 @@
 /* ============================================================================ */
 
 @layer base {
+
   /* Global scrollbar styles - Apply dark theme by default */
   * {
     /* Firefox scrollbar */
@@ -472,14 +567,16 @@
   }
 
   *::-webkit-scrollbar-thumb {
-    background-color: rgba(75, 85, 99, 0.4); /* gray-600/40 */
+    background-color: rgba(75, 85, 99, 0.4);
+    /* gray-600/40 */
     border-radius: 4px;
     border: 2px solid transparent;
     background-clip: padding-box;
   }
 
   *::-webkit-scrollbar-thumb:hover {
-    background-color: rgba(75, 85, 99, 0.6); /* gray-600/60 */
+    background-color: rgba(75, 85, 99, 0.6);
+    /* gray-600/60 */
   }
 
   *::-webkit-scrollbar-corner {
@@ -497,7 +594,8 @@
   body::-webkit-scrollbar-thumb,
   main::-webkit-scrollbar-thumb,
   .main-content::-webkit-scrollbar-thumb {
-    background-color: rgba(75, 85, 99, 0.3); /* Even more subtle for main areas */
+    background-color: rgba(75, 85, 99, 0.3);
+    /* Even more subtle for main areas */
     border-radius: 3px;
   }
 
@@ -518,7 +616,8 @@
   [role="dialog"] *::-webkit-scrollbar-thumb,
   .modal *::-webkit-scrollbar-thumb,
   .overlay *::-webkit-scrollbar-thumb {
-    background-color: rgba(75, 85, 99, 0.5); /* Slightly more visible in modals */
+    background-color: rgba(75, 85, 99, 0.5);
+    /* Slightly more visible in modals */
     border-radius: 3px;
   }
 

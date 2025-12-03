@@ -1,17 +1,17 @@
-/**
+﻿/**
  * useCustomerOverviewSSoT.ts - Hook SSoT v3.1.0 Server-Side
  *
  * @description
- * Hook SSoT completo que consolida TODOS os dados para a visão geral do cliente.
- * Elimina dependência de props e implementa performance otimizada com queries consolidadas.
+ * Hook SSoT completo que consolida TODOS os dados para a visÃ£o geral do cliente.
+ * Elimina dependÃªncia de props e implementa performance otimizada com queries consolidadas.
  *
  * @features
  * - Busca consolidada de customer, metrics, purchases, timeline
- * - Cálculos real-time de status, completude e preferências
- * - Handlers centralizados para comunicação e edição
- * - Cache inteligente com invalidação coordenada
+ * - CÃ¡lculos real-time de status, completude e preferÃªncias
+ * - Handlers centralizados para comunicaÃ§Ã£o e ediÃ§Ã£o
+ * - Cache inteligente com invalidaÃ§Ã£o coordenada
  * - Performance otimizada para escalabilidade
- * - Elimina múltiplas dependencies e hooks externos
+ * - Elimina mÃºltiplas dependencies e hooks externos
  *
  * @author Adega Manager Team
  * @version 3.1.0 - SSoT Server-Side Implementation
@@ -143,7 +143,7 @@ export interface CustomerOverviewOperations {
   sendEmail: () => Promise<void>;
   editProfile: () => void;
 
-  // Cálculos derivados
+  // CÃ¡lculos derivados
   profileCompleteness: number;
   customerStatus: CustomerStatus;
   missingCriticalFields: MissingField[];
@@ -175,21 +175,21 @@ const REPORT_FIELDS = [
     label: 'Email',
     required: true,
     icon: 'Mail',
-    impact: 'Necessário para campanhas de email marketing e relatórios de comunicação.'
+    impact: 'NecessÃ¡rio para campanhas de email marketing e relatÃ³rios de comunicaÃ§Ã£o.'
   },
   {
     key: 'phone',
     label: 'Telefone',
     required: true,
     icon: 'Phone',
-    impact: 'Essencial para relatórios de WhatsApp e análises de contato.'
+    impact: 'Essencial para relatÃ³rios de WhatsApp e anÃ¡lises de contato.'
   },
   {
     key: 'address',
-    label: 'Endereço',
+    label: 'EndereÃ§o',
     required: false,
     icon: 'MapPin',
-    impact: 'Importante para análises geográficas e relatórios de entrega.'
+    impact: 'Importante para anÃ¡lises geogrÃ¡ficas e relatÃ³rios de entrega.'
   }
 ];
 
@@ -238,13 +238,13 @@ export const useCustomerOverviewSSoT = (
           .single();
 
         if (error) {
-          console.error('❌ Erro ao buscar dados do cliente para overview:', error);
+          console.error('âŒ Erro ao buscar dados do cliente para overview:', error);
           throw error;
         }
 
         return data;
       } catch (error) {
-        console.error('❌ Erro crítico ao buscar cliente para overview:', error);
+        console.error('âŒ Erro crÃ­tico ao buscar cliente para overview:', error);
         throw error;
       }
     },
@@ -258,7 +258,7 @@ export const useCustomerOverviewSSoT = (
   // SERVER-SIDE DATA FETCHING - METRICS DATA (SSoT v3.3.1)
   // ============================================================================
 
-  // ✅ SSoT: Usar hook centralizado useCustomerMetrics
+  // âœ… SSoT: Usar hook centralizado useCustomerMetrics
   const {
     data: metricsData,
     isLoading: isLoadingMetrics,
@@ -281,12 +281,12 @@ export const useCustomerOverviewSSoT = (
       days_since_last_purchase: metricsData.days_since_last_purchase,
       calculated_favorite_category: metricsData.favorite_category ?? undefined,
       calculated_favorite_product: metricsData.favorite_product ?? undefined,
-      insights_count: 0, // TODO: Implementar insights se necessário
+      insights_count: 0, // TODO: Implementar insights se necessÃ¡rio
       insights_confidence: 0,
       data_sync_status: {
         ltv_synced: true,
         dates_synced: true,
-        preferences_synced: true, // ✅ Agora preferences vêm do SSoT
+        preferences_synced: true, // âœ… Agora preferences vÃªm do SSoT
       },
     };
   }, [metricsData]);
@@ -322,10 +322,10 @@ export const useCustomerOverviewSSoT = (
           `)
           .eq('customer_id', customerId)
           .order('created_at', { ascending: false })
-          .limit(20); // Últimas 20 compras para overview
+          .limit(20); // Ãšltimas 20 compras para overview
 
         if (salesError) {
-          console.error('❌ Erro ao buscar compras para overview:', salesError);
+          console.error('âŒ Erro ao buscar compras para overview:', salesError);
           throw salesError;
         }
 
@@ -340,7 +340,7 @@ export const useCustomerOverviewSSoT = (
           }))
         }));
       } catch (error) {
-        console.error('❌ Erro crítico ao buscar compras para overview:', error);
+        console.error('âŒ Erro crÃ­tico ao buscar compras para overview:', error);
         throw error;
       }
     },
@@ -373,7 +373,7 @@ export const useCustomerOverviewSSoT = (
           .select('id, total_amount, created_at')
           .eq('customer_id', customerId)
           .order('created_at', { ascending: false })
-          .limit(10);
+          .limit(15);
 
         (sales || []).forEach(sale => {
           activities.push({
@@ -386,7 +386,7 @@ export const useCustomerOverviewSSoT = (
           });
         });
 
-        // Buscar interações para timeline
+        // Buscar interaÃ§Ãµes para timeline
         const { data: interactions } = await supabase
           .from('customer_interactions')
           .select('id, interaction_type, description, created_at')
@@ -398,30 +398,12 @@ export const useCustomerOverviewSSoT = (
           activities.push({
             id: `interaction-${interaction.id}`,
             type: 'interaction',
-            title: `Interação: ${interaction.interaction_type}`,
+            title: `InteraÃ§Ã£o: ${interaction.interaction_type}`,
             description: interaction.description,
             created_at: interaction.created_at,
           });
         });
 
-        // Buscar eventos para timeline
-        const { data: events } = await supabase
-          .from('customer_events')
-          .select('id, source, payload, created_at')
-          .eq('customer_id', customerId)
-          .order('created_at', { ascending: false })
-          .limit(5);
-
-        (events || []).forEach(event => {
-          activities.push({
-            id: `event-${event.id}`,
-            type: 'event',
-            title: `Evento: ${event.source}`,
-            description: 'Evento do sistema registrado',
-            created_at: event.created_at,
-            metadata: event.payload,
-          });
-        });
 
         // Ordenar todas as atividades por data
         return activities.sort((a, b) =>
@@ -429,7 +411,7 @@ export const useCustomerOverviewSSoT = (
         ).slice(0, 15); // Top 15 atividades
 
       } catch (error) {
-        console.error('❌ Erro crítico ao buscar timeline para overview:', error);
+        console.error('âŒ Erro crÃ­tico ao buscar timeline para overview:', error);
         return [];
       }
     },
@@ -445,17 +427,17 @@ export const useCustomerOverviewSSoT = (
 
   const sendWhatsApp = useCallback(async () => {
     if (!customer?.phone) {
-      alert('Cliente não possui telefone cadastrado');
+      alert('Cliente nÃ£o possui telefone cadastrado');
       return;
     }
 
     const phone = customer.phone.replace(/\D/g, '');
-    const message = `Olá ${customer.name}, tudo bem? Aqui é da Adega! 🍷`;
+    const message = `OlÃ¡ ${customer.name}, tudo bem? Aqui Ã© da Adega! ðŸ·`;
     const url = `https://wa.me/55${phone}?text=${encodeURIComponent(message)}`;
 
     window.open(url, '_blank');
 
-    // Registrar interação (se hook de comunicação estiver disponível)
+    // Registrar interaÃ§Ã£o (se hook de comunicaÃ§Ã£o estiver disponÃ­vel)
     try {
       await supabase
         .from('customer_interactions')
@@ -468,13 +450,13 @@ export const useCustomerOverviewSSoT = (
       // Invalidar cache de timeline para atualizar
       queryClient.invalidateQueries({ queryKey: ['customer-overview-timeline', customerId] });
     } catch (error) {
-      console.error('❌ Erro ao registrar interação de WhatsApp:', error);
+      console.error('âŒ Erro ao registrar interaÃ§Ã£o de WhatsApp:', error);
     }
   }, [customer, customerId, queryClient]);
 
   const sendEmail = useCallback(async () => {
     if (!customer?.email) {
-      alert('Cliente não possui email cadastrado');
+      alert('Cliente nÃ£o possui email cadastrado');
       return;
     }
 
@@ -484,7 +466,7 @@ export const useCustomerOverviewSSoT = (
 
     window.open(url, '_blank');
 
-    // Registrar interação
+    // Registrar interaÃ§Ã£o
     try {
       await supabase
         .from('customer_interactions')
@@ -497,24 +479,24 @@ export const useCustomerOverviewSSoT = (
       // Invalidar cache de timeline para atualizar
       queryClient.invalidateQueries({ queryKey: ['customer-overview-timeline', customerId] });
     } catch (error) {
-      console.error('❌ Erro ao registrar interação de email:', error);
+      console.error('âŒ Erro ao registrar interaÃ§Ã£o de email:', error);
     }
   }, [customer, customerId, queryClient]);
 
   const editProfile = useCallback(() => {
-    // TODO: Implementar modal de edição ou navegação
+    // TODO: Implementar modal de ediÃ§Ã£o ou navegaÃ§Ã£o
     console.log('Editar perfil do cliente:', customerId);
   }, [customerId]);
 
   // ============================================================================
-  // CÁLCULOS DERIVADOS
+  // CÃLCULOS DERIVADOS
   // ============================================================================
 
   const profileCompleteness = useMemo((): number => {
     if (!customer) return 0;
 
-    // Usar o cálculo unificado do completeness-calculator.ts
-    // para garantir consistência entre tabela e perfil
+    // Usar o cÃ¡lculo unificado do completeness-calculator.ts
+    // para garantir consistÃªncia entre tabela e perfil
     const customerData = {
       id: customer.id,
       name: customer.name,
@@ -522,9 +504,9 @@ export const useCustomerOverviewSSoT = (
       phone: customer.phone,
       address: customer.address,
       birthday: customer.birthday,
-      first_purchase_date: undefined, // Não disponível no momento
+      first_purchase_date: undefined, // NÃ£o disponÃ­vel no momento
       last_purchase_date: metrics?.last_purchase_real,
-      purchase_frequency: undefined, // TODO: Derivar de métricas ou adicionar ao banco
+      purchase_frequency: undefined, // TODO: Derivar de mÃ©tricas ou adicionar ao banco
       favorite_category: metrics?.calculated_favorite_category,
       favorite_product: metrics?.calculated_favorite_product,
       notes: customer.notes,
@@ -577,7 +559,7 @@ export const useCustomerOverviewSSoT = (
         return {
           status: 'Regular',
           className: 'border-yellow-500/30 text-yellow-400',
-          engagementLevel: 'Médio'
+          engagementLevel: 'MÃ©dio'
         };
       }
       return {
@@ -600,7 +582,7 @@ export const useCustomerOverviewSSoT = (
     return REPORT_FIELDS
       .filter(field => {
         const value = customer[field.key as keyof CustomerOverviewData];
-        return !value || value === 'N/A' || value === 'Não definida';
+        return !value || value === 'N/A' || value === 'NÃ£o definida';
       })
       .filter(field => field.required)
       .map(field => ({
@@ -694,7 +676,7 @@ export const useCustomerOverviewSSoT = (
     sendEmail,
     editProfile,
 
-    // Cálculos derivados
+    // CÃ¡lculos derivados
     profileCompleteness,
     customerStatus,
     missingCriticalFields,
