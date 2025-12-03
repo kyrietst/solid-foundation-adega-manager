@@ -49,7 +49,12 @@ export const useGlassmorphismEffect = (
   const handleMouseMoveRaw = useCallback((e: React.MouseEvent<HTMLElement>) => {
     if (!isEnabled) return;
 
-    const target = e.currentTarget as HTMLElement;
+    // USE A REF EM VEZ DE e.currentTarget para maior segurança
+    const target = elementRef.current || (e.currentTarget as HTMLElement);
+
+    // GUARDA DE SEGURANÇA: Se o alvo sumiu, pare.
+    if (!target) return;
+
     const rect = target.getBoundingClientRect();
 
     // Cálculo das coordenadas relativas
