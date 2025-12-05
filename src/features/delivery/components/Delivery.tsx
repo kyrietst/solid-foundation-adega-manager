@@ -138,56 +138,41 @@ const Delivery = () => {
     }
   };
 
-  // Função para deletar pedido (com itens relacionados)
+  // Função para deletar pedido usando RPC (contorna políticas RLS inconsistentes)
   const handleDeleteOrder = async (saleId: string) => {
     try {
-      // 1. Deletar itens da venda primeiro (foreign key)
-      const { error: itemsError } = await supabase
-        .from('sale_items')
-        .delete()
-        .eq('sale_id', saleId);
+      console.log('🗑️ Iniciando deleção do pedido via RPC:', saleId);
 
-      if (itemsError) {
-        console.error('Erro ao deletar sale_items:', itemsError);
-        throw new Error('Erro ao deletar itens do pedido: ' + itemsError.message);
-      }
+      // Usar RPC com SECURITY DEFINER para contornar políticas RLS
+      const { data, error } = await supabase
+        .rpc('delete_sale_cascade', {
+          sale_uuid: saleId
+        });
 
-      // 2. Deletar registros de tracking
-      const { error: trackingError } = await supabase
-        .from('delivery_tracking')
-        .delete()
-        .eq('sale_id', saleId);
+      if (error) {
+        console.error('❌ Erro RPC delete_sale_cascade:', error);
 
-      if (trackingError) {
-        console.error('Erro ao deletar delivery_tracking:', trackingError);
-        // Não falha se não tiver tracking
-      }
-
-      // 3. Deletar a venda
-      const { error: saleError } = await supabase
-        .from('sales')
-        .delete()
-        .eq('id', saleId);
-
-      if (saleError) {
-        console.error('Erro ao deletar sale:', saleError);
-
-        // Mensagem específica para erro de permissão
-        if (saleError.code === 'PGRST301' || saleError.message.includes('policy')) {
-          throw new Error('Sem permissão para deletar. Apenas Admin/Employee podem excluir pedidos.');
+        // Mensagens específicas
+        if (error.message?.includes('Sem permissão')) {
+          throw new Error('Sem permissão. Apenas Admin/Employee podem excluir pedidos.');
         }
 
-        throw new Error('Erro ao deletar pedido: ' + saleError.message);
+        throw new Error(`Erro ao deletar pedido: ${error.message}`);
       }
+
+      console.log('✅ Pedido deletado com sucesso! Estatísticas:', data);
 
       toast({
         title: "✅ Pedido excluído!",
-        description: "O pedido e seus itens foram removidos com sucesso.",
+        description: `Removidos: ${data.sale_items} itens, ${data.inventory_movements} movimentos de estoque.`,
       });
 
       // Limpar cache e atualizar lista
       queryClient.invalidateQueries({ queryKey: ['delivery-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory-movements'] });
+      queryClient.invalidateQueries({ queryKey: ['sales'] });
       refetch();
+
     } catch (error) {
       console.error('Erro ao deletar pedido:', error);
       toast({
