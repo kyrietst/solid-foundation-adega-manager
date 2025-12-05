@@ -20,6 +20,7 @@ interface KanbanColumnProps {
   status: 'pending' | 'preparing' | 'out_for_delivery' | 'delivered';
   deliveries: DeliveryOrder[];
   onUpdateStatus: (saleId: string, newStatus: string, deliveryPersonId?: string) => void;
+  onDelete?: (saleId: string) => void;
   isUpdating?: boolean;
   icon?: LucideIcon;
   color?: 'yellow' | 'orange' | 'blue' | 'green';
@@ -72,6 +73,7 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
   status,
   deliveries,
   onUpdateStatus,
+  onDelete,
   isUpdating = false,
   icon,
   color = 'yellow'
@@ -146,6 +148,7 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
               key={delivery.id}
               delivery={delivery}
               onUpdateStatus={onUpdateStatus}
+              onDelete={onDelete}
               isUpdating={isUpdating}
             />
           ))

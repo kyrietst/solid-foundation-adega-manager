@@ -26,7 +26,8 @@ import {
   Calendar,
   ArrowRight,
   Map,
-  MessageCircle
+  MessageCircle,
+  Trash2
 } from 'lucide-react';
 import { cn } from '@/core/config/utils';
 import { format } from 'date-fns';
@@ -40,6 +41,7 @@ interface DeliveryOrderCardProps {
   delivery: DeliveryOrder;
   onUpdateStatus?: (saleId: string, newStatus: string, deliveryPersonId?: string) => void;
   onViewDetails?: (saleId: string) => void;
+  onDelete?: (saleId: string) => void;
   isUpdating?: boolean;
   className?: string;
 }
@@ -48,6 +50,7 @@ export const DeliveryOrderCard = React.memo(({
   delivery,
   onUpdateStatus,
   onViewDetails,
+  onDelete,
   isUpdating = false,
   className
 }: DeliveryOrderCardProps) => {
@@ -449,6 +452,22 @@ export const DeliveryOrderCard = React.memo(({
               className="border-white/10 text-gray-300 hover:bg-black/40 hover:text-white"
             >
               Ver Detalhes
+            </Button>
+          )}
+
+          {/* Botão de deletar */}
+          {onDelete && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (window.confirm(`Tem certeza que deseja excluir o pedido #${delivery.id.slice(-8)}?`)) {
+                  onDelete(delivery.id);
+                }
+              }}
+              className="border-red-500/30 text-red-400 hover:bg-red-500/10 hover:border-red-500"
+            >
+              <Trash2 className="h-3 w-3" />
             </Button>
           )}
 

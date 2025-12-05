@@ -8,6 +8,7 @@ import { useToast } from '@/shared/hooks/common/use-toast';
 import { PageHeader } from '@/shared/ui/composite/PageHeader';
 import { useDeliveryOrders, useUpdateDeliveryStatus } from '@/features/delivery/hooks/useDeliveryOrders';
 import { useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/core/api/supabase/client';
 import DeliveryStatsGrid from './DeliveryStatsGrid';
 import KanbanColumn from './KanbanColumn';
 import NotificationCenter from './NotificationCenter';
@@ -137,6 +138,33 @@ const Delivery = () => {
     }
   };
 
+  // Função para deletar pedido
+  const handleDeleteOrder = async (saleId: string) => {
+    try {
+      const { error } = await supabase
+        .from('sales')
+        .delete()
+        .eq('id', saleId);
+
+      if (error) throw error;
+
+      toast({
+        title: "✅ Pedido excluído!",
+        description: "O pedido foi removido com sucesso.",
+      });
+
+      // Atualizar lista
+      refetch();
+    } catch (error) {
+      console.error('Erro ao deletar pedido:', error);
+      toast({
+        title: "Erro ao excluir pedido",
+        description: error instanceof Error ? error.message : "Ocorreu um erro inesperado.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="w-full min-h-screen flex flex-col">
       {/* Header - altura fixa */}
@@ -193,6 +221,7 @@ const Delivery = () => {
             status="pending"
             deliveries={kanbanColumns.pending}
             onUpdateStatus={handleUpdateStatus}
+            onDelete={handleDeleteOrder}
             isUpdating={updateDeliveryStatus.isPending}
             color="yellow"
           />
@@ -203,6 +232,7 @@ const Delivery = () => {
             status="preparing"
             deliveries={kanbanColumns.preparing}
             onUpdateStatus={handleUpdateStatus}
+            onDelete={handleDeleteOrder}
             isUpdating={updateDeliveryStatus.isPending}
             color="orange"
           />
@@ -213,6 +243,7 @@ const Delivery = () => {
             status="out_for_delivery"
             deliveries={kanbanColumns.out_for_delivery}
             onUpdateStatus={handleUpdateStatus}
+            onDelete={handleDeleteOrder}
             isUpdating={updateDeliveryStatus.isPending}
             color="blue"
           />
@@ -223,6 +254,7 @@ const Delivery = () => {
             status="delivered"
             deliveries={kanbanColumns.delivered_today}
             onUpdateStatus={handleUpdateStatus}
+            onDelete={handleDeleteOrder}
             isUpdating={updateDeliveryStatus.isPending}
             color="green"
           />
