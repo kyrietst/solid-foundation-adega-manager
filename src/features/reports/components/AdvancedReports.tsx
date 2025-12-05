@@ -20,7 +20,7 @@ import { CrmReportsSection } from './CrmReportsSection';
 
 import { DateRangePicker } from '@/shared/ui/composite/DateRangePicker';
 import { DateRange } from 'react-day-picker';
-import { subDays, startOfDay, endOfDay } from 'date-fns';
+import { startOfMonth, startOfDay, endOfDay } from 'date-fns';
 
 // ... imports ...
 
@@ -28,9 +28,9 @@ export const AdvancedReports: React.FC = () => {
   const location = useLocation();
   const [activeTab, setActiveTab] = useState('sales'); // Default para Vendas & Delivery
 
-  // Default to last 30 days
+  // Default to current month (consistent with DateRangePicker preset)
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
-    from: startOfDay(subDays(new Date(), 30)),
+    from: startOfMonth(new Date()),
     to: endOfDay(new Date())
   });
 

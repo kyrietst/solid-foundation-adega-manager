@@ -71,6 +71,7 @@ export const SearchInput: React.FC<SearchInputProps> = ({
       return;
     }
     setInternalValue(value);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]); // Removido isFocused/internalValue das deps para evitar loops, confiamos no closure atualizado pelo re-render
 
   const handleClear = useCallback(() => {

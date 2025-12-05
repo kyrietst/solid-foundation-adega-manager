@@ -7,12 +7,14 @@ import { SearchBar21st } from '@/shared/ui/thirdparty/search-bar-21st';
 import { useToast } from '@/shared/hooks/common/use-toast';
 import { PageHeader } from '@/shared/ui/composite/PageHeader';
 import { useDeliveryOrders, useUpdateDeliveryStatus } from '@/features/delivery/hooks/useDeliveryOrders';
+import { useQueryClient } from '@tanstack/react-query';
 import DeliveryStatsGrid from './DeliveryStatsGrid';
 import KanbanColumn from './KanbanColumn';
 import NotificationCenter from './NotificationCenter';
 
 const Delivery = () => {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // Hooks para dados reais
   const { data: deliveries = [], isLoading: isLoadingDeliveries, refetch } = useDeliveryOrders();
@@ -108,6 +110,33 @@ const Delivery = () => {
     kanbanColumns.preparing.length +
     kanbanColumns.out_for_delivery.length;
 
+  // Função de hard refresh para limpar cache fantasma
+  const handleHardRefresh = async () => {
+    try {
+      // Invalidar TODAS as queries de delivery
+      await queryClient.invalidateQueries({ queryKey: ['delivery-orders'], exact: false });
+      await queryClient.invalidateQueries({ queryKey: ['delivery-metrics'], exact: false });
+
+      // Remover dados antigos do cache completamente
+      queryClient.removeQueries({ queryKey: ['delivery-orders'], exact: false });
+
+      // Buscar dados frescos do banco
+      await refetch();
+
+      toast({
+        title: "✅ Cache limpo!",
+        description: "Dados atualizados do banco de dados.",
+      });
+    } catch (error) {
+      console.error('Erro ao atualizar:', error);
+      toast({
+        title: "Erro ao atualizar",
+        description: "Ocorreu um erro ao buscar dados atualizados.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="w-full min-h-screen flex flex-col">
       {/* Header - altura fixa */}
@@ -120,7 +149,7 @@ const Delivery = () => {
         <div className="flex items-center gap-4">
           <NotificationCenter />
           <Button
-            onClick={() => refetch()}
+            onClick={handleHardRefresh}
             disabled={isLoadingDeliveries}
             className="bg-yellow-600 hover:bg-yellow-700 text-white font-medium group relative overflow-hidden"
           >

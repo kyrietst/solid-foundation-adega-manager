@@ -44,26 +44,28 @@ export function DateRangePicker({
                     to: endOfDay(today),
                 })
                 break
-            case "yesterday":
+            case "yesterday": {
                 const yesterday = subDays(today, 1)
                 onDateChange({
                     from: startOfDay(yesterday),
                     to: endOfDay(yesterday),
                 })
                 break
+            }
             case "this_month":
                 onDateChange({
                     from: startOfMonth(today),
                     to: endOfDay(today),
                 })
                 break
-            case "last_month":
+            case "last_month": {
                 const lastMonth = subMonths(today, 1)
                 onDateChange({
                     from: startOfMonth(lastMonth),
                     to: endOfMonth(lastMonth),
                 })
                 break
+            }
             case "last_7_days":
                 onDateChange({
                     from: subDays(today, 7),

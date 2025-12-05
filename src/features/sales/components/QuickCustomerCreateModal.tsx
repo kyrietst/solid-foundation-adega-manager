@@ -103,7 +103,6 @@ export function QuickCustomerCreateModal({
                             onChange={(e) => setName(e.target.value)}
                             placeholder="Ex: João da Silva"
                             className="bg-gray-800/50 border-white/10 text-white focus:border-primary-yellow/50 placeholder:text-gray-500"
-                            autoFocus
                         />
                     </div>
 
