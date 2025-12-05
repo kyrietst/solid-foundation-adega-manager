@@ -138,27 +138,60 @@ const Delivery = () => {
     }
   };
 
-  // Função para deletar pedido
+  // Função para deletar pedido (com itens relacionados)
   const handleDeleteOrder = async (saleId: string) => {
     try {
-      const { error } = await supabase
+      // 1. Deletar itens da venda primeiro (foreign key)
+      const { error: itemsError } = await supabase
+        .from('sale_items')
+        .delete()
+        .eq('sale_id', saleId);
+
+      if (itemsError) {
+        console.error('Erro ao deletar sale_items:', itemsError);
+        throw new Error('Erro ao deletar itens do pedido: ' + itemsError.message);
+      }
+
+      // 2. Deletar registros de tracking
+      const { error: trackingError } = await supabase
+        .from('delivery_tracking')
+        .delete()
+        .eq('sale_id', saleId);
+
+      if (trackingError) {
+        console.error('Erro ao deletar delivery_tracking:', trackingError);
+        // Não falha se não tiver tracking
+      }
+
+      // 3. Deletar a venda
+      const { error: saleError } = await supabase
         .from('sales')
         .delete()
         .eq('id', saleId);
 
-      if (error) throw error;
+      if (saleError) {
+        console.error('Erro ao deletar sale:', saleError);
+
+        // Mensagem específica para erro de permissão
+        if (saleError.code === 'PGRST301' || saleError.message.includes('policy')) {
+          throw new Error('Sem permissão para deletar. Apenas Admin/Employee podem excluir pedidos.');
+        }
+
+        throw new Error('Erro ao deletar pedido: ' + saleError.message);
+      }
 
       toast({
         title: "✅ Pedido excluído!",
-        description: "O pedido foi removido com sucesso.",
+        description: "O pedido e seus itens foram removidos com sucesso.",
       });
 
-      // Atualizar lista
+      // Limpar cache e atualizar lista
+      queryClient.invalidateQueries({ queryKey: ['delivery-orders'] });
       refetch();
     } catch (error) {
       console.error('Erro ao deletar pedido:', error);
       toast({
-        title: "Erro ao excluir pedido",
+        title: "❌ Erro ao excluir pedido",
         description: error instanceof Error ? error.message : "Ocorreu um erro inesperado.",
         variant: "destructive",
       });

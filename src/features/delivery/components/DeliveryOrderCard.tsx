@@ -470,12 +470,6 @@ export const DeliveryOrderCard = React.memo(({
               <Trash2 className="h-3 w-3" />
             </Button>
           )}
-
-          {/* Valor em destaque */}
-          <div className="ml-auto flex items-center gap-1 text-sm font-medium text-yellow-400">
-            <DollarSign className="h-3 w-3" />
-            {formatCurrency(delivery.final_amount)}
-          </div>
         </div>
       </CardContent>
 
