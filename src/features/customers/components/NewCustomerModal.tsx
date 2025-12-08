@@ -1,25 +1,19 @@
 /**
  * NewCustomerModal.tsx - Modal para cadastro de novos clientes
- * Integração completa com Supabase e validações com Zod
- * 
- * @author Adega Manager Team
- * @version 1.0.0
+ * Estilo padronizado: FormDialog + emojis + layout horizontal compacto
  */
 
 import React from 'react';
 import { z } from 'zod';
-import { BaseModal } from '@/shared/ui/composite';
+import { FormDialog } from '@/shared/ui/layout/FormDialog';
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
-  FormLabel,
   FormMessage,
 } from '@/shared/ui/primitives/form';
 import { Input } from '@/shared/ui/primitives/input';
-import { Button } from '@/shared/ui/primitives/button';
 import { Textarea } from '@/shared/ui/primitives/textarea';
 import {
   Select,
@@ -31,53 +25,23 @@ import {
 import { SwitchAnimated } from '@/shared/ui/primitives/switch-animated';
 import { useUpsertCustomer } from '@/features/customers/hooks/use-crm';
 import { useStandardForm } from '@/shared/hooks/common/useStandardForm';
-import {
-  User,
-  Phone,
-  Mail,
-  MapPin,
-  Calendar,
-  MessageSquare,
-  Save,
-  X,
-  UserPlus
-} from 'lucide-react';
+import { User, MessageSquare, MapPin } from 'lucide-react';
+import { getGlassInputClasses } from '@/core/config/theme-utils';
+import { cn } from '@/core/config/utils';
 import { isValidBrazilianPhone, formatPhoneInput, PHONE_PLACEHOLDER, PHONE_ERROR_MESSAGE } from '@/shared/utils/phone';
 
-// Schema de validação com Zod
+// Schema de validação
 const newCustomerSchema = z.object({
-  name: z
-    .string()
-    .min(2, 'Nome deve ter pelo menos 2 caracteres')
-    .max(100, 'Nome deve ter no máximo 100 caracteres')
-    .regex(/^[a-zA-ZÀ-ÿ\s]+$/, 'Nome deve conter apenas letras e espaços'),
-  
-  email: z
-    .string()
-    .email('Email inválido')
-    .optional()
-    .or(z.literal('')),
-  
-  phone: z
-    .string()
-    .refine((val) => !val || isValidBrazilianPhone(val), {
-      message: PHONE_ERROR_MESSAGE
-    })
-    .optional()
-    .or(z.literal('')),
-  
-  birthday: z
-    .string()
-    .optional()
-    .or(z.literal(''))
-    .refine((date) => {
-      if (!date || date === '') return true;
-      const birthDate = new Date(date);
-      const today = new Date();
-      const age = today.getFullYear() - birthDate.getFullYear();
-      return age >= 0 && age <= 120;
-    }, 'Data de nascimento inválida'),
-  
+  name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres').max(100, 'Nome deve ter no máximo 100 caracteres').regex(/^[a-zA-ZÀ-ÿ\s]+$/, 'Nome deve conter apenas letras e espaços'),
+  email: z.string().email('Email inválido').optional().or(z.literal('')),
+  phone: z.string().refine((val) => !val || isValidBrazilianPhone(val), { message: PHONE_ERROR_MESSAGE }).optional().or(z.literal('')),
+  birthday: z.string().optional().or(z.literal('')).refine((date) => {
+    if (!date || date === '') return true;
+    const birthDate = new Date(date);
+    const today = new Date();
+    const age = today.getFullYear() - birthDate.getFullYear();
+    return age >= 0 && age <= 120;
+  }, 'Data de nascimento inválida'),
   address: z.object({
     street: z.string().optional(),
     city: z.string().optional(),
@@ -85,18 +49,9 @@ const newCustomerSchema = z.object({
     zipCode: z.string().optional(),
     full_address: z.string().optional(),
   }).optional(),
-  
-  contact_preference: z
-    .enum(['whatsapp', 'sms', 'email', 'call'])
-    .optional(),
-  
+  contact_preference: z.enum(['whatsapp', 'sms', 'email', 'call']).optional(),
   contact_permission: z.boolean().default(false),
-  
-  notes: z
-    .string()
-    .max(500, 'Observações devem ter no máximo 500 caracteres')
-    .optional()
-    .or(z.literal('')),
+  notes: z.string().max(500, 'Observações devem ter no máximo 500 caracteres').optional().or(z.literal('')),
 });
 
 type NewCustomerFormData = z.infer<typeof newCustomerSchema>;
@@ -106,10 +61,7 @@ interface NewCustomerModalProps {
   onClose: () => void;
 }
 
-export const NewCustomerModal: React.FC<NewCustomerModalProps> = ({
-  isOpen,
-  onClose,
-}) => {
+export const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose }) => {
   const upsertCustomer = useUpsertCustomer();
 
   const { form, isLoading, handleSubmit } = useStandardForm<NewCustomerFormData>({
@@ -119,391 +71,262 @@ export const NewCustomerModal: React.FC<NewCustomerModalProps> = ({
       email: '',
       phone: '',
       birthday: '',
-      address: {
-        street: '',
-        city: '',
-        state: '',
-        zipCode: '',
-        full_address: '',
-      },
+      address: { street: '', city: '', state: '', zipCode: '', full_address: '' },
       contact_preference: undefined,
       contact_permission: false,
       notes: '',
     },
     onSuccess: (data) => `✅ Cliente ${data.name} cadastrado com sucesso!`,
     onError: 'Erro ao cadastrar cliente. Tente novamente.',
-    onSuccessCallback: () => {
-      onClose();
-    },
+    onSuccessCallback: () => onClose(),
     onSubmit: async (data) => {
-      // Preparar dados para envio
       const customerData = {
         name: data.name,
         email: data.email || null,
         phone: data.phone || null,
         birthday: data.birthday || null,
-        address: data.address && (
-          data.address.street || 
-          data.address.city || 
-          data.address.state || 
-          data.address.zipCode ||
-          data.address.full_address
-        ) ? {
+        address: data.address && (data.address.street || data.address.city || data.address.state || data.address.zipCode || data.address.full_address) ? {
           ...data.address,
-          full_address: [
-            data.address.street,
-            data.address.city,
-            data.address.state,
-            data.address.zipCode
-          ].filter(Boolean).join(', ') || data.address.full_address
+          full_address: [data.address.street, data.address.city, data.address.state, data.address.zipCode].filter(Boolean).join(', ') || data.address.full_address
         } : null,
         contact_preference: data.contact_preference || null,
         contact_permission: data.contact_permission,
         notes: data.notes || null,
-        // Campos que serão calculados automaticamente
-        segment: 'Novo', // Novo cliente sempre começa como "Novo"
+        segment: 'Novo',
         lifetime_value: 0,
         tags: [],
       };
-
       return new Promise<void>((resolve, reject) => {
-        upsertCustomer.mutate(customerData, {
-          onSuccess: () => resolve(),
-          onError: (error: Error) => reject(error),
-        });
+        upsertCustomer.mutate(customerData, { onSuccess: () => resolve(), onError: (error: Error) => reject(error) });
       });
     },
   });
 
   const handleClose = () => {
-    if (isLoading) return; // Não permitir fechar durante envio
+    if (isLoading) return;
     form.reset();
     onClose();
   };
 
+  const inputClasses = cn(getGlassInputClasses('form'), 'h-9 text-sm');
+
   return (
-    <BaseModal
-      isOpen={isOpen}
-      onClose={handleClose}
-      title={
-        <>
-          <UserPlus className="h-5 w-5 text-yellow-400" />
-          Cadastrar Novo Cliente
-        </>
-      }
+    <FormDialog
+      open={isOpen}
+      onOpenChange={(open) => !open && handleClose()}
+      title="CADASTRAR CLIENTE"
       description="Preencha os dados do cliente. Apenas o nome é obrigatório."
-      size="2xl"
-      className="max-h-content-2xl overflow-y-auto bg-black/95 backdrop-blur-sm border border-white/10"
+      onSubmit={handleSubmit}
+      submitLabel={isLoading ? 'Cadastrando...' : 'Cadastrar Cliente'}
+      cancelLabel="Cancelar"
+      loading={isLoading}
+      size="full"
+      variant="premium"
+      glassEffect={true}
+      className="max-w-5xl"
     >
+      <Form {...form}>
+        {/* Layout horizontal em 3 colunas */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
 
-        <Form {...form}>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Informações Básicas */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                <User className="h-4 w-4 text-blue-400" />
-                Informações Básicas
-              </h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-gray-300">Nome Completo *</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Ex: João Silva"
-                          {...field}
-                          className="bg-gray-800/50 border-gray-600 text-white"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+          {/* ========================================== */}
+          {/* COLUNA 1 - Identificação */}
+          {/* ========================================== */}
+          <div className="space-y-3">
+            <h3 className="text-base font-semibold text-white flex items-center gap-2 border-b border-gray-700 pb-2">
+              <User className="h-4 w-4 text-primary-yellow" />
+              👤 Identificação
+            </h3>
 
-                <FormField
-                  control={form.control}
-                  name="birthday"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-gray-300">Data de Nascimento</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="date"
-                          {...field}
-                          className="bg-gray-800/50 border-gray-600 text-white"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+            {/* Nome */}
+            <div>
+              <label className="block text-xs font-medium mb-1 text-gray-400">📝 Nome Completo *</label>
+              <FormField control={form.control} name="name" render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <Input placeholder="Ex: João Silva" {...field} className={inputClasses} />
+                  </FormControl>
+                  <FormMessage className="text-xs" />
+                </FormItem>
+              )} />
             </div>
 
-            {/* Informações de Contato */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                <MessageSquare className="h-4 w-4 text-green-400" />
-                Contato
-              </h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-gray-300">Email</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="email"
-                          placeholder="joao@exemplo.com"
-                          {...field}
-                          className="bg-gray-800/50 border-gray-600 text-white"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="phone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-gray-300">Telefone</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder={PHONE_PLACEHOLDER}
-                          {...field}
-                          onChange={(e) => field.onChange(formatPhoneInput(e.target.value))}
-                          className="bg-gray-800/50 border-gray-600 text-white"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="contact_preference"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-gray-300">Preferência de Contato</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white">
-                            <SelectValue placeholder="Selecione..." />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="whatsapp">WhatsApp</SelectItem>
-                          <SelectItem value="sms">SMS</SelectItem>
-                          <SelectItem value="email">Email</SelectItem>
-                          <SelectItem value="call">Ligação</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="contact_permission"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border border-gray-600 p-3 bg-gray-800/30">
-                      <div className="space-y-0.5">
-                        <FormLabel className="text-sm text-gray-300">
-                          Permitir Contatos
-                        </FormLabel>
-                        <FormDescription className="text-xs text-gray-500">
-                          Cliente autoriza receber comunicações
-                        </FormDescription>
-                      </div>
-                      <FormControl>
-                        <SwitchAnimated
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                          variant="yellow"
-                          size="md"
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </div>
-
-            {/* Endereço */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-purple-400" />
-                Endereço
-              </h3>
-              
-              <FormField
-                control={form.control}
-                name="address.full_address"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-gray-300">Endereço Completo</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Rua das Flores, 123, Centro, São Paulo - SP"
-                        {...field}
-                        className="bg-gray-800/50 border-gray-600 text-white"
-                      />
-                    </FormControl>
-                    <FormDescription className="text-xs text-gray-500">
-                      Ou preencha os campos separados abaixo
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <FormField
-                  control={form.control}
-                  name="address.street"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-gray-300">Rua</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Rua das Flores, 123"
-                          {...field}
-                          className="bg-gray-800/50 border-gray-600 text-white"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="address.city"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-gray-300">Cidade</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="São Paulo"
-                          {...field}
-                          className="bg-gray-800/50 border-gray-600 text-white"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="address.state"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-gray-300">Estado</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="SP"
-                          {...field}
-                          className="bg-gray-800/50 border-gray-600 text-white"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="address.zipCode"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-gray-300">CEP</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="01234-567"
-                          {...field}
-                          className="bg-gray-800/50 border-gray-600 text-white"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+            {/* Data de Nascimento */}
+            <div>
+              <label className="block text-xs font-medium mb-1 text-gray-400">🎂 Data de Nascimento</label>
+              <FormField control={form.control} name="birthday" render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <Input type="date" {...field} className={inputClasses} />
+                  </FormControl>
+                  <FormMessage className="text-xs" />
+                </FormItem>
+              )} />
             </div>
 
             {/* Observações */}
-            <div className="space-y-4">
-              <FormField
-                control={form.control}
-                name="notes"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-gray-300">Observações</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Informações adicionais sobre o cliente..."
-                        className="bg-gray-800/50 border-gray-600 text-white min-h-[80px]"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormDescription className="text-xs text-gray-500">
-                      Máximo 500 caracteres
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <div>
+              <label className="block text-xs font-medium mb-1 text-gray-400">📋 Observações</label>
+              <FormField control={form.control} name="notes" render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <Textarea placeholder="Informações adicionais..." className={cn(inputClasses, 'min-h-[60px] h-auto')} {...field} />
+                  </FormControl>
+                  <FormMessage className="text-xs" />
+                </FormItem>
+              )} />
+            </div>
+          </div>
+
+          {/* ========================================== */}
+          {/* COLUNA 2 - Contato */}
+          {/* ========================================== */}
+          <div className="space-y-3">
+            <h3 className="text-base font-semibold text-white flex items-center gap-2 border-b border-gray-700 pb-2">
+              <MessageSquare className="h-4 w-4 text-primary-yellow" />
+              📱 Contato
+            </h3>
+
+            {/* Email */}
+            <div>
+              <label className="block text-xs font-medium mb-1 text-gray-400">📧 Email</label>
+              <FormField control={form.control} name="email" render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <Input type="email" placeholder="joao@exemplo.com" {...field} className={inputClasses} />
+                  </FormControl>
+                  <FormMessage className="text-xs" />
+                </FormItem>
+              )} />
             </div>
 
-            {/* Botões de Ação */}
-            <div className="flex justify-end gap-3 pt-4 border-t border-gray-700">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleClose}
-                disabled={isLoading}
-                className="border-gray-600 text-gray-300 hover:bg-gray-700"
-              >
-                <X className="h-4 w-4 mr-2" />
-                Cancelar
-              </Button>
-              
-              <Button
-                type="submit"
-                disabled={isLoading}
-                className="bg-yellow-500 hover:bg-yellow-600 text-black font-medium"
-              >
-                {isLoading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black mr-2"></div>
-                    Cadastrando...
-                  </>
-                ) : (
-                  <>
-                    <Save className="h-4 w-4 mr-2" />
-                    Cadastrar Cliente
-                  </>
-                )}
-              </Button>
+            {/* Telefone */}
+            <div>
+              <label className="block text-xs font-medium mb-1 text-gray-400">📞 Telefone</label>
+              <FormField control={form.control} name="phone" render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <Input placeholder={PHONE_PLACEHOLDER} {...field} onChange={(e) => field.onChange(formatPhoneInput(e.target.value))} className={inputClasses} />
+                  </FormControl>
+                  <FormMessage className="text-xs" />
+                </FormItem>
+              )} />
             </div>
-          </form>
-        </Form>
-    </BaseModal>
+
+            {/* Preferência de Contato */}
+            <div>
+              <label className="block text-xs font-medium mb-1 text-gray-400">💬 Preferência</label>
+              <FormField control={form.control} name="contact_preference" render={({ field }) => (
+                <FormItem>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger className={inputClasses}>
+                        <SelectValue placeholder="Selecione..." />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="whatsapp">WhatsApp</SelectItem>
+                      <SelectItem value="sms">SMS</SelectItem>
+                      <SelectItem value="email">Email</SelectItem>
+                      <SelectItem value="call">Ligação</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage className="text-xs" />
+                </FormItem>
+              )} />
+            </div>
+
+            {/* Permitir Contatos */}
+            <div className="flex items-center justify-between rounded-lg border border-gray-700 p-3 bg-gray-800/30">
+              <div>
+                <span className="text-sm text-gray-200 font-medium">✅ Permitir Contatos?</span>
+                <p className="text-xs text-gray-500">Autoriza comunicações</p>
+              </div>
+              <FormField control={form.control} name="contact_permission" render={({ field }) => (
+                <FormControl>
+                  <SwitchAnimated checked={field.value} onCheckedChange={field.onChange} variant="yellow" size="sm" />
+                </FormControl>
+              )} />
+            </div>
+          </div>
+
+          {/* ========================================== */}
+          {/* COLUNA 3 - Endereço */}
+          {/* ========================================== */}
+          <div className="space-y-3">
+            <h3 className="text-base font-semibold text-white flex items-center gap-2 border-b border-gray-700 pb-2">
+              <MapPin className="h-4 w-4 text-primary-yellow" />
+              📍 Endereço
+            </h3>
+
+            {/* Endereço Completo */}
+            <div>
+              <label className="block text-xs font-medium mb-1 text-gray-400">🏠 Endereço Completo</label>
+              <FormField control={form.control} name="address.full_address" render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <Input placeholder="Rua das Flores, 123, Centro" {...field} className={inputClasses} />
+                  </FormControl>
+                  <FormMessage className="text-xs" />
+                </FormItem>
+              )} />
+            </div>
+
+            {/* Rua + Cidade lado a lado */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium mb-1 text-gray-400">🛣️ Rua</label>
+                <FormField control={form.control} name="address.street" render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Input placeholder="Rua das Flores" {...field} className={inputClasses} />
+                    </FormControl>
+                    <FormMessage className="text-xs" />
+                  </FormItem>
+                )} />
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1 text-gray-400">🏙️ Cidade</label>
+                <FormField control={form.control} name="address.city" render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Input placeholder="São Paulo" {...field} className={inputClasses} />
+                    </FormControl>
+                    <FormMessage className="text-xs" />
+                  </FormItem>
+                )} />
+              </div>
+            </div>
+
+            {/* Estado + CEP lado a lado */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium mb-1 text-gray-400">🗺️ Estado</label>
+                <FormField control={form.control} name="address.state" render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Input placeholder="SP" {...field} className={inputClasses} />
+                    </FormControl>
+                    <FormMessage className="text-xs" />
+                  </FormItem>
+                )} />
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1 text-gray-400">📮 CEP</label>
+                <FormField control={form.control} name="address.zipCode" render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Input placeholder="01234-567" {...field} className={inputClasses} />
+                    </FormControl>
+                    <FormMessage className="text-xs" />
+                  </FormItem>
+                )} />
+              </div>
+            </div>
+          </div>
+        </div>
+      </Form>
+    </FormDialog>
   );
 };
 

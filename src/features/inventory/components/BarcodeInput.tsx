@@ -5,7 +5,7 @@ import { Label } from '@/shared/ui/primitives/label';
 import { useBarcode } from '@/features/inventory/hooks/use-barcode';
 import { Scan, Loader2 } from 'lucide-react';
 import { cn } from '@/core/config/utils';
-import type { BarcodeComponentProps } from '@/types/inventory.types';
+import type { BarcodeComponentProps } from '@/core/types/inventory.types';
 
 interface BarcodeInputProps extends BarcodeComponentProps {
   placeholder?: string;
@@ -51,7 +51,7 @@ export const BarcodeInput: React.FC<BarcodeInputProps> = ({
     }
 
     setIsProcessing(true);
-    
+
     try {
       await onScan(code);
       setBarcode(''); // Limpa o input após processar
@@ -107,13 +107,13 @@ export const BarcodeInput: React.FC<BarcodeInputProps> = ({
           )}
         </Button>
       </div>
-      
+
       {barcode && !validation.isValid && (
         <p className="text-sm text-red-600">
           {validation.error || "Código inválido. Use formato EAN-8, EAN-13 ou UPC."}
         </p>
       )}
-      
+
       {barcode && validation.isValid && validation.format && (
         <p className="text-sm text-green-600">
           Formato detectado: {validation.format}

@@ -15,9 +15,11 @@ import { ProductsGridContainer } from './ProductsGridContainer';
 import { ProductsTitle, ProductsHeader, AddProductButton } from './ProductsHeader';
 import { useProductsGridLogic } from '@/shared/hooks/products/useProductsGridLogic';
 import { Button } from '@/shared/ui/primitives/button';
-import { Trash2, Package, Store, AlertTriangle, Loader2, ClipboardList, Warehouse } from 'lucide-react';
+import { Trash2, Package, Store, AlertTriangle, Loader2, ClipboardList, Warehouse, Filter } from 'lucide-react';
 import { PaginationControls } from '@/shared/ui/composite/pagination-controls';
 import { SearchInput } from '@/shared/ui/composite/search-input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/primitives/select';
+import { useCategories } from '@/shared/hooks/common/use-categories';
 // Imports dos modais refatorados - Força HMR refresh para carregar logs de diagnóstico
 import { NewProductModal } from './NewProductModal';
 import { SimpleProductViewModal } from './SimpleProductViewModal'; // Modal simplificado v2.0
@@ -89,6 +91,10 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
   const [selectedStore, setSelectedStore] = useState<1 | 2>(1);
   const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
   const [productToTransfer, setProductToTransfer] = useState<Product | null>(null);
+
+  // 📂 v3.6.5 - Filtro por categoria
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const { data: categories = [] } = useCategories();
 
   // 📄 v3.6.2 - Paginação client-side para performance (500+ produtos)
   const [currentPage, setCurrentPage] = useState(1);
@@ -540,7 +546,14 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
       );
     }
 
-    // 3. Mapeia os dados para exibição (Visualização Correta)
+    // 3. Aplica filtro por categoria
+    if (selectedCategory && selectedCategory !== 'all') {
+      scopedProducts = scopedProducts.filter(
+        (p) => p.category === selectedCategory
+      );
+    }
+
+    // 4. Mapeia os dados para exibição (Visualização Correta)
     return scopedProducts.map((product) => ({
       ...product,
       stock_packages:
@@ -552,7 +565,7 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
           ? product.stock_units_loose || 0
           : product.store2_holding_units_loose || 0,
     }));
-  }, [allProducts, selectedStore, searchQuery]);
+  }, [allProducts, selectedStore, searchQuery, selectedCategory]);
 
   // 4. Paginação (Fatiamento final)
   const paginatedProducts = React.useMemo(() => {
@@ -659,27 +672,54 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
               />
             </div>
 
-            {/* Toggle Loja 1 (Active) / Loja 2 (Holding) */}
-            <div className="flex gap-2 mb-4 pb-4 border-b border-white/10">
-              <Button
-                variant={selectedStore === 1 ? 'default' : 'outline'}
-                onClick={() => setSelectedStore(1)}
-                className="flex items-center gap-2"
-                size="sm"
-              >
-                <Store className="h-4 w-4" />
-                Loja 1 (Vendas)
-              </Button>
+            {/* Toggle Loja 1 (Active) / Loja 2 (Holding) + Filtro por Categoria */}
+            <div className="flex items-center justify-between gap-2 mb-4 pb-4 border-b border-white/10">
+              {/* Botões de Loja */}
+              <div className="flex gap-2">
+                <Button
+                  variant={selectedStore === 1 ? 'default' : 'outline'}
+                  onClick={() => setSelectedStore(1)}
+                  className="flex items-center gap-2"
+                  size="sm"
+                >
+                  <Store className="h-4 w-4" />
+                  Loja 1 (Vendas)
+                </Button>
 
-              <Button
-                variant={selectedStore === 2 ? 'default' : 'outline'}
-                onClick={() => setSelectedStore(2)}
-                className="flex items-center gap-2"
-                size="sm"
-              >
-                <Warehouse className="h-4 w-4" />
-                Loja 2 (Depósito)
-              </Button>
+                <Button
+                  variant={selectedStore === 2 ? 'default' : 'outline'}
+                  onClick={() => setSelectedStore(2)}
+                  className="flex items-center gap-2"
+                  size="sm"
+                >
+                  <Warehouse className="h-4 w-4" />
+                  Loja 2 (Depósito)
+                </Button>
+              </div>
+
+              {/* 📂 v3.6.5 - Filtro por Categoria */}
+              <div className="flex items-center gap-2">
+                <Filter className="h-4 w-4 text-gray-400" />
+                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <SelectTrigger className="w-48 h-8 bg-black/40 border-white/20 text-white text-sm">
+                    <SelectValue placeholder="Todas as categorias" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-900/95 border-white/20 backdrop-blur-xl">
+                    <SelectItem value="all" className="text-white hover:bg-white/10">
+                      📂 Todas as Categorias
+                    </SelectItem>
+                    {categories.map((category) => (
+                      <SelectItem
+                        key={category.id}
+                        value={category.name}
+                        className="text-white hover:bg-white/10"
+                      >
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             {/* Grid de produtos com estoque da loja selecionada */}

@@ -1,259 +1,128 @@
 /**
- * CSS específico para impressão em impressoras térmicas
- * Otimizado para Atomo MO-5812: 48mm, 203dpi
- * SUPER LEGÍVEL: Fontes grandes + Zero bordas tracejadas + Layout limpo
+ * CSS para impressão térmica - Versão MATEMÁTICA FÍSICA (42MM)
+ * Otimizado para Atomo MO-5812: Área imprimível de 48mm
+ * Cálculo: 42mm (conteúdo) + 2mm (margem) = 44mm < 48mm ✓
  */
 
 @media print {
-  /* Configuração da página para impressão térmica */
+
+  /* ===== PAPEL FÍSICO ===== */
   @page {
-    size: auto !important;
     margin: 0 !important;
-    padding: 0 !important;
-  }
-  
-  /* Reset global para impressão */
-  * {
-    box-sizing: border-box;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-    color-adjust: exact !important;
+    size: 58mm auto;
   }
 
-  html, body {
-    width: 48mm !important;
+  /* ===== RESET GLOBAL ===== */
+  body,
+  html {
     margin: 0 !important;
     padding: 0 !important;
-    font-family: 'Courier New', 'Consolas', monospace !important;
-    font-size: 16px !important; /* BASE: 16px para legibilidade térmica */
-    line-height: 1.4 !important;
-    color: #000 !important;
-    background: white !important;
-    height: auto !important;
-    min-height: 0 !important;
-    max-height: none !important;
-    overflow: hidden !important;
-    
-    /* FORÇA POSICIONAMENTO NO TOPO */
-    display: flex !important;
-    flex-direction: column !important;
-    justify-content: flex-start !important;
-    align-items: flex-start !important;
-    padding-top: 0 !important;
-    margin-top: 0 !important;
+    width: 100% !important;
+    background-color: #fff !important;
   }
 
-  /* VISIBILIDADE SELETIVA - Garantir que cupom seja visível */
+  /* ===== SISTEMA OVERLAY ===== */
   body * {
     visibility: hidden;
   }
 
-  .receipt-print,
-  .receipt-print *,
-  .receipt-print .receipt-header,
-  .receipt-print .receipt-info,
-  .receipt-print .receipt-items,
-  .receipt-print .receipt-totals,
-  .receipt-print .receipt-footer {
+  .print-area,
+  .print-area * {
     visibility: visible !important;
-    display: block !important;
-    opacity: 1 !important;
   }
 
-  /* Container principal - SUPER LEGÍVEL + VISIBILIDADE GARANTIDA */
+  /* ===== POSICIONAMENTO ESTRATÉGICO ===== */
+  .print-area {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    /* LARGURA SEGURA: 42mm */
+    width: 42mm !important;
+    /* RECUO MÍNIMO: 2mm (foge da borda sem estourar 48mm) */
+    margin-left: 2mm !important;
+    margin-top: 0 !important;
+    margin-right: 0 !important;
+    margin-bottom: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+  }
+
+  /* ===== CONTAINER DO CUPOM ===== */
   .receipt-print {
-    position: relative !important; /* MUDANÇA: relative para garantir visibilidade */
-    width: 48mm !important;
-    max-width: 48mm !important;
-    margin: 0 auto !important; /* Centralizado horizontalmente */
-    padding: 3mm !important; /* Padding para legibilidade */
-    font-family: 'Courier New', 'Consolas', monospace !important;
-    font-size: 16px !important; /* FONTE BASE: 16px */
-    line-height: 1.3 !important;
+    width: 100% !important;
+    /* Fonte Arial Bold para legibilidade em 203dpi */
+    font-family: Arial, Helvetica, sans-serif !important;
+    font-size: 11px !important;
+    font-weight: bold !important;
+    line-height: 1.1 !important;
     color: #000 !important;
     background: white !important;
-    page-break-after: auto !important;
-    page-break-inside: avoid !important;
     height: auto !important;
-    min-height: auto !important;
-    max-height: none !important;
-    overflow: visible !important;
-    display: block !important;
-    
-    /* GARANTIR VISIBILIDADE */
-    opacity: 1 !important;
-    z-index: 999 !important;
   }
 
-  /* Elementos que não devem aparecer na impressão */
-  .no-print {
-    display: none !important;
+  /* ===== LIMPEZA DE RUÍDO ===== */
+  .receipt-print * {
+    margin: 0 !important;
+    padding: 0 !important;
   }
 
-  /* SEPARADORES LIMPOS - SEM BORDAS TRACEJADAS */
-  .receipt-line {
-    border: none !important;
-    margin: 4mm 0 !important; /* Espaçamento generoso */
-    height: 0 !important;
-    background: none !important;
-    /* Apenas espaçamento - nenhuma linha visual */
-  }
-
-  /* BOLD UNIVERSAL PARA 'PRINT AS IMAGE' */
-  .receipt-print span,
-  .receipt-print div:not(.receipt-line),
-  .receipt-print p {
-    font-weight: bold !important; /* FORÇA: todos os textos em bold */
-  }
-
-  /* CABEÇALHO - SUPER LEGÍVEL */
+  /* ===== HEADER & FOOTER ===== */
   .receipt-header {
     text-align: center !important;
-    margin-bottom: 4mm !important;
+    margin-bottom: 5px !important;
   }
 
-  .receipt-header .company-name {
-    font-size: 20px !important; /* GRANDE: 20px para destaque */
-    font-weight: bold !important;
-    margin-bottom: 3mm !important;
-    letter-spacing: 1px !important;
-    text-transform: uppercase !important;
-  }
-
-  .receipt-header .company-subtitle {
-    font-size: 14px !important; /* LEGÍVEL: 14px */
-    margin-bottom: 2mm !important;
-  }
-
-  /* INFORMAÇÕES DA VENDA - BOLD PARA 'PRINT AS IMAGE' */
-  .receipt-info {
-    margin-bottom: 4mm !important;
-  }
-
-  .receipt-info-line {
-    display: flex !important;
-    justify-content: space-between !important;
-    margin-bottom: 2mm !important;
-    line-height: 1.3 !important;
-    font-size: 14px !important; /* LEGÍVEL: 14px + bold */
-    font-weight: bold !important; /* BOLD: legibilidade garantida */
-  }
-
-  /* ITENS DA VENDA */
-  .receipt-items {
-    margin: 4mm 0 !important;
-  }
-
-  .receipt-item {
-    margin-bottom: 3mm !important;
-  }
-
-  .receipt-item-name {
-    display: flex !important;
-    justify-content: space-between !important;
-    margin-bottom: 1mm !important;
-    font-size: 16px !important; /* GRANDE: 16px */
-    font-weight: bold !important;
-  }
-
-  .receipt-item-details {
-    display: flex !important;
-    justify-content: space-between !important;
-    font-size: 14px !important; /* LEGÍVEL: 14px + bold */
-    font-weight: bold !important; /* BOLD: legibilidade garantida */
-    color: #000 !important;
-  }
-
-  /* TOTAIS - DESTAQUE MÁXIMO */
-  .receipt-totals {
-    /* SEM borda tracejada - apenas espaçamento */
-    padding-top: 4mm !important;
-    margin-top: 4mm !important;
-  }
-
-  .receipt-total-line {
-    display: flex !important;
-    justify-content: space-between !important;
-    margin-bottom: 2mm !important;
-    font-size: 16px !important; /* GRANDE: 16px + bold */
-    line-height: 1.3 !important;
-    font-weight: bold !important; /* BOLD: legibilidade garantida */
-  }
-
-  .receipt-total-line.final {
-    font-weight: bold !important;
-    font-size: 20px !important; /* SUPER DESTAQUE: 20px */
-    /* SEM borda - apenas espaçamento */
-    padding-top: 2mm !important;
-    margin-top: 3mm !important;
-    text-transform: uppercase !important;
-  }
-
-  /* RODAPÉ - LIMPO E LEGÍVEL */
   .receipt-footer {
     text-align: center !important;
-    /* SEM borda tracejada - apenas espaçamento */
-    padding-top: 4mm !important;
-    margin-top: 4mm !important;
-    margin-bottom: 0 !important;
+    margin-top: 5px !important;
   }
 
-  .receipt-footer .thanks {
-    font-weight: bold !important;
-    font-size: 18px !important; /* DESTAQUE: 18px */
-    margin-bottom: 2mm !important;
+  /* ===== SEPARADORES ===== */
+  .receipt-line {
+    border-top: 2px solid #000 !important;
+    margin: 2px 0 !important;
+    width: 100% !important;
+    display: block !important;
+    height: 0 !important;
+  }
+
+  /* ===== ROWS ===== */
+  .receipt-row {
+    display: flex !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    margin-bottom: 2px !important;
+  }
+
+  /* ===== TAMANHOS DE TEXTO (ajustados para largura reduzida) ===== */
+  .text-lg {
+    font-size: 12px !important;
     text-transform: uppercase !important;
   }
 
-  .receipt-footer .message {
-    font-size: 14px !important; /* LEGÍVEL: 14px + bold */
-    font-weight: bold !important; /* BOLD: legibilidade garantida */
-    margin-bottom: 2mm !important;
-    line-height: 1.2 !important;
+  .text-md {
+    font-size: 11px !important;
   }
 
-  .receipt-footer .timestamp {
-    font-size: 12px !important; /* LEGÍVEL: 12px + bold */
-    font-weight: bold !important; /* BOLD: legibilidade garantida */
-    color: #000 !important;
-    margin-bottom: 0 !important;
+  .text-sm {
+    font-size: 10px !important;
   }
 
-  /* RESET COMPLETO - Remove espaços desnecessários */
-  .receipt-print h1, .receipt-print h2, .receipt-print h3 {
-    margin: 0 !important;
-    padding: 0 !important;
+  .text-center {
+    text-align: center !important;
   }
 
-  .receipt-print p {
-    margin: 0 !important;
-    padding: 0 !important;
+  /* ===== BOX PARA ENDEREÇO ===== */
+  .address-box {
+    border: 1px solid #000 !important;
+    padding: 2px !important;
+    margin-top: 2px !important;
   }
 
-  /* ALTURA DINÂMICA + VISIBILIDADE GARANTIDA */
-  @media print {
-    body {
-      height: auto !important; /* MUDANÇA: auto para se ajustar ao conteúdo */
-      min-height: 0 !important; /* ZERO: sem altura mínima forçada */
-      overflow: visible !important; /* MUDANÇA: visible para mostrar conteúdo */
-      
-      /* Layout simples sem posicionamento absoluto */
-      display: block !important;
-      margin: 0 !important;
-      padding: 0 !important;
-    }
-    
-    .receipt-print {
-      height: auto !important; /* MUDANÇA: auto para conteúdo real */
-      max-height: none !important; /* MUDANÇA: remove limitação */
-      overflow: visible !important; /* MUDANÇA: visible para mostrar tudo */
-      
-      /* POSICIONAMENTO SIMPLES */
-      position: static !important; /* MUDANÇA: static para fluxo normal */
-      margin: 0 !important;
-      display: block !important;
-      visibility: visible !important;
-      opacity: 1 !important;
-    }
+  /* ===== ZONA DE CORTE ===== */
+  .cut-zone {
+    height: 15mm !important;
+    display: block !important;
+    width: 100% !important;
   }
 }

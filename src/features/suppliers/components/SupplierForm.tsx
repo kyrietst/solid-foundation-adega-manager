@@ -1,22 +1,22 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /**
- * Componente de formulário para criar/editar fornecedores
+ * SupplierForm.tsx - Modal para criar/editar fornecedores
+ * Estilo padronizado: FormDialog + emojis + layout compacto
  */
 
 import React, { useState } from 'react';
-import { X, Save, Building2, Phone, Mail, MessageCircle, Plus, Minus } from 'lucide-react';
-import { BaseModal } from '@/shared/ui/composite/BaseModal';
+import { Plus, Minus, Building2, Phone, MessageCircle, Mail } from 'lucide-react';
+import { FormDialog } from '@/shared/ui/layout/FormDialog';
 import { Button } from '@/shared/ui/primitives/button';
 import { Input } from '@/shared/ui/primitives/input';
-import { Label } from '@/shared/ui/primitives/label';
 import { Textarea } from '@/shared/ui/primitives/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/primitives/select';
 import { Checkbox } from '@/shared/ui/primitives/checkbox';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/primitives/card';
+import { Label } from '@/shared/ui/primitives/label';
 import { useCreateSupplierForm, useEditSupplierForm } from '../hooks/useSupplierForm';
 import { useCreateSupplier, useUpdateSupplier } from '../hooks/useSuppliers';
 import { cn } from '@/core/config/utils';
-import { getSFProTextClasses } from '@/core/config/theme-utils';
+import { getGlassInputClasses } from '@/core/config/theme-utils';
 import type { Supplier } from '../types';
 import { PAYMENT_METHODS_OPTIONS, DELIVERY_TIME_OPTIONS } from '../types';
 
@@ -27,368 +27,268 @@ interface SupplierFormProps {
   supplier?: Supplier;
 }
 
-export const SupplierForm: React.FC<SupplierFormProps> = ({
-  isOpen,
-  onClose,
-  mode,
-  supplier,
-}) => {
+export const SupplierForm: React.FC<SupplierFormProps> = ({ isOpen, onClose, mode, supplier }) => {
   const [customProducts, setCustomProducts] = useState<string[]>(['']);
-  
+
   const createSupplier = useCreateSupplier();
   const updateSupplier = useUpdateSupplier();
-  
+
   const createForm = useCreateSupplierForm();
   const editForm = useEditSupplierForm(supplier || {} as Supplier);
-  
+
   const formData = mode === 'create' ? createForm : editForm;
-  const form = formData.form; // Acessar a instância do react-hook-form
+  const form = formData.form;
   const isSubmitting = formData.isLoading || (mode === 'create' ? createSupplier.isPending : updateSupplier.isPending);
-  
+
   // Reset form when closing
   React.useEffect(() => {
     if (!isOpen) {
       formData.reset();
       setCustomProducts(['']);
     }
-  }, [isOpen]); // Removido 'form' da dependência
-  
+  }, [isOpen]);
+
   // Initialize custom products for edit mode
   React.useEffect(() => {
     if (mode === 'edit' && supplier?.products_supplied) {
       setCustomProducts([...supplier.products_supplied, '']);
     }
-  }, [mode, supplier?.id]); // Usar supplier.id ao invés do objeto completo
-  
-  const handleAddProduct = () => {
-    setCustomProducts([...customProducts, '']);
-  };
-  
+  }, [mode, supplier?.id]);
+
+  const handleAddProduct = () => setCustomProducts([...customProducts, '']);
+
   const handleRemoveProduct = (index: number) => {
     if (customProducts.length > 1) {
       const newProducts = customProducts.filter((_, i) => i !== index);
       setCustomProducts(newProducts);
-      
-      // Update form value
-      const validProducts = newProducts.filter(p => p.trim());
-      formData.setValue('products_supplied', validProducts);
+      formData.setValue('products_supplied', newProducts.filter(p => p.trim()));
     }
   };
-  
+
   const handleProductChange = (index: number, value: string) => {
     const newProducts = [...customProducts];
     newProducts[index] = value;
     setCustomProducts(newProducts);
-    
-    // Update form value with valid products
-    const validProducts = newProducts.filter(p => p.trim());
-    formData.setValue('products_supplied', validProducts);
+    formData.setValue('products_supplied', newProducts.filter(p => p.trim()));
   };
-  
+
   const handlePaymentMethodToggle = (method: string, checked: boolean) => {
     const currentMethods = form.getValues('payment_methods') || [];
-    const newMethods = checked
-      ? [...currentMethods, method]
-      : currentMethods.filter(m => m !== method);
-
+    const newMethods = checked ? [...currentMethods, method] : currentMethods.filter(m => m !== method);
     formData.setValue('payment_methods', newMethods);
   };
-  
-  const handleFormSubmit = async (e?: React.BaseSyntheticEvent) => {
+
+  const handleFormSubmit = async () => {
     try {
-      // Use o handleSubmit do useStandardForm que já está integrado
-      await formData.handleSubmit(e);
+      await formData.handleSubmit();
       onClose();
     } catch (error) {
-      // Error handling is done by useStandardForm
       console.error('Form submission error:', error);
     }
   };
-  
+
+  const handleClose = () => {
+    if (isSubmitting) return;
+    formData.reset();
+    setCustomProducts(['']);
+    onClose();
+  };
+
+  const inputClasses = cn(getGlassInputClasses('form'), 'h-9 text-sm');
+
   return (
-    <BaseModal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={mode === 'create' ? 'Novo Fornecedor' : 'Editar Fornecedor'}
-      size="4xl"
-      maxHeight="90vh"
-      icon={Building2}
-      iconColor="text-purple-400"
-      className="backdrop-blur-xl border-purple-500/30 shadow-2xl"
+    <FormDialog
+      open={isOpen}
+      onOpenChange={(open) => !open && handleClose()}
+      title={mode === 'create' ? 'NOVO FORNECEDOR' : 'EDITAR FORNECEDOR'}
+      description="Cadastre os dados do fornecedor"
+      onSubmit={handleFormSubmit}
+      submitLabel={isSubmitting ? 'Salvando...' : mode === 'create' ? 'Criar Fornecedor' : 'Salvar'}
+      cancelLabel="Cancelar"
+      loading={isSubmitting}
+      size="full"
+      variant="premium"
+      glassEffect={true}
+      className="max-w-6xl"
     >
-        
-        <form onSubmit={handleFormSubmit} className="space-y-6">
-          {/* Informações básicas */}
-          <Card className="bg-black/70 backdrop-blur-xl border-purple-500/30">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
-                <Building2 className="h-5 w-5 text-purple-400" />
-                Informações da Empresa
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="company_name" className="text-gray-300">
-                  Nome da Empresa *
-                </Label>
-                <Input
-                  id="company_name"
-                  {...form.register('company_name')}
-                  placeholder="Ex: Distribuidora ABC Ltda"
-                  className="bg-black/70 border-white/30 text-white placeholder:text-gray-400"
-                />
-                {form.formState.errors.company_name && (
-                  <p className="text-sm text-red-400 mt-1">
-                    {form.formState.errors.company_name.message}
-                  </p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-          
-          {/* Informações de contato */}
-          <Card className="bg-black/70 border-white/20">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
-                <Phone className="h-5 w-5 text-green-400" />
-                Contatos
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="phone" className="text-gray-300 flex items-center gap-2">
-                  <Phone className="h-4 w-4" />
-                  Telefone
-                </Label>
-                <Input
-                  id="phone"
-                  {...form.register('contact_info.phone')}
-                  placeholder="(11) 99999-9999"
-                  className="bg-black/70 border-white/30 text-white placeholder:text-gray-400"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="whatsapp" className="text-gray-300 flex items-center gap-2">
-                  <MessageCircle className="h-4 w-4" />
-                  WhatsApp
-                </Label>
-                <Input
-                  id="whatsapp"
-                  {...form.register('contact_info.whatsapp')}
-                  placeholder="(11) 99999-9999"
-                  className="bg-black/70 border-white/30 text-white placeholder:text-gray-400"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="email" className="text-gray-300 flex items-center gap-2">
-                  <Mail className="h-4 w-4" />
-                  Email
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  {...form.register('contact_info.email')}
-                  placeholder="contato@empresa.com"
-                  className="bg-black/70 border-white/30 text-white placeholder:text-gray-400"
-                />
-              </div>
-              
-              {form.formState.errors.contact_info && (
-                <div className="md:col-span-3">
-                  <p className="text-sm text-red-400">
-                    {form.formState.errors.contact_info.message}
-                  </p>
-                </div>
+      {/* Layout em 3 colunas */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+
+        {/* ========================================== */}
+        {/* COLUNA 1 - Empresa + Contatos */}
+        {/* ========================================== */}
+        <div className="space-y-4">
+          {/* Empresa */}
+          <div className="space-y-3">
+            <h3 className="text-base font-semibold text-white flex items-center gap-2 border-b border-gray-700 pb-2">
+              <Building2 className="h-4 w-4 text-primary-yellow" />
+              🏢 Empresa
+            </h3>
+
+            <div>
+              <label className="block text-xs font-medium mb-1 text-gray-400">📝 Nome da Empresa *</label>
+              <Input
+                {...form.register('company_name')}
+                placeholder="Ex: Distribuidora ABC Ltda"
+                className={inputClasses}
+              />
+              {form.formState.errors.company_name && (
+                <p className="text-xs text-red-400 mt-1">{form.formState.errors.company_name.message}</p>
               )}
-            </CardContent>
-          </Card>
-          
-          {/* Produtos fornecidos */}
-          <Card className="bg-black/70 border-white/20">
-            <CardHeader>
-              <CardTitle className="text-white">Produtos Fornecidos *</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
+            </div>
+          </div>
+
+          {/* Contatos */}
+          <div className="space-y-3">
+            <h3 className="text-base font-semibold text-white flex items-center gap-2 border-b border-gray-700 pb-2">
+              <Phone className="h-4 w-4 text-primary-yellow" />
+              📱 Contatos
+            </h3>
+
+            <div>
+              <label className="block text-xs font-medium mb-1 text-gray-400">📞 Telefone</label>
+              <Input
+                {...form.register('contact_info.phone')}
+                placeholder="(11) 99999-9999"
+                className={inputClasses}
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium mb-1 text-gray-400">💬 WhatsApp</label>
+              <Input
+                {...form.register('contact_info.whatsapp')}
+                placeholder="(11) 99999-9999"
+                className={inputClasses}
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium mb-1 text-gray-400">📧 Email</label>
+              <Input
+                type="email"
+                {...form.register('contact_info.email')}
+                placeholder="contato@empresa.com"
+                className={inputClasses}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* ========================================== */}
+        {/* COLUNA 2 - Produtos + Comercial */}
+        {/* ========================================== */}
+        <div className="space-y-4">
+          {/* Produtos */}
+          <div className="space-y-3">
+            <h3 className="text-base font-semibold text-white flex items-center gap-2 border-b border-gray-700 pb-2">
+              📦 Produtos Fornecidos *
+            </h3>
+
+            <div className="space-y-2 max-h-32 overflow-y-auto">
               {customProducts.map((product, index) => (
                 <div key={index} className="flex items-center gap-2">
                   <Input
                     value={product}
                     onChange={(e) => handleProductChange(index, e.target.value)}
-                    placeholder="Ex: Cerveja, Vinho, Refrigerante..."
-                    className="flex-1 bg-black/70 border-white/30 text-white placeholder:text-gray-400"
+                    placeholder="Ex: Cerveja, Vinho..."
+                    className={cn(inputClasses, 'flex-1')}
                   />
                   {customProducts.length > 1 && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleRemoveProduct(index)}
-                      className="h-10 w-10 p-0 hover:bg-red-500/20 hover:text-red-400"
-                    >
+                    <Button type="button" variant="ghost" size="sm" onClick={() => handleRemoveProduct(index)} className="h-9 w-9 p-0 hover:bg-red-500/20 hover:text-red-400">
                       <Minus className="h-4 w-4" />
                     </Button>
                   )}
                   {index === customProducts.length - 1 && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleAddProduct}
-                      className="h-10 w-10 p-0 hover:bg-green-500/20 hover:text-green-400"
-                    >
+                    <Button type="button" variant="ghost" size="sm" onClick={handleAddProduct} className="h-9 w-9 p-0 hover:bg-green-500/20 hover:text-green-400">
                       <Plus className="h-4 w-4" />
                     </Button>
                   )}
                 </div>
               ))}
-              {form.formState.errors.products_supplied && (
-                <p className="text-sm text-red-400">
-                  {form.formState.errors.products_supplied.message}
-                </p>
-              )}
-            </CardContent>
-          </Card>
-          
-          {/* Informações comerciais */}
-          <Card className="bg-black/70 border-white/20">
-            <CardHeader>
-              <CardTitle className="text-white">Condições Comerciais</CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            </div>
+            {form.formState.errors.products_supplied && (
+              <p className="text-xs text-red-400">{form.formState.errors.products_supplied.message}</p>
+            )}
+          </div>
+
+          {/* Comercial */}
+          <div className="space-y-3">
+            <h3 className="text-base font-semibold text-white flex items-center gap-2 border-b border-gray-700 pb-2">
+              💼 Condições Comerciais
+            </h3>
+
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label htmlFor="delivery_time" className="text-gray-300">
-                  Prazo de Entrega
-                </Label>
-                <Select
-                  value={form.watch('delivery_time') || ''}
-                  onValueChange={(value) => formData.setValue('delivery_time', value)}
-                >
-                  <SelectTrigger className="bg-black/70 border-white/30 text-white">
-                    <SelectValue placeholder="Selecione o prazo" />
+                <label className="block text-xs font-medium mb-1 text-gray-400">🚚 Prazo Entrega</label>
+                <Select value={form.watch('delivery_time') || ''} onValueChange={(value) => formData.setValue('delivery_time', value)}>
+                  <SelectTrigger className={inputClasses}>
+                    <SelectValue placeholder="Selecione..." />
                   </SelectTrigger>
-                  <SelectContent className="bg-gray-900/95 border-white/20 backdrop-blur-xl">
+                  <SelectContent className="bg-gray-900/95 border-white/20">
                     {DELIVERY_TIME_OPTIONS.map((option) => (
-                      <SelectItem
-                        key={option.value}
-                        value={option.value}
-                        className="text-white hover:bg-white/10"
-                      >
+                      <SelectItem key={option.value} value={option.value} className="text-white hover:bg-white/10">
                         {option.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div>
-                <Label htmlFor="minimum_order_value" className="text-gray-300">
-                  Valor Mínimo de Pedido (R$)
-                </Label>
+                <label className="block text-xs font-medium mb-1 text-gray-400">💰 Pedido Mín (R$)</label>
                 <Input
-                  id="minimum_order_value"
                   type="number"
                   step="0.01"
                   min="0"
                   {...form.register('minimum_order_value', { valueAsNumber: true })}
                   placeholder="0.00"
-                  className="bg-black/70 border-white/30 text-white placeholder:text-gray-400"
+                  className={inputClasses}
                 />
-                {form.formState.errors.minimum_order_value && (
-                  <p className="text-sm text-red-400 mt-1">
-                    {form.formState.errors.minimum_order_value.message}
-                  </p>
-                )}
               </div>
-            </CardContent>
-          </Card>
-          
-          {/* Formas de pagamento */}
-          <Card className="bg-black/70 border-white/20">
-            <CardHeader>
-              <CardTitle className="text-white">Formas de Pagamento Aceitas *</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                {PAYMENT_METHODS_OPTIONS.map((method) => (
-                  <div key={method.value} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={method.value}
-                      checked={form.watch('payment_methods')?.includes(method.value) || false}
-                      onCheckedChange={(checked) => 
-                        handlePaymentMethodToggle(method.value, checked as boolean)
-                      }
-                      className="border-white/30 data-[state=checked]:bg-primary-yellow data-[state=checked]:border-primary-yellow"
-                    />
-                    <Label 
-                      htmlFor={method.value} 
-                      className="text-sm text-gray-300 cursor-pointer"
-                    >
-                      {method.label}
-                    </Label>
-                  </div>
-                ))}
-              </div>
-              {form.formState.errors.payment_methods && (
-                <p className="text-sm text-red-400 mt-2">
-                  {form.formState.errors.payment_methods.message}
-                </p>
-              )}
-            </CardContent>
-          </Card>
-          
-          {/* Observações */}
-          <Card className="bg-black/70 border-white/20">
-            <CardHeader>
-              <CardTitle className="text-white">Observações</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Textarea
-                {...form.register('notes')}
-                placeholder="Informações adicionais sobre o fornecedor..."
-                rows={3}
-                className="bg-black/70 border-white/30 text-white placeholder:text-gray-400 resize-none"
-              />
-              {form.formState.errors.notes && (
-                <p className="text-sm text-red-400 mt-1">
-                  {form.formState.errors.notes.message}
-                </p>
-              )}
-            </CardContent>
-          </Card>
-          
-          {/* Ações */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              disabled={isSubmitting}
-              className="bg-transparent border-white/30 text-white hover:bg-white/10"
-            >
-              <X className="h-4 w-4 mr-2" />
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
-              disabled={isSubmitting}
-              className="bg-primary-yellow text-black hover:bg-primary-yellow/90 font-medium"
-            >
-              {isSubmitting ? (
-                <>
-                  <div className="h-4 w-4 mr-2 animate-spin rounded-full border-2 border-black/30 border-t-black" />
-                  Salvando...
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4 mr-2" />
-                  {mode === 'create' ? 'Criar Fornecedor' : 'Salvar Alterações'}
-                </>
-              )}
-            </Button>
+            </div>
           </div>
-        </form>
-    </BaseModal>
+
+          {/* Observações */}
+          <div className="space-y-3">
+            <label className="block text-xs font-medium mb-1 text-gray-400">📋 Observações</label>
+            <Textarea
+              {...form.register('notes')}
+              placeholder="Informações adicionais..."
+              rows={2}
+              className={cn(inputClasses, 'min-h-[50px] h-auto')}
+            />
+          </div>
+        </div>
+
+        {/* ========================================== */}
+        {/* COLUNA 3 - Formas de Pagamento */}
+        {/* ========================================== */}
+        <div className="space-y-3">
+          <h3 className="text-base font-semibold text-white flex items-center gap-2 border-b border-gray-700 pb-2">
+            💳 Formas de Pagamento *
+          </h3>
+
+          <div className="grid grid-cols-2 gap-2">
+            {PAYMENT_METHODS_OPTIONS.map((method) => (
+              <div key={method.value} className="flex items-center space-x-2 p-2 rounded-lg bg-gray-800/30 hover:bg-gray-800/50 transition-colors">
+                <Checkbox
+                  id={method.value}
+                  checked={form.watch('payment_methods')?.includes(method.value) || false}
+                  onCheckedChange={(checked) => handlePaymentMethodToggle(method.value, checked as boolean)}
+                  className="border-white/30 data-[state=checked]:bg-primary-yellow data-[state=checked]:border-primary-yellow"
+                />
+                <Label htmlFor={method.value} className="text-xs text-gray-300 cursor-pointer">
+                  {method.label}
+                </Label>
+              </div>
+            ))}
+          </div>
+          {form.formState.errors.payment_methods && (
+            <p className="text-xs text-red-400">{form.formState.errors.payment_methods.message}</p>
+          )}
+        </div>
+      </div>
+    </FormDialog>
   );
 };

@@ -133,13 +133,13 @@ const modalTypeConfig: Record<ModalType, {
   },
   action: {
     colors: {
-      primary: 'accent-green', // #10b981
+      primary: 'gray', // Neutro
       background: 'bg-gray-950',
-      border: 'border-accent-green/20',
-      headerBg: 'bg-gradient-to-r from-accent-green/10 to-accent-green/5',
-      accentText: 'text-accent-green',
-      ring: 'ring-accent-green/50',
-      iconBg: 'bg-accent-green/10'
+      border: 'border-gray-800', // Borda neutra
+      headerBg: 'bg-gray-900', // Header sólido neutro, sem gradiente
+      accentText: 'text-gray-300', // Texto neutro
+      ring: 'ring-gray-600',
+      iconBg: 'bg-gray-800' // Fundo do ícone neutro
     },
     defaultIcon: Plus,
     ariaLabel: 'Modal de ação'
@@ -185,25 +185,20 @@ const ModalHeader: React.FC<ModalHeaderProps> = ({
 
   return (
     <div className={cn(
-      'px-6 py-4 border-b border-gray-800/50 relative overflow-hidden',
+      'px-6 py-4 border-b border-gray-800',
       config.colors.headerBg
     )}>
-      {/* Subtle gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.02] to-transparent" />
-
-      <div className="relative flex items-start gap-4">
-        {/* Icon container with glow effect */}
+      <div className="flex items-start gap-4">
+        {/* Icon container - simples e limpo */}
         <div className={cn(
-          'flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center',
-          'border transition-all duration-200',
-          config.colors.border,
+          'flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center',
           config.colors.iconBg,
           loading && 'animate-pulse'
         )}>
           {loading ? (
-            <Loader2 className={cn('h-6 w-6 animate-spin', config.colors.accentText)} />
+            <Loader2 className={cn('h-5 w-5 animate-spin', config.colors.accentText)} />
           ) : (
-            <IconComponent className={cn('h-6 w-6', config.colors.accentText)} />
+            <IconComponent className={cn('h-5 w-5', config.colors.accentText)} />
           )}
         </div>
 
@@ -356,7 +351,7 @@ const ModalActions: React.FC<ModalActionsProps> = ({
                   // Primary button styling based on modal type
                   'bg-accent-blue hover:bg-accent-blue/90 text-white': modalType === 'view',
                   'bg-accent-gold-100 hover:bg-accent-gold-90 text-primary-black': modalType === 'edit',
-                  'bg-accent-green hover:bg-accent-green/90 text-white': modalType === 'action',
+                  'bg-primary-yellow hover:bg-primary-yellow/90 text-primary-black': modalType === 'action',
                   'bg-accent-red hover:bg-accent-red/90 text-white': modalType === 'danger'
                 },
                 primaryAction.disabled && 'opacity-50 cursor-not-allowed'
