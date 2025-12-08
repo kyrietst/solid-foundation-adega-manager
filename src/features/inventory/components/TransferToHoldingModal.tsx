@@ -1,9 +1,6 @@
 /**
  * Modal para transferir estoque da Loja 1 (Active) para Loja 2 (Holding)
- * v3.6.1 - "Active vs Holding Stock" Architecture
- *
- * Este modal permite transferências atômicas de pacotes/unidades da Loja 1 para Loja 2
- * usando a RPC transfer_to_store2_holding que garante consistência e auditoria.
+ * v3.6.5 - Padronizado com FormDialog + estilo neutro + emojis
  */
 
 import React from 'react';
@@ -13,12 +10,12 @@ import { z } from 'zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
 import { useToast } from '@/shared/hooks/common/use-toast';
-import { Button } from '@/shared/ui/primitives/button';
+import { FormDialog } from '@/shared/ui/layout/FormDialog';
 import { Input } from '@/shared/ui/primitives/input';
 import { Textarea } from '@/shared/ui/primitives/textarea';
-import { Label } from '@/shared/ui/primitives/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/shared/ui/primitives/dialog';
-import { Loader2, ArrowRight, Package, Box } from 'lucide-react';
+import { Package, Box, ArrowRight, Store } from 'lucide-react';
+import { cn } from '@/core/config/utils';
+import { getGlassInputClasses } from '@/core/config/theme-utils';
 import type { Product } from '@/core/types/inventory.types';
 
 // Schema de validação Zod
@@ -28,10 +25,7 @@ const transferSchema = z.object({
   notes: z.string().optional(),
 }).refine(
   (data) => data.packages > 0 || data.unitsLoose > 0,
-  {
-    message: 'Transfira pelo menos pacotes OU unidades',
-    path: ['packages'], // Mostrar erro no campo packages
-  }
+  { message: 'Transfira pelo menos pacotes OU unidades', path: ['packages'] }
 );
 
 type TransferFormData = z.infer<typeof transferSchema>;
@@ -60,11 +54,7 @@ export const TransferToHoldingModal: React.FC<TransferToHoldingModalProps> = ({
     watch,
   } = useForm<TransferFormData>({
     resolver: zodResolver(transferSchema),
-    defaultValues: {
-      packages: 0,
-      unitsLoose: 0,
-      notes: '',
-    },
+    defaultValues: { packages: 0, unitsLoose: 0, notes: '' },
   });
 
   const packages = watch('packages');
@@ -75,12 +65,11 @@ export const TransferToHoldingModal: React.FC<TransferToHoldingModalProps> = ({
     mutationFn: async (data: TransferFormData) => {
       if (!product) throw new Error('Produto não selecionado');
 
-      // Chamar RPC transfer_to_store2_holding
       const { data: result, error } = await supabase.rpc('transfer_to_store2_holding', {
         p_product_id: product.id,
         p_quantity_packages: data.packages,
         p_quantity_units: data.unitsLoose,
-        p_user_id: null, // TODO: Pegar user_id do contexto de autenticação
+        p_user_id: null,
         p_notes: data.notes || null,
       });
 
@@ -91,13 +80,12 @@ export const TransferToHoldingModal: React.FC<TransferToHoldingModalProps> = ({
 
       return result;
     },
-    onSuccess: (result) => {
-      // Invalidar cache de produtos para atualizar valores
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
       queryClient.invalidateQueries({ queryKey: ['products', 'for-store-toggle'] });
 
       toast({
-        title: 'Transferência realizada',
+        title: '✅ Transferência realizada',
         description: `${packages} pacote(s) e ${unitsLoose} unidade(s) transferidos para Loja 2 (Depósito)`,
         variant: 'default',
       });
@@ -107,22 +95,11 @@ export const TransferToHoldingModal: React.FC<TransferToHoldingModalProps> = ({
       onSuccess?.();
     },
     onError: (error: any) => {
-      console.error('Erro ao transferir estoque:', error);
-
-      // Mensagens de erro amigáveis
       let errorMessage = 'Erro ao transferir estoque. Tente novamente.';
+      if (error.message?.includes('Estoque insuficiente')) errorMessage = error.message;
+      else if (error.message?.includes('Produto não encontrado')) errorMessage = 'Produto não encontrado ou foi deletado.';
 
-      if (error.message?.includes('Estoque insuficiente')) {
-        errorMessage = error.message;
-      } else if (error.message?.includes('Produto não encontrado')) {
-        errorMessage = 'Produto não encontrado ou foi deletado.';
-      }
-
-      toast({
-        title: 'Erro na transferência',
-        description: errorMessage,
-        variant: 'destructive',
-      });
+      toast({ title: '❌ Erro na transferência', description: errorMessage, variant: 'destructive' });
     },
   });
 
@@ -137,118 +114,133 @@ export const TransferToHoldingModal: React.FC<TransferToHoldingModalProps> = ({
 
   if (!product) return null;
 
-  return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[500px] bg-black/95 border-white/10">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-bold text-white flex items-center gap-2">
-            <ArrowRight className="h-5 w-5 text-purple-400" />
-            Transferir para Loja 2 (Depósito)
-          </DialogTitle>
-          <DialogDescription className="text-white/60">
-            Transferir estoque de <span className="font-semibold text-white">{product.name}</span> da Loja 1 (Vendas) para Loja 2 (Depósito)
-          </DialogDescription>
-        </DialogHeader>
+  const inputClasses = cn(getGlassInputClasses('form'), 'h-9 text-sm');
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          {/* Estoque Disponível */}
-          <div className="bg-white/5 border border-white/10 rounded-lg p-4">
-            <h3 className="text-sm font-medium text-white/70 mb-2">Estoque Disponível (Loja 1)</h3>
-            <div className="flex gap-4">
-              <div className="flex items-center gap-2">
-                <Package className="h-4 w-4 text-blue-400" />
-                <span className="text-white font-semibold">{product.stock_packages}</span>
-                <span className="text-white/50 text-sm">pacotes</span>
+  return (
+    <FormDialog
+      open={isOpen}
+      onOpenChange={(open) => !open && handleClose()}
+      title="TRANSFERIR ESTOQUE"
+      description={`Transferir "${product.name}" para Loja 2 (Depósito)`}
+      onSubmit={handleSubmit(onSubmit)}
+      submitLabel={transferMutation.isPending ? 'Transferindo...' : 'Transferir'}
+      cancelLabel="Cancelar"
+      loading={transferMutation.isPending}
+      size="full"
+      variant="premium"
+      glassEffect={true}
+      className="max-w-2xl"
+    >
+      {/* Layout compacto em 2 colunas */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mt-4">
+
+        {/* ========================================== */}
+        {/* COLUNA 1 - Origem (Loja 1) */}
+        {/* ========================================== */}
+        <div className="space-y-3">
+          <h3 className="text-base font-semibold text-white flex items-center gap-2 border-b border-gray-700 pb-2">
+            <Store className="h-4 w-4 text-blue-400" />
+            🏪 Loja 1 (Vendas) - Origem
+          </h3>
+
+          {/* Estoque disponível */}
+          <div className="p-3 rounded-lg bg-gray-800/30 border border-gray-700/50">
+            <p className="text-xs text-gray-400 mb-2">📦 Estoque Disponível</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="text-center p-2 bg-blue-500/10 rounded border border-blue-500/20">
+                <Package className="h-4 w-4 text-blue-400 mx-auto mb-1" />
+                <div className="text-lg font-bold text-blue-400">{product.stock_packages || 0}</div>
+                <div className="text-xs text-gray-400">pacotes</div>
               </div>
-              <div className="flex items-center gap-2">
-                <Box className="h-4 w-4 text-green-400" />
-                <span className="text-white font-semibold">{product.stock_units_loose}</span>
-                <span className="text-white/50 text-sm">unidades</span>
+              <div className="text-center p-2 bg-green-500/10 rounded border border-green-500/20">
+                <Box className="h-4 w-4 text-green-400 mx-auto mb-1" />
+                <div className="text-lg font-bold text-green-400">{product.stock_units_loose || 0}</div>
+                <div className="text-xs text-gray-400">unidades</div>
               </div>
             </div>
           </div>
 
-          {/* Campo: Pacotes */}
-          <div className="space-y-2">
-            <Label htmlFor="packages" className="text-white">
-              Pacotes a transferir
-            </Label>
+          {/* Quantidade a transferir */}
+          <div>
+            <label className="block text-xs font-medium mb-1 text-gray-400">📦 Pacotes a Transferir</label>
             <Input
-              id="packages"
               type="number"
               min="0"
               max={product.stock_packages}
               {...register('packages', { valueAsNumber: true })}
-              className="bg-white/5 border-white/20 text-white"
+              className={inputClasses}
               placeholder="0"
             />
-            {errors.packages && (
-              <p className="text-red-400 text-sm">{errors.packages.message}</p>
-            )}
+            {errors.packages && <p className="text-xs text-red-400 mt-1">{errors.packages.message}</p>}
           </div>
 
-          {/* Campo: Unidades Soltas */}
-          <div className="space-y-2">
-            <Label htmlFor="unitsLoose" className="text-white">
-              Unidades soltas a transferir
-            </Label>
+          <div>
+            <label className="block text-xs font-medium mb-1 text-gray-400">🍾 Unidades Soltas a Transferir</label>
             <Input
-              id="unitsLoose"
               type="number"
               min="0"
               max={product.stock_units_loose}
               {...register('unitsLoose', { valueAsNumber: true })}
-              className="bg-white/5 border-white/20 text-white"
+              className={inputClasses}
               placeholder="0"
             />
-            {errors.unitsLoose && (
-              <p className="text-red-400 text-sm">{errors.unitsLoose.message}</p>
-            )}
+            {errors.unitsLoose && <p className="text-xs text-red-400 mt-1">{errors.unitsLoose.message}</p>}
+          </div>
+        </div>
+
+        {/* ========================================== */}
+        {/* COLUNA 2 - Destino (Loja 2) + Preview */}
+        {/* ========================================== */}
+        <div className="space-y-3">
+          <h3 className="text-base font-semibold text-white flex items-center gap-2 border-b border-gray-700 pb-2">
+            <ArrowRight className="h-4 w-4 text-purple-400" />
+            🏬 Loja 2 (Depósito) - Destino
+          </h3>
+
+          {/* Preview da transferência */}
+          <div className="p-3 rounded-lg bg-purple-500/10 border border-purple-500/30">
+            <p className="text-xs text-purple-300 mb-2 flex items-center gap-1">
+              <ArrowRight className="h-3 w-3" />
+              📋 Será Transferido:
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="text-center p-2 bg-purple-500/20 rounded">
+                <div className="text-lg font-bold text-purple-300">{packages || 0}</div>
+                <div className="text-xs text-gray-400">pacotes</div>
+              </div>
+              <div className="text-center p-2 bg-purple-500/20 rounded">
+                <div className="text-lg font-bold text-purple-300">{unitsLoose || 0}</div>
+                <div className="text-xs text-gray-400">unidades</div>
+              </div>
+            </div>
           </div>
 
-          {/* Campo: Observações */}
-          <div className="space-y-2">
-            <Label htmlFor="notes" className="text-white">
-              Observações (opcional)
-            </Label>
+          {/* Estoque atual na Loja 2 */}
+          <div className="p-3 rounded-lg bg-gray-800/30 border border-gray-700/50">
+            <p className="text-xs text-gray-400 mb-2">📊 Estoque Atual na Loja 2</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="text-center p-2 bg-gray-700/30 rounded">
+                <div className="text-sm font-semibold text-gray-300">{product.store2_holding_packages || 0}</div>
+                <div className="text-xs text-gray-500">pacotes</div>
+              </div>
+              <div className="text-center p-2 bg-gray-700/30 rounded">
+                <div className="text-sm font-semibold text-gray-300">{product.store2_holding_units_loose || 0}</div>
+                <div className="text-xs text-gray-500">unidades</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Observações */}
+          <div>
+            <label className="block text-xs font-medium mb-1 text-gray-400">📝 Observações (opcional)</label>
             <Textarea
-              id="notes"
               {...register('notes')}
-              className="bg-white/5 border-white/20 text-white min-h-[80px]"
+              className={cn(inputClasses, 'h-20 resize-none')}
               placeholder="Ex: Transferência para armazenamento de longo prazo"
             />
           </div>
-
-          {/* Botões */}
-          <div className="flex gap-2 justify-end pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleClose}
-              disabled={transferMutation.isPending}
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
-              disabled={transferMutation.isPending}
-              className="bg-purple-600 hover:bg-purple-700"
-            >
-              {transferMutation.isPending ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Transferindo...
-                </>
-              ) : (
-                <>
-                  <ArrowRight className="h-4 w-4 mr-2" />
-                  Transferir
-                </>
-              )}
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
+        </div>
+      </div>
+    </FormDialog>
   );
 };

@@ -1,45 +1,32 @@
 /**
  * StockAdjustmentModal.tsx - Modal de ajuste de estoque com Estado Absoluto
+ * v3.6.5 - Padronizado com FormDialog + estilo neutro + emojis
  * REFATORADO PARA MODELO ABSOLUTO: Frontend como mensageiro - não calcula deltas
  * Envia valores absolutos diretamente para o backend via set_product_stock_absolute
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { EnhancedBaseModal, ModalSection } from '@/shared/ui/composite';
-import { Button } from '@/shared/ui/primitives/button';
+import { FormDialog } from '@/shared/ui/layout/FormDialog';
 import { Input } from '@/shared/ui/primitives/input';
-import { Label } from '@/shared/ui/primitives/label';
-import { Textarea } from '@/shared/ui/primitives/textarea';
-import {
-  Package,
-  Wine,
-  Calculator,
-  AlertTriangle,
-  CheckCircle,
-  Loader2,
-  Eye,
-  ClipboardList
-} from 'lucide-react';
+import { Package, Wine, AlertTriangle, Loader2, Eye, ArrowRight, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { cn } from '@/core/config/utils';
-import { getGlassCardClasses } from '@/core/config/theme-utils';
+import { getGlassInputClasses } from '@/core/config/theme-utils';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
 import { useToast } from '@/shared/hooks/common/use-toast';
 import { useAuth } from '@/app/providers/AuthContext';
 import type { Product } from '@/core/types/inventory.types';
-import { getSaoPauloTimestamp } from '@/shared/hooks/common/use-brasil-timezone';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/primitives/select';
 
 // ✅ MOTIVOS SIMPLIFICADOS PARA INVENTÁRIO RÁPIDO
 const ADJUSTMENT_REASONS = {
-  'inventory': 'Inventário/Correção',
-  'loss': 'Perda/Quebra',
-  'consumption': 'Consumo Próprio',
-  'purchase': 'Chegada de Mercadoria / Compra'
-  // 'transfer' REMOVIDO - usar TransferToHoldingModal para transferências Loja 1 → Loja 2
+  'inventory': { label: '📋 Inventário/Correção', emoji: '📋' },
+  'loss': { label: '💔 Perda/Quebra', emoji: '💔' },
+  'consumption': { label: '🍷 Consumo Próprio', emoji: '🍷' },
+  'purchase': { label: '📦 Chegada de Mercadoria', emoji: '📦' }
 } as const;
 
 // Schema de validação para o formulário
@@ -70,7 +57,7 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
   const queryClient = useQueryClient();
   const { user } = useAuth();
 
-  // Buscar dados do produto com campos de dupla contagem
+  // Buscar dados do produto
   const {
     data: product,
     isLoading: isLoadingProduct,
@@ -79,41 +66,26 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
     queryKey: ['product-dual-stock', productId],
     queryFn: async (): Promise<Product | null> => {
       if (!productId) return null;
-
       const { data, error } = await supabase
         .from('products')
         .select('*')
-        .eq('id', productId)
+        .eq('id', productId as any)
         .single();
 
       if (error) {
-        // PGRST116 = produto deletado/não encontrado, retornar null ao invés de throw
-        if (error.code === 'PGRST116') {
-          return null;
-        }
+        if (error.code === 'PGRST116') return null;
         throw error;
       }
-
-      return data;
+      return data as unknown as Product;
     },
     enabled: !!productId && isOpen,
-    // 🚨 ESTRATÉGIA ANTI-CACHE AGRESSIVA
-    staleTime: 0, // Dados sempre considerados obsoletos
-    refetchOnWindowFocus: true, // Refetch ao focar janela
-    refetchOnMount: true, // Refetch ao montar componente
-    refetchOnReconnect: true, // Refetch ao reconectar
-    cacheTime: 0, // Não manter cache (React Query v4) / gcTime: 0 (v5)
-    gcTime: 0, // Garbage collection imediato (React Query v5)
-    retry: (failureCount, error) => {
-      // Não fazer retry para produtos deletados/não encontrados
-      if (failureCount < 3 && error.code !== 'PGRST116' && !error.message?.includes('not found')) {
-        return true;
-      }
-      return false;
-    },
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+    gcTime: 0,
   });
 
-  // Configuração do formulário com React Hook Form + Zod
+  // Configuração do formulário
   const {
     register,
     handleSubmit,
@@ -126,164 +98,58 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
     defaultValues: {
       newPackages: 0,
       newUnitsLoose: 0,
-      reason: 'inventory' as const // ✅ Padrão: Inventário/Correção
+      reason: 'inventory' as const
     }
   });
 
-  // Observar mudanças nos campos para cálculo em tempo real
   const watchedValues = watch();
 
   // Configurar valores iniciais quando o produto for carregado
   React.useEffect(() => {
     if (product) {
-      // ✅ SIMPLIFICADO: Sempre usar campos legacy consolidados
       setValue('newPackages', product.stock_packages || 0);
       setValue('newUnitsLoose', product.stock_units_loose || 0);
     }
   }, [product, setValue]);
 
-  // Mutation para ajuste de estoque usando estado absoluto
+  // Mutation para ajuste de estoque
   const adjustStockMutation = useMutation({
     mutationFn: async (formData: StockAdjustmentFormData) => {
-      // 🛡️ VALIDAÇÕES CRÍTICAS DE SEGURANÇA
-      if (!product) {
-        console.error('❌ ERRO CRÍTICO: Produto não encontrado');
-        throw new Error('Produto não encontrado');
-      }
+      if (!product) throw new Error('Produto não encontrado');
+      if (!user?.id) throw new Error('Usuário não autenticado.');
 
-      if (!user) {
-        console.error('❌ ERRO CRÍTICO: Usuário não está autenticado');
-        throw new Error('Usuário não autenticado. Por favor, faça login novamente.');
-      }
-
-      if (!user.id) {
-        console.error('❌ ERRO CRÍTICO: ID do usuário não disponível', { user });
-        throw new Error('ID do usuário não disponível. Por favor, faça login novamente.');
-      }
-
-      if (!productId) {
-        console.error('❌ ERRO CRÍTICO: ID do produto não fornecido');
-        throw new Error('ID do produto é obrigatório');
-      }
-
-      // Garantir valores numéricos válidos
       const newPackages = Number(formData.newPackages || 0);
       const newUnitsLoose = Number(formData.newUnitsLoose || 0);
+      const reasonText = ADJUSTMENT_REASONS[formData.reason].label.replace(/^[^\s]+\s/, '');
 
-      // ✅ Traduzir enum do motivo para texto legível
-      const reasonText = ADJUSTMENT_REASONS[formData.reason];
-
-      // Validações antes de enviar
-      if (isNaN(newPackages) || isNaN(newUnitsLoose)) {
-        console.error('❌ VALIDAÇÃO: Valores inválidos (NaN detectado)', {
-          newPackages, newUnitsLoose
-        });
-        throw new Error('Valores inválidos (NaN detectado)');
-      }
-
-      if (newPackages < 0 || newUnitsLoose < 0) {
-        console.error('❌ VALIDAÇÃO: Valores negativos não permitidos', {
-          newPackages, newUnitsLoose
-        });
-        throw new Error('Valores não podem ser negativos');
-      }
-
-      // ✅ SIMPLIFICADO: Usar RPC legacy (sem multistore)
       const { data: result, error } = await supabase
         .rpc('set_product_stock_absolute', {
           p_product_id: productId,
           p_new_packages: newPackages,
           p_new_units_loose: newUnitsLoose,
-          p_reason: reasonText, // Texto legível do motivo
+          p_reason: reasonText,
           p_user_id: user.id
         });
 
-      if (error) {
-        console.error('❌ ERRO RPC set_product_stock_absolute:', {
-          error,
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code,
-          parameters_sent: {
-            p_product_id: productId,
-            p_new_packages: newPackages,
-            p_new_units_loose: newUnitsLoose,
-            p_reason: reasonText,
-            p_user_id: user.id
-          }
-        });
-        throw error;
-      }
-
-
-      // Verificar se a RPC retornou sucesso
-      if (!result?.success) {
-        console.error('❌ RPC retornou falha:', result);
-        throw new Error(result?.error || 'Erro desconhecido no ajuste de estoque');
-      }
-
-      return result;
+      if (error) throw error;
+      const typedResult = result as unknown as { success?: boolean; error?: string };
+      if (!typedResult?.success) throw new Error(typedResult?.error || 'Erro desconhecido');
+      return typedResult;
     },
     onSuccess: async (result, variables) => {
-      // 🚨 INVALIDAÇÃO AGRESSIVA DE CACHE - Garantir que todos os dados sejam atualizados
       await Promise.all([
-        // Core product queries
         queryClient.invalidateQueries({ queryKey: ['products'] }),
         queryClient.invalidateQueries({ queryKey: ['product', productId] }),
         queryClient.invalidateQueries({ queryKey: ['product-dual-stock', productId] }),
-        queryClient.invalidateQueries({ queryKey: ['product-ssot', productId] }),
-
-        // 🏪 v3.4.2 - Multi-store queries
         queryClient.invalidateQueries({ queryKey: ['products', 'store'] }),
-        queryClient.invalidateQueries({ queryKey: ['products', 'store', 'store1'] }),
-        queryClient.invalidateQueries({ queryKey: ['products', 'store', 'store2'] }),
-        queryClient.invalidateQueries({ queryKey: ['products', 'store-counts'] }),
-
-        // SSoT product queries
-        queryClient.invalidateQueries({ queryKey: ['products-ssot'] }),
-        queryClient.invalidateQueries({ queryKey: ['all-products-ssot'] }),
-        queryClient.invalidateQueries({ queryKey: ['stock-availability-ssot', productId] }),
-
-        // Product variants and availability
-        queryClient.invalidateQueries({ queryKey: ['product-variants', productId] }),
-        queryClient.invalidateQueries({ queryKey: ['product-variants'] }),
-        queryClient.invalidateQueries({ queryKey: ['products-with-variants'] }),
-        queryClient.invalidateQueries({ queryKey: ['variant-availability'] }),
-
-        // Grid and listing queries
-        queryClient.invalidateQueries({ queryKey: ['products', 'available'] }),
-        queryClient.invalidateQueries({ queryKey: ['products', 'lowStock'] }),
-
-        // Inventory and movements
         queryClient.invalidateQueries({ queryKey: ['inventory_movements'] }),
-        queryClient.invalidateQueries({ queryKey: ['movements'] }),
-
-        // Dashboard and reporting
-        queryClient.invalidateQueries({ queryKey: ['dashboard'] }),
-        queryClient.invalidateQueries({ queryKey: ['reports'] }),
-        queryClient.invalidateQueries({ queryKey: ['top-products'] }),
-
-        // ✅ v3.5.4 - KPIs de inventário para Dashboard atualizar
         queryClient.invalidateQueries({ queryKey: ['kpis-inventory'] }),
-        queryClient.invalidateQueries({ queryKey: ['out-of-stock-products'] }),
-        // ✅ v3.5.5 - Invalidar infinite query de low-stock (Load More pattern)
         queryClient.invalidateQueries({ queryKey: ['low-stock-products-infinite'] }),
-
-        // Categories and batch data
-        queryClient.invalidateQueries({ queryKey: ['products-by-category'] }),
-        queryClient.invalidateQueries({ queryKey: ['batches', productId] }),
       ]);
 
-      // 🔄 REFETCH IMEDIATO do produto específico para garantir dados atualizados
-      await queryClient.refetchQueries({
-        queryKey: ['product-dual-stock', productId],
-        type: 'active'
-      });
-
       toast({
-        title: "Estoque ajustado com sucesso!",
-        description: `Estoque atualizado para: ${variables.newPackages} pacotes e ${variables.newUnitsLoose} unidades soltas`,
+        title: "✅ Estoque ajustado!",
+        description: `Novo estoque: ${variables.newPackages} pacotes e ${variables.newUnitsLoose} unidades`,
       });
 
       onSuccess?.();
@@ -292,38 +158,29 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
     },
     onError: (error) => {
       toast({
-        title: "Erro ao ajustar estoque",
+        title: "❌ Erro ao ajustar estoque",
         description: error.message,
         variant: "destructive",
       });
     }
   });
 
-  // ULTRA SIMPLIFICADO - Apenas 2 números diretos
+  // Cálculos de preview
   const calculations = useMemo(() => {
     if (!product) return null;
 
-    // ✅ SIMPLIFICADO: Sempre usar campos legacy consolidados
     const currentPackages = Number(product.stock_packages || 0);
     const currentUnitsLoose = Number(product.stock_units_loose || 0);
     const newPackages = Number(watchedValues.newPackages || 0);
     const newUnitsLoose = Number(watchedValues.newUnitsLoose || 0);
 
-    // Validar que não temos NaN
-    if (isNaN(currentPackages) || isNaN(currentUnitsLoose) || isNaN(newPackages) || isNaN(newUnitsLoose)) {
-      console.error('❌ NaN detectado:', { currentPackages, currentUnitsLoose, newPackages, newUnitsLoose });
-      return null;
-    }
-
-    // APENAS diferenças diretas dos 2 campos
-    const packagesChange = newPackages - currentPackages;
-    const unitsLooseChange = newUnitsLoose - currentUnitsLoose;
+    if (isNaN(currentPackages) || isNaN(newPackages)) return null;
 
     return {
       currentPackages,
       currentUnitsLoose,
-      packagesChange,
-      unitsLooseChange,
+      packagesChange: newPackages - currentPackages,
+      unitsLooseChange: newUnitsLoose - currentUnitsLoose,
       hasChanges: newPackages !== currentPackages || newUnitsLoose !== currentUnitsLoose
     };
   }, [product, watchedValues]);
@@ -333,249 +190,251 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
     onClose();
   };
 
-  // Função simplificada - apenas envia valores absolutos
   const onSubmit = (data: StockAdjustmentFormData) => {
     adjustStockMutation.mutate(data);
   };
 
-  // ✅ FIX: Previne flash do modal de erro durante carregamento inicial
-  // Só mostra erro se realmente houve um erro E não está carregando
+  // Loading state
   if (isLoadingProduct || (!product && !productError)) {
     return (
-      <EnhancedBaseModal
-        isOpen={isOpen}
-        onClose={handleClose}
-        modalType="action"
-        title="Ajustar Estoque"
-        subtitle="Carregando informações do produto"
-        size="5xl"
+      <FormDialog
+        open={isOpen}
+        onOpenChange={(open) => !open && handleClose()}
+        title="AJUSTAR ESTOQUE"
+        description="Carregando informações do produto..."
+        onSubmit={() => { }}
+        submitLabel="Aguarde..."
+        cancelLabel="Cancelar"
         loading={true}
+        className="max-w-3xl"
       >
         <div className="flex items-center justify-center py-8">
           <Loader2 className="h-6 w-6 animate-spin text-yellow-400 mr-2" />
           <span className="text-gray-300">Carregando produto...</span>
         </div>
-      </EnhancedBaseModal>
+      </FormDialog>
     );
   }
 
-  // ✅ FIX: Só mostra erro se realmente houver erro ou dados inválidos após carregamento
+  // Error state
   if (productError || !product || !calculations) {
     return (
-      <EnhancedBaseModal
-        isOpen={isOpen}
-        onClose={handleClose}
-        modalType="danger"
-        title="Erro ao Carregar"
-        subtitle="Não foi possível carregar as informações do produto"
-        size="5xl"
-        status="error"
-        customIcon={AlertTriangle}
+      <FormDialog
+        open={isOpen}
+        onOpenChange={(open) => !open && handleClose()}
+        title="ERRO"
+        description="Não foi possível carregar o produto"
+        onSubmit={handleClose}
+        submitLabel="Fechar"
+        className="max-w-3xl"
       >
         <div className="flex items-center justify-center py-8 text-red-400">
           <AlertTriangle className="h-6 w-6 mr-2" />
           <span>Erro ao carregar produto. Tente novamente.</span>
         </div>
-      </EnhancedBaseModal>
+      </FormDialog>
     );
   }
 
+  const inputClasses = cn(getGlassInputClasses('form'), 'h-9 text-sm');
+
+  // Função helper para renderizar indicador de mudança
+  const renderChangeIndicator = (change: number) => {
+    if (change > 0) return <TrendingUp className="h-4 w-4 text-green-400" />;
+    if (change < 0) return <TrendingDown className="h-4 w-4 text-red-400" />;
+    return <Minus className="h-4 w-4 text-gray-500" />;
+  };
+
   return (
-    <EnhancedBaseModal
-      isOpen={isOpen}
-      onClose={handleClose}
-      modalType="action"
-      title="Ajustar Estoque"
-      subtitle={`${product.name} - Contagem Física`}
-      size="5xl"
-      className="max-h-[90vh] overflow-y-auto"
-      customIcon={ClipboardList}
+    <FormDialog
+      open={isOpen}
+      onOpenChange={(open) => !open && handleClose()}
+      title="AJUSTAR ESTOQUE"
+      description={`📦 ${product.name} - Contagem Física da Loja 1`}
+      onSubmit={handleSubmit(onSubmit)}
+      submitLabel={adjustStockMutation.isPending ? "Ajustando..." : "✓ Confirmar Ajuste"}
+      cancelLabel="Cancelar"
       loading={adjustStockMutation.isPending}
-      showCloseButton={false}
-      primaryAction={{
-        label: adjustStockMutation.isPending ? "Ajustando..." : "Confirmar Ajuste",
-        icon: adjustStockMutation.isPending ? Loader2 : CheckCircle,
-        onClick: handleSubmit(onSubmit),
-        disabled: !isDirty || !calculations.hasChanges || adjustStockMutation.isPending || !user?.id,
-        loading: adjustStockMutation.isPending
-      }}
-      secondaryAction={{
-        label: "Cancelar",
-        onClick: handleClose,
-        disabled: adjustStockMutation.isPending
-      }}
+      size="full"
+      variant="premium"
+      glassEffect={true}
+      className="max-w-3xl"
+      disabled={!isDirty || !calculations.hasChanges || !user?.id}
     >
-      {/* Seção: Informações Atuais do Produto */}
-      <ModalSection
-        title="Estoque Atual"
-        subtitle="Estado atual do estoque no sistema"
-      >
-        <div className={cn(
-          "p-4 rounded-lg border",
-          getGlassCardClasses('premium')
-        )}>
-          <div className="flex items-center gap-4 mb-4">
-            <Package className="h-8 w-8 text-yellow-400" />
-            <div className="flex-1">
-              <h3 className="text-lg font-semibold text-gray-100">
-                {product.name}
-              </h3>
-              <p className="text-sm text-gray-400">
-                {product.category}
-              </p>
+      {/* Layout compacto em 2 colunas */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mt-4">
+
+        {/* ========================================== */}
+        {/* COLUNA 1 - Estoque Atual + Nova Contagem */}
+        {/* ========================================== */}
+        <div className="space-y-4">
+          <h3 className="text-base font-semibold text-white flex items-center gap-2 border-b border-gray-700 pb-2">
+            <Package className="h-4 w-4 text-blue-400" />
+            📊 Contagem de Estoque
+          </h3>
+
+          {/* Resumo do estoque atual */}
+          <div className="p-3 rounded-lg bg-gray-800/30 border border-gray-700/50">
+            <p className="text-xs text-gray-400 mb-2">📦 Estoque Atual no Sistema</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="text-center p-2 bg-blue-500/10 rounded border border-blue-500/20">
+                <Package className="h-4 w-4 text-blue-400 mx-auto mb-1" />
+                <div className="text-lg font-bold text-blue-400">{calculations.currentPackages}</div>
+                <div className="text-xs text-gray-400">pacotes</div>
+              </div>
+              <div className="text-center p-2 bg-green-500/10 rounded border border-green-500/20">
+                <Wine className="h-4 w-4 text-green-400 mx-auto mb-1" />
+                <div className="text-lg font-bold text-green-400">{calculations.currentUnitsLoose}</div>
+                <div className="text-xs text-gray-400">unidades</div>
+              </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="text-center p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
-              <Package className="h-5 w-5 text-blue-400 mx-auto mb-1" />
-              <div className="text-sm text-gray-400">Pacotes Fechados</div>
-              <div className="text-xl font-bold text-blue-400">{calculations.currentPackages || 0}</div>
-            </div>
-
-            <div className="text-center p-3 bg-green-500/10 rounded-lg border border-green-500/20">
-              <Wine className="h-5 w-5 text-green-400 mx-auto mb-1" />
-              <div className="text-sm text-gray-400">Unidades Soltas</div>
-              <div className="text-xl font-bold text-green-400">{calculations.currentUnitsLoose || 0}</div>
-            </div>
-          </div>
-        </div>
-      </ModalSection>
-
-      {/* Seção: Contagem Física */}
-      <ModalSection
-        title="Nova Contagem Física"
-        subtitle="Insira a contagem real dos produtos após verificação física"
-      >
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label htmlFor="newPackages" className="text-gray-100 font-medium">
-                Pacotes Fechados Contados
-              </Label>
-              <Input
-                id="newPackages"
-                type="number"
-                min="0"
-                // eslint-disable-next-line jsx-a11y/no-autofocus -- Intencional: otimização UX para inventário físico (< 5s por produto)
-                autoFocus
-                {...register('newPackages', { valueAsNumber: true })}
-                className="bg-gray-800/50 border-gray-600 text-gray-100 text-lg font-semibold"
-                placeholder="Ex: 10"
-              />
-              {errors.newPackages && (
-                <p className="text-red-400 text-sm">{errors.newPackages.message}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="newUnitsLoose" className="text-gray-100 font-medium">
-                Unidades Soltas Contadas
-              </Label>
-              <Input
-                id="newUnitsLoose"
-                type="number"
-                min="0"
-                {...register('newUnitsLoose', { valueAsNumber: true })}
-                className="bg-gray-800/50 border-gray-600 text-gray-100 text-lg font-semibold"
-                placeholder="Ex: 5"
-              />
-              {errors.newUnitsLoose && (
-                <p className="text-red-400 text-sm">{errors.newUnitsLoose.message}</p>
-              )}
-            </div>
+          {/* Inputs de contagem */}
+          <div>
+            <label className="block text-xs font-medium mb-1 text-gray-400">📦 Pacotes Contados</label>
+            <Input
+              type="number"
+              min="0"
+              autoFocus
+              {...register('newPackages', { valueAsNumber: true })}
+              className={cn(inputClasses, 'text-lg font-semibold')}
+              placeholder="Ex: 10"
+            />
+            {errors.newPackages && <p className="text-xs text-red-400 mt-1">{errors.newPackages.message}</p>}
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="reason" className="text-gray-100 font-medium">
-              Motivo do Ajuste <span className="text-red-400">*</span>
-            </Label>
+          <div>
+            <label className="block text-xs font-medium mb-1 text-gray-400">🍾 Unidades Soltas Contadas</label>
+            <Input
+              type="number"
+              min="0"
+              {...register('newUnitsLoose', { valueAsNumber: true })}
+              className={cn(inputClasses, 'text-lg font-semibold')}
+              placeholder="Ex: 5"
+            />
+            {errors.newUnitsLoose && <p className="text-xs text-red-400 mt-1">{errors.newUnitsLoose.message}</p>}
+          </div>
+
+          {/* Motivo do ajuste */}
+          <div>
+            <label className="block text-xs font-medium mb-1 text-gray-400">📝 Motivo do Ajuste <span className="text-red-400">*</span></label>
             <Select
               value={watchedValues.reason}
-              onValueChange={(value) => setValue('reason', value as 'inventory' | 'loss' | 'consumption' | 'purchase')}
+              onValueChange={(value) => setValue('reason', value as keyof typeof ADJUSTMENT_REASONS)}
             >
-              <SelectTrigger className="bg-gray-800/50 border-gray-600 text-gray-100">
+              <SelectTrigger className={inputClasses}>
                 <SelectValue placeholder="Selecione o motivo" />
               </SelectTrigger>
               <SelectContent>
-                {Object.entries(ADJUSTMENT_REASONS).map(([key, label]) => (
+                {Object.entries(ADJUSTMENT_REASONS).map(([key, config]) => (
                   <SelectItem key={key} value={key}>
-                    {label}
+                    {config.label}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            {errors.reason && (
-              <p className="text-red-400 text-sm">{errors.reason.message}</p>
-            )}
+            {errors.reason && <p className="text-xs text-red-400 mt-1">{errors.reason.message}</p>}
           </div>
-        </form>
-      </ModalSection>
+        </div>
 
-      {/* Seção: Preview das Mudanças */}
-      <ModalSection
-        title="Preview das Mudanças"
-        subtitle="Resumo das alterações que serão aplicadas"
-        icon={Eye}
-      >
-        <div className={cn(
-          "p-4 rounded-lg border",
-          calculations.hasChanges
-            ? "border-blue-500/30 bg-blue-500/5"
-            : "border-gray-600/30 bg-gray-700/5"
-        )}>
+        {/* ========================================== */}
+        {/* COLUNA 2 - Preview das Mudanças */}
+        {/* ========================================== */}
+        <div className="space-y-4">
+          <h3 className="text-base font-semibold text-white flex items-center gap-2 border-b border-gray-700 pb-2">
+            <Eye className="h-4 w-4 text-purple-400" />
+            👁️ Preview das Mudanças
+          </h3>
+
           {calculations.hasChanges ? (
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="text-center">
-                  <div className="text-sm text-gray-400 mb-1">Pacotes</div>
-                  <div className="flex items-center justify-center gap-2">
-                    <span className="text-gray-300">{calculations.currentPackages || 0}</span>
-                    <span className="text-gray-500">→</span>
-                    <span className="text-blue-400 font-semibold">{watchedValues.newPackages || 0}</span>
-                    <span className={cn(
-                      "text-xs font-medium px-1.5 py-0.5 rounded",
-                      (calculations.packagesChange || 0) > 0
-                        ? "bg-green-500/20 text-green-400"
-                        : (calculations.packagesChange || 0) < 0
-                          ? "bg-red-500/20 text-red-400"
-                          : "bg-gray-500/20 text-gray-400"
-                    )}>
-                      {(calculations.packagesChange || 0) > 0 ? '+' : ''}{calculations.packagesChange || 0}
-                    </span>
-                  </div>
+            <>
+              {/* Mudança em Pacotes */}
+              <div className="p-3 rounded-lg bg-gray-800/30 border border-gray-700/50">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-gray-400">📦 Pacotes</span>
+                  {renderChangeIndicator(calculations.packagesChange)}
                 </div>
-
-                <div className="text-center">
-                  <div className="text-sm text-gray-400 mb-1">Unidades Soltas</div>
-                  <div className="flex items-center justify-center gap-2">
-                    <span className="text-gray-300">{calculations.currentUnitsLoose || 0}</span>
-                    <span className="text-gray-500">→</span>
-                    <span className="text-green-400 font-semibold">{watchedValues.newUnitsLoose || 0}</span>
-                    <span className={cn(
-                      "text-xs font-medium px-1.5 py-0.5 rounded",
-                      (calculations.unitsLooseChange || 0) > 0
-                        ? "bg-green-500/20 text-green-400"
-                        : (calculations.unitsLooseChange || 0) < 0
-                          ? "bg-red-500/20 text-red-400"
-                          : "bg-gray-500/20 text-gray-400"
+                <div className="flex items-center justify-between gap-2">
+                  <div className="text-center p-2 bg-gray-700/30 rounded flex-1">
+                    <div className="text-sm text-gray-400">Antes</div>
+                    <div className="text-lg font-bold text-gray-300">{calculations.currentPackages}</div>
+                  </div>
+                  <ArrowRight className="h-5 w-5 text-gray-500" />
+                  <div className="text-center p-2 bg-blue-500/20 rounded flex-1 border border-blue-500/30">
+                    <div className="text-sm text-blue-300">Depois</div>
+                    <div className="text-lg font-bold text-blue-400">{watchedValues.newPackages || 0}</div>
+                  </div>
+                  <div className={cn(
+                    "text-center p-2 rounded min-w-[60px]",
+                    calculations.packagesChange > 0 ? "bg-green-500/20 border border-green-500/30" :
+                      calculations.packagesChange < 0 ? "bg-red-500/20 border border-red-500/30" :
+                        "bg-gray-500/20"
+                  )}>
+                    <div className="text-xs text-gray-400">Diff</div>
+                    <div className={cn(
+                      "text-sm font-bold",
+                      calculations.packagesChange > 0 ? "text-green-400" :
+                        calculations.packagesChange < 0 ? "text-red-400" : "text-gray-400"
                     )}>
-                      {(calculations.unitsLooseChange || 0) > 0 ? '+' : ''}{calculations.unitsLooseChange || 0}
-                    </span>
+                      {calculations.packagesChange > 0 ? '+' : ''}{calculations.packagesChange}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+
+              {/* Mudança em Unidades */}
+              <div className="p-3 rounded-lg bg-gray-800/30 border border-gray-700/50">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-gray-400">🍾 Unidades Soltas</span>
+                  {renderChangeIndicator(calculations.unitsLooseChange)}
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="text-center p-2 bg-gray-700/30 rounded flex-1">
+                    <div className="text-sm text-gray-400">Antes</div>
+                    <div className="text-lg font-bold text-gray-300">{calculations.currentUnitsLoose}</div>
+                  </div>
+                  <ArrowRight className="h-5 w-5 text-gray-500" />
+                  <div className="text-center p-2 bg-green-500/20 rounded flex-1 border border-green-500/30">
+                    <div className="text-sm text-green-300">Depois</div>
+                    <div className="text-lg font-bold text-green-400">{watchedValues.newUnitsLoose || 0}</div>
+                  </div>
+                  <div className={cn(
+                    "text-center p-2 rounded min-w-[60px]",
+                    calculations.unitsLooseChange > 0 ? "bg-green-500/20 border border-green-500/30" :
+                      calculations.unitsLooseChange < 0 ? "bg-red-500/20 border border-red-500/30" :
+                        "bg-gray-500/20"
+                  )}>
+                    <div className="text-xs text-gray-400">Diff</div>
+                    <div className={cn(
+                      "text-sm font-bold",
+                      calculations.unitsLooseChange > 0 ? "text-green-400" :
+                        calculations.unitsLooseChange < 0 ? "text-red-400" : "text-gray-400"
+                    )}>
+                      {calculations.unitsLooseChange > 0 ? '+' : ''}{calculations.unitsLooseChange}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Motivo selecionado */}
+              <div className="p-3 rounded-lg bg-purple-500/10 border border-purple-500/30">
+                <div className="text-xs text-purple-300 mb-1">📝 Motivo Selecionado</div>
+                <div className="text-sm font-medium text-white">
+                  {ADJUSTMENT_REASONS[watchedValues.reason]?.label || 'Não selecionado'}
+                </div>
+              </div>
+            </>
           ) : (
-            <div className="text-center py-4 text-gray-400">
-              <Eye className="h-8 w-8 mx-auto mb-2 opacity-50" />
-              <p>Nenhuma alteração detectada</p>
-              <p className="text-sm">As quantidades estão iguais ao estoque atual</p>
+            <div className="flex flex-col items-center justify-center py-8 text-gray-400">
+              <Eye className="h-10 w-10 mb-3 opacity-30" />
+              <p className="text-sm font-medium">Nenhuma alteração detectada</p>
+              <p className="text-xs mt-1 text-gray-500">Altere as quantidades para ver o preview</p>
             </div>
           )}
         </div>
-      </ModalSection>
-    </EnhancedBaseModal>
+      </div>
+    </FormDialog>
   );
 };
 
