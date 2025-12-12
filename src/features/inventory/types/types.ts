@@ -29,6 +29,10 @@ export interface InventoryFiltersProps {
   suppliers: string[];
   isOpen: boolean;
   onToggle: () => void;
+  // Filtro "Sem Custo" para auditoria rápida
+  showMissingCostsOnly?: boolean;
+  onShowMissingCostsChange?: (value: boolean) => void;
+  missingCostsCount?: number;
 }
 
 export interface InventoryGridProps {

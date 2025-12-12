@@ -9,7 +9,8 @@ import React from 'react';
 import { SearchBar21st } from '@/shared/ui/thirdparty/search-bar-21st';
 import { FilterToggle } from '@/shared/ui/composite/filter-toggle';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/primitives/select';
-import { InventoryFiltersProps } from './types';
+import { InventoryFiltersProps } from '@/features/inventory/types';
+import { cn } from '@/core/config/utils';
 
 export const InventoryFilters: React.FC<InventoryFiltersProps> = ({
   searchTerm,
@@ -20,6 +21,10 @@ export const InventoryFilters: React.FC<InventoryFiltersProps> = ({
   suppliers,
   isOpen,
   onToggle,
+  // Filtro "Sem Custo" para auditoria
+  showMissingCostsOnly = false,
+  onShowMissingCostsChange,
+  missingCostsCount = 0,
 }) => {
   const handleFilterChange = (key: string, value: string) => {
     onFiltersChange({
@@ -30,7 +35,7 @@ export const InventoryFilters: React.FC<InventoryFiltersProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* Busca Principal */}
+      {/* Busca Principal + Filtro Sem Custo */}
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
         <div className="flex-1 max-w-xl">
           <SearchBar21st
@@ -41,7 +46,33 @@ export const InventoryFilters: React.FC<InventoryFiltersProps> = ({
             disableResizeAnimation={true}
           />
         </div>
-        
+
+        {/* 🔥 Botão "Sem Custo" - Auditoria Rápida */}
+        {onShowMissingCostsChange && missingCostsCount > 0 && (
+          <button
+            onClick={() => onShowMissingCostsChange(!showMissingCostsOnly)}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200",
+              "border-2 hover:scale-[1.02] active:scale-[0.98]",
+              showMissingCostsOnly
+                ? "bg-amber-500/20 border-amber-500 text-amber-400 shadow-lg shadow-amber-500/20"
+                : "bg-transparent border-amber-500/50 text-amber-400/70 hover:border-amber-500 hover:text-amber-400"
+            )}
+            title="Filtrar apenas produtos sem preço de custo cadastrado"
+          >
+            <span className="text-lg">⚠️</span>
+            <span>Sem Custo</span>
+            <span className={cn(
+              "px-2 py-0.5 rounded-full text-xs font-bold",
+              showMissingCostsOnly
+                ? "bg-amber-500 text-black"
+                : "bg-amber-500/30 text-amber-400"
+            )}>
+              {missingCostsCount}
+            </span>
+          </button>
+        )}
+
         <FilterToggle
           isOpen={isOpen}
           onToggle={onToggle}

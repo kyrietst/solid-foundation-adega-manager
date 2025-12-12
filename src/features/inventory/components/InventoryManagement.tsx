@@ -15,7 +15,7 @@ import { ProductsGridContainer } from './ProductsGridContainer';
 import { ProductsTitle, ProductsHeader, AddProductButton } from './ProductsHeader';
 import { useProductsGridLogic } from '@/shared/hooks/products/useProductsGridLogic';
 import { Button } from '@/shared/ui/primitives/button';
-import { Trash2, Package, Store, AlertTriangle, Loader2, ClipboardList, Warehouse, Filter } from 'lucide-react';
+import { Trash2, Package, Store, AlertTriangle, Loader2, ClipboardList, Warehouse, Filter, AlertCircle } from 'lucide-react';
 import { PaginationControls } from '@/shared/ui/composite/pagination-controls';
 import { SearchInput } from '@/shared/ui/composite/search-input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/primitives/select';
@@ -95,6 +95,9 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
   // 📂 v3.6.5 - Filtro por categoria
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const { data: categories = [] } = useCategories();
+
+  // 💰 v3.6.6 - Filtro "Sem Custo" para auditoria rápida
+  const [showMissingCostsOnly, setShowMissingCostsOnly] = useState(false);
 
   // 📄 v3.6.2 - Paginação client-side para performance (500+ produtos)
   const [currentPage, setCurrentPage] = useState(1);
@@ -509,7 +512,7 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
     queryFn: async (): Promise<Product[]> => {
       const { data, error } = await supabase
         .from('products')
-        .select('id, name, price, stock_quantity, image_url, barcode, unit_barcode, package_barcode, category, package_units, package_price, has_package_tracking, units_per_package, stock_packages, stock_units_loose, store2_holding_packages, store2_holding_units_loose, minimum_stock, expiry_date, has_expiry_tracking')
+        .select('id, name, price, stock_quantity, cost_price, image_url, barcode, unit_barcode, package_barcode, category, package_units, package_price, has_package_tracking, units_per_package, stock_packages, stock_units_loose, store2_holding_packages, store2_holding_units_loose, minimum_stock, expiry_date, has_expiry_tracking')
         .is('deleted_at', null)
         .order('name', { ascending: true });
 
@@ -522,6 +525,11 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
     },
     enabled: viewMode === 'active', // Só buscar quando na aba "active"
   });
+
+  // 💰 v3.6.6 - Contar produtos sem custo para badge de auditoria
+  const missingCostsCount = React.useMemo(() => {
+    return allProducts.filter(p => !p.cost_price || Number(p.cost_price) <= 0).length;
+  }, [allProducts]);
 
   // 🏪 v3.6.3 - Lógica Unificada: Contexto de Loja -> Busca -> Mapeamento
   const filteredAndMappedProducts = React.useMemo(() => {
@@ -553,6 +561,13 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
       );
     }
 
+    // 4. Aplica filtro "Sem Custo" (auditoria)
+    if (showMissingCostsOnly) {
+      scopedProducts = scopedProducts.filter(
+        (p) => !p.cost_price || Number(p.cost_price) <= 0
+      );
+    }
+
     // 4. Mapeia os dados para exibição (Visualização Correta)
     return scopedProducts.map((product) => ({
       ...product,
@@ -565,7 +580,7 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
           ? product.stock_units_loose || 0
           : product.store2_holding_units_loose || 0,
     }));
-  }, [allProducts, selectedStore, searchQuery, selectedCategory]);
+  }, [allProducts, selectedStore, searchQuery, selectedCategory, showMissingCostsOnly]);
 
   // 4. Paginação (Fatiamento final)
   const paginatedProducts = React.useMemo(() => {
@@ -579,7 +594,7 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
   // 📄 v3.6.2 - Reset inteligente: Voltar para página 1 quando filtros mudarem
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedStore, viewMode, searchQuery]); // 🔍 Adicionado searchQuery
+  }, [selectedStore, viewMode, searchQuery, showMissingCostsOnly]); // 🔍 + 💰 filtros
 
   return (
     <div className={`w-full h-full flex flex-col ${className || ''}`}>
@@ -698,7 +713,28 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
               </div>
 
               {/* 📂 v3.6.5 - Filtro por Categoria */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
+                {/* 💰 v3.6.6 - Botão "Sem Custo" para Auditoria Rápida */}
+                {missingCostsCount > 0 && (
+                  <button
+                    onClick={() => setShowMissingCostsOnly(!showMissingCostsOnly)}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg font-medium text-sm transition-all duration-200 border-2 hover:scale-[1.02] active:scale-[0.98] ${showMissingCostsOnly
+                      ? "bg-amber-500/20 border-amber-500 text-amber-400 shadow-lg shadow-amber-500/20"
+                      : "bg-transparent border-amber-500/50 text-amber-400/70 hover:border-amber-500 hover:text-amber-400"
+                      }`}
+                    title="Filtrar apenas produtos sem preço de custo cadastrado"
+                  >
+                    <AlertCircle className="h-4 w-4" />
+                    <span>Sem Custo</span>
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${showMissingCostsOnly
+                      ? "bg-amber-500 text-black"
+                      : "bg-amber-500/30 text-amber-400"
+                      }`}>
+                      {missingCostsCount}
+                    </span>
+                  </button>
+                )}
+
                 <Filter className="h-4 w-4 text-gray-400" />
                 <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                   <SelectTrigger className="w-48 h-8 bg-black/40 border-white/20 text-white text-sm">
