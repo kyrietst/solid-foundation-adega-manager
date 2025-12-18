@@ -123,11 +123,36 @@ export function Cart({
   // Autocomplete: Preencher endereço automaticamente do cliente selecionado
   useEffect(() => {
     if (saleType === 'delivery' && selectedCustomer?.address && !deliveryAddress) {
-      // Se address é string, usar diretamente. Se é objeto, converter para string
-      const addressString = typeof selectedCustomer.address === 'string'
-        ? selectedCustomer.address
-        : JSON.stringify(selectedCustomer.address);
-      setDeliveryAddress(addressString);
+      const addr = selectedCustomer.address;
+
+      // Se address é string, usar diretamente
+      if (typeof addr === 'string') {
+        setDeliveryAddress(addr);
+      } else if (typeof addr === 'object' && addr !== null) {
+        // PRIORIDADE 1: Usar campos pré-formatados
+        if (addr.full_address) {
+          setDeliveryAddress(addr.full_address);
+        } else if (addr.address && typeof addr.address === 'string') {
+          setDeliveryAddress(addr.address);
+        } else {
+          // PRIORIDADE 2: Construir string formatada manualmente
+          const parts: string[] = [];
+
+          if (addr.street) parts.push(addr.street);
+          if (addr.number) parts.push(`Nº ${addr.number}`);
+          if (addr.neighborhood) parts.push(addr.neighborhood);
+          if (addr.complement) parts.push(`Compl: ${addr.complement}`);
+          if (addr.reference) parts.push(`Ref: ${addr.reference}`);
+          if (addr.city) parts.push(addr.city);
+          if (addr.state) parts.push(addr.state);
+          if (addr.zip || addr.zipCode || addr.cep) parts.push(addr.zip || addr.zipCode || addr.cep);
+
+          const formatted = parts.length > 0 ? parts.join(', ') : '';
+          if (formatted) {
+            setDeliveryAddress(formatted);
+          }
+        }
+      }
     }
   }, [saleType, selectedCustomer, deliveryAddress]);
 

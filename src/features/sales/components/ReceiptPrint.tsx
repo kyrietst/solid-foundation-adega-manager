@@ -31,6 +31,7 @@ export interface ReceiptData {
   items: ReceiptItem[];
   delivery_fee?: number;
   address?: string;
+  deliveryInstructions?: string;
 }
 
 interface ReceiptPrintProps {
@@ -67,9 +68,9 @@ export const ReceiptPrint: React.FC<ReceiptPrintProps> = ({ data }) => {
         {/* HEADER */}
         <div className="receipt-header">
           <div className="text-lg">ADEGA ANITA'S</div>
-          <div>Vinhos e Bebidas</div>
+          <div>é tudo que precisamos</div>
           {data.delivery && (
-            <div className="text-lg" style={{ marginTop: '2px' }}>★ ENTREGA ★</div>
+            <div className="text-lg" style={{ marginTop: '2px' }}>★ DELIVERY ★</div>
           )}
         </div>
 
@@ -86,8 +87,20 @@ export const ReceiptPrint: React.FC<ReceiptPrintProps> = ({ data }) => {
           <div className="text-md">{data.customer_name || 'Consumidor'}</div>
           {data.customer_phone && <div>{data.customer_phone}</div>}
           {data.delivery && data.address && (
-            <div className="address-box">
+            <div className="address-box" style={{
+              wordWrap: 'break-word',
+              whiteSpace: 'pre-wrap',
+              marginTop: '4px',
+              padding: '4px',
+              border: '1px solid #000'
+            }}>
+              <div className="text-md" style={{ fontWeight: 'bold' }}>ENDEREÇO DE ENTREGA:</div>
               {data.address}
+              {data.deliveryInstructions && (
+                <div style={{ marginTop: '2px', fontStyle: 'italic' }}>
+                  Obs: {data.deliveryInstructions}
+                </div>
+              )}
             </div>
           )}
         </div>

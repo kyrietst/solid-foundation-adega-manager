@@ -9,7 +9,7 @@ import type { ReceiptData, ReceiptItem } from '../components/ReceiptPrint';
 
 export const useReceiptData = (saleId: string | null) => {
   const { user } = useAuth();
-  
+
   return useQuery({
     queryKey: ['receipt-data', saleId],
     queryFn: async (): Promise<ReceiptData | null> => {
@@ -28,9 +28,12 @@ export const useReceiptData = (saleId: string | null) => {
           payment_method,
           delivery,
           delivery_fee,
+          delivery_address,
+          delivery_instructions,
           customers (
             name,
-            phone
+            phone,
+            address
           ),
           profiles (
             name
@@ -84,8 +87,49 @@ export const useReceiptData = (saleId: string | null) => {
           .select('name')
           .eq('id', user.id)
           .single();
-        
+
         currentUserName = currentUserProfile?.name;
+      }
+
+      // Formatar endereço de delivery (prioridade: delivery_address da venda > address do cliente)
+      let formattedAddress: string | undefined = undefined;
+
+      if (saleData.delivery) {
+        if (saleData.delivery_address) {
+          // delivery_address é um JSON, pode ter estrutura variada
+          const addr = saleData.delivery_address as any;
+
+          if (typeof addr === 'string') {
+            // Se já for string, usa direto
+            formattedAddress = addr;
+          } else if (typeof addr === 'object' && addr !== null) {
+            // PRIORIDADE 1: Verificar se já existe endereço formatado
+            if (addr.full_address) {
+              formattedAddress = addr.full_address;
+            } else if (addr.address && typeof addr.address === 'string') {
+              formattedAddress = addr.address;
+            } else {
+              // PRIORIDADE 2: Construir string formatada manualmente
+              const parts: string[] = [];
+
+              if (addr.street) parts.push(addr.street);
+              if (addr.number) parts.push(`Nº ${addr.number}`);
+              if (addr.neighborhood) parts.push(addr.neighborhood);
+              if (addr.complement) parts.push(`Compl: ${addr.complement}`);
+              if (addr.reference) parts.push(`Ref: ${addr.reference}`);
+              if (addr.city) parts.push(addr.city);
+              if (addr.state) parts.push(addr.state);
+              if (addr.zip || addr.zipCode || addr.cep) parts.push(addr.zip || addr.zipCode || addr.cep);
+
+              formattedAddress = parts.length > 0 ? parts.join(', ') : undefined;
+            }
+          }
+        }
+
+        // Fallback: usar endereço cadastral do cliente
+        if (!formattedAddress && saleData.customers?.address) {
+          formattedAddress = saleData.customers.address;
+        }
       }
 
       const receiptData: ReceiptData = {
@@ -100,7 +144,9 @@ export const useReceiptData = (saleId: string | null) => {
         customer_phone: saleData.customers?.phone,
         seller_name: saleData.profiles?.name || currentUserName,
         items,
-        delivery_fee: saleData.delivery_fee ? Number(saleData.delivery_fee) : undefined
+        delivery_fee: saleData.delivery_fee ? Number(saleData.delivery_fee) : undefined,
+        address: formattedAddress,
+        deliveryInstructions: saleData.delivery_instructions || undefined
       };
 
       return receiptData;
