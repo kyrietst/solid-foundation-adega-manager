@@ -290,7 +290,8 @@ export const useUpsertSale = () => {
         ? (saleData.deliveryData?.deliveryFee || saleData.delivery_fee || 0)
         : 0;
 
-      const totalWithDeliveryFee = saleData.total_amount + deliveryFee;
+      // ✅ CRITICAL FIX: Subtract discount from final amount calculation
+      const totalWithDeliveryFee = saleData.total_amount - (saleData.discount_amount || 0) + deliveryFee;
 
 
       // 5. Valida os itens da venda
