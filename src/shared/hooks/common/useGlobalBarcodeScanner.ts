@@ -56,11 +56,9 @@ export function useGlobalBarcodeScanner({
             const tagName = target.tagName.toLowerCase();
 
             // Ignora eventos de inputs/textareas para não interferir com digitação normal
-            // EXCETO se for o input de barcode específico (para manter compatibilidade)
             const isInputField = tagName === 'input' || tagName === 'textarea';
-            const isBarcodeInput = target.id === 'barcode-input';
 
-            if (isInputField && !isBarcodeInput) {
+            if (isInputField) {
                 return;
             }
 
