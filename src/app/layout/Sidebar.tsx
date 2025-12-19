@@ -162,7 +162,7 @@ export function AppSidebar() {
     href: link.href,
     icon: link.isEnabled ? link.icon : (
       // Aplicar estilo cinza quando desabilitado
-      React.cloneElement(link.icon as React.ReactElement, {
+      React.cloneElement(link.icon as any, {
         className: "h-5 w-5 shrink-0 text-gray-500"
       })
     ),
@@ -188,7 +188,11 @@ export function AppSidebar() {
         <SidebarBody className="justify-between gap-6">
           <div className="flex flex-1 flex-col overflow-x-hidden overflow-y-auto">
             <div className="mb-6 px-1">
-              {open ? <Logo /> : <LogoIcon />}
+              {open ? (
+                <Logo onClick={() => setOpen(!open)} />
+              ) : (
+                <LogoIcon onClick={() => setOpen(!open)} />
+              )}
             </div>
             <nav className="flex flex-col gap-1" aria-label="Navegação principal">
               {links.map((link, idx) => (
@@ -243,10 +247,15 @@ export function AppSidebar() {
   );
 }
 
-export const Logo = () => {
+export const Logo = ({ onClick }: { onClick?: () => void }) => {
   return (
     <div className="relative z-20 flex items-center space-x-3 py-2">
-      <div className="h-10 w-10 shrink-0 rounded-xl bg-gradient-to-r from-primary-yellow to-accent-gold-90 shadow-lg" />
+      <motion.div
+        onClick={onClick}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        className="h-10 w-10 shrink-0 rounded-xl bg-gradient-to-r from-primary-yellow to-accent-gold-90 shadow-lg cursor-pointer hover:shadow-yellow-400/20"
+      />
       <motion.div
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
@@ -264,10 +273,15 @@ export const Logo = () => {
   );
 };
 
-export const LogoIcon = () => {
+export const LogoIcon = ({ onClick }: { onClick?: () => void }) => {
   return (
     <div className="relative z-20 flex items-center justify-center py-2">
-      <div className="h-10 w-10 shrink-0 rounded-xl bg-gradient-to-r from-primary-yellow to-accent-gold-90 shadow-lg" />
+      <motion.div
+        onClick={onClick}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        className="h-10 w-10 shrink-0 rounded-xl bg-gradient-to-r from-primary-yellow to-accent-gold-90 shadow-lg cursor-pointer hover:shadow-yellow-400/20"
+      />
     </div>
   );
 };

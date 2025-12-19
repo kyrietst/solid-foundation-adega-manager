@@ -3,7 +3,7 @@
 import { cn } from "@/core/config/utils";
 import React, { useState, createContext, useContext } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { Menu, X, Lock } from "lucide-react";
+import { Menu, X, Lock, ChevronRight, ChevronLeft } from "lucide-react";
 import { getSFProTextClasses } from "@/core/config/theme-utils";
 
 interface Links {
@@ -76,7 +76,7 @@ export const SidebarBody = (props: React.ComponentProps<typeof motion.div>) => {
   return (
     <>
       <DesktopSidebar {...props} />
-      <MobileSidebar {...(props as React.ComponentProps<"div">)} />
+      <MobileSidebar {...(props as any)} />
     </>
   );
 };
@@ -91,14 +91,12 @@ export const DesktopSidebar = ({
     <motion.div
       className={cn(
         // Glassy sidebar matching cards style with hero spotlight effect
-        "h-full px-3 py-4 hidden md:flex md:flex-col bg-black/70 backdrop-blur-xl border-r border-white/20 shadow-lg w-[300px] flex-shrink-0 z-20 hero-spotlight",
+        "h-full px-3 py-4 hidden md:flex md:flex-col bg-black/70 backdrop-blur-xl border-r border-white/20 shadow-lg w-[300px] flex-shrink-0 z-20 hero-spotlight relative",
         className
       )}
       animate={{
         width: animate ? (open ? "300px" : "60px") : "300px",
       }}
-      onMouseEnter={() => setOpen(true)}
-      onMouseLeave={() => setOpen(false)}
       onMouseMove={(e) => {
         const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
         const x = ((e.clientX - rect.left) / rect.width) * 100;
@@ -108,6 +106,7 @@ export const DesktopSidebar = ({
       }}
       {...props}
     >
+
       {children}
     </motion.div>
   );
@@ -233,10 +232,10 @@ export const SidebarLink = ({
       )}>
         {React.cloneElement(link.icon as React.ReactElement, {
           className: cn(
-            (link.icon as React.ReactElement).props.className,
+            ((link.icon as React.ReactElement).props as any).className,
             disabled && "text-gray-500"
           )
-        })}
+        } as any)}
       </div>
 
       <motion.span
