@@ -37,6 +37,7 @@ import { useAuth } from '@/app/providers/AuthContext';
 import { useLowStockProducts } from '../hooks/useLowStockProducts';
 import { InventoryCountSheet } from './InventoryCountSheet';
 import { useBarcode } from '@/features/inventory/hooks/use-barcode';
+import { useGlobalBarcodeScanner } from '@/shared/hooks/common/useGlobalBarcodeScanner';
 import type { ProductFormData } from '@/core/types/inventory.types';
 
 // Interface simplificada para edição de produtos (v2.0)
@@ -116,10 +117,14 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
   // Verificar se usuário é admin - aguardar carregamento do profile
   const isAdmin = !loading && userRole === 'admin';
 
-  // 📷 v3.6.2 - Reativar leitor de código de barras
-  useBarcode((scannedCode) => {
-    setSearchQuery(scannedCode);
-    setCurrentPage(1);
+  // 🎯 SCANNER GLOBAL: Detecta código de barras em qualquer lugar da página de estoque
+  useGlobalBarcodeScanner({
+    onScan: (scannedCode) => {
+      console.log('[InventoryManagement] Global barcode detected:', scannedCode);
+      setSearchQuery(scannedCode);
+      setCurrentPage(1);
+    },
+    enabled: viewMode === 'active', // Só ativo na aba de produtos ativos
   });
 
   const handleAddProduct = () => {
@@ -159,7 +164,7 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
       }
 
       // Usar dados atualizados do banco
-      setSelectedProduct(updatedProduct);
+      setSelectedProduct(updatedProduct as unknown as Product);
       setIsDetailsModalOpen(true);
     } catch (error) {
       console.error('Erro na busca do produto para visualização:', error);
@@ -202,7 +207,7 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
       }
 
       // Usar dados atualizados do banco
-      setSelectedProduct(updatedProduct);
+      setSelectedProduct(updatedProduct as unknown as Product);
       setIsEditProductOpen(true);
     } catch (error) {
       console.error('Erro na busca do produto:', error);
@@ -404,20 +409,20 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
 
       const { data, error } = await supabase
         .from('products')
-        .update(updateData)
+        .update(updateData as any)
         .eq('id', selectedProduct.id)
         .select()
         .single();
 
       if (error) throw error;
-      return data;
+      return data as unknown as Product;
     },
     onSuccess: (data) => {
       // Invalidar cache para recarregar dados
       queryClient.invalidateQueries({ queryKey: ['products'] });
 
       // Atualizar o selectedProduct com os dados atualizados
-      setSelectedProduct(data);
+      setSelectedProduct(data as unknown as Product);
 
       setIsEditProductOpen(false);
       toast({
@@ -521,7 +526,7 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
         throw error;
       }
 
-      return data || [];
+      return (data || []) as unknown as Product[];
     },
     enabled: viewMode === 'active', // Só buscar quando na aba "active"
   });
@@ -744,7 +749,7 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
                     <SelectItem value="all" className="text-white hover:bg-white/10">
                       📂 Todas as Categorias
                     </SelectItem>
-                    {categories.map((category) => (
+                    {(categories as any[]).map((category) => (
                       <SelectItem
                         key={category.id}
                         value={category.name}
@@ -764,7 +769,7 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
             ) : filteredAndMappedProducts.length === 0 ? (
               <EmptySearchResults
                 searchTerm="produtos"
-                onClearSearch={() => { }}
+                onClearSearch={() => undefined}
               />
             ) : (
               <>

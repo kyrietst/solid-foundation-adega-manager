@@ -5,13 +5,15 @@ import { ProductsGrid } from "./ProductsGrid";
 import { Cart } from "./Cart";
 import { RecentSales } from "./RecentSales";
 import { ReceiptModal } from "./ReceiptModal";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { ShoppingCart, Store, Truck, Package, Printer } from "lucide-react";
 import { useCart, useCartItemCount } from "@/features/sales/hooks/use-cart";
 import { cn } from '@/core/config/utils';
 import { getGlassCardClasses, getSFProTextClasses } from '@/core/config/theme-utils';
 import { text, shadows } from "@/core/config/theme";
 import { PageHeader } from '@/shared/ui/composite/PageHeader';
+import { useGlobalBarcodeScanner } from '@/shared/hooks/common/useGlobalBarcodeScanner';
+import { useBarcode } from '@/features/inventory/hooks/use-barcode';
 
 export type SaleType = 'presencial' | 'delivery' | 'pickup';
 
@@ -30,17 +32,55 @@ function SalesPage({
   const [saleType, setSaleType] = useState<SaleType>('presencial');
   const [receiptModalOpen, setReceiptModalOpen] = useState(false);
   const [completedSaleId, setCompletedSaleId] = useState<string | null>(null);
-  const { items } = useCart();
+  const { items, addItem } = useCart();
   const totalQuantity = useCartItemCount();
+
+  // 🎯 SCANNER GLOBAL: Hook para buscar produtos por código de barras
+  const { searchByBarcode } = useBarcode();
+
+  // 🎯 SCANNER GLOBAL: Detecta código de barras em qualquer lugar da página
+  useGlobalBarcodeScanner({
+    onScan: async (barcode) => {
+      console.log('[SalesPage] Global barcode detected:', barcode);
+
+      // Busca o produto pelo código de barras
+      const result = await searchByBarcode(barcode);
+
+      if (result && result.product) {
+        const { product, type } = result;
+        const stockUnitsLoose = product.stock_units_loose || 0;
+        const stockPackages = product.stock_packages || 0;
+
+        if (stockUnitsLoose > 0 || stockPackages > 0) {
+          const variantType = type === 'package' ? 'package' : 'unit';
+          const variantId = type === 'package' ? `${product.id}-package` : `${product.id}-unit`;
+
+          await addItem({
+            id: product.id,
+            variant_id: variantId,
+            name: product.name,
+            variant_type: variantType,
+            price: variantType === 'package' ? (product.package_price || product.price) : product.price,
+            quantity: 1,
+            maxQuantity: variantType === 'package' ? stockPackages : stockUnitsLoose,
+            units_sold: variantType === 'package' ? (product.units_per_package || 1) : 1,
+            packageUnits: variantType === 'package' ? (product.units_per_package || 1) : undefined,
+            conversion_required: false, // Não requer conversão automática
+          });
+        }
+      }
+    },
+    enabled: activeTab === 'new-sale', // Só ativo na aba de nova venda
+  });
 
   // Handler para quando uma venda é completada
   const handleSaleComplete = (saleId: string) => {
     setCompletedSaleId(saleId);
     setReceiptModalOpen(true);
   };
-  
+
   const glassClasses = glassEffect ? getGlassCardClasses(variant) : '';
-  
+
   return (
     <div className="w-full h-full flex flex-col">
       {/* Header padronizado - limpo como página de clientes */}
