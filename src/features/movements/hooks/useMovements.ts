@@ -4,7 +4,7 @@
  * Responsabilidade: Query principal de movimentações de estoque
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
 import type { InventoryMovement } from '@/core/types/inventory.types';
@@ -168,13 +168,32 @@ export const useMovements = (options: UseMovementsOptions = {}): UseMovementsRet
     setPageState(1); // Reset para primeira página ao mudar tamanho
   }, []);
 
+  // Deduplicate movements by sale_id to avoid showing multiple rows for the same sale
+  const uniqueMovements = useMemo(() => {
+    if (!data?.movements) return [];
+    const seenSales = new Set<string>();
+    return data.movements.filter(m => {
+      // Se tem venda associada
+      if (m.sales?.id) {
+        // Se já vimos essa venda, filtrar (remover da lista)
+        if (seenSales.has(m.sales.id)) {
+          return false;
+        }
+        // Marcar como vista
+        seenSales.add(m.sales.id);
+      }
+      // Manter movimento (é o primeiro deste venda ou é um movimento sem venda)
+      return true;
+    });
+  }, [data?.movements]);
+
   // Calcular total de páginas
   const totalCount = data?.totalCount || 0;
   const totalPages = Math.ceil(totalCount / pageSize) || 1;
 
   return {
     // Dados
-    movements: data?.movements || [],
+    movements: uniqueMovements,
 
     // Paginação
     page,
