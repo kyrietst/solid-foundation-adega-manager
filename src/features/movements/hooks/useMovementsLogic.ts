@@ -93,7 +93,10 @@ export const useMovementsLogic = () => {
 
     // Filtros
     dateRange,
-    setDateRange,
+    setDateRange: (range: DateRange | undefined) => {
+      setDateRange(range);
+      setPage(1); // Resetar para página 1 ao filtrar
+    },
 
     // Estados
     isLoadingMovements,
