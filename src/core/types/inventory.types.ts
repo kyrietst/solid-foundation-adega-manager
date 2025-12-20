@@ -253,4 +253,23 @@ export interface InventoryMovement {
   user?: {
     name: string;
   };
+  sales?: {
+    id: string;
+    created_at: string;
+    delivery_type: string;
+    payment_method: string;
+    payment_status: string;
+    status: string;
+    final_amount: number;
+    sale_items?: Array<{
+      id: string;
+      product_id: string;
+      quantity: number;
+      unit_price: number;
+      products?: {
+        name: string;
+        barcode?: string;
+      };
+    }>;
+  };
 }

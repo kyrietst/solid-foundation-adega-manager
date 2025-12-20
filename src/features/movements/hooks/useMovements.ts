@@ -93,7 +93,21 @@ export const useMovements = (options: UseMovementsOptions = {}): UseMovementsRet
           sales:sales!inventory_movements_sale_id_fkey (
             id,
             created_at,
-            delivery_type
+            delivery_type,
+            payment_method,
+            payment_status,
+            status,
+            final_amount,
+            sale_items (
+              id,
+              product_id,
+              quantity,
+              unit_price,
+              products (
+                name,
+                barcode
+              )
+            )
           ),
           users:users (
             id,
@@ -107,6 +121,20 @@ export const useMovements = (options: UseMovementsOptions = {}): UseMovementsRet
         console.error('Error fetching movements:', error);
         throw error;
       }
+
+      // 🔍 DEBUG: Log para investigar estrutura dos dados
+      console.group('🔍 MOVEMENTS DEBUG');
+      console.log('Total movements:', data?.length);
+
+      if (data && data.length > 0) {
+        const firstMovement = data[0] as any; // Type assertion for debug purposes
+        console.log('First movement:', firstMovement);
+        console.log('Has sale?', !!firstMovement.sales);
+        console.log('Sale data:', firstMovement.sales);
+        console.log('Sale items:', firstMovement.sales?.sale_items);
+        console.log('Sale items count:', firstMovement.sales?.sale_items?.length || 0);
+      }
+      console.groupEnd();
 
       return {
         movements: (data || []) as unknown as InventoryMovement[],

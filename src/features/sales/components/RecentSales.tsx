@@ -77,12 +77,12 @@ export function RecentSales() {
   const { data: sales, isLoading } = useSales({ limit: 20 });
   const { mutate: deleteSale, isPending: isDeleting } = useDeleteSale();
   const { user, userRole } = useAuth();
-  const [saleToDelete, setSaleToDelete] = useState<{id: string, number: number} | null>(null);
+  const [saleToDelete, setSaleToDelete] = useState<{ id: string, number: number } | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [expandedSaleId, setExpandedSaleId] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
-  
+
   // Alterna a exibição dos detalhes da venda
   const toggleSaleDetails = (saleId: string) => {
     setExpandedSaleId(expandedSaleId === saleId ? null : saleId);
@@ -95,7 +95,7 @@ export function RecentSales() {
 
   const handleConfirmDelete = () => {
     if (!saleToDelete) return;
-    
+
     // Executa a mutação de exclusão
     deleteSale(saleToDelete.id, {
       onSuccess: () => {
@@ -115,8 +115,8 @@ export function RecentSales() {
   };
 
   const handleViewFullHistory = () => {
-    // Navega para página de relatórios financeiros (não logs técnicos)
-    navigate('/reports');
+    // Navega para página de movimentações (histórico completo)
+    navigate('/movements');
   };
 
   if (isLoading) {
@@ -231,7 +231,7 @@ export function RecentSales() {
           </div>
         </div>
       </div>
-      
+
       {/* Área scrollável */}
       <div className="flex-1 min-h-0">
         {sales?.length === 0 ? (
@@ -253,244 +253,244 @@ export function RecentSales() {
                 {sales && sales.length > 10 ? '⬇ Role para ver mais vendas ⬇' : ''}
               </div>
             </div>
-            
-            {sales?.map((sale) => (
-            <div 
-              key={sale.id} 
-              className="bg-black/70 backdrop-blur-xl border border-white/20 shadow-lg rounded-lg p-4 hover:shadow-xl transition-all duration-200 hero-spotlight"
-              onMouseMove={(e) => {
-                const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                const x = ((e.clientX - rect.left) / rect.width) * 100;
-                const y = ((e.clientY - rect.top) / rect.height) * 100;
-                (e.currentTarget as HTMLElement).style.setProperty("--x", `${x}%`);
-                (e.currentTarget as HTMLElement).style.setProperty("--y", `${y}%`);
-              }}
-            >
-              <div className="flex flex-col sm:flex-row justify-between gap-4">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-3">
-                    {sale.delivery_type === 'delivery' ? (
-                      <Truck className="h-5 w-5 text-green-400" />
-                    ) : (
-                      <Store className="h-5 w-5 text-blue-400" />
-                    )}
-                    <h3 className={cn(text.h3, shadows.medium, "font-semibold text-lg")}>
-                      {sale.delivery_type === 'delivery' ? 'Pedido' : 'Venda'} #{sale.order_number}
-                    </h3>
-                    <span 
-                      className={cn("text-xs px-2 py-1 rounded-full", getStatusBadge(sale.status))}
-                    >
-                      {
-                        (() => {
-                          const status = sale.status.toLowerCase();
-                          switch(status) {
-                            case 'completed': return 'Concluído';
-                            case 'pending': return 'Pendente';
-                            case 'cancelled':
-                            case 'canceled': return 'Cancelado';
-                            case 'returned': return 'Devolvido';
-                            default: return status.charAt(0).toUpperCase() + status.slice(1);
-                          }
-                        })()
-                      }
-                    </span>
-                  </div>
-                  <div className="flex flex-col gap-2 text-sm">
-                    <div className="flex items-center gap-2">
-                      <CreditCard className="h-4 w-4 text-blue-400" />
-                      <span className={cn(text.h6, shadows.subtle)}>
-                        {formatPaymentMethod(sale.payment_method)}
-                      </span>
-                      <span className={cn("text-xs px-2 py-0.5 rounded-full", getPaymentStatusBadge(sale.payment_status))}>
-                        {formatPaymentStatus(sale.payment_status)}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <User className="h-4 w-4 text-purple-400" />
-                      <span className={cn(text.h6, shadows.subtle)}>
-                        Vendedor: {sale.seller?.name || 'Não informado'}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <User className="h-4 w-4 text-amber-400" />
-                      <span className={cn(text.h6, shadows.subtle)}>
-                        Cliente: {sale.customer?.name || 'Não informado'}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {(() => {
-                        const IconComponent = getDeliveryTypeIcon(sale.delivery_type) === 'Store' ? Store :
-                                             getDeliveryTypeIcon(sale.delivery_type) === 'Truck' ? Truck : Package;
-                        return <IconComponent className="h-4 w-4 text-orange-400" />;
-                      })()}
-                      <span className={cn(text.h6, shadows.subtle)}>
-                        Tipo: {formatDeliveryType(sale.delivery_type)}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <CalendarDays className="h-4 w-4 text-emerald-400" />
-                      <span className={cn(text.h6, shadows.subtle)}>
-                        {format(new Date(sale.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                      </span>
-                    </div>
 
-                    {/* Telefone do cliente */}
-                    {sale.customer?.phone && (
+            {sales?.map((sale) => (
+              <div
+                key={sale.id}
+                className="bg-black/70 backdrop-blur-xl border border-white/20 shadow-lg rounded-lg p-4 hover:shadow-xl transition-all duration-200 hero-spotlight"
+                onMouseMove={(e) => {
+                  const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                  const x = ((e.clientX - rect.left) / rect.width) * 100;
+                  const y = ((e.clientY - rect.top) / rect.height) * 100;
+                  (e.currentTarget as HTMLElement).style.setProperty("--x", `${x}%`);
+                  (e.currentTarget as HTMLElement).style.setProperty("--y", `${y}%`);
+                }}
+              >
+                <div className="flex flex-col sm:flex-row justify-between gap-4">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-3">
+                      {sale.delivery_type === 'delivery' ? (
+                        <Truck className="h-5 w-5 text-green-400" />
+                      ) : (
+                        <Store className="h-5 w-5 text-blue-400" />
+                      )}
+                      <h3 className={cn(text.h3, shadows.medium, "font-semibold text-lg")}>
+                        {sale.delivery_type === 'delivery' ? 'Pedido' : 'Venda'} #{sale.order_number}
+                      </h3>
+                      <span
+                        className={cn("text-xs px-2 py-1 rounded-full", getStatusBadge(sale.status))}
+                      >
+                        {
+                          (() => {
+                            const status = sale.status.toLowerCase();
+                            switch (status) {
+                              case 'completed': return 'Concluído';
+                              case 'pending': return 'Pendente';
+                              case 'cancelled':
+                              case 'canceled': return 'Cancelado';
+                              case 'returned': return 'Devolvido';
+                              default: return status.charAt(0).toUpperCase() + status.slice(1);
+                            }
+                          })()
+                        }
+                      </span>
+                    </div>
+                    <div className="flex flex-col gap-2 text-sm">
                       <div className="flex items-center gap-2">
-                        <Package className="h-4 w-4 text-blue-400" />
+                        <CreditCard className="h-4 w-4 text-blue-400" />
                         <span className={cn(text.h6, shadows.subtle)}>
-                          Tel: {sale.customer.phone}
+                          {formatPaymentMethod(sale.payment_method)}
+                        </span>
+                        <span className={cn("text-xs px-2 py-0.5 rounded-full", getPaymentStatusBadge(sale.payment_status))}>
+                          {formatPaymentStatus(sale.payment_status)}
                         </span>
                       </div>
-                    )}
+                      <div className="flex items-center gap-2">
+                        <User className="h-4 w-4 text-purple-400" />
+                        <span className={cn(text.h6, shadows.subtle)}>
+                          Vendedor: {sale.seller?.name || 'Não informado'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <User className="h-4 w-4 text-amber-400" />
+                        <span className={cn(text.h6, shadows.subtle)}>
+                          Cliente: {sale.customer?.name || 'Não informado'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {(() => {
+                          const IconComponent = getDeliveryTypeIcon(sale.delivery_type) === 'Store' ? Store :
+                            getDeliveryTypeIcon(sale.delivery_type) === 'Truck' ? Truck : Package;
+                          return <IconComponent className="h-4 w-4 text-orange-400" />;
+                        })()}
+                        <span className={cn(text.h6, shadows.subtle)}>
+                          Tipo: {formatDeliveryType(sale.delivery_type)}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <CalendarDays className="h-4 w-4 text-emerald-400" />
+                        <span className={cn(text.h6, shadows.subtle)}>
+                          {format(new Date(sale.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                        </span>
+                      </div>
 
-                    {/* Informações específicas de delivery */}
-                    {sale.delivery_type === 'delivery' && (
-                      <>
-                        {/* Endereço de entrega */}
-                        {sale.delivery_address && (
-                          <div className="flex items-center gap-2">
-                            <Package className="h-4 w-4 text-green-400" />
-                            <span className={cn(text.h6, shadows.subtle)}>
-                              Endereço: {sale.delivery_address.address}
-                            </span>
-                          </div>
-                        )}
+                      {/* Telefone do cliente */}
+                      {sale.customer?.phone && (
+                        <div className="flex items-center gap-2">
+                          <Package className="h-4 w-4 text-blue-400" />
+                          <span className={cn(text.h6, shadows.subtle)}>
+                            Tel: {sale.customer.phone}
+                          </span>
+                        </div>
+                      )}
 
-                        {/* Taxa de entrega */}
-                        {sale.delivery_fee && sale.delivery_fee > 0 && (
-                          <div className="flex items-center gap-2">
-                            <Package className="h-4 w-4 text-yellow-400" />
-                            <span className={cn(text.h6, shadows.subtle)}>
-                              Taxa: {new Intl.NumberFormat("pt-BR", {
-                                style: "currency",
-                                currency: "BRL"
-                              }).format(sale.delivery_fee)}
-                            </span>
-                          </div>
-                        )}
-
-                        {/* Entregador */}
-                        {sale.delivery_person?.name && (
-                          <div className="flex items-center gap-2">
-                            <Truck className="h-4 w-4 text-purple-400" />
-                            <span className={cn(text.h6, shadows.subtle)}>
-                              Entregador: {sale.delivery_person.name}
-                            </span>
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </div>
-                </div>
-                <div className="flex flex-col items-end gap-1">
-                  <p className={cn(text.h1, shadows.strong, "text-xl font-bold text-right")}>
-                    {new Intl.NumberFormat("pt-BR", {
-                      style: "currency",
-                      currency: "BRL"
-                    }).format(Number(sale.final_amount || sale.total_amount || 0))}
-                  </p>
-                  <div className="flex gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="h-8 bg-black/50 border-blue-400/30 text-blue-400 hover:bg-blue-400/10 hover:border-blue-400/50 hover:text-blue-300 transition-all duration-200 backdrop-blur-sm"
-                      onClick={() => toggleSaleDetails(sale.id)}
-                    >
-                      <Eye className="h-3 w-3 mr-1" />
-                      {expandedSaleId === sale.id ? 'Ocultar' : 'Detalhes'}
-                    </Button>
-                    {(userRole === 'admin' || userRole === 'employee') && (
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="h-8 w-8 p-0 bg-black/50 border-red-400/30 text-red-400 hover:bg-red-400/10 hover:border-red-400/50 hover:text-red-300 transition-all duration-200 backdrop-blur-sm disabled:opacity-50"
-                        onClick={() => handleDeleteClick(sale.id, sale.order_number)}
-                        disabled={isDeleting}
-                      >
-                        <Trash2 className="h-3 w-3" />
-                        <span className="sr-only">Excluir</span>
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </div>
-              
-              {/* Detalhes expandidos da venda */}
-              {expandedSaleId === sale.id && (
-                <div className="mt-4 pt-4 border-t border-white/20 bg-white/5 backdrop-blur-sm rounded-lg p-4 animate-in slide-in-from-top-2 duration-300">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Package className="h-4 w-4 text-emerald-400" />
-                    <h4 className={cn(text.h4, shadows.medium, "font-medium text-emerald-400")}>
-                      Itens da venda ({sale.items?.length || 0})
-                    </h4>
-                  </div>
-                  {sale.items && sale.items.length > 0 ? (
-                    <div className="space-y-3">
-                      {sale.items.map((item) => (
-                        <div key={item.id} className="flex justify-between items-center text-sm bg-black/30 rounded-lg p-3 border border-white/10">
-                          <div className="flex items-center gap-3">
-                            <div className="bg-blue-500/20 text-blue-400 rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold">
-                              {item.quantity}
-                            </div>
-                            <div>
-                              <span className={cn(text.h5, shadows.light, "font-medium text-white")}>
-                                {item.product?.name || 'Produto não encontrado'}
+                      {/* Informações específicas de delivery */}
+                      {sale.delivery_type === 'delivery' && (
+                        <>
+                          {/* Endereço de entrega */}
+                          {sale.delivery_address && (
+                            <div className="flex items-center gap-2">
+                              <Package className="h-4 w-4 text-green-400" />
+                              <span className={cn(text.h6, shadows.subtle)}>
+                                Endereço: {sale.delivery_address.address}
                               </span>
-                              <div className="text-xs text-gray-400">
-                                {new Intl.NumberFormat("pt-BR", {
+                            </div>
+                          )}
+
+                          {/* Taxa de entrega */}
+                          {sale.delivery_fee && sale.delivery_fee > 0 && (
+                            <div className="flex items-center gap-2">
+                              <Package className="h-4 w-4 text-yellow-400" />
+                              <span className={cn(text.h6, shadows.subtle)}>
+                                Taxa: {new Intl.NumberFormat("pt-BR", {
                                   style: "currency",
                                   currency: "BRL"
-                                }).format(Number(item.unit_price || 0))} por unidade
+                                }).format(sale.delivery_fee)}
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Entregador */}
+                          {sale.delivery_person?.name && (
+                            <div className="flex items-center gap-2">
+                              <Truck className="h-4 w-4 text-purple-400" />
+                              <span className={cn(text.h6, shadows.subtle)}>
+                                Entregador: {sale.delivery_person.name}
+                              </span>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end gap-1">
+                    <p className={cn(text.h1, shadows.strong, "text-xl font-bold text-right")}>
+                      {new Intl.NumberFormat("pt-BR", {
+                        style: "currency",
+                        currency: "BRL"
+                      }).format(Number(sale.final_amount || sale.total_amount || 0))}
+                    </p>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 bg-black/50 border-blue-400/30 text-blue-400 hover:bg-blue-400/10 hover:border-blue-400/50 hover:text-blue-300 transition-all duration-200 backdrop-blur-sm"
+                        onClick={() => toggleSaleDetails(sale.id)}
+                      >
+                        <Eye className="h-3 w-3 mr-1" />
+                        {expandedSaleId === sale.id ? 'Ocultar' : 'Detalhes'}
+                      </Button>
+                      {(userRole === 'admin' || userRole === 'employee') && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-8 w-8 p-0 bg-black/50 border-red-400/30 text-red-400 hover:bg-red-400/10 hover:border-red-400/50 hover:text-red-300 transition-all duration-200 backdrop-blur-sm disabled:opacity-50"
+                          onClick={() => handleDeleteClick(sale.id, sale.order_number)}
+                          disabled={isDeleting}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                          <span className="sr-only">Excluir</span>
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Detalhes expandidos da venda */}
+                {expandedSaleId === sale.id && (
+                  <div className="mt-4 pt-4 border-t border-white/20 bg-white/5 backdrop-blur-sm rounded-lg p-4 animate-in slide-in-from-top-2 duration-300">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Package className="h-4 w-4 text-emerald-400" />
+                      <h4 className={cn(text.h4, shadows.medium, "font-medium text-emerald-400")}>
+                        Itens da venda ({sale.items?.length || 0})
+                      </h4>
+                    </div>
+                    {sale.items && sale.items.length > 0 ? (
+                      <div className="space-y-3">
+                        {sale.items.map((item) => (
+                          <div key={item.id} className="flex justify-between items-center text-sm bg-black/30 rounded-lg p-3 border border-white/10">
+                            <div className="flex items-center gap-3">
+                              <div className="bg-blue-500/20 text-blue-400 rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold">
+                                {item.quantity}
+                              </div>
+                              <div>
+                                <span className={cn(text.h5, shadows.light, "font-medium text-white")}>
+                                  {item.product?.name || 'Produto não encontrado'}
+                                </span>
+                                <div className="text-xs text-gray-400">
+                                  {new Intl.NumberFormat("pt-BR", {
+                                    style: "currency",
+                                    currency: "BRL"
+                                  }).format(Number(item.unit_price || 0))} por unidade
+                                </div>
                               </div>
                             </div>
+                            <div className={cn(text.h4, shadows.light, "font-bold text-emerald-400")}>
+                              {new Intl.NumberFormat("pt-BR", {
+                                style: "currency",
+                                currency: "BRL"
+                              }).format(Number(item.subtotal || 0))}
+                            </div>
                           </div>
-                          <div className={cn(text.h4, shadows.light, "font-bold text-emerald-400")}>
-                            {new Intl.NumberFormat("pt-BR", {
-                              style: "currency",
-                              currency: "BRL"
-                            }).format(Number(item.subtotal || 0))}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-6 bg-amber-500/10 rounded-lg border border-amber-400/30">
-                      <Package className="h-8 w-8 text-amber-400 mx-auto mb-2" />
-                      <p className={cn(text.h6, shadows.subtle, "text-sm text-amber-300 font-medium")}>
-                        Venda sem itens registrados
-                      </p>
-                      <p className={cn(text.h6, shadows.subtle, "text-xs text-amber-400/70 mt-1")}>
-                        Esta venda pode ter sido criada antes da implementação do sistema de itens ou teve seus itens removidos.
-                      </p>
-                    </div>
-                  )}
-                  
-                  {sale.notes && (
-                    <div className="mt-4 pt-4 border-t border-white/20">
-                      <div className="flex items-center gap-2 mb-2">
-                        <FileText className="h-4 w-4 text-amber-400" />
-                        <h4 className={cn(text.h5, shadows.medium, "font-medium text-amber-400")}>
-                          Observações:
-                        </h4>
+                        ))}
                       </div>
-                      <div className="bg-black/30 rounded-lg p-3 border border-white/10">
-                        <p className={cn(text.h6, shadows.subtle, "text-sm text-gray-300")}>
-                          {sale.notes}
+                    ) : (
+                      <div className="text-center py-6 bg-amber-500/10 rounded-lg border border-amber-400/30">
+                        <Package className="h-8 w-8 text-amber-400 mx-auto mb-2" />
+                        <p className={cn(text.h6, shadows.subtle, "text-sm text-amber-300 font-medium")}>
+                          Venda sem itens registrados
+                        </p>
+                        <p className={cn(text.h6, shadows.subtle, "text-xs text-amber-400/70 mt-1")}>
+                          Esta venda pode ter sido criada antes da implementação do sistema de itens ou teve seus itens removidos.
                         </p>
                       </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+                    )}
+
+                    {sale.notes && (
+                      <div className="mt-4 pt-4 border-t border-white/20">
+                        <div className="flex items-center gap-2 mb-2">
+                          <FileText className="h-4 w-4 text-amber-400" />
+                          <h4 className={cn(text.h5, shadows.medium, "font-medium text-amber-400")}>
+                            Observações:
+                          </h4>
+                        </div>
+                        <div className="bg-black/30 rounded-lg p-3 border border-white/10">
+                          <p className={cn(text.h6, shadows.subtle, "text-sm text-gray-300")}>
+                            {sale.notes}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             ))}
-            
+
             {/* Botão Ver histórico dentro da área scrollável */}
             <div className="flex justify-center pt-6 pb-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <Button
+                variant="outline"
+                size="sm"
                 className="gap-2 bg-black/50 border-amber-400/30 text-amber-400 hover:bg-amber-400/10 hover:border-amber-400/50 transition-all duration-300"
                 onClick={handleViewFullHistory}
               >
@@ -508,7 +508,7 @@ export function RecentSales() {
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir venda</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir o pedido #{saleToDelete?.number}? 
+              Tem certeza que deseja excluir o pedido #{saleToDelete?.number}?
               <br /><br />
               <strong>Esta ação irá:</strong>
               <br />• Remover a venda do sistema
@@ -519,15 +519,15 @@ export function RecentSales() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel 
-              onClick={handleCancelDelete} 
+            <AlertDialogCancel
+              onClick={handleCancelDelete}
               disabled={isDeleting}
               className="bg-black/50 border-white/20 text-white hover:bg-white/10 hover:border-white/40 transition-all duration-200"
             >
               Cancelar
             </AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleConfirmDelete} 
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
               className="bg-red-600 text-white hover:bg-red-700 border-red-500/50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={isDeleting}
             >

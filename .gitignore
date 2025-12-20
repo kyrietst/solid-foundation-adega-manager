@@ -97,7 +97,7 @@ temp/
 
 # System files
 .fuse_hidden*flattened-codebase.xml
-.mcp.json
+
 
 # ===== SECURITY & DEVELOPMENT PROTECTION =====
 
@@ -137,6 +137,7 @@ flattened-codebase.xml
 .env
 .env.*
 !.env.example
+.mcp.json
 
 # Documentação e Scripts Internos (Manter local, não subir)
 /docs/
@@ -145,7 +146,7 @@ flattened-codebase.xml
 # Ferramentas de IA e Desenvolvimento (Manter local, não subir)
 CLAUDE.md
 .claude/
-.mcp.json
+
 .playwright-mcp/
 
 # Backups e Arquivos Sensíveis (Deletar)
