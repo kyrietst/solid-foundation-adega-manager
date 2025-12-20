@@ -85,10 +85,13 @@ export const useMovements = (options: UseMovementsOptions = {}): UseMovementsRet
         .from('inventory_movements')
         .select(`
           *,
+          quantity:quantity_change,
+          type:type_enum,
           products:products (
             id,
             name,
-            price
+            price,
+            unit_type
           ),
           customers:customers (
             id,

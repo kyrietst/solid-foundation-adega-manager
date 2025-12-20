@@ -90,10 +90,24 @@ export const MovementsTable: React.FC<MovementsTableProps> = ({
 
   const getStatusBadge = (status?: string, type?: string) => {
     // Se não tiver status de venda, usa o tipo de movimentação
+    // Se não tiver status de venda, usa o tipo de movimentação
     if (!status) {
+      const typeTranslations: Record<string, string> = {
+        'inventory_adjustment': 'Ajuste de Estoque',
+        'stock_transfer_out': 'Transferência (Saída)',
+        'stock_transfer_in': 'Transferência (Entrada)',
+        'sale': 'Venda',
+        'purchase': 'Compra',
+        'return': 'Devolução',
+        'loss': 'Perda',
+        'gift': 'Brinde/Bonificação',
+        'manual_entry': 'Entrada Manual',
+        'manual_exit': 'Saída Manual'
+      };
+
       return (
         <Badge variant="outline" className="bg-gray-500/10 text-gray-400 border-gray-500/30">
-          {type || 'N/A'}
+          {typeTranslations[type || ''] || type || 'N/A'}
         </Badge>
       );
     }
@@ -247,8 +261,13 @@ export const MovementsTable: React.FC<MovementsTableProps> = ({
                     {/* Valor */}
                     <td className="px-4 py-3 text-right">
                       <div className="flex flex-col items-end">
-                        <span className={cn("font-bold text-emerald-400", !amount && "text-gray-500")}>
-                          {amount ? formatCurrency(typeof amount === 'number' ? amount : 0) : 'R$ 0,00'}
+                        <span className={cn("font-bold text-emerald-400", !amount && !movement.quantity && "text-gray-500")}>
+                          {isSale
+                            ? (amount ? formatCurrency(typeof amount === 'number' ? amount : 0) : 'R$ 0,00')
+                            : (
+                              <span>{Math.abs(Number(movement.quantity) || 0)} <span className="text-xs font-normal text-gray-400">{movement.products?.unit_type || 'un'}</span></span>
+                            )
+                          }
                         </span>
                         {itemsCount > 0 && (
                           <span className="text-[10px] text-gray-500">
@@ -299,29 +318,52 @@ export const MovementsTable: React.FC<MovementsTableProps> = ({
                             </div>
 
                             {/* Lista de Itens */}
-                            {sale?.sale_items && sale.sale_items.length > 0 ? (
+                            {(sale?.sale_items && sale.sale_items.length > 0) || (!isSale && movement.products) ? (
                               <div className="space-y-3">
-                                {sale.sale_items.map((item, idx) => (
-                                  <div key={idx} className="flex justify-between items-center text-sm bg-black/30 rounded-lg p-3 border border-white/10">
+                                {isSale && sale?.sale_items ? (
+                                  sale.sale_items.map((item, idx) => (
+                                    <div key={idx} className="flex justify-between items-center text-sm bg-black/30 rounded-lg p-3 border border-white/10">
+                                      <div className="flex items-center gap-3">
+                                        <div className="bg-blue-500/20 text-blue-400 rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold">
+                                          {item.quantity}
+                                        </div>
+                                        <div>
+                                          <span className={cn(text.h5, shadows.light, "font-medium text-white")}>
+                                            {item.products?.name || item.product_id}
+                                          </span>
+                                          <div className="text-xs text-gray-400">
+                                            {formatCurrency(item.unit_price)} por unidade
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <div className={cn(text.h4, shadows.light, "font-bold text-emerald-400")}>
+                                        {formatCurrency(item.unit_price * item.quantity)}
+                                      </div>
+                                    </div>
+                                  ))
+                                ) : (
+                                  // Caso não seja venda (Movimentação Manual)
+                                  <div className="flex justify-between items-center text-sm bg-black/30 rounded-lg p-3 border border-white/10">
                                     <div className="flex items-center gap-3">
-                                      <div className="bg-blue-500/20 text-blue-400 rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold">
-                                        {item.quantity}
+                                      <div className="bg-amber-500/20 text-amber-400 rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold">
+                                        {movement.quantity}
                                       </div>
                                       <div>
                                         <span className={cn(text.h5, shadows.light, "font-medium text-white")}>
-                                          {item.products?.name || item.product_id}
+                                          {movement.products?.name || 'Produto sem nome'}
                                         </span>
                                         <div className="text-xs text-gray-400">
-                                          {formatCurrency(item.unit_price)} por unidade
+                                          Movimentação Manual ({movement.type === 'in' ? 'Entrada' : 'Saída'})
                                         </div>
                                       </div>
                                     </div>
                                     <div className={cn(text.h4, shadows.light, "font-bold text-emerald-400")}>
-                                      {formatCurrency(item.unit_price * item.quantity)}
+                                      {Math.abs(Number(movement.quantity) || 0)} {movement.products?.unit_type || 'un'}
                                     </div>
                                   </div>
-                                ))}
+                                )}
                               </div>
+
                             ) : (
                               <div className="text-center py-6 bg-amber-500/10 rounded-lg border border-amber-400/30">
                                 <Package className="h-8 w-8 text-amber-400 mx-auto mb-2" />

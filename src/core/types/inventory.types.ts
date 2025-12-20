@@ -246,6 +246,13 @@ export interface InventoryMovement {
     unit_type: UnitType;
     price: Price;
   };
+  // Propriedade usada no query useMovements (alias 'products')
+  products?: {
+    id: string;
+    name: string;
+    price?: number;
+    unit_type?: UnitType;
+  };
   customer?: {
     name: string;
     phone?: string;
