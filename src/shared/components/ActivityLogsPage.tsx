@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/primitives/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/primitives/table';
+// Table primitives removed as we use raw HTML based on MovementsTable
+// import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/primitives/table';
 import { Badge } from '@/shared/ui/primitives/badge';
+import { PageHeader } from '@/shared/ui/composite/PageHeader';
 import { Button } from '@/shared/ui/primitives/button';
 import { SearchBar21st } from '@/shared/ui/thirdparty/search-bar-21st';
 import { LoadingSpinner } from '@/shared/ui/composite/loading-spinner';
@@ -135,12 +137,12 @@ export default function ActivityLogsPage() {
         .select('id, actor, role, action, entity, entity_id, details, created_at')
         .limit(limit);
 
-      if (role !== 'all') query = query.eq('role', role);
-      if (entity !== 'all') query = query.eq('entity', entity);
+      if (role !== 'all') query = query.eq('role', role as any);
+      if (entity !== 'all') query = query.eq('entity', entity as any);
       if (search) {
         query = query.or(`details.ilike.%${search}%,action.ilike.%${search}%,actor.ilike.%${search}%`);
       }
-      
+
       if (sortField) {
         query = query.order(sortField, { ascending: sortDirection === 'asc' });
       }
@@ -153,7 +155,7 @@ export default function ActivityLogsPage() {
   });
 
   const rows = data || [];
-  
+
   const uniqueEntities = ['all', ...new Set(rows.map(r => r.entity).filter(Boolean))];
 
   const handleSort = (field: SortField) => {
@@ -170,310 +172,320 @@ export default function ActivityLogsPage() {
     return sortDirection === 'asc' ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />;
   };
 
-  if (isLoading) {
-    return (
-      <div className="container my-6 space-y-4 p-4 border border-border rounded-lg bg-background shadow-sm">
-        <div className="flex items-center justify-center py-8">
-          <LoadingSpinner size="lg" text="Carregando atividades..." />
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="container my-6 space-y-4 p-4 border border-border rounded-lg bg-background shadow-sm">
-        <div className="flex items-center justify-center py-8">
-          <div className="text-center text-accent-red">
-            <Activity className="w-8 h-8 mx-auto mb-2" />
-            <p>Erro ao carregar atividades</p>
-            <p className="text-sm text-gray-200 mt-1">{error.message}</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Mouse tracking for glow effect
+  const handleMouseMove = (e: React.MouseEvent<HTMLElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    e.currentTarget.style.setProperty("--x", `${x}% `);
+    e.currentTarget.style.setProperty("--y", `${y}% `);
+  };
 
   return (
-    <div className="container my-6 space-y-4 p-4 border border-border rounded-lg bg-background shadow-sm">
-      <div>
-        <h1 className="text-2xl font-semibold text-white flex items-center gap-2">
-          <Activity className="w-6 h-6" />
-          Atividades do Sistema
-        </h1>
-        <p className="text-sm text-gray-200">Auditoria completa de ações de usuários e sistema.</p>
-      </div>
-
-      {/* Filtros */}
-      <div className="flex flex-wrap gap-4 items-center justify-between">
-        <div className="flex gap-2 flex-wrap items-center">
-          <div className="w-64 md:w-80">
-            <SearchBar21st
-              placeholder="Buscar atividades..."
-              value={search}
-              onChange={(val) => setSearch(val)}
-              debounceMs={150}
-              disableResizeAnimation
-              showOnFocus
-            />
-          </div>
-          <select
-            value={role}
-            onChange={(e) => setRole(e.target.value)}
-            className="px-3 py-2 border border-border rounded-md bg-background text-sm"
-          >
-            <option value="all">Todos os perfis</option>
-            <option value="admin">Admin</option>
-            <option value="employee">Vendedor</option>
-            <option value="delivery">Delivery</option>
-            <option value="system">Sistema</option>
-          </select>
-          <select
-            value={entity}
-            onChange={(e) => setEntity(e.target.value)}
-            className="px-3 py-2 border border-border rounded-md bg-background text-sm"
-          >
-            <option value="all">Todas as entidades</option>
-            {uniqueEntities.slice(1).map((ent) => (
-              <option key={ent} value={ent}>
-                {ent}
-              </option>
-            ))}
-          </select>
-          <select
-            value={limit}
-            onChange={(e) => setLimit(Number(e.target.value))}
-            className="px-3 py-2 border border-border rounded-md bg-background text-sm"
-          >
-            <option value={25}>25 registros</option>
-            <option value={50}>50 registros</option>
-            <option value={100}>100 registros</option>
-            <option value={200}>200 registros</option>
-          </select>
-        </div>
-
+    <div className="w-full h-full flex flex-col p-4 min-h-0">
+      <PageHeader
+        title="LOGS DO SISTEMA"
+        count={rows.length}
+        countLabel="atividades"
+      >
         <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-200">
-            {rows.length} atividade{rows.length !== 1 ? 's' : ''}
-          </span>
+          {/* Adicionar exportação ou outros botões aqui se necessário */}
         </div>
-      </div>
+      </PageHeader>
 
-      {/* Tabela */}
-      <div className="overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[160px]">
-                <Button
-                  variant="ghost"
-                  onClick={() => handleSort('created_at')}
-                  className="flex items-center gap-2 p-0 hover:bg-transparent text-gray-200 hover:text-white"
-                >
-                  <Clock className="w-4 h-4" />
-                  Quando
-                  {getSortIcon('created_at')}
-                </Button>
-              </TableHead>
-              <TableHead className="w-[180px]">
-                <Button
-                  variant="ghost"
-                  onClick={() => handleSort('actor')}
-                  className="flex items-center gap-2 p-0 hover:bg-transparent text-gray-200 hover:text-white"
-                >
-                  <User className="w-4 h-4" />
-                  Usuário
-                  {getSortIcon('actor')}
-                </Button>
-              </TableHead>
-              <TableHead className="w-[120px]">
-                <Button
-                  variant="ghost"
-                  onClick={() => handleSort('role')}
-                  className="flex items-center gap-2 p-0 hover:bg-transparent text-gray-200 hover:text-white"
-                >
-                  <Shield className="w-4 h-4" />
-                  Perfil
-                  {getSortIcon('role')}
-                </Button>
-              </TableHead>
-              <TableHead className="w-[140px]">
-                <Button
-                  variant="ghost"
-                  onClick={() => handleSort('action')}
-                  className="flex items-center gap-2 p-0 hover:bg-transparent text-gray-200 hover:text-white"
-                >
-                  <Activity className="w-4 h-4" />
-                  Ação
-                  {getSortIcon('action')}
-                </Button>
-              </TableHead>
-              <TableHead className="w-[140px]">
-                <Button
-                  variant="ghost"
-                  onClick={() => handleSort('entity')}
-                  className="flex items-center gap-2 p-0 hover:bg-transparent text-gray-200 hover:text-white"
-                >
-                  <Database className="w-4 h-4" />
-                  Entidade
-                  {getSortIcon('entity')}
-                </Button>
-              </TableHead>
-              <TableHead>
-                <div className="flex items-center gap-2 text-gray-200">
-                  <FileText className="w-4 h-4" />
-                  Detalhes
-                </div>
-              </TableHead>
-              <TableHead className="w-[60px]">
-                <div className="flex items-center gap-2 text-gray-200">
-                  <Eye className="w-4 h-4" />
-                </div>
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {rows.length ? (
-              rows.map((row) => (
-                <TableRow key={row.id}>
-                  <TableCell className="font-mono text-xs whitespace-nowrap text-gray-200">
-                    {new Date(row.created_at).toLocaleString('pt-BR', {
-                      day: '2-digit',
-                      month: '2-digit',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                  </TableCell>
-                  <TableCell className="whitespace-nowrap">
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center">
-                        <span className="text-xs font-semibold text-primary">
-                          {(row.actor || 'S').charAt(0).toUpperCase()}
-                        </span>
-                      </div>
-                      <span className="text-sm text-white">{row.actor || 'Sistema'}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <RoleBadge role={row.role} />
-                  </TableCell>
-                  <TableCell>
-                    <ActionBadge action={row.action} />
-                  </TableCell>
-                  <TableCell>
-                    <EntityBadge entity={row.entity} entityId={row.entity_id} />
-                  </TableCell>
-                  <TableCell className="max-w-[250px] text-gray-200">
-                    <div className="truncate" title={row.details || ''}>
-                      {row.details || '—'}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleViewDetails(row)}
-                      className="h-8 w-8 p-0 text-gray-400 hover:text-white hover:bg-white/10"
-                      title="Ver detalhes completos"
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center py-8">
-                  <div className="flex flex-col items-center gap-2">
-                    <Activity className="w-8 h-8 text-gray-200" />
-                    <p className="text-gray-200">Nenhuma atividade encontrada.</p>
-                    {(search || role !== 'all' || entity !== 'all') && (
-                      <p className="text-sm text-gray-300">
-                        Tente ajustar os filtros de busca.
-                      </p>
+      {/* Container principal com altura controlada e scroll - GLOW EFFECT & GLASS */}
+      <section
+        className="flex-1 min-h-0 flex flex-col bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 relative overflow-hidden group"
+        onMouseMove={handleMouseMove}
+      >
+        {/* Glow effect removed */}
+
+        {/* Filtros em uma barra superior dentro do card */}
+        <div className="p-4 border-b border-white/10 flex flex-wrap gap-4 items-center justify-between relative z-10 bg-black/20">
+          <div className="flex gap-2 flex-wrap items-center flex-1">
+            <div className="w-64 md:w-80">
+              <SearchBar21st
+                placeholder="Buscar atividades..."
+                value={search}
+                onChange={(val) => setSearch(val)}
+                debounceMs={150}
+                disableResizeAnimation
+                showOnFocus
+                className="bg-black/50 border-white/10 text-white placeholder:text-gray-500 focus:border-purple-500/50 focus:ring-purple-500/20"
+              />
+            </div>
+            <select
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+              className="px-3 py-2 border border-white/10 rounded-md bg-black/50 text-gray-200 text-sm focus:outline-none focus:border-purple-500/50 hover:bg-white/5 transition-colors"
+              style={{ colorScheme: 'dark' }}
+            >
+              <option value="all">Todos os perfis</option>
+              <option value="admin">Admin</option>
+              <option value="employee">Vendedor</option>
+              <option value="delivery">Delivery</option>
+              <option value="system">Sistema</option>
+            </select>
+            <select
+              value={entity}
+              onChange={(e) => setEntity(e.target.value)}
+              className="px-3 py-2 border border-white/10 rounded-md bg-black/50 text-gray-200 text-sm focus:outline-none focus:border-purple-500/50 hover:bg-white/5 transition-colors"
+              style={{ colorScheme: 'dark' }}
+            >
+              <option value="all">Todas as entidades</option>
+              {uniqueEntities.slice(1).map((ent) => (
+                <option key={ent} value={ent}>
+                  {ent}
+                </option>
+              ))}
+            </select>
+            <select
+              value={limit}
+              onChange={(e) => setLimit(Number(e.target.value))}
+              className="px-3 py-2 border border-white/10 rounded-md bg-black/50 text-gray-200 text-sm focus:outline-none focus:border-purple-500/50 hover:bg-white/5 transition-colors"
+              style={{ colorScheme: 'dark' }}
+            >
+              <option value={25}>25 linhas</option>
+              <option value={50}>50 linhas</option>
+              <option value={100}>100 linhas</option>
+              <option value={200}>200 linhas</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Container da Tabela com Scroll - Estilo MovementsTable */}
+        <div className="relative z-10 flex-1 min-h-0 overflow-auto p-4">
+          {isLoading ? (
+            <div className="h-full flex items-center justify-center">
+              <LoadingSpinner text="Carregando logs..." />
+            </div>
+          ) : error ? (
+            <div className="h-full flex flex-col items-center justify-center text-red-400 gap-2">
+              <Activity className="w-10 h-10 opacity-50" />
+              <p>Erro ao carregar dados</p>
+              <span className="text-xs opacity-70">{error.message}</span>
+            </div>
+          ) : (
+            <div className="w-full overflow-hidden rounded-lg border border-white/10 bg-black/40 backdrop-blur-md">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm text-left">
+                  <thead className="text-xs uppercase bg-black/60 text-gray-400 border-b border-white/10 sticky top-0 z-10">
+                    <tr>
+                      <th
+                        className="px-4 py-3 font-semibold cursor-pointer hover:text-primary-yellow transition-colors group"
+                        onClick={() => handleSort('created_at')}
+                      >
+                        <div className="flex items-center gap-1">
+                          DATA/HORA
+                          {getSortIcon('created_at')}
+                        </div>
+                      </th>
+                      <th
+                        className="px-4 py-3 font-semibold cursor-pointer hover:text-primary-yellow transition-colors group"
+                        onClick={() => handleSort('actor')}
+                      >
+                        <div className="flex items-center gap-1">
+                          USUÁRIO
+                          {getSortIcon('actor')}
+                        </div>
+                      </th>
+                      <th
+                        className="px-4 py-3 font-semibold cursor-pointer hover:text-primary-yellow transition-colors group"
+                        onClick={() => handleSort('role')}
+                      >
+                        <div className="flex items-center gap-1">
+                          PERFIL
+                          {getSortIcon('role')}
+                        </div>
+                      </th>
+                      <th
+                        className="px-4 py-3 font-semibold cursor-pointer hover:text-primary-yellow transition-colors group"
+                        onClick={() => handleSort('action')}
+                      >
+                        <div className="flex items-center gap-1">
+                          AÇÃO
+                          {getSortIcon('action')}
+                        </div>
+                      </th>
+                      <th
+                        className="px-4 py-3 font-semibold cursor-pointer hover:text-primary-yellow transition-colors group"
+                        onClick={() => handleSort('entity')}
+                      >
+                        <div className="flex items-center gap-1">
+                          ENTIDADE
+                          {getSortIcon('entity')}
+                        </div>
+                      </th>
+                      <th className="px-4 py-3 font-semibold text-gray-400">
+                        DETALHES
+                      </th>
+                      <th className="px-4 py-3 font-semibold text-center">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {rows.length ? (
+                      rows.map((row) => (
+                        <tr
+                          key={row.id}
+                          className="hover:bg-white/5 transition-colors duration-200 group"
+                        >
+                          <td className="px-4 py-3 font-mono text-xs whitespace-nowrap text-gray-400 group-hover:text-primary-yellow transition-colors">
+                            {new Date(row.created_at).toLocaleString('pt-BR', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: '2-digit',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </td>
+                          <td className="px-4 py-3 text-gray-300">
+                            <div className="flex items-center gap-3">
+                              <div className="w-7 h-7 bg-white/5 rounded-full flex items-center justify-center border border-white/10 group-hover:border-white/20">
+                                <span className="text-xs font-bold text-gray-300">
+                                  {(row.actor || 'S').charAt(0).toUpperCase()}
+                                </span>
+                              </div>
+                              <span className="text-sm text-gray-300 font-medium group-hover:text-white transition-colors">
+                                {row.actor || 'Sistema'}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <RoleBadge role={row.role} />
+                          </td>
+                          <td className="px-4 py-3">
+                            <ActionBadge action={row.action} />
+                          </td>
+                          <td className="px-4 py-3">
+                            <EntityBadge entity={row.entity} entityId={row.entity_id} />
+                          </td>
+                          <td className="px-4 py-3 text-gray-400 text-sm max-w-[300px]">
+                            <div className="truncate group-hover:text-gray-200 transition-colors" title={row.details || ''}>
+                              {row.details || '—'}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleViewDetails(row)}
+                              className="h-8 w-8 hover:bg-primary-yellow/20 hover:text-primary-yellow transition-all rounded-full"
+                              title="Ver detalhes completos"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={7} className="text-center py-12">
+                          <div className="flex flex-col items-center gap-3">
+                            <div className="p-4 bg-white/5 rounded-full">
+                              <Activity className="w-8 h-8 text-gray-500" />
+                            </div>
+                            <p className="text-gray-400 font-medium">Nenhuma atividade encontrada</p>
+                            {(search || role !== 'all' || entity !== 'all') && (
+                              <p className="text-sm text-gray-500">
+                                Tente limpar ou ajustar os filtros de busca
+                              </p>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
                     )}
-                  </div>
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
 
       {/* Modal de Detalhes do Log */}
       <Dialog open={isDetailModalOpen} onOpenChange={setIsDetailModalOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden bg-black/95 backdrop-blur-xl border-purple-500/30 shadow-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-xl font-bold text-white">
-              <FileText className="h-5 w-5 text-purple-400" />
-              Detalhes do Log
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden bg-zinc-950/95 backdrop-blur-xl border-purple-500/20 shadow-2xl p-0 gap-0">
+          <DialogHeader className="p-6 border-b border-white/10 bg-white/5">
+            <DialogTitle className="flex items-center gap-3 text-xl font-bold text-white">
+              <div className="p-2 bg-purple-500/20 rounded-lg">
+                <FileText className="h-5 w-5 text-purple-400" />
+              </div>
+              Detalhes da Atividade
             </DialogTitle>
-            <DialogDescription className="text-gray-400">
-              Informações completas do registro de atividade para auditoria.
+            <DialogDescription className="text-gray-400 ml-12">
+              Auditoria completa da ação realizada no sistema
             </DialogDescription>
           </DialogHeader>
 
           {selectedLog && (
-            <div className="space-y-4">
+            <div className="p-6 space-y-6 overflow-y-auto max-h-[calc(80vh-100px)]">
               {/* Informações resumidas */}
-              <div className="grid grid-cols-2 gap-4 p-4 bg-black/50 rounded-lg border border-white/10">
-                <div>
-                  <span className="text-xs text-gray-500 uppercase">Usuário</span>
-                  <p className="text-white font-medium">{selectedLog.actor || 'Sistema'}</p>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-white/5 rounded-xl border border-white/5 space-y-1">
+                  <span className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Usuário</span>
+                  <div className="flex items-center gap-2 pt-1">
+                    <User className="w-4 h-4 text-gray-400" />
+                    <p className="text-white font-medium">{selectedLog.actor || 'Sistema'}</p>
+                  </div>
                 </div>
-                <div>
-                  <span className="text-xs text-gray-500 uppercase">Perfil</span>
-                  <div className="mt-1"><RoleBadge role={selectedLog.role} /></div>
+                <div className="p-4 bg-white/5 rounded-xl border border-white/5 space-y-1">
+                  <span className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Perfil</span>
+                  <div className="pt-1"><RoleBadge role={selectedLog.role} /></div>
                 </div>
-                <div>
-                  <span className="text-xs text-gray-500 uppercase">Ação</span>
-                  <div className="mt-1"><ActionBadge action={selectedLog.action} /></div>
+                <div className="p-4 bg-white/5 rounded-xl border border-white/5 space-y-1">
+                  <span className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Ação</span>
+                  <div className="pt-1"><ActionBadge action={selectedLog.action} /></div>
                 </div>
-                <div>
-                  <span className="text-xs text-gray-500 uppercase">Entidade</span>
-                  <div className="mt-1"><EntityBadge entity={selectedLog.entity} entityId={selectedLog.entity_id} /></div>
-                </div>
-                <div className="col-span-2">
-                  <span className="text-xs text-gray-500 uppercase">Data/Hora</span>
-                  <p className="text-white font-mono text-sm">
-                    {new Date(selectedLog.created_at).toLocaleString('pt-BR', {
-                      day: '2-digit',
-                      month: '2-digit',
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                      second: '2-digit'
-                    })}
-                  </p>
+                <div className="p-4 bg-white/5 rounded-xl border border-white/5 space-y-1">
+                  <span className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Entidade</span>
+                  <div className="pt-1"><EntityBadge entity={selectedLog.entity} entityId={selectedLog.entity_id} /></div>
                 </div>
               </div>
 
+              <div className="p-4 bg-white/5 rounded-xl border border-white/5 space-y-1">
+                <span className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Timestamp</span>
+                <p className="text-white font-mono text-sm pt-1 flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-gray-400" />
+                  {new Date(selectedLog.created_at).toLocaleString('pt-BR', {
+                    weekday: 'long',
+                    day: '2-digit',
+                    month: 'long',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                  })}
+                </p>
+              </div>
+
               {/* JSON completo */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-400">JSON Completo (Dev/Suporte)</span>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between px-1">
+                  <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Payload JSON</span>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={handleCopyJson}
-                    className="h-8 text-xs text-gray-400 hover:text-white"
+                    className="h-7 text-xs text-purple-400 hover:text-purple-300 hover:bg-purple-500/10"
                   >
                     {copied ? (
                       <>
-                        <Check className="h-3 w-3 mr-1 text-green-400" />
-                        Copiado!
+                        <Check className="h-3 w-3 mr-1.5" />
+                        Copiado
                       </>
                     ) : (
                       <>
-                        <Copy className="h-3 w-3 mr-1" />
-                        Copiar JSON
+                        <Copy className="h-3 w-3 mr-1.5" />
+                        Copiar Dados
                       </>
                     )}
                   </Button>
                 </div>
-                <pre className="p-4 bg-black/70 rounded-lg border border-white/10 text-xs text-gray-300 overflow-auto max-h-[300px] font-mono">
-                  {JSON.stringify(selectedLog, null, 2)}
-                </pre>
+                <div className="relative group">
+                  <pre className="p-4 bg-zinc-950 rounded-xl border border-white/10 text-xs text-blue-300 overflow-auto max-h-[200px] font-mono shadow-inner custom-scrollbar">
+                    {JSON.stringify(selectedLog, null, 2)}
+                  </pre>
+                </div>
               </div>
             </div>
           )}
@@ -482,6 +494,4 @@ export default function ActivityLogsPage() {
     </div>
   );
 }
-
-
 

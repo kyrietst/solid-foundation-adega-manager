@@ -182,9 +182,7 @@ const Index = () => {
       case 'activities':
         return hasPermission(['admin', 'employee']) ? (
           <Suspense fallback={<LoadingScreen text="Carregando atividades..." />}>
-            <WhitePageShell>
-              <ActivitiesPage />
-            </WhitePageShell>
+            <ActivitiesPage />
           </Suspense>
         ) : <AccessDenied />;
       case 'expenses':
