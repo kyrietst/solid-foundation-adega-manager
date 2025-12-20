@@ -27,9 +27,13 @@ export interface Sale {
   delivery_type?: string;
 }
 
+import { DateRange } from "react-day-picker";
+import { format, endOfDay, startOfDay } from "date-fns";
+
 interface UseMovementsOptions {
   initialPage?: number;
   initialPageSize?: number;
+  dateRange?: DateRange;
 }
 
 interface UseMovementsReturn {
@@ -53,31 +57,31 @@ interface UseMovementsReturn {
 }
 
 /**
- * Hook principal para buscar movimentações de estoque COM PAGINAÇÃO
+ * Hook principal para buscar movimentações de estoque COM PAGINAÇÃO e FILTRO DE DATA
  * Implementa Context7 pattern para queries especializadas
  */
 export const useMovements = (options: UseMovementsOptions = {}): UseMovementsReturn => {
-  const { initialPage = 1, initialPageSize = 50 } = options;
+  const { initialPage = 1, initialPageSize = 50, dateRange } = options;
 
   // Estado de paginação
   const [page, setPageState] = useState(initialPage);
   const [pageSize, setPageSizeState] = useState(initialPageSize);
 
-  // Query paginada
+  // Query paginada e filtrada
   const {
     data,
     isLoading: isLoadingMovements,
     error: movementsError,
     refetch: refetchMovements
   } = useQuery({
-    queryKey: ['inventory_movements', page, pageSize],
+    queryKey: ['inventory_movements', page, pageSize, dateRange],
     queryFn: async () => {
       // Calcular range para paginação
       const from = (page - 1) * pageSize;
       const to = from + pageSize - 1;
 
-      // Query com count total
-      const { data, error, count } = await supabase
+      // Iniciar query
+      let query = supabase
         .from('inventory_movements')
         .select(`
           *,
@@ -113,7 +117,28 @@ export const useMovements = (options: UseMovementsOptions = {}): UseMovementsRet
             id,
             full_name
           )
-        `, { count: 'exact' })
+        `, { count: 'exact' });
+
+      // Aplicar filtros de data se existirem
+      if (dateRange?.from) {
+        const startDate = startOfDay(dateRange.from).toISOString();
+        query = query.gte('date', startDate);
+
+        if (dateRange.to) {
+          const endDate = endOfDay(dateRange.to).toISOString();
+          query = query.lte('date', endDate);
+        } else {
+          // Se só tem data inicial, filtrar apenas aquele dia (ou >= start)
+          // Mas UX comum de DateRange é >= start se end for null, ou dia exato.
+          // Shadcn DatePicker geralmente seta to = undefined quando seleciona o primeiro dia.
+          // Vamos assumir >= start por enquanto ou dia unico. 
+          // Melhor: GTE start. O usuário clica no segundo dia pra fechar o range.
+          query = query.gte('date', startDate);
+        }
+      }
+
+      // Finalizar query com order e range
+      const { data, error, count } = await query
         .order('date', { ascending: false })
         .range(from, to);
 
@@ -123,25 +148,16 @@ export const useMovements = (options: UseMovementsOptions = {}): UseMovementsRet
       }
 
       // 🔍 DEBUG: Log para investigar estrutura dos dados
-      console.group('🔍 MOVEMENTS DEBUG');
-      console.log('Total movements:', data?.length);
-
-      if (data && data.length > 0) {
-        const firstMovement = data[0] as any; // Type assertion for debug purposes
-        console.log('First movement:', firstMovement);
-        console.log('Has sale?', !!firstMovement.sales);
-        console.log('Sale data:', firstMovement.sales);
-        console.log('Sale items:', firstMovement.sales?.sale_items);
-        console.log('Sale items count:', firstMovement.sales?.sale_items?.length || 0);
-      }
-      console.groupEnd();
+      // console.group('🔍 MOVEMENTS DEBUG');
+      // console.log('Total movements:', data?.length);
+      // console.groupEnd();
 
       return {
         movements: (data || []) as unknown as InventoryMovement[],
         totalCount: count || 0
       };
     },
-    staleTime: 2 * 60 * 1000, // 2 minutos (reduzido para dados mais frescos)
+    staleTime: 2 * 60 * 1000, // 2 minutos
     refetchOnWindowFocus: false,
   });
 

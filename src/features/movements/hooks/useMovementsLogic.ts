@@ -4,14 +4,17 @@
  * Inclui suporte a PAGINAÇÃO para performance
  */
 
-import { useMemo } from 'react';
+import { useState, useMemo } from 'react';
+import { DateRange } from "react-day-picker";
 import { useMovements } from './useMovements';
 import { useMovementSupportData } from './useMovementSupportData';
 import { useMovementForm } from './useMovementForm';
 import { useMovementMutation } from './useMovementMutation';
 
 export const useMovementsLogic = () => {
-  // Buscar dados COM PAGINAÇÃO
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
+
+  // Buscar dados COM PAGINAÇÃO e FILTRO
   const {
     movements,
     isLoadingMovements,
@@ -23,7 +26,10 @@ export const useMovementsLogic = () => {
     setPage,
     setPageSize,
     refetchMovements
-  } = useMovements({ initialPageSize: 50 });
+  } = useMovements({
+    initialPageSize: 50,
+    dateRange // Passar range para a query
+  });
 
   const {
     products,
@@ -84,6 +90,10 @@ export const useMovementsLogic = () => {
     totalPages,
     setPage,
     setPageSize,
+
+    // Filtros
+    dateRange,
+    setDateRange,
 
     // Estados
     isLoadingMovements,

@@ -42,6 +42,10 @@ export const MovementsContainer: React.FC = () => {
     // Ações
     handleSubmit,
     handleSuccess,
+
+    // Filtros
+    dateRange,
+    setDateRange
   } = useMovementsLogic();
 
   // Handler para sucesso do formulário
@@ -74,6 +78,10 @@ export const MovementsContainer: React.FC = () => {
     totalPages,
     onPageChange: setPage,
     onPageSizeChange: setPageSize,
+
+    // Filtros
+    dateRange,
+    setDateRange,
 
     // Estados
     isLoading,

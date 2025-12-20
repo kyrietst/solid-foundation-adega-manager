@@ -5,11 +5,13 @@
  */
 
 import React, { useMemo } from 'react';
+import { DateRange } from "react-day-picker";
 import { Button } from '@/shared/ui/primitives/button';
 import { Plus } from 'lucide-react';
 import { FormDialog } from '@/shared/ui/layout/FormDialog';
 import { PageHeader } from '@/shared/ui/composite/PageHeader';
 import { PaginationControls } from '@/shared/ui/composite/pagination-controls';
+import { DatePickerWithRange } from '@/shared/ui/composite/date-range-picker';
 import { MovementsTable } from './MovementsTable';
 import { MovementDialog } from './MovementDialog';
 import { InventoryMovement } from '@/core/types/inventory.types';
@@ -33,6 +35,10 @@ export interface MovementsPresentationProps {
   totalPages: number;
   onPageChange: (page: number) => void;
   onPageSizeChange: (size: number) => void;
+
+  // Filtros
+  dateRange: DateRange | undefined;
+  setDateRange: (date: DateRange | undefined) => void;
 
   // Estados
   isLoading: boolean;
@@ -67,6 +73,9 @@ export const MovementsPresentation: React.FC<MovementsPresentationProps> = ({
   totalPages,
   onPageChange,
   onPageSizeChange,
+  // Filtros
+  dateRange,
+  setDateRange,
   // Estados
   isLoading,
   isCreating,
@@ -94,40 +103,47 @@ export const MovementsPresentation: React.FC<MovementsPresentationProps> = ({
         count={totalCount}
         countLabel="movimentações"
       >
-        {canCreateMovement && (
-          <FormDialog
-            open={isDialogOpen}
-            onOpenChange={onDialogOpenChange}
-            title="REGISTRAR MOVIMENTAÇÃO"
-            description="Adicione uma nova movimentação de estoque ao sistema"
-            onSubmit={onFormSubmit}
-            submitLabel="Salvar Movimentação"
-            cancelLabel="Cancelar"
-            loading={isCreating}
-            size="xl"
-            variant="premium"
-            glassEffect={true}
-            className="max-h-[90vh] overflow-y-auto"
-            trigger={
-              <Button
-                className="bg-gradient-to-r from-primary-yellow to-yellow-500 text-black hover:from-yellow-300 hover:to-yellow-400 font-semibold shadow-lg hover:shadow-yellow-400/30 transition-all duration-200 hover:scale-105"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                NOVA MOVIMENTAÇÃO
-              </Button>
-            }
-          >
-            <MovementDialog
-              formData={formData}
-              products={products}
-              customers={customers}
-              salesList={salesList}
-              isCreating={false}
-              onFormDataChange={onFormDataChange}
-              onSubmit={() => {}}
-            />
-          </FormDialog>
-        )}
+        <div className="flex items-center gap-2">
+          <DatePickerWithRange
+            date={dateRange}
+            setDate={setDateRange}
+          />
+
+          {canCreateMovement && (
+            <FormDialog
+              open={isDialogOpen}
+              onOpenChange={onDialogOpenChange}
+              title="REGISTRAR MOVIMENTAÇÃO"
+              description="Adicione uma nova movimentação de estoque ao sistema"
+              onSubmit={onFormSubmit}
+              submitLabel="Salvar Movimentação"
+              cancelLabel="Cancelar"
+              loading={isCreating}
+              size="xl"
+              variant="premium"
+              glassEffect={true}
+              className="max-h-[90vh] overflow-y-auto"
+              trigger={
+                <Button
+                  className="bg-gradient-to-r from-primary-yellow to-yellow-500 text-black hover:from-yellow-300 hover:to-yellow-400 font-semibold shadow-lg hover:shadow-yellow-400/30 transition-all duration-200 hover:scale-105"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  NOVA MOVIMENTAÇÃO
+                </Button>
+              }
+            >
+              <MovementDialog
+                formData={formData}
+                products={products}
+                customers={customers}
+                salesList={salesList}
+                isCreating={false}
+                onFormDataChange={onFormDataChange}
+                onSubmit={() => { }}
+              />
+            </FormDialog>
+          )}
+        </div>
       </PageHeader>
 
       {/* Container principal com altura controlada e scroll */}
