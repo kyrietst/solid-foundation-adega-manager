@@ -122,6 +122,13 @@ export const useMovements = (options: UseMovementsOptions = {}): UseMovementsRet
       // Aplicar filtros de data se existirem
       if (dateRange?.from) {
         const startDate = startOfDay(dateRange.from).toISOString();
+        console.log('📅 DateRange Filter:', {
+          from: dateRange.from,
+          to: dateRange.to,
+          startDate,
+          endDate: dateRange.to ? endOfDay(dateRange.to).toISOString() : 'N/A'
+        });
+
         query = query.gte('date', startDate);
 
         if (dateRange.to) {
@@ -129,12 +136,10 @@ export const useMovements = (options: UseMovementsOptions = {}): UseMovementsRet
           query = query.lte('date', endDate);
         } else {
           // Se só tem data inicial, filtrar apenas aquele dia (ou >= start)
-          // Mas UX comum de DateRange é >= start se end for null, ou dia exato.
-          // Shadcn DatePicker geralmente seta to = undefined quando seleciona o primeiro dia.
-          // Vamos assumir >= start por enquanto ou dia unico. 
-          // Melhor: GTE start. O usuário clica no segundo dia pra fechar o range.
           query = query.gte('date', startDate);
         }
+      } else {
+        console.log('📅 No DateRange Selected');
       }
 
       // Finalizar query com order e range
