@@ -122,24 +122,16 @@ export const useMovements = (options: UseMovementsOptions = {}): UseMovementsRet
       // Aplicar filtros de data se existirem
       if (dateRange?.from) {
         const startDate = startOfDay(dateRange.from).toISOString();
-        console.log('📅 DateRange Filter:', {
-          from: dateRange.from,
-          to: dateRange.to,
-          startDate,
-          endDate: dateRange.to ? endOfDay(dateRange.to).toISOString() : 'N/A'
-        });
-
         query = query.gte('date', startDate);
 
         if (dateRange.to) {
           const endDate = endOfDay(dateRange.to).toISOString();
           query = query.lte('date', endDate);
         } else {
-          // Se só tem data inicial, filtrar apenas aquele dia (ou >= start)
-          query = query.gte('date', startDate);
+          // Se só tem data inicial, filtrar apenas aquele dia (Start -> End of same day)
+          const endDate = endOfDay(dateRange.from).toISOString();
+          query = query.lte('date', endDate);
         }
-      } else {
-        console.log('📅 No DateRange Selected');
       }
 
       // Finalizar query com order e range
