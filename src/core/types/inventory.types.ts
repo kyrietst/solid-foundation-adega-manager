@@ -278,5 +278,15 @@ export interface InventoryMovement {
         barcode?: string;
       };
     }>;
+    // Novos campos de entrega e cliente
+    delivery_fee?: number;
+    discount_amount?: number;
+    delivery_address?: any; // JSONB
+    delivery_person?: {
+      full_name: string;
+    };
+    customer?: {
+      name: string;
+    };
   };
 }

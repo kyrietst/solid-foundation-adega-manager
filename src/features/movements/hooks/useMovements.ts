@@ -105,6 +105,15 @@ export const useMovements = (options: UseMovementsOptions = {}): UseMovementsRet
             payment_status,
             status,
             final_amount,
+            delivery_fee,
+            discount_amount,
+            delivery_address,
+            delivery_person:profiles!sales_delivery_person_id_fkey (
+              full_name:name
+            ),
+            customer:customers (
+              name
+            ),
             sale_items (
               id,
               product_id,

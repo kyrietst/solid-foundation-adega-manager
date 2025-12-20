@@ -177,8 +177,11 @@ export const MovementsTable: React.FC<MovementsTableProps> = ({
 
               const idDisplay = isSale ? `#${sale.id.slice(0, 8).toUpperCase()}` : `#${movement.id.slice(0, 8).toUpperCase()}`;
 
-              // Cliente
-              const customerName = movement.customer?.name || (isSale ? 'Cliente Balcão' : 'Não informado');
+              // Cliente - Prioriza: Cliente do Movimento -> Cliente da Venda -> Fallback específico
+              // Se for Delivery e não tiver nome, mostra "Não informado" em vez de "Cliente Balcão"
+              const customerName = movement.customer?.name
+                || sale?.customer?.name
+                || (isSale && sale?.delivery_type === 'delivery' ? 'Cliente (Delivery)' : (isSale ? 'Cliente Balcão' : 'Não informado'));
 
               // Vendedor
               const sellerName = usersMap[movement.user_id || ''] || movement.user?.name || 'Sistema';
@@ -398,16 +401,63 @@ export const MovementsTable: React.FC<MovementsTableProps> = ({
                                     </>
                                   )}
                                 </div>
-                                <div className="bg-black/30 rounded-lg p-3 border border-white/10">
-                                  <div className="text-sm text-gray-300 space-y-1">
+                                <div className="bg-black/30 rounded-lg p-4 border border-white/10 space-y-3">
+                                  {/* Endereço de Entrega */}
+                                  {sale?.delivery_address && (
+                                    <div className="text-sm text-gray-300">
+                                      <p className="font-medium text-white mb-1">Endereço:</p>
+                                      {/* Suporte para formato estruturado ou simplificado */}
+                                      {sale.delivery_address.street ? (
+                                        <>
+                                          <p>{sale.delivery_address.street}, {sale.delivery_address.number}</p>
+                                          <p>{sale.delivery_address.neighborhood} - {sale.delivery_address.city}</p>
+                                          {sale.delivery_address.complement && <p className="text-gray-400 text-xs mt-0.5">Complemento: {sale.delivery_address.complement}</p>}
+                                        </>
+                                      ) : (
+                                        <p>{sale.delivery_address.address || 'Endereço sem detalhes'}</p>
+                                      )}
+                                    </div>
+                                  )}
+
+                                  {/* Entregador */}
+                                  {sale?.delivery_person && (
+                                    <div className="text-sm text-gray-300">
+                                      <p className="font-medium text-white mb-1">Entregador:</p>
+                                      <p>{sale.delivery_person.full_name}</p>
+                                    </div>
+                                  )}
+
+                                  {/* Resumo Financeiro da Entrega */}
+                                  {sale && (
+                                    <div className="flex flex-col gap-1 text-sm pt-2 mt-2 border-t border-white/5">
+                                      {sale.delivery_fee > 0 && (
+                                        <div className="flex justify-between text-gray-300">
+                                          <span>Taxa de Entrega:</span>
+                                          <span className="text-red-400">+ {formatCurrency(sale.delivery_fee)}</span>
+                                        </div>
+                                      )}
+                                      {sale.discount_amount > 0 && (
+                                        <div className="flex justify-between text-gray-300">
+                                          <span>Desconto:</span>
+                                          <span className="text-emerald-400">- {formatCurrency(sale.discount_amount)}</span>
+                                        </div>
+                                      )}
+                                      <div className="flex justify-between font-bold text-white mt-1 pt-1 border-t border-white/10">
+                                        <span>Total Final:</span>
+                                        <span className="text-emerald-400">{formatCurrency(sale.final_amount)}</span>
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  <div className="text-sm text-gray-300 space-y-1 pt-2 border-t border-white/5">
                                     {sale?.delivery_type && (
                                       <p className="flex items-center gap-2">
                                         <Truck className="h-3 w-3" />
-                                        <span className="capitalize">{sale.delivery_type === 'delivery' ? 'Entrega Delivery' : 'Retirada / Presencial'}</span>
+                                        <span className="capitalize text-gray-400">{sale.delivery_type === 'delivery' ? 'Entrega Delivery' : 'Retirada / Presencial'}</span>
                                       </p>
                                     )}
                                     {!isSale && movement.reason && (
-                                      <p>{movement.reason}</p>
+                                      <p className="italic text-gray-400">"{movement.reason}"</p>
                                     )}
                                   </div>
                                 </div>
