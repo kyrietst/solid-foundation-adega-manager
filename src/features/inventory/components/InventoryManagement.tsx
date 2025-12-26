@@ -118,12 +118,15 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
   const isAdmin = !loading && userRole === 'admin';
 
   // 🎯 SCANNER GLOBAL: Detecta código de barras em qualquer lugar da página de estoque
+  // ✅ FIX: useCallback para evitar recriação do handler/listener
+  const handleGlobalInventoryScan = React.useCallback((scannedCode: string) => {
+    console.log('[InventoryManagement] Global barcode detected:', scannedCode);
+    setSearchQuery(scannedCode);
+    setCurrentPage(1);
+  }, [setSearchQuery, setCurrentPage]);
+
   useGlobalBarcodeScanner({
-    onScan: (scannedCode) => {
-      console.log('[InventoryManagement] Global barcode detected:', scannedCode);
-      setSearchQuery(scannedCode);
-      setCurrentPage(1);
-    },
+    onScan: handleGlobalInventoryScan,
     enabled: viewMode === 'active', // Só ativo na aba de produtos ativos
   });
 

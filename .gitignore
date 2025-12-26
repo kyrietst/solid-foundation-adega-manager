@@ -163,3 +163,18 @@ CLAUDE.md
 vercel.json
 jsrepo.json
 *.timestamp-*
+
+# ==========================================
+# RESET & CLEANUP PROTOCOL (26/12/2025)
+# ==========================================
+
+# Backups de Banco de Dados
+*.sql
+!supabase/clean_production_schema.sql
+!supabase/migrations/*.sql
+
+# Logs e Scripts Temporários
+scripts/generate_cleanup_script.py
+cleanup_legacy_triggers.sql
+diff_output.sql
+migration_status.txt

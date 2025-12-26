@@ -60,7 +60,7 @@ export interface ProductsGridPresentationProps {
   onClearFilters: () => void;
   onPageChange: (page: number) => void;
   onItemsPerPageChange: (value: string) => void;
-  onBarcodeScanned: (barcode: string) => void;
+  onBarcodeScanned: (barcode: string) => void | Promise<void>;
   onAddToCart: (product: Product) => void;
   onOpenSelection?: (product: Product) => void;
   onAddProduct?: () => void;
@@ -127,7 +127,7 @@ export const ProductsGridPresentation: React.FC<ProductsGridPresentationProps> =
               totalProducts={totalProducts}
               hasActiveFilters={hasActiveFilters}
             />
-            
+
             {/* SearchBar animada alinhada à direita */}
             {showSearch && (
               <div className="sm:w-64">
@@ -142,7 +142,7 @@ export const ProductsGridPresentation: React.FC<ProductsGridPresentationProps> =
             )}
           </div>
         )}
-        
+
         {!showHeader && showSearch && (
           <div className="flex justify-end">
             <div className="sm:w-64">
@@ -156,16 +156,17 @@ export const ProductsGridPresentation: React.FC<ProductsGridPresentationProps> =
             </div>
           </div>
         )}
-        
+
         {/* Código de barras, filtro de categoria e botão adicionar na mesma linha */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="max-w-md">
             <BarcodeInput
               onScan={onBarcodeScanned}
               placeholder="Escaneie o código para adicionar ao carrinho"
+              autoFocus={false} // 🚫 v3.6.7 - Desativado para evitar roubo de foco do SearchBar
             />
           </div>
-          
+
           {/* Filtro de categoria e botão adicionar alinhados à direita */}
           <div className="flex items-center gap-4">
             {showFilters && (
@@ -179,25 +180,25 @@ export const ProductsGridPresentation: React.FC<ProductsGridPresentationProps> =
                       Todas as categorias
                     </SelectItem>
                     {categories.map(category => (
-                      <SelectItem 
-                        key={category} 
-                        value={category} 
+                      <SelectItem
+                        key={category}
+                        value={category}
                         className="text-adega-platinum hover:bg-adega-graphite/50"
                       >
                         {category}
                       </SelectItem>
                     ))}
                   </SelectContent>
-                  </Select>
+                </Select>
               </div>
             )}
-            
+
             {/* Botão adicionar produto */}
             <AddProductButton onAddProduct={showAddButton ? onAddProduct : undefined} />
           </div>
         </div>
       </div>
-      
+
       {/* Grid de produtos paginado */}
       <div className="flex-1 flex flex-col min-h-0">
         {currentProducts.length === 0 ? (
@@ -231,10 +232,10 @@ export const ProductsGridPresentation: React.FC<ProductsGridPresentationProps> =
                 />
               )}
             </div>
-            
+
             {/* Paginação */}
             <div className="mt-4 flex-shrink-0">
-              <PaginationControls 
+              <PaginationControls
                 currentPage={currentPage}
                 totalPages={totalPages}
                 totalItems={totalItems}
