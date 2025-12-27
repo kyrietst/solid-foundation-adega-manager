@@ -5,6 +5,7 @@ import { useAuth } from '@/app/providers/AuthContext';
 import { LoadingScreen } from '@/shared/ui/composite/loading-spinner';
 import SalesPage from '@/features/sales/components/SalesPage';
 import { WhitePageShell } from '@/shared/ui/layout/WhitePageShell';
+import { useRealtimeSync } from '@/shared/hooks/common/useRealtimeSync';
 
 // Lazy loading dos componentes principais para code splitting
 const Dashboard = lazy(() => import('@/features/dashboard/components/Dashboard'));
@@ -36,6 +37,9 @@ const Index = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, userRole, loading, hasPermission } = useAuth();
+
+  // ✅ Hook Global de Sincronização em Tempo Real (Smart Sync)
+  useRealtimeSync();
 
   // Extrai o nome da aba da URL (ex: /sales -> 'sales')
   // Padrão: abre em 'sales' ao invés de 'dashboard'

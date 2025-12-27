@@ -517,6 +517,9 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
   // 🏪 v3.6.1 - Query para produtos (usado no toggle Loja 1/Loja 2)
   const { data: allProducts = [], isLoading: isLoadingAllProducts } = useQuery({
     queryKey: ['products', 'for-store-toggle'],
+    // ✅ Smart Sync Optimization: High concurrency settings
+    staleTime: 5 * 60 * 1000, // 5 minutes cache to prevent request flooding
+    refetchOnWindowFocus: false, // Don't refetch on window focus (relies on Realtime)
     queryFn: async (): Promise<Product[]> => {
       const { data, error } = await supabase
         .from('products')

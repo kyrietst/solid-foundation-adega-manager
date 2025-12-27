@@ -107,6 +107,7 @@ type PaymentMethod = {
 };
 
 // Hooks
+// Hooks
 export const useSales = (params?: {
   startDate?: Date;
   endDate?: Date;
@@ -115,6 +116,9 @@ export const useSales = (params?: {
 }) => {
   return useQuery({
     queryKey: ["sales", params],
+    // ✅ Smart Sync Optimization: High concurrency settings
+    staleTime: 5 * 60 * 1000, // 5 minutes cache to prevent request flooding
+    refetchOnWindowFocus: false, // Don't refetch on window focus (relies on Realtime)
     queryFn: async () => {
       // Query otimizada com join direto para buscar vendas e itens
       let baseQuery = supabase

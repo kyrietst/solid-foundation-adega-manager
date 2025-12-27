@@ -153,8 +153,10 @@ export const useCustomers = (params?: {
       }
     },
     enabled,
-    staleTime: 30 * 1000, // 30 segundos de cache
-    refetchInterval: 5 * 60 * 1000, // Refetch a cada 5 minutos
+    // ✅ Smart Sync Optimization: High concurrency settings
+    staleTime: 5 * 60 * 1000, // 5 minutes cache to prevent request flooding
+    refetchOnWindowFocus: false, // Don't refetch on window focus (relies on Realtime)
+    refetchInterval: false, // Disable auto refetch interval to rely on Smart Sync
   });
 };
 
@@ -340,6 +342,9 @@ export const useCustomerPurchases = (customerId: string) => {
 export const useSalesData = () => {
   return useQuery({
     queryKey: ['sales-data'],
+    // ✅ Smart Sync Optimization: High concurrency settings
+    staleTime: 5 * 60 * 1000, // 5 minutes cache
+    refetchOnWindowFocus: false,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('sales')
