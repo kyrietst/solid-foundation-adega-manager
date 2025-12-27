@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { ProductFormData, UnitType } from '@/types/inventory.types';
+import { ProductFormData, UnitType } from '@/core/types/inventory.types';
 import { ProductValidationResult } from '@/features/inventory/hooks/useProductValidation';
 import { cn } from '@/core/config/utils';
 import { getGlassCardClasses } from '@/core/config/theme-utils';
@@ -13,6 +13,7 @@ import { BarcodeHierarchySection } from './BarcodeHierarchySection';
 import { ProductPricingCard } from './ProductPricingCard';
 import { ProductStockCard } from './ProductStockCard';
 import { ProductFormActions } from './ProductFormActions';
+import { ProductFiscalCard } from './ProductFiscalCard';
 
 export interface ProductFormPresentationProps {
   // Dados processados
@@ -55,7 +56,19 @@ export const ProductFormPresentation: React.FC<ProductFormPresentationProps> = (
   onCostPriceChange,
   onPriceChange,
 }) => {
-  const glassClasses = glassEffect ? getGlassCardClasses(variant) : '';
+  // Map semantic variants to visual style variants for Glass components
+  const glassVariant = React.useMemo<'default' | 'premium' | 'subtle' | 'strong' | 'yellow'>(() => {
+    const mapping: Record<string, 'default' | 'premium' | 'subtle' | 'strong' | 'yellow'> = {
+      default: 'default',
+      premium: 'premium',
+      success: 'subtle', // Success -> Subtle (Clean)
+      warning: 'yellow', // Warning -> Yellow
+      error: 'strong'    // Error -> Strong (High contrast)
+    };
+    return mapping[variant] || 'default';
+  }, [variant]);
+
+  const glassClasses = glassEffect ? getGlassCardClasses(glassVariant) : '';
 
   return (
     <div className={cn('p-6 rounded-lg', glassClasses)}>
@@ -66,7 +79,7 @@ export const ProductFormPresentation: React.FC<ProductFormPresentationProps> = (
           categories={categories}
           fieldErrors={validation.fieldErrors}
           onInputChange={onInputChange}
-          variant={variant}
+          variant={glassVariant}
           glassEffect={glassEffect}
         />
 
@@ -88,7 +101,14 @@ export const ProductFormPresentation: React.FC<ProductFormPresentationProps> = (
           onMarginChange={onMarginChange}
           onCostPriceChange={onCostPriceChange}
           onPriceChange={onPriceChange}
-          variant={variant}
+          variant={glassVariant}
+          glassEffect={glassEffect}
+        />
+
+        {/* Informações Fiscais (NFe/NFCe) */}
+        <ProductFiscalCard
+          formData={formData}
+          onInputChange={onInputChange}
           glassEffect={glassEffect}
         />
 
@@ -97,7 +117,7 @@ export const ProductFormPresentation: React.FC<ProductFormPresentationProps> = (
           formData={formData}
           fieldErrors={validation.fieldErrors}
           onInputChange={onInputChange}
-          variant={variant}
+          variant={glassVariant}
           glassEffect={glassEffect}
         />
 

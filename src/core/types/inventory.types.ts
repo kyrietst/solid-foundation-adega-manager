@@ -63,6 +63,12 @@ export interface Product {
   expiry_date?: string; // Data de validade do produto (ISO string)
   has_expiry_tracking?: boolean; // Se este produto tem controle de validade
 
+  // Campos Fiscais (NFe/NFCe)
+  ncm?: string;
+  cest?: string;
+  cfop?: string;
+  origin?: string;
+
   // ⭐ CAMPOS PRINCIPAIS DO SISTEMA SIMPLIFICADO ⭐
   // "O Estoque é um Espelho da Prateleira" - apenas 2 números diretos
   stock_packages: NonNegativeInteger; // Quantidade de pacotes fechados em estoque
@@ -125,6 +131,15 @@ export interface ProductFormData {
   // Campos de controle de validade
   expiry_date?: string; // Data de validade do produto (ISO string)
   has_expiry_tracking?: boolean; // Se este produto tem controle de validade
+
+  // Campos Fiscais (NFe/NFCe)
+  ncm?: string;
+  cest?: string;
+  cfop?: string;
+  origin?: string; // Origem da mercadoria (0, 1, 2...)
+
+  // Alerta de Estoque
+  minimum_stock?: NonNegativeInteger;
 }
 
 export interface ProductCalculations {

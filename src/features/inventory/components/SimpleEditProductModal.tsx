@@ -30,6 +30,7 @@ import {
 import { SwitchAnimated } from '@/shared/ui/primitives/switch-animated';
 import { BarcodeInput } from '@/features/inventory/components/BarcodeInput';
 import { ProductPricingCard } from '@/features/inventory/components/product-form/ProductPricingCard';
+import { ProductFiscalCard } from '@/features/inventory/components/product-form/ProductFiscalCard';
 import { useToast } from '@/shared/hooks/common/use-toast';
 import { cn } from '@/core/config/utils';
 import { getGlassInputClasses } from '@/core/config/theme-utils';
@@ -67,6 +68,18 @@ const simpleEditProductSchema = z.object({
   cost_price: z.number({ invalid_type_error: 'Preço de custo deve ser um número' }).min(0, 'Preço de custo deve ser maior ou igual a 0').optional().or(z.literal(0)).or(z.literal(undefined)),
   volume_ml: z.number({ invalid_type_error: 'Volume deve ser um número' }).min(1, 'Volume deve ser maior que 0').optional().or(z.literal(0)).or(z.literal(undefined)),
   margin_percent: z.number().optional(),
+  // Fiscal Fields
+  // Fiscal Fields Strict Validation
+  ncm: z.string().optional().refine((val) => !val || /^\d{8}$/.test(val), {
+    message: "NCM deve ter exatamente 8 dígitos numéricos"
+  }),
+  cest: z.string().optional().refine((val) => !val || /^\d{7}$/.test(val), {
+    message: "CEST deve ter exatamente 7 dígitos numéricos"
+  }),
+  cfop: z.string().optional().refine((val) => !val || /^\d{4}$/.test(val), {
+    message: "CFOP deve ter exatamente 4 dígitos numéricos"
+  }),
+  origin: z.union([z.string(), z.number()]).optional(),
 });
 
 type SimpleEditProductFormData = z.infer<typeof simpleEditProductSchema>;
@@ -109,6 +122,10 @@ export const SimpleEditProductModal: React.FC<SimpleEditProductModalProps> = ({
       cost_price: undefined,
       volume_ml: undefined,
       margin_percent: undefined,
+      ncm: '',
+      cest: '',
+      cfop: '',
+      origin: '',
     },
   });
 
@@ -172,6 +189,10 @@ export const SimpleEditProductModal: React.FC<SimpleEditProductModalProps> = ({
         cost_price: product.cost_price ? Number(product.cost_price) : undefined,
         volume_ml: product.volume_ml ? Number(product.volume_ml) : undefined,
         margin_percent: product.margin_percent ? Number(product.margin_percent) : undefined,
+        ncm: product.ncm || '',
+        cest: product.cest || '',
+        cfop: product.cfop || '',
+        origin: product.origin !== null ? String(product.origin) : '',
       });
       fetchCategoriesAndSuppliers();
     }
@@ -238,6 +259,10 @@ export const SimpleEditProductModal: React.FC<SimpleEditProductModalProps> = ({
         package_price: data.package_price === 0 ? undefined : data.package_price,
         cost_price: data.cost_price,
         volume_ml: data.volume_ml === 0 ? undefined : data.volume_ml,
+        ncm: data.ncm || null,
+        cest: data.cest || null,
+        cfop: data.cfop || null,
+        origin: data.origin ? String(data.origin) : null,
       };
 
       await onSubmit(processedData);
@@ -474,6 +499,22 @@ export const SimpleEditProductModal: React.FC<SimpleEditProductModalProps> = ({
                   <p className="text-xs text-gray-500">Ative o toggle acima para configurar venda de fardo</p>
                 </div>
               )}
+
+              {/* Fisco / Tributação */}
+              <ProductFiscalCard
+                formData={form.watch() as any}
+                onInputChange={(field, value) => {
+                  if (field === 'ncm' || field === 'cest' || field === 'cfop') {
+                    // Remove non-digits immediately for better UX
+                    const numericValue = String(value).replace(/\D/g, '');
+                    form.setValue(field, numericValue);
+                  } else {
+                    form.setValue(field as any, value)
+                  }
+                }}
+                glassEffect={false}
+                fieldErrors={form.formState.errors}
+              />
 
               {/* ZONA DE PERIGO - Movida para cá */}
               <div className="mt-6 pt-4 border-t border-red-900/30">

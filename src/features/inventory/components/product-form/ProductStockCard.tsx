@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/primitives
 import { Input } from '@/shared/ui/primitives/input';
 import { Label } from '@/shared/ui/primitives/label';
 import { Package, Box } from 'lucide-react';
-import { ProductFormData } from '@/types/inventory.types';
+import { ProductFormData } from '@/core/types/inventory.types';
 import { cn } from '@/core/config/utils';
 import { getGlassCardClasses } from '@/core/config/theme-utils';
 
@@ -17,7 +17,7 @@ interface ProductStockCardProps {
   formData: Partial<ProductFormData>;
   fieldErrors: Record<string, string>;
   onInputChange: (field: keyof ProductFormData, value: string | number) => void;
-  variant?: 'default' | 'premium' | 'success' | 'warning' | 'error';
+  variant?: 'default' | 'premium' | 'subtle' | 'strong' | 'yellow';
   glassEffect?: boolean;
 }
 

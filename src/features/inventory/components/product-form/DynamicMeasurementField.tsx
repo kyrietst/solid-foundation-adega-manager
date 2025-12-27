@@ -8,7 +8,7 @@ import { Input } from '@/shared/ui/primitives/input';
 import { Label } from '@/shared/ui/primitives/label';
 import { ProductFormData } from '@/core/types/inventory.types';
 import { cn } from '@/core/config/utils';
-import { 
+import {
   isBeverageCategory,
   getMeasurementLabel,
   getMeasurementPlaceholder,
@@ -20,7 +20,7 @@ interface DynamicMeasurementFieldProps {
   formData: Partial<ProductFormData>;
   fieldErrors: Record<string, string>;
   onInputChange: (field: keyof ProductFormData, value: string | number) => void;
-  variant?: 'default' | 'premium' | 'success' | 'warning' | 'error';
+  variant?: 'default' | 'premium' | 'subtle' | 'strong' | 'yellow';
   glassEffect?: boolean;
 }
 
@@ -33,7 +33,7 @@ export const DynamicMeasurementField: React.FC<DynamicMeasurementFieldProps> = (
 }) => {
   const category = formData.category;
   const isBeverage = isBeverageCategory(category);
-  
+
   // Remove o useEffect que causa loops infinitos
   // A atualização dos campos será feita apenas quando necessário
 
@@ -47,17 +47,17 @@ export const DynamicMeasurementField: React.FC<DynamicMeasurementFieldProps> = (
 
   const handleValueChange = (value: string) => {
     const numericValue = Number(value);
-    
+
     // Atualiza o valor de medição
     onInputChange('measurement_value', value);
-    
+
     // Se for bebida, atualiza também o campo volume_ml para compatibilidade
     if (isBeverage && !isNaN(numericValue)) {
       onInputChange('volume_ml', numericValue);
     }
   };
 
-  const fieldValue = isBeverage 
+  const fieldValue = isBeverage
     ? formData.volume_ml || formData.measurement_value || ''
     : formData.measurement_value || '';
 
@@ -88,7 +88,7 @@ export const DynamicMeasurementField: React.FC<DynamicMeasurementFieldProps> = (
           {fieldErrors.volume_ml || fieldErrors.measurement_value}
         </p>
       )}
-      
+
       {/* Campo oculto para armazenar o tipo de medição */}
       <input
         type="hidden"

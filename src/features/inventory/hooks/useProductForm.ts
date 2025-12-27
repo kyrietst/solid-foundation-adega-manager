@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { ProductFormData, UnitType } from '@/types/inventory.types';
+import { ProductFormData, UnitType } from '@/core/types/inventory.types';
 
 export const useProductForm = (initialData: Partial<ProductFormData> = {}) => {
   // TESTE: Valores padrão simples e estáticos
@@ -41,9 +41,16 @@ export const useProductForm = (initialData: Partial<ProductFormData> = {}) => {
     packaging_type: 'fardo',
     has_package_tracking: false,
     has_unit_tracking: false,
+
+    // Campos Fiscais
+    ncm: '',
+    cest: '',
+    cfop: '',
+    origin: '',
+
     ...initialData // Merge simples
-  };
-  
+  } as unknown as Partial<ProductFormData>;
+
   const [formData, setFormData] = useState<Partial<ProductFormData>>(defaultFormData);
 
   const handleInputChange = (field: keyof ProductFormData, value: string | number | UnitType | boolean) => {

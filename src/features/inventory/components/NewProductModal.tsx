@@ -28,6 +28,7 @@ import {
 import { SwitchAnimated } from '@/shared/ui/primitives/switch-animated';
 import { BarcodeInput } from '@/features/inventory/components/BarcodeInput';
 import { ProductPricingCard } from '@/features/inventory/components/product-form/ProductPricingCard';
+import { ProductFiscalCard } from '@/features/inventory/components/product-form/ProductFiscalCard';
 import { useToast } from '@/shared/hooks/common/use-toast';
 import { supabase } from '@/core/api/supabase/client';
 import { useInventoryCalculations } from '@/features/inventory/hooks/useInventoryCalculations';
@@ -59,6 +60,17 @@ const newProductSchema = z.object({
   package_price: z.number({ invalid_type_error: 'Preço deve ser um número' }).min(0, 'Preço deve ser maior ou igual a 0').default(0),
   cost_price: z.number({ invalid_type_error: 'Custo deve ser um número' }).min(0, 'Custo deve ser maior ou igual a 0').default(0),
   margin_percent: z.number().min(0, 'Margem deve ser maior ou igual a 0').default(0),
+  // Fiscal Fields
+  ncm: z.string().optional().refine((val) => !val || /^\d{8}$/.test(val), {
+    message: "NCM deve ter exatamente 8 dígitos numéricos"
+  }),
+  cest: z.string().optional().refine((val) => !val || /^\d{7}$/.test(val), {
+    message: "CEST deve ter exatamente 7 dígitos numéricos"
+  }),
+  cfop: z.string().optional().refine((val) => !val || /^\d{4}$/.test(val), {
+    message: "CFOP deve ter exatamente 4 dígitos numéricos"
+  }),
+  origin: z.union([z.string(), z.number()]).optional(),
 });
 
 type NewProductFormData = z.infer<typeof newProductSchema>;
@@ -91,6 +103,10 @@ export const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClos
       package_price: 0,
       cost_price: 0,
       margin_percent: 0,
+      ncm: '',
+      cest: '',
+      cfop: '',
+      origin: '',
     },
   });
 
@@ -112,6 +128,11 @@ export const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClos
         stock_packages: 0,
         stock_units_loose: 0,
         turnover_rate: 'medium',
+        // Fiscal data
+        ncm: data.ncm || null,
+        cest: data.cest || null,
+        cfop: data.cfop || null,
+        origin: data.origin ? String(data.origin) : null,
         created_at: getSaoPauloTimestamp(),
       };
       const { data: result, error } = await supabase.from('products').insert([productData] as any).select().single();
@@ -450,12 +471,20 @@ export const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClos
               </div>
             )}
 
-            {/* Espaço vazio quando toggle desativado para manter altura */}
-            {!hasPackageTracking && (
-              <div className="p-3 rounded-lg bg-gray-800/10 border border-dashed border-gray-700/30 text-center">
-                <p className="text-xs text-gray-500">Ative o toggle acima para configurar venda de fardo</p>
-              </div>
-            )}
+            {/* Fisco / Tributação */}
+            <ProductFiscalCard
+              formData={form.watch() as any}
+              onInputChange={(field, value) => {
+                if (field === 'ncm' || field === 'cest' || field === 'cfop') {
+                  const numericValue = String(value).replace(/\D/g, '');
+                  form.setValue(field as any, numericValue);
+                } else {
+                  form.setValue(field as any, value);
+                }
+              }}
+              glassEffect={false}
+              fieldErrors={form.formState.errors}
+            />
           </div>
 
           {/* ========================================== */}

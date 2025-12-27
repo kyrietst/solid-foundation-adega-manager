@@ -19,7 +19,7 @@ interface ProductBasicInfoCardProps {
   categories: string[];
   fieldErrors: Record<string, string>;
   onInputChange: (field: keyof ProductFormData, value: string | number | UnitType) => void;
-  variant?: 'default' | 'premium' | 'success' | 'warning' | 'error';
+  variant?: 'default' | 'premium' | 'subtle' | 'strong' | 'yellow';
   glassEffect?: boolean;
 }
 
