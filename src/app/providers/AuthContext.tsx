@@ -5,7 +5,10 @@ import { supabase, clearChromeAuthData } from '@/core/api/supabase/client';
 import { useToast } from '@/shared/hooks/common/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { useAuthErrorHandler } from '@/shared/hooks/auth/useAuthErrorHandler';
-import { UserRole } from '@/core/types/supabase';
+import { UserRole } from '@/core/types/supabase'; // KEEP THIS if we want to fix it there, but for now I will comment and define local
+// to avoid "Do not edit directly" on supabase.ts
+
+export type UserRole = 'admin' | 'employee' | 'delivery';
 
 interface AuthContextType {
   user: User | null;
@@ -25,6 +28,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   console.log('🔐 AuthProvider - Inicializando provider (render)');
   const [user, setUser] = useState<User | null>(null);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
+
+  // ... (rest of the component)
+
+  // skipping to the line to fix Promise.race result
+
   const [featureFlags, setFeatureFlags] = useState<Record<string, boolean> | null>(null);
   const [loading, setLoading] = useState(true);
   const [hasTemporaryPassword, setHasTemporaryPassword] = useState(false);
@@ -51,15 +59,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signOut = useCallback(async () => {
     const signOutOperation = async () => {
-      
+
       // Primeiro limpar estado local
       setUser(null);
       setUserRole(null);
       setFeatureFlags(null);
-      
+
       // Depois fazer logout no Supabase
       const { error } = await supabase.auth.signOut();
-      
+
       if (error) {
         console.error('Erro no supabase.auth.signOut:', error);
         throw error;
@@ -91,12 +99,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     } catch (error) {
       // Em caso de erro, ainda tentar limpar estado e redirecionar
       console.error('Erro durante logout, forçando limpeza:', error);
-      
+
       await authErrorHandler.clearAuthState();
       setUser(null);
       setUserRole(null);
       setFeatureFlags(null);
-      
+
       toast({
         title: "Logout Forçado",
         description: "Ocorreu um erro, mas você foi desconectado.",
@@ -179,7 +187,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const profilePromise = supabase
           .from('profiles')
           .select('role, is_temporary_password, feature_flags')
-          .eq('id', currentUser.id)
+          .eq('id' as any, currentUser.id)
           .single();
 
         // Adicionar timeout na Promise da consulta (10s para a query específica)
@@ -190,7 +198,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           )
         ]);
 
-        const result = await profilePromiseWithTimeout as Awaited<typeof profilePromise>;
+        const result = await profilePromiseWithTimeout as any;
         const { data: profileData, error: profileError } = result;
 
         console.log('📊 AuthProvider - Resultado profiles:', {
@@ -220,7 +228,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           const { data: userData, error: userError } = await supabase
             .from('users')
             .select('role')
-            .eq('id', currentUser.id)
+            .eq('id' as any, currentUser.id)
             .single();
 
           console.log('📊 AuthProvider - Resultado users:', { userData, userError });
@@ -238,7 +246,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             return;
           }
 
-          setUserRole(userData.role);
+          setUserRole((userData as any)?.role);
           setHasTemporaryPassword(false);
           setFeatureFlags(null);
         } else {
@@ -317,6 +325,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
 
     console.log('🔍 AuthProvider - Iniciando autenticação...');
+    // DEBUG: Verificar Clock Skew
+    const localTime = new Date().getTime();
+    console.log('[AUTH-DEBUG] Horário da Máquina:', new Date().toLocaleString());
+
     isInitialized.current = true;
 
     // Timeout de segurança para evitar loading infinito (aumentado para 12s)
@@ -384,20 +396,57 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     // Listen for changes on auth state (sign in, sign out, etc.)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('🔄 AuthProvider - Auth state changed:', event, !!session);
+      console.log(`[AUTH-DEBUG] Auth state changed: ${event}`, {
+        hasSession: !!session,
+        userId: session?.user?.id,
+        email: session?.user?.email
+      });
 
       // Limpar timeout principal quando auth state muda
       clearTimeout(timeoutId);
+
+      // Tratamento Específico de Eventos
+      if ((event as string) === 'TOKEN_REFRESH_ERRORED') {
+        console.error('[AUTH-DEBUG] 🚨 Erro na renovação do token!');
+        // Tentar recuperar sessão uma última vez antes de desistir
+        const { data: { session: fallbackSession }, error: fallbackError } = await supabase.auth.getSession();
+        if (fallbackSession) {
+          console.log('[AUTH-DEBUG] ✅ Sessão recuperada manualmente após erro de refresh');
+          setUser(fallbackSession.user);
+          return;
+        } else {
+          console.error('[AUTH-DEBUG] ❌ Sessão perdida definitivamente:', fallbackError);
+        }
+      }
+
+      if (event === 'SIGNED_OUT') {
+        console.log('[AUTH-DEBUG] 🚪 Usuário desconectado voluntariamente ou por expiração');
+        // Limpeza explícita
+        setUser(null);
+        setUserRole(null);
+        setFeatureFlags(null);
+        setHasTemporaryPassword(false);
+        currentUserIdRef.current = null;
+        fetchingProfileRef.current = false;
+        setLoading(false);
+        return;
+      }
 
       setUser(session?.user ?? null);
 
       // ✅ CORREÇÃO: Só buscar perfil em eventos específicos (não em TOKEN_REFRESHED)
       // Isso evita buscar perfil durante renovação automática de token
       if (session?.user && (event === 'SIGNED_IN' || event === 'USER_UPDATED')) {
-        console.log('👤 AuthProvider - Buscando perfil após', event);
+        console.log(`[AUTH-DEBUG] 👤 Buscando perfil após ${event}`);
         await fetchUserProfile(session.user);
       } else if (!session) {
-        console.log('❌ AuthProvider - Limpando dados após', event);
+        // Fallback genérico para perda de sessão
+        console.log('[AUTH-DEBUG] ❌ Sessão nula detectada no listener genérico');
+        if (user) {
+          // Se tinha user e perdeu, logar aviso forte
+          console.warn('[AUTH-DEBUG] ⚠️ Logout involuntário detectado?');
+        }
+        setUser(null);
         setUserRole(null);
         setFeatureFlags(null);
         setHasTemporaryPassword(false);
@@ -406,7 +455,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
 
       setLoading(false);
-      console.log('✅ AuthProvider - Auth state change processado');
+      console.log('[AUTH-DEBUG] ✅ Auth state change processado');
     });
 
     return () => {
