@@ -5,8 +5,7 @@ import { supabase, clearChromeAuthData } from '@/core/api/supabase/client';
 import { useToast } from '@/shared/hooks/common/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { useAuthErrorHandler } from '@/shared/hooks/auth/useAuthErrorHandler';
-import { UserRole } from '@/core/types/supabase'; // KEEP THIS if we want to fix it there, but for now I will comment and define local
-// to avoid "Do not edit directly" on supabase.ts
+// UserRole removed to fix module error
 
 export type UserRole = 'admin' | 'employee' | 'delivery';
 
@@ -184,10 +183,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         // First try to get from profiles table
         console.log('🔍 AuthProvider - Buscando perfil (tentativa', retryCount + 1, ')');
 
-        const profilePromise = supabase
+        const profilePromise = (supabase
           .from('profiles')
-          .select('role, is_temporary_password, feature_flags')
-          .eq('id' as any, currentUser.id)
+          .select('role, is_temporary_password, feature_flags') as any)
+          .eq('id', currentUser.id)
           .single();
 
         // Adicionar timeout na Promise da consulta (10s para a query específica)
@@ -225,10 +224,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           // Se não é erro de JWT ou já tentou retry, tentar users table
           console.log('⚠️ AuthProvider - Erro na tabela profiles, tentando users table:', profileError);
 
-          const { data: userData, error: userError } = await supabase
+          const { data: userData, error: userError } = await (supabase
             .from('users')
-            .select('role')
-            .eq('id' as any, currentUser.id)
+            .select('role') as any)
+            .eq('id', currentUser.id)
             .single();
 
           console.log('📊 AuthProvider - Resultado users:', { userData, userError });
