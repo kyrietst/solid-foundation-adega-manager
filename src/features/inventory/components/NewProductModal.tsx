@@ -47,6 +47,14 @@ import {
 // ---------------------------------------------------------------------------
 // Schema de validação
 // ---------------------------------------------------------------------------
+import { fiscalSchema } from '@/features/inventory/schemas/product-schemas';
+import { sanitizeFiscalCode } from '@/features/inventory/utils/fiscal-sanitizers';
+
+// ... existing imports ...
+
+// ---------------------------------------------------------------------------
+// Schema de validação
+// ---------------------------------------------------------------------------
 const newProductSchema = z.object({
   name: z.string().min(2, 'Nome deve ter ao menos 2 caracteres').max(200, 'Nome deve ter no máximo 200 caracteres'),
   category: z.string().min(1, 'Categoria é obrigatória'),
@@ -60,17 +68,8 @@ const newProductSchema = z.object({
   package_price: z.number({ invalid_type_error: 'Preço deve ser um número' }).min(0, 'Preço deve ser maior ou igual a 0').default(0),
   cost_price: z.number({ invalid_type_error: 'Custo deve ser um número' }).min(0, 'Custo deve ser maior ou igual a 0').default(0),
   margin_percent: z.number().min(0, 'Margem deve ser maior ou igual a 0').default(0),
-  // Fiscal Fields
-  ncm: z.string().optional().refine((val) => !val || /^\d{8}$/.test(val), {
-    message: "NCM deve ter exatamente 8 dígitos numéricos"
-  }),
-  cest: z.string().optional().refine((val) => !val || /^\d{7}$/.test(val), {
-    message: "CEST deve ter exatamente 7 dígitos numéricos"
-  }),
-  cfop: z.string().optional().refine((val) => !val || /^\d{4}$/.test(val), {
-    message: "CFOP deve ter exatamente 4 dígitos numéricos"
-  }),
-  origin: z.union([z.string(), z.number()]).optional(),
+  // Fiscal Fields (Centralized)
+  ...fiscalSchema.shape,
 });
 
 type NewProductFormData = z.infer<typeof newProductSchema>;
@@ -476,8 +475,7 @@ export const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClos
               formData={form.watch() as any}
               onInputChange={(field, value) => {
                 if (field === 'ncm' || field === 'cest' || field === 'cfop') {
-                  const numericValue = String(value).replace(/\D/g, '');
-                  form.setValue(field as any, numericValue);
+                  form.setValue(field as any, sanitizeFiscalCode(value));
                 } else {
                   form.setValue(field as any, value);
                 }

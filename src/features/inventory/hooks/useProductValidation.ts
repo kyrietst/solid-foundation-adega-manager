@@ -3,8 +3,9 @@
  * Centraliza todas as regras de validação de produto
  */
 
-import { ProductFormData } from '@/types/inventory.types';
+import { ProductFormData } from '@/core/types/inventory.types';
 import { isBeverageCategory } from '@/features/inventory/utils/categoryUtils';
+import { fiscalSchema } from '@/features/inventory/schemas/product-schemas';
 
 export interface ProductValidationResult {
   isValid: boolean;
@@ -124,6 +125,25 @@ export const useProductValidation = () => {
         errors.push('URL da imagem inválida');
         fieldErrors.image_url = 'URL inválida';
       }
+    }
+
+    // Validações Fiscais (Centralizadas)
+    const fiscalResult = fiscalSchema.safeParse({
+      ncm: formData.ncm,
+      cest: formData.cest,
+      cfop: formData.cfop,
+      origin: formData.origin
+    });
+
+    if (!fiscalResult.success) {
+      fiscalResult.error.errors.forEach(err => {
+        const fieldName = err.path[0] as string;
+        // Evita duplicar mensagens genéricas se já houver
+        if (!fieldErrors[fieldName]) {
+          errors.push(err.message);
+          fieldErrors[fieldName] = err.message;
+        }
+      });
     }
 
     return {

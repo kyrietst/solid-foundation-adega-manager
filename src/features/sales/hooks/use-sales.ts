@@ -423,6 +423,7 @@ export const useUpsertSale = () => {
         }
       }
 
+
       // 8. Busca a venda criada para retornar
       const { data: sale, error: fetchError } = await supabase
         .from('sales')
@@ -531,6 +532,8 @@ export const useUpsertSale = () => {
     },
   });
 };
+
+
 
 export const useDeleteSale = () => {
   const queryClient = useQueryClient();

@@ -23,7 +23,9 @@ import {
 } from 'lucide-react';
 import { formatCurrency, cn } from '@/core/config/utils';
 import { getGlassCardClasses } from '@/core/config/theme-utils';
-import { useProductSSoT, useStockAvailabilitySSoT, createProductSelection } from '../hooks/useProductsSSoT';
+import { useStockData, createProductSelection } from '@/shared/hooks/business/useStockData';
+// TODO: Mover createProductSelection para utils ou useStockData
+
 
 // Interface simplificada para seleção de produto (SSoT)
 export interface ProductSelectionData {
@@ -57,19 +59,28 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
   const [selectionType, setSelectionType] = useState<'unit' | 'package'>('unit');
   const [quantity, setQuantity] = useState(1);
 
-  // Buscar dados do produto usando SSoT
-  const {
-    data: product,
-    isLoading: isLoadingProduct,
-    error: productError,
-    refetch: refetchProduct
-  } = useProductSSoT(productId);
+  // Buscar dados do estoque unificado
+  const { products, isLoading: isLoadingStock, checkAvailability } = useStockData();
 
-  // Buscar disponibilidade simplificada
-  const {
-    data: availability,
-    isLoading: isLoadingAvailability
-  } = useStockAvailabilitySSoT(productId, quantity, selectionType);
+  // Encontrar o produto específico na lista SSoT
+  const product = React.useMemo(() =>
+    products.find(p => p.id === productId),
+    [products, productId]
+  );
+
+  const isLoadingProduct = isLoadingStock;
+  const productError = null; // useStockData trata erros internamente ou via query
+
+  // Wrapper para refetch (opcional, já que useStockData é realtime/smart sync)
+  const refetchProduct = () => { };
+
+  // Verificar disponibilidade usando a função do SSoT
+  const availability = React.useMemo(() =>
+    checkAvailability(productId, quantity, selectionType === 'package'),
+    [checkAvailability, productId, quantity, selectionType]
+  );
+
+  const isLoadingAvailability = isLoadingStock;
 
   // ✅ ULTRA-SIMPLIFICAÇÃO: Informações diretas do estoque
   const stockInfo = useMemo(() => {
@@ -203,7 +214,7 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
                 <p className="text-sm text-gray-400">{product.category}</p>
               </div>
             </div>
-            
+
             {/* Informações de Estoque - ESPELHO DA PRATELEIRA */}
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div className="text-center p-2 bg-white/5 rounded">
@@ -229,14 +240,14 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
             {stockInfo.canSellUnits && (
               <div className={cn(
                 "flex items-center space-x-3 rounded-lg border p-4 transition-all duration-200",
-                selectionType === 'unit' 
-                  ? "border-primary-yellow bg-primary-yellow/10" 
+                selectionType === 'unit'
+                  ? "border-primary-yellow bg-primary-yellow/10"
                   : "border-white/20 bg-black/20 hover:bg-white/5",
                 !stockInfo.canSellUnits && "opacity-50"
               )}>
-                <RadioGroupItem 
-                  value="unit" 
-                  id="unit" 
+                <RadioGroupItem
+                  value="unit"
+                  id="unit"
                   disabled={!stockInfo.canSellUnits}
                 />
                 <div className="flex-1">
@@ -295,70 +306,70 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
             )}
           </RadioGroup>
 
-        {/* Seleção de Quantidade */}
-        <div className="space-y-2">
-          <Label className="text-white font-medium">Quantidade</Label>
-          <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleQuantityChange(quantity - 1)}
-              disabled={quantity <= 1}
-              className="border-white/20 text-white hover:bg-white/10"
-            >
-              <Minus className="h-4 w-4" />
-            </Button>
-            
-            <Input
-              type="number"
-              value={quantity}
-              onChange={(e) => handleQuantityChange(parseInt(e.target.value) || 1)}
-              className="text-center bg-black/40 border-white/20 text-white w-20"
-              min="1"
-              max={maxQuantity}
-            />
-            
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleQuantityChange(quantity + 1)}
-              disabled={quantity >= maxQuantity}
-              className="border-white/20 text-white hover:bg-white/10"
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
-            
-            <div className="flex-1 text-right">
-              <p className="text-sm text-gray-400">
-                Máximo: {maxQuantity} {selectionType === 'unit' ? 'unidades' : 'fardos'}
-              </p>
-            </div>
-          </div>
-        </div>
+          {/* Seleção de Quantidade */}
+          <div className="space-y-2">
+            <Label className="text-white font-medium">Quantidade</Label>
+            <div className="flex items-center gap-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleQuantityChange(quantity - 1)}
+                disabled={quantity <= 1}
+                className="border-white/20 text-white hover:bg-white/10"
+              >
+                <Minus className="h-4 w-4" />
+              </Button>
 
-        {/* Resumo do Preço */}
-        <div className="bg-primary-yellow/10 border border-primary-yellow/20 rounded-lg p-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-white font-medium">Total a pagar:</span>
-            <span className="text-xl font-bold text-primary-yellow">
-              {formatCurrency(totalPrice)}
-            </span>
-          </div>
-          <div className="text-sm text-gray-400">
-            {quantity} {selectionType === 'unit' ? 'unidade(s)' : 'fardo(s)'} × {formatCurrency(selectionType === 'unit' ? stockInfo.unitPrice : stockInfo.packagePrice)}
-          </div>
-          {selectionType === 'package' && (
-            <div className="text-xs text-gray-500 mt-1">
-              Total: {quantity} fardo(s)
+              <Input
+                type="number"
+                value={quantity}
+                onChange={(e) => handleQuantityChange(parseInt(e.target.value) || 1)}
+                className="text-center bg-black/40 border-white/20 text-white w-20"
+                min="1"
+                max={maxQuantity}
+              />
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleQuantityChange(quantity + 1)}
+                disabled={quantity >= maxQuantity}
+                className="border-white/20 text-white hover:bg-white/10"
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+
+              <div className="flex-1 text-right">
+                <p className="text-sm text-gray-400">
+                  Máximo: {maxQuantity} {selectionType === 'unit' ? 'unidades' : 'fardos'}
+                </p>
+              </div>
             </div>
-          )}
-          {isLoadingAvailability && (
-            <div className="text-xs text-gray-500 mt-1 flex items-center gap-1">
-              <Loader2 className="h-3 w-3 animate-spin" />
-              Verificando disponibilidade...
+          </div>
+
+          {/* Resumo do Preço */}
+          <div className="bg-primary-yellow/10 border border-primary-yellow/20 rounded-lg p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-white font-medium">Total a pagar:</span>
+              <span className="text-xl font-bold text-primary-yellow">
+                {formatCurrency(totalPrice)}
+              </span>
             </div>
-          )}
-        </div>
+            <div className="text-sm text-gray-400">
+              {quantity} {selectionType === 'unit' ? 'unidade(s)' : 'fardo(s)'} × {formatCurrency(selectionType === 'unit' ? stockInfo.unitPrice : stockInfo.packagePrice)}
+            </div>
+            {selectionType === 'package' && (
+              <div className="text-xs text-gray-500 mt-1">
+                Total: {quantity} fardo(s)
+              </div>
+            )}
+            {isLoadingAvailability && (
+              <div className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                Verificando disponibilidade...
+              </div>
+            )}
+          </div>
 
           {/* Botões de Ação */}
           <div className="flex gap-3 pt-4">

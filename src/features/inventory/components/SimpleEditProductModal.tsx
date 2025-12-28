@@ -48,6 +48,11 @@ import {
 import type { Product } from '@/core/types/inventory.types';
 import { DeleteProductModal } from './DeleteProductModal';
 
+import { fiscalSchema } from '@/features/inventory/schemas/product-schemas';
+import { sanitizeFiscalCode } from '@/features/inventory/utils/fiscal-sanitizers';
+
+// ... (existing imports, keep them safe by targetting specific blocked area)
+
 // Schema simplificado - apenas campos essenciais
 const simpleEditProductSchema = z.object({
   name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres').max(200, 'Nome deve ter no máximo 200 caracteres'),
@@ -69,17 +74,7 @@ const simpleEditProductSchema = z.object({
   volume_ml: z.number({ invalid_type_error: 'Volume deve ser um número' }).min(1, 'Volume deve ser maior que 0').optional().or(z.literal(0)).or(z.literal(undefined)),
   margin_percent: z.number().optional(),
   // Fiscal Fields
-  // Fiscal Fields Strict Validation
-  ncm: z.string().optional().refine((val) => !val || /^\d{8}$/.test(val), {
-    message: "NCM deve ter exatamente 8 dígitos numéricos"
-  }),
-  cest: z.string().optional().refine((val) => !val || /^\d{7}$/.test(val), {
-    message: "CEST deve ter exatamente 7 dígitos numéricos"
-  }),
-  cfop: z.string().optional().refine((val) => !val || /^\d{4}$/.test(val), {
-    message: "CFOP deve ter exatamente 4 dígitos numéricos"
-  }),
-  origin: z.union([z.string(), z.number()]).optional(),
+  ...fiscalSchema.shape,
 });
 
 type SimpleEditProductFormData = z.infer<typeof simpleEditProductSchema>;
@@ -506,8 +501,7 @@ export const SimpleEditProductModal: React.FC<SimpleEditProductModalProps> = ({
                 onInputChange={(field, value) => {
                   if (field === 'ncm' || field === 'cest' || field === 'cfop') {
                     // Remove non-digits immediately for better UX
-                    const numericValue = String(value).replace(/\D/g, '');
-                    form.setValue(field, numericValue);
+                    form.setValue(field, sanitizeFiscalCode(value));
                   } else {
                     form.setValue(field as any, value)
                   }

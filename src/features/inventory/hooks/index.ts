@@ -3,7 +3,7 @@ export { useInventoryCalculations } from './useInventoryCalculations';
 export { useInventoryErrorHandler } from './useInventoryErrorHandler';
 export { useInventoryFilters } from './useInventoryFilters';
 export { useInventoryOperations } from './useInventoryOperations';
-export { useInventoryView } from './useInventoryView';
+
 export { useProductCalculations } from './useProductCalculations';
 export { useProductForm } from './useProductForm';
 export { useProductFormLogic } from './useProductFormLogic';

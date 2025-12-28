@@ -1,11 +1,6 @@
-/**
- * Hook coordenador para lógica do ProductsGrid
- * Combina todos os hooks especializados em uma interface única
- */
-
 import { useState, useEffect } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/core/api/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
+import { useStockData } from '@/shared/hooks/business/useStockData';
 import { useCart } from '@/features/sales/hooks/use-cart';
 import { useBarcode } from '@/features/inventory/hooks/use-barcode';
 import { usePagination } from '@/shared/hooks/common/use-pagination';
@@ -45,105 +40,34 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
   const { searchByBarcode } = useBarcode();
   const queryClient = useQueryClient();
 
-  // Query para buscar produtos incluindo campos da Dupla Contagem e Multi-Store
-  // v3.5.4 - SSoT: Usa RPC para low-stock (herança de categoria)
-  const { data: products = [], isLoading } = useQuery({
-    // ✅ FIX: Garantir que queryKey nunca tenha undefined (causa cache compartilhado)
-    queryKey: ['products', 'available', storeFilter || 'all', stockFilter || 'all'],
-    queryFn: async (): Promise<Product[]> => {
-      // ✅ SSoT v3.5.4: Quando filtro é 'low-stock', usar RPC server-side
-      // Isso garante consistência com o Dashboard (mesma lógica de threshold)
-      if (stockFilter === 'low-stock') {
-        const { data, error } = await supabase
-          .rpc('get_low_stock_products', { p_limit: 100 }); // Limite alto para lista completa
+  // Consulta SSoT Centralizada
+  const { products: allProducts = [], isLoading } = useStockData();
 
-        if (error) {
-          console.error('Error fetching low stock products:', error);
-          throw error;
-        }
+  // Filtragem local inteligente
+  // Isso substitui as RPC calls e queries específicas, mantendo SSoT
+  const products = allProducts.filter(product => {
+    // 1. Filtro de Loja
+    if (storeFilter === 'store2') {
+      // Lógica simplificada: Se tem estoque na loja 2 ou foi transferido
+      // Como store2_holding_packages é um dado do produto, podemos usar diretamete
+      const hasStore2Stock = (product.store2_holding_packages || 0) > 0 || (product.store2_holding_units_loose || 0) > 0;
+      if (!hasStore2Stock) return false;
+    }
 
-        // Mapear resultado da RPC para formato Product
-        // A RPC retorna: id, name, current_stock, minimum_stock, stock_packages, stock_units_loose, price, category
-        return (data || []).map((item: any) => ({
-          id: item.id,
-          name: item.name,
-          price: item.price,
-          category: item.category,
-          stock_packages: item.stock_packages,
-          stock_units_loose: item.stock_units_loose,
-          stock_quantity: item.current_stock, // Mapeado de current_stock
-          minimum_stock: item.minimum_stock,
-          // Campos opcionais não retornados pela RPC (null/defaults)
-          image_url: null,
-          barcode: null,
-          unit_barcode: null,
-          package_barcode: null,
-          package_units: null,
-          package_price: null,
-          has_package_tracking: false,
-          units_per_package: 1,
-          expiry_date: null,
-          has_expiry_tracking: false,
-        })) as Product[];
-      }
+    // 2. Filtro de Estoque Baixo (Low Stock)
+    if (stockFilter === 'low-stock') {
+      return product.stockStatus === 'low_stock' || product.stockStatus === 'out_of_stock';
+    }
 
-      if (storeFilter === 'store2') {
-        // LOJA 2: Mostrar APENAS produtos transferidos
-        // v3.4.3 - Usa histórico de transferências para determinar visibilidade
+    // 3. Excluir deletados (já tratado pelo useStockData/supabase se implementado soft delete lá, mas garantindo)
+    // O useStockData pega 'select * from products', se houver deleted_at, precisa filtrar?
+    // A query original de productsSSoT não filtrava deleted_at, mas useProductsGridLogic filtrava 'is(deleted_at, null)'.
+    // Vou assumir que o SSoT deve retornar produtos ativos.
+    // Se o produto tiver deleted_at, filtrar.
+    // O DB Product raw tem deleted_at? Sim.
+    if ((product as any).deleted_at) return false;
 
-        // Passo 1: Buscar IDs de produtos transferidos para store2
-        const { data: transfers, error: transferError } = await supabase
-          .from('store_transfers')
-          .select('product_id')
-          .eq('to_store', 2);
-
-        if (transferError) {
-          console.error('Error fetching transfers:', transferError);
-          throw transferError;
-        }
-
-        // Passo 2: Extrair IDs únicos
-        const productIds = [...new Set(transfers?.map(t => t.product_id) || [])];
-
-        // Se não houver transferências, retornar array vazio
-        if (productIds.length === 0) {
-          return [];
-        }
-
-        // Passo 3: Buscar produtos transferidos
-        const { data, error } = await supabase
-          .from('products')
-          .select('id, name, price, stock_quantity, image_url, barcode, unit_barcode, package_barcode, category, package_units, package_price, has_package_tracking, units_per_package, stock_packages, stock_units_loose, store2_holding_packages, store2_holding_units_loose, minimum_stock, expiry_date, has_expiry_tracking')
-          .is('deleted_at', null)
-          .in('id', productIds)
-          .order('name', { ascending: true });
-
-        if (error) {
-          console.error('Error fetching products:', error);
-          throw error;
-        }
-
-        return data;
-
-      } else {
-        // LOJA 1 ou SEM FILTRO: Mostrar TODOS os produtos (comportamento atual)
-        let query = supabase
-          .from('products')
-          .select('id, name, price, stock_quantity, image_url, barcode, unit_barcode, package_barcode, category, package_units, package_price, has_package_tracking, units_per_package, stock_packages, stock_units_loose, store2_holding_packages, store2_holding_units_loose, minimum_stock, expiry_date, has_expiry_tracking')
-          .is('deleted_at', null);
-
-        query = query.order('name', { ascending: true });
-
-        const { data, error } = await query;
-
-        if (error) {
-          console.error('Error fetching products:', error);
-          throw error;
-        }
-
-        return data;
-      }
-    },
+    return true;
   });
 
   // 🏪 v3.4.2 - Invalidar cache quando storeFilter muda (forçar atualização dos cards)
@@ -187,16 +111,16 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
 
   // Paginação
   const {
+    paginatedItems: currentProducts,
     currentPage,
     itemsPerPage,
     totalPages,
     totalItems,
-    paginatedItems: currentProducts,
+    setCurrentPage,
     goToPage,
     setItemsPerPage
   } = usePagination(filteredProducts, {
-    initialItemsPerPage: 20,
-    resetOnItemsChange: true
+    initialItemsPerPage: 20
   });
 
   // Handler para código de barras escaneado
@@ -237,7 +161,8 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
           quantity: 1,
           maxQuantity: variantType === 'package' ? stockPackages : stockUnitsLoose,
           units_sold: variantType === 'package' ? (product.units_per_package || 1) : 1,
-          packageUnits: variantType === 'package' ? (product.units_per_package || 1) : undefined
+          packageUnits: variantType === 'package' ? (product.units_per_package || 1) : undefined,
+          conversion_required: false
         };
 
         console.log('[DEBUG] useProductsGridLogic - chamando addItem com:', itemToAdd);
@@ -280,7 +205,8 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
         quantity: 1,
         maxQuantity: stockUnitsLoose,
         units_sold: 1,
-        packageUnits: undefined
+        packageUnits: undefined,
+        conversion_required: false
       });
       onProductSelect?.(product);
     } else if (stockPackages > 0) {
@@ -294,7 +220,8 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
         quantity: 1,
         maxQuantity: stockPackages,
         units_sold: product.units_per_package || 1, // Quantas unidades são vendidas com 1 pacote
-        packageUnits: product.units_per_package || 1 // Quantas unidades tem no pacote
+        packageUnits: product.units_per_package || 1, // Quantas unidades tem no pacote
+        conversion_required: false
       });
       onProductSelect?.(product);
     }
@@ -316,7 +243,7 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
     if (!selectedProduct) return;
 
     // Usar a função específica para seleção de variantes
-    await addFromVariantSelection(selection, {
+    await addFromVariantSelection({ ...selection, conversion_required: false } as any, {
       id: selectedProduct.id,
       name: selectedProduct.name
     });

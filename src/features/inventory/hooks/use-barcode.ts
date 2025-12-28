@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
 import { useToast } from '@/shared/hooks/common/use-toast';
+import { useStockData, transformToStockData } from '@/shared/hooks/business/useStockData';
 import type { Product, BarcodeValidation } from '@/types/inventory.types';
 
 export const useBarcode = () => {
@@ -9,7 +10,9 @@ export const useBarcode = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Busca inteligente de produto por código de barras (principal ou pacote)
+  // Busca inteligente de produto por código de barras via SSoT
+  const { findProductByTerm } = useStockData();
+
   const searchByBarcode = useCallback(async (barcode: string): Promise<{ product: Product; type: 'main' | 'package' } | null> => {
     if (!barcode || barcode.length < 8) {
       toast({
@@ -20,51 +23,55 @@ export const useBarcode = () => {
       return null;
     }
 
-
     try {
-      // Buscar por código principal primeiro
-      const { data: mainProducts, error: mainError } = await supabase
-        .from('products')
-        .select('*')
-        .eq('barcode', barcode);
-      
-      const mainProduct = mainProducts?.[0] || null;
+      // 1. Busca Instantânea no SSoT (Memória)
+      const foundProduct = findProductByTerm(barcode);
 
-      if (mainProduct && !mainError) {
+      if (foundProduct) {
         setLastScannedCode(barcode);
-        
-        const hasPackage = !!mainProduct.package_barcode;
-        const typeLabel = hasPackage
-          ? 'código da unidade'
-          : 'código principal';
+
+        // Identificar se é código principal ou de pacote
+        const isPackage = foundProduct.package_barcode === barcode;
+        const typeLabel = isPackage ? 'código do fardo' : 'código unitário';
 
         toast({
-          title: "✅ Produto encontrado",
-          description: `${mainProduct.name} - ${typeLabel}`,
+          title: isPackage ? "📦 Produto encontrado" : "✅ Produto encontrado",
+          description: `${foundProduct.name} - ${typeLabel}`,
           variant: "default"
         });
 
-        return { product: mainProduct, type: 'main' };
+        return {
+          product: foundProduct,
+          type: isPackage ? 'package' : 'main'
+        };
       }
 
-      // Se não encontrou por código principal, buscar por código de pacote
-      const { data: packageProducts, error: packageError } = await supabase
+      // 2. Fallback: Se não encontrou no cache, tenta no banco (pode ser produto novo)
+      // Isso garante robustez caso o cache esteja desatualizado por segundos
+      const { data: mainProducts } = await supabase
         .from('products')
         .select('*')
-        .eq('package_barcode', barcode);
-      
-      const packageProduct = packageProducts?.[0] || null;
+        .eq('barcode', barcode)
+        .limit(1);
 
-      if (packageProduct && !packageError) {
-        setLastScannedCode(barcode);
+      if (mainProducts && mainProducts.length > 0) {
+        // Encontrou no banco (unitário)
+        const prod = transformToStockData(mainProducts[0]);
+        toast({ title: "✅ Produto encontrado", description: `${prod.name}`, variant: "default" });
+        return { product: prod, type: 'main' };
+      }
 
-        toast({
-          title: "📦 Produto encontrado",
-          description: `${packageProduct.name} - código do fardo (${packageProduct.package_units || 1} unidades)`,
-          variant: "default"
-        });
+      const { data: pkgProducts } = await supabase
+        .from('products')
+        .select('*')
+        .eq('package_barcode', barcode)
+        .limit(1);
 
-        return { product: packageProduct, type: 'package' };
+      if (pkgProducts && pkgProducts.length > 0) {
+        // Encontrou no banco (pacote)
+        const prod = transformToStockData(pkgProducts[0]);
+        toast({ title: "📦 Produto encontrado", description: `${prod.name}`, variant: "default" });
+        return { product: prod, type: 'package' };
       }
 
       // Não encontrado
@@ -76,21 +83,21 @@ export const useBarcode = () => {
       return null;
 
     } catch (error) {
-      console.error('[DEBUG] useBarcode - Erro ao buscar produto por código de barras:', error);
+      console.error('[DEBUG] useBarcode - Erro ao buscar produto:', error);
       toast({
         title: "Erro na busca",
-        description: "Ocorreu um erro ao buscar o produto. Tente novamente.",
+        description: "Ocorreu um erro ao buscar o produto.",
         variant: "destructive"
       });
       return null;
     }
-  }, [toast]);
+  }, [toast, findProductByTerm]);
 
   // Validação de código de barras
   const validateBarcode = useCallback((barcode: string): BarcodeValidation => {
     // Remove espaços e caracteres não numéricos
     const cleanCode = barcode.replace(/\D/g, '');
-    
+
     // Valida comprimento (8-14 dígitos conforme constraint do banco)
     if (cleanCode.length < 8 || cleanCode.length > 14) {
       return {
@@ -164,17 +171,17 @@ export const useBarcode = () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
       queryClient.invalidateQueries({ queryKey: ['products', 'available'] });
       queryClient.invalidateQueries({ queryKey: ['product'] });
-      
+
       toast({
         title: "Código atualizado",
         description: `Código de barras do produto ${data.name} atualizado com sucesso`,
       });
     },
     onError: (error: unknown) => {
-      const errorMessage = (error as { code?: string; message?: string }).code === '23505' 
+      const errorMessage = (error as { code?: string; message?: string }).code === '23505'
         ? 'Este código de barras já está em uso por outro produto'
         : (error as { message?: string }).message || "Erro ao atualizar código de barras";
-      
+
       toast({
         title: "Erro ao atualizar",
         description: errorMessage,

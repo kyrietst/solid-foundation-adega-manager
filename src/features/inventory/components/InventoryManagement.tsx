@@ -11,9 +11,7 @@ import { supabase } from '@/core/api/supabase/client';
 import { useToast } from '@/shared/hooks/common/use-toast';
 import { useGlassmorphismEffect } from '@/shared/hooks/ui/useGlassmorphismEffect';
 import { PageHeader } from '@/shared/ui/composite/PageHeader';
-import { ProductsGridContainer } from './ProductsGridContainer';
 import { ProductsTitle, ProductsHeader, AddProductButton } from './ProductsHeader';
-import { useProductsGridLogic } from '@/shared/hooks/products/useProductsGridLogic';
 import { Button } from '@/shared/ui/primitives/button';
 import { Trash2, Package, Store, AlertTriangle, Loader2, ClipboardList, Warehouse, Filter, AlertCircle } from 'lucide-react';
 import { PaginationControls } from '@/shared/ui/composite/pagination-controls';
@@ -503,11 +501,7 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
     }
   };
 
-  // Hook para obter dados dos produtos usando o hook existente
-  const productsGridData = useProductsGridLogic({
-    showSearch: false,
-    showFilters: false
-  });
+
 
   // 📦 SSoT v3.5.5: Usar hook dedicado com useInfiniteQuery para alertas
   // Permite carregamento progressivo ("Load More") de 100+ produtos
@@ -612,7 +606,7 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
       {/* Header padronizado com contador de produtos */}
       <PageHeader
         title="GESTÃO DE ESTOQUE"
-        count={productsGridData.totalProducts}
+        count={allProducts?.length || 0}
         countLabel="produtos"
       >
         {viewMode === 'active' && (
@@ -637,7 +631,7 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
               <Package className="h-4 w-4" />
               Produtos Ativos
               <span className="ml-1 px-2 py-0.5 bg-green-500/20 text-green-400 rounded-full text-xs font-bold">
-                {productsGridData.totalProducts}
+                {allProducts?.length || 0}
               </span>
             </Button>
 

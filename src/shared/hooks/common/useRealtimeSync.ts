@@ -14,7 +14,10 @@ export const useRealtimeSync = () => {
     const debouncedInvalidateSales = () => {
         if (timeoutRef.current) clearTimeout(timeoutRef.current);
         timeoutRef.current = setTimeout(() => {
-            queryClient.invalidateQueries({ queryKey: ['sales'] });
+            queryClient.invalidateQueries({
+                queryKey: ['sales'],
+                refetchType: 'all'
+            });
             queryClient.invalidateQueries({ queryKey: ['dashboard'] });
             queryClient.invalidateQueries({ queryKey: ['recent-sales'] });
         }, 1000);
