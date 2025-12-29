@@ -72,11 +72,11 @@ export const Sidebar = ({
   );
 };
 
-export const SidebarBody = (props: React.ComponentProps<typeof motion.div>) => {
+export const SidebarBody = (props: Omit<React.ComponentProps<typeof motion.div>, "children"> & { children: React.ReactNode }) => {
   return (
     <>
       <DesktopSidebar {...props} />
-      <MobileSidebar {...(props as any)} />
+      <MobileSidebar {...props} />
     </>
   );
 };
@@ -85,7 +85,7 @@ export const DesktopSidebar = ({
   className,
   children,
   ...props
-}: React.ComponentProps<typeof motion.div>) => {
+}: Omit<React.ComponentProps<typeof motion.div>, "children"> & { children: React.ReactNode }) => {
   const { open, setOpen, animate } = useSidebar();
   return (
     <motion.div
@@ -116,11 +116,11 @@ export const MobileSidebar = ({
   className,
   children,
   ...props
-}: React.ComponentProps<"div">) => {
+}: Omit<React.ComponentProps<typeof motion.div>, "children"> & { children: React.ReactNode }) => {
   const { open, setOpen } = useSidebar();
   return (
     <>
-      <div
+      <motion.div
         className={cn(
           // Mobile top bar matching cards style
           "h-12 px-4 py-3 flex flex-row md:hidden items-center justify-between bg-black/70 backdrop-blur-xl border-b border-white/20 shadow-lg w-full"
@@ -170,7 +170,7 @@ export const MobileSidebar = ({
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
+      </motion.div>
     </>
   );
 };
@@ -184,7 +184,7 @@ export const SidebarLink = ({
 }: {
   link: Links;
   className?: string;
-  onClick?: (e: React.MouseEvent) => void;
+  onClick?: (e: React.SyntheticEvent) => void;
   disabled?: boolean;
 }) => {
   const { open, animate } = useSidebar();
@@ -204,7 +204,7 @@ export const SidebarLink = ({
     }
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      onClick?.(e as unknown as React.MouseEvent);
+      onClick?.(e);
     }
   };
 
@@ -230,12 +230,12 @@ export const SidebarLink = ({
         "transition-all duration-200",
         disabled && "opacity-50"
       )}>
-        {React.cloneElement(link.icon as React.ReactElement, {
+        {React.isValidElement<React.HTMLAttributes<HTMLElement>>(link.icon) && React.cloneElement(link.icon, {
           className: cn(
-            ((link.icon as React.ReactElement).props as any).className,
+            link.icon.props.className,
             disabled && "text-gray-500"
           )
-        } as any)}
+        })}
       </div>
 
       <motion.span

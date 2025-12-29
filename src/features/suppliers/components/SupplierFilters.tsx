@@ -24,19 +24,19 @@ export const SupplierFilters: React.FC<SupplierFiltersProps> = ({
   onFiltersChange,
   className,
 }) => {
-  const updateFilter = (key: keyof ISupplierFilters, value: any) => {
+  const updateFilter = (key: keyof ISupplierFilters, value: ISupplierFilters[keyof ISupplierFilters]) => {
     onFiltersChange({
       ...filters,
       [key]: value,
     });
   };
-  
+
   const clearFilters = () => {
     onFiltersChange({});
   };
-  
+
   const hasActiveFilters = Object.keys(filters).length > 0;
-  
+
   return (
     <div className={cn("space-y-4", className)}>
       <div className="flex items-center justify-between">
@@ -53,7 +53,7 @@ export const SupplierFilters: React.FC<SupplierFiltersProps> = ({
           </Button>
         )}
       </div>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Filtro por categoria de produto */}
         <div className="space-y-2">
@@ -65,7 +65,7 @@ export const SupplierFilters: React.FC<SupplierFiltersProps> = ({
             className="bg-black/50 border-white/30 text-white placeholder:text-gray-400"
           />
         </div>
-        
+
         {/* Filtro por forma de pagamento */}
         <div className="space-y-2">
           <Label className="text-gray-300">Forma de Pagamento</Label>
@@ -92,7 +92,7 @@ export const SupplierFilters: React.FC<SupplierFiltersProps> = ({
             </SelectContent>
           </Select>
         </div>
-        
+
         {/* Filtro por valor mínimo de pedido */}
         <div className="space-y-2">
           <Label className="text-gray-300">Valor Mín. Pedido (até R$)</Label>
@@ -109,14 +109,14 @@ export const SupplierFilters: React.FC<SupplierFiltersProps> = ({
             className="bg-black/50 border-white/30 text-white placeholder:text-gray-400"
           />
         </div>
-        
+
         {/* Filtro por status ativo */}
         <div className="space-y-2">
           <Label className="text-gray-300">Status</Label>
           <div className="flex items-center space-x-2 py-2">
             <Switch
               checked={filters.is_active !== false}
-              onCheckedChange={(checked) => 
+              onCheckedChange={(checked) =>
                 updateFilter('is_active', checked ? undefined : false)
               }
               className="data-[state=checked]:bg-primary-yellow"
@@ -127,7 +127,7 @@ export const SupplierFilters: React.FC<SupplierFiltersProps> = ({
           </div>
         </div>
       </div>
-      
+
       {/* Indicador de filtros ativos */}
       {hasActiveFilters && (
         <div className="flex flex-wrap gap-2 pt-2 border-t border-white/10">
@@ -144,7 +144,7 @@ export const SupplierFilters: React.FC<SupplierFiltersProps> = ({
               </Button>
             </div>
           )}
-          
+
           {filters.payment_method && (
             <div className="flex items-center gap-1 px-2 py-1 bg-green-500/20 text-green-300 rounded text-sm">
               Pagamento: {PAYMENT_METHODS_OPTIONS.find(p => p.value === filters.payment_method)?.label}
@@ -158,7 +158,7 @@ export const SupplierFilters: React.FC<SupplierFiltersProps> = ({
               </Button>
             </div>
           )}
-          
+
           {filters.min_order_value !== undefined && (
             <div className="flex items-center gap-1 px-2 py-1 bg-yellow-500/20 text-yellow-300 rounded text-sm">
               Máx: R$ {filters.min_order_value.toFixed(2)}
@@ -172,7 +172,7 @@ export const SupplierFilters: React.FC<SupplierFiltersProps> = ({
               </Button>
             </div>
           )}
-          
+
           {filters.is_active === false && (
             <div className="flex items-center gap-1 px-2 py-1 bg-red-500/20 text-red-300 rounded text-sm">
               Apenas inativos

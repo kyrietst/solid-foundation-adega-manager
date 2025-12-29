@@ -13,7 +13,7 @@ const supplierSchema = z.object({
   company_name: z.string()
     .min(2, 'Nome da empresa deve ter pelo menos 2 caracteres')
     .max(100, 'Nome da empresa deve ter no máximo 100 caracteres'),
-  
+
   contact_info: z.object({
     phone: z.string()
       .optional()
@@ -28,19 +28,19 @@ const supplierSchema = z.object({
     data => data.phone || data.whatsapp || data.email,
     { message: 'Pelo menos um meio de contato é obrigatório' }
   ),
-  
+
   products_supplied: z.array(z.string())
     .min(1, 'Pelo menos um produto deve ser informado'),
-  
+
   delivery_time: z.string().optional(),
-  
+
   payment_methods: z.array(z.string())
     .min(1, 'Pelo menos uma forma de pagamento deve ser selecionada'),
-  
+
   minimum_order_value: z.number()
     .min(0, 'Valor mínimo deve ser positivo')
     .max(999999, 'Valor mínimo muito alto'),
-  
+
   notes: z.string()
     .max(500, 'Observações devem ter no máximo 500 caracteres')
     .optional(),
@@ -111,7 +111,7 @@ export const validateSupplierName = (name: string) => {
   return result.success ? null : result.error.errors[0].message;
 };
 
-export const validateContactInfo = (contactInfo: any) => {
+export const validateContactInfo = (contactInfo: SupplierFormData['contact_info']) => {
   const hasContact = contactInfo.phone || contactInfo.whatsapp || contactInfo.email;
   if (!hasContact) {
     return 'Pelo menos um meio de contato é obrigatório';

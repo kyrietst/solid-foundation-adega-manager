@@ -44,466 +44,12 @@ import {
   CUSTOMER_STATUSES
 } from "../types/customer-table.types";
 
-// Indicadores visuais para campos críticos de relatórios
-const ReportFieldIndicator = ({
-  fieldName,
-  value,
-  isRequired = false
-}: {
-  fieldName: string;
-  value: any;
-  isRequired?: boolean;
-}) => {
-  const isEmpty = !value || value === '' || value === 'Não informado' || value === 'N/A';
-
-  if (!isEmpty) return null;
-
-  return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <div className={cn(
-            "inline-flex items-center justify-center w-2 h-2 rounded-full ml-1",
-            isRequired ? "bg-accent-red animate-pulse" : "bg-accent-orange"
-          )} />
-        </TooltipTrigger>
-        <TooltipPortal>
-          <TooltipContent className="z-[50000] bg-black/95 backdrop-blur-xl border border-primary-yellow/30">
-            <div className="space-y-1">
-              <p className="text-xs font-medium text-primary-yellow">Campo faltante para relatórios</p>
-              <p className="text-xs text-white">{fieldName}</p>
-              <p className="text-xs text-gray-300">
-                {isRequired ? "🔴 Crítico" : "🟡 Importante"}
-              </p>
-            </div>
-          </TooltipContent>
-        </TooltipPortal>
-      </Tooltip>
-    </TooltipProvider>
-  );
-};
-
-const StatusBadge = React.memo(({
-  status,
-  color
-}: {
-  status: CustomerTableRow['status'];
-  color: CustomerTableRow['statusColor'];
-}) => {
-  // Sistema de cores Adega Wine Cellar v2.1 - Contraste otimizado
-  const statusColors = {
-    gold: "bg-primary-yellow/20 text-primary-yellow border-primary-yellow/40 shadow-lg shadow-primary-yellow/10 font-semibold backdrop-blur-sm",
-    green: "bg-green-400/20 text-green-300 border-green-400/40 shadow-lg shadow-green-400/10 backdrop-blur-sm",
-    yellow: "bg-accent-orange/20 text-orange-300 border-accent-orange/40 shadow-lg shadow-accent-orange/10 backdrop-blur-sm",
-    red: "bg-accent-red/20 text-red-300 border-accent-red/40 shadow-lg shadow-accent-red/10 backdrop-blur-sm lgpd-soft-pulse",
-    gray: "bg-gray-500/20 text-gray-300 border-gray-500/40 shadow-lg shadow-gray-500/10 backdrop-blur-sm",
-    orange: "bg-accent-orange/20 text-orange-300 border-accent-orange/40 shadow-lg shadow-accent-orange/10 backdrop-blur-sm"
-  };
-
-  return (
-    <Badge className={cn(
-      "whitespace-nowrap transition-all duration-200 hover:scale-105 border text-sm font-semibold px-3 py-1",
-      statusColors[color] || statusColors.gray
-    )}>
-      {status}
-    </Badge>
-  );
-}, (prevProps, nextProps) =>
-  prevProps.status === nextProps.status && prevProps.color === nextProps.color
-);
-
-// Componente interativo para nome do cliente com indicadores visuais
-const CustomerNameWithIndicators = React.memo(({
-  customer
-}: {
-  customer: CustomerTableRow;
-}) => {
-  const reportFields = [
-    { key: 'email', label: 'Email', value: customer.email, required: true },
-    { key: 'phone', label: 'Telefone', value: customer.phone, required: true },
-    { key: 'birthday', label: 'Aniversário', value: customer.proximoAniversario, required: false },
-    { key: 'address', label: 'Endereço', value: customer.cidade, required: false },
-    { key: 'category', label: 'Categoria Favorita', value: customer.categoriaFavorita, required: false }
-  ];
-
-  const missingFields = reportFields.filter(field =>
-    !field.value || field.value === 'Não informado' || field.value === 'N/A'
-  );
-
-  const criticalMissing = missingFields.filter(field => field.required);
-  const importantMissing = missingFields.filter(field => !field.required);
-
-  const hasIssues = missingFields.length > 0;
-
-  return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <div className={cn(
-            "group flex items-center gap-2 cursor-pointer transition-all duration-200",
-            hasIssues && "hover:scale-105"
-          )}>
-            {/* Nome do cliente */}
-            <span className={cn(
-              "font-medium transition-colors duration-200",
-              hasIssues ? "text-white group-hover:text-primary-yellow" : "text-gray-100"
-            )}>
-              {customer.cliente}
-            </span>
-
-            {/* Indicadores visuais */}
-            {criticalMissing.length > 0 && (
-              <div className="relative">
-                <AlertTriangle className="h-3 w-3 text-accent-red animate-pulse" />
-                <div className="absolute -top-1 -right-1 w-2 h-2 bg-accent-red rounded-full animate-ping" />
-              </div>
-            )}
-
-            {importantMissing.length > 0 && criticalMissing.length === 0 && (
-              <div className="w-2 h-2 bg-accent-orange rounded-full animate-pulse" />
-            )}
-
-            {!hasIssues && (
-              <CheckCircle2 className="h-3 w-3 text-green-400 opacity-60" />
-            )}
-          </div>
-        </TooltipTrigger>
-        <TooltipPortal>
-          <TooltipContent className="z-[50000] bg-black/95 backdrop-blur-xl border border-primary-yellow/30 shadow-2xl max-w-sm">
-            <div className="space-y-3 p-1">
-              {/* Header */}
-              <div className="flex items-center justify-between border-b border-white/10 pb-2">
-                <span className="font-semibold text-white">Perfil para Relatórios</span>
-                <div className="flex items-center gap-1">
-                  <Eye className="h-3 w-3 text-primary-yellow" />
-                  <span className="text-primary-yellow text-xs font-medium">Clique para editar</span>
-                </div>
-              </div>
-
-              {/* Campos críticos faltantes */}
-              {criticalMissing.length > 0 && (
-                <div className="bg-accent-red/10 border border-accent-red/20 rounded-lg p-2">
-                  <p className="text-accent-red font-medium text-xs flex items-center gap-1 mb-1">
-                    <AlertTriangle className="h-3 w-3 animate-pulse" />
-                    {criticalMissing.length} campos críticos ausentes
-                  </p>
-                  <div className="space-y-1">
-                    {criticalMissing.map((field, i) => (
-                      <div key={i} className="flex items-center gap-2 text-xs">
-                        <span className="w-1 h-1 bg-accent-red rounded-full animate-pulse"></span>
-                        <span className="text-red-200">{field.label}</span>
-                        <span className="text-accent-red/70 text-[10px]">OBRIGATÓRIO</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Campos importantes faltantes */}
-              {importantMissing.length > 0 && (
-                <div className="bg-accent-orange/10 border border-accent-orange/20 rounded-lg p-2">
-                  <p className="text-accent-orange font-medium text-xs flex items-center gap-1 mb-1">
-                    <TrendingUp className="h-3 w-3" />
-                    {importantMissing.length} campos importantes ausentes
-                  </p>
-                  <div className="space-y-1">
-                    {importantMissing.map((field, i) => (
-                      <div key={i} className="flex items-center gap-2 text-xs">
-                        <span className="w-1 h-1 bg-accent-orange rounded-full"></span>
-                        <span className="text-orange-200">{field.label}</span>
-                        <span className="text-accent-orange/70 text-[10px]">RECOMENDADO</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Status completo */}
-              {!hasIssues && (
-                <div className="bg-green-400/10 border border-green-400/20 rounded-lg p-2">
-                  <p className="text-green-400 font-medium text-xs flex items-center gap-1">
-                    <CheckCircle2 className="h-3 w-3" />
-                    Perfil completo para relatórios
-                  </p>
-                  <p className="text-green-200 text-xs mt-1">
-                    Todos os campos necessários estão preenchidos
-                  </p>
-                </div>
-              )}
-
-              {/* Footer */}
-              <div className="text-center pt-1 border-t border-white/10">
-                <p className="text-xs text-gray-300">
-                  Campos completos melhoram a precisão dos relatórios
-                </p>
-              </div>
-            </div>
-          </TooltipContent>
-        </TooltipPortal>
-      </Tooltip>
-    </TooltipProvider>
-  );
-}, (prevProps, nextProps) => prevProps.customer.id === nextProps.customer.id);
-
-const LGPDBadge = React.memo(({ hasPermission }: { hasPermission: boolean }) => {
-  return (
-    <div className="flex justify-center items-center w-full">
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Badge
-              className={cn(
-                "flex items-center gap-1 transition-all duration-200 hover:scale-105 border backdrop-blur-sm cursor-pointer text-sm font-semibold px-3 py-1",
-                hasPermission
-                  ? "bg-green-400/20 text-green-300 border-green-400/40 shadow-lg shadow-green-400/10"
-                  : "bg-accent-red/20 text-red-300 border-accent-red/40 shadow-lg shadow-accent-red/10 lgpd-soft-pulse"
-              )}
-            >
-              {hasPermission ? <CheckCircle2 className="w-3 h-3" /> : <XCircle className="w-3 h-3 lgpd-soft-pulse" />}
-              {hasPermission ? "LGPD ✓" : "Pendente"}
-            </Badge>
-          </TooltipTrigger>
-          <TooltipPortal>
-            <TooltipContent className="z-[50000] bg-black/95 backdrop-blur-xl border border-primary-yellow/30 shadow-2xl">
-              <div className="space-y-2 p-1">
-                <div className="flex items-center gap-2 border-b border-white/10 pb-1">
-                  <Shield className="h-3 w-3 text-primary-yellow" />
-                  <span className="font-semibold text-white text-xs">Status LGPD</span>
-                </div>
-
-                {hasPermission ? (
-                  <div className="bg-green-400/10 border border-green-400/20 rounded-lg p-2">
-                    <p className="text-green-300 font-medium text-xs flex items-center gap-1">
-                      <CheckCircle2 className="h-3 w-3" />
-                      Autorização Concedida
-                    </p>
-                    <p className="text-green-200 text-[10px] mt-1">
-                      Cliente pode receber comunicações de marketing
-                    </p>
-                  </div>
-                ) : (
-                  <div className="bg-accent-red/10 border border-accent-red/20 rounded-lg p-2">
-                    <p className="text-red-300 font-medium text-xs flex items-center gap-1">
-                      <AlertTriangle className="h-3 w-3 lgpd-soft-pulse" />
-                      Autorização Pendente
-                    </p>
-                    <p className="text-red-200 text-[10px] mt-1">
-                      Necessário consentimento para marketing
-                    </p>
-                  </div>
-                )}
-
-                <div className="text-center pt-1 border-t border-white/10">
-                  <p className="text-xs text-gray-300">
-                    Conforme Lei Geral de Proteção de Dados
-                  </p>
-                </div>
-              </div>
-            </TooltipContent>
-          </TooltipPortal>
-        </Tooltip>
-      </TooltipProvider>
-    </div>
-  );
-}, (prevProps, nextProps) => prevProps.hasPermission === nextProps.hasPermission);
-
-const EnhancedProfileCompleteness = ({
-  row,
-  onEditClick
-}: {
-  row: CustomerTableRow;
-  onEditClick?: (customerId: string) => void;
-}) => {
-  // Converter CustomerTableRow para CustomerData format
-  const customerData = {
-    id: row.id,
-    name: row.cliente,
-    email: row.email,
-    phone: row.phone,
-    address: row.cidade ? { city: row.cidade } : null,
-    birthday: row.proximoAniversario ? row.proximoAniversario.toISOString() : null,
-    first_purchase_date: null,
-    last_purchase_date: row.ultimaCompra ? row.ultimaCompra.toISOString() : null,
-    purchase_frequency: null,
-    favorite_category: row.categoriaFavorita,
-    favorite_product: null,
-    notes: null,
-    contact_permission: row.contactPermission,
-    created_at: row.createdAt.toISOString()
-  };
-
-  // Usar cálculo direto em vez do hook para garantir funcionamento
-  const completeness = React.useMemo(() => {
-    try {
-      return calculateCompleteness(customerData);
-    } catch (error) {
-      console.error('Erro ao calcular completude:', error);
-      return null;
-    }
-  }, [customerData]);
-
-  if (!completeness) {
-    return (
-      <div className="flex items-center gap-2 min-w-[80px] text-gray-400">
-        <AlertTriangle className="h-4 w-4" />
-        <span className="text-xs">N/A</span>
-      </div>
-    );
-  }
-
-  // Para tabela, usar versão compacta com mais informações no tooltip
-  return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <div
-            className="flex items-center gap-2 min-w-[100px] cursor-pointer hover:opacity-80 transition-opacity"
-            onClick={() => onEditClick?.(row.id)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                onEditClick?.(row.id);
-              }
-            }}
-            role="button"
-            tabIndex={0}
-            aria-label={`Editar perfil de ${row.cliente}, completude: ${completeness.percentage}%`}
-          >
-            <div className="flex-1">
-              <div className="w-full bg-gray-700/50 rounded-full h-2.5">
-                <div
-                  className={cn(
-                    "h-2.5 rounded-full transition-all duration-300",
-                    completeness.level === 'excellent' ? 'bg-gradient-to-r from-primary-yellow to-yellow-400' :
-                      completeness.level === 'good' ? 'bg-gradient-to-r from-green-500 to-green-400' :
-                        completeness.level === 'fair' ? 'bg-gradient-to-r from-yellow-500 to-yellow-400' :
-                          'bg-gradient-to-r from-red-500 to-red-400'
-                  )}
-                  style={{ width: `${completeness.percentage}%` }}
-                />
-              </div>
-            </div>
-            <div className="flex flex-col items-end">
-              <span className={cn(
-                "text-xs font-medium",
-                completeness.level === 'excellent' ? 'text-primary-yellow' :
-                  completeness.level === 'good' ? 'text-green-400' :
-                    completeness.level === 'fair' ? 'text-yellow-400' :
-                      'text-red-400'
-              )}>
-                {completeness.percentage}%
-              </span>
-              {completeness.criticalMissing.length > 0 && (
-                <AlertTriangle className="h-3 w-3 text-red-400" />
-              )}
-            </div>
-          </div>
-        </TooltipTrigger>
-        <TooltipPortal>
-          <TooltipContent side="left" className="max-w-sm z-[50000] bg-gray-900 border-gray-700">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="font-medium">Completude do Perfil</span>
-                <span className={cn(
-                  "font-bold",
-                  completeness.level === 'excellent' ? 'text-primary-yellow' :
-                    completeness.level === 'good' ? 'text-green-400' :
-                      completeness.level === 'fair' ? 'text-yellow-400' :
-                        'text-red-400'
-                )}>
-                  {completeness.percentage}%
-                </span>
-              </div>
-
-              <div className="text-xs text-gray-300">
-                {completeness.presentFields.length} de {completeness.presentFields.length + completeness.missingFields.length} campos preenchidos
-              </div>
-
-              {completeness.criticalMissing.length > 0 && (
-                <div className="text-xs text-red-400">
-                  ⚠️ {completeness.criticalMissing.length} campos críticos ausentes:
-                  <br />
-                  {completeness.criticalMissing.map(f => f.label).join(', ')}
-                </div>
-              )}
-
-              {completeness.recommendations.length > 0 && (
-                <div className="text-xs text-blue-400">
-                  💡 {completeness.recommendations[0]}
-                </div>
-              )}
-
-              <div className="text-xs text-gray-400 border-t border-gray-600 pt-1">
-                Clique para editar perfil
-              </div>
-            </div>
-          </TooltipContent>
-        </TooltipPortal>
-      </Tooltip>
-    </TooltipProvider>
-  );
-};
-
-const LastContactBadge = ({
-  date,
-  daysAgo
-}: {
-  date: Date | null;
-  daysAgo: number | null;
-}) => {
-  const color = getLastContactColor(daysAgo);
-  const text = formatLastContact(date, daysAgo);
-
-  return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <div className={cn("flex items-center gap-1", color)}>
-            <MessageCircle className="w-3 h-3" />
-            {text}
-          </div>
-        </TooltipTrigger>
-        <TooltipPortal>
-          <TooltipContent className="z-[50000] bg-gray-900 border-gray-700">
-            <p>
-              {daysAgo === null
-                ? "Cliente nunca teve contato registrado"
-                : `Último contato há ${daysAgo} dia${daysAgo === 1 ? '' : 's'}`
-              }
-            </p>
-          </TooltipContent>
-        </TooltipPortal>
-      </Tooltip>
-    </TooltipProvider>
-  );
-};
-
-const OutstandingAmountBadge = ({ amount }: { amount: number }) => {
-  const color = getOutstandingAmountColor(amount);
-
-  return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <div className={cn("flex items-center gap-1", color)}>
-            <DollarSign className="w-3 h-3" />
-            {formatCurrency(amount)}
-          </div>
-        </TooltipTrigger>
-        <TooltipPortal>
-          <TooltipContent className="z-[50000] bg-gray-900 border-gray-700">
-            <p>
-              {amount === 0
-                ? "Cliente não possui valores em aberto"
-                : `Valor total em aberto: ${formatCurrency(amount)}`
-              }
-            </p>
-          </TooltipContent>
-        </TooltipPortal>
-      </Tooltip>
-    </TooltipProvider>
-  );
-};
+import { CustomerStatusBadge } from "./table/CustomerStatusBadge";
+import { CustomerInfoCell } from "./table/CustomerInfoCell";
+import { CustomerLGPDBadge } from "./table/CustomerLGPDBadge";
+import { CustomerCompletenessCell } from "./table/CustomerCompletenessCell";
+import { CustomerLastContactBadge } from "./table/CustomerLastContactBadge";
+import { CustomerOutstandingAmountBadge } from "./table/CustomerOutstandingAmountBadge";
 
 type SortField = 'cliente' | 'ultimaCompra' | 'status' | 'diasParaAniversario' | 'profileCompleteness' | 'diasSemContato' | 'valorEmAberto' | null;
 type SortDirection = 'asc' | 'desc';
@@ -622,7 +168,7 @@ export default function CustomerDataTable() {
               className="block hover:no-underline"
               title={`Ver perfil completo de ${customer.cliente}`}
             >
-              <CustomerNameWithIndicators customer={customer} />
+              <CustomerInfoCell customer={customer} />
             </Link>
           </div>
         ),
@@ -676,7 +222,7 @@ export default function CustomerDataTable() {
         width: '110px',
         align: 'center',
         render: (value, customer) => (
-          <StatusBadge
+          <CustomerStatusBadge
             status={customer.status}
             color={customer.statusColor}
           />
@@ -705,7 +251,7 @@ export default function CustomerDataTable() {
         width: '90px',
         align: 'center',
         render: (value) => (
-          <LGPDBadge hasPermission={value as boolean} />
+          <CustomerLGPDBadge hasPermission={value as boolean} />
         ),
       },
       {
@@ -715,7 +261,7 @@ export default function CustomerDataTable() {
         width: '120px',
         align: 'center',
         render: (value, customer) => (
-          <EnhancedProfileCompleteness
+          <CustomerCompletenessCell
             row={customer}
             onEditClick={(customerId) => {
             }}
@@ -729,7 +275,7 @@ export default function CustomerDataTable() {
         width: '130px',
         align: 'center',
         render: (value, customer) => (
-          <LastContactBadge
+          <CustomerLastContactBadge
             date={customer.ultimoContato}
             daysAgo={customer.diasSemContato}
           />
@@ -742,7 +288,7 @@ export default function CustomerDataTable() {
         width: '130px',
         align: 'center',
         render: (value) => (
-          <OutstandingAmountBadge amount={value as number} />
+          <CustomerOutstandingAmountBadge amount={value as number} />
         ),
       },
     ];

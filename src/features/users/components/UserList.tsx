@@ -63,24 +63,28 @@ export const UserList: React.FC<UserListProps> = ({
     const term = searchTerm.trim().toLowerCase();
     let rows = term
       ? users.filter(u =>
-          (u.name || '').toLowerCase().includes(term) ||
-          (u.email || '').toLowerCase().includes(term) ||
-          (u.role || '').toLowerCase().includes(term)
-        )
+        (u.name || '').toLowerCase().includes(term) ||
+        (u.email || '').toLowerCase().includes(term) ||
+        (u.role || '').toLowerCase().includes(term)
+      )
       : users;
     if (sortField) {
-      rows = [...rows].sort((a, b) => {
-        const av: any = (a as any)[sortField!];
-        const bv: any = (b as any)[sortField!];
-        if (sortField === 'created_at') {
-          const at = new Date(av).getTime();
-          const bt = new Date(bv).getTime();
-          return sortDirection === 'asc' ? at - bt : bt - at;
-        }
-        return sortDirection === 'asc'
-          ? String(av).localeCompare(String(bv))
-          : String(bv).localeCompare(String(av));
-      });
+      if (sortField) {
+        rows = [...rows].sort((a, b) => {
+          const av = a[sortField!];
+          const bv = b[sortField!];
+
+          if (sortField === 'created_at') {
+            const at = new Date(av as string).getTime();
+            const bt = new Date(bv as string).getTime();
+            return sortDirection === 'asc' ? at - bt : bt - at;
+          }
+
+          return sortDirection === 'asc'
+            ? String(av).localeCompare(String(bv))
+            : String(bv).localeCompare(String(av));
+        });
+      }
     }
     return rows;
   }, [users, searchTerm, sortField, sortDirection]);
@@ -208,7 +212,7 @@ export const UserList: React.FC<UserListProps> = ({
 
     // Executar exclusão
     const success = await deleteUser(userId);
-    
+
     if (success) {
       // Atualizar lista após exclusão bem-sucedida
       onRefresh();
@@ -249,7 +253,7 @@ export const UserList: React.FC<UserListProps> = ({
   }
 
   return (
-    <Card 
+    <Card
       className="bg-gray-800/30 border-gray-700/40 backdrop-blur-sm shadow-lg hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300 relative overflow-hidden group"
       onMouseMove={(e) => {
         const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
@@ -260,13 +264,13 @@ export const UserList: React.FC<UserListProps> = ({
       }}
     >
       {/* Purple glow effect */}
-      <div 
+      <div
         className="absolute inset-0 rounded-xl bg-gradient-to-br from-purple-500/20 via-transparent to-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
         style={{
           background: `radial-gradient(600px circle at var(--x, 50%) var(--y, 50%), rgba(147, 51, 234, 0.15), transparent 40%)`
         }}
       />
-      
+
       <CardHeader className="space-y-3 pb-2 relative z-10">
         <div className="flex flex-row items-center justify-between">
           <CardTitle className="text-2xl font-bold text-white">Lista de Usuários</CardTitle>
@@ -298,7 +302,7 @@ export const UserList: React.FC<UserListProps> = ({
                     : "text-gray-300 hover:text-white hover:bg-white/10 hover:border-white/20 border border-transparent"
                 )}
               >
-                <FolderTree className={cn("h-3 w-3 transition-all duration-300", 
+                <FolderTree className={cn("h-3 w-3 transition-all duration-300",
                   activeTab === 'categories' ? "text-accent-gold-100" : "text-gray-400 group-hover:text-white")} />
                 <span className="relative z-10">Categorias</span>
                 {activeTab === 'categories' && (
@@ -308,9 +312,9 @@ export const UserList: React.FC<UserListProps> = ({
             </div>
 
             {/* Botão Atualizar */}
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline"
+              size="sm"
               onClick={handleRefresh}
               disabled={isRefreshing || isLoading}
               className="bg-black/80 border-accent-gold-100/40 text-accent-gold-100 hover:bg-accent-gold-100/20 hover:shadow-lg hover:shadow-accent-gold-100/20 hover:border-accent-gold-100/80 hover:scale-105 backdrop-blur-sm transition-all duration-300 relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
@@ -329,8 +333,8 @@ export const UserList: React.FC<UserListProps> = ({
             <span className="font-medium">{dataset.length} de {users.length} usuários</span>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="sm"
                   className="bg-black/80 border-white/30 text-white hover:bg-white/20 hover:border-white/50 hover:scale-105 backdrop-blur-sm transition-all duration-300 relative overflow-hidden group"
                 >
@@ -354,7 +358,7 @@ export const UserList: React.FC<UserListProps> = ({
           </div>
         </div>
       </CardHeader>
-      
+
       <CardContent className="relative z-10">
         {dataset.length === 0 ? (
           <div className="text-center py-12">
@@ -373,8 +377,8 @@ export const UserList: React.FC<UserListProps> = ({
                 <tr className="border-b border-white/20">
                   {visibleColumns.includes('Nome') && (
                     <th className="text-left p-4 font-medium text-white">
-                      <button 
-                        className="inline-flex items-center gap-2 hover:text-accent-gold-100 transition-colors duration-200 group" 
+                      <button
+                        className="inline-flex items-center gap-2 hover:text-accent-gold-100 transition-colors duration-200 group"
                         onClick={() => handleSort('name')}
                       >
                         <span>Nome</span>
@@ -386,8 +390,8 @@ export const UserList: React.FC<UserListProps> = ({
                   )}
                   {visibleColumns.includes('Email') && (
                     <th className="text-left p-4 font-medium text-white">
-                      <button 
-                        className="inline-flex items-center gap-2 hover:text-accent-gold-100 transition-colors duration-200 group" 
+                      <button
+                        className="inline-flex items-center gap-2 hover:text-accent-gold-100 transition-colors duration-200 group"
                         onClick={() => handleSort('email')}
                       >
                         <span>Email</span>
@@ -399,8 +403,8 @@ export const UserList: React.FC<UserListProps> = ({
                   )}
                   {visibleColumns.includes('Função') && (
                     <th className="text-left p-4 font-medium text-white">
-                      <button 
-                        className="inline-flex items-center gap-2 hover:text-accent-gold-100 transition-colors duration-200 group" 
+                      <button
+                        className="inline-flex items-center gap-2 hover:text-accent-gold-100 transition-colors duration-200 group"
                         onClick={() => handleSort('role')}
                       >
                         <span>Função</span>
@@ -412,8 +416,8 @@ export const UserList: React.FC<UserListProps> = ({
                   )}
                   {visibleColumns.includes('Criado em') && (
                     <th className="text-left p-4 font-medium text-white">
-                      <button 
-                        className="inline-flex items-center gap-2 hover:text-accent-gold-100 transition-colors duration-200 group" 
+                      <button
+                        className="inline-flex items-center gap-2 hover:text-accent-gold-100 transition-colors duration-200 group"
                         onClick={() => handleSort('created_at')}
                       >
                         <span>Criado em</span>
@@ -430,8 +434,8 @@ export const UserList: React.FC<UserListProps> = ({
               </thead>
               <tbody>
                 {dataset.map((user) => (
-                  <tr 
-                    key={user.id} 
+                  <tr
+                    key={user.id}
                     className="border-b border-white/10 hover:bg-white/5 hover:shadow-md transition-all duration-300 group"
                   >
                     {visibleColumns.includes('Nome') && (
@@ -439,7 +443,7 @@ export const UserList: React.FC<UserListProps> = ({
                         <div className="flex items-center">
                           <span className="font-medium text-white group-hover:text-accent-gold-100 transition-colors duration-200">{user.name}</span>
                           {isSupremeAdmin(user.email) && (
-                            <Crown className="h-4 w-4 text-accent-gold-100 ml-2 group-hover:animate-pulse" title="Administrador Supremo" />
+                            <Crown className="h-4 w-4 text-accent-gold-100 ml-2 group-hover:animate-pulse" />
                           )}
                         </div>
                       </td>
@@ -484,7 +488,7 @@ export const UserList: React.FC<UserListProps> = ({
               Nova senha temporária para {resetPasswordModal.userName}
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4">
             <div className="bg-gray-900/50 rounded-lg p-4 border border-gray-600/30">
               <label className="block text-sm font-medium text-amber-300 mb-2">
@@ -508,7 +512,7 @@ export const UserList: React.FC<UserListProps> = ({
                 </Button>
               </div>
             </div>
-            
+
             <div className="bg-blue-500/10 border border-blue-400/30 rounded-lg p-3">
               <p className="text-sm text-blue-300">
                 <strong>Instruções:</strong>
@@ -519,7 +523,7 @@ export const UserList: React.FC<UserListProps> = ({
                 <li>• Esta senha é temporária e deve ser usada imediatamente</li>
               </ul>
             </div>
-            
+
             <div className="flex justify-end">
               <Button
                 onClick={closeResetModal}

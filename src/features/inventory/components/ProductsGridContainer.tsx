@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import type { Product } from '@/types/inventory.types';
+import { Product } from '@/core/types/inventory.types';
 import { useProductsGridLogic, ProductsGridConfig } from '@/shared/hooks/products/useProductsGridLogic';
 import type { StockFilterType } from '@/shared/hooks/products/useProductFilters';
 import { ProductsGridPresentation } from './ProductsGridPresentation';
@@ -144,7 +144,7 @@ export const ProductsGridContainer: React.FC<ProductsGridContainerProps> = ({
   return (
     <>
       <ProductsGridPresentation {...presentationProps} />
-      
+
       {/* Modal de seleção de produto (unidade vs pacote) */}
       {selectedProduct && (
         <ProductSelectionModal

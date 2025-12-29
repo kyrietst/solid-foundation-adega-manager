@@ -4,7 +4,7 @@ import { Badge } from '@/shared/ui/primitives/badge';
 import { Button } from '@/shared/ui/primitives/button';
 import { Input } from '@/shared/ui/primitives/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/primitives/card';
-import { toast } from '@/shared/components/use-toast';
+import { useToast, toast } from '@/shared/hooks/common/use-toast';
 
 interface CustomerTagManagerProps {
   tags: string[];
@@ -40,9 +40,9 @@ const TAG_COLORS = [
   'bg-red-100 text-red-800 border-red-200 hover:bg-red-200'
 ];
 
-export const CustomerTagManager = ({ 
-  tags, 
-  onTagsChange, 
+export const CustomerTagManager = ({
+  tags,
+  onTagsChange,
   maxTags = 10,
   placeholder = "Digite uma tag personalizada..."
 }: CustomerTagManagerProps) => {
@@ -56,17 +56,17 @@ export const CustomerTagManager = ({
 
   const addTag = useCallback((tag: string) => {
     const trimmedTag = tag.trim();
-    
+
     if (!trimmedTag) {
       toast({ title: "Tag vazia", description: "Digite uma tag válida", variant: "destructive" });
       return;
     }
 
     if (tags.length >= maxTags) {
-      toast({ 
-        title: "Limite excedido", 
-        description: `Máximo de ${maxTags} tags permitidas`, 
-        variant: "destructive" 
+      toast({
+        title: "Limite excedido",
+        description: `Máximo de ${maxTags} tags permitidas`,
+        variant: "destructive"
       });
       return;
     }
@@ -78,8 +78,8 @@ export const CustomerTagManager = ({
 
     onTagsChange([...tags, trimmedTag]);
     setNewTag('');
-    toast({ 
-      title: "Tag adicionada", 
+    toast({
+      title: "Tag adicionada",
       description: `Tag "${trimmedTag}" adicionada com sucesso`,
       variant: "success"
     });
@@ -87,8 +87,8 @@ export const CustomerTagManager = ({
 
   const removeTag = useCallback((tagToRemove: string) => {
     onTagsChange(tags.filter(tag => tag !== tagToRemove));
-    toast({ 
-      title: "Tag removida", 
+    toast({
+      title: "Tag removida",
       description: `Tag "${tagToRemove}" removida`,
       variant: "warning"
     });
@@ -174,7 +174,7 @@ export const CustomerTagManager = ({
               {showPredefined ? 'Ocultar' : 'Mostrar'} ({availablePredefinedTags.length})
             </Button>
           </div>
-          
+
           {showPredefined && availablePredefinedTags.length > 0 && (
             <div className="flex flex-wrap gap-2 p-3 bg-muted/30 rounded-md">
               {availablePredefinedTags.map((tag) => (

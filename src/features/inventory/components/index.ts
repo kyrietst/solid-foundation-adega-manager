@@ -5,9 +5,7 @@ export { InventoryGrid } from './InventoryGrid';
 export { InventoryHeader } from './InventoryHeader';
 export { InventoryStats } from './InventoryStats';
 export { ProductCard } from './ProductCard';
-export { ProductDialog } from './ProductDialog';
 export { ProductFilters } from './ProductFilters';
-export { ProductForm } from './ProductForm';
 export { ProductGrid } from './ProductGrid';
 export { ProductRow } from './ProductRow';
 export { ProductsGridContainer } from './ProductsGridContainer';
@@ -15,7 +13,6 @@ export { ProductsGridPresentation } from './ProductsGridPresentation';
 export { ProductsHeader } from './ProductsHeader';
 export { TurnoverAnalysis } from './TurnoverAnalysis';
 export { NewProductModal } from './NewProductModal';
-export { ExpiryAlertsCard } from './ExpiryAlertsCard';
 
 // Product Form Sub-components
 export { ProductBasicInfoCard } from './product-form/ProductBasicInfoCard';

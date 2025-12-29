@@ -141,7 +141,7 @@ const Delivery = () => {
   // Função para deletar pedido usando RPC (contorna políticas RLS inconsistentes)
   const handleDeleteOrder = async (saleId: string) => {
     try {
-      console.log('🗑️ Iniciando deleção do pedido via RPC:', saleId);
+
 
       // Usar RPC com SECURITY DEFINER para contornar políticas RLS
       const { data, error } = await supabase
@@ -160,11 +160,17 @@ const Delivery = () => {
         throw new Error(`Erro ao deletar pedido: ${error.message}`);
       }
 
-      console.log('✅ Pedido deletado com sucesso! Estatísticas:', data);
+      // Tipagem do retorno da RPC (definida localmente pois pode não estar no gerado ainda)
+      interface DeleteSaleResult {
+        sale_items: number;
+        inventory_movements: number;
+      }
+
+      const result = data as unknown as DeleteSaleResult;
 
       toast({
         title: "✅ Pedido excluído!",
-        description: `Removidos: ${data.sale_items} itens, ${data.inventory_movements} movimentos de estoque.`,
+        description: `Removidos: ${result.sale_items} itens, ${result.inventory_movements} movimentos de estoque.`,
       });
 
       // Limpar cache e atualizar lista

@@ -17,7 +17,7 @@ export interface InventoryMovementParams {
   quantityChange: number;
   type: 'sale' | 'initial_stock' | 'inventory_adjustment' | 'return' | 'stock_transfer_out' | 'stock_transfer_in' | 'personal_consumption';
   reason?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface InventoryMovementResult {
@@ -148,11 +148,11 @@ export const useInventoryMovements = () => {
           .order('date', { ascending: false });
 
         if (filters?.productId) {
-          query = query.eq('product_id', filters.productId as any);
+          query = query.filter('product_id', 'eq', filters.productId);
         }
 
         if (filters?.type) {
-          query = query.eq('type_enum', filters.type as any);
+          query = query.filter('type_enum', 'eq', filters.type);
         }
 
         if (filters?.startDate) {
@@ -176,7 +176,7 @@ export const useInventoryMovements = () => {
 
   // Convenience functions for common operations
   const createStockAdjustment = useCallback(
-    (productId: string, quantityChange: number, reason: string, metadata: Record<string, any> = {}) => {
+    (productId: string, quantityChange: number, reason: string, metadata: Record<string, unknown> = {}) => {
       createMovementMutation.mutate({
         productId,
         quantityChange,
@@ -192,7 +192,7 @@ export const useInventoryMovements = () => {
   );
 
   const createSaleMovement = useCallback(
-    (productId: string, quantity: number, reason: string, saleId?: string, customerId?: string, metadata: Record<string, any> = {}) => {
+    (productId: string, quantity: number, reason: string, saleId?: string, customerId?: string, metadata: Record<string, unknown> = {}) => {
       createMovementMutation.mutate({
         productId,
         quantityChange: -Math.abs(quantity), // Sales are always negative
@@ -210,7 +210,7 @@ export const useInventoryMovements = () => {
   );
 
   const createReturnMovement = useCallback(
-    (productId: string, quantity: number, reason: string, saleId?: string, metadata: Record<string, any> = {}) => {
+    (productId: string, quantity: number, reason: string, saleId?: string, metadata: Record<string, unknown> = {}) => {
       createMovementMutation.mutate({
         productId,
         quantityChange: Math.abs(quantity), // Returns are always positive

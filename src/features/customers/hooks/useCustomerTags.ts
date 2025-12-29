@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/shared/components/use-toast';
+import { supabase } from '@/core/api/supabase/client';
+import { useToast, toast } from '@/shared/hooks/common/use-toast';
 
 export interface CustomerTagsData {
   customerId: string;
@@ -14,21 +14,21 @@ export const useCustomerTags = () => {
     mutationFn: async ({ customerId, tags }: CustomerTagsData) => {
       const { data, error } = await supabase
         .from('customers')
-        .update({ tags: JSON.stringify(tags) })
-        .eq('id', customerId)
+        .update({ tags: JSON.stringify(tags) } as any)
+        .eq('id' as any, customerId as any)
         .select('id, name, tags')
         .single();
 
       if (error) throw error;
-      return data;
+      return data as any;
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       // Invalidar queries relacionadas para atualizar cache
       queryClient.invalidateQueries({ queryKey: ['customers'] });
       queryClient.invalidateQueries({ queryKey: ['customer', data.id] });
-      
+
       const tagCount = Array.isArray(data.tags) ? data.tags.length : JSON.parse(data.tags || '[]').length;
-      
+
       toast({
         title: 'Tags atualizadas',
         description: `Cliente ${data.name} agora tem ${tagCount} tag(s)`,
@@ -45,48 +45,56 @@ export const useCustomerTags = () => {
     }
   });
 
-  const addTagToCustomer = useMutation({
-    mutationFn: async ({ customerId, newTag }: { customerId: string; newTag: string }) => {
-      // Primeiro buscar as tags atuais
-      const { data: customer, error: fetchError } = await supabase
-        .from('customers')
-        .select('tags')
-        .eq('id', customerId)
-        .single();
+  // New mutation to get all unique tags from the `customer_tags` table
+  const getAllUniqueTags = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase
+        .from('customer_tags')
+        .select('tag')
+        .order('tag');
 
-      if (fetchError) throw fetchError;
+      if (error) throw error;
 
-      // Processar tags existentes
-      const currentTags = customer.tags ? 
-        (Array.isArray(customer.tags) ? customer.tags : JSON.parse(customer.tags)) 
-        : [];
+      // Filter unique tags in JS to avoid 'distinct' type error
+      const uniqueTags = [...new Set((data || []).map((item: any) => item.tag))];
+      return uniqueTags;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['customer-tags'] });
+    }
+  });
 
-      // Verificar se a tag já existe
-      if (currentTags.includes(newTag)) {
-        throw new Error('Tag já existe');
+  // New mutation to add a tag to a customer in the `customer_tags` table
+  const addTag = useMutation({
+    mutationFn: async ({ customerId, tag }: { customerId: string, tag: string }) => {
+      // First check if tag already exists for this customer
+      const { data: existing } = await supabase
+        .from('customer_tags')
+        .select('id')
+        .eq('customer_id' as any, customerId as any)
+        .eq('tag' as any, tag as any)
+        .maybeSingle();
+
+      if (existing) {
+        throw new Error('Tag já existe para este cliente');
       }
 
-      // Adicionar nova tag
-      const updatedTags = [...currentTags, newTag];
-
-      // Atualizar no banco
       const { data, error } = await supabase
-        .from('customers')
-        .update({ tags: JSON.stringify(updatedTags) })
-        .eq('id', customerId)
-        .select('id, name, tags')
+        .from('customer_tags')
+        .insert([{ customer_id: customerId, tag }] as any)
+        .select()
         .single();
 
       if (error) throw error;
-      return data;
+      return data as any;
     },
     onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['customers'] });
-      queryClient.invalidateQueries({ queryKey: ['customer', data.id] });
-      
+      queryClient.invalidateQueries({ queryKey: ['customer-tags'] });
+      // Invalidation of specific customer query is handled by the component if needed
+
       toast({
         title: 'Tag adicionada',
-        description: `Tag "${variables.newTag}" adicionada com sucesso`,
+        description: `Tag "${variables.tag}" adicionada com sucesso`,
         variant: 'success'
       });
     },
@@ -101,38 +109,21 @@ export const useCustomerTags = () => {
 
   const removeTagFromCustomer = useMutation({
     mutationFn: async ({ customerId, tagToRemove }: { customerId: string; tagToRemove: string }) => {
-      // Buscar tags atuais
-      const { data: customer, error: fetchError } = await supabase
-        .from('customers')
-        .select('tags')
-        .eq('id', customerId)
-        .single();
-
-      if (fetchError) throw fetchError;
-
-      // Processar tags existentes
-      const currentTags = customer.tags ? 
-        (Array.isArray(customer.tags) ? customer.tags : JSON.parse(customer.tags)) 
-        : [];
-
-      // Remover tag
-      const updatedTags = currentTags.filter((tag: string) => tag !== tagToRemove);
-
-      // Atualizar no banco
-      const { data, error } = await supabase
-        .from('customers')
-        .update({ tags: JSON.stringify(updatedTags) })
-        .eq('id', customerId)
-        .select('id, name, tags')
-        .single();
+      // Remover tag da tabela customer_tags
+      const { error } = await supabase
+        .from('customer_tags')
+        .delete()
+        .eq('customer_id' as any, customerId as any)
+        .eq('tag' as any, tagToRemove as any);
 
       if (error) throw error;
-      return data;
+      return { id: customerId, tagToRemove };
     },
     onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['customer-tags'] });
+      // Também invalidar customers para garantir consistência se houver fallback
       queryClient.invalidateQueries({ queryKey: ['customers'] });
-      queryClient.invalidateQueries({ queryKey: ['customer', data.id] });
-      
+
       toast({
         title: 'Tag removida',
         description: `Tag "${variables.tagToRemove}" removida com sucesso`,
@@ -145,31 +136,6 @@ export const useCustomerTags = () => {
         description: error.message || 'Não foi possível remover a tag',
         variant: 'destructive'
       });
-    }
-  });
-
-  // Hook para buscar todas as tags únicas usadas no sistema
-  const getAllUniqueTags = useMutation({
-    mutationFn: async () => {
-      const { data, error } = await supabase
-        .from('customers')
-        .select('tags')
-        .not('tags', 'is', null);
-
-      if (error) throw error;
-
-      // Extrair todas as tags únicas
-      const allTags = new Set<string>();
-      data.forEach(customer => {
-        if (customer.tags) {
-          const tags = Array.isArray(customer.tags) ? 
-            customer.tags : 
-            JSON.parse(customer.tags);
-          tags.forEach((tag: string) => allTags.add(tag));
-        }
-      });
-
-      return Array.from(allTags).sort();
     }
   });
 
@@ -186,12 +152,12 @@ export const useCustomerTags = () => {
 
   return {
     updateCustomerTags,
-    addTagToCustomer,
+    addTag,
+    removeTag: removeTagFromCustomer,
+    addTagToCustomer: addTag,
     removeTagFromCustomer,
     getAllUniqueTags,
     processTags,
-    
-    // Estados dos mutations
-    isUpdating: updateCustomerTags.isPending || addTagToCustomer.isPending || removeTagFromCustomer.isPending
+    isUpdating: updateCustomerTags.isPending || addTag.isPending || removeTagFromCustomer.isPending
   };
 };

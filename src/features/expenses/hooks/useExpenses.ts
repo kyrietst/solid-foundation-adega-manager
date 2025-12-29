@@ -50,15 +50,15 @@ export const useExpenses = (filters?: ExpenseFilters) => {
 
       // Filtros
       if (filters?.category_id) {
-        query = query.eq('category_id', filters.category_id);
+        query = query.eq('category_id' as any, filters.category_id as any);
       }
 
       if (filters?.start_date) {
-        query = query.gte('expense_date', filters.start_date);
+        query = query.gte('date', filters.start_date);
       }
 
       if (filters?.end_date) {
-        query = query.lte('expense_date', filters.end_date);
+        query = query.lte('date', filters.end_date);
       }
 
       if (filters?.search) {
@@ -97,7 +97,7 @@ export const useExpense = (id: string) => {
           *,
           expense_categories(name, color, icon)
         `)
-        .eq('id', id)
+        .eq('id' as any, id as any)
         .single();
 
       if (error) {
@@ -196,7 +196,7 @@ export const useCreateExpense = () => {
     mutationFn: async (expense: ExpenseInsert) => {
       const { data, error } = await supabase
         .from('expenses')
-        .insert([expense])
+        .insert([expense] as any)
         .select(`
           *,
           expense_categories(name, color, icon)
@@ -208,6 +208,7 @@ export const useCreateExpense = () => {
         throw error;
       }
 
+      if (!data) throw new Error('No data returned');
       return data;
     },
     onSuccess: () => {
@@ -231,8 +232,8 @@ export const useUpdateExpense = () => {
     mutationFn: async ({ id, updates }: { id: string; updates: ExpenseUpdate }) => {
       const { data, error } = await supabase
         .from('expenses')
-        .update(updates)
-        .eq('id', id)
+        .update(updates as any)
+        .eq('id' as any, id as any)
         .select(`
           *,
           expense_categories(name, color, icon)
@@ -244,11 +245,12 @@ export const useUpdateExpense = () => {
         throw error;
       }
 
+      if (!data) throw new Error('No data returned');
       return data;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
-      queryClient.invalidateQueries({ queryKey: ['expense', data.id] });
+      queryClient.invalidateQueries({ queryKey: ['expense', (data as any).id] });
       queryClient.invalidateQueries({ queryKey: ['expense-summary'] });
       queryClient.invalidateQueries({ queryKey: ['monthly-expenses'] });
       queryClient.invalidateQueries({ queryKey: ['budget-variance'] });
@@ -269,7 +271,7 @@ export const useDeleteExpense = () => {
       const { error } = await supabase
         .from('expenses')
         .delete()
-        .eq('id', id);
+        .eq('id' as any, id as any);
 
       if (error) {
         console.error('Erro ao excluir despesa:', error);
@@ -285,9 +287,10 @@ export const useDeleteExpense = () => {
       queryClient.invalidateQueries({ queryKey: ['budget-variance'] });
       toast.success('Despesa excluída com sucesso!');
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       console.error('Erro ao excluir despesa:', error);
-      toast.error('Erro ao excluir despesa: ' + (error.message || 'Erro desconhecido'));
+      const message = error instanceof Error ? error.message : 'Erro desconhecido';
+      toast.error('Erro ao excluir despesa: ' + message);
     }
   });
 };

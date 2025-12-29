@@ -156,10 +156,7 @@ export const useMovements = (options: UseMovementsOptions = {}): UseMovementsRet
         throw error;
       }
 
-      // 🔍 DEBUG: Log para investigar estrutura dos dados
-      // console.group('🔍 MOVEMENTS DEBUG');
-      // console.log('Total movements:', data?.length);
-      // console.groupEnd();
+
 
       return {
         movements: (data || []) as unknown as InventoryMovement[],

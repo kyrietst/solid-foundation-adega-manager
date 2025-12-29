@@ -1,7 +1,6 @@
 import { useSales, useDeleteSale } from "@/features/sales/hooks/use-sales";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import { Skeleton } from "@/shared/ui/composite/skeleton";
+import { formatCurrency, formatDate } from "@/shared/utils/formatters";
 import { Button } from "@/shared/ui/primitives/button";
 import { FileText, Download, CalendarDays, CreditCard, ChevronRight, User, Truck, Trash2, Eye, Package, Store } from "lucide-react";
 import { useAuth } from "@/app/providers/AuthContext";
@@ -21,57 +20,8 @@ import {
   AlertDialogTitle,
 } from "@/shared/components/alert-dialog";
 
-type SaleStatus = 'completed' | 'pending' | 'cancelled' | 'returned';
-type PaymentStatus = 'pending' | 'paid' | 'cancelled';
-
-interface Sale {
-  id: string;
-  order_number: number;
-  status: SaleStatus;
-  payment_status: PaymentStatus;
-  created_at: string;
-  payment_method: string;
-  total_amount: number;
-  discount_amount: number;
-  final_amount: number;
-  delivery: boolean;
-  delivery_type: string;
-  delivery_address?: { address: string } | null;
-  delivery_fee?: number;
-  delivery_person_id?: string | null;
-  customer_id: string | null;
-  seller_id: string;
-  notes: string | null;
-  updated_at: string;
-  customer?: {
-    id: string;
-    name: string;
-    email?: string;
-    phone?: string;
-  } | null;
-  seller?: {
-    id: string;
-    name: string;
-    email?: string;
-  } | null;
-  delivery_person?: {
-    id: string;
-    name: string;
-    email?: string;
-  } | null;
-  items?: Array<{
-    id: string;
-    sale_id: string;
-    product_id: string;
-    quantity: number;
-    unit_price: number;
-    subtotal: number;
-    product?: {
-      name: string;
-      barcode?: string;
-    };
-  }>;
-}
+import { SaleStatusBadge } from "./SaleStatusBadge";
+import { PaymentStatusBadge } from "./PaymentStatusBadge";
 
 export function RecentSales() {
   const { data: sales, isLoading } = useSales({ limit: 20 });
@@ -96,15 +46,33 @@ export function RecentSales() {
   const handleConfirmDelete = () => {
     if (!saleToDelete) return;
 
+    if (!user) {
+      toast({
+        title: "Sessão Expirada",
+        description: "Faça login novamente para realizar esta ação.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     // Executa a mutação de exclusão
-    deleteSale(saleToDelete.id, {
+    deleteSale({ saleId: saleToDelete.id, user }, {
       onSuccess: () => {
         setIsDeleteDialogOpen(false);
         setSaleToDelete(null);
+        toast({
+          title: "Venda excluída",
+          description: "A venda foi removida com sucesso.",
+          variant: "default",
+        });
       },
       onError: (error) => {
-        console.error('Erro na exclusão, mantendo modal aberto:', error);
-        // Modal permanece aberto para o usuário tentar novamente
+        console.error('Erro na exclusão:', error);
+        toast({
+          title: "Erro na exclusão",
+          description: "Não foi possível excluir a venda. Tente novamente.",
+          variant: "destructive",
+        });
       }
     });
   };
@@ -133,36 +101,6 @@ export function RecentSales() {
     );
   }
 
-  const getStatusBadge = (status: string) => {
-    const statusLower = status.toLowerCase();
-    switch (statusLower) {
-      case 'completed':
-        return cn('bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 backdrop-blur-sm', shadows.light);
-      case 'pending':
-        return cn('bg-amber-500/20 text-amber-400 border border-amber-500/30 backdrop-blur-sm', shadows.light);
-      case 'cancelled':
-      case 'canceled':
-        return cn('bg-red-500/20 text-red-400 border border-red-500/30 backdrop-blur-sm', shadows.light);
-      case 'returned':
-        return cn('bg-purple-500/20 text-purple-400 border border-purple-500/30 backdrop-blur-sm', shadows.light);
-      default:
-        return cn('bg-gray-500/20 text-gray-400 border border-gray-500/30 backdrop-blur-sm', shadows.light);
-    }
-  };
-
-  const getPaymentStatusBadge = (status: string) => {
-    switch (status) {
-      case 'paid':
-        return cn('bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 backdrop-blur-sm', shadows.light);
-      case 'pending':
-        return cn('bg-amber-500/20 text-amber-400 border border-amber-500/30 backdrop-blur-sm', shadows.light);
-      case 'cancelled':
-        return cn('bg-red-500/20 text-red-400 border border-red-500/30 backdrop-blur-sm', shadows.light);
-      default:
-        return cn('bg-gray-500/20 text-gray-400 border border-gray-500/30 backdrop-blur-sm', shadows.light);
-    }
-  };
-
   const formatPaymentMethod = (method: string) => {
     const methods: Record<string, string> = {
       'credit_card': 'Cartão de Crédito',
@@ -173,15 +111,6 @@ export function RecentSales() {
       'other': 'Outro'
     };
     return methods[method] || method;
-  };
-
-  const formatPaymentStatus = (status: string) => {
-    const statusMap: Record<string, string> = {
-      'pending': 'Pendente',
-      'paid': 'Pago',
-      'cancelled': 'Cancelado'
-    };
-    return statusMap[status] || status;
   };
 
   const formatDeliveryType = (type: string) => {
@@ -277,23 +206,7 @@ export function RecentSales() {
                       <h3 className={cn(text.h3, shadows.medium, "font-semibold text-lg")}>
                         {sale.delivery_type === 'delivery' ? 'Pedido' : 'Venda'} #{sale.order_number}
                       </h3>
-                      <span
-                        className={cn("text-xs px-2 py-1 rounded-full", getStatusBadge(sale.status))}
-                      >
-                        {
-                          (() => {
-                            const status = sale.status.toLowerCase();
-                            switch (status) {
-                              case 'completed': return 'Concluído';
-                              case 'pending': return 'Pendente';
-                              case 'cancelled':
-                              case 'canceled': return 'Cancelado';
-                              case 'returned': return 'Devolvido';
-                              default: return status.charAt(0).toUpperCase() + status.slice(1);
-                            }
-                          })()
-                        }
-                      </span>
+                      <SaleStatusBadge sale={sale} />
                     </div>
                     <div className="flex flex-col gap-2 text-sm">
                       <div className="flex items-center gap-2">
@@ -301,9 +214,7 @@ export function RecentSales() {
                         <span className={cn(text.h6, shadows.subtle)}>
                           {formatPaymentMethod(sale.payment_method)}
                         </span>
-                        <span className={cn("text-xs px-2 py-0.5 rounded-full", getPaymentStatusBadge(sale.payment_status))}>
-                          {formatPaymentStatus(sale.payment_status)}
-                        </span>
+                        <PaymentStatusBadge status={sale.payment_status} />
                       </div>
                       <div className="flex items-center gap-2">
                         <User className="h-4 w-4 text-purple-400" />
@@ -330,7 +241,7 @@ export function RecentSales() {
                       <div className="flex items-center gap-2">
                         <CalendarDays className="h-4 w-4 text-emerald-400" />
                         <span className={cn(text.h6, shadows.subtle)}>
-                          {format(new Date(sale.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                          {formatDate(sale.created_at)}
                         </span>
                       </div>
 
@@ -352,7 +263,7 @@ export function RecentSales() {
                             <div className="flex items-center gap-2">
                               <Package className="h-4 w-4 text-green-400" />
                               <span className={cn(text.h6, shadows.subtle)}>
-                                Endereço: {sale.delivery_address.address}
+                                Endereço: {`${sale.delivery_address.street}, ${sale.delivery_address.number}${sale.delivery_address.complement ? ` - ${sale.delivery_address.complement}` : ''} - ${sale.delivery_address.neighborhood}`}
                               </span>
                             </div>
                           )}
@@ -362,10 +273,7 @@ export function RecentSales() {
                             <div className="flex items-center gap-2">
                               <Package className="h-4 w-4 text-yellow-400" />
                               <span className={cn(text.h6, shadows.subtle)}>
-                                Taxa: {new Intl.NumberFormat("pt-BR", {
-                                  style: "currency",
-                                  currency: "BRL"
-                                }).format(sale.delivery_fee)}
+                                Taxa: {formatCurrency(sale.delivery_fee)}
                               </span>
                             </div>
                           )}
@@ -385,10 +293,7 @@ export function RecentSales() {
                   </div>
                   <div className="flex flex-col items-end gap-1">
                     <p className={cn(text.h1, shadows.strong, "text-xl font-bold text-right")}>
-                      {new Intl.NumberFormat("pt-BR", {
-                        style: "currency",
-                        currency: "BRL"
-                      }).format(Number(sale.final_amount || sale.total_amount || 0))}
+                      {formatCurrency(sale.final_amount || sale.total_amount)}
                     </p>
                     <div className="flex gap-2">
                       <Button
@@ -438,18 +343,12 @@ export function RecentSales() {
                                   {item.product?.name || 'Produto não encontrado'}
                                 </span>
                                 <div className="text-xs text-gray-400">
-                                  {new Intl.NumberFormat("pt-BR", {
-                                    style: "currency",
-                                    currency: "BRL"
-                                  }).format(Number(item.unit_price || 0))} por unidade
+                                  {formatCurrency(item.unit_price)} por unidade
                                 </div>
                               </div>
                             </div>
                             <div className={cn(text.h4, shadows.light, "font-bold text-emerald-400")}>
-                              {new Intl.NumberFormat("pt-BR", {
-                                style: "currency",
-                                currency: "BRL"
-                              }).format(Number(item.subtotal || 0))}
+                              {formatCurrency(item.subtotal)}
                             </div>
                           </div>
                         ))}

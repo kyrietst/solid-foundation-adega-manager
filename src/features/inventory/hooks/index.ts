@@ -5,7 +5,6 @@ export { useInventoryFilters } from './useInventoryFilters';
 export { useInventoryOperations } from './useInventoryOperations';
 
 export { useProductCalculations } from './useProductCalculations';
-export { useProductForm } from './useProductForm';
 export { useProductFormLogic } from './useProductFormLogic';
 export { useProductValidation } from './useProductValidation';
 

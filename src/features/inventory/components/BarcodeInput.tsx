@@ -7,9 +7,12 @@ import { Scan, Loader2 } from 'lucide-react';
 import { cn } from '@/core/config/utils';
 import type { BarcodeComponentProps } from '@/core/types/inventory.types';
 
-interface BarcodeInputProps extends BarcodeComponentProps {
+interface BarcodeInputProps {
+  onScan: (code: string) => Promise<void> | void;
   placeholder?: string;
   className?: string;
+  autoFocus?: boolean;
+  disabled?: boolean;
 }
 
 export const BarcodeInput: React.FC<BarcodeInputProps> = ({

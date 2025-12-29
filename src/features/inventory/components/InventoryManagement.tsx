@@ -1,519 +1,97 @@
+
 /**
  * Componente principal de gerenciamento de inventário
- * Inclui listagem de produtos e funcionalidade para adicionar novos produtos
- * v3.6.2: Paginação client-side para otimizar renderização de 500+ produtos
+ * v4.0: Refatorado para usar Sub-componentes (SRP)
  */
 
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
-import { useToast } from '@/shared/hooks/common/use-toast';
 import { useGlassmorphismEffect } from '@/shared/hooks/ui/useGlassmorphismEffect';
 import { PageHeader } from '@/shared/ui/composite/PageHeader';
-import { ProductsTitle, ProductsHeader, AddProductButton } from './ProductsHeader';
+import { AddProductButton } from './ProductsHeader';
 import { Button } from '@/shared/ui/primitives/button';
-import { Trash2, Package, Store, AlertTriangle, Loader2, ClipboardList, Warehouse, Filter, AlertCircle } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { PaginationControls } from '@/shared/ui/composite/pagination-controls';
-import { SearchInput } from '@/shared/ui/composite/search-input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/primitives/select';
 import { useCategories } from '@/shared/hooks/common/use-categories';
-// Imports dos modais refatorados - Força HMR refresh para carregar logs de diagnóstico
+
+// Modais
 import { NewProductModal } from './NewProductModal';
-import { SimpleProductViewModal } from './SimpleProductViewModal'; // Modal simplificado v2.0
-import { SimpleEditProductModal } from './SimpleEditProductModal'; // Modal simplificado v2.0
+import { SimpleProductViewModal } from './SimpleProductViewModal';
+import { SimpleEditProductModal } from './SimpleEditProductModal';
 import { StockAdjustmentModal } from './StockAdjustmentModal';
 import { StockHistoryModal } from './StockHistoryModal';
-import { TransferToHoldingModal } from './TransferToHoldingModal'; // v3.6.1 - Transfer Loja 1 → Loja 2
+import { TransferToHoldingModal } from './TransferToHoldingModal';
+
+// Components
 import { DeletedProductsGrid } from './DeletedProductsGrid';
 import { InventoryGrid } from './InventoryGrid';
 import { LoadingScreen } from '@/shared/ui/composite/loading-spinner';
 import { EmptySearchResults } from '@/shared/ui/composite/empty-state';
+import { InventoryCountSheet } from './InventoryCountSheet';
+
+// New Sub-components
+import { InventoryFilters } from './InventoryFilters';
+import { InventoryTabs, InventoryViewMode } from './InventoryTabs';
+
+// Hooks
 import { useDeletedProducts } from '../hooks/useDeletedProducts';
-import useProductDelete from '../hooks/useProductDelete';
 import { useAuth } from '@/app/providers/AuthContext';
 import { useLowStockProducts } from '../hooks/useLowStockProducts';
-import { InventoryCountSheet } from './InventoryCountSheet';
-import { useBarcode } from '@/features/inventory/hooks/use-barcode';
 import { useGlobalBarcodeScanner } from '@/shared/hooks/common/useGlobalBarcodeScanner';
-import type { ProductFormData } from '@/core/types/inventory.types';
+import { useInventoryActions, SimpleEditProductFormData } from '../hooks/useInventoryActions';
 
-// Interface simplificada para edição de produtos (v2.0)
-interface SimpleEditProductFormData {
-  name: string;
-  category: string;
-  price: number;
-  barcode?: string;
-  supplier?: string;
-  has_package_tracking?: boolean;
-  package_barcode?: string;
-  package_units?: number;
-  package_price?: number;
-  cost_price?: number;
-  volume_ml?: number;
-  // minimum_stock removido - coluna não existe na tabela products
-}
 import type { Product } from '@/core/types/inventory.types';
 
 interface InventoryManagementProps {
+  className?: string;
+  // Props legado mantidas para compatibilidade, mas podem ser removidas se não usadas
   showAddButton?: boolean;
   showSearch?: boolean;
   showFilters?: boolean;
   onProductSelect?: (product: Product) => void;
-  className?: string;
 }
 
-const InventoryManagement: React.FC<InventoryManagementProps> = ({
-  showAddButton = false,
-  showSearch = true,
-  showFilters = true,
-  onProductSelect,
-  className,
-}) => {
-  // 📦 Ler tab da URL (ex: /inventory?tab=alerts)
+const InventoryManagement: React.FC<InventoryManagementProps> = ({ className }) => {
+  // State: URL & View Mode
   const [searchParams] = useSearchParams();
   const urlTab = searchParams.get('tab');
+  const [viewMode, setViewMode] = useState<InventoryViewMode>(
+    urlTab === 'alerts' ? 'alerts' : urlTab === 'count-sheet' ? 'count-sheet' : 'active'
+  );
 
+  // State: Modals
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);
   const [isEditProductOpen, setIsEditProductOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isStockAdjustmentOpen, setIsStockAdjustmentOpen] = useState(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
-  // 📦 viewMode agora inclui 'alerts' e 'count-sheet' para inventário físico
-  const [viewMode, setViewMode] = useState<'active' | 'deleted' | 'alerts' | 'count-sheet'>(
-    urlTab === 'alerts' ? 'alerts' : urlTab === 'count-sheet' ? 'count-sheet' : 'active'
-  );
-  const [restoringProductId, setRestoringProductId] = useState<string | null>(null);
-
-  // 🏪 v3.6.1 - Active vs Holding Stock: Estado para controlar qual loja está sendo visualizada
-  const [selectedStore, setSelectedStore] = useState<1 | 2>(1);
   const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
   const [productToTransfer, setProductToTransfer] = useState<Product | null>(null);
 
-  // 📂 v3.6.5 - Filtro por categoria
+  // State: Filters
+  const [selectedStore, setSelectedStore] = useState<1 | 2>(1);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const { data: categories = [] } = useCategories();
-
-  // 💰 v3.6.6 - Filtro "Sem Custo" para auditoria rápida
   const [showMissingCostsOnly, setShowMissingCostsOnly] = useState(false);
-
-  // 📄 v3.6.2 - Paginação client-side para performance (500+ produtos)
+  const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 24; // Grid otimizado (3 colunas x 8 linhas)
-  const [searchQuery, setSearchQuery] = useState(''); // 🔍 Busca por nome/código de barras
 
+  // Hooks & Context
   const queryClient = useQueryClient();
-  const { toast } = useToast();
   const { handleMouseMove } = useGlassmorphismEffect();
-  const { user, userRole, loading } = useAuth();
-
-  // Hook para produtos deletados
-  const { data: deletedProducts = [], isLoading: isLoadingDeleted } = useDeletedProducts();
-  const { restore } = useProductDelete();
-
-  // Verificar se usuário é admin - aguardar carregamento do profile
+  const { userRole, loading } = useAuth();
+  const { data: categories = [] } = useCategories();
   const isAdmin = !loading && userRole === 'admin';
 
-  // 🎯 SCANNER GLOBAL: Detecta código de barras em qualquer lugar da página de estoque
-  // ✅ FIX: useCallback para evitar recriação do handler/listener
-  const handleGlobalInventoryScan = React.useCallback((scannedCode: string) => {
-    console.log('[InventoryManagement] Global barcode detected:', scannedCode);
-    setSearchQuery(scannedCode);
-    setCurrentPage(1);
-  }, [setSearchQuery, setCurrentPage]);
-
-  useGlobalBarcodeScanner({
-    onScan: handleGlobalInventoryScan,
-    enabled: viewMode === 'active', // Só ativo na aba de produtos ativos
-  });
-
-  const handleAddProduct = () => {
-    setIsAddProductOpen(true);
-  };
-
-
-  // Handlers para os modais de inventário
-  const handleViewDetails = async (product: Product) => {
-    // Buscar dados atualizados do produto específico do banco (igual ao handleEditProduct)
-    try {
-      const { data: updatedProduct, error } = await supabase
-        .from('products')
-        .select('*')
-        .eq('id', product.id)
-        .is('deleted_at', null)
-        .single();
-
-      if (error) {
-        console.error('Erro ao buscar produto atualizado para visualização:', error);
-        // PGRST116 = produto deletado ou não encontrado
-        if (error.code === 'PGRST116') {
-          toast({
-            title: 'Produto não disponível',
-            description: 'Este produto foi deletado ou não está mais disponível.',
-            variant: 'destructive',
-          });
-          return;
-        }
-        // Para outros erros, mostrar mensagem genérica
-        toast({
-          title: 'Erro ao carregar produto',
-          description: 'Não foi possível carregar os dados do produto.',
-          variant: 'destructive',
-        });
-        return;
-      }
-
-      // Usar dados atualizados do banco
-      setSelectedProduct(updatedProduct as unknown as Product);
-      setIsDetailsModalOpen(true);
-    } catch (error) {
-      console.error('Erro na busca do produto para visualização:', error);
-      toast({
-        title: 'Erro ao carregar produto',
-        description: 'Ocorreu um erro inesperado ao carregar o produto.',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const handleEditProduct = async (product: Product) => {
-    // Buscar dados atualizados do produto específico do banco
-    try {
-      const { data: updatedProduct, error } = await supabase
-        .from('products')
-        .select('*')
-        .eq('id', product.id)
-        .is('deleted_at', null)
-        .single();
-
-      if (error) {
-        console.error('Erro ao buscar produto atualizado:', error);
-        // PGRST116 = produto deletado ou não encontrado
-        if (error.code === 'PGRST116') {
-          toast({
-            title: 'Produto não disponível',
-            description: 'Este produto foi deletado ou não está mais disponível para edição.',
-            variant: 'destructive',
-          });
-          return;
-        }
-        // Para outros erros, mostrar mensagem genérica
-        toast({
-          title: 'Erro ao carregar produto',
-          description: 'Não foi possível carregar os dados do produto.',
-          variant: 'destructive',
-        });
-        return;
-      }
-
-      // Usar dados atualizados do banco
-      setSelectedProduct(updatedProduct as unknown as Product);
-      setIsEditProductOpen(true);
-    } catch (error) {
-      console.error('Erro na busca do produto:', error);
-      toast({
-        title: 'Erro ao carregar produto',
-        description: 'Ocorreu um erro inesperado ao carregar o produto.',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const handleAdjustStock = (product: Product) => {
-    setSelectedProduct(product);
-    setIsStockAdjustmentOpen(true);
-  };
-
-  const handleViewHistory = (product: Product) => {
-    setSelectedProduct(product);
-    setIsHistoryModalOpen(true);
-  };
-
-  // 🏪 v3.6.1 - Handler para abrir modal de transferência Loja 1 → Loja 2
-  const handleTransferToHolding = (product: Product) => {
-    setProductToTransfer(product);
-    setIsTransferModalOpen(true);
-  };
-
-  // REMOVIDO: Mutação antiga substituída pelo novo StockAdjustmentModal
-  /* CÓDIGO REMOVIDO - Substituído pelo novo StockAdjustmentModal
-  const stockAdjustmentMutation = useMutation({
-    mutationFn: async (adjustment: StockAdjustmentWithVariant) => {
-      // Verificar se é ajuste de variante (novo sistema) ou produto legado
-      if (adjustment.variantId && adjustment.variantType) {
-        // NOVO SISTEMA: Usar função de variantes
-        const { data: result, error: variantError } = await supabase
-          .rpc('adjust_variant_stock', {
-            p_variant_id: adjustment.variantId,
-            p_adjustment_type: adjustment.type,
-            p_quantity: adjustment.quantity,
-            p_reason: adjustment.reason || `Ajuste de ${adjustment.variantType} via interface`,
-            p_new_stock: adjustment.newStock // Para tipo 'ajuste'
-          });
-
-        if (variantError) {
-          console.error('Erro ao ajustar variante:', variantError);
-          throw new Error(`Erro no ajuste de variante: ${variantError.message}`);
-        }
-
-        return { variantResult: result, isVariant: true };
-      } else {
-        // SISTEMA LEGADO: Manter funcionalidade existente
-        const currentStock = selectedProduct?.stock_quantity || 0;
-        let newStockQuantity: number;
-        
-        if (adjustment.type === 'ajuste') {
-          newStockQuantity = adjustment.newStock || 0;
-        } else {
-          newStockQuantity = adjustment.type === 'entrada' 
-            ? currentStock + adjustment.quantity
-            : Math.max(0, currentStock - adjustment.quantity);
-        }
-
-        // Usar nova RPC create_inventory_movement do Single Source of Truth
-        const movementType = adjustment.type === 'entrada' ? 'inventory_adjustment' :
-                            adjustment.type === 'saida' ? 'inventory_adjustment' :
-                            'inventory_adjustment'; // Todos são ajustes de inventário
-
-        const quantityChange = adjustment.type === 'ajuste'
-          ? (newStockQuantity - currentStock)
-          : (adjustment.type === 'entrada' ? adjustment.quantity : -adjustment.quantity);
-
-        const { data: movementData, error: movementError } = await supabase
-          .rpc('create_inventory_movement', {
-            p_product_id: adjustment.productId,
-            p_quantity_change: quantityChange,
-            p_type: movementType,
-            p_reason: adjustment.reason || 'Ajuste de estoque via interface',
-            p_metadata: {
-              operation: 'stock_adjustment',
-              adjustment_type: adjustment.type,
-              interface_source: 'inventory_management',
-              previous_stock: currentStock,
-              new_stock: newStockQuantity,
-              user_action: 'manual_adjustment'
-            }
-          });
-
-        if (movementError) {
-          console.error('Erro ao registrar movimentação:', movementError);
-          throw movementError;
-        }
-
-        // Nossa RPC retorna o novo estoque, não precisamos buscar o produto novamente
-        return {
-          productData: {
-            id: adjustment.productId,
-            stock_quantity: movementData.new_stock,
-            movement_id: movementData.movement_id
-          },
-          isVariant: false
-        };
-      }
-    },
-    onSuccess: (data, variables) => {
-      // Invalidar múltiplos caches para garantir atualização (incluindo movimentações)
-      queryClient.invalidateQueries({ queryKey: ['products'] });
-      queryClient.invalidateQueries({ queryKey: ['inventory_movements'] });
-      queryClient.invalidateQueries({ queryKey: ['movements'] });
-
-      // Se foi ajuste de variante, invalidar todos os caches relacionados ao produto
-      if (data.isVariant && variables.productId) {
-        queryClient.invalidateQueries({ queryKey: ['product-variants', variables.productId] });
-        queryClient.invalidateQueries({ queryKey: ['product-variants'] }); // Invalidar geral também
-
-        // Force refetch do produto específico
-        queryClient.refetchQueries({
-          queryKey: ['product-variants', variables.productId],
-          exact: false
-        });
-      }
-
-      // Invalidar cache geral de produtos com variantes se existir
-      queryClient.invalidateQueries({ queryKey: ['products-with-variants'] });
-      
-      setIsStockAdjustmentOpen(false);
-      
-      const typeText = variables.type === 'entrada' ? 'Entrada' : 
-                      variables.type === 'saida' ? 'Saída' : 'Correção';
-      toast({
-        title: 'Estoque atualizado',
-        description: `${typeText} de estoque realizada com sucesso!`,
-        variant: 'default',
-      });
-    },
-    onError: (error: Error) => {
-      console.error('Erro ao ajustar estoque:', error);
-      toast({
-        title: 'Erro ao ajustar estoque',
-        description: 'Erro ao ajustar estoque. Tente novamente.',
-        variant: 'destructive',
-      });
-    },
-  });
-
-  const handleConfirmStockAdjustment = (adjustment: StockAdjustmentWithVariant) => {
-    stockAdjustmentMutation.mutate(adjustment);
-  };
-  */
-
-  // Mutation simplificada para editar produto (v2.0)
-  const editProductMutation = useMutation({
-    mutationFn: async (productData: SimpleEditProductFormData) => {
-      if (!selectedProduct) throw new Error('Nenhum produto selecionado');
-
-      // Validar códigos de barras se fornecidos
-      if (productData.barcode && productData.barcode.trim()) {
-        const barcodePattern = /^[0-9]{8,14}$/;
-        if (!barcodePattern.test(productData.barcode.trim())) {
-          throw new Error('Código de barras deve conter apenas números e ter entre 8 e 14 dígitos');
-        }
-      }
-      if (productData.package_barcode && productData.package_barcode.trim()) {
-        const barcodePattern = /^[0-9]{8,14}$/;
-        if (!barcodePattern.test(productData.package_barcode.trim())) {
-          throw new Error('Código de barras do pacote deve conter apenas números e ter entre 8 e 14 dígitos');
-        }
-      }
-
-      // Preparar dados simplificados para atualização
-      const updateData = {
-        name: productData.name,
-        price: productData.price,
-        // stock_quantity: REMOVIDO - só pode ser alterado via create_inventory_movement()
-        category: productData.category,
-        volume_ml: productData.volume_ml || null,
-        supplier: productData.supplier || null,
-        // minimum_stock removido - coluna não existe na tabela products
-        // ✅ CORREÇÃO: Só incluir cost_price se foi fornecido (evita trigger com NULL)
-        ...(productData.cost_price !== undefined && { cost_price: productData.cost_price }),
-        // Sistema de códigos simplificado
-        barcode: productData.barcode || null,
-        package_barcode: productData.package_barcode || null,
-        package_units: productData.package_units || null,
-        units_per_package: productData.package_units || 1,
-        has_package_tracking: productData.has_package_tracking || false,
-        has_unit_tracking: true, // Sempre ativado no sistema simplificado
-        // ✅ CORREÇÃO: Só incluir package_price se foi fornecido
-        ...(productData.package_price !== undefined && { package_price: productData.package_price }),
-        // Auto-calcular margens de forma segura (evita overflow numérico)
-        margin_percent: safeCalculateMargin(productData.price, productData.cost_price),
-        package_margin: safeCalculatePackageMargin(
-          productData.package_price,
-          productData.cost_price,
-          productData.package_units
-        ),
-        turnover_rate: 'medium',
-        updated_at: new Date().toISOString()
-      };
-
-      const { data, error } = await supabase
-        .from('products')
-        .update(updateData as any)
-        .eq('id', selectedProduct.id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data as unknown as Product;
-    },
-    onSuccess: (data) => {
-      // Invalidar cache para recarregar dados
-      queryClient.invalidateQueries({ queryKey: ['products'] });
-
-      // Atualizar o selectedProduct com os dados atualizados
-      setSelectedProduct(data as unknown as Product);
-
-      setIsEditProductOpen(false);
-      toast({
-        title: 'Produto atualizado',
-        description: `"${data.name}" atualizado com sucesso!`,
-        variant: 'default',
-      });
-    },
-    onError: (error: Error) => {
-      console.error('Erro ao editar produto:', error);
-      toast({
-        title: 'Erro ao editar produto',
-        description: error.message || 'Tente novamente.',
-        variant: 'destructive',
-      });
-    },
-  });
-
-  const handleSubmitEditProduct = (data: SimpleEditProductFormData) => {
-    editProductMutation.mutate(data);
-  };
-
-  const handleCancelEdit = () => {
-    setIsEditProductOpen(false);
-    setSelectedProduct(null);
-  };
-
-  // Função para calcular margens de forma segura, evitando overflow numérico
-  const safeCalculateMargin = (salePrice: number | undefined | null, costPrice: number | undefined | null, maxMargin: number = 999): number | null => {
-    // Validar inputs de forma robusta
-    const validSalePrice = typeof salePrice === 'number' && salePrice > 0 ? salePrice : null;
-    const validCostPrice = typeof costPrice === 'number' && costPrice > 0 ? costPrice : null;
-
-    if (!validSalePrice || !validCostPrice) {
-      return null;
-    }
-
-    const margin = ((validSalePrice - validCostPrice) / validCostPrice) * 100;
-
-    // Limitar margem ao máximo permitido pelo banco e garantir resultado válido
-    return Number.isFinite(margin) ? Math.min(Math.max(margin, 0), maxMargin) : null;
-  };
-
-  // Função para calcular margem de pacote de forma segura
-  const safeCalculatePackageMargin = (packagePrice: number | undefined | null, costPrice: number | undefined | null, packageUnits: number | undefined | null, maxMargin: number = 999): number | null => {
-    // Validar inputs de forma robusta
-    const validPackagePrice = typeof packagePrice === 'number' && packagePrice > 0 ? packagePrice : null;
-    const validCostPrice = typeof costPrice === 'number' && costPrice > 0 ? costPrice : null;
-    const validPackageUnits = typeof packageUnits === 'number' && packageUnits > 0 ? packageUnits : null;
-
-    if (!validPackagePrice || !validCostPrice || !validPackageUnits) {
-      return null;
-    }
-
-    const totalCost = validCostPrice * validPackageUnits;
-    const margin = ((validPackagePrice - totalCost) / totalCost) * 100;
-
-    // Limitar margem ao máximo permitido pelo banco e garantir resultado válido
-    return Number.isFinite(margin) ? Math.min(Math.max(margin, 0), maxMargin) : null;
-  };
-
-  // Handler para restaurar produto deletado
-  const handleRestoreProduct = async (product: any) => {
-    setRestoringProductId(product.id);
-    try {
-      // ✅ Passar objeto completo para nova arquitetura (nunca fetch após restaurar)
-      await restore({ productId: product.id, productName: product.name });
-      // Invalidar queries para atualizar listas
-      queryClient.invalidateQueries({ queryKey: ['products'] });
-      queryClient.invalidateQueries({ queryKey: ['products', 'deleted'] });
-    } catch (error) {
-      console.error('Erro ao restaurar produto:', error);
-    } finally {
-      setRestoringProductId(null);
-    }
-  };
-
-
-
-  // 📦 SSoT v3.5.5: Usar hook dedicado com useInfiniteQuery para alertas
-  // Permite carregamento progressivo ("Load More") de 100+ produtos
+  // Data Fetching
+  const { data: deletedProducts = [], isLoading: isLoadingDeleted } = useDeletedProducts();
   const lowStockQuery = useLowStockProducts();
-  const lowStockCount = lowStockQuery.totalLoaded;
-
-  // 🏪 v3.6.1 - Query para produtos (usado no toggle Loja 1/Loja 2)
   const { data: allProducts = [], isLoading: isLoadingAllProducts } = useQuery({
     queryKey: ['products', 'for-store-toggle'],
-    // ✅ Smart Sync Optimization: High concurrency settings
-    staleTime: 5 * 60 * 1000, // 5 minutes cache to prevent request flooding
-    refetchOnWindowFocus: false, // Don't refetch on window focus (relies on Realtime)
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
     queryFn: async (): Promise<Product[]> => {
       const { data, error } = await supabase
         .from('products')
@@ -521,259 +99,143 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
         .is('deleted_at', null)
         .order('name', { ascending: true });
 
-      if (error) {
-        console.error('Error fetching products for store toggle:', error);
-        throw error;
-      }
-
+      if (error) throw error;
       return (data || []) as unknown as Product[];
     },
-    enabled: viewMode === 'active', // Só buscar quando na aba "active"
+    enabled: viewMode === 'active',
   });
 
-  // 💰 v3.6.6 - Contar produtos sem custo para badge de auditoria
+  // Actions Hook
+  const {
+    editProductMutation,
+    handleRestoreProduct,
+    restoringProductId,
+    fetchFreshProduct
+  } = useInventoryActions({
+    onSuccess: () => setIsEditProductOpen(false)
+  });
+
+  // Derived State
   const missingCostsCount = React.useMemo(() => {
     return allProducts.filter(p => !p.cost_price || Number(p.cost_price) <= 0).length;
   }, [allProducts]);
 
-  // 🏪 v3.6.3 - Lógica Unificada: Contexto de Loja -> Busca -> Mapeamento
   const filteredAndMappedProducts = React.useMemo(() => {
-    // 1. Define o Universo da Loja (Active vs Holding)
-    let scopedProducts = allProducts;
+    // 1. Store Scope
+    let products = selectedStore === 2
+      ? allProducts.filter(p => (p.store2_holding_packages || 0) > 0 || (p.store2_holding_units_loose || 0) > 0)
+      : allProducts;
 
-    if (selectedStore === 2) {
-      // Na Loja 2, o universo é restrito ao que existe lá
-      scopedProducts = allProducts.filter(
-        (p) => (p.store2_holding_packages || 0) > 0 || (p.store2_holding_units_loose || 0) > 0
-      );
-    }
-
-    // 2. Aplica a Busca dentro desse Universo
+    // 2. Search
     if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      scopedProducts = scopedProducts.filter(
-        (p) =>
-          p.name.toLowerCase().includes(query) ||
-          p.barcode?.toLowerCase().includes(query) ||
-          p.package_barcode?.toLowerCase().includes(query)
+      const q = searchQuery.toLowerCase();
+      products = products.filter(p =>
+        p.name.toLowerCase().includes(q) ||
+        p.barcode?.toLowerCase().includes(q) ||
+        p.package_barcode?.toLowerCase().includes(q)
       );
     }
 
-    // 3. Aplica filtro por categoria
+    // 3. Category
     if (selectedCategory && selectedCategory !== 'all') {
-      scopedProducts = scopedProducts.filter(
-        (p) => p.category === selectedCategory
-      );
+      products = products.filter(p => p.category === selectedCategory);
     }
 
-    // 4. Aplica filtro "Sem Custo" (auditoria)
+    // 4. Missing Cost Audit
     if (showMissingCostsOnly) {
-      scopedProducts = scopedProducts.filter(
-        (p) => !p.cost_price || Number(p.cost_price) <= 0
-      );
+      products = products.filter(p => !p.cost_price || Number(p.cost_price) <= 0);
     }
 
-    // 4. Mapeia os dados para exibição (Visualização Correta)
-    return scopedProducts.map((product) => ({
-      ...product,
-      stock_packages:
-        selectedStore === 1
-          ? product.stock_packages || 0
-          : product.store2_holding_packages || 0,
-      stock_units_loose:
-        selectedStore === 1
-          ? product.stock_units_loose || 0
-          : product.store2_holding_units_loose || 0,
+    // 5. Display Mapping
+    return products.map(p => ({
+      ...p,
+      stock_packages: selectedStore === 1 ? p.stock_packages || 0 : p.store2_holding_packages || 0,
+      stock_units_loose: selectedStore === 1 ? p.stock_units_loose || 0 : p.store2_holding_units_loose || 0,
     }));
   }, [allProducts, selectedStore, searchQuery, selectedCategory, showMissingCostsOnly]);
 
-  // 4. Paginação (Fatiamento final)
+  // Pagination
   const paginatedProducts = React.useMemo(() => {
-    const itemsPerPage = 24;
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    return filteredAndMappedProducts.slice(startIndex, startIndex + itemsPerPage);
+    const start = (currentPage - 1) * 24;
+    return filteredAndMappedProducts.slice(start, start + 24);
   }, [filteredAndMappedProducts, currentPage]);
 
   const totalPages = Math.ceil(filteredAndMappedProducts.length / 24);
 
-  // 📄 v3.6.2 - Reset inteligente: Voltar para página 1 quando filtros mudarem
+  // Effects
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedStore, viewMode, searchQuery, showMissingCostsOnly]); // 🔍 + 💰 filtros
+  }, [selectedStore, viewMode, searchQuery, showMissingCostsOnly]);
+
+  // Scanner
+  useGlobalBarcodeScanner({
+    onScan: (code) => {
+      setSearchQuery(code);
+      setCurrentPage(1);
+    },
+    enabled: viewMode === 'active',
+  });
+
+  // Handlers
+  const handleViewDetails = async (product: Product) => {
+    const fresh = await fetchFreshProduct(product.id);
+    if (fresh) { setSelectedProduct(fresh); setIsDetailsModalOpen(true); }
+  };
+  const handleSuccess = (productName: string, updatedData?: Partial<Product>) => {
+    // ... (updates state)
+    // Ensure updatedData matches expected shape if needed, or is partial
+    console.log('Product updated:', productName, updatedData);
+  };
+
+  const handleEditProduct = async (product: Product) => {
+    const fresh = await fetchFreshProduct(product.id);
+    if (fresh) { setSelectedProduct(fresh); setIsEditProductOpen(true); }
+  };
+  const handleAdjustStock = (product: Product) => { setSelectedProduct(product); setIsStockAdjustmentOpen(true); };
+  const handleViewHistory = (product: Product) => { setSelectedProduct(product); setIsHistoryModalOpen(true); };
+  const handleTransfer = (product: Product) => { setProductToTransfer(product); setIsTransferModalOpen(true); };
 
   return (
     <div className={`w-full h-full flex flex-col ${className || ''}`}>
-      {/* Header padronizado com contador de produtos */}
-      <PageHeader
-        title="GESTÃO DE ESTOQUE"
-        count={allProducts?.length || 0}
-        countLabel="produtos"
-      >
-        {viewMode === 'active' && (
-          <AddProductButton onAddProduct={handleAddProduct} />
-        )}
+      <PageHeader title="GESTÃO DE ESTOQUE" count={allProducts?.length || 0} countLabel="produtos">
+        {viewMode === 'active' && <AddProductButton onAddProduct={() => setIsAddProductOpen(true)} />}
       </PageHeader>
 
-      {/* Container com background glass morphism - ocupa altura restante */}
       <div
-        className="flex-1 min-h-0 bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg hero-spotlight p-4 flex flex-col hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300"
+        className="flex-1 min-h-0 bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg hero-spotlight p-4 flex flex-col transition-all duration-300"
         onMouseMove={handleMouseMove}
       >
-        {/* Tab Switcher Active/Deleted/Alerts/Planilha - Apenas para admins */}
         {isAdmin && (
-          <div className="flex gap-2 mb-4 pb-4 border-b border-white/10">
-            <Button
-              variant={viewMode === 'active' ? 'default' : 'outline'}
-              onClick={() => setViewMode('active')}
-              className="flex items-center gap-2"
-              size="sm"
-            >
-              <Package className="h-4 w-4" />
-              Produtos Ativos
-              <span className="ml-1 px-2 py-0.5 bg-green-500/20 text-green-400 rounded-full text-xs font-bold">
-                {allProducts?.length || 0}
-              </span>
-            </Button>
-
-            <Button
-              variant={viewMode === 'deleted' ? 'default' : 'outline'}
-              onClick={() => setViewMode('deleted')}
-              className="flex items-center gap-2"
-              size="sm"
-            >
-              <Trash2 className="h-4 w-4" />
-              Produtos Deletados
-              <span className="ml-1 px-2 py-0.5 bg-red-500/20 text-red-400 rounded-full text-xs font-bold">
-                {deletedProducts.length}
-              </span>
-            </Button>
-
-            {/* 📦 Nova sub-aba: Alertas de Estoque Baixo */}
-            <Button
-              variant={viewMode === 'alerts' ? 'default' : 'outline'}
-              onClick={() => setViewMode('alerts')}
-              className="flex items-center gap-2"
-              size="sm"
-            >
-              <AlertTriangle className="h-4 w-4" />
-              Alertas
-              <span className={`ml-1 px-2 py-0.5 rounded-full text-xs font-bold ${lowStockCount > 0
-                ? 'bg-amber-500/20 text-amber-400'
-                : 'bg-green-500/20 text-green-400'
-                }`}>
-                {lowStockCount}
-              </span>
-            </Button>
-
-            {/* ✅ NOVO: Planilha de Inventário Físico */}
-            <Button
-              variant={viewMode === 'count-sheet' ? 'default' : 'outline'}
-              onClick={() => setViewMode('count-sheet')}
-              className="flex items-center gap-2"
-              size="sm"
-            >
-              <ClipboardList className="h-4 w-4" />
-              Planilha de Inventário
-            </Button>
-          </div>
+          <InventoryTabs
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+            activeCount={allProducts?.length || 0}
+            deletedCount={deletedProducts.length}
+            lowStockCount={lowStockQuery.totalLoaded}
+          />
         )}
 
-        {/* Renderização condicional baseada no modo de visualização */}
-        {viewMode === 'active' ? (
-          /* 🏪 v3.6.1 - Grid de produtos com toggle Loja 1/Loja 2 */
+        {viewMode === 'active' && (
           <div className="flex-1 min-h-0 flex flex-col">
-            {/* 🔍 v3.6.2 - Barra de Busca */}
-            <div className="mb-4">
-              <SearchInput
-                value={searchQuery}
-                onChange={setSearchQuery}
-                placeholder="Buscar por nome ou código de barras..."
-                className="w-full"
-              />
-            </div>
+            <InventoryFilters
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              selectedStore={selectedStore}
+              onStoreChange={setSelectedStore}
+              selectedCategory={selectedCategory}
+              onCategoryChange={setSelectedCategory}
+              showMissingCostsOnly={showMissingCostsOnly}
+              onToggleMissingCosts={() => setShowMissingCostsOnly(!showMissingCostsOnly)}
+              categories={categories as any[]}
+              missingCostsCount={missingCostsCount}
+            />
 
-            {/* Toggle Loja 1 (Active) / Loja 2 (Holding) + Filtro por Categoria */}
-            <div className="flex items-center justify-between gap-2 mb-4 pb-4 border-b border-white/10">
-              {/* Botões de Loja */}
-              <div className="flex gap-2">
-                <Button
-                  variant={selectedStore === 1 ? 'default' : 'outline'}
-                  onClick={() => setSelectedStore(1)}
-                  className="flex items-center gap-2"
-                  size="sm"
-                >
-                  <Store className="h-4 w-4" />
-                  Loja 1 (Vendas)
-                </Button>
-
-                <Button
-                  variant={selectedStore === 2 ? 'default' : 'outline'}
-                  onClick={() => setSelectedStore(2)}
-                  className="flex items-center gap-2"
-                  size="sm"
-                >
-                  <Warehouse className="h-4 w-4" />
-                  Loja 2 (Depósito)
-                </Button>
-              </div>
-
-              {/* 📂 v3.6.5 - Filtro por Categoria */}
-              <div className="flex items-center gap-3">
-                {/* 💰 v3.6.6 - Botão "Sem Custo" para Auditoria Rápida */}
-                {missingCostsCount > 0 && (
-                  <button
-                    onClick={() => setShowMissingCostsOnly(!showMissingCostsOnly)}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg font-medium text-sm transition-all duration-200 border-2 hover:scale-[1.02] active:scale-[0.98] ${showMissingCostsOnly
-                      ? "bg-amber-500/20 border-amber-500 text-amber-400 shadow-lg shadow-amber-500/20"
-                      : "bg-transparent border-amber-500/50 text-amber-400/70 hover:border-amber-500 hover:text-amber-400"
-                      }`}
-                    title="Filtrar apenas produtos sem preço de custo cadastrado"
-                  >
-                    <AlertCircle className="h-4 w-4" />
-                    <span>Sem Custo</span>
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${showMissingCostsOnly
-                      ? "bg-amber-500 text-black"
-                      : "bg-amber-500/30 text-amber-400"
-                      }`}>
-                      {missingCostsCount}
-                    </span>
-                  </button>
-                )}
-
-                <Filter className="h-4 w-4 text-gray-400" />
-                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <SelectTrigger className="w-48 h-8 bg-black/40 border-white/20 text-white text-sm">
-                    <SelectValue placeholder="Todas as categorias" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-gray-900/95 border-white/20 backdrop-blur-xl">
-                    <SelectItem value="all" className="text-white hover:bg-white/10">
-                      📂 Todas as Categorias
-                    </SelectItem>
-                    {(categories as any[]).map((category) => (
-                      <SelectItem
-                        key={category.id}
-                        value={category.name}
-                        className="text-white hover:bg-white/10"
-                      >
-                        {category.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Grid de produtos com estoque da loja selecionada */}
             {isLoadingAllProducts ? (
               <LoadingScreen text={`Carregando produtos da Loja ${selectedStore}...`} />
             ) : filteredAndMappedProducts.length === 0 ? (
-              <EmptySearchResults
-                searchTerm="produtos"
-                onClearSearch={() => undefined}
-              />
+              <EmptySearchResults searchTerm="produtos" onClearSearch={() => setSearchQuery('')} />
             ) : (
               <>
-                {/* 📄 v3.6.2 - Grid paginado (renderiza apenas 24 produtos por vez) */}
                 <div className="flex-1 overflow-y-auto">
                   <InventoryGrid
                     products={paginatedProducts}
@@ -781,55 +243,41 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
                     onViewDetails={handleViewDetails}
                     onEdit={handleEditProduct}
                     onAdjustStock={handleAdjustStock}
-                    onTransfer={selectedStore === 1 ? handleTransferToHolding : undefined}
+                    onTransfer={selectedStore === 1 ? handleTransfer : undefined}
                     variant="default"
                     glassEffect={true}
                   />
                 </div>
-
-                {/* 📄 v3.6.2 - Controles de paginação */}
                 {totalPages > 1 && (
                   <div className="mt-4 flex justify-center">
-                    <PaginationControls
-                      currentPage={currentPage}
-                      totalPages={totalPages}
-                      onPageChange={setCurrentPage}
-                    />
+                    <PaginationControls currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
                   </div>
                 )}
-
-                {/* Info de contagem */}
                 <div className="mt-2 text-center text-sm text-white/50">
                   Mostrando {paginatedProducts.length} de {filteredAndMappedProducts.length} produtos
                 </div>
               </>
             )}
           </div>
-        ) : viewMode === 'deleted' ? (
-          /* Grid de produtos deletados (admin only) */
+        )}
+
+        {viewMode === 'deleted' && (
           <DeletedProductsGrid
             products={deletedProducts}
             isLoading={isLoadingDeleted}
             onRestore={handleRestoreProduct}
             restoringProductId={restoringProductId}
           />
-        ) : viewMode === 'alerts' ? (
-          /* 📦 v3.5.5: Grid de produtos com estoque baixo (Alertas) com Load More */
+        )}
+
+        {viewMode === 'alerts' && (
           <div className="flex-1 min-h-0 flex flex-col">
             {lowStockQuery.isLoading ? (
-              <LoadingScreen text="Carregando alertas de estoque..." />
-            ) : lowStockQuery.error ? (
-              <div className="text-red-400 p-4 bg-red-500/10 rounded-lg border border-red-500/20">
-                ❌ Erro ao carregar alertas: {lowStockQuery.error.message}
-              </div>
+              <LoadingScreen text="Carregando alertas..." />
             ) : lowStockQuery.products.length === 0 ? (
-              <EmptySearchResults
-                searchTerm="produtos com estoque baixo"
-                onClearSearch={() => setViewMode('active')}
-              />
+              <EmptySearchResults searchTerm="alertas" onClearSearch={() => setViewMode('active')} />
             ) : (
               <>
-                {/* Grid de produtos com scroll */}
                 <div className="flex-1 overflow-y-auto">
                   <InventoryGrid
                     products={lowStockQuery.products}
@@ -841,131 +289,28 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({
                     glassEffect={true}
                   />
                 </div>
-
-                {/* Botão "Carregar Mais" */}
                 {lowStockQuery.hasMore && (
                   <div className="mt-4 flex justify-center">
-                    <Button
-                      onClick={() => lowStockQuery.loadMore()}
-                      disabled={lowStockQuery.isLoadingMore}
-                      variant="outline"
-                      size="lg"
-                      className="w-64 bg-amber-500/10 hover:bg-amber-500/20 border-amber-500/30 text-amber-300 hover:text-amber-200"
-                    >
-                      {lowStockQuery.isLoadingMore ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Carregando...
-                        </>
-                      ) : (
-                        <>
-                          Carregar Mais ({lowStockQuery.totalLoaded} carregados)
-                        </>
-                      )}
+                    <Button onClick={() => lowStockQuery.loadMore()} disabled={lowStockQuery.isLoadingMore} variant="outline" className="text-amber-300 border-amber-500/30">
+                      {lowStockQuery.isLoadingMore ? <Loader2 className="animate-spin mr-2" /> : 'Carregar Mais'}
                     </Button>
-                  </div>
-                )}
-
-                {/* Info footer */}
-                {!lowStockQuery.hasMore && (
-                  <div className="mt-4 text-center text-sm text-white/50">
-                    ✅ Todos os {lowStockQuery.totalLoaded} produtos com estoque baixo foram carregados
                   </div>
                 )}
               </>
             )}
           </div>
-        ) : viewMode === 'count-sheet' ? (
-          /* ✅ Planilha de Inventário Físico */
-          <InventoryCountSheet />
-        ) : null}
+        )}
+
+        {viewMode === 'count-sheet' && <InventoryCountSheet />}
       </div>
 
-      {/* Modal para adicionar produto */}
-      <NewProductModal
-        isOpen={isAddProductOpen}
-        onClose={() => setIsAddProductOpen(false)}
-        onSuccess={() => {
-          // Invalidar queries para atualizar a lista de produtos
-          queryClient.invalidateQueries({ queryKey: ['products'] });
-        }}
-      />
-
-      {/* Modal simplificado de visualização do produto */}
-      <SimpleProductViewModal
-        product={selectedProduct}
-        isOpen={isDetailsModalOpen}
-        onClose={() => {
-          setIsDetailsModalOpen(false);
-          setSelectedProduct(null);
-        }}
-        onEdit={handleEditProduct}
-        onAdjustStock={handleAdjustStock}
-        onViewHistory={handleViewHistory}
-      />
-
-      {/* Modal de ajuste de estoque - NOVO: Single Source of Truth */}
-      <StockAdjustmentModal
-        productId={selectedProduct?.id || ''}
-        isOpen={isStockAdjustmentOpen}
-        onClose={() => {
-          setIsStockAdjustmentOpen(false);
-          setSelectedProduct(null);
-        }}
-        onSuccess={(data) => {
-
-          // Forçar atualização do cache manualmente
-          queryClient.invalidateQueries({ queryKey: ['products'] });
-          queryClient.invalidateQueries({ queryKey: ['product-variants'] });
-
-          // Refetch imediato se soubermos o produto
-          if (selectedProduct?.id) {
-            queryClient.refetchQueries({
-              queryKey: ['product-variants', selectedProduct.id],
-              exact: false
-            });
-          }
-
-          setIsStockAdjustmentOpen(false);
-          setSelectedProduct(null);
-        }}
-      />
-
-      {/* Modal simplificado para editar produto (v2.0) */}
-      <SimpleEditProductModal
-        isOpen={isEditProductOpen}
-        onClose={handleCancelEdit}
-        product={selectedProduct}
-        onSubmit={handleSubmitEditProduct}
-        isLoading={editProductMutation.isPending}
-        onSuccess={() => {
-          queryClient.invalidateQueries({ queryKey: ['products'] });
-        }}
-      />
-
-      {/* Modal de histórico de movimentações */}
-      <StockHistoryModal
-        product={selectedProduct}
-        isOpen={isHistoryModalOpen}
-        onClose={() => {
-          setIsHistoryModalOpen(false);
-          // CORREÇÃO: Não limpar selectedProduct - deixar que o modal pai gerencie
-        }}
-      />
-
-      {/* 🏪 v3.6.1 - Modal de transferência Loja 1 → Loja 2 */}
-      <TransferToHoldingModal
-        product={productToTransfer}
-        isOpen={isTransferModalOpen}
-        onClose={() => {
-          setIsTransferModalOpen(false);
-          setProductToTransfer(null);
-        }}
-        onSuccess={() => {
-          queryClient.invalidateQueries({ queryKey: ['products'] });
-          queryClient.invalidateQueries({ queryKey: ['products', 'for-store-toggle'] });
-        }}
-      />
+      {/* Modals */}
+      <NewProductModal isOpen={isAddProductOpen} onClose={() => setIsAddProductOpen(false)} onSuccess={() => queryClient.invalidateQueries({ queryKey: ['products'] })} />
+      <SimpleProductViewModal product={selectedProduct} isOpen={isDetailsModalOpen} onClose={() => { setIsDetailsModalOpen(false); setSelectedProduct(null); }} onEdit={handleEditProduct} onAdjustStock={handleAdjustStock} onViewHistory={handleViewHistory} />
+      <StockAdjustmentModal productId={selectedProduct?.id || ''} isOpen={isStockAdjustmentOpen} onClose={() => { setIsStockAdjustmentOpen(false); setSelectedProduct(null); }} onSuccess={() => { queryClient.invalidateQueries({ queryKey: ['products'] }); setIsStockAdjustmentOpen(false); }} />
+      <SimpleEditProductModal isOpen={isEditProductOpen} onClose={() => { setIsEditProductOpen(false); setSelectedProduct(null); }} product={selectedProduct as any} onSubmit={(data) => { if (selectedProduct) editProductMutation.mutate({ productData: data as any, selectedProduct }); }} isLoading={editProductMutation.isPending} onSuccess={() => queryClient.invalidateQueries({ queryKey: ['products'] })} />
+      <StockHistoryModal product={selectedProduct} isOpen={isHistoryModalOpen} onClose={() => setIsHistoryModalOpen(false)} />
+      <TransferToHoldingModal product={productToTransfer} isOpen={isTransferModalOpen} onClose={() => { setIsTransferModalOpen(false); setProductToTransfer(null); }} onSuccess={() => { queryClient.invalidateQueries({ queryKey: ['products'] }); queryClient.invalidateQueries({ queryKey: ['products', 'for-store-toggle'] }); }} />
     </div>
   );
 };

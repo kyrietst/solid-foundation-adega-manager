@@ -35,6 +35,7 @@ export interface Product {
   margin_percent?: Percentage;
   created_at: string;
   updated_at: string;
+  deleted_at?: string | null;
 
   // Novos campos para estoque aprimorado
   unit_type: UnitType;

@@ -52,7 +52,9 @@ import {
 // TIPOS E INTERFACES
 // ============================================================================
 
-export interface FormFieldProps<T = any> {
+import { ZodType } from 'zod';
+
+export interface FormFieldProps<T = Record<string, unknown>> {
   data: Partial<T>;
   updateField: <K extends keyof T>(field: K, value: T[K]) => void;
   updateMultipleFields: (updates: Partial<T>) => void;
@@ -63,7 +65,7 @@ export interface FormFieldProps<T = any> {
   hasChanges: boolean;
 }
 
-export interface SuperModalProps<T = any> extends Omit<EnhancedBaseModalProps, 'primaryAction' | 'secondaryAction' | 'loading' | 'status'> {
+export interface SuperModalProps<T = Record<string, unknown>> extends Omit<EnhancedBaseModalProps, 'primaryAction' | 'secondaryAction' | 'loading' | 'status' | 'children'> {
   /** Dados do formulário */
   formData?: Partial<T>;
 
@@ -74,7 +76,7 @@ export interface SuperModalProps<T = any> extends Omit<EnhancedBaseModalProps, '
   formConfig?: Omit<UseModalFormConfig<T>, 'onSuccess' | 'onCancel'>;
 
   /** Schema de validação Zod */
-  validationSchema?: any;
+  validationSchema?: ZodType;
 
   /** Callback quando formulário é submetido com sucesso */
   onSuccess?: (data: T) => void;
@@ -119,7 +121,7 @@ export interface SuperModalProps<T = any> extends Omit<EnhancedBaseModalProps, '
 
 interface DebugPanelProps<T> {
   formData: Partial<T>;
-  validation: any;
+  validation: { isValid: boolean; errors: unknown[]; validationState?: { errors: Record<string, string> } };
   hasChanges: boolean;
   canSubmit: boolean;
   isSubmitting: boolean;
@@ -133,6 +135,9 @@ const DebugPanel = <T,>({
   isSubmitting
 }: DebugPanelProps<T>) => {
   const [isVisible, setIsVisible] = useState(false);
+
+  // Safe access to errors
+  const errorMap = validation.validationState?.errors || {};
 
   return (
     <div className="border-t border-gray-800 bg-gray-950/50">
@@ -166,11 +171,11 @@ const DebugPanel = <T,>({
             </div>
           </div>
 
-          {Object.keys(validation.validationState.errors).length > 0 && (
+          {Object.keys(errorMap).length > 0 && (
             <div>
               <div className="text-red-400 mb-1">Validation Errors</div>
               <div className="text-xs text-red-300 bg-red-950/20 p-2 rounded">
-                {Object.entries(validation.validationState.errors).map(([field, error]) => (
+                {Object.entries(errorMap).map(([field, error]) => (
                   <div key={field}>{field}: {error as string}</div>
                 ))}
               </div>
@@ -186,7 +191,7 @@ const DebugPanel = <T,>({
 // COMPONENTE PRINCIPAL - SUPER MODAL
 // ============================================================================
 
-export const SuperModal = <T extends Record<string, any>>({
+export const SuperModal = <T extends Record<string, unknown>>({
   modalType,
   title,
   subtitle,
@@ -225,7 +230,7 @@ export const SuperModal = <T extends Record<string, any>>({
   const form = useModalForm<T>({
     ...formConfig,
     initialData: initialFormData,
-    validationSchema,
+    schema: validationSchema,
     onSuccess: (data) => {
       setSubmitSuccess(true);
       setSubmitError(null);
@@ -330,7 +335,7 @@ export const SuperModal = <T extends Record<string, any>>({
     data: form.formData,
     updateField: form.updateField,
     updateMultipleFields: form.updateMultipleFields,
-    errors: form.validation.errors || {},
+    errors: (form.validation.fieldErrors as Record<string, string>) || {},
     hasFieldError: form.hasFieldError,
     getFieldError: form.getFieldError,
     isSubmitting: form.isSubmitting,
@@ -427,10 +432,10 @@ export interface UseSuperModalConfig<T> {
   initialData?: Partial<T>;
   onSubmit?: (data: T) => Promise<void> | void;
   onSuccess?: (data: T) => void;
-  validationSchema?: any;
+  validationSchema?: ZodType;
 }
 
-export const useSuperModal = <T extends Record<string, any>>(
+export const useSuperModal = <T extends Record<string, unknown>>(
   config: UseSuperModalConfig<T>
 ) => {
   const [isOpen, setIsOpen] = useState(false);

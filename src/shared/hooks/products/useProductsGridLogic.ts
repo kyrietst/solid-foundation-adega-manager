@@ -6,7 +6,9 @@ import { useBarcode } from '@/features/inventory/hooks/use-barcode';
 import { usePagination } from '@/shared/hooks/common/use-pagination';
 import { useProductFilters, StockFilterType } from './useProductFilters';
 import { useProductCategories } from './useProductCategories';
-import type { Product } from '@/types/inventory.types';
+import type { Product } from '@/core/types/inventory.types';
+import type { Price } from '@/core/types/branded.types';
+import type { VariantType } from '@/core/types/variants.types';
 import type { ProductSelectionData } from '@/features/sales/components/ProductSelectionModal';
 
 export interface ProductsGridConfig {
@@ -65,7 +67,7 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
     // Vou assumir que o SSoT deve retornar produtos ativos.
     // Se o produto tiver deleted_at, filtrar.
     // O DB Product raw tem deleted_at? Sim.
-    if ((product as any).deleted_at) return false;
+    if (product.deleted_at) return false;
 
     return true;
   });
@@ -125,10 +127,10 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
 
   // Handler para código de barras escaneado
   const handleBarcodeScanned = async (barcode: string) => {
-    console.log('[DEBUG] useProductsGridLogic - handleBarcodeScanned iniciado para:', barcode);
+
 
     const result = await searchByBarcode(barcode);
-    console.log('[DEBUG] useProductsGridLogic - resultado searchByBarcode:', result);
+
 
     if (result && result.product) {
       const { product, type } = result;
@@ -156,7 +158,7 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
           id: product.id,
           variant_id: variantId,
           name: product.name,
-          variant_type: variantType,
+          variant_type: variantType as VariantType,
           price: variantType === 'package' ? (product.package_price || product.price) : product.price,
           quantity: 1,
           maxQuantity: variantType === 'package' ? stockPackages : stockUnitsLoose,
@@ -200,7 +202,7 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
         id: product.id,
         variant_id: `${product.id}-unit`,
         name: product.name,
-        variant_type: 'unit',
+        variant_type: 'unit' as VariantType,
         price: product.price,
         quantity: 1,
         maxQuantity: stockUnitsLoose,
@@ -243,7 +245,15 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
     if (!selectedProduct) return;
 
     // Usar a função específica para seleção de variantes
-    await addFromVariantSelection({ ...selection, conversion_required: false } as any, {
+    await addFromVariantSelection({
+      variant_id: selection.variant_id,
+      variant_type: selection.variant_type as VariantType,
+      quantity: selection.quantity,
+      unit_price: selection.unit_price as unknown as Price,
+      total_price: selection.total_price as unknown as Price,
+      units_sold: selection.units_sold,
+      conversion_required: false,
+    }, {
       id: selectedProduct.id,
       name: selectedProduct.name
     });

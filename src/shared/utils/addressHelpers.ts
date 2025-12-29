@@ -111,77 +111,7 @@ export function formatDeliveryAddress(address: any): string {
   }
 }
 
-/**
- * Parse endereço de delivery para objeto estruturado
- * Sempre retorna um objeto (nunca null), mesmo que com campos vazios
- *
- * @param address - Objeto de endereço em qualquer formato
- * @returns Objeto estruturado com campos de endereço
- */
-export function parseDeliveryAddress(address: any): AddressObject {
-  const defaultAddress: AddressObject = {
-    street: '',
-    number: '',
-    complement: '',
-    neighborhood: '',
-    city: '',
-    state: '',
-    full_address: formatDeliveryAddress(address)
-  };
 
-  if (!address) return defaultAddress;
-
-  try {
-    // Tentar extrair do formato nested (address.address)
-    if (address.address) {
-      let inner: any;
-
-      // Se é string, fazer parse
-      if (typeof address.address === 'string') {
-        try {
-          inner = JSON.parse(address.address);
-        } catch {
-          // Se parse falhar, é string pura
-          return {
-            ...defaultAddress,
-            full_address: address.address
-          };
-        }
-      } else {
-        inner = address.address;
-      }
-
-      // Extrair campos do objeto interno
-      return {
-        street: inner.street || inner.raw || '',
-        number: inner.number || '',
-        complement: inner.complement || '',
-        neighborhood: inner.neighborhood || '',
-        city: inner.city || '',
-        state: inner.state || '',
-        full_address: inner.full_address || inner.raw || address.address || formatDeliveryAddress(address)
-      };
-    }
-
-    // Usar direto se tem formato esperado
-    if (address.street || address.full_address) {
-      return {
-        street: address.street || '',
-        number: address.number || '',
-        complement: address.complement || '',
-        neighborhood: address.neighborhood || '',
-        city: address.city || '',
-        state: address.state || '',
-        full_address: address.full_address || formatDeliveryAddress(address)
-      };
-    }
-
-    return defaultAddress;
-  } catch (error) {
-    console.error('Erro ao fazer parse de endereço:', error, address);
-    return defaultAddress;
-  }
-}
 
 /**
  * Formata telefone para WhatsApp (adiciona código do país e remove formatação)
@@ -214,37 +144,4 @@ export function formatPhoneForWhatsApp(phone: string | null | undefined): string
   }
 }
 
-/**
- * Formata telefone para exibição legível
- *
- * Exemplos:
- * - "5511951388472" → "(11) 95138-8472"
- * - "11951388472" → "(11) 95138-8472"
- *
- * @param phone - Telefone em formato numérico
- * @returns Telefone formatado para exibição
- */
-export function formatPhoneDisplay(phone: string | null | undefined): string {
-  if (!phone) return '';
 
-  try {
-    // Remover código do país se existir
-    let cleaned = phone.replace(/\D/g, '');
-    if (cleaned.startsWith('55')) {
-      cleaned = cleaned.substring(2);
-    }
-
-    // Formato: (DD) 9DDDD-DDDD ou (DD) DDDD-DDDD
-    if (cleaned.length === 11) {
-      return `(${cleaned.substring(0, 2)}) ${cleaned.substring(2, 7)}-${cleaned.substring(7)}`;
-    } else if (cleaned.length === 10) {
-      return `(${cleaned.substring(0, 2)}) ${cleaned.substring(2, 6)}-${cleaned.substring(6)}`;
-    }
-
-    // Fallback: retornar original
-    return phone;
-  } catch (error) {
-    console.error('Erro ao formatar telefone para exibição:', error, phone);
-    return phone || '';
-  }
-}

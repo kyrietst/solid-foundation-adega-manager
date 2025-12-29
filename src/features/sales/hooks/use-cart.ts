@@ -9,7 +9,7 @@ import type {
 } from '@/core/types/variants.types';
 
 // Type alias para item do carrinho (herda todos os campos de CartItemWithVariant)
-type CartItem = CartItemWithVariant;
+export type CartItem = CartItemWithVariant;
 
 interface CartState {
   items: CartItem[];
@@ -54,7 +54,7 @@ const checkStockAvailability = async (productId: string, quantity: number = 1, v
     const { data: product, error } = await supabase
       .from('products')
       .select('stock_packages, stock_units_loose, has_package_tracking, name')
-      .eq('id', productId)
+      .filter('id', 'eq', productId)
       .single();
 
     if (error) {
@@ -78,9 +78,16 @@ const checkStockAvailability = async (productId: string, quantity: number = 1, v
       };
     }
 
-    const stockPackages = product.stock_packages || 0;
-    const stockUnitsLoose = product.stock_units_loose || 0;
-    const hasPackageTracking = product.has_package_tracking;
+    // Explicit typing based on the selected fields
+    const productData = product as {
+      stock_packages: number;
+      stock_units_loose: number;
+      has_package_tracking: boolean | null;
+      name: string;
+    };
+
+    const stockPackages = productData.stock_packages || 0;
+    const stockUnitsLoose = productData.stock_units_loose || 0;
 
     // Verificar disponibilidade baseada no tipo de variante
     if (variantType === 'unit') {
@@ -164,11 +171,10 @@ export const useCart = create<CartState>()(
               );
             } else {
               // Adiciona um novo item ao carrinho
-              const displayName = `${item.name} ${
-                item.variant_type === 'package'
-                  ? `(Pacote ${item.packageUnits || 1}x)`
-                  : '(Unidade)'
-              }`;
+              const displayName = `${item.name} ${item.variant_type === 'package'
+                ? `(Pacote ${item.packageUnits || 1}x)`
+                : '(Unidade)'
+                }`;
 
               const newItem: CartItem = {
                 ...item,
@@ -216,19 +222,18 @@ export const useCart = create<CartState>()(
               newItems = state.items.map((i) =>
                 i.id === product.id && i.variant_id === selection.variant_id
                   ? {
-                      ...i,
-                      quantity: newQuantity,
-                      units_sold: i.units_sold + selection.units_sold
-                    }
+                    ...i,
+                    quantity: newQuantity,
+                    units_sold: i.units_sold + selection.units_sold
+                  }
                   : i
               );
             } else {
               // Cria novo item baseado na seleção de variante
-              const displayName = `${product.name} ${
-                selection.variant_type === 'package'
-                  ? `(Pacote ${selection.units_sold / selection.quantity}x)`
-                  : '(Unidade)'
-              }`;
+              const displayName = `${product.name} ${selection.variant_type === 'package'
+                ? `(Pacote ${selection.units_sold / selection.quantity}x)`
+                : '(Unidade)'
+                }`;
 
               const newItem: CartItem = {
                 id: product.id,
@@ -242,7 +247,8 @@ export const useCart = create<CartState>()(
                 packageUnits: selection.variant_type === 'package'
                   ? selection.units_sold / selection.quantity
                   : undefined,
-                displayName
+                displayName,
+                conversion_required: false
               };
 
               newItems = [...state.items, newItem];
@@ -255,13 +261,13 @@ export const useCart = create<CartState>()(
           const typeLabel = selection.variant_type === 'package' ? 'pacote' : 'unidade';
           toastHelpers.pos.productAdded(product.name, typeLabel);
         },
-      
+
         updateItemQuantity: (productId, variantId, quantity) => {
           set((state) => {
             let newItems: CartItem[];
-            
+
             if (quantity <= 0) {
-              newItems = state.items.filter((item) => 
+              newItems = state.items.filter((item) =>
                 !(item.id === productId && item.variant_id === variantId)
               );
             } else {
@@ -270,9 +276,9 @@ export const useCart = create<CartState>()(
                   const newQuantity = Math.min(quantity, item.maxQuantity);
                   // Recalcular units_sold baseado na nova quantidade
                   const unitsPerItem = item.units_sold / item.quantity;
-                  
-                  return { 
-                    ...item, 
+
+                  return {
+                    ...item,
                     quantity: newQuantity,
                     units_sold: newQuantity * unitsPerItem
                   };
@@ -280,24 +286,24 @@ export const useCart = create<CartState>()(
                 return item;
               });
             }
-            
+
             return updateState(newItems);
           });
         },
-      
+
         removeItem: (productId, variantId) => {
           set((state) => {
-            const newItems = state.items.filter((item) => 
+            const newItems = state.items.filter((item) =>
               !(item.id === productId && item.variant_id === variantId)
             );
             return updateState(newItems);
           });
         },
-        
+
         setCustomer: (customerId) => {
           set((state) => updateState(state.items, customerId));
         },
-        
+
         clearCart: () => {
           set(updateState([], null));
         },

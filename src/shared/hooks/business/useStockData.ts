@@ -9,10 +9,10 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
 import { calculatePackageDisplay } from '@/shared/utils/stockCalculations';
 import type { Product } from '@/core/types/inventory.types';
-import type { Database } from '@/core/api/supabase/types';
+import { Tables } from '@/core/types/supabase';
 
 // Types
-type SupabaseProduct = Database['public']['Tables']['products']['Row'];
+type SupabaseProduct = Tables<'products'>;
 
 export interface ProductStockData extends Product {
     // Dados calculados de apresentação
@@ -92,7 +92,7 @@ export const transformToStockData = (dbProduct: any): ProductStockData => {
         // Embeds
         unit_type: (dbProduct.unit_type as any) || 'un',
         turnover_rate: (dbProduct.turnover_rate as any) || 'medium',
-        package_size: Number(dbProduct.package_size || 0),
+        package_size: Number(dbProduct.package_size || 0) as any,
         // Pacotes
         is_package: dbProduct.is_package || false,
         units_per_package: Number(dbProduct.units_per_package || 1) as any,
@@ -108,7 +108,8 @@ export const transformToStockData = (dbProduct: any): ProductStockData => {
         ncm: dbProduct.ncm || undefined,
         cest: dbProduct.cest || undefined,
         cfop: dbProduct.cfop || undefined,
-        origin: dbProduct.origin ? String(dbProduct.origin) : undefined
+        origin: dbProduct.origin ? String(dbProduct.origin) : undefined,
+        deleted_at: dbProduct.deleted_at || null
     };
 
     // 2. Cálculos de Apresentação (Direto da Prateleira)

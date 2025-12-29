@@ -3,11 +3,11 @@
  * Processa arquivos CSV e valida estrutura e dados
  */
 
-import { validateCsvRow, convertCsvRowToProduct } from './csvUtils';
+import { validateCsvRow, convertCsvRowToProduct, CsvProductRow } from './csvUtils';
 
 export interface CsvParseResult {
   isValid: boolean;
-  data: any[];
+  data: CsvProductRow[];
   errors: string[];
   warnings: string[];
   statistics: {
@@ -22,12 +22,12 @@ export interface CsvValidationError {
   row: number;
   field: string;
   message: string;
-  value: any;
+  value: string;
 }
 
 export interface CsvImportPreview {
   headers: string[];
-  sampleData: any[];
+  sampleData: CsvProductRow[];
   totalRows: number;
   validationSummary: {
     validRows: number;
@@ -71,15 +71,15 @@ export const REQUIRED_COLUMNS = [
 export const parseCsvText = async (csvText: string): Promise<CsvParseResult> => {
   const errors: string[] = [];
   const warnings: string[] = [];
-  const data: any[] = [];
-  
+  const data: CsvProductRow[] = [];
+
   try {
     // Dividir em linhas e remover linhas vazias
     const lines = csvText
       .split('\n')
       .map(line => line.trim())
       .filter(line => line.length > 0);
-    
+
     if (lines.length < 2) {
       errors.push('Arquivo deve conter pelo menos cabeçalho e uma linha de dados');
       return {
@@ -90,11 +90,11 @@ export const parseCsvText = async (csvText: string): Promise<CsvParseResult> => 
         statistics: { totalRows: 0, validRows: 0, invalidRows: 0, emptyRows: 0 }
       };
     }
-    
+
     // Processar cabeçalho
     const headerLine = lines[0];
     const headers = parseCsvLine(headerLine);
-    
+
     // Validar estrutura do cabeçalho
     const headerValidation = validateHeaders(headers);
     if (!headerValidation.isValid) {
@@ -107,40 +107,44 @@ export const parseCsvText = async (csvText: string): Promise<CsvParseResult> => 
         statistics: { totalRows: 0, validRows: 0, invalidRows: 0, emptyRows: 0 }
       };
     }
-    
+
     warnings.push(...headerValidation.warnings);
-    
+
     // Processar linhas de dados
     let validRows = 0;
     let invalidRows = 0;
     let emptyRows = 0;
-    
+
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i];
       const lineNumber = i + 1;
-      
+
       // Pular linhas vazias
       if (!line || line.trim() === '') {
         emptyRows++;
         continue;
       }
-      
+
       try {
         const values = parseCsvLine(line);
-        
+
         // Verificar se o número de colunas está correto
         if (values.length !== headers.length) {
           errors.push(`Linha ${lineNumber}: Número de colunas incorreto (esperado: ${headers.length}, encontrado: ${values.length})`);
           invalidRows++;
           continue;
         }
-        
+
         // Criar objeto com os dados
-        const rowData: any = {};
+        const rowData: Partial<CsvProductRow> = {};
         headers.forEach((header, index) => {
           rowData[header] = values[index] || '';
         });
-        
+
+        // Typed cast since we constructed it dynamically
+        const typedRowData = rowData as CsvProductRow;
+
+
         // Validar dados da linha
         const validation = validateCsvRow(rowData);
         if (!validation.isValid) {
@@ -148,17 +152,17 @@ export const parseCsvText = async (csvText: string): Promise<CsvParseResult> => 
           invalidRows++;
           continue;
         }
-        
+
         // Adicionar dados válidos
-        data.push(rowData);
+        data.push(typedRowData);
         validRows++;
-        
+
       } catch (error) {
         errors.push(`Linha ${lineNumber}: Erro ao processar - ${error}`);
         invalidRows++;
       }
     }
-    
+
     return {
       isValid: errors.length === 0 && validRows > 0,
       data,
@@ -171,7 +175,7 @@ export const parseCsvText = async (csvText: string): Promise<CsvParseResult> => 
         emptyRows
       }
     };
-    
+
   } catch (error) {
     errors.push(`Erro geral ao processar CSV: ${error}`);
     return {
@@ -194,11 +198,11 @@ export const parseCsvLine = (line: string): string[] => {
   let current = '';
   let inQuotes = false;
   let i = 0;
-  
+
   while (i < line.length) {
     const char = line[i];
     const nextChar = line[i + 1];
-    
+
     if (char === '"') {
       if (inQuotes && nextChar === '"') {
         // Aspas duplas escapadas
@@ -216,13 +220,13 @@ export const parseCsvLine = (line: string): string[] => {
     } else {
       current += char;
     }
-    
+
     i++;
   }
-  
+
   // Adicionar último campo
   result.push(current.trim());
-  
+
   return result;
 };
 
@@ -234,37 +238,37 @@ export const parseCsvLine = (line: string): string[] => {
 export const validateHeaders = (headers: string[]): { isValid: boolean; errors: string[]; warnings: string[] } => {
   const errors: string[] = [];
   const warnings: string[] = [];
-  
+
   // Verificar se todas as colunas obrigatórias estão presentes
-  const missingRequired = EXPECTED_CSV_HEADERS.filter(expected => 
+  const missingRequired = EXPECTED_CSV_HEADERS.filter(expected =>
     !headers.find(header => header.trim() === expected)
   );
-  
+
   if (missingRequired.length > 0) {
     errors.push(`Colunas obrigatórias ausentes: ${missingRequired.join(', ')}`);
   }
-  
+
   // Verificar colunas extras (não esperadas)
-  const extraColumns = headers.filter(header => 
+  const extraColumns = headers.filter(header =>
     !EXPECTED_CSV_HEADERS.includes(header.trim())
   );
-  
+
   if (extraColumns.length > 0) {
     warnings.push(`Colunas não reconhecidas (serão ignoradas): ${extraColumns.join(', ')}`);
   }
-  
+
   // Verificar ordem das colunas
   const expectedOrder = EXPECTED_CSV_HEADERS.slice(0, headers.length);
   const actualOrder = headers.slice(0, EXPECTED_CSV_HEADERS.length);
-  
-  const orderMismatch = expectedOrder.some((expected, index) => 
+
+  const orderMismatch = expectedOrder.some((expected, index) =>
     actualOrder[index] && actualOrder[index].trim() !== expected
   );
-  
+
   if (orderMismatch) {
     warnings.push('Ordem das colunas não corresponde ao padrão esperado. Verifique se os dados estão sendo mapeados corretamente.');
   }
-  
+
   return {
     isValid: errors.length === 0,
     errors,
@@ -280,13 +284,13 @@ export const validateHeaders = (headers: string[]): { isValid: boolean; errors: 
  */
 export const generateCsvPreview = async (csvText: string, maxRows: number = 10): Promise<CsvImportPreview> => {
   const parseResult = await parseCsvText(csvText);
-  
+
   // Pegar apenas as primeiras linhas para preview
   const sampleData = parseResult.data.slice(0, maxRows);
-  
+
   // Extrair headers dos dados (se existirem)
   const headers = parseResult.data.length > 0 ? Object.keys(parseResult.data[0]) : [];
-  
+
   return {
     headers,
     sampleData,
@@ -304,7 +308,7 @@ export const generateCsvPreview = async (csvText: string, maxRows: number = 10):
  * @param csvData - Dados processados do CSV
  * @returns Array de produtos formatados
  */
-export const convertCsvDataToProducts = (csvData: any[]) => {
+export const convertCsvDataToProducts = (csvData: Partial<CsvProductRow>[]) => {
   return csvData.map(row => convertCsvRowToProduct(row));
 };
 
@@ -315,23 +319,23 @@ export const convertCsvDataToProducts = (csvData: any[]) => {
  */
 export const validateCsvFile = (file: File): { isValid: boolean; errors: string[] } => {
   const errors: string[] = [];
-  
+
   // Verificar extensão
   if (!file.name.toLowerCase().endsWith('.csv')) {
     errors.push('Arquivo deve ter extensão .csv');
   }
-  
+
   // Verificar tamanho (máximo 5MB)
   const maxSize = 5 * 1024 * 1024; // 5MB
   if (file.size > maxSize) {
     errors.push('Arquivo muito grande. Tamanho máximo: 5MB');
   }
-  
+
   // Verificar se não está vazio
   if (file.size === 0) {
     errors.push('Arquivo não pode estar vazio');
   }
-  
+
   return {
     isValid: errors.length === 0,
     errors
@@ -346,7 +350,7 @@ export const validateCsvFile = (file: File): { isValid: boolean; errors: string[
 export const readCsvFile = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    
+
     reader.onload = (event) => {
       const result = event.target?.result;
       if (typeof result === 'string') {
@@ -355,11 +359,11 @@ export const readCsvFile = (file: File): Promise<string> => {
         reject(new Error('Erro ao ler arquivo'));
       }
     };
-    
+
     reader.onerror = () => {
       reject(new Error('Erro ao ler arquivo'));
     };
-    
+
     // Ler como texto UTF-8
     reader.readAsText(file, 'UTF-8');
   });

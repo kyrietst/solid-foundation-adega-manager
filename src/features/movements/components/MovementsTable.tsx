@@ -299,14 +299,6 @@ export const MovementsTable: React.FC<MovementsTableProps> = ({
 
                   {/* Detalhes Expandidos */}
                   {isExpanded && (() => {
-                    // 🔍 DEBUG: Log dos itens
-                    console.log('🔍 Rendering movement:', movement.id, {
-                      hasSale: !!sale,
-                      saleId: sale?.id,
-                      saleItems: sale?.sale_items,
-                      itemsLength: sale?.sale_items?.length
-                    });
-
                     return (
                       <tr className="bg-transparent">
                         <td colSpan={8} className="p-0 border-none">
