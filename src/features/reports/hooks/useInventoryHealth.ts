@@ -54,7 +54,7 @@ export function useInventoryHealth(dateRange: DateRange | undefined) {
 
             // 3. Buscar Valor Total do Estoque (RPC para precisão)
             const { data: totalValuationData, error: valuationError } = await supabase
-                .rpc('get_total_inventory_valuation');
+                .rpc('get_inventory_total_value');
 
             if (valuationError) console.error('Erro ao buscar valuation:', valuationError);
             const totalStockValue = Number(totalValuationData) || 0;

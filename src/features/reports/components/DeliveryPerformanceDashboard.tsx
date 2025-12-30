@@ -43,7 +43,7 @@ import { DateRange } from 'react-day-picker';
 
 // ... imports ...
 
-// --- Hook Reutilizado ---
+// --- Hook Reutilizado (Otimizado com RPC) ---
 function useDeliveryComparison(dateRange: DateRange | undefined) {
     return useQuery({
         queryKey: ['delivery-vs-instore-complete', dateRange],
@@ -61,32 +61,20 @@ function useDeliveryComparison(dateRange: DateRange | undefined) {
                 };
             }
 
-            const { data: salesData, error } = await supabase
-                .from('sales')
-                .select('delivery_type, total_amount, created_at')
-                .gte('created_at', dateRange.from.toISOString())
-                .lte('created_at', dateRange.to.toISOString());
+            const { data, error } = await supabase.rpc('get_delivery_performance_stats', {
+                p_start_date: dateRange.from.toISOString(),
+                p_end_date: dateRange.to.toISOString()
+            });
 
             if (error) throw error;
 
-            const deliverySales = (salesData as any[] || []).filter(s => s.delivery_type === 'delivery');
-            const instoreSales = (salesData as any[] || []).filter(s => s.delivery_type !== 'delivery');
-
-            const delivery_revenue = deliverySales.reduce((acc, curr) => acc + (curr.total_amount || 0), 0);
-            const delivery_orders = deliverySales.length;
-            const delivery_avg_ticket = delivery_orders > 0 ? delivery_revenue / delivery_orders : 0;
-
-            const instore_revenue = instoreSales.reduce((acc, curr) => acc + (curr.total_amount || 0), 0);
-            const instore_orders = instoreSales.length;
-            const instore_avg_ticket = instore_orders > 0 ? instore_revenue / instore_orders : 0;
-
-            return {
-                delivery_orders,
-                delivery_revenue,
-                delivery_avg_ticket,
-                instore_orders,
-                instore_revenue,
-                instore_avg_ticket,
+            return (data as unknown as ComparisonData) || {
+                delivery_orders: 0,
+                delivery_revenue: 0,
+                delivery_avg_ticket: 0,
+                instore_orders: 0,
+                instore_revenue: 0,
+                instore_avg_ticket: 0,
                 delivery_growth_rate: 0,
                 instore_growth_rate: 0
             };
@@ -127,38 +115,25 @@ export const DeliveryPerformanceDashboard: React.FC<DeliveryPerformanceDashboard
     const { data: comparison, isLoading: loadingComparison } = useDeliveryComparison(dateRange);
     const { data: trends, isLoading: loadingTrends } = useDeliveryTrends(dateRange);
 
-    // Dados seguros com fallback e cálculos memoizados
-    const {
-        safeComparison,
-        totalRevenue,
-        totalOrders,
-        generalAvgTicket,
-        deliveryShare,
-        instoreShare
-    } = useMemo(() => {
-        const safeData = comparison || {
-            delivery_orders: 0,
-            delivery_revenue: 0,
-            delivery_avg_ticket: 0,
-            instore_orders: 0,
-            instore_revenue: 0,
-            instore_avg_ticket: 0,
-            delivery_growth_rate: 0,
-            instore_growth_rate: 0
-        };
+    // Dados seguros com fallback (memoização implícita do React Query)
+    const safeComparison = comparison || {
+        delivery_orders: 0,
+        delivery_revenue: 0,
+        delivery_avg_ticket: 0,
+        instore_orders: 0,
+        instore_revenue: 0,
+        instore_avg_ticket: 0,
+        delivery_growth_rate: 0,
+        instore_growth_rate: 0
+    };
 
-        const totalRev = (safeData.delivery_revenue || 0) + (safeData.instore_revenue || 0);
-        const totalOrd = (safeData.delivery_orders || 0) + (safeData.instore_orders || 0);
+    // Cálculos Simples (Apenas display)
+    const totalRevenue = (safeComparison.delivery_revenue || 0) + (safeComparison.instore_revenue || 0);
+    const totalOrders = (safeComparison.delivery_orders || 0) + (safeComparison.instore_orders || 0);
+    const generalAvgTicket = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
-        return {
-            safeComparison: safeData,
-            totalRevenue: totalRev,
-            totalOrders: totalOrd,
-            generalAvgTicket: totalOrd > 0 ? totalRev / totalOrd : 0,
-            deliveryShare: totalRev > 0 ? ((safeData.delivery_revenue || 0) / totalRev) * 100 : 0,
-            instoreShare: totalRev > 0 ? (100 - (((safeData.delivery_revenue || 0) / totalRev) * 100)) : 100 // derived directly
-        };
-    }, [comparison]);
+    const deliveryShare = totalRevenue > 0 ? ((safeComparison.delivery_revenue || 0) / totalRevenue) * 100 : 0;
+    const instoreShare = 100 - deliveryShare;
 
     // Formatação
     const formatCurrency = (val: number) =>

@@ -12,8 +12,7 @@ import { useCart, useCartTotal } from '@/features/sales/hooks/use-cart';
 import { useCustomer } from '@/features/customers/hooks/use-crm';
 import { usePaymentMethods } from '@/features/sales/hooks/use-sales';
 import { useCheckout } from '@/features/pos/hooks/useCheckout';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/core/api/supabase/client';
+import { useDeliveryPersons } from '@/features/delivery/hooks/useDeliveryPersons';
 import { cn } from '@/core/config/utils';
 import { getGlassCardClasses, getValueClasses } from '@/core/config/theme-utils';
 import { text, shadows } from "@/core/config/theme";
@@ -56,20 +55,8 @@ export function Cart({
   const { data: paymentMethods = [], isLoading: isLoadingPaymentMethods } = usePaymentMethods();
   const { data: selectedCustomer } = useCustomer(customerId || '');
 
-  // Query para buscar entregadores disponíveis - Poderia ser extraído para um hook useDeliveryPersons()
-  const { data: deliveryPersons = [] } = useQuery({
-    queryKey: ['delivery-persons'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, name, email')
-        .eq('role', 'delivery' as any) // Cast explícito se necessário, ou tipagem correta
-        .order('name');
-
-      if (error) throw error;
-      return (data || []) as { id: string; name: string; email: string }[];
-    }
-  });
+  // Data Fetching
+  const { data: deliveryPersons = [] } = useDeliveryPersons(saleType === 'delivery');
 
   const [paymentMethodId, setPaymentMethodId] = useState<string>('');
   const [discount, setDiscount] = useState(0);

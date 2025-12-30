@@ -1,7 +1,4 @@
-import React, { useState, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/core/api/supabase/client';
-
+import React, { useState } from 'react';
 import {
     DollarSign, TrendingUp, TrendingDown, AlertCircle,
     Calendar, ArrowUpRight, ArrowDownRight, Users, Wallet
@@ -19,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/shared/ui/primitives/button';
 import { cn } from '@/core/config/utils';
 import { DateRange } from 'react-day-picker';
+import { useFinancialCharts } from '@/features/reports/hooks/useFinancialCharts';
 
 // --- Types ---
 interface DailyFlow {
@@ -41,166 +39,91 @@ interface ExpenseCategory {
     percentage: number;
 }
 
-// --- Hooks ---
-
-// 1. Hook de Fluxo Diário (Entradas vs Saídas)
-function useDailyCashFlow(dateRange: DateRange | undefined) {
-    return useQuery({
-        queryKey: ['daily-cash-flow', dateRange],
-        queryFn: async (): Promise<DailyFlow[]> => {
-            if (!dateRange?.from || !dateRange?.to) return [];
-
-            const { data, error } = await supabase.rpc('get_daily_cash_flow', {
-                p_start_date: dateRange.from.toISOString(),
-                p_end_date: dateRange.to.toISOString()
-            });
-
-            if (error) throw error;
-
-            return (data as any[]).map(item => ({
-                date: item.date,
-                income: Number(item.income),
-                outcome: Number(item.outcome),
-                balance: Number(item.balance)
-            }));
-        },
-        enabled: !!dateRange?.from,
-        staleTime: 5 * 60 * 1000
-    });
-}
-
-// 2. Hook de Devedores (Top Debtors)
-function useDebtors() {
-    return useQuery({
-        queryKey: ['top-debtors'],
-        queryFn: async (): Promise<Debtor[]> => {
-            const { data, error } = await supabase
-                .from('accounts_receivable')
-                .select(`
-                    amount,
-                    due_date,
-                    customers!inner(name, phone)
-                `)
-                .eq('status', 'open' as any)
-                .lt('due_date', new Date().toISOString()) // Apenas vencidos
-                .order('amount', { ascending: false })
-                .limit(10); // Top 10
-
-            if (error) throw error;
-
-            return (data || []).map((item: any) => ({
-                customer_name: item.customers?.name || 'Cliente Desconhecido',
-                amount: item.amount,
-                days_overdue: Math.max(0, Math.floor(
-                    (new Date().getTime() - new Date(item.due_date).getTime()) / (1000 * 60 * 60 * 24)
-                )),
-                phone: item.customers?.phone
-            }));
-        },
-        staleTime: 5 * 60 * 1000
-    });
-}
-
-// 3. Hook de Top Despesas
-function useTopExpenses(dateRange: DateRange | undefined) {
-    return useQuery({
-        queryKey: ['top-expenses-breakdown', dateRange],
-        queryFn: async (): Promise<ExpenseCategory[]> => {
-            if (!dateRange?.from || !dateRange?.to) return [];
-
-            const startDate = dateRange.from.toISOString();
-            const endDate = dateRange.to.toISOString();
-
-            const { data, error } = await supabase
-                .from('expenses')
-                .select('amount, category:expense_categories(name)')
-                .gte('date', startDate)
-                .lte('date', endDate);
-
-            if (error) throw error;
-
-            const categoryMap = new Map<string, number>();
-            let total = 0;
-
-            (data || []).forEach((item: any) => {
-                const catName = item.category?.name || 'Outros';
-                const amount = Number(item.amount);
-                categoryMap.set(catName, (categoryMap.get(catName) || 0) + amount);
-                total += amount;
-            });
-
-            return Array.from(categoryMap.entries())
-                .map(([name, amount]) => ({
-                    name,
-                    amount,
-                    percentage: total > 0 ? (amount / total) * 100 : 0
-                }))
-                .sort((a, b) => b.amount - a.amount)
-                .slice(0, 5);
-        },
-        enabled: !!dateRange?.from,
-        staleTime: 5 * 60 * 1000
-    });
-}
-
-// 4. Hook de KPIs Financeiros (Agregado)
-function useFinancialKPIs(dateRange: DateRange | undefined) {
-    // Reutilizando lógica dos hooks anteriores para consistência
-    const { data: flow } = useDailyCashFlow(dateRange);
-
-    const totalRevenue = flow?.reduce((acc, curr) => acc + curr.income, 0) || 0;
-    const totalExpenses = flow?.reduce((acc, curr) => acc + curr.outcome, 0) || 0;
-    const operationalProfit = totalRevenue - totalExpenses;
-
-    // Total a Receber (Geral, não apenas vencidos, para o KPI)
-    // Precisamos de uma query separada rápida para o total geral em aberto
-    const { data: totalReceivable } = useQuery({
-        queryKey: ['total-receivable-kpi'],
-        queryFn: async () => {
-            const { data } = await supabase
-                .from('accounts_receivable')
-                .select('amount')
-                .eq('status', 'open' as any);
-            return ((data as any[]) || []).reduce((acc, curr) => acc + curr.amount, 0);
-        }
-    });
-
-    return {
-        revenue: totalRevenue,
-        expenses: totalExpenses,
-        profit: operationalProfit,
-        receivables: totalReceivable || 0
-    };
-}
-
 interface FinancialCashFlowDashboardProps {
     dateRange?: DateRange;
 }
 
 export const FinancialCashFlowDashboard: React.FC<FinancialCashFlowDashboardProps> = ({ dateRange }) => {
-    const { data: dailyFlow, isLoading: loadingFlow } = useDailyCashFlow(dateRange);
-    const { data: debtors, isLoading: loadingDebtors } = useDebtors();
-    const { data: topExpenses, isLoading: loadingExpenses } = useTopExpenses(dateRange);
-    const kpis = useFinancialKPIs(dateRange);
+    // State
+    const [period, setPeriod] = useState<'daily' | 'weekly' | 'monthly'>('daily');
 
-    const isLoading = loadingFlow || loadingDebtors || loadingExpenses;
+    // Data Fetching
+    const { dailyCashFlow, debtors, topExpenses } = useFinancialCharts(period);
+
+    // Safety check for hook results in case they are undefined during initial render/mocking
+    const cashFlowData = dailyCashFlow?.data || [];
+    const isLoadingCashFlow = dailyCashFlow?.isLoading || false;
+
+    const debtorsList = debtors?.data || [];
+    const isLoadingDebtors = debtors?.isLoading || false;
+
+    const topExpensesList = topExpenses?.data || [];
+    const isLoadingExpenses = topExpenses?.isLoading || false;
+
+    const isLoading = isLoadingCashFlow || isLoadingDebtors || isLoadingExpenses;
+
+    // Derived Metrics
+    const totalRevenue = cashFlowData.reduce((acc: number, curr: any) => acc + (curr.total_amount || 0), 0);
+    const totalExpenses = topExpensesList.reduce((acc: number, curr: any) => acc + (curr.amount || 0), 0);
+    const netProfit = totalRevenue - totalExpenses;
+
+    // KPI logic
+    const kpis = {
+        revenue: totalRevenue,
+        expenses: totalExpenses,
+        profit: netProfit,
+        receivables: 0
+    };
+
+    // Handlers
+    const handlePeriodChange = (value: string) => {
+        if (value === 'daily' || value === 'weekly' || value === 'monthly') {
+            setPeriod(value);
+        }
+    };
 
     // Formatação
     const formatCurrency = (val: number) =>
         new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
 
     if (isLoading) {
-        return (
-            <div className="flex items-center justify-center h-96">
-                <LoadingSpinner size="lg" />
-            </div>
-        );
+        return <LoadingSpinner />;
     }
 
     return (
-        <div className="space-y-8 pb-10">
+        <div className="space-y-6 animate-in fade-in duration-500">
+            {/* 1. Header & Filtros */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div className="space-y-1">
+                    <h2 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+                        <DollarSign className="w-6 h-6 text-emerald-400" />
+                        Fluxo de Caixa
+                    </h2>
+                    <p className="text-sm text-gray-400">
+                        Visão consolidada de entradas, saídas e previsões.
+                    </p>
+                </div>
 
-            {/* 2. A Saúde do Caixa (KPIs) */}
+                <div className="flex items-center gap-2">
+                    <Select value={period} onValueChange={handlePeriodChange}>
+                        <SelectTrigger className="w-[140px] bg-gray-900/50 border-gray-700 text-white">
+                            <SelectValue placeholder="Período" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="daily">Diário</SelectItem>
+                            <SelectItem value="weekly">Semanal</SelectItem>
+                            <SelectItem value="monthly">Mensal</SelectItem>
+                        </SelectContent>
+                    </Select>
+
+                    <Button variant="outline" className="border-gray-700 bg-gray-900/30 text-gray-300">
+                        <Calendar className="w-4 h-4 mr-2" />
+                        Exportar
+                    </Button>
+                </div>
+            </div>
+
+            {/* 2. KPIs Principais */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <StatCard
                     title="Faturamento Total"
@@ -250,148 +173,98 @@ export const FinancialCashFlowDashboard: React.FC<FinancialCashFlowDashboardProp
 
                 <div className="h-[300px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={dailyFlow || []}>
+                        <BarChart data={cashFlowData}>
                             <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} />
                             <XAxis
-                                dataKey="date"
-                                stroke="#6B7280"
-                                tick={{ fill: '#9CA3AF', fontSize: 12 }}
+                                dataKey="created_at" // updated key
+                                stroke="#9CA3AF"
+                                fontSize={12}
                                 tickLine={false}
                                 axisLine={false}
+                                tickFormatter={(val) => new Date(val).toLocaleDateString()}
                             />
                             <YAxis
-                                stroke="#6B7280"
-                                tick={{ fill: '#9CA3AF', fontSize: 12 }}
+                                stroke="#9CA3AF"
+                                fontSize={12}
                                 tickLine={false}
                                 axisLine={false}
-                                tickFormatter={(val) => `R$${val / 1000}k`}
+                                tickFormatter={(val) => `R$ ${val}`}
                             />
                             <Tooltip
-                                cursor={{ fill: '#ffffff10' }}
-                                contentStyle={{
-                                    backgroundColor: '#1F2937',
-                                    borderColor: '#374151',
-                                    borderRadius: '8px',
-                                    color: '#F3F4F6'
-                                }}
-                                itemStyle={{ color: '#E5E7EB' }}
-                                labelStyle={{ color: '#E5E7EB', fontWeight: '600' }}
-                                formatter={(value: number) => formatCurrency(value)}
+                                contentStyle={{ backgroundColor: '#1F2937', borderColor: '#374151', color: '#F3F4F6' }}
+                                itemStyle={{ color: '#F3F4F6' }}
+                                formatter={(val: number) => formatCurrency(val)}
                             />
-                            <ReferenceLine y={0} stroke="#6b7280" />
-                            <Bar dataKey="income" name="Entradas" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={40} />
-                            <Bar dataKey="outcome" name="Saídas" fill="#ef4444" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                            <Bar dataKey="total_amount" name="Entradas" fill="#10B981" radius={[4, 4, 0, 0]} />
                         </BarChart>
                     </ResponsiveContainer>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* 4. Quem me deve? (Tabela de Cobrança) */}
-                <div className="bg-gray-800/30 border border-gray-700/40 backdrop-blur-sm shadow-lg rounded-xl p-6 flex flex-col">
+            {/* 4. Grid de Detalhes (Devedores vs Despesas) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Top Devedores */}
+                <GlassCard className="p-6">
                     <div className="flex items-center justify-between mb-4">
                         <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                            <AlertCircle className="w-5 h-5 text-red-400" />
-                            Top Devedores (Ação Necessária)
+                            <AlertCircle className="w-5 h-5 text-amber-500" />
+                            Top Devedores
                         </h3>
-                        <Button variant="ghost" size="sm" className="text-xs text-gray-400 hover:text-white">
-                            Ver Todos
-                        </Button>
+                        <Button variant="ghost" size="sm" className="text-xs text-gray-400">Ver Todos</Button>
                     </div>
 
-                    <div className="overflow-auto flex-1">
-                        <table className="w-full text-sm text-left">
-                            <thead className="text-xs text-gray-400 uppercase bg-gray-900/50 sticky top-0 backdrop-blur-md">
-                                <tr>
-                                    <th className="px-4 py-3 rounded-l-lg">Cliente</th>
-                                    <th className="px-4 py-3">Valor</th>
-                                    <th className="px-4 py-3">Atraso</th>
-                                    <th className="px-4 py-3 rounded-r-lg text-right">Ação</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-800">
-                                {debtors?.map((debtor, idx) => (
-                                    <tr key={idx} className="hover:bg-white/5 transition-colors">
-                                        <td className="px-4 py-3 font-medium text-white">
-                                            {debtor.customer_name}
-                                        </td>
-                                        <td className="px-4 py-3 text-red-300 font-bold">
-                                            {formatCurrency(debtor.amount)}
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <span className={cn(
-                                                "px-2 py-1 rounded-full text-xs font-medium",
-                                                debtor.days_overdue > 30 ? "bg-red-500/20 text-red-300" : "bg-yellow-500/20 text-yellow-300"
-                                            )}>
-                                                {debtor.days_overdue} dias
-                                            </span>
-                                        </td>
-                                        <td className="px-4 py-3 text-right">
-                                            <Button
-                                                size="sm"
-                                                variant="outline"
-                                                className="h-7 text-xs border-green-500/30 text-green-400 hover:bg-green-500/20"
-                                                onClick={() => window.open(`https://wa.me/55${debtor.phone?.replace(/\D/g, '')}?text=Olá ${debtor.customer_name}, notamos uma pendência de ${formatCurrency(debtor.amount)}. Podemos ajudar?`, '_blank')}
-                                                disabled={!debtor.phone}
-                                            >
-                                                Cobrar
-                                            </Button>
-                                        </td>
-                                    </tr>
-                                ))}
-                                {(!debtors || debtors.length === 0) && (
-                                    <tr>
-                                        <td colSpan={4} className="px-4 py-8 text-center text-gray-500">
-                                            Nenhum devedor encontrado.
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
+                    <div className="space-y-4">
+                        {debtorsList.length === 0 ? (
+                            <div className="text-center py-8 text-gray-500 text-sm">Nenhum débito em atraso</div>
+                        ) : (
+                            debtorsList.map((debtor: any, i: number) => (
+                                <div key={i} className="flex items-center justify-between p-3 bg-gray-900/40 rounded-lg border border-gray-800 hover:border-gray-700 transition-colors">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-500 font-bold text-xs">
+                                            {debtor.customer?.full_name?.substring(0, 2).toUpperCase() || 'CLI'}
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-medium text-white">{debtor.customer?.full_name || 'Desconhecido'}</p>
+                                            <p className="text-xs text-amber-400">Venceu há {Math.floor((Date.now() - new Date(debtor.created_at).getTime()) / (1000 * 60 * 60 * 24))} dias</p>
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-sm font-bold text-white">{formatCurrency(debtor.total_amount)}</p>
+                                        <Button variant="link" className="h-auto p-0 text-xs text-blue-400">Cobrar</Button>
+                                    </div>
+                                </div>
+                            ))
+                        )}
                     </div>
-                </div>
+                </GlassCard>
 
-                {/* 5. Para onde foi o dinheiro? (Top Despesas) */}
-                <div className="bg-gray-800/30 border border-gray-700/40 backdrop-blur-sm shadow-lg rounded-xl p-6">
-                    <div className="flex items-center justify-between mb-6">
+                {/* Top Despesas */}
+                <GlassCard className="p-6">
+                    <div className="flex items-center justify-between mb-4">
                         <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                            <Wallet className="w-5 h-5 text-yellow-400" />
-                            Top Despesas
+                            <ArrowDownRight className="w-5 h-5 text-red-500" />
+                            Principais Despesas
                         </h3>
                     </div>
 
-                    <div className="h-[300px] w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart layout="vertical" data={topExpenses || []} margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#374151" horizontal={false} />
-                                <XAxis type="number" stroke="#6B7280" tick={{ fill: '#9CA3AF', fontSize: 12 }} />
-                                <YAxis
-                                    dataKey="name"
-                                    type="category"
-                                    stroke="#6B7280"
-                                    tick={{ fill: '#9CA3AF', fontSize: 12 }}
-                                    width={100}
-                                />
-                                <Tooltip
-                                    cursor={{ fill: '#ffffff10' }}
-                                    contentStyle={{
-                                        backgroundColor: '#1F2937',
-                                        borderColor: '#374151',
-                                        borderRadius: '8px',
-                                        color: '#F3F4F6'
-                                    }}
-                                    itemStyle={{ color: '#E5E7EB' }}
-                                    formatter={(value: number) => formatCurrency(value)}
-                                />
-                                <Bar dataKey="amount" name="Valor" fill="#f59e0b" radius={[0, 4, 4, 0]} barSize={20}>
-                                    {topExpenses?.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={['#f59e0b', '#ef4444', '#8b5cf6', '#3b82f6', '#10b981'][index % 5]} />
-                                    ))}
-                                </Bar>
-                            </BarChart>
-                        </ResponsiveContainer>
+                    <div className="space-y-4">
+                        {/* Mock data visualization as we don't have full expenses yet */}
+                        {topExpensesList.map((expense: any, i: number) => (
+                            <div key={i} className="space-y-2">
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-gray-300">{expense.category?.name}</span>
+                                    <span className="text-white font-medium">{formatCurrency(expense.amount)}</span>
+                                </div>
+                                <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+                                    <div
+                                        className="h-full bg-red-500/80 rounded-full"
+                                        style={{ width: `${(expense.amount / totalExpenses) * 100}%` }}
+                                    />
+                                </div>
+                            </div>
+                        ))}
                     </div>
-                </div>
+                </GlassCard>
             </div>
         </div>
     );

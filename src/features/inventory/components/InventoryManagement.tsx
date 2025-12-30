@@ -41,6 +41,8 @@ import { useAuth } from '@/app/providers/AuthContext';
 import { useLowStockProducts } from '../hooks/useLowStockProducts';
 import { useGlobalBarcodeScanner } from '@/shared/hooks/common/useGlobalBarcodeScanner';
 import { useInventoryActions, SimpleEditProductFormData } from '../hooks/useInventoryActions';
+import { useInventoryData } from '../hooks/useInventoryData';
+import { useInventoryFilters } from '../hooks/useInventoryFilters';
 
 import type { Product } from '@/core/types/inventory.types';
 
@@ -71,13 +73,6 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({ className }) 
   const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
   const [productToTransfer, setProductToTransfer] = useState<Product | null>(null);
 
-  // State: Filters
-  const [selectedStore, setSelectedStore] = useState<1 | 2>(1);
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [showMissingCostsOnly, setShowMissingCostsOnly] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-
   // Hooks & Context
   const queryClient = useQueryClient();
   const { handleMouseMove } = useGlassmorphismEffect();
@@ -88,22 +83,22 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({ className }) 
   // Data Fetching
   const { data: deletedProducts = [], isLoading: isLoadingDeleted } = useDeletedProducts();
   const lowStockQuery = useLowStockProducts();
-  const { data: allProducts = [], isLoading: isLoadingAllProducts } = useQuery({
-    queryKey: ['products', 'for-store-toggle'],
-    staleTime: 5 * 60 * 1000,
-    refetchOnWindowFocus: false,
-    queryFn: async (): Promise<Product[]> => {
-      const { data, error } = await supabase
-        .from('products')
-        .select('id, name, price, stock_quantity, cost_price, image_url, barcode, unit_barcode, package_barcode, category, package_units, package_price, has_package_tracking, units_per_package, stock_packages, stock_units_loose, store2_holding_packages, store2_holding_units_loose, minimum_stock, expiry_date, has_expiry_tracking, ncm, cest, cfop, origin, packaging_type, has_unit_tracking, description, volume_ml, supplier')
-        .is('deleted_at', null)
-        .order('name', { ascending: true });
 
-      if (error) throw error;
-      return (data || []) as unknown as Product[];
-    },
-    enabled: viewMode === 'active',
-  });
+  // New Data Hook
+  const { data: allProducts = [], isLoading: isLoadingAllProducts } = useInventoryData(viewMode === 'active');
+
+  // New Filters Hook
+  const {
+    selectedStore, setSelectedStore,
+    selectedCategory, setSelectedCategory,
+    showMissingCostsOnly, setShowMissingCostsOnly,
+    searchQuery, setSearchQuery,
+    currentPage, setCurrentPage,
+    missingCostsCount,
+    filteredProducts: filteredAndMappedProducts,
+    totalItems,
+    totalPages
+  } = useInventoryFilters({ products: allProducts });
 
   // Actions Hook
   const {
@@ -114,58 +109,6 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({ className }) 
   } = useInventoryActions({
     onSuccess: () => setIsEditProductOpen(false)
   });
-
-  // Derived State
-  const missingCostsCount = React.useMemo(() => {
-    return allProducts.filter(p => !p.cost_price || Number(p.cost_price) <= 0).length;
-  }, [allProducts]);
-
-  const filteredAndMappedProducts = React.useMemo(() => {
-    // 1. Store Scope
-    let products = selectedStore === 2
-      ? allProducts.filter(p => (p.store2_holding_packages || 0) > 0 || (p.store2_holding_units_loose || 0) > 0)
-      : allProducts;
-
-    // 2. Search
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      products = products.filter(p =>
-        p.name.toLowerCase().includes(q) ||
-        p.barcode?.toLowerCase().includes(q) ||
-        p.package_barcode?.toLowerCase().includes(q)
-      );
-    }
-
-    // 3. Category
-    if (selectedCategory && selectedCategory !== 'all') {
-      products = products.filter(p => p.category === selectedCategory);
-    }
-
-    // 4. Missing Cost Audit
-    if (showMissingCostsOnly) {
-      products = products.filter(p => !p.cost_price || Number(p.cost_price) <= 0);
-    }
-
-    // 5. Display Mapping
-    return products.map(p => ({
-      ...p,
-      stock_packages: selectedStore === 1 ? p.stock_packages || 0 : p.store2_holding_packages || 0,
-      stock_units_loose: selectedStore === 1 ? p.stock_units_loose || 0 : p.store2_holding_units_loose || 0,
-    }));
-  }, [allProducts, selectedStore, searchQuery, selectedCategory, showMissingCostsOnly]);
-
-  // Pagination
-  const paginatedProducts = React.useMemo(() => {
-    const start = (currentPage - 1) * 24;
-    return filteredAndMappedProducts.slice(start, start + 24);
-  }, [filteredAndMappedProducts, currentPage]);
-
-  const totalPages = Math.ceil(filteredAndMappedProducts.length / 24);
-
-  // Effects
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [selectedStore, viewMode, searchQuery, showMissingCostsOnly]);
 
   // Scanner
   useGlobalBarcodeScanner({
@@ -238,7 +181,7 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({ className }) 
               <>
                 <div className="flex-1 overflow-y-auto">
                   <InventoryGrid
-                    products={paginatedProducts}
+                    products={filteredAndMappedProducts}
                     gridColumns={{ mobile: 1, tablet: 2, desktop: 3 }}
                     onViewDetails={handleViewDetails}
                     onEdit={handleEditProduct}
@@ -254,7 +197,7 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({ className }) 
                   </div>
                 )}
                 <div className="mt-2 text-center text-sm text-white/50">
-                  Mostrando {paginatedProducts.length} de {filteredAndMappedProducts.length} produtos
+                  Mostrando {filteredAndMappedProducts.length} de {filteredAndMappedProducts.length} produtos
                 </div>
               </>
             )}
