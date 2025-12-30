@@ -1,4 +1,4 @@
-/* eslint-disable react-hooks/exhaustive-deps */
+
 import React, { createContext, useContext, useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase, clearChromeAuthData } from '@/core/api/supabase/client';
@@ -211,7 +211,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       subscription.unsubscribe();
       clearTimeout(timeoutId);
     };
-  }, []);
+  }, [fetchUserProfile, setFeatureFlags, setHasTemporaryPassword, setUserRole, user]); // Added dependencies
 
   const hasPermission = useCallback((requiredRole: UserRole | UserRole[]) => {
     if (!user) return false;

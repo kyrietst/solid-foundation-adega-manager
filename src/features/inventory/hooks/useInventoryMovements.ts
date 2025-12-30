@@ -53,6 +53,62 @@ export interface InventoryMovement {
   } | null;
 }
 
+export const useInventoryMovementsList = (filters?: {
+  productId?: string;
+  type?: string;
+  startDate?: string;
+  endDate?: string;
+  limit?: number;
+}) => {
+  return useQuery({
+    queryKey: ['inventory_movements', filters],
+    queryFn: async () => {
+      let query = supabase
+        .from('inventory_movements')
+        .select(`
+          *,
+          product:products!inner (
+            name,
+            unit_type,
+            price
+          ),
+          customer:customers (
+            name,
+            phone
+          ),
+          user:profiles (
+            name
+          )
+        `)
+        .order('date', { ascending: false });
+
+      if (filters?.productId) {
+        query = query.filter('product_id', 'eq', filters.productId);
+      }
+
+      if (filters?.type) {
+        query = query.filter('type_enum', 'eq', filters.type);
+      }
+
+      if (filters?.startDate) {
+        query = query.gte('date', filters.startDate);
+      }
+
+      if (filters?.endDate) {
+        query = query.lte('date', filters.endDate);
+      }
+
+      if (filters?.limit) {
+        query = query.limit(filters.limit);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return data as unknown as InventoryMovement[];
+    },
+  });
+};
+
 export const useInventoryMovements = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -117,63 +173,6 @@ export const useInventoryMovements = () => {
     },
   });
 
-  // Query for fetching movements with optional filters
-  const useMovements = (filters?: {
-    productId?: string;
-    type?: string;
-    startDate?: string;
-    endDate?: string;
-    limit?: number;
-  }) => {
-    return useQuery({
-      queryKey: ['inventory_movements', filters],
-      queryFn: async () => {
-        let query = supabase
-          .from('inventory_movements')
-          .select(`
-            *,
-            product:products!inner (
-              name,
-              unit_type,
-              price
-            ),
-            customer:customers (
-              name,
-              phone
-            ),
-            user:profiles (
-              name
-            )
-          `)
-          .order('date', { ascending: false });
-
-        if (filters?.productId) {
-          query = query.filter('product_id', 'eq', filters.productId);
-        }
-
-        if (filters?.type) {
-          query = query.filter('type_enum', 'eq', filters.type);
-        }
-
-        if (filters?.startDate) {
-          query = query.gte('date', filters.startDate);
-        }
-
-        if (filters?.endDate) {
-          query = query.lte('date', filters.endDate);
-        }
-
-        if (filters?.limit) {
-          query = query.limit(filters.limit);
-        }
-
-        const { data, error } = await query;
-        if (error) throw error;
-        return data as unknown as InventoryMovement[];
-      },
-    });
-  };
-
   // Convenience functions for common operations
   const createStockAdjustment = useCallback(
     (productId: string, quantityChange: number, reason: string, metadata: Record<string, unknown> = {}) => {
@@ -237,8 +236,8 @@ export const useInventoryMovements = () => {
       createSaleMovement,
       createReturnMovement,
 
-      // Query hook
-      useMovements,
+      // Query hook (now stable)
+      useMovements: useInventoryMovementsList,
 
       // Status
       isCreating: createMovementMutation.isPending,
@@ -251,7 +250,7 @@ export const useInventoryMovements = () => {
       createStockAdjustment,
       createSaleMovement,
       createReturnMovement,
-      useMovements,
+      // useInventoryMovementsList is a stable import, no need to add to deps or it stays stable
       invalidateMovementsCache,
     ]
   );

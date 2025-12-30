@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
 
@@ -69,8 +69,8 @@ function useDeliveryComparison(dateRange: DateRange | undefined) {
 
             if (error) throw error;
 
-            const deliverySales = (salesData || []).filter(s => s.delivery_type === 'delivery');
-            const instoreSales = (salesData || []).filter(s => s.delivery_type !== 'delivery');
+            const deliverySales = (salesData as any[] || []).filter(s => s.delivery_type === 'delivery');
+            const instoreSales = (salesData as any[] || []).filter(s => s.delivery_type !== 'delivery');
 
             const delivery_revenue = deliverySales.reduce((acc, curr) => acc + (curr.total_amount || 0), 0);
             const delivery_orders = deliverySales.length;
@@ -112,7 +112,7 @@ function useDeliveryTrends(dateRange: DateRange | undefined) {
 
             if (error) throw error;
 
-            return (data as any[]) || [];
+            return (data as unknown as any[]) || [];
         },
         enabled: !!dateRange?.from && !!dateRange?.to,
         staleTime: 5 * 60 * 1000,
@@ -127,25 +127,38 @@ export const DeliveryPerformanceDashboard: React.FC<DeliveryPerformanceDashboard
     const { data: comparison, isLoading: loadingComparison } = useDeliveryComparison(dateRange);
     const { data: trends, isLoading: loadingTrends } = useDeliveryTrends(dateRange);
 
-    // Dados seguros com fallback
-    const safeComparison = comparison || {
-        delivery_orders: 0,
-        delivery_revenue: 0,
-        delivery_avg_ticket: 0,
-        instore_orders: 0,
-        instore_revenue: 0,
-        instore_avg_ticket: 0,
-        delivery_growth_rate: 0,
-        instore_growth_rate: 0
-    };
+    // Dados seguros com fallback e cálculos memoizados
+    const {
+        safeComparison,
+        totalRevenue,
+        totalOrders,
+        generalAvgTicket,
+        deliveryShare,
+        instoreShare
+    } = useMemo(() => {
+        const safeData = comparison || {
+            delivery_orders: 0,
+            delivery_revenue: 0,
+            delivery_avg_ticket: 0,
+            instore_orders: 0,
+            instore_revenue: 0,
+            instore_avg_ticket: 0,
+            delivery_growth_rate: 0,
+            instore_growth_rate: 0
+        };
 
-    // Cálculos
-    const totalRevenue = (safeComparison.delivery_revenue || 0) + (safeComparison.instore_revenue || 0);
-    const totalOrders = (safeComparison.delivery_orders || 0) + (safeComparison.instore_orders || 0);
-    const generalAvgTicket = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+        const totalRev = (safeData.delivery_revenue || 0) + (safeData.instore_revenue || 0);
+        const totalOrd = (safeData.delivery_orders || 0) + (safeData.instore_orders || 0);
 
-    const deliveryShare = totalRevenue > 0 ? ((safeComparison.delivery_revenue || 0) / totalRevenue) * 100 : 0;
-    const instoreShare = 100 - deliveryShare;
+        return {
+            safeComparison: safeData,
+            totalRevenue: totalRev,
+            totalOrders: totalOrd,
+            generalAvgTicket: totalOrd > 0 ? totalRev / totalOrd : 0,
+            deliveryShare: totalRev > 0 ? ((safeData.delivery_revenue || 0) / totalRev) * 100 : 0,
+            instoreShare: totalRev > 0 ? (100 - (((safeData.delivery_revenue || 0) / totalRev) * 100)) : 100 // derived directly
+        };
+    }, [comparison]);
 
     // Formatação
     const formatCurrency = (val: number) =>
