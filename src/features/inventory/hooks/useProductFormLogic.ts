@@ -16,8 +16,11 @@ export const productFormSchema = z.object({
   barcode: z.string().optional().or(z.literal('')),
   supplier: z.string().optional().or(z.literal('')),
   has_package_tracking: z.boolean().default(false),
+  has_unit_tracking: z.boolean().default(false),
   package_barcode: z.string().optional().or(z.literal('')),
+  unit_barcode: z.string().optional().or(z.literal('')),
   package_units: z.number().min(1).optional().default(1),
+  packaging_type: z.string().optional(),
   package_price: z.number().min(0.01).optional().or(z.literal(0)).or(z.literal(undefined)),
 
   // Fiscal / Opcionais (Relaxados para evitar conflitos)
@@ -93,6 +96,13 @@ export const useProductFormLogic = ({
         cfop: initialData.cfop || '',
         origin: initialData.origin || '',
         has_package_tracking: initialData.has_package_tracking || false,
+        has_unit_tracking: initialData.has_unit_tracking || false,
+        packaging_type: initialData.packaging_type || 'fardo',
+        unit_barcode: initialData.unit_barcode || '',
+        // Campos extras que podem vir nulos do banco
+        volume_ml: initialData.volume_ml || 0,
+        description: initialData.description || '',
+        image_url: initialData.image_url || '',
       } as any); // Cast necessário devido à complexidade do form vs modelo
     } else if (mode === 'create') {
       form.reset({
@@ -102,7 +112,10 @@ export const useProductFormLogic = ({
         cost_price: 0,
         margin_percent: 0,
         has_package_tracking: false,
+        has_unit_tracking: false,
         package_units: 1,
+        packaging_type: 'fardo',
+        unit_barcode: '',
         supplier: '', // Default para create
       });
     }

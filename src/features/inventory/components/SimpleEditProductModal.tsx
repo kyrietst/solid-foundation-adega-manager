@@ -94,17 +94,6 @@ export const SimpleEditProductModal: React.FC<SimpleEditProductModalProps> = ({
         glassEffect={true}
         variant="default"
         className="max-w-7xl"
-        footerWidgets={
-          <div className="mr-auto">
-            <button
-              type="button"
-              onClick={() => setIsDeleteModalOpen(true)}
-              className="text-red-400 hover:text-red-300 text-sm font-medium transition-colors px-2 py-1 hover:bg-red-500/10 rounded-md"
-            >
-              Excluir Produto
-            </button>
-          </div>
-        }
       >
         <Form {...form}>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mt-4">
@@ -127,19 +116,17 @@ export const SimpleEditProductModal: React.FC<SimpleEditProductModalProps> = ({
               <ProductPackageForm
                 form={form}
                 inputClasses={getGlassInputClasses('form')}
+                activeScanner={activeScanner}
+                onActivateScanner={(type) => setActiveScanner(type)}
+                onScan={handleBarcodeScanned}
+                onDeleteClick={() => setIsDeleteModalOpen(true)}
               />
             </div>
 
             {/* COLUNA 3: PRECIFICAÇÃO */}
             <div className="space-y-4">
               <ProductPricingCard
-                formData={form.watch()}
                 calculations={calculations}
-                fieldErrors={form.formState.errors}
-                onInputChange={(field, value) => form.setValue(field as any, value)}
-                onMarginChange={calculations.handleMarginChange}
-                onCostPriceChange={calculations.handleCostPriceChange}
-                onPriceChange={calculations.handlePriceChange}
                 variant="subtle"
                 glassEffect={false}
               />
@@ -152,7 +139,8 @@ export const SimpleEditProductModal: React.FC<SimpleEditProductModalProps> = ({
       <DeleteProductModal
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
-        product={product}
+        productId={product.id}
+        productName={product.name || ''}
         onSuccess={() => {
           setIsDeleteModalOpen(false);
           onClose(); // Close edit modal too

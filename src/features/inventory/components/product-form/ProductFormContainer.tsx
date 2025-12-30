@@ -27,50 +27,28 @@ export const ProductFormContainer: React.FC<ProductFormContainerProps> = ({
   variant = 'default',
   glassEffect = true
 }) => {
-  // Lógica centralizada
   const {
-    formData,
+    form,
     calculations,
-    validation,
-    categories,
-    handleInputChange,
     handleSubmit,
-    handleCancel,
-    handleBarcodeScanned,
-    handleMarginChange,
-    // História 1.4: Novos handlers para cálculos
-    handleCostPriceChange,
-    handlePriceChange,
+    isSubmitting
   } = useProductFormLogic({
     initialData,
-    onSubmit,
-    onCancel
+    onSubmit: onSubmit as any, // Type assertion might be needed if signatures differ slightly
+    onClose: onCancel,
+    mode: isEdit ? 'edit' : 'create'
   });
 
-  // Preparar props para apresentação
-  const presentationProps = {
-    // Dados processados
-    formData,
-    calculations,
-    validation,
-    categories,
-
-    // Estados
-    isLoading,
-    isEdit,
-    variant,
-    glassEffect,
-
-    // Handlers
-    onInputChange: handleInputChange,
-    onSubmit: handleSubmit,
-    onCancel: handleCancel,
-    onBarcodeScanned: handleBarcodeScanned,
-    onMarginChange: handleMarginChange,
-    // História 1.4: Handlers de cálculos em tempo real
-    onCostPriceChange: handleCostPriceChange,
-    onPriceChange: handlePriceChange,
-  };
-
-  return <ProductFormPresentation {...presentationProps} />;
+  return (
+    <ProductFormPresentation
+      form={form}
+      calculations={calculations}
+      isLoading={isLoading || isSubmitting}
+      isEdit={isEdit}
+      variant={variant}
+      glassEffect={glassEffect}
+      onSubmit={handleSubmit}
+      onCancel={onCancel}
+    />
+  );
 };

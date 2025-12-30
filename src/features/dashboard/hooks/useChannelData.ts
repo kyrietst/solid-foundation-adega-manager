@@ -9,13 +9,16 @@ export function useChannelData() {
             const startDate = getMonthStartDate();
             const endDate = getNowSaoPaulo();
 
-            const { data: sales } = await supabase
+            const { data } = await supabase
                 .from('sales')
                 .select('delivery_type, final_amount')
-                .eq('status', 'completed')
+                .eq('status', 'completed' as any) // Fix exact match type error
                 .gte('created_at', startDate.toISOString())
                 .lte('created_at', endDate.toISOString())
                 .not('final_amount', 'is', null);
+
+            // Explicit cast to avoid type inference issues with Supabase result
+            const sales = data as unknown as Array<{ delivery_type: string; final_amount: number }>;
 
             const deliverySales = (sales || []).filter(s => s.delivery_type === 'delivery');
             const instoreSales = (sales || []).filter(s => s.delivery_type === 'presencial');

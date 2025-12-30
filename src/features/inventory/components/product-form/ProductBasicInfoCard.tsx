@@ -9,28 +9,23 @@ import { Input } from '@/shared/ui/primitives/input';
 import { Label } from '@/shared/ui/primitives/label';
 import { Textarea } from '@/shared/ui/primitives/textarea';
 import { Package } from 'lucide-react';
-import { ProductFormData, UnitType } from '@/core/types/inventory.types';
 import { DynamicMeasurementField } from './DynamicMeasurementField';
 import { cn } from '@/core/config/utils';
 import { getGlassCardClasses } from '@/core/config/theme-utils';
+import { useFormContext } from 'react-hook-form';
+import { ProductFormValues } from '@/features/inventory/hooks/useProductFormLogic';
 
 interface ProductBasicInfoCardProps {
-  formData: Partial<ProductFormData>;
-  categories: string[];
-  fieldErrors: Record<string, string>;
-  onInputChange: (field: keyof ProductFormData, value: string | number | UnitType) => void;
   variant?: 'default' | 'premium' | 'subtle' | 'strong' | 'yellow';
   glassEffect?: boolean;
 }
 
 export const ProductBasicInfoCard: React.FC<ProductBasicInfoCardProps> = React.memo(({
-  formData,
-  categories,
-  fieldErrors,
-  onInputChange,
   variant = 'default',
   glassEffect = true,
 }) => {
+  const { register, formState: { errors } } = useFormContext<ProductFormValues>();
+
   // ✅ ACCESSIBILITY FIX: Generate unique ID prefix to prevent duplicate IDs
   const formId = useId();
   const glassClasses = glassEffect ? getGlassCardClasses(variant) : '';
@@ -50,55 +45,48 @@ export const ProductBasicInfoCard: React.FC<ProductBasicInfoCardProps> = React.m
             <Label htmlFor={`${formId}-name`} className="text-gray-200">Nome do Produto *</Label>
             <Input
               id={`${formId}-name`}
-              value={formData.name || ''}
-              onChange={(e) => onInputChange('name', e.target.value)}
+              {...register('name')}
               placeholder="Ex: Vinho Tinto Cabernet Sauvignon"
-              required
               className={cn(
                 'bg-gray-800/50 border-primary-yellow/30 text-gray-200 focus:border-primary-yellow placeholder:text-gray-400',
-                fieldErrors.name && 'border-accent-red'
+                errors.name && 'border-accent-red'
               )}
             />
-            {fieldErrors.name && (
-              <p className="text-accent-red text-sm mt-1">{fieldErrors.name}</p>
+            {errors.name && (
+              <p className="text-accent-red text-sm mt-1">{errors.name?.message}</p>
             )}
           </div>
 
-          {/* Categoria - TESTE COM INPUT SIMPLES */}
+          {/* Categoria */}
           <div>
             <Label htmlFor={`${formId}-category`} className="text-gray-200">Categoria *</Label>
             <Input
               id={`${formId}-category`}
-              value={formData.category || ''}
-              onChange={(e) => onInputChange('category', e.target.value)}
+              {...register('category')}
               placeholder="Digite a categoria"
               className={cn(
                 'bg-gray-800/50 border-primary-yellow/30 text-gray-200 focus:border-primary-yellow placeholder:text-gray-400',
-                fieldErrors.category && 'border-accent-red'
+                errors.category && 'border-accent-red'
               )}
             />
-            {fieldErrors.category && (
-              <p className="text-accent-red text-sm mt-1">{fieldErrors.category}</p>
+            {errors.category && (
+              <p className="text-accent-red text-sm mt-1">{errors.category?.message}</p>
             )}
           </div>
 
-          {/* Campo Dinâmico Volume/Unidade baseado na categoria */}
+          {/* Campo Dinâmico Volume/Unidade baseada no contexto */}
           <DynamicMeasurementField
-            formData={formData}
-            fieldErrors={fieldErrors}
-            onInputChange={onInputChange}
             variant={variant}
             glassEffect={glassEffect}
           />
 
 
-          {/* Tipo de Unidade - TESTE COM INPUT SIMPLES */}
+          {/* Tipo de Unidade */}
           <div>
             <Label htmlFor={`${formId}-unit_type`} className="text-gray-200">Venda em</Label>
             <Input
               id={`${formId}-unit_type`}
-              value={formData.unit_type || 'un'}
-              onChange={(e) => onInputChange('unit_type', e.target.value as UnitType)}
+              {...register('unit_type')}
               placeholder="un ou pct"
               className="bg-gray-800/50 border-primary-yellow/30 text-gray-200 focus:border-primary-yellow placeholder:text-gray-400"
             />
@@ -110,8 +98,7 @@ export const ProductBasicInfoCard: React.FC<ProductBasicInfoCardProps> = React.m
           <Label htmlFor={`${formId}-description`} className="text-gray-200">Descrição</Label>
           <Textarea
             id={`${formId}-description`}
-            value={formData.description || ''}
-            onChange={(e) => onInputChange('description', e.target.value)}
+            {...register('description')}
             placeholder="Descrição detalhada do produto..."
             rows={3}
             className="bg-gray-800/50 border-primary-yellow/30 text-gray-200 focus:border-primary-yellow placeholder:text-gray-400"

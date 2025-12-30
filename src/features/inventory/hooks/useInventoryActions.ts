@@ -22,6 +22,16 @@ export interface SimpleEditProductFormData {
     package_price?: number;
     cost_price?: number;
     volume_ml?: number;
+    // Fiscal and Description
+    ncm?: string;
+    cest?: string;
+    cfop?: string;
+    origin?: string | number;
+    description?: string;
+    image_url?: string;
+    unit_barcode?: string;
+    has_unit_tracking?: boolean;
+    packaging_type?: string;
 }
 
 interface UseInventoryActionsProps {
@@ -86,14 +96,24 @@ export const useInventoryActions = ({ onSuccess }: UseInventoryActionsProps = {}
                     productData.cost_price,
                     productData.package_units
                 ),
+                // Campos Fiscais e Extras
+                ncm: productData.ncm || null,
+                cest: productData.cest || null,
+                cfop: productData.cfop || null,
+                origin: productData.origin ? String(productData.origin) : null,
+                description: productData.description || null,
+                image_url: productData.image_url || null,
+                unit_barcode: productData.unit_barcode || null,
+                // Garantir packaging_type
+                packaging_type: productData.packaging_type || 'fardo',
                 turnover_rate: 'medium',
                 updated_at: new Date().toISOString()
             };
 
             const { data, error } = await supabase
                 .from('products')
-                .update(updateData as unknown as Database['public']['Tables']['products']['Update'])
-                .eq('id', selectedProduct.id)
+                .update(updateData as any)
+                .eq('id' as any, selectedProduct.id as any)
                 .select()
                 .single();
 
@@ -143,7 +163,7 @@ export const useInventoryActions = ({ onSuccess }: UseInventoryActionsProps = {}
             const { data: updatedProduct, error } = await supabase
                 .from('products')
                 .select('*')
-                .eq('id', productId)
+                .eq('id' as any, productId as any)
                 .is('deleted_at', null)
                 .single();
 
