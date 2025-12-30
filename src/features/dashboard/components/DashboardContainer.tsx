@@ -7,33 +7,62 @@ import React from 'react';
 import { useAuth } from '@/app/providers/AuthContext';
 import { useDashboardData } from '@/features/dashboard/hooks/useDashboardData';
 import { useDashboardMetrics } from '@/features/dashboard/hooks/useDashboardMetrics';
+import { useInventoryKpis } from '@/features/dashboard/hooks/useDashboardKpis';
+import { useChannelData } from '@/features/dashboard/hooks/useChannelData';
 import { DashboardPresentation } from './DashboardPresentation';
 
 export const DashboardContainer: React.FC = () => {
   const { userRole } = useAuth();
-  
-  // Buscar dados reais do dashboard
+
+  // 1. Dados Gerais do Dashboard (Vendas, Clientes, etc)
   const {
     counts,
     salesData,
-    isLoading,
+    financials,
+    isLoading: isLoadingGeneral,
     isLoadingCounts,
-    isLoadingSales
-  } = useDashboardData();
+    isLoadingSales,
+    isLoadingFinancials
+  } = useDashboardData(30);
 
-  // Processar métricas para apresentação (apenas métricas públicas)
+  // 2. Dados de Estoque (KPIs)
+  const {
+    data: inventoryKpis,
+    isLoading: isLoadingInventory
+  } = useInventoryKpis();
+
+  // 3. Dados de Canais (Delivery vs Loja)
+  const {
+    data: channelData,
+    isLoading: isLoadingChannels
+  } = useChannelData();
+
+  // Processar métricas legadas (se ainda usadas)
   const { publicMetrics } = useDashboardMetrics(counts);
 
-  // Preparar dados para o componente de apresentação
+  // Preparar dados centralizados para o componente de apresentação
   const presentationProps = {
     // Dados processados
     publicMetrics,
     salesData: salesData || [],
 
-    // Estados de loading
-    isLoading,
-    isLoadingCounts,
-    isLoadingSales,
+    // Dados Consolidados para UnifiedKpiSection
+    kpiData: {
+      counts,
+      financials,
+      inventory: inventoryKpis,
+      channels: channelData
+    },
+
+    // Estados de loading consolidados
+    loadingStates: {
+      general: isLoadingGeneral,
+      counts: isLoadingCounts,
+      sales: isLoadingSales,
+      financials: isLoadingFinancials,
+      inventory: isLoadingInventory,
+      channels: isLoadingChannels
+    },
 
     // Configuração de apresentação
     userRole,

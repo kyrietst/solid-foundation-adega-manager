@@ -2,72 +2,65 @@
  * Apresentação pura do Dashboard - Centro de Comando Operacional
  * Layout Bento Grid com KPIs unificados e hierarquia visual clara
  *
- * @version 2.0.0 - Refatoração UX/UI
+ * @version 2.1.0 - Refatoração Arquitetural (Container/Presentational)
  */
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/core/api/supabase/client';
 import { Card, CardContent } from '@/shared/ui/primitives/card';
 import { TopProductsCard } from './TopProductsCard';
 import { MetricCard } from '@/features/dashboard/hooks/useDashboardMetrics';
-import { SalesDataPoint } from '@/features/dashboard/hooks/useDashboardData';
+import { SalesDataPoint, DashboardCounts, DashboardFinancials } from '@/features/dashboard/hooks/useDashboardData';
 import { SalesChartSection } from './SalesChartSection';
-import { useInventoryKpis } from '../hooks/useDashboardKpis';
-import { useDashboardData } from '../hooks/useDashboardData';
+import { InventoryKpis } from '@/features/dashboard/hooks/useDashboardKpis';
 import { LowStockAlertCard } from './LowStockAlertCard';
 import { InventoryInsightCard } from './InventoryInsightCard';
 import { DollarSign, TrendingUp, Truck, Store, Users, CreditCard } from 'lucide-react';
 import { PageHeader } from '@/shared/ui/composite/PageHeader';
 import { StatCard } from '@/shared/ui/composite/stat-card';
-import { getDataPeriodLabel, getMonthStartDate, getNowSaoPaulo } from '../utils/dateHelpers';
+import { getDataPeriodLabel, getNowSaoPaulo } from '../utils/dateHelpers';
 import { cn } from '@/core/config/utils';
+
+// Tipagem dos dados de Canais (extraído do hook)
+interface ChannelData {
+  delivery_revenue: number;
+  instore_revenue: number;
+  delivery_orders: number;
+  instore_orders: number;
+  total_orders: number;
+}
 
 export interface DashboardPresentationProps {
   publicMetrics: MetricCard[];
   salesData: SalesDataPoint[];
-  isLoading: boolean;
-  isLoadingCounts: boolean;
-  isLoadingSales: boolean;
+
+  // Dados Consolidados
+  kpiData: {
+    counts: DashboardCounts | undefined;
+    financials: DashboardFinancials | undefined;
+    inventory: InventoryKpis | undefined;
+    channels: ChannelData | undefined;
+  };
+
+  // Estados de loading
+  loadingStates: {
+    general: boolean;
+    counts: boolean;
+    sales: boolean;
+    financials: boolean;
+    inventory: boolean;
+    channels: boolean;
+  };
+
   userRole: string;
   showEmployeeNote: boolean;
 }
 
-// Hook para buscar dados de canais (Delivery vs Presencial) + contagem de vendas
-function useChannelData() {
-  return useQuery({
-    queryKey: ['channel-breakdown', 'mtd'],
-    queryFn: async () => {
-      const startDate = getMonthStartDate();
-      const endDate = getNowSaoPaulo();
-
-      // ✅ REFATORADO: Query direta (RPC foi dropada)
-      const { data: sales } = await supabase
-        .from('sales')
-        .select('delivery_type, final_amount')
-        .eq('status', 'completed')
-        .gte('created_at', startDate.toISOString())
-        .lte('created_at', endDate.toISOString())
-        .not('final_amount', 'is', null);
-
-      const deliverySales = (sales || []).filter(s => s.delivery_type === 'delivery');
-      const instoreSales = (sales || []).filter(s => s.delivery_type === 'presencial');
-
-      return {
-        delivery_revenue: deliverySales.reduce((sum, s) => sum + Number(s.final_amount || 0), 0),
-        instore_revenue: instoreSales.reduce((sum, s) => sum + Number(s.final_amount || 0), 0),
-        delivery_orders: deliverySales.length,
-        instore_orders: instoreSales.length,
-        total_orders: (sales || []).length
-      };
-    },
-    staleTime: 2 * 60 * 1000,
-    refetchOnWindowFocus: true,
-  });
-}
-
 export const DashboardPresentation: React.FC<DashboardPresentationProps> = ({
+  // publicMetrics, // Usaremos os dados diretos do kpiData para flexibilidade
+  // salesData,     // Importante para o gráfico (se fosse passado via prop para SalesChartSection)
+  kpiData,
+  loadingStates,
   showEmployeeNote,
 }) => {
   return (
@@ -83,13 +76,18 @@ export const DashboardPresentation: React.FC<DashboardPresentationProps> = ({
 
         {/* Seção de KPIs - altura uniforme */}
         <div className="mb-6">
-          <UnifiedKpiSection />
+          <UnifiedKpiSection
+            kpiData={kpiData}
+            loadingStates={loadingStates}
+          />
         </div>
 
         {/* Layout Bento Grid: 2/3 + 1/3 */}
         <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6 min-h-0">
           {/* Coluna Principal (2/3) - Gráfico de Vendas */}
           <div className="lg:col-span-2 min-h-[400px]">
+            {/* Nota: SalesChartSection ainda busca seus dados. 
+                 Idealmente seria refatorado também, mas foco é MVP da refatoração de KPIs */}
             <SalesChartSection className="h-full" />
           </div>
 
@@ -119,15 +117,25 @@ export const DashboardPresentation: React.FC<DashboardPresentationProps> = ({
   );
 };
 
+interface UnifiedKpiSectionProps {
+  kpiData: DashboardPresentationProps['kpiData'];
+  loadingStates: DashboardPresentationProps['loadingStates'];
+}
+
 /**
- * Seção de KPIs Unificada
- * 6 cards com altura uniforme, dados de canais integrados no card de Faturamento
+ * Seção de KPIs Unificada (Pure Component)
+ * Recebe todos os dados via props, sem side-effects
  */
-function UnifiedKpiSection() {
+function UnifiedKpiSection({ kpiData, loadingStates }: UnifiedKpiSectionProps) {
   const navigate = useNavigate();
-  const { data: i, isLoading: l3 } = useInventoryKpis();
-  const { counts, financials, isLoadingCounts, isLoadingFinancials } = useDashboardData(30);
-  const { data: channelData, isLoading: loadingChannels } = useChannelData();
+
+  const { counts, financials, inventory: i, channels: channelData } = kpiData;
+  const {
+    counts: isLoadingCounts,
+    financials: isLoadingFinancials,
+    inventory: isLoadingInventory,
+    channels: loadingChannels
+  } = loadingStates;
 
   // Helper para valores seguros
   const safeValue = (value: unknown, fallback: number = 0): number => {
@@ -295,7 +303,7 @@ function UnifiedKpiSection() {
               totalCost={safeValue(i?.totalCostValue, 0)}
               potentialRevenue={safeValue(i?.potentialRevenue, 0)}
               productCount={safeValue(i?.totalProducts, 0)}
-              isLoading={l3}
+              isLoading={isLoadingInventory}
               onClick={() => navigate('/inventory')}
               className="h-full"
             />
