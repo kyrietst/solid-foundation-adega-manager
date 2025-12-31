@@ -105,6 +105,7 @@ Deno.serve(async (req: Request) => {
                     id: userData.user.id,
                     name,
                     email,
+                    role, // Added role explicitly
                     created_at: new Date().toISOString(),
                     updated_at: new Date().toISOString()
                 },
@@ -113,24 +114,9 @@ Deno.serve(async (req: Request) => {
 
         if (profileError) {
             // Cleanup: delete user if profile creation fails
+            console.error('Profile creation failed:', profileError)
             await supabase.auth.admin.deleteUser(userData.user.id)
-            throw profileError
-        }
-
-        // Create role
-        const { error: roleError } = await supabase
-            .from('user_roles')
-            .insert({
-                id: crypto.randomUUID(),
-                user_id: userData.user.id,
-                role,
-                created_at: new Date().toISOString()
-            })
-
-        if (roleError) {
-            // Cleanup: delete user if role creation fails
-            await supabase.auth.admin.deleteUser(userData.user.id)
-            throw roleError
+            throw new Error(`Failed to create profile: ${profileError.message}`)
         }
 
         // Return success response
