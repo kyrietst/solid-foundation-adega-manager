@@ -1,4 +1,4 @@
-﻿export type Json =
+export type Json =
   | string
   | number
   | boolean
@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "12.2.3 (519615d)"
+    PostgrestVersion: "13.0.5"
   }
   public: {
     Tables: {
@@ -209,75 +209,36 @@ export type Database = {
       }
       batch_units: {
         Row: {
-          batch_id: string
+          batch_id: string | null
           created_at: string | null
           created_by: string | null
-          customer_id: string | null
-          defects: string | null
-          expired_at: string | null
           id: string
-          location_code: string | null
-          package_barcode: string | null
           package_code: string | null
-          package_sequence: number | null
-          product_id: string
-          quality_notes: string | null
-          reserved_at: string | null
-          sale_id: string | null
-          shelf_code: string | null
-          sold_at: string | null
+          product_id: string | null
           status: string | null
-          unit_barcode: string | null
           unit_code: string
-          unit_sequence: number
           updated_at: string | null
         }
         Insert: {
-          batch_id: string
+          batch_id?: string | null
           created_at?: string | null
           created_by?: string | null
-          customer_id?: string | null
-          defects?: string | null
-          expired_at?: string | null
           id?: string
-          location_code?: string | null
-          package_barcode?: string | null
           package_code?: string | null
-          package_sequence?: number | null
-          product_id: string
-          quality_notes?: string | null
-          reserved_at?: string | null
-          sale_id?: string | null
-          shelf_code?: string | null
-          sold_at?: string | null
+          product_id?: string | null
           status?: string | null
-          unit_barcode?: string | null
           unit_code: string
-          unit_sequence: number
           updated_at?: string | null
         }
         Update: {
-          batch_id?: string
+          batch_id?: string | null
           created_at?: string | null
           created_by?: string | null
-          customer_id?: string | null
-          defects?: string | null
-          expired_at?: string | null
           id?: string
-          location_code?: string | null
-          package_barcode?: string | null
           package_code?: string | null
-          package_sequence?: number | null
-          product_id?: string
-          quality_notes?: string | null
-          reserved_at?: string | null
-          sale_id?: string | null
-          shelf_code?: string | null
-          sold_at?: string | null
+          product_id?: string | null
           status?: string | null
-          unit_barcode?: string | null
           unit_code?: string
-          unit_sequence?: number
           updated_at?: string | null
         }
         Relationships: [
@@ -427,43 +388,16 @@ export type Database = {
           type?: string
           value?: number | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "customer_history_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "customers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "customer_history_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "mv_customer_segmentation_kpis"
-            referencedColumns: ["customer_id"]
-          },
-          {
-            foreignKeyName: "customer_history_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "v_customer_stats"
-            referencedColumns: ["customer_id"]
-          },
-        ]
+        Relationships: []
       }
       customer_insights: {
         Row: {
           calculated_at: string | null
           churn_risk: string | null
-          confidence: number | null
-          created_at: string | null
           custom_segment: string | null
           customer_id: string | null
           frequency_score: number | null
           id: string
-          insight_type: string | null
-          insight_value: string | null
-          is_active: boolean | null
           last_purchase_date: string | null
           monetary_score: number | null
           recency_score: number | null
@@ -472,15 +406,10 @@ export type Database = {
         Insert: {
           calculated_at?: string | null
           churn_risk?: string | null
-          confidence?: number | null
-          created_at?: string | null
           custom_segment?: string | null
           customer_id?: string | null
           frequency_score?: number | null
           id?: string
-          insight_type?: string | null
-          insight_value?: string | null
-          is_active?: boolean | null
           last_purchase_date?: string | null
           monetary_score?: number | null
           recency_score?: number | null
@@ -489,15 +418,10 @@ export type Database = {
         Update: {
           calculated_at?: string | null
           churn_risk?: string | null
-          confidence?: number | null
-          created_at?: string | null
           custom_segment?: string | null
           customer_id?: string | null
           frequency_score?: number | null
           id?: string
-          insight_type?: string | null
-          insight_value?: string | null
-          is_active?: boolean | null
           last_purchase_date?: string | null
           monetary_score?: number | null
           recency_score?: number | null
@@ -773,46 +697,34 @@ export type Database = {
       }
       delivery_zones: {
         Row: {
-          color_hex: string | null
+          active: boolean | null
+          base_fee: number
           created_at: string | null
-          delivery_fee: number
-          description: string | null
-          estimated_time_minutes: number
           id: string
-          is_active: boolean | null
-          minimum_order_value: number | null
-          name: string
-          polygon: Json
-          priority: number | null
+          max_distance: number | null
+          min_distance: number | null
           updated_at: string | null
+          zone_name: string
         }
         Insert: {
-          color_hex?: string | null
+          active?: boolean | null
+          base_fee?: number
           created_at?: string | null
-          delivery_fee?: number
-          description?: string | null
-          estimated_time_minutes?: number
           id?: string
-          is_active?: boolean | null
-          minimum_order_value?: number | null
-          name: string
-          polygon: Json
-          priority?: number | null
+          max_distance?: number | null
+          min_distance?: number | null
           updated_at?: string | null
+          zone_name: string
         }
         Update: {
-          color_hex?: string | null
+          active?: boolean | null
+          base_fee?: number
           created_at?: string | null
-          delivery_fee?: number
-          description?: string | null
-          estimated_time_minutes?: number
           id?: string
-          is_active?: boolean | null
-          minimum_order_value?: number | null
-          name?: string
-          polygon?: Json
-          priority?: number | null
+          max_distance?: number | null
+          min_distance?: number | null
           updated_at?: string | null
+          zone_name?: string
         }
         Relationships: []
       }
@@ -960,97 +872,34 @@ export type Database = {
       }
       expiry_alerts: {
         Row: {
-          acknowledged_at: string | null
           acknowledged_by: string | null
-          affected_packages: number | null
-          affected_units: number | null
           alert_date: string
-          alert_level: number
-          alert_type: string
-          batch_id: string
+          batch_id: string | null
           created_at: string | null
-          days_until_expiry: number
-          estimated_loss_value: number | null
-          expiry_date: string
           id: string
-          message: string
-          notification_method: string | null
-          notification_sent: boolean | null
-          notification_sent_at: string | null
-          priority: number | null
-          product_category: string | null
-          product_id: string
-          product_name: string
-          resolution_notes: string | null
-          resolved_at: string | null
+          product_id: string | null
           resolved_by: string | null
           status: string | null
-          suggested_action: string | null
-          supplier_name: string | null
-          title: string
-          updated_at: string | null
         }
         Insert: {
-          acknowledged_at?: string | null
           acknowledged_by?: string | null
-          affected_packages?: number | null
-          affected_units?: number | null
           alert_date: string
-          alert_level?: number
-          alert_type: string
-          batch_id: string
+          batch_id?: string | null
           created_at?: string | null
-          days_until_expiry: number
-          estimated_loss_value?: number | null
-          expiry_date: string
           id?: string
-          message: string
-          notification_method?: string | null
-          notification_sent?: boolean | null
-          notification_sent_at?: string | null
-          priority?: number | null
-          product_category?: string | null
-          product_id: string
-          product_name: string
-          resolution_notes?: string | null
-          resolved_at?: string | null
+          product_id?: string | null
           resolved_by?: string | null
           status?: string | null
-          suggested_action?: string | null
-          supplier_name?: string | null
-          title: string
-          updated_at?: string | null
         }
         Update: {
-          acknowledged_at?: string | null
           acknowledged_by?: string | null
-          affected_packages?: number | null
-          affected_units?: number | null
           alert_date?: string
-          alert_level?: number
-          alert_type?: string
-          batch_id?: string
+          batch_id?: string | null
           created_at?: string | null
-          days_until_expiry?: number
-          estimated_loss_value?: number | null
-          expiry_date?: string
           id?: string
-          message?: string
-          notification_method?: string | null
-          notification_sent?: boolean | null
-          notification_sent_at?: string | null
-          priority?: number | null
-          product_category?: string | null
-          product_id?: string
-          product_name?: string
-          resolution_notes?: string | null
-          resolved_at?: string | null
+          product_id?: string | null
           resolved_by?: string | null
           status?: string | null
-          suggested_action?: string | null
-          supplier_name?: string | null
-          title?: string
-          updated_at?: string | null
         }
         Relationships: [
           {
@@ -1233,48 +1082,33 @@ export type Database = {
       }
       nps_surveys: {
         Row: {
-          channel: string | null
-          comment: string | null
-          context: Json | null
           created_at: string | null
           created_by: string | null
           customer_id: string | null
-          device_info: Json | null
+          feedback: string | null
           id: string
-          response_date: string | null
           sale_id: string | null
           score: number
-          survey_type: string | null
           updated_at: string | null
         }
         Insert: {
-          channel?: string | null
-          comment?: string | null
-          context?: Json | null
           created_at?: string | null
           created_by?: string | null
           customer_id?: string | null
-          device_info?: Json | null
+          feedback?: string | null
           id?: string
-          response_date?: string | null
           sale_id?: string | null
           score: number
-          survey_type?: string | null
           updated_at?: string | null
         }
         Update: {
-          channel?: string | null
-          comment?: string | null
-          context?: Json | null
           created_at?: string | null
           created_by?: string | null
           customer_id?: string | null
-          device_info?: Json | null
+          feedback?: string | null
           id?: string
-          response_date?: string | null
           sale_id?: string | null
           score?: number
-          survey_type?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -1319,7 +1153,7 @@ export type Database = {
         Row: {
           amount: number
           budget_category: string | null
-          category_id: string
+          category_id: string | null
           created_at: string | null
           created_by: string | null
           description: string
@@ -1329,14 +1163,13 @@ export type Database = {
           payment_method: string
           receipt_url: string | null
           recurring_frequency: string | null
-          subcategory: string | null
           supplier_vendor: string | null
           updated_at: string | null
         }
         Insert: {
           amount: number
           budget_category?: string | null
-          category_id: string
+          category_id?: string | null
           created_at?: string | null
           created_by?: string | null
           description: string
@@ -1346,14 +1179,13 @@ export type Database = {
           payment_method: string
           receipt_url?: string | null
           recurring_frequency?: string | null
-          subcategory?: string | null
           supplier_vendor?: string | null
           updated_at?: string | null
         }
         Update: {
           amount?: number
           budget_category?: string | null
-          category_id?: string
+          category_id?: string | null
           created_at?: string | null
           created_by?: string | null
           description?: string
@@ -1363,7 +1195,6 @@ export type Database = {
           payment_method?: string
           receipt_url?: string | null
           recurring_frequency?: string | null
-          subcategory?: string | null
           supplier_vendor?: string | null
           updated_at?: string | null
         }
@@ -1883,13 +1714,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "fk_sales_delivery_zone_id"
-            columns: ["delivery_zone_id"]
-            isOneToOne: false
-            referencedRelation: "delivery_zones"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "sales_customer_id_fkey"
             columns: ["customer_id"]
             isOneToOne: false
@@ -2108,14 +1932,13 @@ export type Database = {
         Row: {
           date: string | null
           id: string | null
-          new_stock: string | null
+          new_stock: number | null
           notes: string | null
-          previous_stock: string | null
+          previous_stock: number | null
           product_category: string | null
           product_name: string | null
           quantity: number | null
           reason: string | null
-          reference_number: string | null
           source: string | null
           stock_change: number | null
           type: string | null
@@ -2323,6 +2146,14 @@ export type Database = {
           retained: number
         }[]
       }
+      get_customer_summary: {
+        Args: { end_date: string; start_date: string }
+        Returns: {
+          active_customers: number
+          new_customers: number
+          total_customers: number
+        }[]
+      }
       get_customer_table_data: {
         Args: never
         Returns: {
@@ -2455,6 +2286,14 @@ export type Database = {
         }[]
       }
       get_inventory_financials: { Args: never; Returns: Json }
+      get_inventory_health_metrics: {
+        Args: {
+          end_date: string
+          min_stock_default?: number
+          start_date: string
+        }
+        Returns: Json
+      }
       get_inventory_kpis: {
         Args: { p_end_date: string; p_start_date: string }
         Returns: {
@@ -2524,10 +2363,7 @@ export type Database = {
           total_saidas: number
         }[]
       }
-      get_my_role_safe: {
-        Args: never
-        Returns: Database["public"]["Enums"]["user_role"]
-      }
+      get_my_role_safe: { Args: never; Returns: string }
       get_nps_score: {
         Args: {
           customer_segment?: string
@@ -2732,20 +2568,36 @@ export type Database = {
         }
         Returns: undefined
       }
-      process_sale: {
-        Args: {
-          p_customer_id: string
-          p_discount_amount?: number
-          p_final_amount: number
-          p_is_delivery?: boolean
-          p_items: Json[]
-          p_notes?: string
-          p_payment_method_id: string
-          p_total_amount: number
-          p_user_id: string
-        }
-        Returns: Json
-      }
+      process_sale:
+        | {
+            Args: {
+              p_customer_id: string
+              p_discount_amount?: number
+              p_final_amount: number
+              p_is_delivery?: boolean
+              p_items: Json[]
+              p_notes?: string
+              p_payment_method_id: string
+              p_total_amount: number
+              p_user_id: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_customer_id: string
+              p_delivery_type?: string
+              p_discount_amount?: number
+              p_final_amount: number
+              p_is_delivery?: boolean
+              p_items: Json[]
+              p_notes?: string
+              p_payment_method_id: string
+              p_total_amount: number
+              p_user_id: string
+            }
+            Returns: Json
+          }
       sell_from_batch_fifo: {
         Args: {
           p_allow_partial?: boolean
@@ -2767,6 +2619,8 @@ export type Database = {
         }
         Returns: Json
       }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
       transfer_to_store2_holding: {
         Args: {
           p_notes?: string
@@ -2970,80 +2824,3 @@ export const Constants = {
     },
   },
 } as const
-
-export type Tables<
-  PublicTableNameOrOptions extends
-    | keyof (Database['public']['Tables'])
-    | { schema: keyof Database },
-  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-    ? keyof (Database[PublicTableNameOrOptions['schema']]['Tables'])
-    : never = never
-> = PublicTableNameOrOptions extends { schema: keyof Database }
-  ? (Database[PublicTableNameOrOptions['schema']]['Tables'])[TableName] extends {
-      Row: infer R
-    }
-    ? R
-    : never
-  : PublicTableNameOrOptions extends keyof (Database['public']['Tables'])
-  ? (Database['public']['Tables'])[PublicTableNameOrOptions] extends {
-      Row: infer R
-    }
-    ? R
-    : never
-  : never
-
-export type TablesInsert<
-  PublicTableNameOrOptions extends
-    | keyof Database['public']['Tables']
-    | { schema: keyof Database },
-  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-    ? keyof Database[PublicTableNameOrOptions['schema']]['Tables']
-    : never = never
-> = PublicTableNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicTableNameOrOptions['schema']]['Tables'][TableName] extends {
-      Insert: infer I
-    }
-    ? I
-    : never
-  : PublicTableNameOrOptions extends keyof Database['public']['Tables']
-  ? Database['public']['Tables'][PublicTableNameOrOptions] extends {
-      Insert: infer I
-    }
-    ? I
-    : never
-  : never
-
-export type TablesUpdate<
-  PublicTableNameOrOptions extends
-    | keyof Database['public']['Tables']
-    | { schema: keyof Database },
-  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-    ? keyof Database[PublicTableNameOrOptions['schema']]['Tables']
-    : never = never
-> = PublicTableNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicTableNameOrOptions['schema']]['Tables'][TableName] extends {
-      Update: infer U
-    }
-    ? U
-    : never
-  : PublicTableNameOrOptions extends keyof Database['public']['Tables']
-  ? Database['public']['Tables'][PublicTableNameOrOptions] extends {
-      Update: infer U
-    }
-    ? U
-    : never
-  : never
-
-export type Enums<
-  PublicEnumNameOrOptions extends
-    | keyof Database['public']['Enums']
-    | { schema: keyof Database },
-  EnumName extends PublicEnumNameOrOptions extends { schema: keyof Database }
-    ? keyof Database[PublicEnumNameOrOptions['schema']]['Enums']
-    : never = never
-> = PublicEnumNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicEnumNameOrOptions['schema']]['Enums'][EnumName]
-  : PublicEnumNameOrOptions extends keyof Database['public']['Enums']
-  ? Database['public']['Enums'][PublicEnumNameOrOptions]
-  : never
-

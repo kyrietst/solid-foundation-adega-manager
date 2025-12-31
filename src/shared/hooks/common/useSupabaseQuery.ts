@@ -11,6 +11,16 @@ import { supabase } from '@/core/api/supabase/client';
 import { PostgrestSingleResponse, PostgrestResponse } from '@supabase/supabase-js';
 import { Database } from '@/core/types/database.types';
 
+// ============================================================================
+// STRICT DATABASE TYPING HELPER
+// ============================================================================
+
+type TableName = keyof Database['public']['Tables'];
+type Row<K extends TableName> = Database['public']['Tables'][K]['Row'];
+type Insert<K extends TableName> = Database['public']['Tables'][K]['Insert'];
+type Update<K extends TableName> = Database['public']['Tables'][K]['Update'];
+type Column<K extends TableName> = keyof Row<K> & string;
+
 // Context7 Pattern: Custom error classes for better error handling
 export class SupabaseQueryError extends Error {
   constructor(
@@ -283,13 +293,14 @@ export function useSupabaseMutation<TData, TVariables = void>(
 // Context7 Pattern: Specialized hooks for common Supabase operations
 
 // Generic CRUD operations hook
-export function useSupabaseCRUD<T extends { id: string }>(tableName: keyof Database['public']['Tables']) {
+// REFACTORED: Now strictly constrained to valid table names and types
+export function useSupabaseCRUD<K extends TableName>(tableName: K) {
   const queryClient = useQueryClient();
 
   // Context7 Pattern: Memoized query configurations
   const queries = useMemo(() => ({
     // List all records
-    list: (filters?: Record<string, unknown>) => ({
+    list: (filters?: Partial<Row<K>>) => ({
       queryKey: ['supabase', tableName, 'list', filters],
       queryFn: async () => {
         let query = supabase.from(tableName).select('*');
@@ -297,34 +308,35 @@ export function useSupabaseCRUD<T extends { id: string }>(tableName: keyof Datab
         if (filters) {
           Object.entries(filters).forEach(([key, value]) => {
             if (value !== undefined && value !== null && value !== '') {
-              query = query.eq(key as any, value as any);
+              // Valid usage: key is from Partial<Row<K>>, query.eq accepts strictly typed columns
+              query = query.eq(key as Column<K>, value);
             }
           });
         }
 
-        return await query as any;
+        return (await query) as any;
       }
     }),
 
     // Get single record by ID
     single: (id: string) => ({
       queryKey: ['supabase', tableName, 'single', id],
-      queryFn: async () => await supabase.from(tableName).select('*').eq('id', id).single() as any
+      queryFn: async () => (await supabase.from(tableName).select('*').eq('id' as any, id).single()) as any
     })
   }), [tableName]);
 
   // Context7 Pattern: Memoized mutation configurations
   const mutations = useMemo(() => ({
     create: {
-      mutationFn: async (variables: Omit<T, 'id'>) =>
-        await supabase.from(tableName).insert([variables]).select().single(),
+      mutationFn: async (variables: Insert<K>) =>
+        (await supabase.from(tableName).insert(variables as any).select().single()) as any, // insert types can be complex, explicit cast often needed safely
       invalidateQueries: [['supabase', tableName, 'list']]
     },
 
     // Update existing record
     update: (id: string) => ({
-      mutationFn: async (variables: Partial<Omit<T, 'id'>>) =>
-        await supabase.from(tableName).update(variables).eq('id', id).select().single(),
+      mutationFn: async (variables: Update<K>) =>
+        (await supabase.from(tableName).update(variables as any).eq('id' as any, id).select().single()) as any,
       invalidateQueries: [
         ['supabase', tableName, 'list'],
         ['supabase', tableName, 'single', id]
@@ -333,7 +345,7 @@ export function useSupabaseCRUD<T extends { id: string }>(tableName: keyof Datab
 
     // Delete record
     delete: (id: string) => ({
-      mutationFn: async () => await supabase.from(tableName as any).delete().eq('id', id),
+      mutationFn: async () => (await supabase.from(tableName).delete().eq('id' as any, id)) as any,
       invalidateQueries: [['supabase', tableName, 'list']]
     })
   }), [tableName]);
@@ -342,11 +354,11 @@ export function useSupabaseCRUD<T extends { id: string }>(tableName: keyof Datab
     queries,
     mutations,
     // Context7 Pattern: Pre-configured hooks
-    useList: (filters?: Record<string, unknown>) => useSupabaseQuery(queries.list(filters)),
-    useSingle: (id: string) => useSupabaseQuery(queries.single(id)),
-    useCreate: () => useSupabaseMutation(mutations.create),
-    useUpdate: (id: string) => useSupabaseMutation(mutations.update(id)),
-    useDelete: (id: string) => useSupabaseMutation(mutations.delete(id))
+    useList: (filters?: Partial<Row<K>>) => useSupabaseQuery<Row<K>>(queries.list(filters)),
+    useSingle: (id: string) => useSupabaseQuery<Row<K>>(queries.single(id)),
+    useCreate: () => useSupabaseMutation<Row<K>, Insert<K>>(mutations.create),
+    useUpdate: (id: string) => useSupabaseMutation<Row<K>, Update<K>>(mutations.update(id)),
+    useDelete: (id: string) => useSupabaseMutation<null, void>(mutations.delete(id))
   };
 }
 
