@@ -11,7 +11,7 @@ import { useState, useMemo, useEffect, useId } from 'react';
 import { useCart, useCartTotal } from '@/features/sales/hooks/use-cart';
 import { useCustomer } from '@/features/customers/hooks/use-crm';
 import { usePaymentMethods } from '@/features/sales/hooks/use-sales';
-import { useCheckout } from '@/features/pos/hooks/useCheckout';
+import { useCheckout } from '@/features/sales/hooks/useCheckout';
 import { useDeliveryPersons } from '@/features/delivery/hooks/useDeliveryPersons';
 import { cn } from '@/core/config/utils';
 import { getGlassCardClasses, getValueClasses } from '@/core/config/theme-utils';
