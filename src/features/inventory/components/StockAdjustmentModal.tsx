@@ -14,20 +14,13 @@ import { Input } from '@/shared/ui/primitives/input';
 import { Package, Wine, AlertTriangle, Loader2, Eye, ArrowRight, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { cn } from '@/core/config/utils';
 import { getGlassInputClasses } from '@/core/config/theme-utils';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/core/api/supabase/client';
-import { useToast } from '@/shared/hooks/common/use-toast';
 import { useAuth } from '@/app/providers/AuthContext';
-import type { Product } from '@/core/types/inventory.types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/primitives/select';
-
-// ✅ MOTIVOS SIMPLIFICADOS PARA INVENTÁRIO RÁPIDO
-const ADJUSTMENT_REASONS = {
-  'inventory': { label: '📋 Inventário/Correção', emoji: '📋' },
-  'loss': { label: '💔 Perda/Quebra', emoji: '💔' },
-  'consumption': { label: '🍷 Consumo Próprio', emoji: '🍷' },
-  'purchase': { label: '📦 Chegada de Mercadoria', emoji: '📦' }
-} as const;
+import {
+  useProductStockDetails,
+  useStockAdjustment,
+  ADJUSTMENT_REASONS
+} from '@/features/inventory/hooks/useStockOperations';
 
 // Schema de validação para o formulário
 const stockAdjustmentSchema = z.object({
@@ -53,37 +46,16 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
   productId,
   onSuccess
 }) => {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
   const { user } = useAuth();
 
-  // Buscar dados do produto
+  // Hooker de operações de estoque
   const {
     data: product,
     isLoading: isLoadingProduct,
     error: productError
-  } = useQuery({
-    queryKey: ['product-dual-stock', productId],
-    queryFn: async (): Promise<Product | null> => {
-      if (!productId) return null;
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .eq('id', productId as any)
-        .single();
+  } = useProductStockDetails(productId, isOpen);
 
-      if (error) {
-        if (error.code === 'PGRST116') return null;
-        throw error;
-      }
-      return data as unknown as Product;
-    },
-    enabled: !!productId && isOpen,
-    staleTime: 0,
-    refetchOnWindowFocus: true,
-    refetchOnMount: true,
-    gcTime: 0,
-  });
+  const adjustStockMutation = useStockAdjustment();
 
   // Configuração do formulário
   const {
@@ -112,69 +84,12 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
     }
   }, [product, setValue]);
 
-  // Mutation para ajuste de estoque
-  const adjustStockMutation = useMutation({
-    mutationFn: async (formData: StockAdjustmentFormData) => {
-      if (!product) throw new Error('Produto não encontrado');
-      if (!user?.id) throw new Error('Usuário não autenticado.');
-
-      const newPackages = Number(formData.newPackages || 0);
-      const newUnitsLoose = Number(formData.newUnitsLoose || 0);
-      const reasonText = ADJUSTMENT_REASONS[formData.reason].label.replace(/^[^\s]+\s/, '');
-
-      const { data: result, error } = await supabase
-        .rpc('set_product_stock_absolute', {
-          p_product_id: productId,
-          p_new_packages: newPackages,
-          p_new_units_loose: newUnitsLoose,
-          p_reason: reasonText,
-          p_user_id: user.id
-        });
-
-      if (error) throw error;
-      const typedResult = result as unknown as { success?: boolean; error?: string };
-      if (!typedResult?.success) throw new Error(typedResult?.error || 'Erro desconhecido');
-      return typedResult;
-    },
-    onSuccess: async (result, variables) => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['products'] }),
-        queryClient.invalidateQueries({ queryKey: ['product', productId] }),
-        queryClient.invalidateQueries({ queryKey: ['product-dual-stock', productId] }),
-        queryClient.invalidateQueries({ queryKey: ['products', 'store'] }),
-        queryClient.invalidateQueries({ queryKey: ['inventory_movements'] }),
-        queryClient.invalidateQueries({ queryKey: ['kpis-inventory'] }),
-        queryClient.invalidateQueries({ queryKey: ['low-stock-products-infinite'] }),
-      ]);
-
-      toast({
-        title: "✅ Estoque ajustado!",
-        description: `Novo estoque: ${variables.newPackages} pacotes e ${variables.newUnitsLoose} unidades`,
-      });
-
-      onSuccess?.();
-      onClose();
-      reset();
-    },
-    onError: (error) => {
-      toast({
-        title: "❌ Erro ao ajustar estoque",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  });
-
-  // Cálculos de preview
   const calculations = useMemo(() => {
     if (!product) return null;
-
-    const currentPackages = Number(product.stock_packages || 0);
-    const currentUnitsLoose = Number(product.stock_units_loose || 0);
-    const newPackages = Number(watchedValues.newPackages || 0);
-    const newUnitsLoose = Number(watchedValues.newUnitsLoose || 0);
-
-    if (isNaN(currentPackages) || isNaN(newPackages)) return null;
+    const currentPackages = product.stock_packages || 0;
+    const currentUnitsLoose = product.stock_units_loose || 0;
+    const newPackages = watchedValues.newPackages || 0;
+    const newUnitsLoose = watchedValues.newUnitsLoose || 0;
 
     return {
       currentPackages,
@@ -183,7 +98,7 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
       unitsLooseChange: newUnitsLoose - currentUnitsLoose,
       hasChanges: newPackages !== currentPackages || newUnitsLoose !== currentUnitsLoose
     };
-  }, [product, watchedValues]);
+  }, [product, watchedValues.newPackages, watchedValues.newUnitsLoose]);
 
   const handleClose = () => {
     reset();
@@ -191,7 +106,20 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
   };
 
   const onSubmit = (data: StockAdjustmentFormData) => {
-    adjustStockMutation.mutate(data);
+    if (!user?.id) return;
+
+    adjustStockMutation.mutate({
+      productId,
+      newPackages: data.newPackages,
+      newUnitsLoose: data.newUnitsLoose,
+      reason: data.reason,
+      userId: user.id
+    }, {
+      onSuccess: () => {
+        onSuccess?.();
+        handleClose();
+      }
+    });
   };
 
   // Loading state

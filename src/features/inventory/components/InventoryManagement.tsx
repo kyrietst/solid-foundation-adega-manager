@@ -6,7 +6,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
 import { useGlassmorphismEffect } from '@/shared/hooks/ui/useGlassmorphismEffect';
 import { PageHeader } from '@/shared/ui/composite/PageHeader';

@@ -12,10 +12,9 @@ import {
   Truck, Store, TrendingUp, DollarSign
 } from 'lucide-react';
 import { cn } from '@/core/config/utils';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/core/api/supabase/client';
 import { KpiCards } from './KpiCards';
-import { getCurrentMonthLabel, getMonthStartDate, getNowSaoPaulo } from '../utils/dateHelpers';
+import { getCurrentMonthLabel } from '../utils/dateHelpers';
+import { useDeliveryVsInstore } from '@/features/dashboard/hooks/useDashboardMetrics';
 
 // ✅ MTD Strategy: Dashboard sempre mostra mês atual (dia 01 até hoje)
 // Para análise com períodos customizados, use a página de Reports
@@ -24,102 +23,10 @@ interface DeliveryVsInstoreComparisonProps {
   className?: string;
 }
 
-interface ComparisonData {
-  delivery_orders: number;
-  delivery_revenue: number;
-  delivery_avg_ticket: number;
-  instore_orders: number;
-  instore_revenue: number;
-  instore_avg_ticket: number;
-  delivery_growth_rate: number;
-  instore_growth_rate: number;
-}
-
 export const DeliveryVsInstoreComparison = ({ className }: DeliveryVsInstoreComparisonProps) => {
 
   // Query para dados comparativos básicos para dashboard com fallback (MTD)
-  const { data: comparison, isLoading } = useQuery({
-    queryKey: ['delivery-vs-instore-dashboard', 'mtd'],
-    queryFn: async (): Promise<ComparisonData> => {
-
-      // ✅ MTD: Calcular período do mês atual
-      const startDate = getMonthStartDate();
-      const endDate = getNowSaoPaulo();
-      const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-
-      // ✅ REFATORADO: Query direta (RPC foi dropada)
-      // Cálculo manual de métricas delivery vs presencial (MTD)
-
-      const endDate = getNowSaoPaulo();
-      const startDate = getMonthStartDate();
-
-      // Período anterior para crescimento (mês anterior completo)
-      const prevEndDate = new Date(startDate);
-      prevEndDate.setDate(prevEndDate.getDate() - 1); // Último dia do mês anterior
-      const prevStartDate = new Date(prevEndDate.getFullYear(), prevEndDate.getMonth(), 1);
-
-      // Buscar vendas atuais
-      const { data: currentSales, error: currentError } = await supabase
-        .from('sales')
-        .select('delivery_type, final_amount')
-        .eq('status', 'completed')
-        .gte('created_at', startDate.toISOString())
-        .lte('created_at', endDate.toISOString())
-        .not('final_amount', 'is', null);
-
-      if (currentError) {
-        console.error('❌ Erro ao buscar vendas atuais:', currentError);
-        throw currentError;
-      }
-
-      // Buscar vendas anteriores para cálculo de crescimento
-      const { data: prevSales } = await supabase
-        .from('sales')
-        .select('delivery_type, final_amount')
-        .eq('status', 'completed')
-        .gte('created_at', prevStartDate.toISOString())
-        .lt('created_at', startDate.toISOString())
-        .not('final_amount', 'is', null);
-
-      // Calcular métricas atuais
-      const deliverySales = (currentSales || []).filter(s => s.delivery_type === 'delivery');
-      const presencialSales = (currentSales || []).filter(s => s.delivery_type === 'presencial');
-
-      const deliveryOrders = deliverySales.length;
-      const deliveryRevenue = deliverySales.reduce((sum, s) => sum + Number(s.final_amount || 0), 0);
-      const deliveryAvgTicket = deliveryOrders > 0 ? deliveryRevenue / deliveryOrders : 0;
-
-      const instoreOrders = presencialSales.length;
-      const instoreRevenue = presencialSales.reduce((sum, s) => sum + Number(s.final_amount || 0), 0);
-      const instoreAvgTicket = instoreOrders > 0 ? instoreRevenue / instoreOrders : 0;
-
-      // Calcular crescimento (comparação com período anterior)
-      const prevDeliveryRevenue = (prevSales || [])
-        .filter(s => s.delivery_type === 'delivery')
-        .reduce((sum, s) => sum + Number(s.final_amount || 0), 0);
-      const prevInstoreRevenue = (prevSales || [])
-        .filter(s => s.delivery_type === 'presencial')
-        .reduce((sum, s) => sum + Number(s.final_amount || 0), 0);
-
-      const deliveryGrowthRate = prevDeliveryRevenue > 0 ?
-        ((deliveryRevenue - prevDeliveryRevenue) / prevDeliveryRevenue) * 100 : 0;
-      const instoreGrowthRate = prevInstoreRevenue > 0 ?
-        ((instoreRevenue - prevInstoreRevenue) / prevInstoreRevenue) * 100 : 0;
-
-      return {
-        delivery_orders: deliveryOrders,
-        delivery_revenue: deliveryRevenue,
-        delivery_avg_ticket: deliveryAvgTicket,
-        instore_orders: instoreOrders,
-        instore_revenue: instoreRevenue,
-        instore_avg_ticket: instoreAvgTicket,
-        delivery_growth_rate: deliveryGrowthRate,
-        instore_growth_rate: instoreGrowthRate
-      };
-    },
-    staleTime: 2 * 60 * 1000, // ✅ SSoT: 2 minutos (sincronizado com SalesChartSection)
-    refetchOnWindowFocus: true, // ✅ SSoT: Atualiza ao voltar para a aba
-  });
+  const { data: comparison, isLoading } = useDeliveryVsInstore();
 
   if (isLoading || !comparison) {
     return (
@@ -171,7 +78,7 @@ export const DeliveryVsInstoreComparison = ({ className }: DeliveryVsInstoreComp
       isLoading: false,
       href: '/reports?tab=delivery&section=delivery-overview',
       subLabel: `${!isNaN(deliveryRevenuePercent) ? deliveryRevenuePercent.toFixed(1) : '0.0'}%`,
-      formatType: 'text' as const // Já formatado manualmente
+      formatType: 'none' as const // Já formatado manualmente
     },
     {
       id: 'presencial',
@@ -183,7 +90,7 @@ export const DeliveryVsInstoreComparison = ({ className }: DeliveryVsInstoreComp
       isLoading: false,
       href: '/reports?tab=delivery&section=instore-overview',
       subLabel: `${!isNaN(instoreRevenuePercent) ? instoreRevenuePercent.toFixed(1) : '0.0'}%`,
-      formatType: 'text' as const // Já formatado manualmente
+      formatType: 'none' as const // Já formatado manualmente
     },
     {
       id: 'receita-total',
@@ -195,7 +102,7 @@ export const DeliveryVsInstoreComparison = ({ className }: DeliveryVsInstoreComp
       isLoading: false,
       href: '/reports?tab=delivery&section=revenue-analysis',
       subLabel: getCurrentMonthLabel(),
-      formatType: 'text' as const
+      formatType: 'none' as const
     },
     {
       id: 'ticket-medio',
@@ -207,7 +114,7 @@ export const DeliveryVsInstoreComparison = ({ className }: DeliveryVsInstoreComp
       isLoading: false,
       href: '/reports?tab=delivery&section=ticket-analysis',
       subLabel: `${formatCurrency(Math.max(comparison.delivery_avg_ticket, comparison.instore_avg_ticket))} vs ${formatCurrency(Math.min(comparison.delivery_avg_ticket, comparison.instore_avg_ticket))}`,
-      formatType: 'text' as const
+      formatType: 'none' as const
     }
   ];
 

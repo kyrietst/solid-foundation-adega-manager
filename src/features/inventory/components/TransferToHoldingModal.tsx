@@ -7,9 +7,6 @@ import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/core/api/supabase/client';
-import { useToast } from '@/shared/hooks/common/use-toast';
 import { FormDialog } from '@/shared/ui/layout/FormDialog';
 import { Input } from '@/shared/ui/primitives/input';
 import { Textarea } from '@/shared/ui/primitives/textarea';
@@ -17,6 +14,7 @@ import { Package, Box, ArrowRight, Store } from 'lucide-react';
 import { cn } from '@/core/config/utils';
 import { getGlassInputClasses } from '@/core/config/theme-utils';
 import type { Product } from '@/core/types/inventory.types';
+import { useStockTransfer } from '@/features/inventory/hooks/useStockOperations';
 
 // Schema de validação Zod
 const transferSchema = z.object({
@@ -43,8 +41,7 @@ export const TransferToHoldingModal: React.FC<TransferToHoldingModalProps> = ({
   onClose,
   onSuccess,
 }) => {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const transferMutation = useStockTransfer();
 
   const {
     register,
@@ -60,57 +57,28 @@ export const TransferToHoldingModal: React.FC<TransferToHoldingModalProps> = ({
   const packages = watch('packages');
   const unitsLoose = watch('unitsLoose');
 
-  // Mutation para transferir estoque usando RPC
-  const transferMutation = useMutation({
-    mutationFn: async (data: TransferFormData) => {
-      if (!product) throw new Error('Produto não selecionado');
-
-      const { data: result, error } = await supabase.rpc('transfer_to_store2_holding', {
-        p_product_id: product.id,
-        p_quantity_packages: data.packages,
-        p_quantity_units: data.unitsLoose,
-        p_user_id: null,
-        p_notes: data.notes || null,
-      });
-
-      if (error) {
-        console.error('Erro na transferência:', error);
-        throw error;
-      }
-
-      return result;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['products'] });
-      queryClient.invalidateQueries({ queryKey: ['products', 'for-store-toggle'] });
-
-      toast({
-        title: '✅ Transferência realizada',
-        description: `${packages} pacote(s) e ${unitsLoose} unidade(s) transferidos para Loja 2 (Depósito)`,
-        variant: 'default',
-      });
-
-      reset();
-      onClose();
-      onSuccess?.();
-    },
-    onError: (error: any) => {
-      let errorMessage = 'Erro ao transferir estoque. Tente novamente.';
-      if (error.message?.includes('Estoque insuficiente')) errorMessage = error.message;
-      else if (error.message?.includes('Produto não encontrado')) errorMessage = 'Produto não encontrado ou foi deletado.';
-
-      toast({ title: '❌ Erro na transferência', description: errorMessage, variant: 'destructive' });
-    },
-  });
-
   const onSubmit = (data: TransferFormData) => {
-    transferMutation.mutate(data);
+    if (!product) return;
+
+    transferMutation.mutate({
+      productId: product.id,
+      packages: data.packages,
+      unitsLoose: data.unitsLoose,
+      notes: data.notes
+    }, {
+      onSuccess: () => {
+        onSuccess?.();
+        handleClose();
+      }
+    });
   };
 
   const handleClose = () => {
     reset();
     onClose();
   };
+
+
 
   if (!product) return null;
 

@@ -10,28 +10,13 @@
  */
 
 import React from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { AlertTriangle, Package, RefreshCw, ArrowRight, Box } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/primitives/card';
 import { Button } from '@/shared/ui/primitives/button';
 import { Badge } from '@/shared/ui/primitives/badge';
-import { supabase } from '@/core/api/supabase/client';
 import { cn } from '@/core/config/utils';
-
-interface LowStockProduct {
-  id: string;
-  name: string;
-  current_stock: number;
-  minimum_stock: number;
-  stock_packages: number;
-  stock_units_loose: number;
-  price: number;
-  category: string;
-  limit_packages: number;
-  limit_units: number;
-  is_legacy_override: boolean;
-}
+import { useLowStockAlerts } from '@/features/dashboard/hooks/useDashboardMetrics';
 
 interface LowStockAlertCardProps {
   className?: string;
@@ -44,26 +29,7 @@ export const LowStockAlertCard: React.FC<LowStockAlertCardProps> = ({
 }) => {
   const navigate = useNavigate();
 
-  const { data: products, isLoading, error, refetch } = useQuery({
-    queryKey: ['low-stock-products', limit],
-    queryFn: async (): Promise<LowStockProduct[]> => {
-
-      // ✅ FIX: Usar RPC unificada que considera mínimo por categoria
-      // Regra: COALESCE(p.minimum_stock, c.default_min_stock, 10)
-      const { data, error } = await supabase
-        .rpc('get_low_stock_products', { p_limit: limit });
-
-      if (error) {
-        console.error('❌ Erro ao buscar produtos com estoque baixo:', error);
-        throw error;
-      }
-
-      return (data as unknown as LowStockProduct[]) || [];
-    },
-    staleTime: 2 * 60 * 1000, // 2 minutos
-    refetchInterval: 5 * 60 * 1000, // Refresh a cada 5 minutos
-    refetchOnWindowFocus: true,
-  });
+  const { data: products, isLoading, error, refetch } = useLowStockAlerts(limit);
 
   const handleViewAll = () => {
     navigate('/inventory?tab=alerts');

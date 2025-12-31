@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import {
     DollarSign, TrendingUp, TrendingDown, AlertCircle,
-    Calendar, ArrowUpRight, ArrowDownRight, Users, Wallet
+    Calendar, ArrowDownRight, Users, Wallet
 } from 'lucide-react';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid,
-    Tooltip, ResponsiveContainer, Cell, ReferenceLine
+    Tooltip, ResponsiveContainer
 } from 'recharts';
 
 import { GlassCard } from '@/shared/ui/composite/GlassCard';
@@ -221,15 +221,15 @@ export const FinancialCashFlowDashboard: React.FC<FinancialCashFlowDashboardProp
                                 <div key={i} className="flex items-center justify-between p-3 bg-gray-900/40 rounded-lg border border-gray-800 hover:border-gray-700 transition-colors">
                                     <div className="flex items-center gap-3">
                                         <div className="w-8 h-8 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-500 font-bold text-xs">
-                                            {debtor.customer?.full_name?.substring(0, 2).toUpperCase() || 'CLI'}
+                                            {debtor.customer_name?.substring(0, 2).toUpperCase() || 'CL'}
                                         </div>
                                         <div>
-                                            <p className="text-sm font-medium text-white">{debtor.customer?.full_name || 'Desconhecido'}</p>
-                                            <p className="text-xs text-amber-400">Venceu há {Math.floor((Date.now() - new Date(debtor.created_at).getTime()) / (1000 * 60 * 60 * 24))} dias</p>
+                                            <p className="text-sm font-medium text-white">{debtor.customer_name || 'Desconhecido'}</p>
+                                            <p className="text-xs text-amber-400">Venceu há {debtor.days_overdue} dias</p>
                                         </div>
                                     </div>
                                     <div className="text-right">
-                                        <p className="text-sm font-bold text-white">{formatCurrency(debtor.total_amount)}</p>
+                                        <p className="text-sm font-bold text-white">{formatCurrency(debtor.amount)}</p>
                                         <Button variant="link" className="h-auto p-0 text-xs text-blue-400">Cobrar</Button>
                                     </div>
                                 </div>

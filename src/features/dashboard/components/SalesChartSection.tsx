@@ -2,24 +2,14 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/primitives/card';
 import { Button } from '@/shared/ui/primitives/button';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/core/api/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
 import { Calendar, TrendingUp, BarChart3, ExternalLink, RefreshCw } from 'lucide-react';
 import { cn } from '@/core/config/utils';
-import { getMonthStartDate, getNowSaoPaulo, getCurrentMonthLabel } from '@/features/dashboard/utils/dateHelpers';
+import { getCurrentMonthLabel } from '@/features/dashboard/utils/dateHelpers';
+import { useSalesChart } from '@/features/dashboard/hooks/useDashboardMetrics';
 
 // ✅ SSoT: Dashboard usa RPC get_sales_chart_data para dados do gráfico
 // Mesma lógica híbrida dos KPIs (delivery_status + status)
-
-interface SalesChartData {
-  period: string;
-  period_label: string;
-  revenue: number;
-  orders: number;
-  // ✅ SSoT: Breakdown por canal (opcional, para futuras melhorias)
-  delivery_revenue?: number;
-  presencial_revenue?: number;
-}
 
 interface SalesChartSectionProps {
   className?: string;
@@ -37,80 +27,7 @@ export function SalesChartSection({ className, contentHeight = 360, cardHeight }
   const queryClient = useQueryClient();
 
   // ✅ SSoT: Usar RPC get_sales_chart_data - mesma lógica dos KPIs
-  const { data: salesData, isLoading, error, refetch } = useQuery({
-    queryKey: ['sales-chart-data', 'mtd'],
-    queryFn: async (): Promise<SalesChartData[]> => {
-      // ✅ MTD Strategy: Sempre do dia 01 do mês atual até hoje (timezone São Paulo)
-      const startDate = getMonthStartDate();
-      const endDate = getNowSaoPaulo();
-
-
-      // ✅ SSoT: Chamar RPC que usa mesma lógica híbrida dos KPIs
-      const { data: rpcData, error } = await supabase
-        .rpc('get_sales_chart_data', {
-          p_start_date: startDate.toISOString(),
-          p_end_date: endDate.toISOString()
-        });
-
-      if (error) {
-        console.error('❌ Erro ao buscar dados do gráfico via RPC:', error);
-        throw error;
-      }
-
-      // ✅ SSoT: RPC já retorna dados agregados por dia com lógica híbrida aplicada
-      // Precisamos preencher os dias sem vendas para o gráfico ficar completo
-      const dailyData = new Map<string, SalesChartData>();
-
-      // Inicializar todos os dias do mês com zero
-      const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-      for (let i = 0; i < daysDiff; i++) {
-        const date = new Date(startDate);
-        date.setDate(startDate.getDate() + i);
-        // ✅ FIX TIMEZONE: Usar data local para evitar shift de UTC
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        const dateKey = `${year}-${month}-${day}`;
-
-        // Usar variáveis diferentes para o displayDate para evitar conflito
-        const [y, m, d] = dateKey.split('-').map(Number);
-        const displayDate = new Date(y, m - 1, d);
-
-        dailyData.set(dateKey, {
-          period: dateKey,
-          period_label: displayDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
-          revenue: 0,
-          orders: 0,
-          delivery_revenue: 0,
-          presencial_revenue: 0
-        });
-      }
-
-      // Preencher com dados da RPC
-      (rpcData as any[] || []).forEach((row: any) => {
-        const dateKey = row.sale_date; // RPC retorna DATE como YYYY-MM-DD
-        if (dailyData.has(dateKey)) {
-          dailyData.set(dateKey, {
-            period: dateKey,
-            period_label: row.period_label,
-            revenue: Math.round(Number(row.total_revenue) * 100) / 100,
-            orders: Number(row.total_orders),
-            delivery_revenue: Math.round(Number(row.delivery_revenue) * 100) / 100,
-            presencial_revenue: Math.round(Number(row.presencial_revenue) * 100) / 100
-          });
-        }
-      });
-
-      // Converter para array ordenado
-      const chartData = Array.from(dailyData.values());
-
-
-      return chartData;
-    },
-    staleTime: 2 * 60 * 1000, // 2 minutos (mais fresco que antes)
-    refetchInterval: 2 * 60 * 1000,
-    refetchOnWindowFocus: true, // ✅ Atualiza ao voltar para a aba
-  });
+  const { data: salesData, isLoading, error, refetch } = useSalesChart();
 
   // ✅ SSoT: Função para forçar refresh manual
   const handleRefresh = () => {

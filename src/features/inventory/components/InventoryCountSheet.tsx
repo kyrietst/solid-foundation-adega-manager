@@ -4,28 +4,14 @@
  */
 
 import React from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/core/api/supabase/client';
-import type { Product } from '@/core/types/inventory.types';
-import { Loader2, Printer, ClipboardList } from 'lucide-react';
+import { useProducts } from '@/features/inventory/hooks/useProducts';
 import { Button } from '@/shared/ui/primitives/button';
+import { Loader2, ClipboardList, Printer } from 'lucide-react';
 import { cn } from '@/core/config/utils';
 
 export const InventoryCountSheet: React.FC = () => {
   // Buscar todos os produtos ativos
-  const { data: products, isLoading } = useQuery<Product[]>({
-    queryKey: ['products', 'count-sheet'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .is('deleted_at', null)
-        .order('name', { ascending: true });
-
-      if (error) throw error;
-      return data as Product[];
-    }
-  });
+  const { data: products, isLoading } = useProducts();
 
   const handlePrint = () => {
     window.print();

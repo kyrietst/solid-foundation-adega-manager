@@ -2,11 +2,11 @@
  * Interfaces TypeScript para componentes de customers refatorados  
  */
 
-import { 
-  CustomerProfile, 
-  CustomerInsight, 
+import {
+  CustomerProfile,
+  CustomerInsight,
   CustomerInteraction,
-  CustomerSegment 
+  CustomerSegment
 } from '@/features/customers/hooks/use-crm';
 
 // Interfaces para componentes principais
@@ -114,9 +114,12 @@ export interface CustomerOperations {
   createCustomer: (data: any) => void;
   updateCustomer: (data: any) => void;
   deleteCustomer: (id: string) => void;
+  createQuickCustomer: (data: { name: string; phone?: string | null }, options?: any) => void;
+  createQuickCustomerAsync: (data: { name: string; phone?: string | null }) => Promise<string>;
   isCreating: boolean;
   isUpdating: boolean;
   isDeleting: boolean;
+  isCreatingQuick: boolean;
 }
 
 // Interface para modal de detalhes
@@ -124,7 +127,7 @@ export interface CustomerDetailData {
   insights?: CustomerInsight[];
   interactions?: CustomerInteraction[];
   purchases?: any[]; // TODO: definir tipo específico para purchases
-  isLoadingInsights: boolean;  
+  isLoadingInsights: boolean;
   isLoadingInteractions: boolean;
   isLoadingPurchases: boolean;
 }

@@ -7,8 +7,8 @@
 import React, { useState, useEffect } from 'react';
 import { FormDialog } from '@/shared/ui/layout/FormDialog';
 import { Form } from '@/shared/ui/primitives/form';
-import { supabase } from '@/core/api/supabase/client';
 import type { Product } from '@/core/types/inventory.types';
+import { useProductResources } from '@/features/inventory/hooks/useProductResources';
 import { DeleteProductModal } from './DeleteProductModal';
 
 // Components
@@ -42,8 +42,7 @@ export const SimpleEditProductModal: React.FC<SimpleEditProductModalProps> = ({
   onSuccess
 }) => {
   const { toast } = useToast();
-  const [categories, setCategories] = useState<string[]>([]);
-  const [suppliers, setSuppliers] = useState<string[]>([]);
+  const { categories, suppliers } = useProductResources(isOpen);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [activeScanner, setActiveScanner] = useState<'main' | 'package' | null>(null);
 
@@ -57,13 +56,7 @@ export const SimpleEditProductModal: React.FC<SimpleEditProductModalProps> = ({
     onClose
   });
 
-  // Fetch Data (simpler version)
-  useEffect(() => {
-    supabase.from('categories').select('name').eq('is_active', true as any).order('name')
-      .then(({ data }) => data && setCategories((data as any[]).map(i => i.name)));
-    supabase.from('products').select('supplier').not('supplier', 'is', null).neq('supplier', '' as any)
-      .then(({ data }) => data && setSuppliers([...new Set((data as any[]).map(i => i.supplier))].sort()));
-  }, []);
+  // Fetch Data handled by useProductResources
 
   const handleBarcodeScanned = (code: string) => {
     form.setValue('barcode', code);

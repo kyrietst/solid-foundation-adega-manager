@@ -5,13 +5,12 @@
 
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/primitives/card';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/core/api/supabase/client';
 import { Users, TrendingUp, AlertCircle, Heart, DollarSign, Calendar } from 'lucide-react';
 import { LoadingSpinner } from '@/shared/ui/composite/loading-spinner';
 import { StandardReportsTable, TableColumn } from './StandardReportsTable';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { DateRange } from 'react-day-picker';
+import { useCrmReports } from '@/features/reports/hooks/useCrmReports';
 
 interface CrmReportsSectionProps {
   dateRange?: DateRange;
@@ -19,98 +18,12 @@ interface CrmReportsSectionProps {
 
 export const CrmReportsSection: React.FC<CrmReportsSectionProps> = ({ dateRange }) => {
 
-  // 1. Customer Summary (Total & New) - Uses Timezone Safe RPC
-  const { data: summaryData, isLoading: loadingSummary } = useQuery({
-    queryKey: ['crm-summary', dateRange],
-    queryFn: async () => {
-      if (!dateRange?.from || !dateRange?.to) return { total_customers: 0, new_customers: 0, active_customers: 0 };
-      const { data, error } = await supabase.rpc('get_customer_summary', {
-        start_date: dateRange.from.toISOString(),
-        end_date: dateRange.to.toISOString()
-      });
-      if (error) throw error;
-      return data?.[0] || { total_customers: 0, new_customers: 0, active_customers: 0 };
-    },
-    enabled: !!dateRange?.from,
-  });
-
-  // 2. Customer Retention (Active) - Uses Timezone Safe RPC
-  const { data: retentionData, isLoading: loadingRetention } = useQuery({
-    queryKey: ['crm-retention', dateRange],
-    queryFn: async () => {
-      if (!dateRange?.from || !dateRange?.to) return [];
-      const { data, error } = await supabase.rpc('get_customer_retention', {
-        start_date: dateRange.from.toISOString(),
-        end_date: dateRange.to.toISOString()
-      });
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!dateRange?.from,
-  });
-
-  // 3. Top Customers (LTV/Period)
-  const { data: topCustomers, isLoading: loadingTopCustomers } = useQuery({
-    queryKey: ['crm-top-customers', dateRange],
-    queryFn: async () => {
-      if (!dateRange?.from || !dateRange?.to) return [];
-      const { data, error } = await supabase.rpc('get_top_customers', {
-        start_date: dateRange.from.toISOString(),
-        end_date: dateRange.to.toISOString(),
-        limit_count: 20
-      });
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!dateRange?.from,
-  });
-
-  // 4. Segments (All Time)
-  const { data: segments, isLoading: loadingSegments } = useQuery({
-    queryKey: ['crm-segments'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('customers')
-        .select('segment, lifetime_value, last_purchase_date')
-        .not('segment', 'is', null);
-
-      if (error) throw error;
-
-      const segmentAnalysis = (data as any[] || []).reduce((acc: any, customer) => {
-        const segment = customer.segment || 'Indefinido';
-        if (!acc[segment]) {
-          acc[segment] = { segment, count: 0, total_ltv: 0, recent_active: 0 };
-        }
-        acc[segment].count += 1;
-        acc[segment].total_ltv += Number(customer.lifetime_value || 0);
-
-        if (customer.last_purchase_date) {
-          const daysSince = Math.floor((new Date().getTime() - new Date(customer.last_purchase_date).getTime()) / (86400000));
-          if (daysSince <= 30) acc[segment].recent_active += 1;
-        }
-        return acc;
-      }, {});
-
-      return Object.values(segmentAnalysis).map((seg: any) => ({
-        ...seg,
-        avg_ltv: seg.count > 0 ? seg.total_ltv / seg.count : 0,
-        retention_rate: seg.count > 0 ? (seg.recent_active / seg.count) * 100 : 0
-      }));
-    },
-  });
-
-  // 5. Birthday Analytics (All Time)
-  const { data: customersBirthday } = useQuery({
-    queryKey: ['crm-birthdays'],
-    queryFn: async () => {
-      const { data } = await supabase.from('customers').select('birthday').not('birthday', 'is', null);
-      return data || [];
-    }
-  });
+  const { summary, retention, topCustomers, segments, birthdays } = useCrmReports(dateRange);
 
   // Calculated Metrics
   const metrics = useMemo(() => {
-    if (!summaryData) return { total: 0, new: 0, active: 0 };
+    const summaryData = summary.data;
+    if (!summaryData || typeof summaryData === 'string') return { total: 0, new: 0, active: 0 };
 
     // Total: From RPC
     const total = summaryData.total_customers || 0;
@@ -122,22 +35,31 @@ export const CrmReportsSection: React.FC<CrmReportsSectionProps> = ({ dateRange 
     const active = summaryData.active_customers || 0;
 
     return { total, new: newCust, active };
-  }, [summaryData]);
+  }, [summary.data]);
 
   // Churn Analysis
   const churnAnalysis = useMemo(() => {
-    if (!segments) return { alto: 0, medio: 0, baixo: 0, muito_baixo: 0 };
+    const segmentsData = segments.data;
+    if (!segmentsData) return { alto: 0, medio: 0, baixo: 0, muito_baixo: 0 };
     const analysis = { alto: 0, medio: 0, baixo: 0, muito_baixo: 0 };
-    segments.forEach((s: any) => {
+    segmentsData.forEach((s: any) => {
       if (s.segment === 'Em Risco' || s.segment === 'Inativo') analysis.alto += s.count;
       else if (s.segment === 'Regular' && s.retention_rate < 25) analysis.medio += Math.floor(s.count * 0.3);
       else if (s.segment === 'Regular' && s.retention_rate < 50) analysis.baixo += Math.floor(s.count * 0.4);
       else analysis.muito_baixo += s.count;
     });
     return analysis;
-  }, [segments]);
+  }, [segments.data]);
 
   const formatCurrency = (val: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+
+  const loadingSummary = summary.isLoading;
+  const loadingRetention = retention.isLoading;
+  const retentionData = retention.data;
+  const loadingTopCustomers = topCustomers.isLoading;
+  const topCustomersData = topCustomers.data;
+  const segmentsData = segments.data;
+  const customersBirthday = birthdays.data;
 
   // Columns
   const customerColumns: TableColumn[] = [
@@ -211,7 +133,7 @@ export const CrmReportsSection: React.FC<CrmReportsSectionProps> = ({ dateRange 
           </CardHeader>
           <CardContent className="h-80">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={segments || []}>
+              <BarChart data={segments.data || []}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} />
                 <XAxis dataKey="segment" stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} />
                 <YAxis stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} />
@@ -231,7 +153,7 @@ export const CrmReportsSection: React.FC<CrmReportsSectionProps> = ({ dateRange 
           </CardHeader>
           <CardContent className="h-80">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={(retentionData as any[]) || []}>
+              <LineChart data={(retention.data as any[]) || []}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} />
                 <XAxis dataKey="period" stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} />
                 <YAxis stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} />
@@ -257,7 +179,7 @@ export const CrmReportsSection: React.FC<CrmReportsSectionProps> = ({ dateRange 
           </CardHeader>
           <CardContent className="h-[400px] p-0">
             <StandardReportsTable
-              data={(topCustomers as any[]) || []}
+              data={(topCustomers.data as any[]) || []}
               columns={customerColumns}
               title=""
               searchFields={['customer_name']}
@@ -301,13 +223,13 @@ export const CrmReportsSection: React.FC<CrmReportsSectionProps> = ({ dateRange 
                 Aniversariantes
               </h4>
               <div className="flex justify-between text-sm text-gray-400">
-                <span>Hoje: <span className="text-white font-bold">{customersBirthday?.filter((c: any) => {
+                <span>Hoje: <span className="text-white font-bold">{birthdays.data?.filter((c: any) => {
                   if (!c.birthday) return false;
                   const d = new Date(c.birthday);
                   const today = new Date();
                   return d.getDate() === today.getDate() && d.getMonth() === today.getMonth();
                 }).length || 0}</span></span>
-                <span>Este Mês: <span className="text-white font-bold">{customersBirthday?.filter((c: any) => {
+                <span>Este Mês: <span className="text-white font-bold">{birthdays.data?.filter((c: any) => {
                   if (!c.birthday) return false;
                   const d = new Date(c.birthday);
                   const today = new Date();

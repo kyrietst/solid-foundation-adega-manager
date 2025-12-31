@@ -7,16 +7,15 @@
  */
 
 import React from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/primitives/card';
 import { Badge } from '@/shared/ui/primitives/badge';
 import { Separator } from '@/shared/ui/primitives/separator';
-import { 
-  Clock, 
-  MapPin, 
-  User, 
-  CheckCircle, 
-  Truck, 
+import {
+  Clock,
+  MapPin,
+  User,
+  CheckCircle,
+  Truck,
   Package,
   AlertCircle,
   Navigation,
@@ -25,20 +24,7 @@ import {
 import { cn } from '@/core/config/utils';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { supabase } from '@/core/api/supabase/client';
-
-interface DeliveryTimelineEvent {
-  tracking_id: string;
-  status: string;
-  notes: string;
-  location_lat?: number;
-  location_lng?: number;
-  created_by_id?: string;
-  created_by_name: string;
-  created_at: string;
-  time_diff_minutes?: number;
-  is_current_status: boolean;
-}
+import { useDeliveryTimeline, DeliveryTimelineEvent } from '@/features/delivery/hooks/useDeliveryTimeline';
 
 interface DeliveryTimelineProps {
   saleId: string;
@@ -46,26 +32,9 @@ interface DeliveryTimelineProps {
 }
 
 export const DeliveryTimeline = ({ saleId, className }: DeliveryTimelineProps) => {
-  
+
   // Buscar timeline da entrega
-  const { data: timeline = [], isLoading, error } = useQuery({
-    queryKey: ['delivery-timeline', saleId],
-    queryFn: async (): Promise<DeliveryTimelineEvent[]> => {
-
-      const { data, error } = await supabase.rpc('get_delivery_timeline', {
-        p_sale_id: saleId
-      });
-
-      if (error) {
-        console.error('❌ Erro ao buscar timeline:', error);
-        throw error;
-      }
-
-      return data || [];
-    },
-    staleTime: 30 * 1000, // 30 segundos
-    refetchInterval: 60 * 1000, // Refetch a cada minuto
-  });
+  const { data: timeline = [], isLoading, error } = useDeliveryTimeline(saleId);
 
   const getStatusIcon = (status: string, isCurrent: boolean) => {
     const iconProps = {
@@ -87,7 +56,7 @@ export const DeliveryTimeline = ({ saleId, className }: DeliveryTimelineProps) =
 
   const getStatusColor = (status: string, isCurrent: boolean) => {
     if (!isCurrent) return 'bg-gray-600/30 border-gray-500/50';
-    
+
     switch (status) {
       case 'pending': return 'bg-yellow-500/20 border-yellow-400/50';
       case 'preparing': return 'bg-orange-500/20 border-orange-400/50';
@@ -119,7 +88,7 @@ export const DeliveryTimeline = ({ saleId, className }: DeliveryTimelineProps) =
 
   const formatTimeDiff = (minutes?: number) => {
     if (!minutes || minutes <= 0) return null;
-    
+
     if (minutes < 60) {
       return `${Math.round(minutes)} min depois`;
     } else if (minutes < 1440) { // menos de 24h
@@ -208,7 +177,7 @@ export const DeliveryTimeline = ({ saleId, className }: DeliveryTimelineProps) =
         <div className="relative">
           {/* Linha vertical da timeline */}
           <div className="absolute left-5 top-0 bottom-0 w-0.5 bg-gray-600/50"></div>
-          
+
           <div className="space-y-6">
             {timeline.map((event, index) => (
               <div key={event.tracking_id} className="relative flex gap-4">
@@ -230,14 +199,14 @@ export const DeliveryTimeline = ({ saleId, className }: DeliveryTimelineProps) =
                       )}>
                         {getStatusText(event.status)}
                       </h4>
-                      
+
                       {event.notes && (
                         <div className="flex items-start gap-2 mt-1">
                           <MessageSquare className="h-3 w-3 text-gray-500 mt-0.5 flex-shrink-0" />
                           <p className="text-sm text-gray-400">{event.notes}</p>
                         </div>
                       )}
-                      
+
                       {/* Localização se disponível */}
                       {event.location_lat && event.location_lng && (
                         <div className="flex items-center gap-2 mt-1">
@@ -253,7 +222,7 @@ export const DeliveryTimeline = ({ saleId, className }: DeliveryTimelineProps) =
                       <div className="text-sm text-gray-300">
                         {formatTime(event.created_at)}
                       </div>
-                      
+
                       {/* Diferença de tempo */}
                       {event.time_diff_minutes && formatTimeDiff(event.time_diff_minutes) && (
                         <div className="text-xs text-gray-500 mt-1">

@@ -48,9 +48,9 @@ import {
 } from 'lucide-react';
 import { formatCurrency } from '@/core/config/utils';
 import { useAuth } from '@/app/providers/AuthContext';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/core/api/supabase/client';
-import type { Product } from '@/types/inventory.types';
+// import { useQuery } from '@tanstack/react-query'; // Removed
+// import { supabase } from '@/core/api/supabase/client'; // Removed
+import type { Product } from '@/core/types/inventory.types';
 import {
   useCreateHistoricalSale,
   calculateTotalAmount,
@@ -58,6 +58,7 @@ import {
   type HistoricalSaleItem,
 } from '../hooks/use-historical-sales';
 import { toast } from 'sonner';
+import { useProducts } from '@/features/inventory/hooks/useProducts';
 
 // ============================================================================
 // TYPES
@@ -99,19 +100,12 @@ export const CustomerHistoricalSalesTab: React.FC<CustomerHistoricalSalesTabProp
 
   const { user } = useAuth();
 
-  // Buscar produtos disponíveis
-  const { data: products = [] } = useQuery({
-    queryKey: ['products', 'available'],
-    queryFn: async (): Promise<Product[]> => {
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .order('name', { ascending: true });
+  // ... imports remain the same
 
-      if (error) throw error;
-      return data || [];
-    },
-  });
+  // ... component code
+
+  // Buscar produtos disponíveis
+  const { data: products = [] } = useProducts();
 
   const { mutate: createHistoricalSale, isPending } = useCreateHistoricalSale();
 

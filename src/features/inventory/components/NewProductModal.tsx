@@ -57,7 +57,6 @@ interface NewProductModalProps {
 
 export const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSuccess }) => {
   const { toast } = useToast();
-  const queryClient = useQueryClient();
   // Categories and Suppliers are now handled by hooks
   const [activeScanner, setActiveScanner] = useState<'main' | 'package' | null>(null);
 

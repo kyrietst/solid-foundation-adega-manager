@@ -6,7 +6,6 @@
 import React from 'react';
 import { useAuth } from '@/app/providers/AuthContext';
 import { useDashboardData } from '@/features/dashboard/hooks/useDashboardData';
-import { useDashboardMetrics } from '@/features/dashboard/hooks/useDashboardMetrics';
 import { useInventoryKpis } from '@/features/dashboard/hooks/useDashboardKpis';
 import { useChannelData } from '@/features/dashboard/hooks/useChannelData';
 import { DashboardPresentation } from './DashboardPresentation';
@@ -37,13 +36,9 @@ export const DashboardContainer: React.FC = () => {
     isLoading: isLoadingChannels
   } = useChannelData();
 
-  // Processar métricas legadas (se ainda usadas)
-  const { publicMetrics } = useDashboardMetrics(counts);
-
   // Preparar dados centralizados para o componente de apresentação
   const presentationProps = {
     // Dados processados
-    publicMetrics,
     salesData: salesData || [],
 
     // Dados Consolidados para UnifiedKpiSection

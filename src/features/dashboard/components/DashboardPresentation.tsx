@@ -9,7 +9,6 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/shared/ui/primitives/card';
 import { TopProductsCard } from './TopProductsCard';
-import { MetricCard } from '@/features/dashboard/hooks/useDashboardMetrics';
 import { SalesDataPoint, DashboardCounts, DashboardFinancials } from '@/features/dashboard/hooks/useDashboardData';
 import { SalesChartSection } from './SalesChartSection';
 import { InventoryKpis } from '@/features/dashboard/hooks/useDashboardKpis';
@@ -31,7 +30,6 @@ interface ChannelData {
 }
 
 export interface DashboardPresentationProps {
-  publicMetrics: MetricCard[];
   salesData: SalesDataPoint[];
 
   // Dados Consolidados

@@ -9,20 +9,11 @@ import { SearchBar21st } from '@/shared/ui/thirdparty/search-bar-21st';
 import { LoadingSpinner } from '@/shared/ui/composite/loading-spinner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/shared/ui/primitives/dialog';
 import { Clock, User, Shield, Activity, Database, FileText, ArrowUpDown, ArrowUp, ArrowDown, Eye, X, Copy, Check } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/core/api/supabase/client';
+// import { useQuery } from '@tanstack/react-query'; // Removed
+// import { supabase } from '@/core/api/supabase/client'; // Removed
 import { cn } from '@/core/config/utils';
+import { useActivityLogs, ActivityLogRow } from '@/shared/hooks/audit/useActivityLogs'; // Imported
 
-export interface ActivityLogRow {
-  id: string;
-  actor: string | null;
-  role: string | null;
-  action: string;
-  entity: string | null;
-  entity_id: string | null;
-  details: string | null;
-  created_at: string;
-}
 
 // Badge para perfil do usuário
 const RoleBadge = ({ role }: { role: string | null }) => {
@@ -103,6 +94,8 @@ const EntityBadge = ({ entity, entityId }: { entity: string | null; entityId: st
 type SortField = 'created_at' | 'actor' | 'role' | 'action' | 'entity' | null;
 type SortDirection = 'asc' | 'desc';
 
+
+
 export default function ActivityLogsPage() {
   const [search, setSearch] = useState('');
   const [role, setRole] = useState<string | 'all'>('all');
@@ -129,29 +122,13 @@ export default function ActivityLogsPage() {
     }
   };
 
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['activity-logs', { search, role, entity, limit, sortField, sortDirection }],
-    queryFn: async (): Promise<ActivityLogRow[]> => {
-      let query = supabase
-        .from('activity_logs')
-        .select('id, actor, role, action, entity, entity_id, details, created_at')
-        .limit(limit);
-
-      if (role !== 'all') query = query.eq('role', role as any);
-      if (entity !== 'all') query = query.eq('entity', entity as any);
-      if (search) {
-        query = query.or(`details.ilike.%${search}%,action.ilike.%${search}%,actor.ilike.%${search}%`);
-      }
-
-      if (sortField) {
-        query = query.order(sortField, { ascending: sortDirection === 'asc' });
-      }
-
-      const { data, error } = await query;
-      if (error) throw error;
-      return (data || []) as ActivityLogRow[];
-    },
-    staleTime: 60_000,
+  const { data, isLoading, error } = useActivityLogs({
+    search,
+    role,
+    entity,
+    limit,
+    sortField,
+    sortDirection
   });
 
   const rows = data || [];
@@ -210,7 +187,6 @@ export default function ActivityLogsPage() {
                 onChange={(val) => setSearch(val)}
                 debounceMs={150}
                 disableResizeAnimation
-                showOnFocus
                 className="bg-black/50 border-white/10 text-white placeholder:text-gray-500 focus:border-purple-500/50 focus:ring-purple-500/20"
               />
             </div>

@@ -2,19 +2,10 @@ import React, { useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CardContent, CardHeader, CardTitle } from '@/shared/ui/primitives/card';
 import { Button } from '@/shared/ui/primitives/button';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/core/api/supabase/client';
 import { TrendingUp, Package, RefreshCw, ArrowRight } from 'lucide-react';
 import { cn } from '@/core/config/utils';
-import { getMonthStartDate, getNowSaoPaulo, getCurrentMonthLabel } from '@/features/dashboard/utils/dateHelpers';
-
-interface TopProduct {
-  product_id: string;
-  name: string;
-  category: string;
-  qty: number;
-  revenue: number;
-}
+import { getCurrentMonthLabel } from '@/features/dashboard/utils/dateHelpers';
+import { useTopProducts } from '@/features/dashboard/hooks/useDashboardMetrics';
 
 interface TopProductsCardProps {
   className?: string;
@@ -25,72 +16,7 @@ interface TopProductsCardProps {
 export const TopProductsCard = React.memo(function TopProductsCard({ className, limit = 5, cardHeight }: TopProductsCardProps) {
   const navigate = useNavigate();
 
-  const { data: topProducts, isLoading, error, refetch } = useQuery({
-    queryKey: ['top-products', 'mtd', limit],
-    queryFn: async (): Promise<TopProduct[]> => {
-      // ✅ MTD Strategy: Sempre do dia 01 do mês atual até hoje (timezone São Paulo)
-      const startDate = getMonthStartDate();
-      const endDate = getNowSaoPaulo();
-
-
-      // Buscar top produtos baseado nas vendas
-      const { data: salesData, error: salesError } = await supabase
-        .from('sale_items')
-        .select(`
-          product_id,
-          quantity,
-          unit_price,
-          products!inner(name, category)
-        `)
-        .gte('created_at', startDate.toISOString())
-        .lte('created_at', endDate.toISOString());
-
-      if (salesError) {
-        console.error('❌ Erro ao buscar vendas para top produtos:', salesError);
-        throw salesError;
-      }
-
-      // Agrupar por produto e calcular totais
-      const productMap = new Map<string, {
-        product_id: string;
-        name: string;
-        category: string;
-        qty: number;
-        revenue: number;
-      }>();
-
-      (salesData || []).forEach(item => {
-        const productId = item.product_id;
-        const quantity = Number(item.quantity) || 0;
-        const price = Number(item.unit_price) || 0;
-        const revenue = quantity * price;
-
-        if (productMap.has(productId)) {
-          const existing = productMap.get(productId)!;
-          existing.qty += quantity;
-          existing.revenue += revenue;
-        } else {
-          productMap.set(productId, {
-            product_id: productId,
-            name: (item.products as any)?.name || 'Produto sem nome',
-            category: (item.products as any)?.category || 'Sem categoria',
-            qty: quantity,
-            revenue: revenue
-          });
-        }
-      });
-
-      // Converter para array e ordenar por receita
-      const topProducts = Array.from(productMap.values())
-        .sort((a, b) => b.qty - a.qty)
-        .slice(0, limit);
-
-
-      return topProducts;
-    },
-    staleTime: 5 * 60 * 1000,
-    refetchInterval: 5 * 60 * 1000,
-  });
+  const { data: topProducts, isLoading, error, refetch } = useTopProducts(limit);
 
   // ✅ Context7 Pattern: Memoizar funções de formatação
   const formatCurrency = useCallback((value: number) => {
