@@ -29,8 +29,14 @@ interface ChannelData {
   total_orders: number;
 }
 
+import { SalesChartData, TopProduct } from '@/features/dashboard/hooks/useDashboardMetrics';
+
+// ... imports remain the same
+
 export interface DashboardPresentationProps {
-  salesData: SalesDataPoint[];
+  // Dados de Gráficos e Listas (Injetados pelo Container)
+  chartData: SalesChartData[];
+  topProducts: TopProduct[];
 
   // Dados Consolidados
   kpiData: {
@@ -48,6 +54,13 @@ export interface DashboardPresentationProps {
     financials: boolean;
     inventory: boolean;
     channels: boolean;
+    topProducts?: boolean;
+  };
+
+  // Estados de erro
+  errors: {
+    salesChart: any;
+    topProducts: any;
   };
 
   userRole: string;
@@ -55,10 +68,11 @@ export interface DashboardPresentationProps {
 }
 
 export const DashboardPresentation: React.FC<DashboardPresentationProps> = ({
-  // publicMetrics, // Usaremos os dados diretos do kpiData para flexibilidade
-  // salesData,     // Importante para o gráfico (se fosse passado via prop para SalesChartSection)
+  chartData,
+  topProducts,
   kpiData,
   loadingStates,
+  errors,
   showEmployeeNote,
 }) => {
   return (
@@ -84,15 +98,25 @@ export const DashboardPresentation: React.FC<DashboardPresentationProps> = ({
         <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6 min-h-0">
           {/* Coluna Principal (2/3) - Gráfico de Vendas */}
           <div className="lg:col-span-2 min-h-[400px]">
-            {/* Nota: SalesChartSection ainda busca seus dados. 
-                 Idealmente seria refatorado também, mas foco é MVP da refatoração de KPIs */}
-            <SalesChartSection className="h-full" />
+            <SalesChartSection
+              className="h-full"
+              data={chartData}
+              isLoading={loadingStates.sales}
+              error={errors.salesChart}
+            />
           </div>
 
           {/* Coluna Lateral (1/3) - Top Produtos + Alertas */}
           <div className="flex flex-col gap-4 min-h-[400px]">
             <div className="flex-1 min-h-0">
-              <TopProductsCard limit={4} className="h-full" />
+              {/* Passando dados e loading via props */}
+              <TopProductsCard
+                limit={4}
+                className="h-full"
+                data={topProducts}
+                isLoading={loadingStates.topProducts}
+                error={errors.topProducts}
+              />
             </div>
             <div className="flex-1 min-h-0">
               <LowStockAlertCard limit={5} className="h-full" />

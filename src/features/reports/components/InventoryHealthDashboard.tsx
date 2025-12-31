@@ -1,19 +1,15 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
     Package, AlertTriangle, TrendingDown, TrendingUp,
-    ShoppingCart, Flame, ArrowRight, AlertCircle
+    ShoppingCart, Flame, AlertCircle
 } from 'lucide-react';
-import { GlassCard } from '@/shared/ui/composite/GlassCard';
 import { StatCard } from '@/shared/ui/composite/stat-card';
-import { PageHeader } from '@/shared/ui/composite/PageHeader';
 import { LoadingSpinner } from '@/shared/ui/composite/loading-spinner';
 import { Button } from '@/shared/ui/primitives/button';
 import { cn } from '@/core/config/utils';
-import { useInventoryHealth } from '../hooks/useInventoryHealth';
-
+import { useInventoryHealth, InventoryHealthProduct } from '../hooks/useInventoryHealth';
 import { DateRange } from 'react-day-picker';
-
-// ... imports ...
+import { DataTable, TableColumn } from '@/shared/ui/layout/DataTable';
 
 interface InventoryHealthDashboardProps {
     dateRange?: DateRange;
@@ -22,9 +18,89 @@ interface InventoryHealthDashboardProps {
 export const InventoryHealthDashboard: React.FC<InventoryHealthDashboardProps> = ({ dateRange }) => {
     const { data, isLoading } = useInventoryHealth(dateRange);
 
-    // Formatação
     const formatCurrency = (val: number) =>
         new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+
+    const replenishmentColumns: TableColumn<InventoryHealthProduct>[] = useMemo(() => [
+        {
+            key: 'name',
+            title: 'Produto',
+            className: 'font-medium',
+            render: (_val, item) => (
+                <div className="flex flex-col">
+                    <span>{item.name}</span>
+                    {item.units_sold_30d !== undefined && item.units_sold_30d > 0 && (
+                        <span className="text-[10px] text-blue-400 flex items-center gap-1">
+                            <TrendingUp className="w-3 h-3" />
+                            {item.units_sold_30d} vendidos (30d)
+                        </span>
+                    )}
+                </div>
+            )
+        },
+        {
+            key: 'total_units',
+            title: 'Atual',
+            align: 'center',
+            className: 'font-bold'
+        },
+        {
+            key: 'minimum_stock',
+            title: 'Mínimo',
+            align: 'center',
+            className: 'text-gray-400'
+        },
+        {
+            key: 'status',
+            title: 'Status',
+            align: 'right',
+            render: (_val, item) => (
+                <span className={cn(
+                    "px-2 py-1 rounded-full text-xs font-medium",
+                    item.total_units === 0
+                        ? "bg-red-500/20 text-red-300 border border-red-500/30"
+                        : "bg-yellow-500/20 text-yellow-300 border border-yellow-500/30"
+                )}>
+                    {item.total_units === 0 ? "ESGOTADO" : "BAIXO"}
+                </span>
+            )
+        }
+    ], []);
+
+    const deadStockColumns: TableColumn<InventoryHealthProduct>[] = useMemo(() => [
+        {
+            key: 'name',
+            title: 'Produto',
+            className: 'font-medium'
+        },
+        {
+            key: 'total_units',
+            title: 'Qtd.',
+            align: 'center',
+            className: 'text-gray-300'
+        },
+        {
+            key: 'stuck_value',
+            title: 'Valor Parado',
+            align: 'right',
+            className: 'font-bold text-orange-300',
+            render: (val) => formatCurrency(Number(val))
+        },
+        {
+            key: 'id', // Action column
+            title: 'Ação',
+            align: 'right',
+            render: () => (
+                <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs border-orange-500/30 text-orange-400 hover:bg-orange-500/20"
+                >
+                    Promoção
+                </Button>
+            )
+        }
+    ], []);
 
     if (isLoading) {
         return (
@@ -41,8 +117,7 @@ export const InventoryHealthDashboard: React.FC<InventoryHealthDashboardProps> =
     return (
         <div className="space-y-8 pb-10">
 
-
-            {/* 2. KPIs de Patrimônio */}
+            {/* KPIs start */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <StatCard
                     title="Patrimônio em Estoque"
@@ -71,139 +146,71 @@ export const InventoryHealthDashboard: React.FC<InventoryHealthDashboardProps> =
                     formatType="number"
                 />
             </div>
+            {/* KPIs end */}
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* 3. O Que Comprar? (Sugestão de Reposição) */}
-                <div className="bg-gray-800/30 border border-gray-700/40 backdrop-blur-sm shadow-lg rounded-xl p-6 flex flex-col h-[500px]">
+                {/* Sugestão de Reposição */}
+                <div className="bg-gray-800/30 border border-gray-700/40 backdrop-blur-sm shadow-lg rounded-xl p-6 flex flex-col h-[600px]">
                     <div className="flex items-center justify-between mb-4">
                         <h3 className="text-lg font-semibold text-white flex items-center gap-2">
                             <ShoppingCart className="w-5 h-5 text-blue-400" />
                             Sugestão de Compra (Reposição)
                         </h3>
                         <span className="text-xs text-gray-400 bg-black/20 px-2 py-1 rounded-full">
-                            Ordenado por Giro
+                            Ordenado por Giro ({replenishment.length})
                         </span>
                     </div>
 
-                    <div className="overflow-auto flex-1 pr-2">
-                        <table className="w-full text-sm text-left">
-                            <thead className="text-xs text-gray-400 uppercase bg-gray-900/50 sticky top-0 backdrop-blur-md">
-                                <tr>
-                                    <th className="px-4 py-3 rounded-l-lg">Produto</th>
-                                    <th className="px-4 py-3 text-center">Atual</th>
-                                    <th className="px-4 py-3 text-center">Mínimo</th>
-                                    <th className="px-4 py-3 rounded-r-lg text-right">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-800">
-                                {replenishment.map((product, idx) => (
-                                    <tr key={idx} className="hover:bg-white/5 transition-colors group">
-                                        <td className="px-4 py-3 font-medium text-white">
-                                            <div className="flex flex-col">
-                                                <span>{product.name}</span>
-                                                {product.units_sold_30d > 0 && (
-                                                    <span className="text-[10px] text-blue-400 flex items-center gap-1">
-                                                        <TrendingUp className="w-3 h-3" />
-                                                        {product.units_sold_30d} vendidos (30d)
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </td>
-                                        <td className="px-4 py-3 text-center font-bold text-white">
-                                            {product.total_units}
-                                        </td>
-                                        <td className="px-4 py-3 text-center text-gray-400">
-                                            {product.minimum_stock}
-                                        </td>
-                                        <td className="px-4 py-3 text-right">
-                                            <span className={cn(
-                                                "px-2 py-1 rounded-full text-xs font-medium",
-                                                product.total_units === 0
-                                                    ? "bg-red-500/20 text-red-300 border border-red-500/30"
-                                                    : "bg-yellow-500/20 text-yellow-300 border border-yellow-500/30"
-                                            )}>
-                                                {product.total_units === 0 ? "ESGOTADO" : "BAIXO"}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                ))}
-                                {replenishment.length === 0 && (
-                                    <tr>
-                                        <td colSpan={4} className="px-4 py-12 text-center text-gray-500">
-                                            <div className="flex flex-col items-center gap-2">
-                                                <AlertCircle className="w-8 h-8 opacity-50" />
-                                                <p>Estoque saudável! Nenhum item crítico.</p>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
+                    <div className="flex-1 overflow-hidden">
+                        <DataTable
+                            data={replenishment}
+                            columns={replenishmentColumns}
+                            virtualization={true}
+                            rowHeight={50}
+                            itemsPerPage={50}
+                            emptyTitle="Estoque saudável!"
+                            emptyDescription="Nenhum item crítico no momento."
+                            emptyIcon={<AlertCircle className="w-8 h-8 opacity-50" />}
+                            compact
+                            glassEffect={false} // Already in a card
+                            variant="default"
+                            className="h-full border-none"
+                        />
                     </div>
                 </div>
 
-                {/* 4. O Que Queimar? (Dead Stock) */}
-                <div className="bg-gray-800/30 border border-gray-700/40 backdrop-blur-sm shadow-lg rounded-xl p-6 flex flex-col h-[500px]">
+                {/* Dead Stock */}
+                <div className="bg-gray-800/30 border border-gray-700/40 backdrop-blur-sm shadow-lg rounded-xl p-6 flex flex-col h-[600px]">
                     <div className="flex items-center justify-between mb-4">
                         <h3 className="text-lg font-semibold text-white flex items-center gap-2">
                             <Flame className="w-5 h-5 text-orange-400" />
                             O Que Queimar? (Encalhados)
                         </h3>
                         <span className="text-xs text-gray-400 bg-black/20 px-2 py-1 rounded-full">
-                            Valor Parado
+                            Valor Parado ({deadStock.length})
                         </span>
                     </div>
 
-                    <div className="overflow-auto flex-1 pr-2">
-                        <table className="w-full text-sm text-left">
-                            <thead className="text-xs text-gray-400 uppercase bg-gray-900/50 sticky top-0 backdrop-blur-md">
-                                <tr>
-                                    <th className="px-4 py-3 rounded-l-lg">Produto</th>
-                                    <th className="px-4 py-3 text-center">Qtd.</th>
-                                    <th className="px-4 py-3 text-right">Valor Parado</th>
-                                    <th className="px-4 py-3 rounded-r-lg text-right">Ação</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-800">
-                                {deadStock.map((product, idx) => (
-                                    <tr key={idx} className="hover:bg-white/5 transition-colors">
-                                        <td className="px-4 py-3 font-medium text-white">
-                                            {product.name}
-                                        </td>
-                                        <td className="px-4 py-3 text-center text-gray-300">
-                                            {product.total_units}
-                                        </td>
-                                        <td className="px-4 py-3 text-right font-bold text-orange-300">
-                                            {formatCurrency(product.stuck_value)}
-                                        </td>
-                                        <td className="px-4 py-3 text-right">
-                                            <Button
-                                                size="sm"
-                                                variant="outline"
-                                                className="h-7 text-xs border-orange-500/30 text-orange-400 hover:bg-orange-500/20"
-                                            >
-                                                Promoção
-                                            </Button>
-                                        </td>
-                                    </tr>
-                                ))}
-                                {deadStock.length === 0 && (
-                                    <tr>
-                                        <td colSpan={4} className="px-4 py-12 text-center text-gray-500">
-                                            <div className="flex flex-col items-center gap-2">
-                                                <TrendingUp className="w-8 h-8 opacity-50" />
-                                                <p>Ótimo giro! Nenhum produto encalhado.</p>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
+                    <div className="flex-1 overflow-hidden">
+                        <DataTable
+                            data={deadStock}
+                            columns={deadStockColumns}
+                            virtualization={true} // Critical: Dead stock can be huge
+                            rowHeight={50}
+                            itemsPerPage={50}
+                            emptyTitle="Ótimo giro!"
+                            emptyDescription="Nenhum produto encalhado."
+                            emptyIcon={<TrendingUp className="w-8 h-8 opacity-50" />}
+                            compact
+                            glassEffect={false}
+                            variant="default"
+                            className="h-full border-none"
+                        />
                     </div>
                 </div>
             </div>
 
-            {/* 5. Giro Rápido (Top Movers) */}
+            {/* Top Movers */}
             <div className="bg-gray-800/30 border border-gray-700/40 backdrop-blur-sm shadow-lg rounded-xl p-6">
                 <div className="flex items-center justify-between mb-6">
                     <h3 className="text-lg font-semibold text-white flex items-center gap-2">

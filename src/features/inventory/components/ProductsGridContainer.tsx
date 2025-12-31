@@ -87,6 +87,12 @@ export const ProductsGridContainer: React.FC<ProductsGridContainerProps> = ({
     openProductSelection,
     closeProductSelection,
     handleProductSelectionConfirm,
+
+    // Infinite Scroll
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isError
   } = useProductsGridLogic({ ...config, storeFilter, stockFilter });
 
   // Preparar props para apresentação
@@ -104,6 +110,12 @@ export const ProductsGridContainer: React.FC<ProductsGridContainerProps> = ({
     hasActiveFilters,
     filterDescription,
 
+    // Infinite Scroll
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isError,
+
     // Configuração
     showSearch,
     showFilters,
@@ -115,7 +127,7 @@ export const ProductsGridContainer: React.FC<ProductsGridContainerProps> = ({
     variant,
     glassEffect,
 
-    // Paginação
+    // Paginação (Ignored/Dummy)
     currentPage,
     itemsPerPage,
     totalPages,
@@ -129,7 +141,7 @@ export const ProductsGridContainer: React.FC<ProductsGridContainerProps> = ({
     onFiltersToggle: setIsFiltersOpen,
     onClearFilters: clearFilters,
     onPageChange: goToPage,
-    onItemsPerPageChange: (value: string) => setItemsPerPage(parseInt(value)),
+    onItemsPerPageChange: (_value: string) => { }, // No-op as pagination is replaced by infinite scroll
     onBarcodeScanned: handleBarcodeScanned,
     onAddToCart: handleAddToCart,
     onOpenSelection: openProductSelection,

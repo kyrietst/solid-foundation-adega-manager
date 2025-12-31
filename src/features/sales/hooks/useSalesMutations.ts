@@ -14,10 +14,10 @@ export const useUpsertSale = () => {
             const allowedRoles: AllowedRole[] = ['admin', 'employee'];
 
             // Check user profile permissions
-            const { data: profileVal, error: profileError } = await (supabase
+            const { data: profileVal, error: profileError } = await supabase
                 .from('profiles')
                 .select('role')
-                .eq('id' as any, user.id as any))
+                .eq('id', user.id)
                 .maybeSingle();
 
             const profileData = profileVal as { role: string };
@@ -30,10 +30,10 @@ export const useUpsertSale = () => {
             }
 
             // Fetch payment method details
-            const { data: paymentMethodDataVal } = await (supabase
+            const { data: paymentMethodDataVal } = await supabase
                 .from('payment_methods')
                 .select('name')
-                .eq('id' as any, saleData.payment_method_id as any))
+                .eq('id', saleData.payment_method_id)
                 .maybeSingle();
 
             const paymentMethodData = paymentMethodDataVal as { name: string };
@@ -43,23 +43,8 @@ export const useUpsertSale = () => {
             let saleResult: Database['public']['Tables']['sales']['Row'];
 
             // Construct strictly typed payload
-            // delivery_address is a string in the database, not Json
-            const formatAddress = (addr: any): string | null => {
-                if (!addr) return null;
-                if (typeof addr === 'string') return addr;
-                // Assuming standard address object structure from the error message
-                // { street: string; number: string; complement?: string; neighborhood: string; city: string; zipCode: string; reference?: string; }
-                const parts = [
-                    addr.street,
-                    addr.number ? `, ${addr.number}` : '',
-                    addr.neighborhood ? ` - ${addr.neighborhood}` : '',
-                    addr.city ? ` - ${addr.city}` : ''
-                ];
-                return parts.join('');
-            };
-
-            const deliveryAddr: string | null = saleData.delivery_address ||
-                formatAddress(saleData.deliveryData?.address);
+            // delivery_address is JSONB in the database
+            const deliveryAddr = saleData.delivery_address || saleData.deliveryData?.address || null;
 
             const isDelivery = saleData.saleType === 'delivery' || !!saleData.deliveryData;
 
@@ -93,7 +78,7 @@ export const useUpsertSale = () => {
                 const { data: updatedSaleVal, error: updateError } = await supabase
                     .from('sales')
                     .update(updatePayload)
-                    .eq('id' as any, saleId as any)
+                    .eq('id', saleId)
                     .select()
                     .single();
 
@@ -110,7 +95,7 @@ export const useUpsertSale = () => {
                     table_name: 'sales',
                     record_id: saleId,
                     old_data: null,
-                    new_data: { ...updatePayload, item_count: saleData.items.length } as unknown as Json,
+                    new_data: { ...updatePayload } as unknown as Json,
                     ip_address: '0.0.0.0'
                 };
 
@@ -120,8 +105,8 @@ export const useUpsertSale = () => {
                 // Create new sale
                 const insertPayload: any = {
                     ...baseSalePayloadPart,
-                    status: 'completed',
-                    items: saleData.items as unknown as Json
+                    status: 'completed'
+                    // items removed - handled in separate table
                 };
 
                 const { data: newSaleVal, error: insertError } = await supabase
@@ -138,13 +123,14 @@ export const useUpsertSale = () => {
 
                 // Insert Items
                 if (saleData.items.length > 0) {
-                    const itemsPayload: any[] = saleData.items.map(item => ({
+                    const itemsPayload = saleData.items.map(item => ({
                         sale_id: newSale.id,
                         product_id: item.product_id,
                         quantity: item.quantity,
                         unit_price: item.unit_price,
-                        price: item.unit_price,
-                        total: item.quantity * item.unit_price
+                        units_sold: item.units_sold,
+                        package_units: item.package_units,
+                        sale_type: item.sale_type
                     }));
 
                     const { error: itemsError } = await supabase.from('sale_items').insert(itemsPayload);
@@ -171,6 +157,7 @@ export const useUpsertSale = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['sales'] });
             queryClient.invalidateQueries({ queryKey: ['products'] });
+            queryClient.invalidateQueries({ queryKey: ['financial-metrics'] });
             toast({
                 title: 'Venda salva',
                 description: 'A venda foi processada com sucesso.',
@@ -196,10 +183,10 @@ export const useDeleteSale = () => {
         mutationFn: async ({ saleId, user }: { saleId: string; user: { id: string } }) => {
             const allowedRoles: AllowedRole[] = ['admin'];
 
-            const { data: profileVal } = await (supabase
+            const { data: profileVal } = await supabase
                 .from('profiles')
                 .select('role')
-                .eq('id' as any, user.id as any))
+                .eq('id', user.id)
                 .maybeSingle();
 
             const profileData = profileVal as { role: string };
@@ -216,6 +203,7 @@ export const useDeleteSale = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['sales'] });
             queryClient.invalidateQueries({ queryKey: ['products'] });
+            queryClient.invalidateQueries({ queryKey: ['financial-metrics'] });
             toast({
                 title: 'Venda cancelada',
                 description: 'A venda foi removida e o estoque restaurado.',

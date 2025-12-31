@@ -23,8 +23,8 @@ import {
 } from 'lucide-react';
 import { formatCurrency, cn } from '@/core/config/utils';
 import { getGlassCardClasses } from '@/core/config/theme-utils';
-import { useStockData, createProductSelection } from '@/shared/hooks/business/useStockData';
-// TODO: Mover createProductSelection para utils ou useStockData
+import { useSingleProductStock } from '@/shared/hooks/business/useSingleProductStock';
+import { createProductSelection } from '@/shared/hooks/business/useStockData';
 
 
 // Interface simplificada para seleção de produto (SSoT)
@@ -59,26 +59,39 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
   const [selectionType, setSelectionType] = useState<'unit' | 'package'>('unit');
   const [quantity, setQuantity] = useState(1);
 
-  // Buscar dados do estoque unificado
-  const { products, isLoading: isLoadingStock, checkAvailability } = useStockData();
-
-  // Encontrar o produto específico na lista SSoT
-  const product = React.useMemo(() =>
-    products.find(p => p.id === productId),
-    [products, productId]
-  );
+  // ✅ Optimization: Fetch ONLY this product's fresh data
+  const { data: product, isLoading: isLoadingStock, refetch } = useSingleProductStock(productId);
 
   const isLoadingProduct = isLoadingStock;
-  const productError = null; // useStockData trata erros internamente ou via query
+  const productError = null;
 
-  // Wrapper para refetch (opcional, já que useStockData é realtime/smart sync)
-  const refetchProduct = () => { };
+  // Wrapper para refetch
+  const refetchProduct = () => refetch();
 
-  // Verificar disponibilidade usando a função do SSoT
-  const availability = React.useMemo(() =>
-    checkAvailability(productId, quantity, selectionType === 'package'),
-    [checkAvailability, productId, quantity, selectionType]
-  );
+  // ✅ Local Availability Check (Replaces global hook helper)
+  const availability = React.useMemo(() => {
+    if (!product) return { available: false, maxUnits: 0, maxPackages: 0 };
+
+    const totalPhysicalUnits = (product.stock_packages * product.units_per_package) + product.stock_units_loose;
+    const requestedUnits = selectionType === 'package' ? quantity * product.units_per_package : quantity;
+
+    if (totalPhysicalUnits <= 0) {
+      return { available: false, maxUnits: 0, maxPackages: 0, reason: 'out_of_stock' };
+    }
+
+    const maxPackages = Math.floor(totalPhysicalUnits / product.units_per_package);
+
+    if (requestedUnits > totalPhysicalUnits) {
+      return {
+        available: false,
+        maxUnits: totalPhysicalUnits,
+        maxPackages,
+        reason: 'insufficient_quantity'
+      };
+    }
+
+    return { available: true, maxUnits: totalPhysicalUnits, maxPackages };
+  }, [product, quantity, selectionType]);
 
   const isLoadingAvailability = isLoadingStock;
 

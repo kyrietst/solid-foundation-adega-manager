@@ -6,9 +6,9 @@
  * ⚡ Depois: 500 produtos = 12-18 cards renderizados
  */
 
-import React, { useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import type { Product } from '@/types/inventory.types';
+import type { Product } from '@/core/types/inventory.types'; // Fixed path
 import { cn } from '@/core/config/utils';
 import { ProductCard } from './ProductCard';
 
@@ -24,6 +24,10 @@ interface ProductGridProps {
   variant?: 'default' | 'premium' | 'success' | 'warning' | 'error';
   glassEffect?: boolean;
   className?: string;
+  // Infinite Scroll Utils
+  fetchNextPage?: () => void;
+  hasNextPage?: boolean;
+  isFetchingNextPage?: boolean;
 }
 
 export const ProductGrid: React.FC<ProductGridProps> = ({
@@ -32,8 +36,11 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
   onAddToCart,
   onOpenSelection,
   variant = 'default',
-  glassEffect = false,  // PERFORMANCE: Desabilitado por padrão em listas longas
+  glassEffect = false,
   className = '',
+  fetchNextPage,
+  hasNextPage,
+  isFetchingNextPage
 }) => {
   const parentRef = useRef<HTMLDivElement>(null);
 
@@ -50,9 +57,24 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
   const rowVirtualizer = useVirtualizer({
     count: rows.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 500,  // Card height (~450px) + pb-6 spacing (24px) + buffer (26px)
-    overscan: 2,  // Renderizar 2 rows extras acima/abaixo para smooth scroll
+    estimateSize: () => 450, // Ajustado para altura aproximada do card
+    overscan: 2,
   });
+
+  const virtualItems = rowVirtualizer.getVirtualItems();
+
+  // Infinite Scroll Trigger
+  useEffect(() => {
+    if (!fetchNextPage || !hasNextPage || isFetchingNextPage) return;
+
+    const lastItem = virtualItems[virtualItems.length - 1];
+    if (!lastItem) return;
+
+    // Se o último item visível for um dos últimos 2 rows, carrega mais
+    if (lastItem.index >= rows.length - 2) {
+      fetchNextPage();
+    }
+  }, [virtualItems, rows.length, fetchNextPage, hasNextPage, isFetchingNextPage]);
 
   return (
     <div
@@ -71,7 +93,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
         }}
       >
         {/* APENAS rows visíveis são renderizadas */}
-        {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+        {virtualItems.map((virtualRow) => {
           const rowProducts = rows[virtualRow.index];
 
           return (
@@ -92,13 +114,20 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
                   onAddToCart={onAddToCart}
                   onOpenSelection={onOpenSelection}
                   variant={variant}
-                  glassEffect={glassEffect}  // Passar prop para controle fino
+                  glassEffect={glassEffect}
                 />
               ))}
             </div>
           );
         })}
       </div>
+
+      {/* Loading Indicator for Infinite Scroll */}
+      {isFetchingNextPage && (
+        <div className="py-4 flex justify-center w-full">
+          <span className="text-adega-platinum/70 text-sm animate-pulse">Carregando mais produtos...</span>
+        </div>
+      )}
     </div>
   );
 };

@@ -11,7 +11,8 @@ import { Eye, Edit, Package, Box, AlertTriangle, ArrowRightLeft } from 'lucide-r
 import { cn } from '@/core/config/utils';
 import { getHoverTransformClasses } from '@/core/config/theme-utils';
 import { useGlassmorphismEffect } from '@/shared/hooks/ui/useGlassmorphismEffect';
-import type { Product } from '@/types/inventory.types';
+import { OptimizedImage } from '@/shared/ui/composite/optimized-image';
+import type { Product } from '@/core/types/inventory.types';
 
 interface InventoryCardProps {
   product: Product;
@@ -67,7 +68,7 @@ export const InventoryCard: React.FC<InventoryCardProps> = ({
       {/* Imagem do produto com status overlay */}
       <div className="relative h-32 bg-gray-700/50 flex items-center justify-center">
         {product.image_url ? (
-          <img
+          <OptimizedImage
             src={product.image_url}
             alt={product.name}
             className="w-full h-full object-cover"

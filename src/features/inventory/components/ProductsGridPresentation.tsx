@@ -4,10 +4,9 @@
  */
 
 import React from 'react';
-import type { Product } from '@/types/inventory.types';
+import type { Product } from '@/core/types/inventory.types';
 import { LoadingScreen } from '@/shared/ui/composite/loading-spinner';
 import { EmptySearchResults } from '@/shared/ui/composite/empty-state';
-import { PaginationControls } from '@/shared/ui/composite/pagination-controls';
 import { BarcodeInput } from '@/features/inventory/components/BarcodeInput';
 import { ProductsHeader, AddProductButton } from './ProductsHeader';
 import { ProductFilters } from './ProductFilters';
@@ -45,13 +44,11 @@ export interface ProductsGridPresentationProps {
   variant?: 'default' | 'premium' | 'success' | 'warning' | 'error';
   glassEffect?: boolean;
 
-  // Paginação
-  currentPage: number;
-  itemsPerPage: number;
-  totalPages: number;
-  totalItems: number;
-  filteredCount: number;
-  totalProducts: number;
+  // Infinite Scroll
+  fetchNextPage: () => void;
+  hasNextPage: boolean;
+  isFetchingNextPage: boolean;
+  isError?: boolean;
 
   // Ações
   onSearchChange: (value: string) => void;
@@ -90,18 +87,15 @@ export const ProductsGridPresentation: React.FC<ProductsGridPresentationProps> =
   className,
   variant = 'default',
   glassEffect = true,
-  currentPage,
-  itemsPerPage,
-  totalPages,
-  totalItems,
-  filteredCount,
-  totalProducts,
+  fetchNextPage,
+  hasNextPage,
+  isFetchingNextPage,
+  isError,
+  // Actions
   onSearchChange,
   onCategoryChange,
   onFiltersToggle,
   onClearFilters,
-  onPageChange,
-  onItemsPerPageChange,
   onBarcodeScanned,
   onAddToCart,
   onOpenSelection,
@@ -109,11 +103,19 @@ export const ProductsGridPresentation: React.FC<ProductsGridPresentationProps> =
   onViewDetails,
   onEdit,
   onAdjustStock,
-  onTransfer, // 🏪 v3.4.0
-  storeFilter, // 🏪 v3.4.0
+  onTransfer,
+  storeFilter,
 }) => {
   if (isLoading) {
     return <LoadingScreen text="Carregando produtos..." />;
+  }
+
+  if (isError) {
+    return (
+      <div className="flex justify-center items-center h-full text-red-400">
+        Erro ao carregar produtos. Tente recarregar.
+      </div>
+    );
   }
 
   return (
@@ -123,8 +125,8 @@ export const ProductsGridPresentation: React.FC<ProductsGridPresentationProps> =
         {showHeader && (
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <ProductsHeader
-              filteredCount={filteredCount}
-              totalProducts={totalProducts}
+              filteredCount={products.length} // Usa length real carregado
+              totalProducts={products.length} // TODO: Pegar count total do servidor se disponível
               hasActiveFilters={hasActiveFilters}
             />
 
@@ -199,56 +201,42 @@ export const ProductsGridPresentation: React.FC<ProductsGridPresentationProps> =
         </div>
       </div>
 
-      {/* Grid de produtos paginado */}
+      {/* Grid de produtos INFINITO */}
       <div className="flex-1 flex flex-col min-h-0">
-        {currentProducts.length === 0 ? (
+        {products.length === 0 ? (
           <EmptySearchResults
             searchTerm={filterDescription}
             onClearSearch={onClearFilters}
           />
         ) : (
-          <>
-            <div className="flex-1 min-h-0">
-              {mode === 'inventory' ? (
-                <InventoryGrid
-                  products={currentProducts}
-                  gridColumns={gridColumns}
-                  onViewDetails={onViewDetails!}
-                  onEdit={onEdit!}
-                  onAdjustStock={onAdjustStock}
-                  onTransfer={onTransfer}
-                  storeFilter={storeFilter}
-                  variant={variant}
-                  glassEffect={glassEffect}
-                />
-              ) : (
-                <ProductGrid
-                  products={currentProducts}
-                  gridColumns={gridColumns}
-                  onAddToCart={onAddToCart}
-                  onOpenSelection={onOpenSelection}
-                  variant={variant}
-                  glassEffect={glassEffect}
-                />
-              )}
-            </div>
-
-            {/* Paginação */}
-            <div className="mt-4 flex-shrink-0">
-              <PaginationControls
-                currentPage={currentPage}
-                totalPages={totalPages}
-                totalItems={totalItems}
-                itemsPerPage={itemsPerPage}
-                onPageChange={onPageChange}
-                onItemsPerPageChange={onItemsPerPageChange}
-                itemsPerPageOptions={[12, 20, 30, 50]}
-                showItemsPerPage={true}
-                showInfo={true}
-                itemLabel="produtos"
+          <div className="flex-1 min-h-0">
+            {mode === 'inventory' ? (
+              <InventoryGrid
+                products={products}
+                gridColumns={gridColumns}
+                onViewDetails={onViewDetails!}
+                onEdit={onEdit!}
+                onAdjustStock={onAdjustStock}
+                onTransfer={onTransfer}
+                storeFilter={storeFilter}
+                variant={variant}
+                glassEffect={glassEffect}
               />
-            </div>
-          </>
+            ) : (
+              <ProductGrid
+                products={products}
+                gridColumns={gridColumns}
+                onAddToCart={onAddToCart}
+                onOpenSelection={onOpenSelection}
+                variant={variant}
+                glassEffect={glassEffect}
+                // Infinite Scroll Props
+                fetchNextPage={fetchNextPage}
+                hasNextPage={hasNextPage}
+                isFetchingNextPage={isFetchingNextPage}
+              />
+            )}
+          </div>
         )}
       </div>
     </div>

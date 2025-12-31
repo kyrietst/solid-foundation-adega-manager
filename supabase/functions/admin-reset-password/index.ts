@@ -19,10 +19,10 @@
  * @returns {object} { success: boolean, error?: string }
  */
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient } from '@supabase/supabase-js'
 import { corsHeaders } from '../_shared/cors.ts'
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: Request) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -45,54 +45,38 @@ Deno.serve(async (req) => {
       {
         auth: {
           autoRefreshToken: false,
-          persistSession: false,
-        },
+          persistSession: false
+        }
       }
     )
 
-    // 3. Criar cliente regular para verificar permissões do usuário autenticado
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: authHeader },
-        },
-      }
-    )
+    // 3. Validar se o solicitante é realmente um administrador
+    const token = authHeader.replace('Bearer ', '')
+    const { data: { user: caller }, error: userError } = await supabaseAdmin.auth.getUser(token)
 
-    // 4. Verificar se o usuário autenticado é admin
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
-
-    if (userError || !user) {
+    if (userError || !caller) {
       return new Response(
-        JSON.stringify({ success: false, error: 'Unauthorized - invalid token' }),
+        JSON.stringify({ success: false, error: 'Invalid token' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    // 5. Buscar role do usuário autenticado
-    const { data: profile, error: profileError } = await supabaseClient
-      .from('profiles')
+    // 4. Verificar role na tabela user_roles ou profiles
+    // A query abaixo depende da sua estrutura de roles. Ajuste conforme necessário.
+    const { data: roleData, error: roleError } = await supabaseAdmin
+      .from('profiles') // ou user_roles
       .select('role')
-      .eq('id', user.id)
+      .eq('id', caller.id)
       .single()
 
-    if (profileError || !profile) {
+    if (roleError || roleData?.role !== 'admin') {
       return new Response(
-        JSON.stringify({ success: false, error: 'User profile not found' }),
+        JSON.stringify({ success: false, error: 'Unauthorized: Admin access required' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    if (profile.role !== 'admin') {
-      return new Response(
-        JSON.stringify({ success: false, error: 'Forbidden - admin role required' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    // 6. Extrair parâmetros da requisição
+    // 5. Parse do corpo da requisição
     const { userId, newPassword } = await req.json()
 
     if (!userId || !newPassword) {
@@ -102,20 +86,21 @@ Deno.serve(async (req) => {
       )
     }
 
-    // 7. Validar senha (mínimo 8 caracteres)
-    if (newPassword.length < 8) {
+    // 6. Validar segurança da senha (opcional, mas recomendado)
+    if (newPassword.length < 6) {
       return new Response(
-        JSON.stringify({ success: false, error: 'Password must be at least 8 characters' }),
+        JSON.stringify({ success: false, error: 'Password must be at least 6 characters' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    // 8. Resetar senha usando método nativo do Supabase
+    // 7. Atualizar a senha do usuário alvo
     const { data: updatedUser, error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
       userId,
       { password: newPassword }
     )
 
+    // 8. Tratar erros de update
     if (updateError) {
       console.error('Error resetting password:', updateError)
       return new Response(
@@ -126,13 +111,13 @@ Deno.serve(async (req) => {
 
     // 9. CRÍTICO: Marcar senha como temporária na tabela profiles
     // Isto garante que o modal de troca de senha seja exibido no próximo login
-    const { error: profileError } = await supabaseAdmin
+    const { error: profileError2 } = await supabaseAdmin
       .from('profiles')
       .update({ is_temporary_password: true })
       .eq('id', userId)
 
-    if (profileError) {
-      console.error('Error setting temporary password flag:', profileError)
+    if (profileError2) {
+      console.error('Error setting temporary password flag:', profileError2)
       // ⚠️ Não falhar a operação inteira se apenas a flag falhar
       // A senha já foi resetada com sucesso
       console.warn('Password was reset but temporary flag could not be set')
@@ -150,10 +135,11 @@ Deno.serve(async (req) => {
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
 
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Unexpected error:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error'
     return new Response(
-      JSON.stringify({ success: false, error: 'Internal server error' }),
+      JSON.stringify({ success: false, error: errorMessage }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }

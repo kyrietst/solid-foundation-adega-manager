@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
     DollarSign, TrendingUp, TrendingDown, AlertCircle,
     Calendar, ArrowDownRight, Users, Wallet
@@ -63,17 +63,25 @@ export const FinancialCashFlowDashboard: React.FC<FinancialCashFlowDashboardProp
     const isLoading = isLoadingCashFlow || isLoadingDebtors || isLoadingExpenses;
 
     // Derived Metrics
-    const totalRevenue = cashFlowData.reduce((acc: number, curr: any) => acc + (curr.total_amount || 0), 0);
-    const totalExpenses = topExpensesList.reduce((acc: number, curr: any) => acc + (curr.amount || 0), 0);
-    const netProfit = totalRevenue - totalExpenses;
+    const totalRevenue = useMemo(() => {
+        return cashFlowData.reduce((acc: number, curr: any) => acc + (curr.total_amount || 0), 0);
+    }, [cashFlowData]);
+
+    const totalExpenses = useMemo(() => {
+        return topExpensesList.reduce((acc: number, curr: any) => acc + (curr.amount || 0), 0);
+    }, [topExpensesList]);
+
+    const netProfit = useMemo(() => {
+        return totalRevenue - totalExpenses;
+    }, [totalRevenue, totalExpenses]);
 
     // KPI logic
-    const kpis = {
+    const kpis = useMemo(() => ({
         revenue: totalRevenue,
         expenses: totalExpenses,
         profit: netProfit,
         receivables: 0
-    };
+    }), [totalRevenue, totalExpenses, netProfit]);
 
     // Handlers
     const handlePeriodChange = (value: string) => {

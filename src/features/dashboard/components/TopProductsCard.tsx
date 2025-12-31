@@ -5,18 +5,22 @@ import { Button } from '@/shared/ui/primitives/button';
 import { TrendingUp, Package, RefreshCw, ArrowRight } from 'lucide-react';
 import { cn } from '@/core/config/utils';
 import { getCurrentMonthLabel } from '@/features/dashboard/utils/dateHelpers';
-import { useTopProducts } from '@/features/dashboard/hooks/useDashboardMetrics';
+import { TopProduct } from '@/features/dashboard/hooks/useDashboardMetrics';
 
 interface TopProductsCardProps {
   className?: string;
   limit?: number;
-  cardHeight?: number; // altura fixa do card (para alinhar com outros cards)
+  cardHeight?: number;
+  data: TopProduct[];
+  isLoading?: boolean;
+  error?: any;
 }
 
-export const TopProductsCard = React.memo(function TopProductsCard({ className, limit = 5, cardHeight }: TopProductsCardProps) {
+export const TopProductsCard = React.memo(function TopProductsCard({ className, limit = 5, cardHeight, data: topProducts, isLoading, error }: TopProductsCardProps) {
   const navigate = useNavigate();
 
-  const { data: topProducts, isLoading, error, refetch } = useTopProducts(limit);
+  // Hooks removidos - Componente agora é "Puro"
+  // const { data: topProducts, isLoading, error, refetch } = useTopProducts(limit);
 
   // ✅ Context7 Pattern: Memoizar funções de formatação
   const formatCurrency = useCallback((value: number) => {
@@ -50,7 +54,9 @@ export const TopProductsCard = React.memo(function TopProductsCard({ className, 
   };
 
   const handleRefresh = () => {
-    refetch();
+    // refetch();
+    // TODO: Prop onRefresh
+    window.location.reload();
   };
 
   if (error) {

@@ -6,15 +6,16 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Calendar, TrendingUp, BarChart3, ExternalLink, RefreshCw } from 'lucide-react';
 import { cn } from '@/core/config/utils';
 import { getCurrentMonthLabel } from '@/features/dashboard/utils/dateHelpers';
-import { useSalesChart } from '@/features/dashboard/hooks/useDashboardMetrics';
+import { SalesChartData } from '@/features/dashboard/hooks/useDashboardMetrics';
 
-// ✅ SSoT: Dashboard usa RPC get_sales_chart_data para dados do gráfico
-// Mesma lógica híbrida dos KPIs (delivery_status + status)
-
+// ✅ SSoT: Recebe dados do pai (Dashboard Container) - Sem fetch interno
 interface SalesChartSectionProps {
   className?: string;
   contentHeight?: number;
-  cardHeight?: number; // altura fixa do card (para alinhar com outros cards)
+  cardHeight?: number;
+  data: SalesChartData[]; // ✅ Prop Data
+  isLoading?: boolean;    // ✅ Prop Loading
+  error?: any;            // ✅ Prop Error
 }
 
 const chartTypes = [
@@ -22,18 +23,13 @@ const chartTypes = [
   { value: 'bar', label: 'Barras', icon: BarChart3 }
 ];
 
-export function SalesChartSection({ className, contentHeight = 360, cardHeight }: SalesChartSectionProps) {
+export function SalesChartSection({ className, contentHeight = 360, cardHeight, data: salesData, isLoading, error }: SalesChartSectionProps) {
   const [chartType, setChartType] = useState<'line' | 'bar'>('line');
-  const queryClient = useQueryClient();
 
-  // ✅ SSoT: Usar RPC get_sales_chart_data - mesma lógica dos KPIs
-  const { data: salesData, isLoading, error, refetch } = useSalesChart();
-
-  // ✅ SSoT: Função para forçar refresh manual
+  // Refetch manual removido ou passado via prop (por enquanto simplificado)
   const handleRefresh = () => {
-    queryClient.invalidateQueries({ queryKey: ['sales-chart-data'] });
-    queryClient.invalidateQueries({ queryKey: ['delivery-vs-instore-dashboard'] });
-    refetch();
+    // Implementação futura: onRefresh prop
+    window.location.reload(); // Fallback simples temporário
   };
 
   const formatCurrency = (value: number) => {

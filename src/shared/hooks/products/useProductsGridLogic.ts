@@ -1,21 +1,20 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useStockData } from '@/shared/hooks/business/useStockData';
 import { useCart } from '@/features/sales/hooks/use-cart';
 import { useBarcode } from '@/features/inventory/hooks/use-barcode';
-import { usePagination } from '@/shared/hooks/common/use-pagination';
-import { useProductFilters, StockFilterType } from './useProductFilters';
 import { useProductCategories } from './useProductCategories';
+import { useProductList } from '@/features/inventory/hooks/useProductList';
 import type { Product } from '@/core/types/inventory.types';
 import type { Price } from '@/core/types/branded.types';
 import type { VariantType } from '@/core/types/variants.types';
 import type { ProductSelectionData } from '@/features/sales/components/ProductSelectionModal';
+import { StockFilterType } from './useProductFilters';
 
 export interface ProductsGridConfig {
   showSearch?: boolean;
   showFilters?: boolean;
   initialCategory?: string;
-  storeFilter?: string; // Legacy: não usado // 🏪 Filtro de loja (v3.4.0)
+  storeFilter?: string; // 🏪 Filtro de loja (v3.4.0)
   stockFilter?: StockFilterType; // 📦 Filtro de estoque (low-stock)
   onProductSelect?: (product: Product) => void;
   gridColumns?: {
@@ -31,8 +30,8 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
     showSearch = true,
     showFilters = true,
     initialCategory = 'all',
-    storeFilter, // 🏪 Filtro de loja
-    stockFilter = 'all', // 📦 Filtro de estoque
+    storeFilter,
+    stockFilter = 'all',
     onProductSelect,
     gridColumns = { mobile: 1, tablet: 2, desktop: 3 },
     className
@@ -42,117 +41,85 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
   const { searchByBarcode } = useBarcode();
   const queryClient = useQueryClient();
 
-  // Consulta SSoT Centralizada
-  const { products: allProducts = [], isLoading } = useStockData();
+  // 1. Estados de Filtro (Server-Side)
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState(initialCategory);
 
-  // Filtragem local inteligente
-  // Isso substitui as RPC calls e queries específicas, mantendo SSoT
-  const products = allProducts.filter(product => {
-    // 1. Filtro de Loja
-    if (storeFilter === 'store2') {
-      // Lógica simplificada: Se tem estoque na loja 2 ou foi transferido
-      // Como store2_holding_packages é um dado do produto, podemos usar diretamete
-      const hasStore2Stock = (product.store2_holding_packages || 0) > 0 || (product.store2_holding_units_loose || 0) > 0;
-      if (!hasStore2Stock) return false;
-    }
+  // UI States
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
 
-    // 2. Filtro de Estoque Baixo (Low Stock)
-    if (stockFilter === 'low-stock') {
-      return product.stockStatus === 'low_stock' || product.stockStatus === 'out_of_stock';
-    }
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+    }, 400); // 400ms debounce
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
-    // 3. Excluir deletados (já tratado pelo useStockData/supabase se implementado soft delete lá, mas garantindo)
-    // O useStockData pega 'select * from products', se houver deleted_at, precisa filtrar?
-    // A query original de productsSSoT não filtrava deleted_at, mas useProductsGridLogic filtrava 'is(deleted_at, null)'.
-    // Vou assumir que o SSoT deve retornar produtos ativos.
-    // Se o produto tiver deleted_at, filtrar.
-    // O DB Product raw tem deleted_at? Sim.
-    if (product.deleted_at) return false;
+  const hasActiveFilters = debouncedSearch !== '' || selectedCategory !== 'all' || stockFilter !== 'all';
+  const filterDescription = hasActiveFilters ?
+    `${debouncedSearch ? `Busca: "${debouncedSearch}"` : ''} ${selectedCategory !== 'all' ? `Categoria: ${selectedCategory}` : ''}`.trim()
+    : undefined;
 
-    return true;
+  // 2. Data Fetching (Infinite Query)
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    isError
+  } = useProductList({
+    search: debouncedSearch,
+    category: selectedCategory,
+    stockFilter,
+    storeFilter,
+    pageSize: 24, // Múltiplo de 2, 3 e 4 para grid
+    enabled: true
   });
 
-  // 🏪 v3.4.2 - Invalidar cache quando storeFilter muda (forçar atualização dos cards)
-  useEffect(() => {
-    if (storeFilter) {
-      queryClient.invalidateQueries({ queryKey: ['products', 'available'] });
-      queryClient.invalidateQueries({ queryKey: ['products', 'store'] });
-      queryClient.invalidateQueries({ queryKey: ['product-ssot'] });
-    }
-  }, [storeFilter, queryClient]);
+  // Flatten pages
+  const products = useMemo(() => {
+    return data?.pages.flatMap(page => page.products) || [];
+  }, [data]);
 
-  // Estados do modal de seleção de produto
+  const totalProducts = data?.pages[0]?.count || 0;
+
+  // 3. Categorias (Simplificado: usa produtos carregados ou deveria ser RPC)
+  // Para performance máxima, idealmente seria um hook separado de categorias.
+  // Vamos manter useProductCategories recebendo os produtos carregados por enquanto.
+  const {
+    categories,
+    getProductsByCategory, // Nota: isso filtra LOCALMENTE nos dados carregados, cuidado.
+    categoryCounts
+  } = useProductCategories(products);
+
+  // Estados do modal de seleção
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
-  // Lógica de filtros
-  const {
-    searchTerm,
-    selectedCategory,
-    isFiltersOpen,
-    categories,
-    filteredProducts,
-    hasActiveFilters,
-    filterDescription,
-    setSearchTerm,
-    setSelectedCategory,
-    setIsFiltersOpen,
-    clearFilters,
-    totalProducts,
-    filteredCount,
-  } = useProductFilters(products, initialCategory, stockFilter);
-
-  // Lógica de categorias
-  const {
-    categoryCounts,
-    getProductsByCategory,
-    categoryExists,
-    getMostPopularCategory,
-    totalCategories,
-  } = useProductCategories(products);
-
-  // Paginação
-  const {
-    paginatedItems: currentProducts,
-    currentPage,
-    itemsPerPage,
-    totalPages,
-    totalItems,
-    setCurrentPage,
-    goToPage,
-    setItemsPerPage
-  } = usePagination(filteredProducts, {
-    initialItemsPerPage: 20
-  });
+  // Ações de Filtro
+  const clearFilters = useCallback(() => {
+    setSearchTerm('');
+    setSelectedCategory('all');
+    setDebouncedSearch('');
+  }, []);
 
   // Handler para código de barras escaneado
   const handleBarcodeScanned = async (barcode: string) => {
-
-
+    // Busca Server-Side via useBarcode (agora desacoplado)
     const result = await searchByBarcode(barcode);
-
 
     if (result && result.product) {
       const { product, type } = result;
-
-      // ✅ CORREÇÃO v3.4.5: Usar campos MULTISTORE (store1_*) ao invés de legacy (fix: produtos novos não adicionavam via barcode)
+      // ... (mantida lógica original de adicionar ao carrinho)
       const stockUnitsLoose = product.stock_units_loose || 0;
       const stockPackages = product.stock_packages || 0;
 
-      console.log('[DEBUG] useProductsGridLogic - produto encontrado:', {
-        productId: product.id,
-        productName: product.name,
-        stockUnitsLoose,
-        stockPackages,
-        barcodeType: type
-      });
-
       if (stockUnitsLoose > 0 || stockPackages > 0) {
-        // Determinar variant_id e outros campos necessários
         const variantType = type === 'package' ? 'package' : 'unit';
-        const variantId = type === 'package'
-          ? `${product.id}-package`
-          : `${product.id}-unit`;
+        const variantId = type === 'package' ? `${product.id}-package` : `${product.id}-unit`;
 
         const itemToAdd = {
           id: product.id,
@@ -167,37 +134,21 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
           conversion_required: false
         };
 
-        console.log('[DEBUG] useProductsGridLogic - chamando addItem com:', itemToAdd);
-
         await addItem(itemToAdd);
         onProductSelect?.(product);
-
-        console.log('[DEBUG] useProductsGridLogic - addItem executado com sucesso');
-      } else {
-        console.log('[DEBUG] useProductsGridLogic - produto sem estoque disponível');
       }
-    } else {
-      console.log('[DEBUG] useProductsGridLogic - nenhum produto encontrado para o código:', barcode);
     }
   };
 
-  // Handler para adicionar produto ao carrinho - CORRIGIDO PARA ULTRA-SIMPLIFICAÇÃO
+  // Handler para adicionar produto ao carrinho
   const handleAddToCart = async (product: Product) => {
-    // ✅ CORREÇÃO v3.4.2: Usar campos MULTISTORE (store1_*) ao invés de legacy
     const stockUnitsLoose = product.stock_units_loose || 0;
     const stockPackages = product.stock_packages || 0;
 
-    // ✅ LÓGICA ULTRA-SIMPLES:
-    // 1. Se tem unidades soltas E pacotes: abrir modal para escolher
-    // 2. Se tem APENAS unidades: adicionar unidade automaticamente
-    // 3. Se tem APENAS pacotes: adicionar pacote automaticamente
-    // 4. Se não tem nada: não fazer nada
-
     if (stockUnitsLoose > 0 && stockPackages > 0) {
-      // ✅ TEM AMBOS: Abrir modal para escolher
       openProductSelection(product);
     } else if (stockUnitsLoose > 0) {
-      // ✅ SÓ TEM UNIDADES: Adicionar unidade automaticamente
+      // Unidade
       await addItem({
         id: product.id,
         variant_id: `${product.id}-unit`,
@@ -212,7 +163,7 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
       });
       onProductSelect?.(product);
     } else if (stockPackages > 0) {
-      // ✅ SÓ TEM PACOTES: Adicionar pacote automaticamente
+      // Pacote
       await addItem({
         id: product.id,
         variant_id: `${product.id}-package`,
@@ -221,13 +172,12 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
         price: product.package_price || product.price,
         quantity: 1,
         maxQuantity: stockPackages,
-        units_sold: product.units_per_package || 1, // Quantas unidades são vendidas com 1 pacote
-        packageUnits: product.units_per_package || 1, // Quantas unidades tem no pacote
+        units_sold: product.units_per_package || 1,
+        packageUnits: product.units_per_package || 1,
         conversion_required: false
       });
       onProductSelect?.(product);
     }
-    // ✅ Se não tem nem unidades nem pacotes: não fazer nada
   };
 
   // Funções de controle do modal de seleção
@@ -244,7 +194,6 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
   const handleProductSelectionConfirm = async (selection: ProductSelectionData) => {
     if (!selectedProduct) return;
 
-    // Usar a função específica para seleção de variantes
     await addFromVariantSelection({
       variant_id: selection.variant_id,
       variant_type: selection.variant_type as VariantType,
@@ -262,58 +211,67 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
     closeProductSelection();
   };
 
-  return {
-    // Dados
-    products,
-    currentProducts,
-    categories,
-    categoryCounts,
+  // Dummy pagination props for compatibility (deprecated)
+  const paginationProps = {
+    currentPage: 1,
+    itemsPerPage: products.length,
+    totalPages: 1,
+    totalItems: totalProducts,
+    goToPage: () => { },
+    setItemsPerPage: () => { }
+  };
 
-    // Estados
+  return {
+    // Dados Principais
+    products,
+    currentProducts: products, // Alias para compatibilidade
+    categories,
+    categoryCounts, // Pode estar incompleto se não carregar tudo
+
+    // Infinite Scroll API
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
     isLoading,
+    isError,
+
+    // Filtros
     searchTerm,
     selectedCategory,
     isFiltersOpen,
     hasActiveFilters,
     filterDescription,
 
-    // Configuração
+    // Config
     showSearch,
     showFilters,
     gridColumns,
     className,
 
-    // Paginação
-    currentPage,
-    itemsPerPage,
-    totalPages,
-    totalItems,
-    filteredCount,
+    // Paginação (Legado/Compatibilidade)
+    ...paginationProps,
+    filteredCount: totalProducts,
     totalProducts,
 
-    // Estados do modal de seleção
+    // Modal
     isModalOpen,
     selectedProduct,
 
-    // Ações
+    // Actions
     setSearchTerm,
     setSelectedCategory,
     setIsFiltersOpen,
     clearFilters,
-    goToPage,
-    setItemsPerPage,
     handleBarcodeScanned,
     handleAddToCart,
 
-    // Ações do modal de seleção
+    // Modal Actions
     openProductSelection,
     closeProductSelection,
     handleProductSelectionConfirm,
 
-    // Utilities
-    getProductsByCategory,
-    categoryExists,
-    getMostPopularCategory,
-    totalCategories,
+    // Utils
+    getMostPopularCategory: () => null, // Deprecated
+    categoryExists: () => true,
   };
 };

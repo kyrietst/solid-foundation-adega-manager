@@ -8,9 +8,10 @@ import React from 'react';
 import { Button } from '@/shared/ui/primitives/button';
 import { Badge } from '@/shared/ui/primitives/badge';
 import { Plus, Package, Box, AlertTriangle } from 'lucide-react';
-import type { Product } from '@/types/inventory.types';
+import type { Product } from '@/core/types/inventory.types';
 import { formatCurrency, cn } from '@/core/config/utils';
 import { getGlassCardClasses, getHoverTransformClasses } from '@/core/config/theme-utils';
+import { OptimizedImage } from '@/shared/ui/composite/optimized-image';
 
 interface ProductCardProps {
   product: Product;
@@ -27,7 +28,14 @@ export const ProductCard = React.memo<ProductCardProps>(({
   variant = 'default',
   glassEffect = false,  // PERFORMANCE: Desabilitado por padrão em grids
 }) => {
-  const glassClasses = glassEffect ? getGlassCardClasses(variant) : '';
+  // Map ProductCard variants to supported GlassCard variants
+  const getGlassVariant = (v: string): 'default' | 'premium' | 'yellow' => {
+    if (v === 'premium') return 'premium';
+    if (v === 'warning') return 'yellow';
+    return 'default';
+  };
+
+  const glassClasses = glassEffect ? getGlassCardClasses(getGlassVariant(variant)) : '';
 
   // ✅ v3.5.4 - Sistema unificado de estoque (colunas legacy)
   const stockPackages = product.stock_packages || 0;
@@ -58,7 +66,7 @@ export const ProductCard = React.memo<ProductCardProps>(({
       {/* Imagem do produto */}
       <div className="aspect-video bg-gray-700/50 relative overflow-hidden flex items-center justify-center">
         {product.image_url ? (
-          <img
+          <OptimizedImage
             src={product.image_url}
             alt={product.name}
             className="w-full h-full object-cover"
