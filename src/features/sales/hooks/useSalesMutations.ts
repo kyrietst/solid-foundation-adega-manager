@@ -17,7 +17,7 @@ export const useUpsertSale = () => {
             const { data: profileVal, error: profileError } = await (supabase
                 .from('profiles')
                 .select('role')
-                .eq('id', user.id))
+                .eq('id' as any, user.id as any))
                 .maybeSingle();
 
             const profileData = profileVal as { role: string };
@@ -33,7 +33,7 @@ export const useUpsertSale = () => {
             const { data: paymentMethodDataVal } = await (supabase
                 .from('payment_methods')
                 .select('name')
-                .eq('id', saleData.payment_method_id))
+                .eq('id' as any, saleData.payment_method_id as any))
                 .maybeSingle();
 
             const paymentMethodData = paymentMethodDataVal as { name: string };
@@ -43,10 +43,23 @@ export const useUpsertSale = () => {
             let saleResult: Database['public']['Tables']['sales']['Row'];
 
             // Construct strictly typed payload
-            // Convert to unknown then Json to satisfy strictly typed Json unions if the object shape is complex
-            const deliveryAddr: Json | null = saleData.delivery_address
-                ? (saleData.delivery_address as unknown as Json)
-                : (saleData.deliveryData?.address ? (saleData.deliveryData.address as unknown as Json) : null);
+            // delivery_address is a string in the database, not Json
+            const formatAddress = (addr: any): string | null => {
+                if (!addr) return null;
+                if (typeof addr === 'string') return addr;
+                // Assuming standard address object structure from the error message
+                // { street: string; number: string; complement?: string; neighborhood: string; city: string; zipCode: string; reference?: string; }
+                const parts = [
+                    addr.street,
+                    addr.number ? `, ${addr.number}` : '',
+                    addr.neighborhood ? ` - ${addr.neighborhood}` : '',
+                    addr.city ? ` - ${addr.city}` : ''
+                ];
+                return parts.join('');
+            };
+
+            const deliveryAddr: string | null = saleData.delivery_address ||
+                formatAddress(saleData.deliveryData?.address);
 
             const isDelivery = saleData.saleType === 'delivery' || !!saleData.deliveryData;
 
@@ -73,29 +86,30 @@ export const useUpsertSale = () => {
 
             if (saleId) {
                 // Update existing sale
-                const updatePayload: TablesUpdate<'sales'> = {
+                const updatePayload: any = {
                     ...baseSalePayloadPart
                 };
 
-                const { data: updatedSale, error: updateError } = await supabase
+                const { data: updatedSaleVal, error: updateError } = await supabase
                     .from('sales')
                     .update(updatePayload)
-                    .eq('id', saleId)
+                    .eq('id' as any, saleId as any)
                     .select()
                     .single();
 
                 if (updateError) throw updateError;
-                if (!updatedSale) throw new Error('Venda não encontrada após atualização.');
+                if (!updatedSaleVal) throw new Error('Venda não encontrada após atualização.');
+
+                const updatedSale = updatedSaleVal as unknown as Database['public']['Tables']['sales']['Row'];
                 saleResult = updatedSale;
 
                 // Audit Log
-                const auditPayload: TablesInsert<'audit_logs'> = {
+                const auditPayload: any = {
                     user_id: user.id,
                     action: 'update_sale',
                     table_name: 'sales',
                     record_id: saleId,
                     old_data: null,
-                    // Cast to unknown first to safely assign to Json compatible type
                     new_data: { ...updatePayload, item_count: saleData.items.length } as unknown as Json,
                     ip_address: '0.0.0.0'
                 };
@@ -104,32 +118,33 @@ export const useUpsertSale = () => {
 
             } else {
                 // Create new sale
-                const insertPayload: TablesInsert<'sales'> = {
+                const insertPayload: any = {
                     ...baseSalePayloadPart,
-                    status: 'completed'
+                    status: 'completed',
+                    items: saleData.items as unknown as Json
                 };
 
-                const { data: newSale, error: insertError } = await supabase
+                const { data: newSaleVal, error: insertError } = await supabase
                     .from('sales')
                     .insert(insertPayload)
                     .select()
                     .single();
 
                 if (insertError) throw insertError;
-                if (!newSale) throw new Error('Falha ao criar venda.');
+                if (!newSaleVal) throw new Error('Falha ao criar venda.');
+
+                const newSale = newSaleVal as unknown as Database['public']['Tables']['sales']['Row'];
                 saleResult = newSale;
 
                 // Insert Items
                 if (saleData.items.length > 0) {
-                    const itemsPayload: TablesInsert<'sale_items'>[] = saleData.items.map(item => ({
+                    const itemsPayload: any[] = saleData.items.map(item => ({
                         sale_id: newSale.id,
                         product_id: item.product_id,
                         quantity: item.quantity,
                         unit_price: item.unit_price,
-                        units_sold: item.units_sold,
-                        sale_type: item.sale_type || null,
-                        package_units: item.package_units || null,
-                        conversion_required: false
+                        price: item.unit_price,
+                        total: item.quantity * item.unit_price
                     }));
 
                     const { error: itemsError } = await supabase.from('sale_items').insert(itemsPayload);
@@ -138,15 +153,16 @@ export const useUpsertSale = () => {
 
                 // Insert Delivery Tracking
                 if (saleData.deliveryData) {
-                    const deliveryPayload: TablesInsert<'delivery_tracking'> = {
+                    const deliveryPayload: any = {
                         sale_id: newSale.id,
                         status: 'pending',
                         notes: saleData.deliveryData.instructions || '',
                         created_by: user.id,
-                        location_lat: null, // ensuring fields exist
+                        location_lat: null,
                         location_lng: null
                     };
-                    await supabase.from('delivery_tracking').insert(deliveryPayload);
+                    const { error: deliveryError } = await supabase.from('delivery_tracking').insert(deliveryPayload);
+                    if (deliveryError) throw deliveryError;
                 }
             }
 
@@ -183,7 +199,7 @@ export const useDeleteSale = () => {
             const { data: profileVal } = await (supabase
                 .from('profiles')
                 .select('role')
-                .eq('id', user.id))
+                .eq('id' as any, user.id as any))
                 .maybeSingle();
 
             const profileData = profileVal as { role: string };

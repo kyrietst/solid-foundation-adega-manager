@@ -95,7 +95,28 @@ const getMovementTypeVariant = (type: string) => {
   }
 };
 
+import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
+import { SectionFallback } from '@/shared/components/SectionFallback';
+
 export const InventoryMovementsHistory: React.FC<InventoryMovementsHistoryProps> = ({
+  product_id,
+  className
+}) => {
+  return (
+    <ErrorBoundary
+      fallback={
+        <SectionFallback
+          title="Histórico Indisponível"
+          onRetry={() => window.location.reload()}
+        />
+      }
+    >
+      <InventoryMovementsHistoryContent product_id={product_id} className={className} />
+    </ErrorBoundary>
+  );
+};
+
+const InventoryMovementsHistoryContent: React.FC<InventoryMovementsHistoryProps> = ({
   product_id,
   className
 }) => {
@@ -125,12 +146,12 @@ export const InventoryMovementsHistory: React.FC<InventoryMovementsHistoryProps>
 
       // Filtro por produto específico
       if (product_id) {
-        query = query.eq('product_id', product_id);
+        query = query.eq('product_id' as any, product_id as any);
       }
 
       // Filtro por tipo
       if (filters.type && filters.type !== 'all') {
-        query = query.eq('type', filters.type);
+        query = query.eq('type' as any, filters.type as any);
       }
 
       // Filtro por período
@@ -143,12 +164,12 @@ export const InventoryMovementsHistory: React.FC<InventoryMovementsHistoryProps>
 
       // Filtro por usuário
       if (filters.user_id && filters.user_id !== 'all') {
-        query = query.eq('user_id', filters.user_id);
+        query = query.eq('user_id' as any, filters.user_id as any);
       }
 
       const { data, error } = await query.limit(100);
       if (error) throw error;
-      return data;
+      return (data as any[]) || [];
     }
   });
 
@@ -161,7 +182,7 @@ export const InventoryMovementsHistory: React.FC<InventoryMovementsHistoryProps>
         .select('id, name')
         .order('name');
       if (error) throw error;
-      return data;
+      return (data as any[]) || [];
     }
   });
 

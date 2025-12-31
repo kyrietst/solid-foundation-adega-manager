@@ -9,6 +9,7 @@ import { useQuery, useMutation, useQueryClient, UseQueryOptions, UseMutationOpti
 import { useCallback, useMemo } from 'react';
 import { supabase } from '@/core/api/supabase/client';
 import { PostgrestSingleResponse, PostgrestResponse } from '@supabase/supabase-js';
+import { Database } from '@/core/types/database.types';
 
 // Context7 Pattern: Custom error classes for better error handling
 export class SupabaseQueryError extends Error {
@@ -40,16 +41,18 @@ export class SupabaseMutationError extends Error {
 // Context7 Pattern: Type-safe query result with discriminated unions
 export type QueryResult<T> =
   | { success: true; data: T; error: null }
-  | { success: false; data: null; error: SupabaseQueryError };
+  | { success: false; data: null; error: SupabaseQueryError }
+  | { success: false; data: null; error: null }; // Loading or Initial state
 
 export type MutationResult<T> =
   | { success: true; data: T; error: null }
-  | { success: false; data: null; error: SupabaseMutationError };
+  | { success: false; data: null; error: SupabaseMutationError }
+  | { success: false; data: null; error: null }; // Loading or Initial state
 
 // Context7 Pattern: Query configuration interface
 export interface SupabaseQueryConfig<T> {
-  queryKey: string[];
-  queryFn: () => Promise<PostgrestResponse<T> | PostgrestSingleResponse<T>>;
+  queryKey: readonly unknown[];
+  queryFn: () => PromiseLike<PostgrestResponse<T> | PostgrestSingleResponse<T>>;
   enabled?: boolean;
   staleTime?: number;
   cacheTime?: number;
@@ -60,7 +63,7 @@ export interface SupabaseQueryConfig<T> {
 
 // Context7 Pattern: Mutation configuration interface
 export interface SupabaseMutationConfig<TData, TVariables> {
-  mutationFn: (variables: TVariables) => Promise<PostgrestResponse<TData> | PostgrestSingleResponse<TData>>;
+  mutationFn: (variables: TVariables) => PromiseLike<PostgrestResponse<TData> | PostgrestSingleResponse<TData>>;
   onSuccess?: (data: TData, variables: TVariables) => void;
   onError?: (error: SupabaseMutationError, variables: TVariables) => void;
   invalidateQueries?: string[][];
@@ -115,11 +118,11 @@ export function useSupabaseQuery<T>(
     ...options
   }), [config, options]);
 
-  const query = useQuery<T[], SupabaseQueryError>(
-    config.queryKey,
+  const query = useQuery({
+    queryKey: config.queryKey,
     queryFn,
-    queryOptions
-  );
+    ...queryOptions
+  });
 
   // Context7 Pattern: Enhanced return with result pattern
   const result = useMemo<QueryResult<T[]>>(() => {
@@ -144,7 +147,7 @@ export function useSupabaseQuery<T>(
       success: false,
       data: null,
       error: null
-    } as any; // Temporary for loading states
+    }; // Temporary for loading states
   }, [query.isError, query.isSuccess, query.data, query.error]);
 
   return {
@@ -204,7 +207,7 @@ export function useSupabaseMutation<TData, TVariables = void>(
     // Invalidate related queries
     if (config.invalidateQueries) {
       config.invalidateQueries.forEach(queryKey => {
-        queryClient.invalidateQueries(queryKey);
+        queryClient.invalidateQueries({ queryKey });
       });
     }
 
@@ -230,14 +233,12 @@ export function useSupabaseMutation<TData, TVariables = void>(
     }
   }, [config.onError]);
 
-  const mutation = useMutation<TData, SupabaseMutationError, TVariables>(
+  const mutation = useMutation<TData, SupabaseMutationError, TVariables>({
     mutationFn,
-    {
-      ...options,
-      onSuccess,
-      onError
-    }
-  );
+    ...options,
+    onSuccess,
+    onError
+  });
 
   // Context7 Pattern: Enhanced return with result pattern
   const result = useMemo<MutationResult<TData>>(() => {
@@ -271,7 +272,7 @@ export function useSupabaseMutation<TData, TVariables = void>(
     // Context7 Pattern: Type-safe convenience methods
     mutateAsync: mutation.mutateAsync,
     mutate: mutation.mutate,
-    isLoading: mutation.isLoading,
+    isLoading: mutation.isPending,
     isError: mutation.isError,
     isSuccess: mutation.isSuccess,
     data: mutation.data,
@@ -282,7 +283,7 @@ export function useSupabaseMutation<TData, TVariables = void>(
 // Context7 Pattern: Specialized hooks for common Supabase operations
 
 // Generic CRUD operations hook
-export function useSupabaseCRUD<T extends { id: string }>(tableName: string) {
+export function useSupabaseCRUD<T extends { id: string }>(tableName: keyof Database['public']['Tables']) {
   const queryClient = useQueryClient();
 
   // Context7 Pattern: Memoized query configurations
@@ -296,35 +297,34 @@ export function useSupabaseCRUD<T extends { id: string }>(tableName: string) {
         if (filters) {
           Object.entries(filters).forEach(([key, value]) => {
             if (value !== undefined && value !== null && value !== '') {
-              query = query.eq(key, value);
+              query = query.eq(key as any, value as any);
             }
           });
         }
 
-        return query;
+        return await query as any;
       }
     }),
 
     // Get single record by ID
     single: (id: string) => ({
       queryKey: ['supabase', tableName, 'single', id],
-      queryFn: () => supabase.from(tableName).select('*').eq('id', id).single()
+      queryFn: async () => await supabase.from(tableName).select('*').eq('id', id).single() as any
     })
   }), [tableName]);
 
   // Context7 Pattern: Memoized mutation configurations
   const mutations = useMemo(() => ({
-    // Create new record
-    create: (data: Omit<T, 'id'>) => ({
-      mutationFn: (variables: Omit<T, 'id'>) =>
-        supabase.from(tableName).insert([variables]).select().single(),
+    create: {
+      mutationFn: async (variables: Omit<T, 'id'>) =>
+        await supabase.from(tableName).insert([variables]).select().single(),
       invalidateQueries: [['supabase', tableName, 'list']]
-    }),
+    },
 
     // Update existing record
-    update: (id: string, data: Partial<Omit<T, 'id'>>) => ({
-      mutationFn: (variables: Partial<Omit<T, 'id'>>) =>
-        supabase.from(tableName).update(variables).eq('id', id).select().single(),
+    update: (id: string) => ({
+      mutationFn: async (variables: Partial<Omit<T, 'id'>>) =>
+        await supabase.from(tableName).update(variables).eq('id', id).select().single(),
       invalidateQueries: [
         ['supabase', tableName, 'list'],
         ['supabase', tableName, 'single', id]
@@ -333,7 +333,7 @@ export function useSupabaseCRUD<T extends { id: string }>(tableName: string) {
 
     // Delete record
     delete: (id: string) => ({
-      mutationFn: () => supabase.from(tableName).delete().eq('id', id),
+      mutationFn: async () => await supabase.from(tableName as any).delete().eq('id', id),
       invalidateQueries: [['supabase', tableName, 'list']]
     })
   }), [tableName]);
@@ -347,7 +347,7 @@ export function useSupabaseCRUD<T extends { id: string }>(tableName: string) {
     useCreate: () => useSupabaseMutation(mutations.create),
     useUpdate: (id: string) => useSupabaseMutation(mutations.update(id)),
     useDelete: (id: string) => useSupabaseMutation(mutations.delete(id))
-  } as const;
+  };
 }
 
 // Context7 Pattern: Table-specific hooks for the application

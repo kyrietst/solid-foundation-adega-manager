@@ -1,7 +1,7 @@
 // v3.4.3 - PGRST116 infinite loop fix (force rebuild)
 import { Toaster } from "@/shared/ui/primitives/toaster";
 import { TooltipProvider } from "@/shared/ui/primitives/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, MutationCache, QueryCache } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { lazy, Suspense } from "react";
 import { AuthProvider } from "@/app/providers/AuthContext";
@@ -11,6 +11,7 @@ import { AuthErrorBoundary } from "@/shared/components/AuthErrorBoundary";
 import { QueryErrorBoundary } from "@/shared/ui/layout/QueryErrorBoundary";
 import { TropicalDuskGlow } from "@/shared/ui/effects/tropical-dusk-glow";
 import { TempPasswordHandler } from "@/shared/components/TempPasswordHandler";
+import { toast } from "@/shared/hooks/common/use-toast";
 // Lazy load major pages to reduce initial bundle size (-60% bundle)
 const Index = lazy(() => import('./pages/Index'));
 const Auth = lazy(() => import('./pages/Auth'));
@@ -34,6 +35,36 @@ const ActivitiesPage = lazy(() =>
 
 // Optimized QueryClient configuration (Context7 best practices)
 const queryClient = new QueryClient({
+  queryCache: new QueryCache({
+    onError: (error, query) => {
+      // Only show global toast if the query doesn't have a specific error handler
+      if (query.meta?.errorMessage) {
+        toast({
+          title: "Erro ao carregar dados",
+          description: (query.meta.errorMessage as string) || "Ocorreu um erro inesperado.",
+          variant: "destructive",
+        });
+      }
+      // Note: We avoid showing generic toasts for every query error to prevent spam.
+      // Critical errors should be handled by ErrorBoundaries or specific hook onError callbacks.
+    }
+  }),
+  mutationCache: new MutationCache({
+    onError: (error, _variables, _context, mutation) => {
+      // If the mutation has its own onError handler, we might still want a global fallback
+      // but usually let the specific handler manage the UI.
+      // However, for "blindagem", we want to ensure *something* shows up if nothing else does.
+
+      // Default behavior: Show toast if not suppressed
+      if (!mutation.meta?.suppressErrorToast) {
+        toast({
+          title: "Ocorreu um erro na operação",
+          description: error instanceof Error ? error.message : "Falha ao processar solicitação.",
+          variant: "destructive",
+        });
+      }
+    }
+  }),
   defaultOptions: {
     queries: {
       // Context7: Better default settings for stability and performance

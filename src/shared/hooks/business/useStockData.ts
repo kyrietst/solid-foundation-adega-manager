@@ -9,6 +9,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
 import { calculatePackageDisplay } from '@/shared/utils/stockCalculations';
 import type { Product } from '@/core/types/inventory.types';
+import type { Price, StockQuantity, NonNegativeInteger, Volume, Percentage } from '@/core/types/branded.types';
 import { Tables } from '@/core/types/supabase';
 
 // Types
@@ -78,30 +79,30 @@ export interface StockAvailability {
 /**
  * Helper: Transforma DB Row -> Frontend Product com metadados de estoque
  */
-export const transformToStockData = (dbProduct: any): ProductStockData => {
+export const transformToStockData = (dbProduct: Tables<'products'>): ProductStockData => {
     // 1. Cast básico seguro
     const product: Product = {
         id: dbProduct.id,
         name: dbProduct.name,
         category: dbProduct.category,
-        price: Number(dbProduct.price) as any,
+        price: Number(dbProduct.price) as Price,
         // Estoque Real (SSoT)
-        stock_packages: Number(dbProduct.stock_packages || 0) as any,
-        stock_units_loose: Number(dbProduct.stock_units_loose || 0) as any,
-        stock_quantity: 0 as any, // Deprecated
+        stock_packages: Number(dbProduct.stock_packages ?? 0) as NonNegativeInteger,
+        stock_units_loose: Number(dbProduct.stock_units_loose ?? 0) as NonNegativeInteger,
+        stock_quantity: 0 as StockQuantity, // Deprecated
         // Embeds
-        unit_type: (dbProduct.unit_type as any) || 'un',
-        turnover_rate: (dbProduct.turnover_rate as any) || 'medium',
-        package_size: Number(dbProduct.package_size || 0) as any,
+        unit_type: (dbProduct.unit_type as Product['unit_type']) || 'un',
+        turnover_rate: (dbProduct.turnover_rate as Product['turnover_rate']) || 'medium',
+        package_size: Number(dbProduct.package_size ?? 0) as NonNegativeInteger,
         // Pacotes
         is_package: dbProduct.is_package || false,
-        units_per_package: Number(dbProduct.units_per_package || 1) as any,
-        package_price: dbProduct.package_price ? Number(dbProduct.package_price) as any : undefined,
+        units_per_package: Number(dbProduct.units_per_package ?? 1) as NonNegativeInteger,
+        package_price: dbProduct.package_price ? (Number(dbProduct.package_price) as Price) : undefined,
         package_barcode: dbProduct.package_barcode || undefined,
         // Outros
         barcode: dbProduct.barcode || undefined,
-        cost_price: dbProduct.cost_price ? Number(dbProduct.cost_price) as any : undefined,
-        volume_ml: dbProduct.volume_ml ? Number(dbProduct.volume_ml) as any : undefined,
+        cost_price: dbProduct.cost_price ? (Number(dbProduct.cost_price) as Price) : undefined,
+        volume_ml: dbProduct.volume_ml ? (Number(dbProduct.volume_ml) as Volume) : undefined,
         created_at: dbProduct.created_at,
         updated_at: dbProduct.updated_at,
         // Fiscais

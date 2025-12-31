@@ -4,10 +4,11 @@
  */
 
 import React, { useMemo, useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { BaseModal } from '@/shared/ui/composite/BaseModal';
 import { Button } from '@/shared/ui/primitives/button';
 import { Badge } from '@/shared/ui/primitives/badge';
-import { 
+import {
   X,
   Package,
   TrendingUp,
@@ -25,7 +26,8 @@ import { formatCurrency } from '@/core/config/utils';
 import { supabase } from '@/core/api/supabase/client';
 import { useFormatBrazilianDate } from '@/shared/hooks/common/use-brasil-timezone';
 import { calculatePackageDisplay } from '@/shared/utils/stockCalculations';
-import type { Product } from '@/types/inventory.types';
+import type { Product } from '@/core/types/inventory.types';
+import type { Tables } from '@/core/types/database.types';
 
 interface StockHistoryModalProps {
   product: Product | null;
@@ -45,107 +47,9 @@ interface StockMovement {
   stockChange: number;
 }
 
-// Buscar histórico real de movimentações do banco de dados
-const fetchRealStockHistory = async (productId: string): Promise<StockMovement[]> => {
-  try {
-
-    // Buscar as movimentações primeiro usando nossa nova estrutura
-    const { data: movements, error: movementsError } = await supabase
-      .from('inventory_movements')
-      .select(`
-        id,
-        date,
-        type,
-        quantity_change,
-        new_stock_quantity,
-        reason,
-        metadata,
-        user_id
-      `)
-      .eq('product_id', productId)
-      .order('date', { ascending: false });
-
-    if (movementsError) {
-      console.error('Erro ao buscar movimentações:', movementsError);
-      return [];
-    }
-
-    if (!movements || movements.length === 0) {
-      return [];
-    }
-
-
-    // Buscar nomes dos usuários para os user_ids únicos
-    const userIds = [...new Set(movements.map(m => m.user_id).filter(Boolean))];
-    const { data: profiles } = await supabase
-      .from('profiles')
-      .select('id, name')
-      .in('id', userIds);
-
-    // Criar um mapa de user_id para nome
-    const userMap = new Map();
-    if (profiles) {
-      profiles.forEach(profile => {
-        userMap.set(profile.id, profile.name);
-      });
-    }
-
-    return movements.map(movement => {
-      // Mapear tipos corretamente baseado na nova estrutura enum
-      let mappedType: StockMovement['type'];
-      switch (movement.type) {
-        case 'initial_stock':
-        case 'stock_transfer_in':
-        case 'return':
-          mappedType = 'entrada';
-          break;
-        case 'sale':
-          mappedType = 'venda';
-          break;
-        case 'stock_transfer_out':
-        case 'personal_consumption':
-          mappedType = 'saida';
-          break;
-        case 'inventory_adjustment':
-          mappedType = 'ajuste';
-          break;
-        // Legacy support
-        case 'out':
-        case 'saida':
-          mappedType = 'saida';
-          break;
-        case 'in':
-        case 'entrada':
-          mappedType = 'entrada';
-          break;
-        default:
-          mappedType = 'ajuste'; // Default para adjustment
-      }
-
-      // Usar quantity_change diretamente (já indica positivo/negativo)
-      const stockChange = movement.quantity_change;
-      const displayQuantity = Math.abs(stockChange);
-
-      // Extrair informações do metadata se disponível
-      const metadata = movement.metadata || {};
-      const reference = metadata.sale_id || metadata.movement_id || undefined;
-
-      return {
-        id: movement.id,
-        date: new Date(movement.date),
-        type: mappedType,
-        quantity: displayQuantity,
-        reason: movement.reason || 'Sem motivo especificado',
-        user: userMap.get(movement.user_id) || 'Sistema',
-        balanceAfter: movement.new_stock_quantity || 0,
-        reference: reference,
-        stockChange: stockChange
-      };
-    });
-  } catch (error) {
-    console.error('Erro ao buscar movimentações:', error);
-    return [];
-  }
+// Mapeando tipo do banco de dados que pode ter type_enum em vez de type
+type InventoryMovementRow = Omit<Tables<'inventory_movements'>, 'type' | 'type_enum'> & {
+  type: Tables<'inventory_movements'>['type_enum'] | string;
 };
 
 const getMovementIcon = (type: StockMovement['type']) => {
@@ -198,25 +102,117 @@ export const StockHistoryModal: React.FC<StockHistoryModalProps> = ({
   isOpen,
   onClose,
 }) => {
-  const [movements, setMovements] = useState<StockMovement[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const { formatCompact } = useFormatBrazilianDate();
-  
+
   // SSoT: Calcular breakdown de estoque diretamente do produto
   const stockDisplay = product ? calculatePackageDisplay(product.stock_quantity, product.package_units) : null;
 
-  useEffect(() => {
-    if (product && isOpen) {
-      setIsLoading(true);
-      fetchRealStockHistory(product.id) // Usando o UUID correto do produto
-        .then(setMovements)
-        .catch(error => {
-          console.error('Erro ao carregar movimentações:', error);
-          setMovements([]);
-        })
-        .finally(() => setIsLoading(false));
+  // Query para buscar movimentações
+  const { data: movements = [], isLoading, error } = useQuery({
+    queryKey: ['stock-history', product?.id],
+    enabled: !!product && isOpen,
+    queryFn: async () => {
+      if (!product) return [];
+
+      // Buscar as movimentações
+      const { data: movementsData, error: movementsError } = await supabase
+        .from('inventory_movements')
+        .select(`
+          id,
+          date,
+          type,
+          quantity_change,
+          new_stock_quantity,
+          reason,
+          metadata,
+          user_id
+        `)
+        .eq('product_id', product.id)
+        .order('date', { ascending: false });
+
+      if (movementsError) throw movementsError;
+
+      // Type safe cast handling the mismatch between DB column 'type' and generated 'type_enum'
+      const rawMovements = movementsData as unknown as InventoryMovementRow[];
+
+      if (!rawMovements || rawMovements.length === 0) {
+        return [];
+      }
+
+      // Buscar nomes dos usuários para os user_ids únicos
+      const userIds = [...new Set(rawMovements.map(m => m.user_id).filter(Boolean))];
+      let userMap = new Map();
+
+      if (userIds.length > 0) {
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('id, name')
+          .in('id', userIds);
+
+        const profiles = profilesData as Pick<Tables<'profiles'>, 'id' | 'name'>[] | null;
+
+        if (profiles) {
+          profiles.forEach(profile => {
+            userMap.set(profile.id, profile.name);
+          });
+        }
+      }
+
+      return rawMovements.map(movement => {
+        // Mapear tipos corretamente baseado na nova estrutura enum
+        let mappedType: StockMovement['type'];
+        // Handle type being possibly 'type_enum' or 'type' or just string value
+        const typeValue = (movement as any).type || (movement as any).type_enum;
+
+        switch (typeValue) {
+          case 'initial_stock':
+          case 'stock_transfer_in':
+          case 'return':
+            mappedType = 'entrada';
+            break;
+          case 'sale':
+            mappedType = 'venda';
+            break;
+          case 'stock_transfer_out':
+          case 'personal_consumption':
+            mappedType = 'saida';
+            break;
+          case 'inventory_adjustment':
+            mappedType = 'ajuste';
+            break;
+          // Legacy support
+          case 'out':
+          case 'saida':
+            mappedType = 'saida';
+            break;
+          case 'in':
+          case 'entrada':
+            mappedType = 'entrada';
+            break;
+          default:
+            mappedType = 'ajuste'; // Default para adjustment
+        }
+
+        const stockChange = movement.quantity_change;
+        const displayQuantity = Math.abs(stockChange);
+
+        const metadata = movement.metadata as any || {};
+        const reference = metadata.sale_id || metadata.movement_id || undefined;
+
+        return {
+          id: movement.id,
+          date: new Date(movement.date),
+          type: mappedType,
+          quantity: displayQuantity,
+          reason: movement.reason || 'Sem motivo especificado',
+          user: userMap.get(movement.user_id) || 'Sistema',
+          balanceAfter: movement.new_stock_quantity || 0,
+          reference: reference,
+          stockChange: stockChange
+        } as StockMovement;
+      });
     }
-  }, [product, isOpen]);
+  });
 
   if (!product) return null;
 
@@ -227,50 +223,55 @@ export const StockHistoryModal: React.FC<StockHistoryModalProps> = ({
       title="Histórico de Movimentações"
       description="Visualize todas as movimentações de estoque deste produto, incluindo entradas, saídas e ajustes."
       size="4xl"
-      maxHeight="90vh"
-      icon={Package}
-      iconColor="text-yellow-400"
     >
       {/* Informações do produto */}
-          <div className="bg-black/30 rounded-lg p-3 mt-4">
-            <h4 className="font-medium text-gray-100 mb-1">{product.name}</h4>
-            <div className="space-y-2">
-              <div className="flex items-center gap-4 text-sm text-gray-400">
-                <span>Categoria: {product.category}</span>
-                <span>Total de Movimentações: <span className="text-yellow-400 font-medium">{movements.length}</span></span>
-              </div>
-              
-              {/* Estoque atual com variantes quando disponível */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm text-gray-400">
-                  <span>Estoque Total: <span className="text-gray-100 font-medium">{product.stock_quantity} un</span></span>
-                </div>
-                {product.has_package_tracking && stockDisplay && stockDisplay.packages > 0 && (
-                  <div className="text-xs text-gray-500">
-                    {stockDisplay.formatted}
-                  </div>
-                )}
-            </div>
+      <div className="bg-black/30 rounded-lg p-3 mt-4">
+        <h4 className="font-medium text-gray-100 mb-1">{product.name}</h4>
+        <div className="space-y-2">
+          <div className="flex items-center gap-4 text-sm text-gray-400">
+            <span>Categoria: {product.category}</span>
+            <span>Total de Movimentações: <span className="text-yellow-400 font-medium">{movements.length}</span></span>
           </div>
 
-      {/* Lista de movimentações */}
-      <div className="flex-1 overflow-y-auto mt-4 space-y-3 max-h-[60vh]">
-        {isLoading ? (
-          <div className="text-center py-12">
-            <Loader2 className="h-16 w-16 text-yellow-400 mx-auto mb-4 animate-spin" />
-            <p className="text-gray-400">Carregando histórico de movimentações...</p>
+          {/* Estoque atual com variantes quando disponível */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm text-gray-400">
+              <span>Estoque Total: <span className="text-gray-100 font-medium">{product.stock_quantity} un</span></span>
+            </div>
+            {product.has_package_tracking && stockDisplay && stockDisplay.packages > 0 && (
+              <div className="text-xs text-gray-500">
+                {stockDisplay.formatted}
+              </div>
+            )}
           </div>
-        ) : movements.length === 0 ? (
-          <div className="text-center py-12">
-            <Package className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-400">Nenhuma movimentação encontrada</p>
-            <p className="text-xs text-gray-500 mt-2">Este produto ainda não possui histórico de movimentações</p>
-          </div>
-        ) : (
-          movements.map((movement) => {
+        </div>
+
+        {/* Lista de movimentações */}
+        <div className="flex-1 overflow-y-auto mt-4 space-y-3 max-h-[60vh]">
+          {isLoading ? (
+            <div className="text-center py-12">
+              <Loader2 className="h-16 w-16 text-yellow-400 mx-auto mb-4 animate-spin" />
+              <p className="text-gray-400">Carregando histórico de movimentações...</p>
+            </div>
+          ) : error ? (
+            <div className="text-center py-12">
+              <div className="bg-red-500/10 p-4 rounded-full w-fit mx-auto mb-4">
+                <X className="h-8 w-8 text-red-500" />
+              </div>
+              <p className="text-red-400 font-medium">Erro ao carregar histórico</p>
+              <p className="text-xs text-gray-500 mt-2">Tente novamente mais tarde.</p>
+            </div>
+          ) : movements.length === 0 ? (
+            <div className="text-center py-12">
+              <Package className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-400">Nenhuma movimentação encontrada</p>
+              <p className="text-xs text-gray-500 mt-2">Este produto ainda não possui histórico de movimentações</p>
+            </div>
+          ) : (
+            movements.map((movement) => {
               const MovementIcon = getMovementIcon(movement.type);
               const colorClasses = getMovementColor(movement.type);
-              
+
               return (
                 <div
                   key={movement.id}
@@ -282,7 +283,7 @@ export const StockHistoryModal: React.FC<StockHistoryModalProps> = ({
                       <div className={cn("p-2 rounded-lg border", colorClasses)}>
                         <MovementIcon className="h-4 w-4" />
                       </div>
-                      
+
                       <div className="space-y-1">
                         <div className="flex items-center space-x-2">
                           <Badge className={cn("text-xs", colorClasses)}>
@@ -294,11 +295,11 @@ export const StockHistoryModal: React.FC<StockHistoryModalProps> = ({
                             </span>
                           )}
                         </div>
-                        
+
                         <p className="text-sm text-gray-100 font-medium">
                           {movement.reason}
                         </p>
-                        
+
                         <div className="flex items-center space-x-4 text-xs text-gray-400">
                           <span className="flex items-center">
                             <Calendar className="h-3 w-3 mr-1" />
@@ -311,7 +312,7 @@ export const StockHistoryModal: React.FC<StockHistoryModalProps> = ({
                         </div>
                       </div>
                     </div>
-                    
+
                     {/* Lado direito: Quantidade e saldo */}
                     <div className="text-right space-y-1">
                       <div className="flex items-center space-x-2">
@@ -323,7 +324,7 @@ export const StockHistoryModal: React.FC<StockHistoryModalProps> = ({
                         </span>
                         <span className="text-xs text-gray-400">un</span>
                       </div>
-                      
+
                       <div className="text-xs text-gray-400">
                         Saldo: <span className="text-gray-100 font-medium">{movement.balanceAfter} un</span>
                       </div>
@@ -332,34 +333,36 @@ export const StockHistoryModal: React.FC<StockHistoryModalProps> = ({
                 </div>
               );
             })
-        )}
-      </div>
-
-      {/* Footer com estatísticas */}
-      <div className="border-t border-white/10 pt-4 mt-4">
-        <div className="grid grid-cols-3 gap-4 text-center">
-          <div className="bg-green-400/10 rounded-lg p-3 border border-green-400/30">
-            <div className="text-green-400 font-bold text-lg">
-              {movements.filter(m => m.type === 'entrada').reduce((sum, m) => sum + m.quantity, 0)}
-            </div>
-            <div className="text-xs text-green-400/70">Total Entradas</div>
-          </div>
-
-          <div className="bg-red-400/10 rounded-lg p-3 border border-red-400/30">
-            <div className="text-red-400 font-bold text-lg">
-              {movements.filter(m => m.type === 'saida' || m.type === 'venda').reduce((sum, m) => sum + m.quantity, 0)}
-            </div>
-            <div className="text-xs text-red-400/70">Total Saídas</div>
-          </div>
-
-          <div className="bg-yellow-400/10 rounded-lg p-3 border border-yellow-400/30">
-            <div className="text-yellow-400 font-bold text-lg">
-              {movements.filter(m => m.type === 'ajuste').length}
-            </div>
-            <div className="text-xs text-yellow-400/70">Ajustes</div>
-          </div>
+          )}
         </div>
-      </div>
+
+        {/* Footer com estatísticas */}
+        {movements.length > 0 && (
+          <div className="border-t border-white/10 pt-4 mt-4">
+            <div className="grid grid-cols-3 gap-4 text-center">
+              <div className="bg-green-400/10 rounded-lg p-3 border border-green-400/30">
+                <div className="text-green-400 font-bold text-lg">
+                  {movements.filter(m => m.type === 'entrada').reduce((sum, m) => sum + m.quantity, 0)}
+                </div>
+                <div className="text-xs text-green-400/70">Total Entradas</div>
+              </div>
+
+              <div className="bg-red-400/10 rounded-lg p-3 border border-red-400/30">
+                <div className="text-red-400 font-bold text-lg">
+                  {Math.abs(movements.filter(m => m.type === 'saida' || m.type === 'venda').reduce((sum, m) => sum + m.quantity, 0))}
+                </div>
+                <div className="text-xs text-red-400/70">Total Saídas</div>
+              </div>
+
+              <div className="bg-yellow-400/10 rounded-lg p-3 border border-yellow-400/30">
+                <div className="text-yellow-400 font-bold text-lg">
+                  {movements.filter(m => m.type === 'ajuste').length}
+                </div>
+                <div className="text-xs text-yellow-400/70">Ajustes</div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </BaseModal>
   );

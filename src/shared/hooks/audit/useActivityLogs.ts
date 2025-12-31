@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
+import { Database } from '@/core/types/database.types';
 
 export interface ActivityLogRow {
     id: string;
@@ -30,8 +31,8 @@ export function useActivityLogs(params: UseActivityLogsParams) {
                 .select('id, actor, role, action, entity, entity_id, details, created_at')
                 .limit(params.limit);
 
-            if (params.role !== 'all') query = query.eq('role', params.role as any);
-            if (params.entity !== 'all') query = query.eq('entity', params.entity as any);
+            if (params.role !== 'all') query = query.eq('role', params.role as Database['public']['Enums']['user_role']);
+            if (params.entity !== 'all') query = query.eq('entity', params.entity);
             if (params.search) {
                 query = query.or(`details.ilike.%${params.search}%,action.ilike.%${params.search}%,actor.ilike.%${params.search}%`);
             }

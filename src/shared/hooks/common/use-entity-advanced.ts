@@ -8,9 +8,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
 import { useToast } from '@/shared/hooks/common/use-toast';
-import type { 
-  WithId, 
-  BaseEntity, 
+import type {
+  WithId,
+  BaseEntity,
   AuditableEntity,
   ListResponse,
   ProductLike,
@@ -18,11 +18,18 @@ import type {
   SaleLike,
   Repository,
   ValidationSchema,
+} from '@/core/types/generic.types';
+
+import {
   hasId,
   hasName,
   hasTimestamps,
   isNotNullish
-} from '@/types/generic.types';
+} from '@/core/types/generic.types';
+import { Database, Tables, TablesInsert, TablesUpdate } from '@/core/types/database.types';
+
+// Helper type for valid table names
+type TableName = keyof Database['public']['Tables'];
 
 // ============================================================================
 // ADVANCED GENERIC CONSTRAINTS
@@ -57,8 +64,8 @@ interface OrderableEntity<T> {
  * Hook para entidades com nome pesquisável
  * Aplica constraint que garante existência do campo 'name'
  */
-export function useSearchableEntity<T extends SearchableByName<T>>(
-  table: string,
+export function useSearchableEntity<T extends SearchableByName<T>, K extends TableName = any>(
+  table: K,
   searchTerm?: string,
   options?: { enabled?: boolean }
 ) {
@@ -66,19 +73,19 @@ export function useSearchableEntity<T extends SearchableByName<T>>(
     queryKey: [table, 'searchable', searchTerm],
     queryFn: async (): Promise<T[]> => {
       let query = supabase.from(table).select('*');
-      
+
       if (searchTerm) {
         query = query.ilike('name', `%${searchTerm}%`);
       }
-      
+
       const { data, error } = await query;
       if (error) throw error;
-      
+
       // Type guard: garante que todos os itens têm ID e nome
-      const validData = (data || []).filter((item): item is T => 
+      const validData = (data || []).filter((item): item is T =>
         hasId(item) && hasName(item)
       ) as T[];
-      
+
       return validData;
     },
     enabled: options?.enabled ?? true,
@@ -89,38 +96,38 @@ export function useSearchableEntity<T extends SearchableByName<T>>(
  * Hook para produtos com constraint ProductLike
  * Garante que a entidade tem name, price, category, stock_quantity
  */
-export function useProductEntity<T extends ProductLike>(
-  table: string,
+export function useProductEntity<T extends ProductLike, K extends TableName = any>(
+  table: K,
   filters?: { category?: string; inStock?: boolean }
 ) {
   return useQuery({
     queryKey: [table, 'products', filters],
     queryFn: async (): Promise<T[]> => {
       let query = supabase.from(table).select('*');
-      
+
       if (filters?.category) {
-        query = query.eq('category', filters.category);
+        query = query.eq('category' as any, filters.category);
       }
-      
+
       if (filters?.inStock) {
-        query = query.filter('stock_quantity', 'gt', 0);
+        query = query.filter('stock_quantity' as any, 'gt', 0);
       }
-      
+
       const { data, error } = await query;
       if (error) throw error;
-      
+
       // Type guard específico para produtos
       const validProducts = (data || []).filter((item): item is T => {
-        return hasId(item) && 
-               hasName(item) && 
-               'price' in item && 
-               'category' in item && 
-               'stock_quantity' in item &&
-               typeof item.price === 'number' &&
-               typeof item.category === 'string' &&
-               typeof item.stock_quantity === 'number';
+        return hasId(item) &&
+          hasName(item) &&
+          'price' in item &&
+          'category' in item &&
+          'stock_quantity' in item &&
+          typeof item.price === 'number' &&
+          typeof item.category === 'string' &&
+          typeof item.stock_quantity === 'number';
       }) as T[];
-      
+
       return validProducts;
     },
   });
@@ -130,27 +137,27 @@ export function useProductEntity<T extends ProductLike>(
  * Hook para clientes com constraint CustomerLike
  * Garante que a entidade tem name e campos opcionais de contato
  */
-export function useCustomerEntity<T extends CustomerLike>(
-  table: string,
+export function useCustomerEntity<T extends CustomerLike, K extends TableName = any>(
+  table: K,
   searchTerm?: string
 ) {
   return useQuery({
     queryKey: [table, 'customers', searchTerm],
     queryFn: async (): Promise<T[]> => {
       let query = supabase.from(table).select('*');
-      
+
       if (searchTerm) {
         query = query.or(`name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%`);
       }
-      
+
       const { data, error } = await query;
       if (error) throw error;
-      
+
       // Type guard específico para clientes
       const validCustomers = (data || []).filter((item): item is T => {
         return hasId(item) && hasName(item);
       }) as T[];
-      
+
       return validCustomers;
     },
   });
@@ -160,36 +167,36 @@ export function useCustomerEntity<T extends CustomerLike>(
  * Hook para vendas com constraint SaleLike
  * Garante que a entidade tem customer_id, total_amount, payment_method
  */
-export function useSaleEntity<T extends SaleLike>(
-  table: string,
+export function useSaleEntity<T extends SaleLike, K extends TableName = any>(
+  table: K,
   dateRange?: { start: Date; end: Date }
 ) {
   return useQuery({
     queryKey: [table, 'sales', dateRange],
     queryFn: async (): Promise<T[]> => {
       let query = supabase.from(table).select('*');
-      
+
       if (dateRange) {
         query = query
-          .gte('created_at', dateRange.start.toISOString())
-          .lte('created_at', dateRange.end.toISOString());
+          .gte('created_at' as any, dateRange.start.toISOString())
+          .lte('created_at' as any, dateRange.end.toISOString());
       }
-      
-      query = query.order('created_at', { ascending: false });
-      
+
+      query = query.order('created_at' as any, { ascending: false });
+
       const { data, error } = await query;
       if (error) throw error;
-      
+
       // Type guard específico para vendas
       const validSales = (data || []).filter((item): item is T => {
-        return hasId(item) && 
-               hasTimestamps(item) &&
-               'total_amount' in item && 
-               'payment_method' in item &&
-               typeof item.total_amount === 'number' &&
-               typeof item.payment_method === 'string';
+        return hasId(item) &&
+          hasTimestamps(item) &&
+          'total_amount' in item &&
+          'payment_method' in item &&
+          typeof item.total_amount === 'number' &&
+          typeof item.payment_method === 'string';
       }) as T[];
-      
+
       return validSales;
     },
   });
@@ -202,12 +209,12 @@ export function useSaleEntity<T extends SaleLike>(
 /**
  * Hook para entidades com paginação avançada e type safety
  */
-export function usePaginatedEntity<T extends BaseEntity>(
-  table: string,
+export function usePaginatedEntity<T extends BaseEntity, K extends TableName = any>(
+  table: K,
   options: PaginationOptions & OrderableEntity<T> & {
     filters?: Record<string, unknown>;
     search?: { field: keyof T; term: string };
-  } = {}
+  } = {} as any
 ) {
   const {
     page = 1,
@@ -236,8 +243,8 @@ export function usePaginatedEntity<T extends BaseEntity>(
       // Aplicar filtros em ambas as queries
       Object.entries(filters).forEach(([key, value]) => {
         if (isNotNullish(value)) {
-          countQuery = countQuery.eq(key, value);
-          dataQuery = dataQuery.eq(key, value);
+          countQuery = countQuery.eq(key as any, value);
+          dataQuery = dataQuery.eq(key as any, value);
         }
       });
 
@@ -250,8 +257,8 @@ export function usePaginatedEntity<T extends BaseEntity>(
 
       // Aplicar ordenação
       if (orderBy) {
-        dataQuery = dataQuery.order(String(orderBy.field), { 
-          ascending: orderBy.direction === 'asc' 
+        dataQuery = dataQuery.order(String(orderBy.field), {
+          ascending: orderBy.direction === 'asc'
         });
       }
 
@@ -265,7 +272,7 @@ export function usePaginatedEntity<T extends BaseEntity>(
       if (dataResult.error) throw dataResult.error;
 
       const total = countResult.count || 0;
-      const data = (dataResult.data || []).filter(hasId) as T[];
+      const data = (dataResult.data || []).filter(hasId) as unknown as T[];
 
       return {
         data,
@@ -287,9 +294,10 @@ export function usePaginatedEntity<T extends BaseEntity>(
  */
 export function useValidatedMutation<
   TEntity extends BaseEntity,
-  TInput = Omit<TEntity, 'id' | 'created_at' | 'updated_at'>
+  K extends TableName,
+  TInput extends TablesInsert<K> = TablesInsert<K>
 >(
-  table: string,
+  table: K,
   validationSchema?: ValidationSchema<TInput>,
   options?: {
     onSuccess?: (data: TEntity) => void;
@@ -309,22 +317,22 @@ export function useValidatedMutation<
 
       const { data, error } = await supabase
         .from(table)
-        .insert(input as any)
+        .insert(input)
         .select()
         .single();
 
       if (error) throw error;
-      
+
       if (!hasId(data)) {
         throw new Error('Entidade criada não possui ID válido');
       }
 
-      return data as TEntity;
+      return data as unknown as TEntity;
     },
     onSuccess: (data) => {
       // Invalidar queries relacionadas
       queryClient.invalidateQueries({ queryKey: [table] });
-      
+
       toast({
         title: 'Sucesso',
         description: 'Registro criado com sucesso!',
@@ -351,15 +359,15 @@ export function useValidatedMutation<
 /**
  * Factory para criar um repository com constraints genéricos
  */
-export function createRepository<T extends BaseEntity>(
-  table: string
+export function createRepository<T extends BaseEntity, K extends TableName>(
+  table: K
 ): Repository<T> {
   return {
     async findById(id: string): Promise<T | null> {
       const { data, error } = await supabase
         .from(table)
         .select('*')
-        .eq('id', id)
+        .eq('id' as any, id)
         .single();
 
       if (error) {
@@ -367,10 +375,15 @@ export function createRepository<T extends BaseEntity>(
         throw error;
       }
 
-      return hasId(data) ? (data as T) : null;
+      return hasId(data) ? (data as unknown as T) : null;
     },
 
-    async findMany(options = {}): Promise<ListResponse<T>> {
+    async findMany(options: {
+      filters?: Record<string, unknown>;
+      orderBy?: { field: keyof T; direction: 'asc' | 'desc' };
+      limit?: number;
+      offset?: number;
+    } = {}): Promise<ListResponse<T>> {
       const { filters = {}, orderBy, limit = 50, offset = 0 } = options;
 
       let query = supabase.from(table).select('*', { count: 'exact' });
@@ -378,14 +391,14 @@ export function createRepository<T extends BaseEntity>(
       // Aplicar filtros
       Object.entries(filters).forEach(([key, value]) => {
         if (isNotNullish(value)) {
-          query = query.eq(key, value);
+          query = query.eq(key as any, value);
         }
       });
 
       // Aplicar ordenação
       if (orderBy) {
-        query = query.order(String(orderBy.field), { 
-          ascending: orderBy.direction === 'asc' 
+        query = query.order(String(orderBy.field), {
+          ascending: orderBy.direction === 'asc'
         });
       }
 
@@ -395,7 +408,7 @@ export function createRepository<T extends BaseEntity>(
       const { data, error, count } = await query;
       if (error) throw error;
 
-      const validData = (data || []).filter(hasId) as T[];
+      const validData = (data || []).filter(hasId) as unknown as T[];
 
       return {
         data: validData,
@@ -406,44 +419,47 @@ export function createRepository<T extends BaseEntity>(
       };
     },
 
+    // Note: strict typing here requires TInput to match TablesInsert<K>
     async create(input): Promise<T> {
+      // We cast input to TablesInsert<K> because Repository interface is generic
+      // but we know 'table' matches 'K'
       const { data, error } = await supabase
         .from(table)
-        .insert(input as any)
+        .insert(input as any) // Keeping explicit cast due to Repository interface constraints
         .select()
         .single();
 
       if (error) throw error;
-      
+
       if (!hasId(data)) {
         throw new Error('Entidade criada não possui ID válido');
       }
 
-      return data as T;
+      return data as unknown as T;
     },
 
     async update(id: string, input): Promise<T> {
       const { data, error } = await supabase
         .from(table)
         .update({ ...input, updated_at: new Date().toISOString() } as any)
-        .eq('id', id)
+        .eq('id' as any, id)
         .select()
         .single();
 
       if (error) throw error;
-      
+
       if (!hasId(data)) {
         throw new Error('Entidade atualizada não possui ID válido');
       }
 
-      return data as T;
+      return data as unknown as T;
     },
 
     async delete(id: string): Promise<void> {
       const { error } = await supabase
         .from(table)
         .delete()
-        .eq('id', id);
+        .eq('id' as any, id);
 
       if (error) throw error;
     }
@@ -458,8 +474,8 @@ export function createRepository<T extends BaseEntity>(
  * Hook principal que combina todas as funcionalidades avançadas
  * Serve como interface unificada para os hooks especializados
  */
-export function useEntityAdvanced<T extends BaseEntity>(
-  table: string,
+export function useEntityAdvanced<T extends BaseEntity, K extends TableName = any>(
+  table: K,
   options?: {
     type?: 'searchable' | 'product' | 'customer' | 'sale' | 'paginated';
     searchTerm?: string;
@@ -483,15 +499,15 @@ export function useEntityAdvanced<T extends BaseEntity>(
     queryKey: [table, 'searchable-advanced', searchTerm],
     queryFn: async (): Promise<T[]> => {
       let query = supabase.from(table).select('*');
-      
+
       if (searchTerm) {
         query = query.ilike('name', `%${searchTerm}%`);
       }
-      
+
       const { data, error } = await query;
       if (error) throw error;
-      
-      const validData = (data || []).filter(hasId) as T[];
+
+      const validData = (data || []).filter(hasId) as unknown as T[];
       return validData;
     },
     enabled: type === 'searchable',
@@ -510,10 +526,10 @@ export function useEntityAdvanced<T extends BaseEntity>(
   const paginatedQuery = usePaginatedEntity(table, pagination);
 
   // Repository
-  const repository = createRepository<T>(table);
+  const repository = createRepository<T, K>(table);
 
   // Hook para mutations validadas
-  const mutation = useValidatedMutation<T>(table);
+  const mutation = useValidatedMutation<T, K>(table);
 
   // Retornar dados baseado no tipo
   switch (type) {

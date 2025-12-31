@@ -4,11 +4,14 @@
  */
 
 import { useState, useEffect } from 'react';
+import { Tables } from "@/core/types/database.types";
 import { supabase } from '@/core/api/supabase/client';
 import { useQuery } from '@tanstack/react-query';
+import { useToast } from '@/shared/hooks/common/use-toast';
 import { User, UserManagementState } from '@/features/users/components/types';
 
 export const useUserManagement = (): UserManagementState => {
+  const { toast } = useToast();
   const [error, setError] = useState<string | null>(null);
 
   // Use React Query for better caching and state management
@@ -30,7 +33,17 @@ export const useUserManagement = (): UserManagementState => {
         throw error;
       }
 
-      return data as User[];
+      // Cast data to any[] to avoid SelectQueryError inference issues
+      const profiles = (data as Tables<'profiles'>[]) || [];
+
+      return profiles.map((profile) => ({
+        id: profile.id,
+        name: profile.name || 'Desconhecido',
+        email: profile.email || '',
+        role: profile.role || 'employee',
+        created_at: profile.created_at || new Date().toISOString(),
+        updated_at: profile.updated_at || new Date().toISOString(),
+      })) as User[];
     },
     enabled: true, // Always fetch when component mounts
   });
@@ -51,6 +64,11 @@ export const useUserManagement = (): UserManagementState => {
     } catch (err: any) {
       console.error('Error refreshing users:', err);
       setError(err.message);
+      toast({
+        title: "Erro ao atualizar",
+        description: "Não foi possível recarregar a lista de usuários.",
+        variant: "destructive"
+      });
     }
   };
 

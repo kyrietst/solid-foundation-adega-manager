@@ -6,6 +6,7 @@
 
 import React, { useState } from 'react';
 import { Plus, Minus, Building2, Phone, MessageCircle, Mail } from 'lucide-react';
+import { toast } from 'sonner';
 import { FormDialog } from '@/shared/ui/layout/FormDialog';
 import { Button } from '@/shared/ui/primitives/button';
 import { Input } from '@/shared/ui/primitives/input';
@@ -84,6 +85,7 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({ isOpen, onClose, mod
       onClose();
     } catch (error) {
       console.error('Form submission error:', error);
+      toast.error("Erro ao salvar fornecedor. Tente novamente.");
     }
   };
 
