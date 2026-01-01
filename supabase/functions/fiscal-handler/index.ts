@@ -173,56 +173,118 @@ Deno.serve(async (req) => {
     })
 
     // Construct Payload
+    // Cálculo simples de totais para evitar rejeição
+    const totalVenda = items.reduce((acc: number, item: any) => acc + item.valor_bruto, 0).toFixed(2)
+
+    // 9. Construct Payload (SEFAZ Standard)
     const nfcePayload = {
-        ambiente: 'homologacao', // 'homologacao' or 'producao' depends on API config usually, but Nuvem Fiscal uses separate Clients for Sandbox?
-        // Actually Nuvem Fiscal API v2 abstracts 'ambiente' often by the credentials used, 
-        // BUT the payload often demands 'ambiente'.
-        // User said: "Saia do Mock Mode e ative a integração real para o ambiente Sandbox."
-        // Usually 'homologacao' is correct for Sandbox.
-        
-        referencia: sale.id, // ID para idempotência
-        emissor: {
-            cnpj: settings.cnpj.replace(/\D/g, ''),
-            inscricao_estadual: settings.ie === 'ISENTO' ? undefined : settings.ie,
-            nome_razao_social: settings.business_name,
-            nome_fantasia: settings.trade_name,
-            endereco: {
-                logradouro: settings.address_street,
-                numero: settings.address_number,
-                complemento: settings.address_complement,
-                bairro: settings.address_neighborhood,
-                codigo_municipio: '3548708', // Hardcoded São Bernardo do Campo 
-                // API usually requires 'codigo_municipio'. 
-                // CRITICAL: We don't have IBGE code in store_settings.
-                // Fallback: Hardcoded SP Capital (3550308) for now or try to match?
-                // The prompt didn't ask to fetch IBGE. I will look for a smart default or omit if optional?
-                // Nuvem Fiscal documentation says `codigo_municipio` is required in schema.
-                // I will inject a placeholder logic or use a known one if address is Sao Paulo.
-                // Assuming 'São Paulo' -> 3550308. 
-                 municipio: settings.address_city,
-                 uf: settings.address_state,
-                 cep: settings.address_zip_code?.replace(/\D/g, '')
-            }
-        },
-        destinatario: sale.customer ? {
-            nome: sale.customer.name,
-            // cpf: sale.customer.document // Assuming we don't have it yet as per DB check
-            // If we don't send CPF, it is anonymous.
-        } : undefined,
-        itens: items,
-        pagamento: {
-            formas_pagamento: [
-                {
-                    codigo_meio_pagamento: mapPaymentMethod(sale.payment_method),
-                    valor: sale.final_amount,
-                    tipo_integracao: '2' // 1=Integrado TEF, 2=Não Integrado
+        ambiente: "homologacao", // Obrigatório na raiz
+        infNFe: {
+            versao: "4.00",
+            ide: {
+                cUF: "35", // SP
+                cNF: Math.floor(10000000 + Math.random() * 90000000).toString(), // Número aleatório
+                natOp: "VENDA",
+                mod: "65", // Modelo NFC-e
+                serie: "1",
+                nNF: sale.order_number ? parseInt(sale.order_number) : Math.floor(Math.random() * 1000), // Fallback se order_number for texto/null
+                dhEmi: new Date().toISOString(),
+                tpNF: "1", // 1=Saída
+                idDest: "1", // 1=Operação interna
+                cMunFG: "3548708", // São Bernardo do Campo (IBGE)
+                tpImp: "4", // DANFE NFC-e
+                tpEmis: "1", // Normal
+                tpAmb: "2", // 2=Homologação
+                finNFe: "1", // Normal
+                indFinal: "1", // Consumidor final
+                indPres: "1", // Presencial
+                procEmi: "0",
+                verProc: "FiscalHandler v2.1"
+            },
+            emit: {
+                CNPJ: settings.cnpj.replace(/\D/g, ''),
+                xNome: settings.business_name.substring(0, 60),
+                enderEmit: {
+                    xLgr: settings.address_street.substring(0, 60),
+                    nro: settings.address_number,
+                    xBairro: settings.address_neighborhood.substring(0, 60),
+                    cMun: "3548708", // São Bernardo
+                    xMun: "Sao Bernardo do Campo",
+                    UF: "SP",
+                    CEP: settings.address_zip_code.replace(/\D/g, ''),
+                    cPais: "1058",
+                    xPais: "BRASIL"
+                },
+                IE: settings.ie === 'ISENTO' ? undefined : settings.ie.replace(/\D/g, ''),
+                CRT: "1" // Simples Nacional
+            },
+            det: items.map((item: any, i: number) => ({
+                nItem: i + 1,
+                prod: {
+                    cProd: item.codigo_produto.substring(0, 60),
+                    cEAN: "SEM GTIN",
+                    xProd: item.descricao.substring(0, 120),
+                    NCM: item.ncm, // Deve ser válido (8 dígitos)
+                    CFOP: "5102",
+                    uCom: "UN",
+                    qCom: item.quantidade_comercial,
+                    vUnCom: item.valor_unitario_comercial.toFixed(2),
+                    vProd: item.valor_bruto.toFixed(2),
+                    cEANTrib: "SEM GTIN",
+                    uTrib: "UN",
+                    qTrib: item.quantidade_tributavel,
+                    vUnTrib: item.valor_unitario_tributavel.toFixed(2),
+                    indTot: "1"
+                },
+                imposto: {
+                    ICMS: {
+                        ICMSSN102: { // Simples Nacional sem crédito
+                            orig: "0",
+                            CSOSN: "102"
+                        }
+                    },
+                    PIS: {
+                        PISOutr: { CST: "99", vBC: "0.00", pPIS: "0.00", vPIS: "0.00" }
+                    },
+                    COFINS: {
+                        COFINSOutr: { CST: "99", vBC: "0.00", pCOFINS: "0.00", vCOFINS: "0.00" }
+                    }
                 }
-            ]
-        },
-        // Inf Adic
-        informacoes_adicionais: {
-            informacoes_complementares_interesse_contribuinte: `Venda ${sale.order_number}`
+            })),
+            total: {
+                ICMSTot: {
+                    vBC: "0.00",
+                    vICMS: "0.00",
+                    vICMSDeson: "0.00",
+                    vFCP: "0.00",
+                    vBCST: "0.00",
+                    vST: "0.00",
+                    vFCPST: "0.00",
+                    vFCPSTRet: "0.00",
+                    vProd: totalVenda,
+                    vFrete: "0.00",
+                    vSeg: "0.00",
+                    vDesc: "0.00",
+                    vII: "0.00",
+                    vIPI: "0.00",
+                    vIPIDevol: "0.00",
+                    vPIS: "0.00",
+                    vCOFINS: "0.00",
+                    vOutro: "0.00",
+                    vNF: totalVenda,
+                    vTotTrib: "0.00"
+                }
+            },
+            transp: { modFrete: "9" }, // Sem frete
+            pag: {
+                detPag: [{
+                    tPag: mapPaymentMethod(sale.payment_method), // Mapped dynamically
+                    vPag: totalVenda
+                }]
+            }
         }
+        // Nota: O campo 'referencia' pode ser passado se a API da Nuvem Fiscal suportar na raiz, 
+        // mas o padrão SEFAZ puro é infNFe. Vamos manter 'ambiente' e 'infNFe'.
     }
 
     // 9. Process Emission
