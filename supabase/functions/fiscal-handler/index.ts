@@ -2,7 +2,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { corsHeaders } from '../_shared/cors.ts'
 
-console.log("Fiscal Handler v2.1 - Real Integration Initiated")
+console.log("Fiscal Handler v2.1.1 - Force Update")
 
 // Constants
 const AUTH_URL = 'https://auth.nuvemfiscal.com.br/oauth/token'
