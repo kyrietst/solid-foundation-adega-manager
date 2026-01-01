@@ -2,22 +2,24 @@
  * ReceiptModal.tsx - Modal para visualizar e imprimir cupom fiscal
  */
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { BaseModal } from '@/shared/ui/composite';
 import { LoadingSpinner } from '@/shared/ui/composite/loading-spinner';
 import { Button } from '@/shared/ui/primitives/button';
 import { ReceiptPrint } from './ReceiptPrint';
 import { useReceiptData } from '../hooks/useReceiptData';
-import { Receipt, Printer, X, CheckCircle } from 'lucide-react';
+import { Receipt, Printer, CheckCircle, FileText, QrCode } from 'lucide-react';
 import { useToast } from '@/shared/hooks/common/use-toast';
 import { Alert, AlertDescription } from '@/shared/ui/primitives/alert';
 import { Settings } from 'lucide-react';
+import { useFiscalEmission } from '@/features/fiscal/hooks/useFiscalEmission';
+import { FiscalStatusBadge } from '@/features/fiscal/components/FiscalStatusBadge';
 
 interface ReceiptModalProps {
   isOpen: boolean;
   onClose: () => void;
   saleId: string | null;
-  autoClose?: boolean; // Fechar automaticamente após imprimir
+  autoClose?: boolean;
 }
 
 export const ReceiptModal: React.FC<ReceiptModalProps> = ({
@@ -28,6 +30,8 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
 }) => {
   const { toast } = useToast();
   const { data: receiptData, isLoading, error } = useReceiptData(saleId);
+  const { emitInvoice, isLoading: isFiscalLoading } = useFiscalEmission();
+  const [fiscalData, setFiscalData] = useState<{ status: string, pdf_url?: string, xml_url?: string } | null>(null);
   const hasPrinted = useRef(false);
 
   // Iniciar impressão automaticamente quando o modal abrir e os dados estiverem prontos
@@ -35,9 +39,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
     if (isOpen && receiptData && !isLoading && !error && !hasPrinted.current) {
       hasPrinted.current = true;
       
-      // Aguardar um momento para garantir que o modal esteja renderizado
       const timer = setTimeout(() => {
-        // Verificar se modal ainda está aberto antes de imprimir
         if (isOpen) {
           try {
             window.print();
@@ -60,9 +62,9 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
       return () => clearTimeout(timer);
     }
     
-    // Reset flag quando modal fecha
     if (!isOpen) {
       hasPrinted.current = false;
+      setFiscalData(null); // Reset fiscal data on close
     }
   }, [isOpen, receiptData, isLoading, error, toast]);
 
@@ -90,22 +92,17 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
     }
   };
 
-  const handleCustomPrint = () => {
-    toast({
-      title: "💡 SOLUÇÃO MANUAL",
-      description: "1. Ctrl+P 2. Mais definições 3. Tamanho papel: Personalizado 4. Largura: 58mm 5. Altura: 100mm",
-      variant: "default",
-      duration: 10000
+  const handleEmitFiscal = async () => {
+    if (!saleId) return;
+    await emitInvoice(saleId, (data) => {
+      setFiscalData(data);
     });
   };
 
-  const openPrintSettings = () => {
-    toast({
-      title: "💡 Configuração ZPrinter Paper (58x210mm)",
-      description: "1. Selecione 'ZPrinter Paper (58x210mm)' 2. Margens: Padrão 3. Escala: 100% 4. Qualidade: Rascunho",
-      variant: "default",
-      duration: 8000
-    });
+  const handleOpenFiscalPDF = () => {
+    if (fiscalData?.pdf_url) {
+      window.open(fiscalData.pdf_url, '_blank');
+    }
   };
 
   return (
@@ -113,10 +110,11 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title={
-        <>
+        <div className="flex items-center gap-2">
           <Receipt className="h-5 w-5 text-primary-yellow" />
-          Cupom Fiscal - Adega Anita's
-        </>
+          <span>Cupom Fiscal - Adega Anita's</span>
+          {fiscalData && <FiscalStatusBadge status={fiscalData.status} />}
+        </div>
       }
       description={saleId ? `Venda: #${saleId.slice(-8).toUpperCase()}` : 'Preparando cupom...'}
       size="md"
@@ -126,7 +124,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
         <div className="mt-4">
           {isLoading && (
             <div className="flex items-center justify-center py-8">
-              <LoadingSpinner size="md" color="blue" />
+              <LoadingSpinner size="md" color="default" />
               <span className="ml-3 text-gray-600">Carregando dados da venda...</span>
             </div>
           )}
@@ -164,16 +162,44 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
                 </AlertDescription>
               </Alert>
 
-              {/* Botão de ação único - UX MELHORADA */}
-              <div className="flex justify-center mt-6">
+              {/* Botões de Ação */}
+              <div className="flex flex-col gap-3 mt-6">
                 <Button
                   onClick={handlePrint}
                   size="lg"
-                  className="bg-primary-yellow hover:bg-yellow-500 text-black px-8 py-3 font-semibold shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
+                  className="w-full bg-primary-yellow hover:bg-yellow-500 text-black font-semibold shadow-lg transition-all"
                 >
                   <Printer className="h-5 w-5 mr-2" />
-                  IMPRIMIR CUPOM
+                  IMPRIMIR CUPOM (NÃO FISCAL)
                 </Button>
+
+                {/* Botão Fiscal - Lógica Condicional */}
+                {!fiscalData || fiscalData.status !== 'authorized' ? (
+                  <Button
+                    onClick={handleEmitFiscal}
+                    disabled={isFiscalLoading}
+                    variant="outline"
+                    className="w-full border-blue-500 text-blue-600 hover:bg-blue-50"
+                  >
+                    {isFiscalLoading ? (
+                      <LoadingSpinner size="sm" color="default" />
+                    ) : (
+                      <>
+                        <QrCode className="h-5 w-5 mr-2" />
+                        EMITIR NFC-e (FISCAL)
+                      </>
+                    )}
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={handleOpenFiscalPDF}
+                    variant="outline"
+                    className="w-full border-green-500 text-green-600 hover:bg-green-50"
+                  >
+                    <FileText className="h-5 w-5 mr-2" />
+                    VER NOTA FISCAL (PDF)
+                  </Button>
+                )}
               </div>
 
               {/* Instruções de Configuração */}

@@ -26,7 +26,7 @@ export type Sale = {
     payment_method: string;
     payment_status: 'pending' | 'paid' | 'cancelled';
     order_number: number; // Added based on DB schema
-    status: 'pending' | 'completed' | 'cancelled' | 'delivering' | 'delivered' | 'returned';
+    status: 'pending' | 'completed' | 'cancelled' | 'delivering' | 'delivered' | 'returned' | 'refunded';
     delivery: boolean | null;
     delivery_status?: 'pending' | 'preparing' | 'out_for_delivery' | 'delivered' | 'cancelled' | null; // Added based on DB schema
     delivery_type: string; // Added based on DB schema
@@ -37,6 +37,14 @@ export type Sale = {
     notes: string | null;
     created_at: string;
     updated_at: string;
+    // Fiscal Data
+    invoice?: {
+        id: string;
+        status: 'pending' | 'authorized' | 'rejected' | 'cancelled' | 'processing';
+        external_id?: string | null;
+        xml_url?: string | null;
+        pdf_url?: string | null;
+    } | null;
     customer?: {
         id: string;
         name: string;

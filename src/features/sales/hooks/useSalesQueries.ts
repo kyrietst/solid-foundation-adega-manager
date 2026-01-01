@@ -36,6 +36,13 @@ export const useSales = (params?: {
             name,
             email,
             phone
+          ),
+          invoice_logs (
+            id,
+            status,
+            external_id,
+            pdf_url,
+            xml_url
           )
         `)
                 .order('created_at', { ascending: false });
@@ -87,7 +94,7 @@ export const useSales = (params?: {
 
             // Mapeia os dados para o formato esperado
             const mappedData = salesWithItems.map((sale: any) => {
-                // Mapeia os itens da venda
+                // Mapeias os itens da venda
                 const items = (sale.sale_items || []).map((item: any) => ({
                     id: item.id,
                     sale_id: sale.id,
@@ -104,6 +111,11 @@ export const useSales = (params?: {
                 // Buscar seller pelos dados carregados
                 const sellerId = sale.seller_id || sale.user_id;
                 const seller = sellers.find(s => s.id === sellerId);
+                
+                // Mapeia o invoice (pega o ultimo/mais recente se houver array)
+                const lastInvoice = sale.invoice_logs && sale.invoice_logs.length > 0 
+                  ? sale.invoice_logs[0] // Assumindo que o banco retorna ordem padrao ou podemos ordenar
+                  : null;
 
                 return {
                     ...sale,
@@ -121,6 +133,9 @@ export const useSales = (params?: {
                     // Remove as relações do objeto para evitar conflitos
                     sale_items: undefined,
                     customers: undefined,
+                    invoice_logs: undefined,
+                    // Adiciona dados mapeados
+                    invoice: lastInvoice, 
                     // Garante que os campos obrigatórios existam
                     discount_amount: sale.discount_amount || 0,
                     final_amount: sale.final_amount || sale.total_amount,

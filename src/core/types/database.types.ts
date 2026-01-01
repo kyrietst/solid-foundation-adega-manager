@@ -519,6 +519,50 @@ export type Database = {
           },
         ]
       }
+      invoice_logs: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          external_id: string | null
+          id: string
+          pdf_url: string | null
+          sale_id: string | null
+          status: string
+          updated_at: string | null
+          xml_url: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          external_id?: string | null
+          id?: string
+          pdf_url?: string | null
+          sale_id?: string | null
+          status: string
+          updated_at?: string | null
+          xml_url?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          external_id?: string | null
+          id?: string
+          pdf_url?: string | null
+          sale_id?: string | null
+          status?: string
+          updated_at?: string | null
+          xml_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_logs_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          }
+        ]
+      },
       notifications: {
         Row: {
           created_at: string | null
@@ -597,6 +641,10 @@ export type Database = {
           supplier_id: string | null
           units_per_package: number | null
           updated_at: string | null
+          ncm: string | null
+          cest: string | null
+          cfop: string | null
+          origin: string | null
         }
         Insert: {
           barcode?: string | null
@@ -844,6 +892,63 @@ export type Database = {
           },
         ]
       }
+      store_settings: {
+        Row: {
+          id: string
+          created_at: string | null
+          updated_at: string | null
+          environment: string
+          business_name: string | null
+          trade_name: string | null
+          cnpj: string | null
+          ie: string | null
+          address_street: string | null
+          address_number: string | null
+          address_complement: string | null
+          address_neighborhood: string | null
+          address_city: string | null
+          address_state: string | null
+          address_zip_code: string | null
+          crt: string | null
+        }
+        Insert: {
+          id?: string
+          created_at?: string | null
+          updated_at?: string | null
+          environment?: string
+          business_name?: string | null
+          trade_name?: string | null
+          cnpj?: string | null
+          ie?: string | null
+          address_street?: string | null
+          address_number?: string | null
+          address_complement?: string | null
+          address_neighborhood?: string | null
+          address_city?: string | null
+          address_state?: string | null
+          address_zip_code?: string | null
+          crt?: string | null
+        }
+        Update: {
+          id?: string
+          created_at?: string | null
+          updated_at?: string | null
+          environment?: string
+          business_name?: string | null
+          trade_name?: string | null
+          cnpj?: string | null
+          ie?: string | null
+          address_street?: string | null
+          address_number?: string | null
+          address_complement?: string | null
+          address_neighborhood?: string | null
+          address_city?: string | null
+          address_state?: string | null
+          address_zip_code?: string | null
+          crt?: string | null
+        }
+        Relationships: []
+      },
       suppliers: {
         Row: {
           contact_info: string | null

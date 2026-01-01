@@ -2,13 +2,14 @@ import { useSales, useDeleteSale } from "@/features/sales/hooks/use-sales";
 import { Skeleton } from "@/shared/ui/composite/skeleton";
 import { formatCurrency, formatDate } from "@/shared/utils/formatters";
 import { Button } from "@/shared/ui/primitives/button";
-import { FileText, Download, CalendarDays, CreditCard, ChevronRight, User, Truck, Trash2, Eye, Package, Store } from "lucide-react";
+import { FileText, Download, CalendarDays, CreditCard, ChevronRight, User, Truck, Trash2, Eye, Package, Store, QrCode } from "lucide-react";
 import { useAuth } from "@/app/providers/AuthContext";
 import { useState } from "react";
 import { useToast } from "@/shared/hooks/common/use-toast";
 import { text, shadows } from "@/core/config/theme";
 import { cn } from "@/core/config/utils";
 import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,6 +23,9 @@ import {
 
 import { SaleStatusBadge } from "./SaleStatusBadge";
 import { PaymentStatusBadge } from "./PaymentStatusBadge";
+import { FiscalStatusBadge } from "@/features/fiscal/components/FiscalStatusBadge";
+import { useFiscalEmission } from "@/features/fiscal/hooks/useFiscalEmission";
+import { LoadingSpinner } from "@/shared/ui/composite/loading-spinner";
 
 export function RecentSales() {
   const { data: sales, isLoading } = useSales({ limit: 20 });
@@ -32,6 +36,10 @@ export function RecentSales() {
   const [expandedSaleId, setExpandedSaleId] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  const { emitInvoice, isLoading: isFiscalProcessing } = useFiscalEmission();
+  const [processingSaleId, setProcessingSaleId] = useState<string | null>(null);
 
   // Alterna a exibição dos detalhes da venda
   const toggleSaleDetails = (saleId: string) => {
@@ -42,6 +50,23 @@ export function RecentSales() {
     setSaleToDelete({ id: saleId, number: saleNumber });
     setIsDeleteDialogOpen(true);
   };
+
+  const handleEmitFiscal = async (saleId: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Evita expandir o card
+    if (processingSaleId) return;
+
+    setProcessingSaleId(saleId);
+    await emitInvoice(saleId, () => {
+      // Atualiza a lista para mostrar o novo status
+      queryClient.invalidateQueries({ queryKey: ["sales"] });
+    });
+    setProcessingSaleId(null);
+  };
+
+  const handleViewFiscal = (url: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    window.open(url, '_blank');
+  }
 
   const handleConfirmDelete = () => {
     if (!saleToDelete) return;
@@ -207,6 +232,8 @@ export function RecentSales() {
                         {sale.delivery_type === 'delivery' ? 'Pedido' : 'Venda'} #{sale.order_number}
                       </h3>
                       <SaleStatusBadge sale={sale} />
+                      {/* Badge Fiscal */}
+                      <FiscalStatusBadge status={sale.invoice?.status} />
                     </div>
                     <div className="flex flex-col gap-2 text-sm">
                       <div className="flex items-center gap-2">
@@ -238,6 +265,40 @@ export function RecentSales() {
                           Tipo: {formatDeliveryType(sale.delivery_type)}
                         </span>
                       </div>
+
+                      {/* Botão Fiscal Inline - AÇÃO RÁPIDA */}
+                      <div className="flex items-center gap-2 mt-1">
+                        {sale.invoice && sale.invoice.status === 'authorized' ? (
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-6 px-2 text-green-400 hover:text-green-300 hover:bg-green-400/10 text-xs"
+                            onClick={(e) => handleViewFiscal(sale.invoice!.pdf_url || '', e)}
+                          >
+                            <FileText className="h-3 w-3 mr-1" />
+                            Ver NFC-e
+                          </Button>
+                        ) : (
+                           // Mostrar botão de emitir apenas se não estiver cancelado ou reembolsado
+                           (sale.status !== 'cancelled' && sale.status !== 'refunded') && (
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-6 px-2 text-blue-400 hover:text-blue-300 hover:bg-blue-400/10 text-xs"
+                              disabled={isFiscalProcessing && processingSaleId === sale.id}
+                              onClick={(e) => handleEmitFiscal(sale.id, e)}
+                            >
+                              {isFiscalProcessing && processingSaleId === sale.id ? (
+                                <LoadingSpinner size="sm" color="default" />
+                              ) : (
+                                <QrCode className="h-3 w-3 mr-1" />
+                              )}
+                              {isFiscalProcessing && processingSaleId === sale.id ? 'Emitindo...' : 'Emitir Cupom Fiscal'}
+                            </Button>
+                           )
+                        )}
+                      </div>
+
                       <div className="flex items-center gap-2">
                         <CalendarDays className="h-4 w-4 text-emerald-400" />
                         <span className={cn(text.h6, shadows.subtle)}>
