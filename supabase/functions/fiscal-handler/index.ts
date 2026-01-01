@@ -166,6 +166,29 @@ Deno.serve(async (req) => {
     const totalVenda = items.reduce((acc: number, item: any) => acc + item.valor_bruto, 0)
     const totalVendaNumber = parseFloat(totalVenda.toFixed(2))
 
+    // Lógica Avançada de Pagamento
+    const tPag = mapPaymentMethod(sale.payment_method)
+    
+    const paymentDet: any = {
+        tPag: tPag,
+        vPag: totalVendaNumber
+    }
+
+    // Regra 1: Se for '99' (Outros), exige descrição (Erro 441)
+    if (tPag === '99') {
+        paymentDet.xPag = 'Outros'
+    }
+
+    // Regra 2: Se for Cartão (03 ou 04), exige grupo 'card' (Erro 391)
+    if (tPag === '03' || tPag === '04') {
+        paymentDet.card = {
+            tpIntegra: 2, // 2 = Não Integrado (Maquininha POS avulsa)
+            CNPJ: null, // Opcional em tpIntegra=2 na maioria dos estados
+            tBand: null, // Opcional
+            cAut: null // Opcional
+        }
+    }
+
     // 9. Construct Payload (SEFAZ Standard)
     const nfcePayload = {
         ambiente: "homologacao", // Obrigatório na raiz
@@ -267,12 +290,7 @@ Deno.serve(async (req) => {
             },
             transp: { modFrete: 9 }, // NUMBER (Era "9")
             pag: {
-                detPag: [{
-                    tPag: mapPaymentMethod(sale.payment_method), 
-                    vPag: totalVendaNumber, // NUMBER
-                    // Se for 99, obrigatorio descricao. Se for outro, undefined.
-                    xPag: mapPaymentMethod(sale.payment_method) === '99' ? 'Outros' : undefined
-                }]
+                detPag: [ paymentDet ]
             }
         }
     }
