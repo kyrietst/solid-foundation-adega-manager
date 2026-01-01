@@ -105,7 +105,7 @@ Deno.serve(async (req) => {
     tokenParams.append('grant_type', 'client_credentials')
     tokenParams.append('client_id', CLIENT_ID)
     tokenParams.append('client_secret', CLIENT_SECRET)
-    tokenParams.append('scope', 'cfe:emissao')
+    tokenParams.append('scope', 'nfce:emissao')
 
     const authRes = await fetch(AUTH_URL, {
       method: 'POST',
