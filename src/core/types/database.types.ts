@@ -430,48 +430,48 @@ export type Database = {
       }
       inventory_movements: {
         Row: {
-          created_at: string | null
+          created_at: string
           id: string
-          metadata: Json | null
+          metadata: Json
+          movement_type: string | null
           new_stock_quantity: number
-          previous_stock: number | null
+          previous_stock: number
           product_id: string
           quantity_change: number
           reason: string | null
           related_sale_id: string | null
           sale_id: string | null
           type_enum: Database["public"]["Enums"]["movement_type"]
-          updated_at: string | null
           user_id: string | null
         }
         Insert: {
-          created_at?: string | null
+          created_at?: string
           id?: string
-          metadata?: Json | null
+          metadata?: Json
+          movement_type?: string | null
           new_stock_quantity: number
-          previous_stock?: number | null
+          previous_stock: number
           product_id: string
           quantity_change: number
           reason?: string | null
           related_sale_id?: string | null
           sale_id?: string | null
           type_enum: Database["public"]["Enums"]["movement_type"]
-          updated_at?: string | null
           user_id?: string | null
         }
         Update: {
-          created_at?: string | null
+          created_at?: string
           id?: string
-          metadata?: Json | null
+          metadata?: Json
+          movement_type?: string | null
           new_stock_quantity?: number
-          previous_stock?: number | null
+          previous_stock?: number
           product_id?: string
           quantity_change?: number
           reason?: string | null
           related_sale_id?: string | null
           sale_id?: string | null
           type_enum?: Database["public"]["Enums"]["movement_type"]
-          updated_at?: string | null
           user_id?: string | null
         }
         Relationships: [

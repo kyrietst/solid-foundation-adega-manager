@@ -119,7 +119,7 @@ export const StockHistoryModal: React.FC<StockHistoryModalProps> = ({
         .from('inventory_movements')
         .select(`
           id,
-          date,
+          created_at,
           type,
           quantity_change,
           new_stock_quantity,
@@ -128,7 +128,7 @@ export const StockHistoryModal: React.FC<StockHistoryModalProps> = ({
           user_id
         `)
         .eq('product_id', product.id)
-        .order('date', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (movementsError) throw movementsError;
 
@@ -199,9 +199,12 @@ export const StockHistoryModal: React.FC<StockHistoryModalProps> = ({
         const metadata = movement.metadata as any || {};
         const reference = metadata.sale_id || metadata.movement_id || undefined;
 
+        // Use created_at instead of date
+        const dateValue = new Date((movement as any).created_at || (movement as any).date);
+
         return {
           id: movement.id,
-          date: new Date(movement.date),
+          date: dateValue,
           type: mappedType,
           quantity: displayQuantity,
           reason: movement.reason || 'Sem motivo especificado',

@@ -9,6 +9,7 @@ import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { supabase } from '@/core/api/supabase/client';
+import { useInventoryMovementsList } from '../hooks/useInventoryMovements';
 
 import {
   Table,
@@ -126,51 +127,22 @@ const InventoryMovementsHistoryContent: React.FC<InventoryMovementsHistoryProps>
     user_id: ''
   });
 
-  // Query para buscar movimentações
-  const { data: movements, isLoading, error } = useQuery({
-    queryKey: ['inventory_movements', product_id, filters],
-    queryFn: async () => {
-      let query = supabase
-        .from('inventory_movements')
-        .select(`
-          *,
-          product:products!inner (
-            name,
-            units_per_package
-          ),
-          user:profiles (
-            name
-          )
-        `)
-        .order('date', { ascending: false });
+  // Helper to calculate start date
+  const startDate = React.useMemo(() => {
+    if (filters.period === 'all') return undefined;
+    const days = parseInt(filters.period.replace('d', ''));
+    const date = new Date();
+    date.setDate(date.getDate() - days);
+    return date.toISOString();
+  }, [filters.period]);
 
-      // Filtro por produto específico
-      if (product_id) {
-        query = query.eq('product_id' as any, product_id as any);
-      }
-
-      // Filtro por tipo
-      if (filters.type && filters.type !== 'all') {
-        query = query.eq('type' as any, filters.type as any);
-      }
-
-      // Filtro por período
-      if (filters.period !== 'all') {
-        const days = parseInt(filters.period.replace('d', ''));
-        const startDate = new Date();
-        startDate.setDate(startDate.getDate() - days);
-        query = query.gte('date', startDate.toISOString());
-      }
-
-      // Filtro por usuário
-      if (filters.user_id && filters.user_id !== 'all') {
-        query = query.eq('user_id' as any, filters.user_id as any);
-      }
-
-      const { data, error } = await query.limit(100);
-      if (error) throw error;
-      return (data as any[]) || [];
-    }
+  // Query para buscar movimentações usando o hook centralizado
+  const { data: movements, isLoading, error } = useInventoryMovementsList({
+    productId: product_id || undefined,
+    type: filters.type || undefined,
+    userId: filters.user_id || undefined,
+    startDate,
+    limit: 100
   });
 
   // Query para buscar usuários para o filtro
@@ -317,7 +289,7 @@ const InventoryMovementsHistoryContent: React.FC<InventoryMovementsHistoryProps>
                     return (
                       <TableRow key={movement.id}>
                         <TableCell className="font-mono text-xs">
-                          {format(new Date(movement.date), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
+                          {format(new Date(movement.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
                         </TableCell>
 
                         {!product_id && (
@@ -328,8 +300,11 @@ const InventoryMovementsHistoryContent: React.FC<InventoryMovementsHistoryProps>
 
                         <TableCell>
                           <Badge
-                            variant={getMovementTypeVariant(movement.type)}
-                            className="flex items-center gap-1 w-fit"
+                            variant="outline"
+                            className={cn(
+                              "flex items-center gap-1 w-fit",
+                              getMovementTypeVariant(movement.type_enum)
+                            )}
                           >
                             <MovementIcon className="h-3 w-3" />
                             {MOVEMENT_TYPE_LABELS[movement.type as keyof typeof MOVEMENT_TYPE_LABELS] || movement.type}

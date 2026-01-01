@@ -252,7 +252,7 @@ export interface InventoryMovement {
   due_date: string | null;
   sale_id: string | null;
   user_id: string | null;
-  date: string;
+
   created_at: string;
   updated_at: string;
 

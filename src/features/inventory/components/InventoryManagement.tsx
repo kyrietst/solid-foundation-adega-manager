@@ -249,11 +249,44 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({ className }) 
 
       {/* Modals */}
       <NewProductModal isOpen={isAddProductOpen} onClose={() => setIsAddProductOpen(false)} onSuccess={() => queryClient.invalidateQueries({ queryKey: ['products'] })} />
-      <SimpleProductViewModal product={selectedProduct} isOpen={isDetailsModalOpen} onClose={() => { setIsDetailsModalOpen(false); setSelectedProduct(null); }} onEdit={handleEditProduct} onAdjustStock={handleAdjustStock} onViewHistory={handleViewHistory} />
-      <StockAdjustmentModal productId={selectedProduct?.id || ''} isOpen={isStockAdjustmentOpen} onClose={() => { setIsStockAdjustmentOpen(false); setSelectedProduct(null); }} onSuccess={() => { queryClient.invalidateQueries({ queryKey: ['products'] }); setIsStockAdjustmentOpen(false); }} />
-      <SimpleEditProductModal isOpen={isEditProductOpen} onClose={() => { setIsEditProductOpen(false); setSelectedProduct(null); }} product={selectedProduct as any} onSubmit={(data) => { if (selectedProduct) editProductMutation.mutate({ productData: data as any, selectedProduct }); }} isLoading={editProductMutation.isPending} onSuccess={() => queryClient.invalidateQueries({ queryKey: ['products'] })} />
-      <StockHistoryModal product={selectedProduct} isOpen={isHistoryModalOpen} onClose={() => setIsHistoryModalOpen(false)} />
-      <TransferToHoldingModal product={productToTransfer} isOpen={isTransferModalOpen} onClose={() => { setIsTransferModalOpen(false); setProductToTransfer(null); }} onSuccess={() => { queryClient.invalidateQueries({ queryKey: ['products'] }); queryClient.invalidateQueries({ queryKey: ['products', 'for-store-toggle'] }); }} />
+      
+      <SimpleProductViewModal 
+        product={isDetailsModalOpen ? selectedProduct : null} 
+        isOpen={isDetailsModalOpen} 
+        onClose={() => { setIsDetailsModalOpen(false); setSelectedProduct(null); }} 
+        onEdit={handleEditProduct} 
+        onAdjustStock={handleAdjustStock} 
+        onViewHistory={handleViewHistory} 
+      />
+      
+      <StockAdjustmentModal 
+        productId={isStockAdjustmentOpen ? (selectedProduct?.id || '') : ''} 
+        isOpen={isStockAdjustmentOpen} 
+        onClose={() => { setIsStockAdjustmentOpen(false); setSelectedProduct(null); }} 
+        onSuccess={() => { queryClient.invalidateQueries({ queryKey: ['products'] }); setIsStockAdjustmentOpen(false); }} 
+      />
+      
+      <SimpleEditProductModal 
+        isOpen={isEditProductOpen} 
+        onClose={() => { setIsEditProductOpen(false); setSelectedProduct(null); }} 
+        product={isEditProductOpen ? (selectedProduct as any) : null} 
+        onSubmit={(data) => { if (selectedProduct) editProductMutation.mutate({ productData: data as any, selectedProduct }); }} 
+        isLoading={editProductMutation.isPending} 
+        onSuccess={() => queryClient.invalidateQueries({ queryKey: ['products'] })} 
+      />
+      
+      <StockHistoryModal 
+        product={isHistoryModalOpen ? selectedProduct : null} 
+        isOpen={isHistoryModalOpen} 
+        onClose={() => setIsHistoryModalOpen(false)} 
+      />
+      
+      <TransferToHoldingModal 
+        product={isTransferModalOpen ? productToTransfer : null} 
+        isOpen={isTransferModalOpen} 
+        onClose={() => { setIsTransferModalOpen(false); setProductToTransfer(null); }} 
+        onSuccess={() => { queryClient.invalidateQueries({ queryKey: ['products'] }); queryClient.invalidateQueries({ queryKey: ['products', 'for-store-toggle'] }); }} 
+      />
     </div>
   );
 };

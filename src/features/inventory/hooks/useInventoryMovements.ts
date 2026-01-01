@@ -17,7 +17,7 @@ export interface InventoryMovementParams {
   quantityChange: number;
   type: 'sale' | 'initial_stock' | 'inventory_adjustment' | 'return' | 'stock_transfer_out' | 'stock_transfer_in' | 'personal_consumption';
   reason?: string;
-  metadata?: Record<string, unknown>;
+  metadata?: Record<string, any>;
 }
 
 export interface InventoryMovementResult {
@@ -33,9 +33,11 @@ export interface InventoryMovement {
   quantity_change: number;
   new_stock_quantity: number;
   type_enum: string;
+  // Fallback for when type is returned as string in some contexts
+  type: string;
   reason: string | null;
   metadata: Json;
-  date: string;
+  created_at: string;
   customer_id?: string | null;
   sale_id?: string | null;
   user_id?: string | null;
@@ -43,6 +45,7 @@ export interface InventoryMovement {
     name: string;
     unit_type: string;
     price: number;
+    units_per_package?: number;
   };
   customer: {
     name: string;
@@ -55,6 +58,7 @@ export interface InventoryMovement {
 
 export const useInventoryMovementsList = (filters?: {
   productId?: string;
+  userId?: string;
   type?: string;
   startDate?: string;
   endDate?: string;
@@ -70,7 +74,8 @@ export const useInventoryMovementsList = (filters?: {
           product:products!inner (
             name,
             unit_type,
-            price
+            price,
+            units_per_package
           ),
           customer:customers (
             name,
@@ -79,30 +84,36 @@ export const useInventoryMovementsList = (filters?: {
           user:profiles (
             name
           )
-        `)
-        .order('date', { ascending: false });
+        `);
 
       if (filters?.productId) {
-        query = query.filter('product_id', 'eq', filters.productId);
+        query = query.eq('product_id', filters.productId);
       }
 
-      if (filters?.type) {
-        query = query.filter('type_enum', 'eq', filters.type);
+      if (filters?.userId && filters.userId !== 'all') {
+        query = query.eq('user_id', filters.userId);
+      }
+
+      // Handle 'all' type filter or specific type
+      if (filters?.type && filters.type !== 'all') {
+        // Checking if it matches the enum column or the type column (sometimes one is used over the other)
+        // Schema usually has type or type_enum. The code below used type_enum previously.
+        // We will assume type_enum is the correct column for the enum value based on previous code.
+        query = query.eq('type_enum', filters.type as any);
       }
 
       if (filters?.startDate) {
-        query = query.gte('date', filters.startDate);
+        query = query.gte('created_at', filters.startDate);
       }
 
       if (filters?.endDate) {
-        query = query.lte('date', filters.endDate);
+        query = query.lte('created_at', filters.endDate);
       }
 
-      if (filters?.limit) {
-        query = query.limit(filters.limit);
-      }
+      const { data, error } = await query
+        .order('created_at', { ascending: false })
+        .limit(filters?.limit || 100);
 
-      const { data, error } = await query;
       if (error) throw error;
       return data as unknown as InventoryMovement[];
     },
@@ -122,7 +133,7 @@ export const useInventoryMovements = () => {
           p_quantity_change: quantityChange,
           p_type: type,
           p_reason: reason || null,
-          p_metadata: metadata
+          p_metadata: (metadata as Record<string, any>) || {},
         });
 
       if (error) throw error;

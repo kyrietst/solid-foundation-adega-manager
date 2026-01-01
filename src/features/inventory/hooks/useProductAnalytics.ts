@@ -23,7 +23,7 @@ export interface ProductAnalytics {
   lastMovement: {
     type: string;
     quantity: number;
-    date: string;
+    created_at: string;
   } | null;
 }
 
@@ -42,7 +42,9 @@ const calculateCompleteness = (product: Product | null): ProductCompleteness | n
     { key: 'volume_ml', weight: 3 },
     { key: 'minimum_stock', weight: 2 },
     { key: 'barcode', weight: 2 },
-    { key: 'image_url', weight: 1 }
+    { key: 'image_url', weight: 1 },
+    { key: 'ncm', weight: 2 },
+    { key: 'cfop', weight: 2 }
   ];
 
   const analysis = fields.map(field => {
@@ -66,7 +68,9 @@ const calculateCompleteness = (product: Product | null): ProductCompleteness | n
     'volume_ml': 'Volume',
     'minimum_stock': 'Estoque Mínimo',
     'barcode': 'Código de Barras',
-    'image_url': 'Imagem'
+    'image_url': 'Imagem',
+    'ncm': 'NCM (Fiscal)',
+    'cfop': 'CFOP (Fiscal)'
   };
 
   const missing = analysis.filter(f => !f.isComplete).map(f => fieldNames[f.key]);
@@ -132,7 +136,7 @@ export const useProductAnalytics = (productId: string | null, product?: Product 
 
         interface MovementData {
           id: string;
-          date: string;
+          created_at: string;
           type_enum: string;
           quantity_change: number;
         }
@@ -157,56 +161,56 @@ export const useProductAnalytics = (productId: string | null, product?: Product 
 
         // Usar função RPC otimizada para buscar resumo de movimentações
         const { error: summaryError } = await supabase
-          .rpc('get_product_movement_summary', { p_product_id: productId });
+          .rpc('get_product_movement_summary' as any, { p_product_id: productId });
 
         if (summaryError) {
           console.warn('⚠️ Erro ao buscar resumo via RPC:', summaryError.message);
         }
 
         // Buscar movimentações detalhadas para datas e lastMovement
-        const { data: movementData, error: movementError } = await (supabase
-          .from('inventory_movements') as any)
-          .select('id, date, type_enum, quantity_change')
+        const { data: movements, error: movementsError } = await supabase
+          .from('inventory_movements')
+          .select('id, created_at, type_enum, quantity_change')
           .eq('product_id', productId)
-          .order('date', { ascending: false })
+          .order('created_at', { ascending: false })
           .limit(50); // Limit to avoid fetching too much history
 
-        if (movementError) {
-          console.error('❌ Erro ao buscar movimentações:', movementError.message);
-          throw movementError;
+        if (movementsError) { // Changed from movementError to movementsError
+          console.error('❌ Erro ao buscar movimentações:', movementsError.message); // Changed from movementError to movementsError
+          throw movementsError; // Changed from movementError to movementsError
         }
 
-        const movements = (movementData as unknown as MovementData[]) || [];
+        const movementData = (movements as unknown as MovementData[]) || []; // Renamed from movements to movementData to avoid conflict
 
         // Last Movement
         let lastMovement = null;
-        if (movements.length > 0) {
-          const last = movements[0];
+        if (movementData.length > 0) {
+          const last = movementData[0];
           lastMovement = {
             type: ['saida', 'out', 'sale'].includes(last.type_enum) ? 'SAIDA' : 'ENTRADA',
             quantity: Math.abs(last.quantity_change),
-            date: new Date(last.date).toLocaleDateString('pt-BR')
+            created_at: new Date(last.created_at).toLocaleDateString('pt-BR') // Changed from 'date' to 'created_at'
           };
         }
 
         // Encontrar última entrada
-        const lastEntry = movements
-          .filter(m => ['entrada', 'in'].includes(m.type_enum))
-          .map(m => new Date(m.date))[0] || null;
+        const lastEntry = movementData // Changed from movements to movementData
+          .filter(m => ['entrada', 'in', 'initial_stock', 'stock_transfer_in'].includes(m.type_enum)) // Added more types
+          .map(m => new Date(m.created_at))[0] || null; // Changed from m.date to m.created_at
 
         // Encontrar última saída
-        const lastExit = movements
-          .filter(m => ['saida', 'out', 'sale'].includes(m.type_enum))
-          .map(m => new Date(m.date))[0] || null;
+        const lastExit = movementData // Changed from movements to movementData
+          .filter(m => ['saida', 'out', 'sale', 'stock_transfer_out', 'personal_consumption'].includes(m.type_enum)) // Added more types
+          .map(m => new Date(m.created_at))[0] || null; // Changed from m.date to m.created_at
 
         // Calcular vendas dos últimos 30 dias
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-        const salesLast30Days = movements
+        const salesLast30Days = movementData // Changed from movements to movementData
           .filter(m =>
             ['saida', 'out', 'sale'].includes(m.type_enum) &&
-            new Date(m.date) >= thirtyDaysAgo
+            new Date(m.created_at) >= thirtyDaysAgo // Changed from m.date to m.created_at
           )
           .reduce((sum, m) => sum + Math.abs(m.quantity_change), 0);
 
@@ -240,7 +244,7 @@ export const useProductAnalytics = (productId: string | null, product?: Product 
         setAnalytics(finalAnalytics);
 
       } catch (err) {
-        console.error('❌ ERRO ao buscar analytics do produto:', err);
+        console.error('❌ ERRO (v2) ao buscar analytics do produto:', err);
         setError(err instanceof Error ? err.message : 'Erro desconhecido');
         setAnalytics(null);
       } finally {
