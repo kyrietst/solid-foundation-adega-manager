@@ -182,23 +182,23 @@ Deno.serve(async (req) => {
         infNFe: {
             versao: "4.00",
             ide: {
-                cUF: "35", // SP
-                cNF: Math.floor(10000000 + Math.random() * 90000000).toString(), // Número aleatório
-                natOp: "VENDA",
-                mod: "65", // Modelo NFC-e
-                serie: "1",
-                nNF: sale.order_number ? parseInt(sale.order_number) : Math.floor(Math.random() * 1000), // Fallback se order_number for texto/null
+                cUF: 35, // NUMBER (Era string "35")
+                cNF: Math.floor(10000000 + Math.random() * 90000000), // NUMBER (Remova .toString())
+                natOp: "VENDA", // String ok
+                mod: 65, // NUMBER (Era "65")
+                serie: 1, // NUMBER (Era "1")
+                nNF: sale.order_number ? parseInt(sale.order_number) : Math.floor(Math.random() * 1000), // Ensure Number
                 dhEmi: new Date().toISOString(),
-                tpNF: "1", // 1=Saída
-                idDest: "1", // 1=Operação interna
-                cMunFG: "3548708", // São Bernardo do Campo (IBGE)
-                tpImp: "4", // DANFE NFC-e
-                tpEmis: "1", // Normal
-                tpAmb: "2", // 2=Homologação
-                finNFe: "1", // Normal
-                indFinal: "1", // Consumidor final
-                indPres: "1", // Presencial
-                procEmi: "0",
+                tpNF: 1, // NUMBER (Era "1")
+                idDest: 1, // NUMBER (Era "1")
+                cMunFG: 3548708, // NUMBER (Era "3548708") - IBGE São Bernardo
+                tpImp: 4, // NUMBER (Era "4")
+                tpEmis: 1, // NUMBER (Era "1")
+                tpAmb: 2, // NUMBER (Era "2" - Homologação)
+                finNFe: 1, // NUMBER (Era "1")
+                indFinal: 1, // NUMBER (Era "1")
+                indPres: 1, // NUMBER (Era "1")
+                procEmi: 0, // NUMBER (Era "0")
                 verProc: "FiscalHandler v2.1"
             },
             emit: {
@@ -216,7 +216,7 @@ Deno.serve(async (req) => {
                     xPais: "BRASIL"
                 },
                 IE: settings.ie === 'ISENTO' ? undefined : settings.ie.replace(/\D/g, ''),
-                CRT: "1" // Simples Nacional
+                CRT: 1 // Simples Nacional (NUMBER)
             },
             det: items.map((item: any, i: number) => ({
                 nItem: i + 1,
