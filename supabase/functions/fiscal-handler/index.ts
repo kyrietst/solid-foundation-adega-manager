@@ -13,6 +13,8 @@ Deno.serve(async (req) => {
     return new Response('ok', { headers: corsHeaders })
   }
 
+  let sale_id_for_log: string | null = null // Variable to hold sale_id for error logging
+
   try {
     // 2. Auth Check: Ensure user is signed in
     const authHeader = req.headers.get('Authorization')
@@ -44,6 +46,7 @@ Deno.serve(async (req) => {
 
     // 4. Parse Request
     const { sale_id } = await req.json()
+    sale_id_for_log = sale_id // Capture ID for global error logging
     if (!sale_id) {
        throw new Error('Missing sale_id in request body')
     }
@@ -188,7 +191,7 @@ Deno.serve(async (req) => {
                 numero: settings.address_number,
                 complemento: settings.address_complement,
                 bairro: settings.address_neighborhood,
-                codigo_municipio: '3550308', // TODO: Need specific IBGE code or API infers from CEP? 
+                codigo_municipio: '3548708', // Hardcoded São Bernardo do Campo 
                 // API usually requires 'codigo_municipio'. 
                 // CRITICAL: We don't have IBGE code in store_settings.
                 // Fallback: Hardcoded SP Capital (3550308) for now or try to match?
@@ -323,9 +326,38 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('[Fiscal] Critical Error:', error)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    
+    // Emergency Log to DB if we have sale_id
+    if (sale_id_for_log) {
+       try {
+         // Re-init client if needed context unavailable, but usually 'supabaseClient' is in try block scope.
+         // We recreate it for safety in catch block with anon key (assuming we can't reusing the one from try block easily due to scope)
+         // Actually, let's just use a fresh client or try-catch inside.
+         // For simplicity, we just assume we can't access 'supabaseClient' here because it is defined inside 'try'.
+         // So we instantiate it again.
+         
+         const authHeader = req.headers.get('Authorization')
+         if (authHeader) {
+            const sbAdmin = createClient(
+              Deno.env.get('SUPABASE_URL') ?? '',
+              Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+              { global: { headers: { Authorization: authHeader } } }
+            )
+            await sbAdmin.from('invoice_logs').upsert({
+                 sale_id: sale_id_for_log,
+                 status: 'rejected',
+                 error_message: errorMessage,
+                 updated_at: new Date().toISOString()
+            }, { onConflict: 'sale_id' })
+         }
+       } catch (logErr) {
+         console.error('Failed to log error to DB:', logErr)
+       }
+    }
+
     return new Response(
       JSON.stringify({ error: errorMessage }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
 })
