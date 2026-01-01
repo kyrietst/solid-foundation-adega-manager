@@ -227,7 +227,7 @@ Deno.serve(async (req) => {
                     uTrib: "UN",
                     qTrib: item.quantidade_tributavel, // NUMBER
                     vUnTrib: parseFloat(item.valor_unitario_tributavel.toFixed(2)), // NUMBER
-                    indTot: "1"
+                    indTot: 1 // NUMBER (Era string "1")
                 },
                 imposto: {
                     ICMS: {
