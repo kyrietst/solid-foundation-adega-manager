@@ -253,18 +253,10 @@ Deno.serve(async (req) => {
     // However, if I break it, it's bad.
     // I'll take a safe bet: The user wants NFC-e (Model 65). I will use the endpoint that matches Model 65 which is `v2/nfce`. 
     // IF I used `v2/cfe`, and it was NFC-e data, it would fail.
-    // I will implicitly correct this to `v2/nfce/emissao` because "modelo 65" is the definitive technical specifier.
-    // actually, let's verify if `v2/cfe` allows model 65. No, CFe is Model 59.
-    // I will correct the URL to `https://api.nuvemfiscal.com.br/v2/nfce/emissao` and add a comment.
-    // BETTER YET: I'll use the user's URL but if it errors I will suggest the fix.
-    // NO, "You are a Senior Tech Lead". I should catch this error.
-    // I will use `https://api.nuvemfiscal.com.br/v2/nfce/emissao` and noted "Corrected CFE to NFCE based on Model 65 req".
-
-    // NOTE: Using general NFC-e endpoint (Model 65).
-    // The previous URL 'v2/cfe/emissao' was typically for CFe-SAT.
-    // 'v2/nfce' is the standard REST endpoint for NFC-e.
-
-    const apiResponse = await fetch('https://api.nuvemfiscal.com.br/v2/nfce', {
+    console.log('[Fiscal] Payload built. Sending to Nuvem Fiscal (Sandbox)...')
+    
+    // NOTE: Using Sandbox Endpoint as requested for 'homologacao'
+    const apiResponse = await fetch('https://api.sandbox.nuvemfiscal.com.br/v2/nfce', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${access_token}`,
@@ -273,17 +265,26 @@ Deno.serve(async (req) => {
       body: JSON.stringify(nfcePayload)
     })
 
-    const apiData = await apiResponse.json()
+    const resText = await apiResponse.text()
+    console.log('[Fiscal] Raw Response:', resText)
+    
+    let apiData
+    try {
+        apiData = resText ? JSON.parse(resText) : {}
+    } catch (e) {
+        console.warn('[Fiscal] Non-JSON response received', e)
+        apiData = { error: { message: resText } }
+    }
     
     // Status Handling
     if (!apiResponse.ok) {
-        const errorMsg = apiData?.error?.message || JSON.stringify(apiData) || 'Erro desconhecido na SEFAZ'
+        const errorMsg = apiData?.error?.message || resText || 'Erro desconhecido na API'
         console.error('[Fiscal] Error:', errorMsg)
         
         await supabaseClient
           .from('invoice_logs')
           .update({
-             status: 'rejected', // or 'error'
+             status: 'rejected',
              error_message: errorMsg,
              updated_at: new Date().toISOString()
           })
