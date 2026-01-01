@@ -256,7 +256,7 @@ Deno.serve(async (req) => {
     console.log('[Fiscal] Payload built. Sending to Nuvem Fiscal (Sandbox)...')
     
     // NOTE: Using Sandbox Endpoint as requested for 'homologacao'
-    const apiResponse = await fetch('https://api.sandbox.nuvemfiscal.com.br/v2/nfce', {
+    const apiResponse = await fetch('https://api.sandbox.nuvemfiscal.com.br/nfce', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${access_token}`,
@@ -283,12 +283,12 @@ Deno.serve(async (req) => {
         
         await supabaseClient
           .from('invoice_logs')
-          .update({
+          .upsert({
+             sale_id: sale_id,
              status: 'rejected',
              error_message: errorMsg,
              updated_at: new Date().toISOString()
-          })
-          .eq('sale_id', sale_id)
+          }, { onConflict: 'sale_id' })
         
         return new Response(
           JSON.stringify({ error: 'Fiscal Emission Failed', details: errorMsg }),
@@ -299,18 +299,18 @@ Deno.serve(async (req) => {
     // Success
     console.log('[Fiscal] Success:', apiData)
     // Map response fields (adjust based on actual Nuvem Fiscal response structure)
-    // Usually: { id, status, url_xml, url_pdf, ... }
-    
+    // 10. Success
+    console.log('[Fiscal] Authorized! Updating log...')
     await supabaseClient
       .from('invoice_logs')
-      .update({
-         status: 'authorized',
-         external_id: apiData.id,
-         xml_url: apiData.url_xml || apiData.xml_url, // fallback
-         pdf_url: apiData.url_danfe || apiData.pdf_url, // fallback
-         updated_at: new Date().toISOString()
-      })
-      .eq('sale_id', sale_id)
+      .upsert({
+        sale_id: sale_id,
+        status: 'authorized',
+        external_id: apiData.id || 'N/A',
+        xml_url: apiData.xml || null, // Check correct field from Nuvem Fiscal
+        pdf_url: apiData.pdf || null, // Check correct field
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'sale_id' })
 
     return new Response(
       JSON.stringify({ 
