@@ -129,10 +129,19 @@ Deno.serve(async (req) => {
     // Payment Mapping
     const mapPaymentMethod = (method: string) => {
         const normalized = method ? method.toLowerCase().trim() : ''
+        
+        // 1. Prioridade: Códigos Diretos (Para quando refatorarmos o Frontend)
+        if (normalized === '01' || normalized === '1') return '01'
+        if (normalized === '03' || normalized === '3') return '03'
+        if (normalized === '04' || normalized === '4') return '04'
+        if (normalized === '17') return '17'
+
+        // 2. Mapeamento de Nomes (Compatibilidade Atual)
         if (normalized.includes('pix')) return '17' // Código Oficial PIX
         if (normalized.includes('cash') || normalized.includes('dinheiro')) return '01'
         if (normalized.includes('credit') || normalized.includes('credito')) return '03'
         if (normalized.includes('debit') || normalized.includes('debito')) return '04'
+        
         return '99' // Outros
     }
 
@@ -183,9 +192,6 @@ Deno.serve(async (req) => {
     if (tPag === '03' || tPag === '04') {
         paymentDet.card = {
             tpIntegra: 2, // 2 = Não Integrado (Maquininha POS avulsa)
-            CNPJ: null, // Opcional em tpIntegra=2 na maioria dos estados
-            tBand: null, // Opcional
-            cAut: null // Opcional
         }
     }
 
@@ -212,7 +218,7 @@ Deno.serve(async (req) => {
                 indFinal: 1, // NUMBER
                 indPres: 1, // NUMBER
                 procEmi: 0, // NUMBER
-                verProc: "FiscalHandler v2.1"
+                verProc: "FiscalHandler v2.2"
             },
             emit: {
                 CNPJ: settings.cnpj.replace(/\D/g, ''),
@@ -225,7 +231,7 @@ Deno.serve(async (req) => {
                     xMun: "Sao Bernardo do Campo",
                     UF: "SP",
                     CEP: settings.address_zip_code.replace(/\D/g, ''),
-                    cPais: "1058",
+                    cPais: "1058", // Brasil
                     xPais: "BRASIL"
                 },
                 IE: settings.ie === 'ISENTO' ? undefined : settings.ie.replace(/\D/g, ''),
@@ -296,13 +302,13 @@ Deno.serve(async (req) => {
     }
 
     // 9. Process Emission
-    console.log('[Fiscal] Payload built. Sending to Nuvem Fiscal...')
+    // console.log('[Fiscal] DEBUG FINAL PAYLOAD:', JSON.stringify(nfcePayload)) // REMOVED PER USER REQUEST
+    console.log('[Fiscal] Payload built. Sending to Nuvem Fiscal (Sandbox)...')
     
     // NOTE: Nuvem Fiscal endpoint might vary (v2/cfe/emissao vs v2/nfe). 
     // User said: https://api.nuvemfiscal.com.br/v2/cfe/emissao
     // Validating if it's CFE (SAT) or NFC-e. 
     // NFC-e is `nfce`. CLe is `cfe`. User prompt said "NFC-e" but URL said `cfe`.
-    // Wait. `cfe` is usually SAT (CFe-SAT). `nfce` is Nota Fiscal Consumidor Eletronica.
     // The specific user instruction was: "Envie o POST para https://api.nuvemfiscal.com.br/v2/cfe/emissao"
     // AND "payload JSON da NFC-e".
     // This is conflicting. CFe != NFC-e.
