@@ -232,7 +232,7 @@ Deno.serve(async (req) => {
                 imposto: {
                     ICMS: {
                         ICMSSN102: { // Simples Nacional sem crédito
-                            orig: "0",
+                            orig: 0, // NUMBER (Era "0")
                             CSOSN: "102"
                         }
                     },
@@ -268,7 +268,7 @@ Deno.serve(async (req) => {
                     vTotTrib: 0.00
                 }
             },
-            transp: { modFrete: "9" }, // Sem frete
+            transp: { modFrete: 9 }, // NUMBER (Era "9")
             pag: {
                 detPag: [{
                     tPag: mapPaymentMethod(sale.payment_method), 
