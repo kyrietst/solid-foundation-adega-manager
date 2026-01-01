@@ -11,8 +11,6 @@ export const useUpsertSale = () => {
 
     return useMutation({
         mutationFn: async ({ saleId, saleData, user }: { saleId?: string; saleData: UpsertSaleInput; user: { id: string } }) => {
-            const allowedRoles: AllowedRole[] = ['admin', 'employee'];
-
             // Check user profile permissions
             const { data: profileVal, error: profileError } = await supabase
                 .from('profiles')
@@ -20,11 +18,11 @@ export const useUpsertSale = () => {
                 .eq('id', user.id)
                 .maybeSingle();
 
-            const profileData = profileVal as { role: string };
-
             if (profileError) throw profileError;
 
-            // Strict check: profileData must exist and have a role
+            const allowedRoles: AllowedRole[] = ['admin', 'employee'];
+            const profileData = profileVal as { role: string };
+
             if (!profileData || !profileData.role || !allowedRoles.includes(profileData.role as AllowedRole)) {
                 throw new Error('Permissão negada ou perfil não encontrado.');
             }
@@ -37,43 +35,40 @@ export const useUpsertSale = () => {
                 .maybeSingle();
 
             const paymentMethodData = paymentMethodDataVal as { name: string };
+            const paymentName = paymentMethodData?.name || 'Outro';
 
             const totalAmount = saleData.total_amount || 0;
             const discountAmount = saleData.discount_amount || 0;
-            let saleResult: Database['public']['Tables']['sales']['Row'];
-
-            // Construct strictly typed payload
-            // delivery_address is JSONB in the database
-            const deliveryAddr = saleData.delivery_address || saleData.deliveryData?.address || null;
-
+            const finalAmount = totalAmount - discountAmount;
             const isDelivery = saleData.saleType === 'delivery' || !!saleData.deliveryData;
-
-            // We define the partial payload first to ensure shared properties match
-            // We use a temporary object that matches key parts of Insert/Update
-            const baseSalePayloadPart = {
-                customer_id: saleData.customer_id,
-                total_amount: totalAmount,
-                discount_amount: discountAmount,
-                final_amount: totalAmount - discountAmount,
-                payment_method: paymentMethodData?.name || 'Outro', // Using data directly
-                payment_status: 'paid', // Default to paid for POS
-                status: 'completed',
-                updated_at: new Date().toISOString(),
-                delivery: isDelivery,
-                delivery_type: isDelivery ? 'delivery' : 'presencial',
-                delivery_status: isDelivery ? 'pending' : null, // Set initial delivery status
-                delivery_fee: saleData.delivery_fee || saleData.deliveryData?.deliveryFee || 0,
-                delivery_address: deliveryAddr,
-                delivery_person_id: saleData.delivery_person_id || null,
-                notes: saleData.notes || null,
-                user_id: user.id
-            };
+            
+            // Prepare Common Data
+            const deliveryAddress = saleData.delivery_address || saleData.deliveryData?.address || null;
+            const deliveryFee = saleData.delivery_fee || saleData.deliveryData?.deliveryFee || 0;
+            const deliveryInstructions = saleData.notes || saleData.deliveryData?.instructions || null;
 
             if (saleId) {
-                // Update existing sale
-                const updatePayload: any = {
-                    ...baseSalePayloadPart
+                // UPDATE SCENARIO (Manteve-se o update manual pois RPC é só para Create por enquanto)
+                const baseSalePayloadPart = {
+                    customer_id: saleData.customer_id,
+                    total_amount: totalAmount,
+                    discount_amount: discountAmount,
+                    final_amount: finalAmount,
+                    payment_method: paymentName,
+                    payment_status: 'paid',
+                    status: 'completed',
+                    updated_at: new Date().toISOString(),
+                    delivery: isDelivery,
+                    delivery_type: isDelivery ? 'delivery' : 'presencial',
+                    delivery_status: isDelivery ? 'pending' : null,
+                    delivery_fee: deliveryFee,
+                    delivery_address: deliveryAddress,
+                    delivery_person_id: saleData.delivery_person_id || null,
+                    notes: saleData.notes || null,
+                    user_id: user.id
                 };
+
+                const updatePayload: any = { ...baseSalePayloadPart };
 
                 const { data: updatedSaleVal, error: updateError } = await supabase
                     .from('sales')
@@ -85,74 +80,68 @@ export const useUpsertSale = () => {
                 if (updateError) throw updateError;
                 if (!updatedSaleVal) throw new Error('Venda não encontrada após atualização.');
 
-                const updatedSale = updatedSaleVal as unknown as Database['public']['Tables']['sales']['Row'];
-                saleResult = updatedSale;
-
-                // Audit Log
-                const auditPayload: any = {
+                // Log Audit
+                await supabase.from('audit_logs').insert({
                     user_id: user.id,
                     action: 'update_sale',
                     table_name: 'sales',
                     record_id: saleId,
-                    old_data: null,
-                    new_data: { ...updatePayload } as unknown as Json,
+                    new_data: updatePayload as unknown as Json,
                     ip_address: '0.0.0.0'
-                };
+                });
 
-                await supabase.from('audit_logs').insert(auditPayload);
+                return updatedSaleVal as unknown as Database['public']['Tables']['sales']['Row'];
 
             } else {
-                // Create new sale
-                const insertPayload: any = {
-                    ...baseSalePayloadPart,
-                    status: 'completed'
-                    // items removed - handled in separate table
-                };
-
-                const { data: newSaleVal, error: insertError } = await supabase
-                    .from('sales')
-                    .insert(insertPayload)
-                    .select()
-                    .single();
-
-                if (insertError) throw insertError;
-                if (!newSaleVal) throw new Error('Falha ao criar venda.');
-
-                const newSale = newSaleVal as unknown as Database['public']['Tables']['sales']['Row'];
-                saleResult = newSale;
-
-                // Insert Items
-                if (saleData.items.length > 0) {
-                    const itemsPayload = saleData.items.map(item => ({
-                        sale_id: newSale.id,
+                // CREATE SCENARIO -> USE RPC 'process_sale'
+                // This ensures stock is decremented correctly (Zero Trust / Integrity Rule)
+                
+                const rpcPayload = {
+                    p_customer_id: saleData.customer_id || null,
+                    p_user_id: user.id,
+                    p_items: saleData.items.map(item => ({
                         product_id: item.product_id,
                         quantity: item.quantity,
                         unit_price: item.unit_price,
+                        sale_type: item.sale_type, // 'package' or 'unit'
                         units_sold: item.units_sold,
-                        package_units: item.package_units,
-                        sale_type: item.sale_type
-                    }));
+                        package_units: item.package_units
+                    })),
+                    p_total_amount: totalAmount,
+                    p_final_amount: finalAmount,
+                    p_payment_method_id: saleData.payment_method_id,
+                    p_discount_amount: discountAmount,
+                    p_notes: saleData.notes || '',
+                    p_is_delivery: isDelivery,
+                    p_delivery_fee: deliveryFee,
+                    p_delivery_address: typeof deliveryAddress === 'object' && deliveryAddress !== null 
+                        ? JSON.stringify(deliveryAddress) 
+                        : (deliveryAddress as string || null),
+                    p_delivery_person_id: saleData.delivery_person_id || null,
+                    p_delivery_instructions: deliveryInstructions
+                };
 
-                    const { error: itemsError } = await supabase.from('sale_items').insert(itemsPayload);
-                    if (itemsError) throw itemsError;
-                }
+                const { data: rpcData, error: rpcError } = await supabase.rpc('process_sale', rpcPayload);
 
-                // Insert Delivery Tracking
-                if (saleData.deliveryData) {
-                    const deliveryPayload: any = {
-                        sale_id: newSale.id,
-                        status: 'pending',
-                        notes: saleData.deliveryData.instructions || '',
-                        created_by: user.id,
-                        location_lat: null,
-                        location_lng: null
-                    };
-                    const { error: deliveryError } = await supabase.from('delivery_tracking').insert(deliveryPayload);
-                    if (deliveryError) throw deliveryError;
-                }
+                if (rpcError) throw rpcError;
+                
+                // RPC returns jsonb { sale_id: ... }
+                // We need to return the full Row object to satisfy type requirements or compatibility
+                const newSaleId = (rpcData as any)?.sale_id;
+                
+                if (!newSaleId) throw new Error('RPC executou mas não retornou ID da venda.');
+
+                // Fetch the created sale to return consistent data
+                const { data: newSaleRow, error: fetchError } = await supabase
+                    .from('sales')
+                    .select('*')
+                    .eq('id', newSaleId)
+                    .single();
+
+                if (fetchError || !newSaleRow) throw new Error('Erro ao recuperar venda criada.');
+
+                return newSaleRow as unknown as Database['public']['Tables']['sales']['Row'];
             }
-
-            return saleResult;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['sales'] });

@@ -29,13 +29,13 @@ Deno.serve(async (req: Request) => {
         }
 
         // Verificar se o usuário é admin
-        const { data: roles } = await supabaseClient
-            .from('user_roles')
+        const { data: profile } = await supabaseClient
+            .from('profiles')
             .select('role')
-            .eq('user_id', user.id)
+            .eq('id', user.id)
             .single()
 
-        if (!roles || roles.role !== 'admin') {
+        if (!profile || profile.role !== 'admin') {
             throw new Error('Unauthorized - Admin only')
         }
 

@@ -28,7 +28,8 @@
     "migration:status": "npm run db:status",
     "migration:diff": "npm run db:diff --file",
     "migration:pull": "npm run db:pull",
-    "deploy:functions": "supabase functions deploy --no-verify-jwt --project-ref goppneqeowgeehpqkcxe"
+    "deploy:functions": "supabase functions deploy --no-verify-jwt --project-ref goppneqeowgeehpqkcxe",
+    "deploy:functions:prod": "supabase functions deploy --no-verify-jwt --project-ref uujkzvbgnfzuzlztrzln"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",

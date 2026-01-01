@@ -1,12 +1,13 @@
 /**
  * Hook para exclusão segura de usuários
- * Gerencia remoção completa de usuários do sistema
+ * Gerencia remoção completa de usuários do sistema via Edge Function
  */
 
 import { useState } from 'react';
 import { supabase } from '@/core/api/supabase/client';
 import { useToast } from '@/shared/hooks/common/use-toast';
 import { useAuth } from '@/app/providers/AuthContext';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface UseUserDeletionReturn {
   deleteUser: (userId: string) => Promise<boolean>;
@@ -19,6 +20,7 @@ export const useUserDeletion = (): UseUserDeletionReturn => {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const { user: currentUser } = useAuth();
+  const queryClient = useQueryClient();
 
   const deleteUser = async (userId: string): Promise<boolean> => {
     // Validações de segurança
@@ -49,46 +51,27 @@ export const useUserDeletion = (): UseUserDeletionReturn => {
     setError(null);
 
     try {
-      // 1. Buscar dados do usuário antes de excluir (para logs)
-      const { data: userToDelete, error: fetchError } = await supabase
-        .from('users')
-        .select('email, full_name')
-        .eq('id', userId)
-        .single();
+      // Invocar Edge Function para deleção segura (Auth + Profile)
+      const { data, error: funcError } = await supabase.functions.invoke('delete-user', {
+        body: { userId }
+      });
 
-      if (fetchError) {
-        console.error('Error fetching user to delete:', fetchError);
-        throw new Error('Usuário não encontrado');
+      if (funcError) {
+        throw new Error(funcError.message || 'Falha na comunicação com o servidor');
       }
 
-      // 2. Excluir da tabela profiles primeiro (devido a foreign keys)
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .delete()
-        .eq('id', userId);
-
-      if (profileError) {
-        console.error('Error deleting from profiles:', profileError);
-        throw new Error('Erro ao remover perfil do usuário');
+      // Verificar erro retornado no body (embora delete-user atual retorne 400 no status se falhar, bom garantir)
+      if (data && data.error) {
+        throw new Error(data.error);
       }
-
-      // 3. Excluir da tabela users
-      const { error: userError } = await supabase
-        .from('users')
-        .delete()
-        .eq('id', userId);
-
-      if (userError) {
-        console.error('Error deleting from users:', userError);
-        throw new Error('Erro ao remover dados do usuário');
-      }
-
-      // 4. Auth.users permanece (sem acesso admin) - comportamento esperado
 
       toast({
         title: "Usuário removido",
-        description: `${userToDelete.full_name || userToDelete.email} foi removido com sucesso`,
+        description: "Usuário foi removido com sucesso",
       });
+
+      // Invalidar cache para atualizar lista
+      queryClient.invalidateQueries({ queryKey: ['users', 'management'] });
 
       return true;
 

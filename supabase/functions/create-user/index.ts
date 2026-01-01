@@ -6,6 +6,7 @@ const handleError = (error: unknown) => {
     const message = error instanceof Error ? error.message : 'An unknown error occurred'
     return new Response(
         JSON.stringify({
+            success: false,
             error: message,
             details: error
         }),
@@ -49,13 +50,13 @@ Deno.serve(async (req: Request) => {
         }
 
         // Verify if caller is admin
-        const { data: roles } = await supabase
-            .from('user_roles')
+        const { data: profile } = await supabase
+            .from('profiles')
             .select('role')
-            .eq('user_id', caller.id)
+            .eq('id', caller.id)
             .single()
 
-        if (!roles || roles.role !== 'admin') {
+        if (!profile || profile.role !== 'admin') {
             throw new Error('Unauthorized: Admin access required')
         }
 
