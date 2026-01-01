@@ -144,37 +144,30 @@ Deno.serve(async (req) => {
         const product = item.products
         if (!product) throw new Error(`Produto não encontrado para item ${item.id}`)
 
-        // CSOSN 102 fallback (Simples Nacional - Tributada sem crédito)
-        // CFOP 5102 fallback
-        
         return {
             numero_item: index + 1,
             codigo_produto: product.barcode || 'SEM_EQ',
             descricao: product.name,
             cfop: product.cfop || '5102',
             unidade_comercial: 'UN',
-            quantidade_comercial: item.quantity,
-            valor_unitario_comercial: item.unit_price,
-            valor_bruto: item.quantity * item.unit_price,
+            quantidade_comercial: item.quantity, // Number
+            valor_unitario_comercial: item.unit_price, // Number
+            valor_bruto: item.quantity * item.unit_price, // Number
             unidade_tributavel: 'UN',
-            quantidade_tributavel: item.quantity,
-            valor_unitario_tributavel: item.unit_price,
-            ncm: product.ncm || '00000000', // Warning: This might reject if invalid
-            cest: product.cest || undefined, // Optional
+            quantidade_tributavel: item.quantity, // Number
+            valor_unitario_tributavel: item.unit_price, // Number
+            ncm: product.ncm || '00000000',
+            cest: product.cest || undefined,
             impostos: {
-                icms: {
-                    csosn: '102', // Simplificação solicitada pelo usuário
-                    origem: product.origin || '0' // 0 = Nacional
-                }
-                // PIS/COFINS geralmente não destacados em NFC-e Simples Nacional básico, 
-                // mas a API pode exigir. Vamos confiar no padrão simplificado 102.
+                icms: { csosn: '102', origem: product.origin || '0' }
             }
         }
     })
 
     // Construct Payload
     // Cálculo simples de totais para evitar rejeição
-    const totalVenda = items.reduce((acc: number, item: any) => acc + item.valor_bruto, 0).toFixed(2)
+    const totalVenda = items.reduce((acc: number, item: any) => acc + item.valor_bruto, 0)
+    const totalVendaNumber = parseFloat(totalVenda.toFixed(2))
 
     // 9. Construct Payload (SEFAZ Standard)
     const nfcePayload = {
@@ -182,23 +175,23 @@ Deno.serve(async (req) => {
         infNFe: {
             versao: "4.00",
             ide: {
-                cUF: 35, // NUMBER (Era string "35")
-                cNF: Math.floor(10000000 + Math.random() * 90000000), // NUMBER (Remova .toString())
+                cUF: 35, // SP
+                cNF: Math.floor(10000000 + Math.random() * 90000000), // NUMBER
                 natOp: "VENDA", // String ok
-                mod: 65, // NUMBER (Era "65")
-                serie: 1, // NUMBER (Era "1")
-                nNF: sale.order_number ? parseInt(sale.order_number) : Math.floor(Math.random() * 1000), // Ensure Number
+                mod: 65, // NUMBER
+                serie: 1, // NUMBER
+                nNF: sale.order_number ? parseInt(sale.order_number) : Math.floor(Math.random() * 1000), // NUMBER
                 dhEmi: new Date().toISOString(),
-                tpNF: 1, // NUMBER (Era "1")
-                idDest: 1, // NUMBER (Era "1")
-                cMunFG: 3548708, // NUMBER (Era "3548708") - IBGE São Bernardo
-                tpImp: 4, // NUMBER (Era "4")
-                tpEmis: 1, // NUMBER (Era "1")
-                tpAmb: 2, // NUMBER (Era "2" - Homologação)
-                finNFe: 1, // NUMBER (Era "1")
-                indFinal: 1, // NUMBER (Era "1")
-                indPres: 1, // NUMBER (Era "1")
-                procEmi: 0, // NUMBER (Era "0")
+                tpNF: 1, // NUMBER
+                idDest: 1, // NUMBER
+                cMunFG: 3548708, // NUMBER - São Bernardo do Campo (IBGE)
+                tpImp: 4, // NUMBER
+                tpEmis: 1, // NUMBER
+                tpAmb: 2, // NUMBER
+                finNFe: 1, // NUMBER
+                indFinal: 1, // NUMBER
+                indPres: 1, // NUMBER
+                procEmi: 0, // NUMBER
                 verProc: "FiscalHandler v2.1"
             },
             emit: {
@@ -216,7 +209,7 @@ Deno.serve(async (req) => {
                     xPais: "BRASIL"
                 },
                 IE: settings.ie === 'ISENTO' ? undefined : settings.ie.replace(/\D/g, ''),
-                CRT: 1 // Simples Nacional (NUMBER)
+                CRT: 1 // NUMBER
             },
             det: items.map((item: any, i: number) => ({
                 nItem: i + 1,
@@ -227,13 +220,13 @@ Deno.serve(async (req) => {
                     NCM: item.ncm, // Deve ser válido (8 dígitos)
                     CFOP: "5102",
                     uCom: "UN",
-                    qCom: item.quantidade_comercial,
-                    vUnCom: item.valor_unitario_comercial.toFixed(2),
-                    vProd: item.valor_bruto.toFixed(2),
+                    qCom: item.quantidade_comercial, // NUMBER
+                    vUnCom: parseFloat(item.valor_unitario_comercial.toFixed(2)), // NUMBER (Double)
+                    vProd: parseFloat(item.valor_bruto.toFixed(2)), // NUMBER (Double)
                     cEANTrib: "SEM GTIN",
                     uTrib: "UN",
-                    qTrib: item.quantidade_tributavel,
-                    vUnTrib: item.valor_unitario_tributavel.toFixed(2),
+                    qTrib: item.quantidade_tributavel, // NUMBER
+                    vUnTrib: parseFloat(item.valor_unitario_tributavel.toFixed(2)), // NUMBER
                     indTot: "1"
                 },
                 imposto: {
@@ -244,47 +237,45 @@ Deno.serve(async (req) => {
                         }
                     },
                     PIS: {
-                        PISOutr: { CST: "99", vBC: "0.00", pPIS: "0.00", vPIS: "0.00" }
+                        PISOutr: { CST: "99", vBC: 0.00, pPIS: 0.00, vPIS: 0.00 } // NUMBERS
                     },
                     COFINS: {
-                        COFINSOutr: { CST: "99", vBC: "0.00", pCOFINS: "0.00", vCOFINS: "0.00" }
+                        COFINSOutr: { CST: "99", vBC: 0.00, pCOFINS: 0.00, vCOFINS: 0.00 } // NUMBERS
                     }
                 }
             })),
             total: {
                 ICMSTot: {
-                    vBC: "0.00",
-                    vICMS: "0.00",
-                    vICMSDeson: "0.00",
-                    vFCP: "0.00",
-                    vBCST: "0.00",
-                    vST: "0.00",
-                    vFCPST: "0.00",
-                    vFCPSTRet: "0.00",
-                    vProd: totalVenda,
-                    vFrete: "0.00",
-                    vSeg: "0.00",
-                    vDesc: "0.00",
-                    vII: "0.00",
-                    vIPI: "0.00",
-                    vIPIDevol: "0.00",
-                    vPIS: "0.00",
-                    vCOFINS: "0.00",
-                    vOutro: "0.00",
-                    vNF: totalVenda,
-                    vTotTrib: "0.00"
+                    vBC: 0.00,
+                    vICMS: 0.00,
+                    vICMSDeson: 0.00,
+                    vFCP: 0.00,
+                    vBCST: 0.00,
+                    vST: 0.00,
+                    vFCPST: 0.00,
+                    vFCPSTRet: 0.00,
+                    vProd: totalVendaNumber, // NUMBER
+                    vFrete: 0.00,
+                    vSeg: 0.00,
+                    vDesc: 0.00,
+                    vII: 0.00,
+                    vIPI: 0.00,
+                    vIPIDevol: 0.00,
+                    vPIS: 0.00,
+                    vCOFINS: 0.00,
+                    vOutro: 0.00,
+                    vNF: totalVendaNumber, // NUMBER
+                    vTotTrib: 0.00
                 }
             },
             transp: { modFrete: "9" }, // Sem frete
             pag: {
                 detPag: [{
-                    tPag: mapPaymentMethod(sale.payment_method), // Mapped dynamically
-                    vPag: totalVenda
+                    tPag: mapPaymentMethod(sale.payment_method), 
+                    vPag: totalVendaNumber // NUMBER
                 }]
             }
         }
-        // Nota: O campo 'referencia' pode ser passado se a API da Nuvem Fiscal suportar na raiz, 
-        // mas o padrão SEFAZ puro é infNFe. Vamos manter 'ambiente' e 'infNFe'.
     }
 
     // 9. Process Emission
