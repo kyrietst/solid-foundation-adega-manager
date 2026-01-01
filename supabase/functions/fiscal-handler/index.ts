@@ -128,15 +128,12 @@ Deno.serve(async (req) => {
     
     // Payment Mapping
     const mapPaymentMethod = (method: string) => {
-        // 01=Dinheiro, 03=Credito, 04=Debito, 17=PIX
-        const map: Record<string, string> = {
-            'cash': '01',
-            'credit_card': '03',
-            'debit_card': '04',
-            'pix': '17',
-            'other': '99'
-        }
-        return map[method] || '99'
+        const normalized = method ? method.toLowerCase().trim() : ''
+        if (normalized.includes('pix')) return '17' // Código Oficial PIX
+        if (normalized.includes('cash') || normalized.includes('dinheiro')) return '01'
+        if (normalized.includes('credit') || normalized.includes('credito')) return '03'
+        if (normalized.includes('debit') || normalized.includes('debito')) return '04'
+        return '99' // Outros
     }
 
     // Items Mapping
@@ -272,7 +269,9 @@ Deno.serve(async (req) => {
             pag: {
                 detPag: [{
                     tPag: mapPaymentMethod(sale.payment_method), 
-                    vPag: totalVendaNumber // NUMBER
+                    vPag: totalVendaNumber, // NUMBER
+                    // Se for 99, obrigatorio descricao. Se for outro, undefined.
+                    xPag: mapPaymentMethod(sale.payment_method) === '99' ? 'Outros' : undefined
                 }]
             }
         }
@@ -332,11 +331,13 @@ Deno.serve(async (req) => {
         apiData = { error: { message: resText } }
     }
     
-    // Status Handling
-    if (!apiResponse.ok) {
-        const errorMsg = apiData?.error?.message || resText || 'Erro desconhecido na API'
+    // Status Handling (HTTP Error OR Logical Rejection)
+    if (!apiResponse.ok || apiData.status === 'rejeitado' || apiData.status === 'erro') {
+        const errorDetails = apiData.autorizacao?.motivo_status || apiData.error?.message || 'Erro de Validação SEFAZ'
+        const errorMsg = `Emissão Rejeitada: ${errorDetails}`
         console.error('[Fiscal] Error:', errorMsg)
         
+        // Log rejection to DB
         await supabaseClient
           .from('invoice_logs')
           .upsert({
@@ -347,7 +348,7 @@ Deno.serve(async (req) => {
           }, { onConflict: 'sale_id' })
         
         return new Response(
-          JSON.stringify({ error: 'Fiscal Emission Failed', details: errorMsg }),
+          JSON.stringify({ error: 'Fiscal Rejection', details: errorMsg }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
     }
