@@ -87,7 +87,7 @@ export const ProductFiscalCard: React.FC<ProductFiscalCardProps> = ({
                             }}
                         />
                         {errors.cest && (
-                            <p className="text-xs text-red-500 font-medium ml-1">{errors.cest?.message}</p>
+                            <p className="text-xs text-red-500 font-medium ml-1">{errors.cest?.message as string}</p>
                         )}
                     </div>
 
@@ -103,14 +103,50 @@ export const ProductFiscalCard: React.FC<ProductFiscalCardProps> = ({
                             )}
                             disabled={disabled}
                             maxLength={4}
+                            onChange={(e) => {
+                                const val = e.target.value.replace(/\D/g, '').substring(0, 4);
+                                e.target.value = val;
+                                register('cfop').onChange(e);
+                            }}
                         />
                         {errors.cfop && (
-                            <p className="text-xs text-red-500 font-medium ml-1">{errors.cfop?.message}</p>
+                            <p className="text-xs text-red-500 font-medium ml-1">{errors.cfop?.message as string}</p>
+                        )}
+                    </div>
+
+                    {/* UNIDADE COMERCIAL (uCom) */}
+                    <div className="space-y-2">
+                        <Label className="text-zinc-300">Unidade Comercial (uCom)</Label>
+                        <Controller
+                            control={control}
+                            name="ucom"
+                            render={({ field }) => (
+                                <Select
+                                    value={field.value}
+                                    onValueChange={field.onChange}
+                                    disabled={disabled}
+                                >
+                                    <SelectTrigger className={cn(
+                                        "bg-zinc-900/50 border-white/10 text-white focus:border-emerald-500/50 focus:ring-emerald-500/20",
+                                        errors.ucom && "border-red-500 focus:border-red-500"
+                                    )}>
+                                        <SelectValue placeholder="Selecione..." />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-zinc-900 border-white/10 text-white">
+                                        {['UN', 'KG', 'L', 'M', 'CX', 'DZ', 'GT', 'M2', 'M3'].map((unit) => (
+                                            <SelectItem key={unit} value={unit}>{unit}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            )}
+                        />
+                        {errors.ucom && (
+                            <p className="text-xs text-red-500 font-medium ml-1">{errors.ucom?.message as string}</p>
                         )}
                     </div>
 
                     {/* Origem */}
-                    <div className="space-y-2">
+                    <div className="space-y-2 md:col-span-2">
                         <Label className="text-zinc-300">Origem da Mercadoria</Label>
                         <Controller
                             control={control}
