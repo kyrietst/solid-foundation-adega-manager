@@ -81,16 +81,7 @@ export const ProductBasicInfoCard: React.FC<ProductBasicInfoCardProps> = React.m
           />
 
 
-          {/* Tipo de Unidade */}
-          <div>
-            <Label htmlFor={`${formId}-unit_type`} className="text-gray-200">Venda em</Label>
-            <Input
-              id={`${formId}-unit_type`}
-              {...register('unit_type')}
-              placeholder="un ou pct"
-              className="bg-gray-800/50 border-primary-yellow/30 text-gray-200 focus:border-primary-yellow placeholder:text-gray-400"
-            />
-          </div>
+
         </div>
 
         {/* Descrição */}
