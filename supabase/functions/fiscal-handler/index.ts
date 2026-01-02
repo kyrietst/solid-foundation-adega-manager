@@ -59,8 +59,12 @@ Deno.serve(async (req) => {
         .from('sales')
         .select(`
           *,
+          payment_methods (
+            code
+          ),
           sale_items (
             *,
+            fiscal_snapshot,
             products (
               name,
               barcode,
@@ -126,44 +130,34 @@ Deno.serve(async (req) => {
 
     // 8. The Great Mapping (JSON Factory)
     
-    // Payment Mapping
-    const mapPaymentMethod = (method: string) => {
-        const normalized = method ? method.toLowerCase().trim() : ''
-        
-        // 1. Prioridade: Códigos Diretos (Para quando refatorarmos o Frontend)
-        if (normalized === '01' || normalized === '1') return '01'
-        if (normalized === '03' || normalized === '3') return '03'
-        if (normalized === '04' || normalized === '4') return '04'
-        if (normalized === '17') return '17'
-
-        // 2. Mapeamento de Nomes (Compatibilidade Atual)
-        if (normalized.includes('pix')) return '17' // Código Oficial PIX
-        if (normalized.includes('cash') || normalized.includes('dinheiro')) return '01'
-        if (normalized.includes('credit') || normalized.includes('credito')) return '03'
-        if (normalized.includes('debit') || normalized.includes('debito')) return '04'
-        
-        return '99' // Outros
-    }
-
     // Items Mapping
     const items = sale.sale_items.map((item: any, index: number) => {
         const product = item.products
+        const snapshot = item.fiscal_snapshot || {}
+        
         if (!product) throw new Error(`Produto não encontrado para item ${item.id}`)
+
+        // Fiscal Data Priorities: Snapshot > Product > Default
+        const ncm = snapshot.ncm || product.ncm || '00000000'
+        const cfop = snapshot.cfop || product.cfop || '5102'
+        const uCom = snapshot.uCom || snapshot.ucom || 'UN'
+        const xProd = snapshot.xProd || product.name
+        const cest = snapshot.cest || product.cest
 
         return {
             numero_item: index + 1,
             codigo_produto: product.barcode || 'SEM_EQ',
-            descricao: product.name,
-            cfop: product.cfop || '5102',
-            unidade_comercial: 'UN',
+            descricao: xProd,
+            cfop: cfop,
+            unidade_comercial: uCom,
             quantidade_comercial: item.quantity, // Number
             valor_unitario_comercial: item.unit_price, // Number
             valor_bruto: item.quantity * item.unit_price, // Number
-            unidade_tributavel: 'UN',
+            unidade_tributavel: uCom,
             quantidade_tributavel: item.quantity, // Number
             valor_unitario_tributavel: item.unit_price, // Number
-            ncm: product.ncm || '00000000',
-            cest: product.cest || undefined,
+            ncm: ncm,
+            cest: cest || undefined,
             impostos: {
                 icms: { csosn: '102', origem: product.origin || '0' }
             }
@@ -176,7 +170,7 @@ Deno.serve(async (req) => {
     const totalVendaNumber = parseFloat(totalVenda.toFixed(2))
 
     // Lógica Avançada de Pagamento
-    const tPag = mapPaymentMethod(sale.payment_method)
+    const tPag = sale.payment_methods?.code || '99'
     
     const paymentDet: any = {
         tPag: tPag,

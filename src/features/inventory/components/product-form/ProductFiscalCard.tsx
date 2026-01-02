@@ -43,34 +43,48 @@ export const ProductFiscalCard: React.FC<ProductFiscalCardProps> = ({
 
                     {/* NCM */}
                     <div className="space-y-2">
-                        <Label className="text-zinc-300">NCM (Nomenclatura Comum do Mercosul)</Label>
+                        <Label className="text-zinc-400 text-xs uppercase font-bold tracking-wider">NCM <span className="text-xs text-zinc-600">(8 Dígitos)</span></Label>
                         <Input
                             {...register('ncm')}
-                            placeholder="Ex: 22042100 (apenas números)"
-                            className={cn(
-                                "bg-zinc-900/50 border-white/10 text-white placeholder:text-zinc-600 focus:border-emerald-500/50 focus:ring-emerald-500/20",
-                                errors.ncm && "border-red-500 focus:border-red-500"
-                            )}
+                            placeholder="00000000"
                             disabled={disabled}
                             maxLength={8}
+                            className={cn(
+                                "bg-zinc-900/50 border-white/10 text-white font-mono placeholder:text-zinc-700",
+                                glassEffect && "bg-black/20 backdrop-blur-sm",
+                                errors.ncm && "border-red-500 focus:border-red-500"
+                            )}
+                            onChange={(e) => {
+                                // Force numbers only
+                                const val = e.target.value.replace(/\D/g, '').substring(0, 8);
+                                e.target.value = val;
+                                register('ncm').onChange(e);
+                            }}
                         />
                         {errors.ncm && (
-                            <p className="text-xs text-red-500 font-medium ml-1">{errors.ncm?.message}</p>
+                            <p className="text-xs text-red-500 font-medium ml-1">{errors.ncm?.message as string}</p>
                         )}
                     </div>
 
                     {/* CEST */}
                     <div className="space-y-2">
-                        <Label className="text-zinc-300">CEST (Código Especificador da ST)</Label>
+                        <Label className="text-zinc-400 text-xs uppercase font-bold tracking-wider">CEST <span className="text-xs text-zinc-600">(7 Dígitos)</span></Label>
                         <Input
                             {...register('cest')}
-                            placeholder="Ex: 0202400 (apenas números)"
+                            placeholder="0000000"
                             className={cn(
-                                "bg-zinc-900/50 border-white/10 text-white placeholder:text-zinc-600 focus:border-emerald-500/50 focus:ring-emerald-500/20",
+                                "bg-zinc-900/50 border-white/10 text-white font-mono placeholder:text-zinc-700",
+                                glassEffect && "bg-black/20 backdrop-blur-sm",
                                 errors.cest && "border-red-500 focus:border-red-500"
                             )}
                             disabled={disabled}
                             maxLength={7}
+                            onChange={(e) => {
+                                // Force numbers only
+                                const val = e.target.value.replace(/\D/g, '').substring(0, 7);
+                                e.target.value = val;
+                                register('cest').onChange(e);
+                            }}
                         />
                         {errors.cest && (
                             <p className="text-xs text-red-500 font-medium ml-1">{errors.cest?.message}</p>
@@ -79,7 +93,7 @@ export const ProductFiscalCard: React.FC<ProductFiscalCardProps> = ({
 
                     {/* CFOP */}
                     <div className="space-y-2">
-                        <Label className="text-zinc-300">CFOP Padrão</Label>
+                        <Label className="text-zinc-400 text-xs uppercase font-bold tracking-wider">CFOP Padrão <span className="text-xs text-zinc-600">(4 Dígitos)</span></Label>
                         <Input
                             {...register('cfop')}
                             placeholder="Ex: 5102 (apenas números)"

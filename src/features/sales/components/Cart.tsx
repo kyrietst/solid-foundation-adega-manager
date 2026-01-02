@@ -79,7 +79,7 @@ export function Cart({
 
   // Lógica para detectar pagamento em dinheiro
   const selectedPaymentMethod = paymentMethods.find(m => m.id === paymentMethodId);
-  const isCashPayment = selectedPaymentMethod?.type === 'cash' || selectedPaymentMethod?.name === 'Dinheiro';
+  const isCashPayment = selectedPaymentMethod?.slug === 'dinheiro' || selectedPaymentMethod?.code === '01' || selectedPaymentMethod?.name === 'Dinheiro';
 
   // Cálculo do troco
   const change = useMemo(() => {

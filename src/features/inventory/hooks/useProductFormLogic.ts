@@ -24,9 +24,11 @@ export const productFormSchema = z.object({
   package_price: z.number().min(0.01).optional().or(z.literal(0)).or(z.literal(undefined)),
 
   // Fiscal / Opcionais (Relaxados para evitar conflitos)
-  ncm: z.string().optional(),
-  cest: z.string().optional(),
-  cfop: z.string().optional(),
+  // Fiscal / Opcionais
+  ncm: z.string().optional().refine((val) => !val || /^\d{8}$/.test(val), "NCM deve ter 8 dígitos numéricos"),
+  cest: z.string().optional().refine((val) => !val || /^\d{7}$/.test(val), "CEST deve ter 7 dígitos numéricos"),
+  cfop: z.string().optional().refine((val) => !val || /^\d{4}$/.test(val), "CFOP deve ter 4 dígitos numéricos"),
+  ucom: z.enum(['UN', 'KG', 'L', 'M', 'CX', 'DZ', 'GT', 'M2', 'M3']).default('UN'),
   origin: z.union([z.string(), z.number()]).optional(),
 
   // Campos extras permitidos
@@ -94,6 +96,7 @@ export const useProductFormLogic = ({
         ncm: initialData.ncm || '',
         cest: initialData.cest || '',
         cfop: initialData.cfop || '',
+        ucom: initialData.ucom || 'UN',
         origin: initialData.origin || '',
         has_package_tracking: initialData.has_package_tracking || false,
         has_unit_tracking: initialData.has_unit_tracking || false,
@@ -117,6 +120,7 @@ export const useProductFormLogic = ({
         packaging_type: 'fardo',
         unit_barcode: '',
         supplier: '', // Default para create
+        ucom: 'UN', // Fiscal default
       });
     }
   }, [initialData, mode, form]);

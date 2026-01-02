@@ -69,6 +69,7 @@ export interface Product {
   cest?: string;
   cfop?: string;
   origin?: string;
+  ucom?: string | null; // Novo campo fiscal (UN, KG, etc)
 
   // ⭐ CAMPOS PRINCIPAIS DO SISTEMA SIMPLIFICADO ⭐
   // "O Estoque é um Espelho da Prateleira" - apenas 2 números diretos
@@ -253,6 +254,14 @@ export interface InventoryMovement {
   sale_id: string | null;
   user_id: string | null;
 
+  // Fiscal data
+  ncm?: string | null;
+  cest?: string | null;
+  cfop?: string | null;
+  origin?: string | null;
+
+
+  // System fields
   created_at: string;
   updated_at: string;
 

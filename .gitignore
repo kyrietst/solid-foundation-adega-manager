@@ -117,8 +117,7 @@ schedule-backup.*
 .env.backup*
 
 # Internal Documentation
-docs/
-@docs/
+
 
 # Configuration Files
 jsrepo.json
@@ -140,7 +139,7 @@ flattened-codebase.xml
 .mcp.json
 
 # Documentação e Scripts Internos (Manter local, não subir)
-/docs/
+
 /scripts/
 
 # Ferramentas de IA e Desenvolvimento (Manter local, não subir)

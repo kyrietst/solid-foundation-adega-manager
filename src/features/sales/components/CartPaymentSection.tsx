@@ -4,11 +4,7 @@ import { Input } from '@/shared/ui/primitives/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/primitives/select';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 
-interface PaymentMethod {
-    id: string;
-    name: string;
-    type?: string;
-}
+import { PaymentMethod } from '@/features/sales/hooks/usePaymentMethods';
 
 interface CartPaymentSectionProps {
     cartId: string;
