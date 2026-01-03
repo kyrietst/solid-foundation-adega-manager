@@ -380,6 +380,9 @@ export type Database = {
           segment: string | null
           tags: string[] | null
           updated_at: string | null
+          cpf_cnpj: string | null
+          ie: string | null
+          indicador_ie: number | null
         }
         Insert: {
           address?: Json | null
@@ -400,6 +403,9 @@ export type Database = {
           purchase_frequency?: string | null
           segment?: string | null
           updated_at?: string | null
+          cpf_cnpj?: string | null
+          ie?: string | null
+          indicador_ie?: number | null
         }
         Update: {
           address?: Json | null
@@ -420,6 +426,9 @@ export type Database = {
           purchase_frequency?: string | null
           segment?: string | null
           updated_at?: string | null
+          cpf_cnpj?: string | null
+          ie?: string | null
+          indicador_ie?: number | null
         }
         Relationships: []
       }

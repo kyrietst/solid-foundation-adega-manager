@@ -111,3 +111,40 @@ FUNCTION process_sale(
 2. Se for `NULL`, tenta buscar na tabela `payment_methods` usando o texto de
    `p_payment_method` (Fallback).
 3. Insere `payment_method_id` na tabela `sales`.
+
+---
+
+### `customers` (Clientes)
+
+Tabela unificada de perfis de clientes para CRM e Emissão Fiscal.
+
+| Coluna               | Tipo        | Descrição                                       |
+| :------------------- | :---------- | :---------------------------------------------- |
+| `id`                 | uuid        | PK                                              |
+| `name`               | text        | Nome completo (Razão Social ou Pessoa Física)   |
+| `address`            | **jsonb**   | Estrutura `FiscalAddress` (ver abaixo)          |
+| `tags`               | text[]      | Array de tags (ex: `['vip', 'bom-pagador']`)    |
+| `segment`            | text        | `VIP`, `Regular`, `Novo`, `Inativo`, `Em risco` |
+| `birthday`           | date        | Data de nascimento (CRM Aniversariantes)        |
+| `contact_preference` | text        | `whatsapp`, `sms`, `email`, `call`              |
+| `contact_permission` | boolean     | Flag LGPD (Permissão de contato)                |
+| `lifetime_value`     | numeric     | Total gasto em toda a vida (Calculado/Cache)    |
+| `last_purchase_date` | timestamptz | Data da última compra                           |
+
+#### Estrutura `address` (JSONB)
+
+Obrigatório para emissão de nota com destinatário.
+
+```json
+{
+  "cep": "09784410",
+  "logradouro": "Rua Vinte e Oito de Abril",
+  "numero": "123",
+  "bairro": "Centro",
+  "nome_municipio": "São Bernardo do Campo",
+  "codigo_municipio": "3548708", // IBGE (CRÍTICO)
+  "uf": "SP",
+  "pais": "Brasil",
+  "codigo_pais": "1058"
+}
+```

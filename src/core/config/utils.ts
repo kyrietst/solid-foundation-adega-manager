@@ -29,6 +29,16 @@ export function formatAddress(address: any): string {
 
   // If it's an object (JSONB), format it properly
   if (typeof address === 'object') {
+    // Check for FiscalAddress structure (New Standard)
+    if ('logradouro' in address || 'nome_municipio' in address) {
+        const parts = [
+            [address.logradouro, address.numero || 'S/N'].filter(Boolean).join(', '),
+            address.bairro,
+            [address.nome_municipio, address.uf].filter(Boolean).join(' - ')
+        ];
+        return parts.filter(Boolean).join(' - ');
+    }
+
     const addr = address as AddressData;
 
     // Prefer raw if available, otherwise construct from parts

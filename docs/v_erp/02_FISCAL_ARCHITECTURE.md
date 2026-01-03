@@ -82,3 +82,26 @@ O sistema conta com camadas de defesa para evitar rejeições da SEFAZ (Erro 225
 - **Produção:** `https://[project-ref].supabase.co/functions/v1/fiscal-handler`
 - **Payload esperado:** `{ "saleId": "uuid-da-venda" }`
 - **Autenticação:** Bearer Token (JWT do usuário logado).
+
+---
+
+## 5. Fiscal Address & Customer Data
+
+Para que a NFC-e seja emitida com identificação do destinatário (CPF/CNPJ e
+Endereço), o sistema impõe padrões rígidos no cadastro de clientes.
+
+### Estrutura `FiscalAddress` (JSONB)
+
+O endereço no banco (`customers.address`) deve conter o **Código IBGE
+(`codigo_municipio`)**. Sem isso, a SEFAZ rejeita notas interestaduais ou com
+delivery.
+
+### Estratégia de Lookup (Client-Side)
+
+No Frontend (`CustomerForm`), utilizamos uma estratégia de **Redundância** para
+garantir o preenchimento automático e correto:
+
+1. **ViaCEP (Primary):** Prioritário por estabilidade e CORS-friendly.
+2. **BrasilAPI (Fallback):** Secundário caso ViaCEP falhe.
+
+Isso elimina erros de "Dados do Transportador/Destinatário Incompletos".

@@ -50,6 +50,9 @@ const formSchema = z.object({
   contact_permission: z.boolean().refine(val => val === true, {
     message: "É obrigatório aceitar os termos de contato conforme LGPD"
   }),
+  cpf_cnpj: z.string().max(18, 'Máximo 18 caracteres').optional().or(z.literal('')),
+  ie: z.string().max(20, 'Máximo 20 caracteres').optional().or(z.literal('')),
+  indicador_ie: z.coerce.number().optional().default(9),
   notes: z.string().optional(),
   tags: z.array(z.string()).optional(),
 });
@@ -59,15 +62,18 @@ type CustomerFormValues = z.infer<typeof formSchema>;
 const calculateProfileCompleteness = (values: CustomerFormValues): number => {
   const weights = {
     name: 15,
-    phone: 15,
-    contact_permission: 15, // Obrigatório LGPD
-    email: 10,
+    cpf_cnpj: 20, // High value for fiscal
+    phone: 10,
+    contact_permission: 10, // Obrigatório LGPD
+  // ... adjusted weights
+    email: 5,
     address: 10,
-    birthday: 10,
-    contact_preference: 10,
+    birthday: 5,
+    contact_preference: 5,
     notes: 5,
-    tags: 10 // Tags personalizáveis
+    tags: 5
   };
+
   
   let totalPoints = 0;
   
@@ -124,6 +130,9 @@ export function CustomerForm({
       contact_permission: false,
       notes: '',
       tags: [],
+      cpf_cnpj: '',
+      ie: '',
+      indicador_ie: 9,
     },
     onSuccess: `Cliente ${customerId ? 'atualizado' : 'salvo'} com sucesso!`,
     onError: 'Erro ao salvar cliente',
@@ -138,6 +147,9 @@ export function CustomerForm({
         email: data.email === '' ? null : data.email,
         phone: data.phone === '' ? null : data.phone,
         notes: data.notes === '' ? null : data.notes,
+        cpf_cnpj: data.cpf_cnpj === '' ? null : data.cpf_cnpj,
+        ie: data.ie === '' ? null : data.ie,
+        indicador_ie: data.indicador_ie,
         contact_preference: data.contact_preference || null,
         // Standardize address to FiscalAddress structure is handled by form
       };
@@ -163,7 +175,11 @@ export function CustomerForm({
         birthday: customerData.birthday || '',
         contact_preference: (customerData.contact_preference as any) || '',
         contact_permission: customerData.contact_permission || false,
+
         notes: customerData.notes || '',
+        cpf_cnpj: customerData.cpf_cnpj || '',
+        ie: customerData.ie || '',
+        indicador_ie: customerData.indicador_ie || 9,
         tags: (customerData.tags as any) || [], 
         address: addressData ? {
           cep: addressData.cep || '',
@@ -262,6 +278,24 @@ export function CustomerForm({
                 </FormItem>
               )}
             />
+
+            <FormField
+              control={form.control}
+              name="cpf_cnpj"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-gray-200 text-sm">CPF / CNPJ</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="000.000.000-00" 
+                      className="bg-gray-800/50 border-primary-yellow/30 text-gray-200 focus:border-primary-yellow placeholder:text-gray-400 h-9"
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             
             <FormField
               control={form.control}
@@ -318,6 +352,48 @@ export function CustomerForm({
                       {...field} 
                     />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+             <FormField
+              control={form.control}
+              name="ie"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-gray-200 text-sm">Inscrição Estadual</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="Isento ou Número" 
+                      className="bg-gray-800/50 border-primary-yellow/30 text-gray-200 focus:border-primary-yellow placeholder:text-gray-400 h-9"
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+             <FormField
+              control={form.control}
+              name="indicador_ie"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-gray-200 text-sm">Contribuinte ICMS?</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={String(field.value)}>
+                    <FormControl>
+                      <SelectTrigger className="bg-gray-800/50 border-primary-yellow/30 text-gray-200 focus:border-primary-yellow h-9">
+                        <SelectValue placeholder="Selecione" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="1">1 - Contribuinte ICMS</SelectItem>
+                      <SelectItem value="2">2 - Contribuinte Isento</SelectItem>
+                      <SelectItem value="9">9 - Não Contribuinte</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

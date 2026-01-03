@@ -26,6 +26,9 @@ export interface CustomerProfile {
   email: string | null;
   phone: string | null;
   address: FiscalAddress | null;
+  cpf_cnpj: string | null;
+  ie: string | null;
+  indicador_ie: number | null;
   birthday: string | null;
   contact_preference: ContactPreference | null;
   contact_permission: boolean;
