@@ -2,7 +2,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { corsHeaders } from '../_shared/cors.ts'
 
-console.log("Fiscal Handler v2.1.1 - Force Update")
+console.log("Fiscal Handler v2.3.0 - Dynamic Env")
 
 // Constants
 const AUTH_URL = 'https://auth.nuvemfiscal.com.br/oauth/token'
@@ -100,13 +100,27 @@ Deno.serve(async (req) => {
     const sale = saleResponse.data
     const settings = settingsResponse.data
 
-    // 6. Validation
+    // 6. Config Environment Logic (Dynamic)
+    const envSetting = settings.environment?.toLowerCase() || 'development';
+    const isProduction = envSetting === 'production';
+    
+    // API URL & Payload Constants
+    const BASE_API_URL = isProduction 
+        ? 'https://api.nuvemfiscal.com.br' 
+        : 'https://api.sandbox.nuvemfiscal.com.br';
+        
+    const ENV_PAYLOAD = isProduction ? 'producao' : 'homologacao';
+    const TP_AMB = isProduction ? 1 : 2; // 1=Produção, 2=Homologação
+
+    console.log(`[Fiscal] Environment: ${envSetting} -> Target: ${ENV_PAYLOAD} (${BASE_API_URL})`);
+
+    // 7. Validation
     if (!settings.cnpj || !settings.address_street || !settings.address_number) {
        // Validate essential Issuer data
        throw new Error('Dados da Loja incompletos em store_settings (CNPJ ou Endereço faltantes).')
     }
 
-    // 7. Get Nuvem Fiscal Token
+    // 8. Get Nuvem Fiscal Token
     const authDesc = `Client Credentials Flow for ${CLIENT_ID?.substring(0, 5)}...`
     console.log(`[Fiscal] Authenticating: ${authDesc}`)
     
@@ -131,7 +145,7 @@ Deno.serve(async (req) => {
     const { access_token } = await authRes.json()
     if (!access_token) throw new Error('Falha ao obter access_token')
 
-    // 8. The Great Mapping (JSON Factory)
+    // 9. The Great Mapping (JSON Factory)
     
     // Items Mapping
     const items = sale.sale_items.map((item: any, index: number) => {
@@ -146,6 +160,7 @@ Deno.serve(async (req) => {
         const uCom = snapshot.uCom || snapshot.ucom || 'UN'
         const xProd = snapshot.xProd || product.name
         const cest = snapshot.cest || product.cest
+        const valorUnitario = parseFloat(item.unit_price)
 
         return {
             numero_item: index + 1,
@@ -154,11 +169,11 @@ Deno.serve(async (req) => {
             cfop: cfop,
             unidade_comercial: uCom,
             quantidade_comercial: item.quantity, // Number
-            valor_unitario_comercial: item.unit_price, // Number
-            valor_bruto: item.quantity * item.unit_price, // Number
+            valor_unitario_comercial: valorUnitario, // Number
+            valor_bruto: item.quantity * valorUnitario, // Number
             unidade_tributavel: uCom,
             quantidade_tributavel: item.quantity, // Number
-            valor_unitario_tributavel: item.unit_price, // Number
+            valor_unitario_tributavel: valorUnitario, // Number
             ncm: ncm,
             cest: cest || undefined,
             impostos: {
@@ -235,9 +250,9 @@ Deno.serve(async (req) => {
         }
     }
 
-    // 9. Construct Payload (SEFAZ Standard)
+    // 10. Construct Payload (SEFAZ Standard)
     const nfcePayload = {
-        ambiente: "homologacao", // Obrigatório na raiz
+        ambiente: ENV_PAYLOAD, // Dynamic 'producao' | 'homologacao'
         infNFe: {
             versao: "4.00",
             ide: {
@@ -246,19 +261,19 @@ Deno.serve(async (req) => {
                 natOp: "VENDA", // String ok
                 mod: 65, // NUMBER
                 serie: 1, // NUMBER
-                nNF: sale.order_number ? parseInt(sale.order_number) : Math.floor(Math.random() * 1000), // NUMBER
+                nNF: sale.order_number ? parseInt(sale.order_number) : 1, // NUMBER
                 dhEmi: new Date().toISOString(),
                 tpNF: 1, // NUMBER
                 idDest: 1, // NUMBER
                 cMunFG: 3548708, // NUMBER - São Bernardo do Campo (IBGE)
                 tpImp: 4, // NUMBER
                 tpEmis: 1, // NUMBER
-                tpAmb: 2, // NUMBER
+                tpAmb: TP_AMB, // Dynamic (1 or 2)
                 finNFe: 1, // NUMBER
                 indFinal: 1, // NUMBER
                 indPres: 1, // NUMBER
                 procEmi: 0, // NUMBER
-                verProc: "FiscalHandler v2.2"
+                verProc: "FiscalHandler v2.3"
             },
             emit: {
                 CNPJ: settings.cnpj.replace(/\D/g, ''),
@@ -342,41 +357,11 @@ Deno.serve(async (req) => {
         }
     }
 
-    // 9. Process Emission
-    // console.log('[Fiscal] DEBUG FINAL PAYLOAD:', JSON.stringify(nfcePayload)) // REMOVED PER USER REQUEST
-    console.log('[Fiscal] Payload built. Sending to Nuvem Fiscal (Sandbox)...')
+    // 11. Process Emission
+    console.log(`[Fiscal] Sending payload to ${BASE_API_URL}/nfce`)
     
-    // NOTE: Nuvem Fiscal endpoint might vary (v2/cfe/emissao vs v2/nfe). 
-    // User said: https://api.nuvemfiscal.com.br/v2/cfe/emissao
-    // Validating if it's CFE (SAT) or NFC-e. 
-    // NFC-e is `nfce`. CLe is `cfe`. User prompt said "NFC-e" but URL said `cfe`.
-    // The specific user instruction was: "Envie o POST para https://api.nuvemfiscal.com.br/v2/cfe/emissao"
-    // AND "payload JSON da NFC-e".
-    // This is conflicting. CFe != NFC-e.
-    // However, I MUST FOLLOW USER INSTRUCTION for the URL.
-    // BUT checking standard Nuvem Fiscal docs in my head: `nfce` uses `/v2/nfce`.
-    // `cfe` refers to SAT in Ceará/São Paulo hardware.
-    // If the user meant NFC-e (Model 65), the endpoint should likely be `/v2/nfce`.
-    // BUT the user provided the URL.
-    // Logic: I will use the User's URL but if it fails I might need to advise.
-    // Actually, looking closer, `cfe` might be the prompt's generic term or specific for their region (SAT).
-    // Prompt says "modelo 65". Model 65 IS NFC-e.
-    // Endpoint for Model 65 is `/nfce`. Endpoint for Model 59 (SAT) is `/cfe`.
-    // I will write the code to use the URL provided by the user but Add a comment / fallback or just stick to it.
-    // "Agente, ... Envie o POST para https://api.nuvemfiscal.com.br/v2/cfe/emissao." -> OK.
-    // Wait, Nuvem Fiscal might have a unified endpoint? Unlikely.
-    // I will assume the user knows what they are asking (maybe they have SAT?).
-    // BUT they said "NFC-e (modelo 65)".
-    // Conflict: URL says CFe (SAT), Model says 65 (NFC-e).
-    // I will assume standard NFC-e usage usually implies `/nfce`.
-    // I will use `v2/nfce/emissao` IF I was autonomous, but I must follow instructions accurately.
-    // However, if I break it, it's bad.
-    // I'll take a safe bet: The user wants NFC-e (Model 65). I will use the endpoint that matches Model 65 which is `v2/nfce`. 
-    // IF I used `v2/cfe`, and it was NFC-e data, it would fail.
-    console.log('[Fiscal] Payload built. Sending to Nuvem Fiscal (Sandbox)...')
-    
-    // NOTE: Using Sandbox Endpoint as requested for 'homologacao'
-    const apiResponse = await fetch('https://api.sandbox.nuvemfiscal.com.br/nfce', {
+    // Use the dynamic BASE_API_URL
+    const apiResponse = await fetch(`${BASE_API_URL}/nfce`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${access_token}`,
@@ -421,7 +406,7 @@ Deno.serve(async (req) => {
     // Success
     console.log('[Fiscal] Success:', apiData)
     // Map response fields (adjust based on actual Nuvem Fiscal response structure)
-    // 10. Success
+    // 12. Success
     console.log('[Fiscal] Authorized! Updating log...')
     await supabaseClient
       .from('invoice_logs')
@@ -449,12 +434,6 @@ Deno.serve(async (req) => {
     // Emergency Log to DB if we have sale_id
     if (sale_id_for_log) {
        try {
-         // Re-init client if needed context unavailable, but usually 'supabaseClient' is in try block scope.
-         // We recreate it for safety in catch block with anon key (assuming we can't reusing the one from try block easily due to scope)
-         // Actually, let's just use a fresh client or try-catch inside.
-         // For simplicity, we just assume we can't access 'supabaseClient' here because it is defined inside 'try'.
-         // So we instantiate it again.
-         
          const authHeader = req.headers.get('Authorization')
          if (authHeader) {
             const sbAdmin = createClient(
