@@ -37,7 +37,8 @@ interface ViaCepResponse {
 }
 
 /**
- * Busca endereço usando ViaCEP (Fallback)
+ * Busca endereço usando ViaCEP (Prioridade 1)
+ * Mais estável em produção (CORS friendly) e garante IBGE.
  */
 async function fetchViaCEP(cleanCep: string): Promise<FiscalAddress | null> {
     try {
@@ -61,28 +62,17 @@ async function fetchViaCEP(cleanCep: string): Promise<FiscalAddress | null> {
             codigo_pais: '1058'
         };
     } catch (error) {
-        console.warn('[AddressLookup] ViaCEP Fallback failed:', error);
-        return null;
+        console.warn('[AddressLookup] ViaCEP failed:', error);
+        throw error; // Propagate to trigger fallback
     }
 }
 
 /**
- * Busca endereço pelo CEP com Redundância (BrasilAPI -> ViaCEP)
- * @param cep String contendo o CEP (com ou sem máscara)
- * @returns Promise<FiscalAddress | null>
+ * Busca endereço usando BrasilAPI (Fallback)
+ * Rica em dados, mas pode sofrer com CORS/Rate Limit.
  */
-export async function fetchAddressByCEP(cep: string): Promise<FiscalAddress | null> {
-    // 1. Limpar CEP (apenas números)
-    const cleanCep = cep.replace(/\D/g, '');
-
-    // 2. Validação básica
-    if (cleanCep.length !== 8) {
-        return null;
-    }
-
+async function fetchBrasilAPI(cleanCep: string): Promise<FiscalAddress | null> {
     try {
-        // 3. Tentativa Primária: BrasilAPI v2
-        // Vantagem: Mais rápida, dados mais limpos, coordenadas
         const response = await fetch(`https://brasilapi.com.br/api/cep/v2/${cleanCep}`);
 
         if (!response.ok) {
@@ -90,10 +80,6 @@ export async function fetchAddressByCEP(cep: string): Promise<FiscalAddress | nu
         }
 
         const data: BrasilApiResponse = await response.json();
-
-        // Check for IBGE in BrasilAPI response (depends on provider)
-        // Se vier vazio, talvez valha a pena tentar o fallback apenas pelo IBGE?
-        // Por hora, se a BrasilAPI responder sucesso, confiamos nela.
 
         return {
             cep: data.cep,
@@ -108,11 +94,35 @@ export async function fetchAddressByCEP(cep: string): Promise<FiscalAddress | nu
             pais: 'Brasil',
             codigo_pais: '1058'
         };
+    } catch (error) {
+         console.warn('[AddressLookup] BrasilAPI Fallback failed:', error);
+         return null;
+    }
+}
+
+/**
+ * Busca endereço pelo CEP com Redundância (ViaCEP -> BrasilAPI)
+ * @param cep String contendo o CEP (com ou sem máscara)
+ * @returns Promise<FiscalAddress | null>
+ */
+export async function fetchAddressByCEP(cep: string): Promise<FiscalAddress | null> {
+    // 1. Limpar CEP (apenas números)
+    const cleanCep = cep.replace(/\D/g, '');
+
+    // 2. Validação básica
+    if (cleanCep.length !== 8) {
+        return null;
+    }
+
+    try {
+        // 3. Tentativa Primária: ViaCEP
+        // Motivo: Mais estável em produção, sem bloqueio de CORS.
+        return await fetchViaCEP(cleanCep);
 
     } catch (error) {
-        console.warn(`[AddressLookup] Primary API (BrasilAPI) failed for ${cleanCep}. Switching to Fallback...`, error);
+        console.warn(`[AddressLookup] Primary API (ViaCEP) failed for ${cleanCep}. Switching to Fallback (BrasilAPI)...`);
         
-        // 4. Fallback: ViaCEP
-        return await fetchViaCEP(cleanCep);
+        // 4. Fallback: BrasilAPI
+        return await fetchBrasilAPI(cleanCep);
     }
 }
