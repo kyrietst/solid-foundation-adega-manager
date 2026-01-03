@@ -213,6 +213,14 @@ Deno.serve(async (req) => {
         }
     }
 
+    // Regra 3 (Workaround): PIX (17) -> Tratar como 99 para evitar Erro 391 em Sandbox/Homologação
+    // SEFAZ as vezes rejeita 17 pedindo cartão em alguns ambientes.
+    if (tPag === '17') {
+        paymentDet.tPag = '99'
+        paymentDet.xPag = 'Pagamento Instantaneo (Pix)'
+    }
+
+
 
     // Destinatário Logic (NEW)
     let dest: any = undefined;
