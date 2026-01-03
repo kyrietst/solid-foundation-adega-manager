@@ -12,6 +12,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
 import { useToast } from '@/shared/hooks/common/use-toast';
 import { useProfileCompletenessCalculator } from '@/features/customers/hooks/useProfileCompletenessCalculator';
+import { FiscalAddress } from '@/core/types/fiscal.types';
 
 // Tipos
 export type CustomerSegment = 'VIP' | 'Regular' | 'Novo' | 'Inativo' | 'Em risco';
@@ -24,7 +25,7 @@ export interface CustomerProfile {
   name: string;
   email: string | null;
   phone: string | null;
-  address: any | null;
+  address: FiscalAddress | null;
   birthday: string | null;
   contact_preference: ContactPreference | null;
   contact_permission: boolean;
@@ -36,6 +37,7 @@ export interface CustomerProfile {
   favorite_product: string | null;
   segment: CustomerSegment | null;
   notes: string | null;
+  tags: string[] | null;
   created_at: string;
   updated_at: string;
 }
@@ -145,7 +147,7 @@ export const useCustomers = (params?: {
         }
 
         // Retornar apenas dados reais do banco (pode ser array vazio)
-        return (data as CustomerProfile[]) || [];
+        return (data as unknown as CustomerProfile[]) || [];
 
       } catch (error) {
         console.error('💥 Erro crítico ao buscar clientes:', error);
@@ -172,7 +174,7 @@ export const useCustomer = (customerId: string) => {
         .single();
 
       if (error) throw error;
-      return data as CustomerProfile;
+      return data as unknown as CustomerProfile;
     },
     enabled: !!customerId
   });
@@ -206,7 +208,7 @@ export const useCustomerInteractions = (customerId: string) => {
         .order('date', { ascending: false });
 
       if (customerId) {
-        movementsQuery = movementsQuery.eq('customer_id', customerId);
+        movementsQuery = (movementsQuery as any).eq('customer_id', customerId);
       }
 
       let movements: any[] = [];
@@ -245,9 +247,11 @@ export const useUpsertCustomer = () => {
 
   return useMutation({
     mutationFn: async (customerData: Partial<CustomerProfile>) => {
+      // Use 'as any' to bypass complex Enum/Type mismatches between App types and DB types
+      // The database.types.ts has been updated to include correct columns but Enums are still strings in DB
       const { data, error } = await supabase
         .from('customers')
-        .upsert(customerData)
+        .upsert(customerData as any)
         .select()
         .single();
 
@@ -255,7 +259,7 @@ export const useUpsertCustomer = () => {
         throw new Error(error.message);
       }
 
-      return data as CustomerProfile;
+      return data as unknown as CustomerProfile;
     },
     onSuccess: (data, variables) => {
       // Invalida as queries de clientes para atualizar a lista

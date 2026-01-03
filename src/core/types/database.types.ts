@@ -271,6 +271,51 @@ export type Database = {
           },
         ]
       }
+      customer_interactions: {
+        Row: {
+          associated_sale_id: string | null
+          created_at: string
+          created_by: string
+          customer_id: string
+          description: string
+          id: string
+          interaction_type: string
+        }
+        Insert: {
+          associated_sale_id?: string | null
+          created_at?: string
+          created_by: string
+          customer_id: string
+          description: string
+          id?: string
+          interaction_type: string
+        }
+        Update: {
+          associated_sale_id?: string | null
+          created_at?: string
+          created_by?: string
+          customer_id?: string
+          description?: string
+          id?: string
+          interaction_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_interactions_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_interactions_associated_sale_id_fkey"
+            columns: ["associated_sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       customer_segments: {
         Row: {
           created_at: string | null
@@ -316,30 +361,64 @@ export type Database = {
       }
       customers: {
         Row: {
-          address: string | null
+          address: Json | null
+          birthday: string | null
+          contact_permission: boolean
+          contact_preference: string | null
           created_at: string | null
           email: string | null
+          favorite_category: string | null
+          favorite_product: string | null
+          first_purchase_date: string | null
           id: string
+          last_purchase_date: string | null
+          lifetime_value: number
           name: string
+          notes: string | null
           phone: string | null
+          purchase_frequency: string | null
+          segment: string | null
+          tags: string[] | null
           updated_at: string | null
         }
         Insert: {
-          address?: string | null
+          address?: Json | null
+          birthday?: string | null
+          contact_permission?: boolean
+          contact_preference?: string | null
           created_at?: string | null
           email?: string | null
+          favorite_category?: string | null
+          favorite_product?: string | null
+          first_purchase_date?: string | null
           id?: string
+          last_purchase_date?: string | null
+          lifetime_value?: number
           name: string
+          notes?: string | null
           phone?: string | null
+          purchase_frequency?: string | null
+          segment?: string | null
           updated_at?: string | null
         }
         Update: {
-          address?: string | null
+          address?: Json | null
+          birthday?: string | null
+          contact_permission?: boolean
+          contact_preference?: string | null
           created_at?: string | null
           email?: string | null
+          favorite_category?: string | null
+          favorite_product?: string | null
+          first_purchase_date?: string | null
           id?: string
+          last_purchase_date?: string | null
+          lifetime_value?: number
           name?: string
+          notes?: string | null
           phone?: string | null
+          purchase_frequency?: string | null
+          segment?: string | null
           updated_at?: string | null
         }
         Relationships: []

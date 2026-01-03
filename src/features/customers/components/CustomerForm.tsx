@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import * as z from 'zod';
 import { Button } from '@/shared/ui/primitives/button';
 import { Input } from '@/shared/ui/primitives/input';
@@ -19,27 +19,32 @@ import {
   FormLabel,
   FormMessage,
 } from '@/shared/ui/primitives/form';
-import { useUpsertCustomer } from '@/features/customers/hooks/use-crm';
+import { useUpsertCustomer, useCustomer } from '@/features/customers/hooks/use-crm';
 import { useStandardForm } from '@/shared/hooks/common/useStandardForm';
 import { CustomerTagManager } from './CustomerTagManager';
-import { Loader2, MapPin, Calendar, Phone, MessageSquare, Shield, CheckCircle2 } from 'lucide-react';
+import { Loader2, MapPin, Calendar, MessageSquare, Shield, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/core/config/utils';
+import { FiscalAddressForm } from '@/shared/components/form/FiscalAddressForm';
 
-const addressSchema = z.object({
-  street: z.string().min(2, 'Rua é obrigatória'),
-  number: z.string().min(1, 'Número é obrigatório'),
-  complement: z.string().optional(),
-  neighborhood: z.string().min(2, 'Bairro é obrigatório'),
-  city: z.string().min(2, 'Cidade é obrigatória'),
-  state: z.string().min(2, 'Estado é obrigatório'),
-  zipcode: z.string().min(8, 'CEP deve ter 8 dígitos').max(9, 'CEP inválido'),
-}).optional();
+// Schema para Endereço Fiscal (NFe 4.0 Standard)
+const fiscalAddressSchema = z.object({
+  cep: z.string().min(8, 'CEP inválido').max(9, 'CEP inválido'),
+  logradouro: z.string().min(1, 'Logradouro é obrigatório'),
+  numero: z.string().min(1, 'Número é obrigatório'),
+  bairro: z.string().min(1, 'Bairro é obrigatório'),
+  nome_municipio: z.string().min(1, 'Cidade é obrigatória'),
+  uf: z.string().length(2, 'UF deve ter 2 letras'),
+  complemento: z.string().optional(),
+  codigo_municipio: z.string().optional(), // IBGE
+  pais: z.string().optional(),
+  codigo_pais: z.string().optional(),
+});
 
 const formSchema = z.object({
   name: z.string().min(2, { message: 'O nome deve ter pelo menos 2 caracteres.' }),
   email: z.string().email({ message: 'Email inválido.' }).optional().or(z.literal('')),
   phone: z.string().optional(),
-  address: addressSchema,
+  address: fiscalAddressSchema.nullable().optional(),
   birthday: z.string().optional(),
   contact_preference: z.enum(['whatsapp', 'sms', 'email', 'call', '']).optional(),
   contact_permission: z.boolean().refine(val => val === true, {
@@ -70,7 +75,8 @@ const calculateProfileCompleteness = (values: CustomerFormValues): number => {
   if (values.phone?.trim()) totalPoints += weights.phone;
   if (values.contact_permission) totalPoints += weights.contact_permission;
   if (values.email?.trim()) totalPoints += weights.email;
-  if (values.address && values.address.street && values.address.city) totalPoints += weights.address;
+  // Check for FiscalAddress fields
+  if (values.address && values.address.logradouro && values.address.nome_municipio) totalPoints += weights.address;
   if (values.birthday?.trim()) totalPoints += weights.birthday;
   if (values.contact_preference?.trim()) totalPoints += weights.contact_preference;
   if (values.notes?.trim()) totalPoints += weights.notes;
@@ -81,15 +87,20 @@ const calculateProfileCompleteness = (values: CustomerFormValues): number => {
 };
 
 interface CustomerFormProps {
+  customerId?: string;
   onSuccess: () => void;
 }
 
 export function CustomerForm({ 
+  customerId,
   onSuccess
 }: CustomerFormProps) {
   const upsertCustomer = useUpsertCustomer();
+  const { data: customerData, isLoading: isLoadingData } = useCustomer(customerId || '');
   const [currentTags, setCurrentTags] = useState<string[]>([]);
+  const [isEditMode, setIsEditMode] = useState(false);
 
+  // Initialize form with default empty values
   const { form, isLoading, handleSubmit } = useStandardForm<CustomerFormValues>({
     schema: formSchema,
     defaultValues: {
@@ -97,31 +108,81 @@ export function CustomerForm({
       email: '',
       phone: '',
       address: {
-        street: '',
-        number: '',
-        complement: '',
-        neighborhood: '',
-        city: '',
-        state: '',
-        zipcode: '',
+        cep: '',
+        logradouro: '',
+        numero: '',
+        bairro: '',
+        nome_municipio: '',
+        uf: '',
+        complemento: '',
+        codigo_municipio: '',
+        pais: 'Brasil',
+        codigo_pais: '1058'
       },
       birthday: '',
-      contact_preference: '',
+      contact_preference: undefined,
       contact_permission: false,
       notes: '',
       tags: [],
     },
-    onSuccess: 'Cliente salvo com sucesso!',
+    onSuccess: `Cliente ${customerId ? 'atualizado' : 'salvo'} com sucesso!`,
     onError: 'Erro ao salvar cliente',
-    onSubmit: async (data) => {
-      await upsertCustomer.mutateAsync({
+    onSubmit: async (data: any) => {
+      // Clean up empty optional fields before sending
+      const payload = {
         ...data,
+        id: customerId, // Include ID if editing
         tags: currentTags,
-      });
+        // Ensure enums are null if empty string (though Zod handles this mostly)
+        contact_preference: data.contact_preference || null,
+        // Standardize address to FiscalAddress structure is handled by form,
+        // verify backend accepts it (it does as Json)
+      };
+      
+      await upsertCustomer.mutateAsync(payload);
     },
     onSuccessCallback: onSuccess,
-    resetOnSuccess: true,
+    resetOnSuccess: !customerId, // Don't reset if editing, or maybe yes? Usually close modal.
   });
+
+  // Populate form when editing
+  useEffect(() => {
+    if (customerId && customerData) {
+      setIsEditMode(true);
+      if (customerData.tags) setCurrentTags(customerData.tags as any || []); // Ensure array
+      
+      const addressData = customerData.address as any; // FiscalAddress
+      
+      form.reset({
+        name: customerData.name,
+        email: customerData.email || '',
+        phone: customerData.phone || '',
+        birthday: customerData.birthday || '',
+        contact_preference: (customerData.contact_preference as any) || '',
+        contact_permission: customerData.contact_permission || false,
+        notes: customerData.notes || '',
+        tags: (customerData.tags as any) || [], 
+        address: addressData ? {
+          cep: addressData.cep || '',
+          logradouro: addressData.logradouro || '',
+          numero: addressData.numero || '',
+          bairro: addressData.bairro || '',
+          nome_municipio: addressData.nome_municipio || '',
+          uf: addressData.uf || '',
+          complemento: addressData.complemento || '',
+          codigo_municipio: addressData.codigo_municipio || '',
+          pais: addressData.pais || 'Brasil',
+          codigo_pais: addressData.codigo_pais || '1058'
+        } : {
+           cep: '', logradouro: '', numero: '', bairro: '', nome_municipio: '', uf: '', complemento: '', codigo_municipio: '', pais: 'Brasil', codigo_pais: '1058'
+        }
+      });
+    }
+  }, [customerId, customerData, form]);
+
+  if (customerId && isLoadingData) {
+    return <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin text-primary-yellow" /></div>;
+  }
 
   // Calcular completude em tempo real
   const currentValues = form.watch();
@@ -261,171 +322,14 @@ export function CustomerForm({
           </div>
         </div>
 
-        {/* Endereço - Compacto */}
-        <div className="space-y-3 border border-gray-600/30 rounded-lg p-3">
-          <div className="flex items-center gap-2 text-gray-200">
-            <MapPin className="w-4 h-4" />
-            <h3 className="font-medium">Endereço para Delivery</h3>
+        {/* Endereço Fiscal Padronizado */}
+        <div className="border border-gray-600/30 rounded-lg px-4 pt-2 pb-0 bg-gray-900/20">
+          <div className="flex items-center gap-2 text-gray-200 mb-2 mt-2">
+            <MapPin className="w-4 h-4 text-primary-yellow" />
+            <h3 className="font-medium">Endereço (Fiscal & Delivery)</h3>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="address.street"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-gray-200">Rua/Avenida</FormLabel>
-                  <FormControl>
-                    <Input 
-                      placeholder="Nome da rua ou avenida"
-                      className="bg-gray-800/50 border-primary-yellow/30 text-gray-200 focus:border-primary-yellow placeholder:text-gray-400"
-                      {...field} 
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="address.number"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-gray-200">Número</FormLabel>
-                  <FormControl>
-                    <Input 
-                      placeholder="123"
-                      className="bg-gray-800/50 border-primary-yellow/30 text-gray-200 focus:border-primary-yellow placeholder:text-gray-400"
-                      {...field} 
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="address.complement"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-gray-200">Complemento</FormLabel>
-                  <FormControl>
-                    <Input 
-                      placeholder="Apto, bloco, etc (opcional)"
-                      className="bg-gray-800/50 border-primary-yellow/30 text-gray-200 focus:border-primary-yellow placeholder:text-gray-400"
-                      {...field} 
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="address.neighborhood"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-gray-200">Bairro</FormLabel>
-                  <FormControl>
-                    <Input 
-                      placeholder="Nome do bairro"
-                      className="bg-gray-800/50 border-primary-yellow/30 text-gray-200 focus:border-primary-yellow placeholder:text-gray-400"
-                      {...field} 
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <FormField
-              control={form.control}
-              name="address.city"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-gray-200">Cidade</FormLabel>
-                  <FormControl>
-                    <Input 
-                      placeholder="Nome da cidade"
-                      className="bg-gray-800/50 border-primary-yellow/30 text-gray-200 focus:border-primary-yellow placeholder:text-gray-400"
-                      {...field} 
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="address.state"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-gray-200">Estado</FormLabel>
-                  <FormControl>
-                    <Input 
-                      placeholder="SP"
-                      className="bg-gray-800/50 border-primary-yellow/30 text-gray-200 focus:border-primary-yellow placeholder:text-gray-400"
-                      {...field} 
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="address.zipcode"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-gray-200">CEP</FormLabel>
-                  <FormControl>
-                    <Input 
-                      placeholder="12345-678"
-                      className="bg-gray-800/50 border-primary-yellow/30 text-gray-200 focus:border-primary-yellow placeholder:text-gray-400"
-                      {...field} 
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-        </div>
-
-        {/* Informações Pessoais */}
-        <div className="space-y-4 border border-gray-600/30 rounded-lg p-4">
-          <div className="flex items-center gap-2 text-gray-200">
-            <Calendar className="w-4 h-4" />
-            <h3 className="font-medium">Informações Pessoais</h3>
-          </div>
-          
-          <FormField
-            control={form.control}
-            name="birthday"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-gray-200">Data de Aniversário</FormLabel>
-                <FormControl>
-                  <Input 
-                    placeholder="dd/mm/aaaa"
-                    type="date"
-                    className="bg-gray-800/50 border-primary-yellow/30 text-gray-200 focus:border-primary-yellow placeholder:text-gray-400"
-                    {...field} 
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <FiscalAddressForm prefix="address" />
         </div>
 
         {/* Preferências de Contato */}
@@ -441,7 +345,7 @@ export function CustomerForm({
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-gray-200 text-sm">Forma Preferida de Contato</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} defaultValue={field.value || undefined}>
                   <FormControl>
                     <SelectTrigger className="bg-gray-800/50 border-primary-yellow/30 text-gray-200 focus:border-primary-yellow h-9">
                       <SelectValue placeholder="Selecione como prefere ser contatado" />

@@ -7,12 +7,25 @@ import { Label } from '@/shared/ui/primitives/label';
 import { fetchAddressByCEP } from '@/shared/utils/address-lookup';
 import { FiscalAddress } from '@/core/types/fiscal.types';
 
-export const FiscalAddressForm = () => {
-    const { register, setValue, watch, formState: { errors } } = useFormContext<FiscalAddress>();
+interface FiscalAddressFormProps {
+    prefix?: string;
+}
+
+export const FiscalAddressForm = ({ prefix = '' }: FiscalAddressFormProps) => {
+    const { register, setValue, watch, formState: { errors } } = useFormContext();
     const [isLoading, setIsLoading] = useState(false);
+    
+    // Helper to generate field name
+    const name = (field: keyof FiscalAddress) => prefix ? `${prefix}.${field}` : field;
+    
+    // Helper to get error
+    const getError = (field: keyof FiscalAddress) => {
+        if (!prefix) return errors[field] as any;
+        return (errors[prefix] as any)?.[field];
+    };
 
     const handleSearchCep = async () => {
-        const cep = watch('cep');
+        const cep = watch(name('cep'));
         if (!cep || cep.length < 8) return;
 
         setIsLoading(true);
@@ -20,14 +33,15 @@ export const FiscalAddressForm = () => {
             const address = await fetchAddressByCEP(cep);
             
             if (address) {
-                setValue('logradouro', address.logradouro);
-                setValue('bairro', address.bairro);
-                setValue('nome_municipio', address.nome_municipio);
-                setValue('uf', address.uf);
-                setValue('codigo_municipio', address.codigo_municipio); // CRITICAL Fields
+                setValue(name('logradouro'), address.logradouro);
+                setValue(name('bairro'), address.bairro);
+                setValue(name('nome_municipio'), address.nome_municipio);
+                setValue(name('uf'), address.uf);
+                setValue(name('codigo_municipio'), address.codigo_municipio);
+                setValue(name('pais'), address.pais);
+                setValue(name('codigo_pais'), address.codigo_pais);
                 
-                // Focus number field ideally, but conceptually we just fill data
-                document.getElementById('fiscal-address-number')?.focus();
+                document.getElementById(`${prefix}fiscal-address-number`)?.focus();
             }
         } catch (error) {
             console.error('Erro ao buscar CEP', error);
@@ -39,20 +53,20 @@ export const FiscalAddressForm = () => {
     return (
         <div className="grid gap-4 py-4">
             {/* Hidden Fields for Fiscal Compliance */}
-            <input type="hidden" {...register('codigo_municipio')} />
-            <input type="hidden" {...register('pais', { value: 'Brasil' })} />
-            <input type="hidden" {...register('codigo_pais', { value: '1058' })} />
+            <input type="hidden" {...register(name('codigo_municipio'))} />
+            <input type="hidden" {...register(name('pais'), { value: 'Brasil' })} />
+            <input type="hidden" {...register(name('codigo_pais'), { value: '1058' })} />
 
             {/* Row 1: CEP + Search */}
             <div className="grid grid-cols-4 gap-4 items-end">
                 <div className="col-span-3">
-                    <Label htmlFor="cep">CEP</Label>
+                    <Label htmlFor={name('cep')}>CEP</Label>
                     <div className="flex gap-2 mt-1.5">
                         <Input 
-                            id="cep" 
+                            id={name('cep')} 
                             placeholder="00000-000" 
                             maxLength={9}
-                            {...register('cep', { 
+                            {...register(name('cep'), { 
                                 required: 'CEP é obrigatório',
                                 onChange: (e) => {
                                     // Simple Mask
@@ -71,69 +85,69 @@ export const FiscalAddressForm = () => {
                             {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
                         </Button>
                     </div>
-                    {errors.cep && <span className="text-xs text-red-500">{errors.cep.message}</span>}
+                    {getError('cep') && <span className="text-xs text-red-500">{getError('cep').message}</span>}
                 </div>
             </div>
 
             {/* Row 2: Logradouro + Numero */}
             <div className="grid grid-cols-4 gap-4">
                 <div className="col-span-3">
-                    <Label htmlFor="logradouro">Logradouro</Label>
+                    <Label htmlFor={name('logradouro')}>Logradouro</Label>
                     <Input 
-                        id="logradouro" 
+                        id={name('logradouro')} 
                         readOnly 
                         className="bg-muted"
-                        {...register('logradouro', { required: 'Logradouro obrigatório' })} 
+                        {...register(name('logradouro'), { required: 'Logradouro obrigatório' })} 
                     />
                 </div>
                 <div className="col-span-1">
-                    <Label htmlFor="numero">Número</Label>
+                    <Label htmlFor={name('numero')}>Número</Label>
                     <Input 
-                        id="fiscal-address-number" 
-                        {...register('numero', { required: 'Nº obrigatório' })} 
+                        id={`${prefix}fiscal-address-number`}
+                        {...register(name('numero'), { required: 'Nº obrigatório' })} 
                     />
-                     {errors.numero && <span className="text-xs text-red-500">{errors.numero.message}</span>}
+                     {getError('numero') && <span className="text-xs text-red-500">{getError('numero').message}</span>}
                 </div>
             </div>
 
             {/* Row 3: Bairro + Cidade + UF */}
             <div className="grid grid-cols-5 gap-4">
                 <div className="col-span-2">
-                    <Label htmlFor="bairro">Bairro</Label>
+                    <Label htmlFor={name('bairro')}>Bairro</Label>
                     <Input 
-                        id="bairro" 
+                        id={name('bairro')} 
                         readOnly 
                         className="bg-muted"
-                        {...register('bairro')} 
+                        {...register(name('bairro'))} 
                     />
                 </div>
                 <div className="col-span-2">
-                    <Label htmlFor="cidade">Cidade</Label>
+                    <Label htmlFor={name('nome_municipio')}>Cidade</Label>
                     <Input 
-                        id="cidade" 
+                        id={name('nome_municipio')} 
                         readOnly 
                         className="bg-muted"
-                        {...register('nome_municipio')} 
+                        {...register(name('nome_municipio'))} 
                     />
                 </div>
                 <div className="col-span-1">
-                    <Label htmlFor="uf">UF</Label>
+                    <Label htmlFor={name('uf')}>UF</Label>
                     <Input 
-                        id="uf" 
+                        id={name('uf')} 
                         readOnly 
                         className="bg-muted"
-                        {...register('uf')} 
+                        {...register(name('uf'))} 
                     />
                 </div>
             </div>
 
             {/* Row 4: Complemento */}
             <div>
-                <Label htmlFor="complemento">Complemento (Opcional)</Label>
+                <Label htmlFor={name('complemento')}>Complemento (Opcional)</Label>
                 <Input 
-                    id="complemento" 
+                    id={name('complemento')} 
                     placeholder="Apto, Bloco, Fundos..." 
-                    {...register('complemento')} 
+                    {...register(name('complemento'))} 
                 />
             </div>
         </div>
