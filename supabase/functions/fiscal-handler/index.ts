@@ -318,7 +318,8 @@ Deno.serve(async (req) => {
                     cPais: "1058", // Brasil
                     xPais: "BRASIL"
                 },
-                IE: settings.ie === 'ISENTO' ? undefined : settings.ie.replace(/\D/g, '')
+                IE: settings.ie === 'ISENTO' ? undefined : settings.ie.replace(/\D/g, ''),
+                CRT: 3 // NUMBER (Regime Normal - Forced Override)
             },
             dest: dest, // Add Dest here (can be undefined for consumer final anonymous)
             det: items.map((item: any, i: number) => ({
@@ -391,6 +392,7 @@ Deno.serve(async (req) => {
 
     // 11. Process Emission
     console.log(`[Fiscal] Sending payload to ${BASE_API_URL}/nfce`)
+    console.log('[Fiscal] Emit Block:', JSON.stringify(nfcePayload.infNFe.emit))
     
     // Use the dynamic BASE_API_URL
     const apiResponse = await fetch(`${BASE_API_URL}/nfce`, {
