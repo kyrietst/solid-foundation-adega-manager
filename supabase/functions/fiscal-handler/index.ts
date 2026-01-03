@@ -411,6 +411,8 @@ Deno.serve(async (req) => {
         // --- DUPLICITY RECOVERY (Erro 539) ---
         const isDuplicity = (apiData.error?.code === '539') || (typeof errorDetails === 'string' && errorDetails.includes('Duplicidade'))
         
+        let recoveryDebugStr = ''
+
         if (isDuplicity) {
             console.log('[Fiscal] Detected Duplicity (Erro 539). Attempting Auto-Recovery...')
             // Extract chNFe from message ex: "Rejeição: Duplicidade de NF-e [chNFe:3522...]"
@@ -421,8 +423,9 @@ Deno.serve(async (req) => {
                  console.log(`[Fiscal] Recovering Key: ${chNFe}`)
                  try {
                      // Fetch from Nuvem Fiscal by Key (List with filter)
-                     // DOCS: GET /nfce?chave={chave_acesso}
-                     const recoveryUrl = `${BASE_API_URL}/nfce?chave=${chNFe}`
+                     // DOCS: GET /nfce?chave={chave_acesso}&cpf_cnpj={cnpj}&ambiente={ambiente}
+                     const cleanCnpj = settings.cnpj.replace(/\D/g, '')
+                     const recoveryUrl = `${BASE_API_URL}/nfce?chave=${chNFe}&cpf_cnpj=${cleanCnpj}&ambiente=${ENV_PAYLOAD}`
                      console.log(`[Fiscal] Fetching: ${recoveryUrl}`)
                      
                      const recoveryRes = await fetch(recoveryUrl, {
@@ -466,6 +469,7 @@ Deno.serve(async (req) => {
                                          })
 
                                      if (uploadError) {
+                                         recoveryDebugStr += ` | PDF Upload Error: ${uploadError.message}`
                                          console.error('[Fiscal] Recovery Storage Upload Error:', uploadError)
                                      } else {
                                          // 3. Get Public URL
@@ -477,8 +481,12 @@ Deno.serve(async (req) => {
                                          recoveredPdfUrl = urlData.publicUrl
                                          console.log(`[Fiscal] Recovered PDF Stored: ${recoveredPdfUrl}`)
                                      }
+                                 } else {
+                                     recoveryDebugStr += ` | PDF Fetch Binary Failed: ${pdfRes.status}`
                                  }
                              } catch (proxyErr) {
+                                 const msg = proxyErr instanceof Error ? proxyErr.message : 'Unknown'
+                                 recoveryDebugStr += ` | Proxy Exception: ${msg}`
                                  console.error('[Fiscal] Recovery Proxy Exception:', proxyErr)
                              }
                              // ------------------------------------------
@@ -504,32 +512,43 @@ Deno.serve(async (req) => {
                                { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
                              )
                          } else {
+                            recoveryDebugStr += ` | Recovery Found 0 items in search`
                             console.warn('[Fiscal] Recovery: Invoice not found in search results.')
                          }
                      } else {
-                         console.warn('[Fiscal] Recovery Search Failed:', await recoveryRes.text())
+                         const txt = await recoveryRes.text()
+                         recoveryDebugStr += ` | Recovery Search API Failed: ${recoveryRes.status} body=${txt}`
+                         console.warn('[Fiscal] Recovery Search Failed:', txt)
                      }
                  } catch (recErr) {
+                     const msg = recErr instanceof Error ? recErr.message : 'Unknown'
+                     recoveryDebugStr += ` | Recovery Exception: ${msg}`
                      console.error('[Fiscal] Recovery Exception:', recErr)
                  }
             } else {
+                recoveryDebugStr += ' | Could not extract chNFe regex'
                 console.warn('[Fiscal] Could not extract chNFe for recovery.')
             }
         }
         // -------------------------------------
         
         // Log rejection to DB
+        const finalErrorLog = errorMsg + (recoveryDebugStr ? ` [DEBUG RECOVERY: ${recoveryDebugStr}]` : '')
+        
         await supabaseClient
           .from('invoice_logs')
           .upsert({
-             sale_id: sale_id,
-             status: 'rejected',
-             error_message: errorMsg,
-             updated_at: new Date().toISOString()
+            sale_id: sale_id,
+            status: 'rejected',
+            external_id: null,
+            xml_url: null,
+            pdf_url: null,
+            error_message: finalErrorLog,
+            updated_at: new Date().toISOString()
           }, { onConflict: 'sale_id' })
         
         return new Response(
-          JSON.stringify({ error: 'Fiscal Rejection', details: errorMsg }),
+          JSON.stringify({ error: 'Fiscal Rejection', details: finalErrorLog }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
     }
