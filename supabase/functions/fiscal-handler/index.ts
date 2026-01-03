@@ -74,11 +74,14 @@ Deno.serve(async (req) => {
               origin
             )
           ),
-          customers (
+            customers (
             name,
             email,
             phone,
-            address
+            address,
+            cpf_cnpj,
+            ie,
+            indicador_ie
           )
         `)
         .eq('id', sale_id)
@@ -189,6 +192,49 @@ Deno.serve(async (req) => {
         }
     }
 
+    // Destinatário Logic (NEW)
+    let dest: any = undefined;
+    const customer = sale.customers;
+
+    if (customer && (customer.cpf_cnpj || customer.name)) {
+        dest = {};
+        
+        // Identificação Basic
+        if (customer.name) dest.xNome = customer.name.substring(0, 60);
+        
+        // CPF/CNPJ Logic
+        const doc = customer.cpf_cnpj ? customer.cpf_cnpj.replace(/\D/g, '') : null;
+        if (doc) {
+            if (doc.length === 11) dest.CPF = doc;
+            else if (doc.length === 14) dest.CNPJ = doc;
+        }
+
+        // IE logic
+        if (customer.indicador_ie) dest.indIEDest = customer.indicador_ie;
+        if (customer.ie) dest.IE = customer.ie.replace(/\D/g, '');
+        if (customer.email) dest.email = customer.email;
+
+        // Endereço Logic
+        if (customer.address && typeof customer.address === 'object') {
+            const addr = customer.address;
+            // Check if it's FiscalAddress (has logradouro)
+            if (addr.logradouro) {
+                dest.enderDest = {
+                    xLgr: addr.logradouro.substring(0, 60),
+                    nro: addr.numero || 'S/N',
+                    xCpl: addr.complemento ? addr.complemento.substring(0, 60) : undefined,
+                    xBairro: addr.bairro.substring(0, 60),
+                    cMun: addr.codigo_municipio, // IBGE!
+                    xMun: addr.nome_municipio.substring(0, 60),
+                    UF: addr.uf,
+                    CEP: addr.cep ? addr.cep.replace(/\D/g, '') : undefined,
+                    cPais: "1058",
+                    xPais: "BRASIL"
+                };
+            }
+        }
+    }
+
     // 9. Construct Payload (SEFAZ Standard)
     const nfcePayload = {
         ambiente: "homologacao", // Obrigatório na raiz
@@ -231,6 +277,7 @@ Deno.serve(async (req) => {
                 IE: settings.ie === 'ISENTO' ? undefined : settings.ie.replace(/\D/g, ''),
                 CRT: 1 // NUMBER
             },
+            dest: dest, // Add Dest here (can be undefined for consumer final anonymous)
             det: items.map((item: any, i: number) => ({
                 nItem: i + 1,
                 prod: {
