@@ -8,6 +8,7 @@
  */
 
 import { useState, useMemo, useEffect, useId } from 'react';
+import { useForm, FormProvider } from 'react-hook-form';
 import { useCart, useCartTotal } from '@/features/sales/hooks/use-cart';
 import { useCustomer } from '@/features/customers/hooks/use-crm';
 import { usePaymentMethods } from '@/features/sales/hooks/use-sales';
@@ -16,6 +17,7 @@ import { useDeliveryPersons } from '@/features/delivery/hooks/useDeliveryPersons
 import { cn } from '@/core/config/utils';
 import { getGlassCardClasses, getValueClasses } from '@/core/config/theme-utils';
 import { text, shadows } from "@/core/config/theme";
+import { FiscalAddress } from '@/core/types/fiscal.types';
 
 import { Button } from '@/shared/ui/primitives/button';
 import { ScrollArea } from '@/shared/ui/primitives/scroll-area';
@@ -55,6 +57,14 @@ export function Cart({
   const { data: paymentMethods = [], isLoading: isLoadingPaymentMethods } = usePaymentMethods();
   const { data: selectedCustomer } = useCustomer(customerId || '');
 
+  // Form System for Address
+  const addressForm = useForm<FiscalAddress>({
+      defaultValues: {
+          pais: 'Brasil',
+          codigo_pais: '1058'
+      }
+  });
+
   // Data Fetching
   const { data: deliveryPersons = [] } = useDeliveryPersons(saleType === 'delivery');
 
@@ -63,8 +73,7 @@ export function Cart({
   const [cashReceived, setCashReceived] = useState<number>(0);
   const [showCashInput, setShowCashInput] = useState(false);
 
-  // Estados para delivery
-  const [deliveryAddress, setDeliveryAddress] = useState('');
+  // Estados para delivery (Address movido para react-hook-form)
   const [deliveryFee, setDeliveryFee] = useState<number>(0);
   const [deliveryPersonId, setDeliveryPersonId] = useState<string>('');
 
@@ -103,30 +112,30 @@ export function Cart({
 
   // Autocomplete: Preencher endereço automaticamente do cliente selecionado
   useEffect(() => {
-    if (saleType === 'delivery' && selectedCustomer?.address && !deliveryAddress) {
+    if (saleType === 'delivery' && selectedCustomer?.address) {
       const addr = selectedCustomer.address;
-      // Lógica de formatação de endereço extraída pode ser um utilitário, mas mantendo aqui por brevidade
-      // Se necessário, mover para um addressHelper
+      
+      // Tentativa de mapeamento inteligente
       if (typeof addr === 'string') {
-        setDeliveryAddress(addr);
+          // Fallback legacy string
+          addressForm.setValue('logradouro', addr); 
+          addressForm.setValue('cep', ''); 
       } else if (typeof addr === 'object' && addr !== null) {
-        if (addr.full_address) {
-          setDeliveryAddress(addr.full_address);
-        } else if (addr.address && typeof addr.address === 'string') {
-          setDeliveryAddress(addr.address);
-        } else {
-          const parts: string[] = [];
-          if (addr.street) parts.push(addr.street);
-          if (addr.number) parts.push(`Nº ${addr.number}`);
-          if (addr.neighborhood) parts.push(addr.neighborhood);
-          if (addr.complement) parts.push(`Compl: ${addr.complement}`);
-          // if (addr.reference) parts.push(`Ref: ${addr.reference}`); // Opcional
-          const formatted = parts.join(', ');
-          if (formatted) setDeliveryAddress(formatted);
-        }
+          // If customer has structured data (even partial)
+          // We map what we can. 
+          // Note: In future, customer address should strictly be FiscalAddress too.
+          if ((addr as any).street) addressForm.setValue('logradouro', (addr as any).street);
+          if ((addr as any).number) addressForm.setValue('numero', (addr as any).number);
+          if ((addr as any).neighborhood) addressForm.setValue('bairro', (addr as any).neighborhood);
+          if ((addr as any).city) addressForm.setValue('nome_municipio', (addr as any).city);
+          if ((addr as any).state) addressForm.setValue('uf', (addr as any).state);
+          // If we had IBGE recorded, we would set it here too
+          if ((addr as any).ibge) addressForm.setValue('codigo_municipio', (addr as any).ibge);
+          if ((addr as any).zip_code) addressForm.setValue('cep', (addr as any).zip_code);
+          if ((addr as any).complement) addressForm.setValue('complemento', (addr as any).complement);
       }
     }
-  }, [saleType, selectedCustomer, deliveryAddress]);
+  }, [saleType, selectedCustomer, addressForm]);
 
   // Map internal variantes to Theme variants
   const getGlassVariant = (v: string) => {
@@ -147,7 +156,7 @@ export function Cart({
     setDiscount(0);
     setCashReceived(0);
     setShowCashInput(false);
-    setDeliveryAddress('');
+    addressForm.reset();
     setDeliveryFee(0);
     setDeliveryPersonId('');
   };
@@ -161,7 +170,7 @@ export function Cart({
     paymentMethodId,
     discount,
     allowDiscounts,
-    deliveryAddress,
+    deliveryAddress: addressForm.watch(), 
     deliveryFee,
     deliveryPersonId,
     isCashPayment: !!isCashPayment,
@@ -253,16 +262,16 @@ export function Cart({
 
           {/* Seção Delivery */}
           {saleType === 'delivery' && (
-            <CartDeliverySection
-              cartId={cartId}
-              deliveryAddress={deliveryAddress}
-              deliveryFee={deliveryFee}
-              deliveryPersonId={deliveryPersonId}
-              deliveryPersons={deliveryPersons}
-              onAddressChange={setDeliveryAddress}
-              onFeeChange={setDeliveryFee}
-              onDeliveryPersonChange={setDeliveryPersonId}
-            />
+            <FormProvider {...addressForm}>
+                 <CartDeliverySection
+                    cartId={cartId}
+                    deliveryFee={deliveryFee}
+                    deliveryPersonId={deliveryPersonId}
+                    deliveryPersons={deliveryPersons}
+                    onFeeChange={setDeliveryFee}
+                    onDeliveryPersonChange={setDeliveryPersonId}
+                 />
+            </FormProvider>
           )}
 
           {/* Totais e Botão Final */}

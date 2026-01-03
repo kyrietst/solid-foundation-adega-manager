@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Input } from '@/shared/ui/primitives/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/primitives/select';
 import { ChevronDown, ChevronUp } from 'lucide-react';
+import { FiscalAddressForm } from '@/shared/components/form/FiscalAddressForm';
 
 interface DeliveryPerson {
     id: string;
@@ -11,22 +12,20 @@ interface DeliveryPerson {
 
 interface CartDeliverySectionProps {
     cartId: string;
-    deliveryAddress: string;
+    // deliveryAddress removed - managed by FormContext
     deliveryFee: number;
     deliveryPersonId: string;
     deliveryPersons: DeliveryPerson[];
-    onAddressChange: (val: string) => void;
+    // onAddressChange removed
     onFeeChange: (val: number) => void;
     onDeliveryPersonChange: (val: string) => void;
 }
 
 export function CartDeliverySection({
     cartId,
-    deliveryAddress,
     deliveryFee,
     deliveryPersonId,
     deliveryPersons,
-    onAddressChange,
     onFeeChange,
     onDeliveryPersonChange
 }: CartDeliverySectionProps) {
@@ -39,12 +38,7 @@ export function CartDeliverySection({
                 onClick={() => setIsExpanded(!isExpanded)}
             >
                 <h4 className="text-sm font-medium text-gray-200 flex items-center gap-2">
-                    Entrega
-                    {deliveryAddress && (
-                        <span className="text-xs text-orange-400 truncate max-w-32">
-                            ({deliveryAddress})
-                        </span>
-                    )}
+                    Entrega (Fiscal)
                 </h4>
                 {isExpanded ? (
                     <ChevronUp className="h-4 w-4 text-gray-400" />
@@ -55,16 +49,9 @@ export function CartDeliverySection({
 
             {isExpanded && (
                 <div className="px-4 pb-4 space-y-4">
-                    <div className="space-y-2">
-                        <label htmlFor={`${cartId}-address`} className="text-sm font-medium text-gray-200">Endereço de Entrega *</label>
-                        <Input
-                            id={`${cartId}-address`}
-                            name="delivery_address"
-                            placeholder="Ex: Rua das Flores, 123, Bela Vista"
-                            value={deliveryAddress}
-                            onChange={(e) => onAddressChange(e.target.value)}
-                            className="text-sm bg-gray-800/50 border-orange-400/30 text-gray-200 focus:border-orange-400"
-                        />
+                    {/* New Smart Address Form */}
+                    <div className="bg-gray-800/30 p-3 rounded-md border border-white/10">
+                        <FiscalAddressForm />
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">

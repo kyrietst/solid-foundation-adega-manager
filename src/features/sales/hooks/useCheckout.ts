@@ -4,6 +4,7 @@ import { useToast } from '@/shared/hooks/common/use-toast';
 import { useAuth } from '@/app/providers/AuthContext';
 import { CartItem } from '@/features/sales/hooks/use-cart';
 import type { SaleType } from '@/features/sales/components/SalesPage';
+import { FiscalAddress } from '@/core/types/fiscal.types';
 
 export interface CheckoutState {
     processSale: () => Promise<void>;
@@ -22,7 +23,7 @@ export interface UseCheckoutProps {
     allowDiscounts: boolean;
 
     // Delivery props
-    deliveryAddress: string;
+    deliveryAddress: string | FiscalAddress | null;
     deliveryFee: number;
     deliveryPersonId: string;
 
@@ -102,10 +103,20 @@ export const useCheckout = ({
 
         // Validações específicas para delivery
         if (saleType === 'delivery') {
-            if (!deliveryAddress.trim()) {
+            let isValidAddress = false;
+            
+            if (typeof deliveryAddress === 'string') {
+                 isValidAddress = !!deliveryAddress.trim();
+            } else if (deliveryAddress) {
+                 // Check if FiscalAddress has mandatory fields (Logradouro, Numero)
+                 // Note: CEP and others handled by form validation usually, but here we double check
+                 isValidAddress = !!deliveryAddress.logradouro && !!deliveryAddress.numero;
+            }
+
+            if (!isValidAddress) {
                 toast({
-                    title: "Endereço obrigatório",
-                    description: "Informe o endereço de entrega",
+                    title: "Endereço incompleto",
+                    description: "Informe o endereço de entrega (Logradouro e Número)",
                     variant: "destructive",
                 });
                 return;
@@ -132,6 +143,18 @@ export const useCheckout = ({
         }
 
         try {
+            // Prepared Address Payload
+            let finalDeliveryAddress: string | null = null;
+            if (saleType === 'delivery' && deliveryAddress) {
+                if (typeof deliveryAddress === 'string') {
+                     // Legacy or simple string fallback
+                     finalDeliveryAddress = deliveryAddress;
+                } else {
+                     // SERIALIZE FISCAL OBJECT TO JSON STRING for RPC
+                     finalDeliveryAddress = JSON.stringify(deliveryAddress);
+                }
+            }
+
             const saleData = {
                 customer_id: customerId || null,
                 total_amount: subtotal,
@@ -139,7 +162,7 @@ export const useCheckout = ({
                 discount_amount: allowDiscounts ? discount : 0,
                 saleType: saleType,
                 // Dados de delivery (se aplicável)
-                delivery_address: saleType === 'delivery' ? deliveryAddress : null,
+                delivery_address: finalDeliveryAddress,
                 delivery_fee: saleType === 'delivery' ? deliveryFee : 0,
                 delivery_person_id: saleType === 'delivery' ? (deliveryPersonId || null) : null,
                 items: items.map(item => ({
