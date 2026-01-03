@@ -188,8 +188,14 @@ Deno.serve(async (req) => {
     const totalVendaNumber = parseFloat(totalVenda.toFixed(2))
 
     // Lógica Avançada de Pagamento
-    const tPag = sale.payment_methods?.code || '99'
+    // Robust extraction: Handle if payment_methods is array or object
+    const pmraw = sale.payment_methods
+    const pm = Array.isArray(pmraw) ? pmraw[0] : pmraw
+    const tPag = pm?.code || '99'
     
+    // DEBUG: Log resolved tPag
+    console.log(`[Fiscal] Resolved tPag: ${tPag} (Raw: ${JSON.stringify(pmraw)})`)
+
     const paymentDet: any = {
         tPag: tPag,
         vPag: totalVendaNumber
@@ -206,6 +212,7 @@ Deno.serve(async (req) => {
             tpIntegra: 2, // 2 = Não Integrado (Maquininha POS avulsa)
         }
     }
+
 
     // Destinatário Logic (NEW)
     let dest: any = undefined;
