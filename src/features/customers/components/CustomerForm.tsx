@@ -133,10 +133,13 @@ export function CustomerForm({
         ...data,
         id: customerId, // Include ID if editing
         tags: currentTags,
-        // Ensure enums are null if empty string (though Zod handles this mostly)
+        // Sanitize empty strings to null for DB compatibility
+        birthday: data.birthday === '' ? null : data.birthday,
+        email: data.email === '' ? null : data.email,
+        phone: data.phone === '' ? null : data.phone,
+        notes: data.notes === '' ? null : data.notes,
         contact_preference: data.contact_preference || null,
-        // Standardize address to FiscalAddress structure is handled by form,
-        // verify backend accepts it (it does as Json)
+        // Standardize address to FiscalAddress structure is handled by form
       };
       
       await upsertCustomer.mutateAsync(payload);
