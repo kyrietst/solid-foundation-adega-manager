@@ -187,19 +187,10 @@ Deno.serve(async (req) => {
     const totalVenda = items.reduce((acc: number, item: any) => acc + item.valor_bruto, 0)
     const totalVendaNumber = parseFloat(totalVenda.toFixed(2))
 
-    // Calculate Tax Totals (CST 00 Logic)
-    let totalBC = 0
-    let totalICMS = 0
-    
-    items.forEach((item: any) => {
-        const vBC_item = parseFloat(item.valor_bruto.toFixed(2))
-        const vICMS_item = parseFloat((item.valor_bruto * 0.18).toFixed(2))
-        totalBC += vBC_item
-        totalICMS += vICMS_item
-    })
-    
-    totalBC = parseFloat(totalBC.toFixed(2))
-    totalICMS = parseFloat(totalICMS.toFixed(2))
+    // Calculate Tax Totals (MEI Logic - Simples Nacional)
+    // MEI não destaca ICMS (vBC e vICMS = 0)
+    const totalBC = 0.00
+    const totalICMS = 0.00
 
     // Lógica Avançada de Pagamento
     // Robust extraction: Handle if payment_methods is array or object
@@ -319,7 +310,7 @@ Deno.serve(async (req) => {
                     xPais: "BRASIL"
                 },
                 IE: settings.ie === 'ISENTO' ? undefined : settings.ie.replace(/\D/g, ''),
-                CRT: 3 // NUMBER (Regime Normal - Forced Override)
+                CRT: 4 // NUMBER (Simples Nacional - MEI)
             },
             dest: dest, // Add Dest here (can be undefined for consumer final anonymous)
             det: items.map((item: any, i: number) => ({
@@ -342,13 +333,9 @@ Deno.serve(async (req) => {
                 },
                 imposto: {
                     ICMS: {
-                        ICMS00: { 
+                        ICMSSN102: { 
                             orig: parseInt(item.impostos?.icms?.origem || '0'), // NUMBER
-                            CST: "00", // Tributada Integralmente
-                            modBC: 3, // Valor da Operação
-                            vBC: parseFloat(item.valor_bruto.toFixed(2)), // Base de Cálculo = Valor do Item
-                            pICMS: 18, // Alíquota SP (Padrão)
-                            vICMS: parseFloat((item.valor_bruto * 0.18).toFixed(2)) // Valor do Imposto
+                            CSOSN: "102", // Tributada pelo Simples Nacional sem permissão de crédito
                         }
                     },
                     PIS: {
