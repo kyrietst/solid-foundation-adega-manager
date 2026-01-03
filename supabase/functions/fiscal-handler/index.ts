@@ -420,9 +420,9 @@ Deno.serve(async (req) => {
             if (chNFe) {
                  console.log(`[Fiscal] Recovering Key: ${chNFe}`)
                  try {
-                     // Fetch from Nuvem Fiscal by Key (using ID endpoint as proxy or direct if supported)
-                     // Nuvem Fiscal often allows /nfce/{key}
-                     const recoveryUrl = `${BASE_API_URL}/nfce/${chNFe}`
+                     // Fetch from Nuvem Fiscal by Key (List with filter)
+                     // DOCS: GET /nfce?chave={chave_acesso}
+                     const recoveryUrl = `${BASE_API_URL}/nfce?chave=${chNFe}`
                      console.log(`[Fiscal] Fetching: ${recoveryUrl}`)
                      
                      const recoveryRes = await fetch(recoveryUrl, {
@@ -433,31 +433,81 @@ Deno.serve(async (req) => {
                      })
 
                      if (recoveryRes.ok) {
-                         const recoveryData = await recoveryRes.json()
-                         console.log('[Fiscal] Recovery Success:', recoveryData)
+                         const recoverySearchResult = await recoveryRes.json()
+                         console.log('[Fiscal] Recovery Search Result:', recoverySearchResult)
+                         
+                         // Expecting { data: [ { id: '...', ... } ], ... } or direct array
+                         const items = recoverySearchResult.data || recoverySearchResult.items || (Array.isArray(recoverySearchResult) ? recoverySearchResult : [])
+                         const recoveredNote = items[0]
 
-                         // Upsert Log (Recovered)
-                         await supabaseClient
-                           .from('invoice_logs')
-                           .upsert({
-                             sale_id: sale_id,
-                             status: 'authorized',
-                             external_id: recoveryData.id || 'RECOVERED',
-                             xml_url: recoveryData.xml,
-                             pdf_url: recoveryData.pdf,
-                             error_message: null, // Clear error
-                             updated_at: new Date().toISOString()
-                           }, { onConflict: 'sale_id' })
+                         if (recoveredNote) {
+                             let recoveredPdfUrl = recoveredNote.pdf || recoveredNote.url_pdf || recoveredNote.link_pdf || recoveredNote.url_danfe
+                             const recoveredXmlUrl = recoveredNote.xml || recoveredNote.url_xml || recoveredNote.link_xml
 
-                         return new Response(
-                           JSON.stringify({ 
-                             message: 'Invoice Authorized (Recovered)', 
-                             data: recoveryData 
-                           }),
-                           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-                         )
+                             // --- PROXY PDF STORAGE (RECOVERY MODE) ---
+                             try {
+                                 console.log(`[Fiscal] Starting PDF Proxy for Recovered ID: ${recoveredNote.id}`)
+                                 // 1. Fetch Binary PDF
+                                 const pdfRes = await fetch(`${BASE_API_URL}/nfce/${recoveredNote.id}/pdf`, {
+                                     headers: { 'Authorization': `Bearer ${access_token}` }
+                                 })
+                                 
+                                 if (pdfRes.ok) {
+                                     const pdfBuffer = await pdfRes.arrayBuffer()
+                                     const fileName = `${sale_id}_${Date.now()}_rec.pdf`
+
+                                     // 2. Upload to Supabase Storage
+                                     const { error: uploadError } = await supabaseClient
+                                         .storage
+                                         .from('invoices')
+                                         .upload(fileName, pdfBuffer, {
+                                             contentType: 'application/pdf',
+                                             upsert: true
+                                         })
+
+                                     if (uploadError) {
+                                         console.error('[Fiscal] Recovery Storage Upload Error:', uploadError)
+                                     } else {
+                                         // 3. Get Public URL
+                                         const { data: urlData } = supabaseClient
+                                             .storage
+                                             .from('invoices')
+                                             .getPublicUrl(fileName)
+                                         
+                                         recoveredPdfUrl = urlData.publicUrl
+                                         console.log(`[Fiscal] Recovered PDF Stored: ${recoveredPdfUrl}`)
+                                     }
+                                 }
+                             } catch (proxyErr) {
+                                 console.error('[Fiscal] Recovery Proxy Exception:', proxyErr)
+                             }
+                             // ------------------------------------------
+
+                             // Upsert Log (Recovered)
+                             await supabaseClient
+                               .from('invoice_logs')
+                               .upsert({
+                                 sale_id: sale_id,
+                                 status: 'authorized',
+                                 external_id: recoveredNote.id || 'RECOVERED',
+                                 xml_url: recoveredXmlUrl,
+                                 pdf_url: recoveredPdfUrl,
+                                 error_message: null, 
+                                 updated_at: new Date().toISOString()
+                               }, { onConflict: 'sale_id' })
+
+                             return new Response(
+                               JSON.stringify({ 
+                                 message: 'Invoice Authorized (Recovered)', 
+                                 data: recoveredNote 
+                               }),
+                               { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+                             )
+                         } else {
+                            console.warn('[Fiscal] Recovery: Invoice not found in search results.')
+                         }
                      } else {
-                         console.warn('[Fiscal] Recovery Fetch Failed:', await recoveryRes.text())
+                         console.warn('[Fiscal] Recovery Search Failed:', await recoveryRes.text())
                      }
                  } catch (recErr) {
                      console.error('[Fiscal] Recovery Exception:', recErr)
@@ -489,16 +539,84 @@ Deno.serve(async (req) => {
     // Map response fields (adjust based on actual Nuvem Fiscal response structure)
     // 12. Success
     console.log('[Fiscal] Authorized! Updating log...')
-    await supabaseClient
-      .from('invoice_logs')
-      .upsert({
-        sale_id: sale_id,
-        status: 'authorized',
-        external_id: apiData.id || 'N/A',
-        xml_url: apiData.xml || null, // Check correct field from Nuvem Fiscal
-        pdf_url: apiData.pdf || null, // Check correct field
-        updated_at: new Date().toISOString()
-      }, { onConflict: 'sale_id' })
+        // --- PROXY PDF STORAGE (Nuvem Fiscal -> Supabase Storage) ---
+        let finalPdfUrl = null
+        
+        // Determine ID: either from fresh emission (apiData.id) or recovered note
+        // We need to look back at the recovery block. Since 'items' is scoped there, 
+        // we should interpret the ID from context or 'external_id' if we saved it in a variable.
+        // Better: let's rely on apiData or the fact that if we recovered, we have the ID.
+        // However, 'items' is not available here. 
+        // Let's use a safe lookup.
+        
+        // If apiData.id exists, use it. If not, we might be in a recovery scenario where apiData failed.
+        // But if recovery succeeded, we returned EARLY on line 457! 
+        // WAIT: The previous code returned a Response inside the recovery block (line 457).
+        // So if we are HERE (line 500+), it means it was a FRESH emission that SUCCEEDED (or at least didn't error out).
+        // So apiData.id SHOULD be present if status is authorized.
+
+        const fiscalId = apiData.id
+        
+        if (fiscalId && (apiData.status === 'autorizado' || apiData.status === 'processamento')) {
+            console.log(`[Fiscal] Starting PDF Proxy for ID: ${fiscalId}`)
+            
+            try {
+                // 1. Fetch Binary PDF
+                const pdfRes = await fetch(`${BASE_API_URL}/nfce/${fiscalId}/pdf`, {
+                    headers: { 'Authorization': `Bearer ${access_token}` }
+                })
+                
+                if (pdfRes.ok) {
+                    const pdfBuffer = await pdfRes.arrayBuffer()
+                    const fileName = `${sale_id}_${Date.now()}.pdf`
+
+                    // 2. Upload to Supabase Storage
+                    const { error: uploadError } = await supabaseClient
+                        .storage
+                        .from('invoices')
+                        .upload(fileName, pdfBuffer, {
+                            contentType: 'application/pdf',
+                            upsert: true
+                        })
+
+                    if (uploadError) {
+                        console.error('[Fiscal] Storage Upload Error:', uploadError)
+                    } else {
+                        // 3. Get Public URL
+                        const { data: urlData } = supabaseClient
+                            .storage
+                            .from('invoices')
+                            .getPublicUrl(fileName)
+                        
+                        finalPdfUrl = urlData.publicUrl
+                        console.log(`[Fiscal] PDF Stored Successfully: ${finalPdfUrl}`)
+                    }
+                } else {
+                    console.warn(`[Fiscal] Failed to fetch PDF binary: ${pdfRes.status}`)
+                }
+            } catch (proxyErr) {
+                console.error('[Fiscal] Proxy PDF Exception:', proxyErr)
+            }
+        }
+
+        // Fallback to API links if proxy failed
+        const apiPdfLink = apiData.pdf || apiData.url_pdf || apiData.link_pdf || apiData.url_danfe
+        const bestPdfUrl = finalPdfUrl || apiPdfLink
+        const bestXmlUrl = apiData.xml || apiData.url_xml 
+
+        // Log success to DB
+        await supabaseClient
+            .from('invoice_logs')
+            .upsert({
+                sale_id: sale_id,
+                status: 'authorized',
+                external_id: apiData.id || 'UNKNOWN',
+                xml_url: bestXmlUrl,
+                pdf_url: bestPdfUrl, // NOW USING STORAGE URL
+                error_message: null, 
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'sale_id' })
+
 
     return new Response(
       JSON.stringify({ 
