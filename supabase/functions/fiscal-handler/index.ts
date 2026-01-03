@@ -407,6 +407,66 @@ Deno.serve(async (req) => {
         const errorDetails = apiData.autorizacao?.motivo_status || apiData.error?.message || 'Erro de Validação SEFAZ'
         const errorMsg = `Emissão Rejeitada: ${errorDetails}`
         console.error('[Fiscal] Error:', errorMsg)
+
+        // --- DUPLICITY RECOVERY (Erro 539) ---
+        const isDuplicity = (apiData.error?.code === '539') || (typeof errorDetails === 'string' && errorDetails.includes('Duplicidade'))
+        
+        if (isDuplicity) {
+            console.log('[Fiscal] Detected Duplicity (Erro 539). Attempting Auto-Recovery...')
+            // Extract chNFe from message ex: "Rejeição: Duplicidade de NF-e [chNFe:3522...]"
+            const match = errorDetails.match(/\[chNFe:(\d+)/) 
+            const chNFe = match ? match[1] : null
+
+            if (chNFe) {
+                 console.log(`[Fiscal] Recovering Key: ${chNFe}`)
+                 try {
+                     // Fetch from Nuvem Fiscal by Key (using ID endpoint as proxy or direct if supported)
+                     // Nuvem Fiscal often allows /nfce/{key}
+                     const recoveryUrl = `${BASE_API_URL}/nfce/${chNFe}`
+                     console.log(`[Fiscal] Fetching: ${recoveryUrl}`)
+                     
+                     const recoveryRes = await fetch(recoveryUrl, {
+                         headers: { 
+                             'Authorization': `Bearer ${access_token}`,
+                             'Content-Type': 'application/json' 
+                        }
+                     })
+
+                     if (recoveryRes.ok) {
+                         const recoveryData = await recoveryRes.json()
+                         console.log('[Fiscal] Recovery Success:', recoveryData)
+
+                         // Upsert Log (Recovered)
+                         await supabaseClient
+                           .from('invoice_logs')
+                           .upsert({
+                             sale_id: sale_id,
+                             status: 'authorized',
+                             external_id: recoveryData.id || 'RECOVERED',
+                             xml_url: recoveryData.xml,
+                             pdf_url: recoveryData.pdf,
+                             error_message: null, // Clear error
+                             updated_at: new Date().toISOString()
+                           }, { onConflict: 'sale_id' })
+
+                         return new Response(
+                           JSON.stringify({ 
+                             message: 'Invoice Authorized (Recovered)', 
+                             data: recoveryData 
+                           }),
+                           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+                         )
+                     } else {
+                         console.warn('[Fiscal] Recovery Fetch Failed:', await recoveryRes.text())
+                     }
+                 } catch (recErr) {
+                     console.error('[Fiscal] Recovery Exception:', recErr)
+                 }
+            } else {
+                console.warn('[Fiscal] Could not extract chNFe for recovery.')
+            }
+        }
+        // -------------------------------------
         
         // Log rejection to DB
         await supabaseClient
