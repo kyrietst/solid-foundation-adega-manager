@@ -187,6 +187,20 @@ Deno.serve(async (req) => {
     const totalVenda = items.reduce((acc: number, item: any) => acc + item.valor_bruto, 0)
     const totalVendaNumber = parseFloat(totalVenda.toFixed(2))
 
+    // Calculate Tax Totals (CST 00 Logic)
+    let totalBC = 0
+    let totalICMS = 0
+    
+    items.forEach((item: any) => {
+        const vBC_item = parseFloat(item.valor_bruto.toFixed(2))
+        const vICMS_item = parseFloat((item.valor_bruto * 0.18).toFixed(2))
+        totalBC += vBC_item
+        totalICMS += vICMS_item
+    })
+    
+    totalBC = parseFloat(totalBC.toFixed(2))
+    totalICMS = parseFloat(totalICMS.toFixed(2))
+
     // Lógica Avançada de Pagamento
     // Robust extraction: Handle if payment_methods is array or object
     const pmraw = sale.payment_methods
@@ -304,8 +318,7 @@ Deno.serve(async (req) => {
                     cPais: "1058", // Brasil
                     xPais: "BRASIL"
                 },
-                IE: settings.ie === 'ISENTO' ? undefined : settings.ie.replace(/\D/g, ''),
-                CRT: 1 // NUMBER
+                IE: settings.ie === 'ISENTO' ? undefined : settings.ie.replace(/\D/g, '')
             },
             dest: dest, // Add Dest here (can be undefined for consumer final anonymous)
             det: items.map((item: any, i: number) => ({
@@ -328,9 +341,13 @@ Deno.serve(async (req) => {
                 },
                 imposto: {
                     ICMS: {
-                        ICMSSN102: { // Simples Nacional sem crédito
-                            orig: 0, // NUMBER (Era "0")
-                            CSOSN: "102"
+                        ICMS00: { 
+                            orig: parseInt(item.impostos?.icms?.origem || '0'), // NUMBER
+                            CST: "00", // Tributada Integralmente
+                            modBC: 3, // Valor da Operação
+                            vBC: parseFloat(item.valor_bruto.toFixed(2)), // Base de Cálculo = Valor do Item
+                            pICMS: 18, // Alíquota SP (Padrão)
+                            vICMS: parseFloat((item.valor_bruto * 0.18).toFixed(2)) // Valor do Imposto
                         }
                     },
                     PIS: {
@@ -343,8 +360,8 @@ Deno.serve(async (req) => {
             })),
             total: {
                 ICMSTot: {
-                    vBC: 0.00,
-                    vICMS: 0.00,
+                    vBC: totalBC,
+                    vICMS: totalICMS,
                     vICMSDeson: 0.00,
                     vFCP: 0.00,
                     vBCST: 0.00,
