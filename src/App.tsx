@@ -16,17 +16,14 @@ import { toast } from "@/shared/hooks/common/use-toast";
 const Index = lazy(() => import('./pages/Index'));
 const Auth = lazy(() => import('./pages/Auth'));
 const NotFound = lazy(() => import('./pages/NotFound'));
-const ChromeDiagnostics = lazy(() => import('./pages/ChromeDiagnostics'));
+
 
 // Lazy load AdvancedReports component
 const AdvancedReports = lazy(() =>
   import('@/features/reports/components/AdvancedReports').then((m) => ({ default: m.AdvancedReports }))
 );
 
-// Lazy load Design System page
-const DesignSystemPage = lazy(() =>
-  import('./pages/DesignSystemPage').then((m) => ({ default: m.default }))
-);
+
 
 // Lazy load Activities page (Histórico & Logs)
 const ActivitiesPage = lazy(() =>
@@ -161,30 +158,8 @@ const App = () => {
                             </RouteErrorBoundary>
                           }
                         />
-                        <Route
-                          path="/chrome-diagnostics"
-                          element={
-                            <RouteErrorBoundary routeName="Diagnósticos Chrome">
-                              <Suspense fallback={
-                                <div className="flex items-center justify-center min-h-screen bg-black">
-                                  <div className="animate-spin rounded-full h-16 w-16 border-4 border-yellow-500/30 border-t-yellow-400"></div>
-                                </div>
-                              }>
-                                <ChromeDiagnostics />
-                              </Suspense>
-                            </RouteErrorBoundary>
-                          }
-                        />
-                        <Route
-                          path="/designsystem"
-                          element={
-                            <RouteErrorBoundary routeName="Design System">
-                              <Suspense fallback={<div className="flex items-center justify-center min-h-screen bg-black"><div className="text-accent-gold-100">Carregando Design System...</div></div>}>
-                                <DesignSystemPage />
-                              </Suspense>
-                            </RouteErrorBoundary>
-                          }
-                        />
+
+
 
                         {/* Rota principal com nested routes - LAZY LOADED */}
                         <Route

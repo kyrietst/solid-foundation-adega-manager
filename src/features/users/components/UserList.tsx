@@ -40,7 +40,7 @@ export const UserList: React.FC<UserListProps> = ({
   const { isSupremeAdmin } = useRoleUtilities();
   const { toast } = useToast();
   const { deleteUser, isDeleting } = useUserDeletion();
-  const ALL_COLUMNS = ['Nome', 'Email', 'Função', 'Criado em', 'Ações'] as const;
+  const ALL_COLUMNS = ['Nome', 'Email', 'Perfil de Acesso', 'Criado em', 'Ações'] as const;
   const [visibleColumns, setVisibleColumns] = React.useState<string[]>([...ALL_COLUMNS]);
   const [searchTerm, setSearchTerm] = React.useState('');
   const [sortField, setSortField] = React.useState<'name' | 'email' | 'role' | 'created_at' | null>('created_at');
@@ -401,13 +401,13 @@ export const UserList: React.FC<UserListProps> = ({
                       </button>
                     </th>
                   )}
-                  {visibleColumns.includes('Função') && (
+                  {visibleColumns.includes('Perfil de Acesso') && (
                     <th className="text-left p-4 font-medium text-white">
                       <button
                         className="inline-flex items-center gap-2 hover:text-accent-gold-100 transition-colors duration-200 group"
                         onClick={() => handleSort('role')}
                       >
-                        <span>Função</span>
+                        <span>Perfil de Acesso</span>
                         <div className="group-hover:scale-110 transition-transform duration-200">
                           {icon('role')}
                         </div>
@@ -451,7 +451,7 @@ export const UserList: React.FC<UserListProps> = ({
                     {visibleColumns.includes('Email') && (
                       <td className="p-4 text-white/70 group-hover:text-white transition-colors duration-200">{user.email}</td>
                     )}
-                    {visibleColumns.includes('Função') && (
+                    {visibleColumns.includes('Perfil de Acesso') && (
                       <td className="p-4"><UserRoleBadge role={user.role} /></td>
                     )}
                     {visibleColumns.includes('Criado em') && (

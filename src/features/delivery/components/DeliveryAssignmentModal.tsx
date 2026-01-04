@@ -110,7 +110,8 @@ export const DeliveryAssignmentModal = ({
       description={
         currentDeliveryPersonId
           ? `Entregador atual: ${currentDeliveryPersonName}. Selecione um novo entregador ou use atribuição automática.`
-          : 'Selecione um entregador para esta entrega ou use a atribuição automática.'
+          : 'Selecione um Agente Logístico para esta entrega ou use a atribuição automática.'
+
       }
       size="4xl"
       className="bg-black/95 backdrop-blur-xl border-white/20"

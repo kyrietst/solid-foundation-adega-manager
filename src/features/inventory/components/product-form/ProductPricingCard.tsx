@@ -37,9 +37,9 @@ export const ProductPricingCard: React.FC<ProductPricingCardProps> = React.memo(
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Preço de Custo */}
+          {/* Custo Médio Unit. */}
           <div>
-            <Label htmlFor="cost_price" className="text-gray-200">Preço de Custo (R$)</Label>
+            <Label htmlFor="cost_price" className="text-gray-200">Custo Médio Unit.</Label>
             <div className="relative">
               <DollarSign className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
               <Input
@@ -72,9 +72,9 @@ export const ProductPricingCard: React.FC<ProductPricingCardProps> = React.memo(
             </div>
           </div>
 
-          {/* Preço de Venda */}
+          {/* Valor Unitário (vUnCom) */}
           <div>
-            <Label htmlFor="price" className="text-gray-200 font-bold">Preço de Venda (R$) *</Label>
+            <Label htmlFor="price" className="text-gray-200 font-bold">Valor Unitário (vUnCom) *</Label>
             <div className="relative">
               <DollarSign className="absolute left-3 top-2.5 h-4 w-4 text-emerald-400" />
               <Input

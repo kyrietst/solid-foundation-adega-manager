@@ -76,7 +76,7 @@ export const ProfitabilityTable = React.memo(function ProfitabilityTable({
                 <div className="flex items-center justify-between">
                     <CardTitle className="text-base font-semibold text-amber-400 flex items-center gap-2">
                         <DollarSign className="h-5 w-5" />
-                        {title || `Top ${limit} por ${sortBy === 'profit' ? 'Lucro' : 'Margem'}`}
+                        {title || `Top ${limit} por ${sortBy === 'profit' ? 'Margem Contrib.' : 'Margem'}`}
                     </CardTitle>
                     <Button
                         variant="ghost"

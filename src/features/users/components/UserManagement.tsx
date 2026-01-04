@@ -111,7 +111,7 @@ const UserManagement = () => {
                   className="bg-gradient-to-r from-primary-yellow to-yellow-500 text-black hover:from-yellow-300 hover:to-yellow-400 font-semibold shadow-lg hover:shadow-yellow-400/30 transition-all duration-200 hover:scale-105"
                 >
                   <Plus className="h-4 w-4 mr-2" />
-                  NOVO USUÁRIO
+                  NOVO COLABORADOR
                 </Button>
               )}
             </div>

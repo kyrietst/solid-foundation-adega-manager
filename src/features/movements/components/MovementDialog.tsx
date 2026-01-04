@@ -53,8 +53,8 @@ export const MovementDialog: React.FC<MovementDialogProps> = ({
               <SelectValue placeholder="Selecione o tipo..." />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="in">📦 Entrada</SelectItem>
-              <SelectItem value="out">📤 Saída</SelectItem>
+              <SelectItem value="in">📦 Entrada (Compra/Bonificação)</SelectItem>
+              <SelectItem value="out">📤 Saída (Venda/Quebra)</SelectItem>
               <SelectItem value="fiado">💳 Fiado</SelectItem>
               <SelectItem value="devolucao">🔄 Devolução</SelectItem>
             </SelectContent>
@@ -220,7 +220,7 @@ export const MovementDialog: React.FC<MovementDialogProps> = ({
           Observações
         </h3>
         <div>
-          <label className="block text-sm font-medium mb-1 text-gray-300">📝 Motivo</label>
+          <label className="block text-sm font-medium mb-1 text-gray-300">📝 Natureza da Operação / Justificativa</label>
           <Input
             value={formData.reason}
             onChange={(e) => onFormDataChange({ reason: e.target.value })}

@@ -62,7 +62,7 @@ export const DeliveryOrderCard = React.memo(({
     switch (status) {
       case 'pending': return <Clock className="h-4 w-4 text-yellow-400" />;
       case 'preparing': return <Package className="h-4 w-4 text-orange-400" />;
-      case 'out_for_delivery': return <Truck className="h-4 w-4 text-blue-400" />;
+      case 'out_for_delivery': return 'Em Trânsito';
       case 'delivered': return <CheckCircle className="h-4 w-4 text-green-400" />;
       case 'cancelled': return <AlertCircle className="h-4 w-4 text-red-400" />;
       default: return <Clock className="h-4 w-4 text-gray-400" />;
@@ -84,7 +84,7 @@ export const DeliveryOrderCard = React.memo(({
     switch (status) {
       case 'pending': return 'Pendente';
       case 'preparing': return 'Preparando';
-      case 'out_for_delivery': return 'Em Trânsito';
+      case 'out_for_delivery': return 'Em Rota de Entrega';
       case 'delivered': return 'Entregue';
       case 'cancelled': return 'Cancelado';
       default: return status;
@@ -302,7 +302,7 @@ export const DeliveryOrderCard = React.memo(({
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-white font-medium">
               <Truck className="h-4 w-4 text-purple-400" />
-              Entregador
+              Entregador / Agente Logístico
             </div>
             <div className="ml-6 flex items-center gap-2">
               <p className="text-gray-300 text-sm flex-1">

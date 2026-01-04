@@ -253,7 +253,7 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({ isOpen, onClose, mod
 
           {/* Observações */}
           <div className="space-y-3">
-            <label className="block text-xs font-medium mb-1 text-gray-400">📋 Observações</label>
+            <label className="block text-xs font-medium mb-1 text-gray-400">📋 Notas de Negociação</label>
             <Textarea
               {...form.register('notes')}
               placeholder="Informações adicionais..."

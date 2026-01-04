@@ -1,11 +1,71 @@
-// deno-lint-ignore-file no-explicit-any
 import { createClient } from '@supabase/supabase-js'
 import { corsHeaders } from '../_shared/cors.ts'
 
-console.log("Fiscal Handler v2.3.0 - Dynamic Env")
+console.log("Fiscal Handler v2.5.0 - Strict Typed")
 
 // Constants
 const AUTH_URL = 'https://auth.nuvemfiscal.com.br/oauth/token'
+
+// Types
+interface FiscalPayload {
+  sale_id: string;
+  [key: string]: unknown;
+}
+
+interface SaleItem {
+    id: string;
+    quantity: number;
+    unit_price: number;
+    products: {
+        name: string;
+        barcode: string;
+        ncm: string;
+        cest: string | null;
+        cfop: string;
+        origin: string;
+    } | null; // Product can be null in join if integrity failed
+    fiscal_snapshot: {
+        ncm?: string;
+        cfop?: string;
+        uCom?: string;
+        ucom?: string;
+        xProd?: string;
+        cest?: string;
+    } | null;
+    impostos?: {
+        icms?: {
+            origem?: string;
+        };
+    };
+    valor_bruto?: number; // Calculated later
+}
+
+interface MappedItem {
+    numero_item: number;
+    codigo_produto: string;
+    descricao: string;
+    cfop: string;
+    unidade_comercial: string;
+    quantidade_comercial: number;
+    valor_unitario_comercial: number;
+    valor_bruto: number;
+    unidade_tributavel: string;
+    quantidade_tributavel: number;
+    valor_unitario_tributavel: number;
+    ncm: string;
+    cest?: string;
+    impostos?: {
+        icms?: {
+            origem?: string;
+            csosn?: string;
+        };
+    };
+}
+
+interface PaymentMethod {
+    code: string;
+    [key: string]: unknown;
+}
 
 Deno.serve(async (req) => {
   // 1. Handle CORS
@@ -45,7 +105,9 @@ Deno.serve(async (req) => {
     }
 
     // 4. Parse Request
-    const { sale_id } = await req.json()
+    const body = await req.json() as FiscalPayload
+    const { sale_id } = body
+    
     sale_id_for_log = sale_id // Capture ID for global error logging
     if (!sale_id) {
        throw new Error('Missing sale_id in request body')
@@ -148,7 +210,7 @@ Deno.serve(async (req) => {
     // 9. The Great Mapping (JSON Factory)
     
     // Items Mapping
-    const items = sale.sale_items.map((item: any, index: number) => {
+    const items: MappedItem[] = sale.sale_items.map((item: SaleItem, index: number) => {
         const product = item.products
         const snapshot = item.fiscal_snapshot || {}
         
@@ -160,7 +222,7 @@ Deno.serve(async (req) => {
         const uCom = snapshot.uCom || snapshot.ucom || 'UN'
         const xProd = snapshot.xProd || product.name
         const cest = snapshot.cest || product.cest
-        const valorUnitario = parseFloat(item.unit_price)
+        const valorUnitario = parseFloat(item.unit_price.toString()) // Ensure float
 
         return {
             numero_item: index + 1,
@@ -184,7 +246,7 @@ Deno.serve(async (req) => {
 
     // Construct Payload
     // Cálculo simples de totais para evitar rejeição
-    const totalVenda = items.reduce((acc: number, item: any) => acc + item.valor_bruto, 0)
+    const totalVenda = items.reduce((acc: number, item: MappedItem) => acc + item.valor_bruto, 0)
     const totalVendaNumber = parseFloat(totalVenda.toFixed(2))
 
     // Calculate Tax Totals (MEI Logic - Simples Nacional)
@@ -199,9 +261,9 @@ Deno.serve(async (req) => {
     const tPag = pm?.code || '99'
     
     // DEBUG: Log resolved tPag
-    console.log(`[Fiscal] Resolved tPag: ${tPag} (Raw: ${JSON.stringify(pmraw)})`)
+    console.log(`[Fiscal] Resolved tPag: ${tPag}`)
 
-    const paymentDet: any = {
+    const paymentDet: Record<string, unknown> = {
         tPag: tPag,
         vPag: totalVendaNumber
     }
@@ -228,7 +290,7 @@ Deno.serve(async (req) => {
 
 
     // Destinatário Logic (NEW)
-    let dest: any = undefined;
+    let dest: Record<string, unknown> | undefined = undefined;
     const customer = sale.customers;
 
     if (customer && (customer.cpf_cnpj || customer.name)) {
@@ -313,7 +375,7 @@ Deno.serve(async (req) => {
                 CRT: 4 // NUMBER (Simples Nacional - MEI)
             },
             dest: dest, // Add Dest here (can be undefined for consumer final anonymous)
-            det: items.map((item: any, i: number) => ({
+            det: items.map((item: MappedItem, i: number) => ({
                 nItem: i + 1,
                 prod: {
                     cProd: item.codigo_produto.substring(0, 60),
@@ -379,7 +441,7 @@ Deno.serve(async (req) => {
 
     // 11. Process Emission
     console.log(`[Fiscal] Sending payload to ${BASE_API_URL}/nfce`)
-    console.log('[Fiscal] Emit Block:', JSON.stringify(nfcePayload.infNFe.emit))
+    // Removed sensitive payload log
     
     // Use the dynamic BASE_API_URL
     const apiResponse = await fetch(`${BASE_API_URL}/nfce`, {
@@ -392,7 +454,7 @@ Deno.serve(async (req) => {
     })
 
     const resText = await apiResponse.text()
-    console.log('[Fiscal] Raw Response:', resText)
+    // Removed raw response log
     
     let apiData
     try {
@@ -437,7 +499,7 @@ Deno.serve(async (req) => {
 
                      if (recoveryRes.ok) {
                          const recoverySearchResult = await recoveryRes.json()
-                         console.log('[Fiscal] Recovery Search Result:', recoverySearchResult)
+                         // Removed detailed search result log
                          
                          // Expecting { data: [ { id: '...', ... } ], ... } or direct array
                          const items = recoverySearchResult.data || recoverySearchResult.items || (Array.isArray(recoverySearchResult) ? recoverySearchResult : [])
@@ -554,7 +616,8 @@ Deno.serve(async (req) => {
     }
 
     // Success
-    console.log('[Fiscal] Success:', apiData)
+    // Removed success log matching sensitive data logic
+    
     // Map response fields (adjust based on actual Nuvem Fiscal response structure)
     // 12. Success
     console.log('[Fiscal] Authorized! Updating log...')

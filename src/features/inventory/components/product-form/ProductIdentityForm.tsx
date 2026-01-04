@@ -48,7 +48,7 @@ export const ProductIdentityForm: React.FC<ProductIdentityFormProps> = ({
 
             {/* Nome */}
             <div>
-                <label className="block text-xs font-medium mb-1 text-gray-400">📦 Nome do Produto *</label>
+                <label className="block text-xs font-medium mb-1 text-gray-400">📦 Descrição (xProd) *</label>
                 <FormField control={form.control} name="name" render={({ field }) => (
                     <FormItem>
                         <FormControl>
@@ -113,9 +113,9 @@ export const ProductIdentityForm: React.FC<ProductIdentityFormProps> = ({
                 </div>
             </div>
 
-            {/* Código de Barras */}
+            {/* GTIN/EAN (cEAN) */}
             <div>
-                <label className="block text-xs font-medium mb-1 text-gray-400">🔖 Código de Barras</label>
+                <label className="block text-xs font-medium mb-1 text-gray-400">🔖 GTIN/EAN (cEAN)</label>
                 {activeScanner !== 'main' ? (
                     <Button type="button" variant="outline" onClick={() => onActivateScanner('main')} className="w-full h-9 text-xs border-primary-yellow/50 text-primary-yellow hover:bg-primary-yellow/10">
                         <ScanLine className="h-3 w-3 mr-1.5" /> Escanear
@@ -126,7 +126,7 @@ export const ProductIdentityForm: React.FC<ProductIdentityFormProps> = ({
                 <FormField control={form.control} name="barcode" render={({ field }) => (
                     <FormItem className="mt-1">
                         <FormControl>
-                            <Input placeholder="Ou digite" {...field} onChange={e => { const v = e.target.value.replace(/\D/g, ''); if (v.length <= 14) field.onChange(v); }} maxLength={14} className={cn(inputClasses, 'font-mono')} />
+                            <Input placeholder="Sem GTIN = deixe em branco ou 'SEM GTIN'" {...field} onChange={e => { const v = e.target.value.replace(/\D/g, ''); if (v.length <= 14) field.onChange(v); }} maxLength={14} className={cn(inputClasses, 'font-mono')} />
                         </FormControl>
                         <FormMessage className="text-xs" />
                     </FormItem>

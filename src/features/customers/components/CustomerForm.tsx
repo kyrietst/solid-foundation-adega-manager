@@ -265,7 +265,7 @@ export function CustomerForm({
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-gray-200 text-sm">Nome *</FormLabel>
+                  <FormLabel className="text-gray-200 text-sm">Razão Social / Nome Completo *</FormLabel>
                   <FormControl>
                     <Input 
                       placeholder="Nome completo do cliente" 
@@ -302,7 +302,7 @@ export function CustomerForm({
               name="phone"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-gray-200 text-sm">Telefone</FormLabel>
+                  <FormLabel className="text-gray-200 text-sm">Telefone / WhatsApp</FormLabel>
                   <FormControl>
                     <Input 
                       placeholder="(99) 99999-9999" 

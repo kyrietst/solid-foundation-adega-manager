@@ -125,7 +125,7 @@ export const ReceiptPrint: React.FC<ReceiptPrintProps> = ({ data }) => {
 
         {/* TOTAIS */}
         <div className="receipt-row">
-          <span>Subtotal:</span>
+          <span>Valor Bruto:</span>
           <span>{formatCurrency(data.total_amount)}</span>
         </div>
 
@@ -144,7 +144,7 @@ export const ReceiptPrint: React.FC<ReceiptPrintProps> = ({ data }) => {
         )}
 
         <div className="receipt-row text-lg" style={{ margin: '4px 0' }}>
-          <span>TOTAL:</span>
+          <span>Valor Líquido a Pagar:</span>
           <span>{formatCurrency(data.final_amount)}</span>
         </div>
 

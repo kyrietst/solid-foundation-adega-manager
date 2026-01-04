@@ -43,7 +43,7 @@ export const ProductFiscalCard: React.FC<ProductFiscalCardProps> = ({
 
                     {/* NCM */}
                     <div className="space-y-2">
-                        <Label className="text-zinc-400 text-xs uppercase font-bold tracking-wider">NCM <span className="text-xs text-zinc-600">(8 Dígitos)</span></Label>
+                        <Label className="text-zinc-400 text-xs uppercase font-bold tracking-wider">Classificação Fiscal (NCM) <span className="text-xs text-zinc-600">(8 Dígitos)</span></Label>
                         <Input
                             {...register('ncm')}
                             placeholder="00000000"
@@ -93,7 +93,7 @@ export const ProductFiscalCard: React.FC<ProductFiscalCardProps> = ({
 
                     {/* CFOP */}
                     <div className="space-y-2">
-                        <Label className="text-zinc-400 text-xs uppercase font-bold tracking-wider">CFOP Padrão <span className="text-xs text-zinc-600">(4 Dígitos)</span></Label>
+                        <Label className="text-zinc-400 text-xs uppercase font-bold tracking-wider">CFOP (Operação) <span className="text-xs text-zinc-600">(4 Dígitos)</span></Label>
                         <Input
                             {...register('cfop')}
                             placeholder="Ex: 5102 (apenas números)"

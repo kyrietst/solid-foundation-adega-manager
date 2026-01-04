@@ -11,11 +11,7 @@ import {
   Filter,
   Edit,
   Trash2,
-  Eye,
-  Calendar,
-  CreditCard,
-  Building,
-  FileText
+  Calendar
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -41,7 +37,7 @@ export const ExpensesTab: React.FC = () => {
   const expenseFilters: ExpenseFilters = {
     ...filters,
     page: pagination.currentPage,
-    limit: pagination.pageSize
+    limit: pagination.itemsPerPage
   };
 
   const { data: expensesData, isLoading } = useExpenses(expenseFilters);
@@ -58,18 +54,7 @@ export const ExpensesTab: React.FC = () => {
     return format(new Date(dateString), 'dd/MM/yyyy', { locale: ptBR });
   };
 
-  const translatePaymentMethod = (method: string) => {
-    const translations: Record<string, string> = {
-      'credit_card': 'Cartão de Crédito',
-      'debit_card': 'Cartão de Débito',
-      'pix': 'PIX',
-      'cash': 'Dinheiro',
-      'bank_transfer': 'Transferência',
-      'check': 'Cheque',
-      'other': 'Outro'
-    };
-    return translations[method] || method;
-  };
+
 
   const getCategoryColor = (category: any) => {
     return category?.color || '#6B7280';
@@ -118,7 +103,8 @@ export const ExpensesTab: React.FC = () => {
               )}
             >
               <Plus className="h-4 w-4 mr-2" />
-              Nova Despesa
+              Lançar Despesa Operacional
+
             </Button>
           </CardTitle>
         </CardHeader>
@@ -142,7 +128,7 @@ export const ExpensesTab: React.FC = () => {
       {/* Lista de despesas */}
       {expenses.length === 0 ? (
         <ExpensesEmptyState
-          hasFilters={!!(filters.category_id || filters.start_date || filters.end_date || filters.payment_method)}
+          hasFilters={!!(filters.category_id || filters.start_date || filters.end_date)}
           onClearFilters={() => {
             setFilters({});
             pagination.goToPage(1);
@@ -163,8 +149,6 @@ export const ExpensesTab: React.FC = () => {
                     <th className="p-4 text-gray-300 font-semibold font-sf-pro text-sm">Descrição</th>
                     <th className="p-4 text-gray-300 font-semibold font-sf-pro text-sm">Categoria</th>
                     <th className="p-4 text-gray-300 font-semibold font-sf-pro text-sm">Valor</th>
-                    <th className="p-4 text-gray-300 font-semibold font-sf-pro text-sm">Pagamento</th>
-                    <th className="p-4 text-gray-300 font-semibold font-sf-pro text-sm">Fornecedor</th>
                     <th className="p-4 text-gray-300 font-semibold font-sf-pro text-sm text-center">Ações</th>
                   </tr>
                 </thead>
@@ -183,9 +167,6 @@ export const ExpensesTab: React.FC = () => {
                       <td className="p-4">
                         <div>
                           <div className="text-white font-medium">{expense.description}</div>
-                          {expense.subcategory && (
-                            <div className="text-sm text-gray-400">{expense.subcategory}</div>
-                          )}
                         </div>
                       </td>
                       <td className="p-4">
@@ -202,39 +183,8 @@ export const ExpensesTab: React.FC = () => {
                         </div>
                       </td>
                       <td className="p-4">
-                        <div className="flex items-center gap-2 text-gray-300">
-                          <CreditCard className="h-4 w-4" />
-                          {translatePaymentMethod(expense.payment_method)}
-                        </div>
-                      </td>
-                      <td className="p-4">
-                        <div className="flex items-center gap-2 text-gray-300">
-                          {expense.supplier_vendor ? (
-                            <>
-                              <Building className="h-4 w-4" />
-                              {expense.supplier_vendor}
-                            </>
-                          ) : (
-                            <span className="text-gray-500">-</span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="p-4">
                         <div className="flex items-center justify-center gap-2">
-                          {expense.receipt_url && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => window.open(expense.receipt_url!, '_blank')}
-                              className={cn(
-                                getGlassButtonClasses('secondary', 'sm'),
-                                getHoverTransformClasses('scale'),
-                                "shadow-sm hover:shadow-blue-500/20"
-                              )}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          )}
+
                           <Button
                             size="sm"
                             variant="outline"
@@ -253,9 +203,9 @@ export const ExpensesTab: React.FC = () => {
                             onClick={() => handleDelete(expense.id)}
                             disabled={deleteExpenseMutation.isPending}
                             className={cn(
-                              getGlassButtonClasses('destructive', 'sm'),
+                              getGlassButtonClasses('outline', 'sm'),
                               getHoverTransformClasses('scale'),
-                              "shadow-sm hover:shadow-red-500/20"
+                              "shadow-sm hover:shadow-red-500/20 text-red-400 border-red-500/30 hover:bg-red-500/10"
                             )}
                           >
                             <Trash2 className="h-4 w-4" />
@@ -272,10 +222,10 @@ export const ExpensesTab: React.FC = () => {
       )}
 
       {/* Paginação */}
-      {totalExpenses > pagination.pageSize && (
+      {totalExpenses > pagination.itemsPerPage && (
         <PaginationControls
           currentPage={pagination.currentPage}
-          totalPages={pagination.totalPages(totalExpenses)}
+          totalPages={pagination.totalPages}
           onPageChange={pagination.goToPage}
           className="justify-center"
         />
