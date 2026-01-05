@@ -50,18 +50,7 @@ export const useAutomationMetrics = () => {
     queryFn: async (): Promise<AutomationMetrics> => {
 
       try {
-        // 1. Buscar dados de audit_logs (proxy para execuções)
-        const { data: auditLogs, error: auditError } = await supabase
-          .from('audit_logs')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(100);
-
-        if (auditError) {
-          console.error('Erro ao buscar audit_logs:', auditError);
-        }
-
-        // 2. Buscar dados de clientes para calcular impacto potencial
+        // 1. Buscar dados de clientes para calcular impacto potencial
         const { data: customers, error: customersError } = await supabase
           .from('customers')
           .select('id, created_at, birthday, last_purchase_date');
@@ -71,42 +60,16 @@ export const useAutomationMetrics = () => {
         }
 
         // 3. Calcular métricas baseadas em cenários realistas
-        const totalCustomers = customers?.length || 0;
+        // Como o motor de automação (n8n) foi removido, não temos workflows ativos reais ainda.
+        // O sistema deve refletir isso (Realismo).
+        
+        const activeWorkflows = 0;
+        const totalExecutions = 0;
+        const successRate = 0;
+        const customersImpacted = 0;
+        const lastExecution = null;
 
-        // Simular workflows ativos baseados no tamanho do negócio
-        const activeWorkflows = Math.min(Math.max(Math.floor(totalCustomers * 0.1), 3), 15);
-
-        // Total de execuções = contagem de audit_logs (representa atividade do sistema)
-        const auditLogCount = auditLogs?.length || 0;
-        const totalExecutions = Math.max(
-          auditLogCount,
-          Math.floor(totalCustomers * 2)
-        );
-
-        // Taxa de sucesso realista (95-99% para sistemas bem configurados)
-        const successRate = totalExecutions > 0
-          ? 95 + Math.random() * 4
-          : 0;
-
-        // Clientes impactados baseados em dados reais
-        const customersWithBirthdays = customers?.filter(c => c.birthday).length || 0;
-        const customersWithRecentActivity = customers?.filter(c => {
-          if (!c.last_purchase_date) return false;
-          const daysSince = Math.floor(
-            (new Date().getTime() - new Date(c.last_purchase_date).getTime()) / (1000 * 60 * 60 * 24)
-          );
-          return daysSince <= 30;
-        }).length || 0;
-
-        const customersImpacted = Math.min(
-          customersWithBirthdays + customersWithRecentActivity,
-          Math.floor(totalCustomers * 0.8)
-        );
-
-        // Última execução = último registro de audit_logs
-        const lastExecution = auditLogs?.[0]?.created_at || null;
-
-        // Tarefas pendentes baseadas em oportunidades reais
+        // Tarefas pendentes baseadas em oportunidades reais (Aniversariantes)
         const now = new Date();
         const upcomingBirthdays = customers?.filter(c => {
           if (!c.birthday) return false;
@@ -120,13 +83,12 @@ export const useAutomationMetrics = () => {
           return daysUntil <= 30 && daysUntil > 0;
         }).length || 0;
 
-        const upcomingTasks = upcomingBirthdays + Math.floor(totalCustomers * 0.1);
-
+        const upcomingTasks = upcomingBirthdays; // Apenas aniversários reais
 
         return {
           activeWorkflows,
           totalExecutions,
-          successRate: Math.round(successRate * 10) / 10,
+          successRate,
           customersImpacted,
           lastExecution,
           upcomingTasks
@@ -146,8 +108,8 @@ export const useAutomationMetrics = () => {
         };
       }
     },
-    staleTime: 2 * 60 * 1000, // 2 minutos
-    refetchInterval: 5 * 60 * 1000, // Refetch a cada 5 minutos
+    staleTime: 5 * 60 * 1000, 
+    refetchInterval: false,
   });
 };
 
@@ -297,35 +259,9 @@ export const useRecentExecutions = (limit: number = 10) => {
   return useQuery({
     queryKey: ['recent-executions', limit],
     queryFn: async (): Promise<AutomationExecution[]> => {
-
-      try {
-        // Buscar últimos registros de audit_logs como proxy para execuções
-        const { data: auditLogs, error } = await supabase
-          .from('audit_logs')
-          .select('id, action, table_name, created_at, record_id')
-          .order('created_at', { ascending: false })
-          .limit(limit);
-
-        if (error) {
-          console.error('Erro ao buscar audit_logs:', error);
-          return [];
-        }
-
-        // Mapear audit_logs para o formato de AutomationExecution
-        return (auditLogs || []).map(log => ({
-          id: log.id,
-          workflow_name: log.action || 'Sistema', // action se torna workflow_name
-          trigger_event: log.table_name || 'Manual', // table_name se torna trigger_event
-          result: 'success' as const, // Audit logs registram ações bem-sucedidas
-          customer_id: log.record_id || undefined, // record_id pode ser customer_id
-          created_at: log.created_at,
-          details: null
-        }));
-
-      } catch (error) {
-        console.error('Erro ao buscar execuções recentes:', error);
-        return [];
-      }
+      // Como não temos logs de automação reais ainda, retornamos vazio para evitar erros de tipo
+      // e respeitar a política de "Zero Fake".
+      return [];
     },
     staleTime: 1 * 60 * 1000, // 1 minuto
   });

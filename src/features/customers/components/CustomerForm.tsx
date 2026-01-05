@@ -26,14 +26,14 @@ import { Loader2, MapPin, Calendar, MessageSquare, Shield, CheckCircle2 } from '
 import { cn } from '@/core/config/utils';
 import { FiscalAddressForm } from '@/shared/components/form/FiscalAddressForm';
 
-// Schema para Endereço Fiscal (NFe 4.0 Standard)
+// Schema para Endereço Fiscal (NFe 4.0 Standard) - Agora Opcional na Criação
 const fiscalAddressSchema = z.object({
-  cep: z.string().min(8, 'CEP inválido').max(9, 'CEP inválido'),
-  logradouro: z.string().min(1, 'Logradouro é obrigatório'),
-  numero: z.string().min(1, 'Número é obrigatório'),
-  bairro: z.string().min(1, 'Bairro é obrigatório'),
-  nome_municipio: z.string().min(1, 'Cidade é obrigatória'),
-  uf: z.string().length(2, 'UF deve ter 2 letras'),
+  cep: z.string().min(8, 'CEP inválido').max(9, 'CEP inválido').optional().or(z.literal('')),
+  logradouro: z.string().optional(),
+  numero: z.string().optional(),
+  bairro: z.string().optional(),
+  nome_municipio: z.string().optional(),
+  uf: z.string().optional(),
   complemento: z.string().optional(),
   codigo_municipio: z.string().optional(), // IBGE
   pais: z.string().optional(),
@@ -46,10 +46,9 @@ const formSchema = z.object({
   phone: z.string().optional(),
   address: fiscalAddressSchema.nullable().optional(),
   birthday: z.string().optional(),
-  contact_preference: z.enum(['whatsapp', 'sms', 'email', 'call', '']).optional(),
-  contact_permission: z.boolean().refine(val => val === true, {
-    message: "É obrigatório aceitar os termos de contato conforme LGPD"
-  }),
+  // Relaxed contact preference
+  contact_preference: z.string().optional(),
+  contact_permission: z.boolean().default(true),
   cpf_cnpj: z.string().max(18, 'Máximo 18 caracteres').optional().or(z.literal('')),
   ie: z.string().max(20, 'Máximo 20 caracteres').optional().or(z.literal('')),
   indicador_ie: z.coerce.number().optional().default(9),
@@ -59,38 +58,7 @@ const formSchema = z.object({
 
 type CustomerFormValues = z.infer<typeof formSchema>;
 
-const calculateProfileCompleteness = (values: CustomerFormValues): number => {
-  const weights = {
-    name: 15,
-    cpf_cnpj: 20, // High value for fiscal
-    phone: 10,
-    contact_permission: 10, // Obrigatório LGPD
-  // ... adjusted weights
-    email: 5,
-    address: 10,
-    birthday: 5,
-    contact_preference: 5,
-    notes: 5,
-    tags: 5
-  };
 
-  
-  let totalPoints = 0;
-  
-  if (values.name?.trim()) totalPoints += weights.name;
-  if (values.phone?.trim()) totalPoints += weights.phone;
-  if (values.contact_permission) totalPoints += weights.contact_permission;
-  if (values.email?.trim()) totalPoints += weights.email;
-  // Check for FiscalAddress fields
-  if (values.address && values.address.logradouro && values.address.nome_municipio) totalPoints += weights.address;
-  if (values.birthday?.trim()) totalPoints += weights.birthday;
-  if (values.contact_preference?.trim()) totalPoints += weights.contact_preference;
-  if (values.notes?.trim()) totalPoints += weights.notes;
-  if (values.tags && values.tags.length > 0) totalPoints += weights.tags;
-  
-  const maxPoints = Object.values(weights).reduce((sum, weight) => sum + weight, 0);
-  return Math.round((totalPoints / maxPoints) * 100);
-};
 
 interface CustomerFormProps {
   customerId?: string;
@@ -105,6 +73,7 @@ export function CustomerForm({
   const { data: customerData, isLoading: isLoadingData } = useCustomer(customerId || '');
   const [currentTags, setCurrentTags] = useState<string[]>([]);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [showAddress, setShowAddress] = useState(false);
 
   // Initialize form with default empty values
   const { form, isLoading, handleSubmit } = useStandardForm<CustomerFormValues>({
@@ -127,7 +96,7 @@ export function CustomerForm({
       },
       birthday: '',
       contact_preference: undefined,
-      contact_permission: false,
+      contact_permission: true,
       notes: '',
       tags: [],
       cpf_cnpj: '',
@@ -196,6 +165,7 @@ export function CustomerForm({
            cep: '', logradouro: '', numero: '', bairro: '', nome_municipio: '', uf: '', complemento: '', codigo_municipio: '', pais: 'Brasil', codigo_pais: '1058'
         }
       });
+      if (addressData && addressData.logradouro) setShowAddress(true);
     }
   }, [customerId, customerData, form]);
 
@@ -203,54 +173,13 @@ export function CustomerForm({
     return <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin text-primary-yellow" /></div>;
   }
 
-  // Calcular completude em tempo real
-  const currentValues = form.watch();
-  const completeness = calculateProfileCompleteness(currentValues);
-  
-  const getCompletenessColor = (percentage: number) => {
-    if (percentage >= 80) return 'text-green-400';
-    if (percentage >= 60) return 'text-yellow-400'; 
-    return 'text-red-400';
-  };
-  
-  const getCompletenessBarColor = (percentage: number) => {
-    if (percentage >= 80) return 'bg-green-500';
-    if (percentage >= 60) return 'bg-yellow-500';
-    return 'bg-red-500';
-  };
+
 
   return (
     <Form {...form}>
       <form onSubmit={handleSubmit} className="space-y-6">
         
-        {/* Indicador de Completude do Perfil - Compacto */}
-        <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-600/30">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-primary-yellow" />
-              <span className="text-gray-200 font-medium">Completude do Perfil</span>
-            </div>
-            <span className={cn("font-bold text-sm", getCompletenessColor(completeness))}>
-              {completeness}%
-            </span>
-          </div>
-          
-          <div className="w-full bg-gray-700 rounded-full h-2">
-            <div 
-              className={cn("h-2 rounded-full transition-all duration-300", getCompletenessBarColor(completeness))}
-              style={{ width: `${completeness}%` }}
-            />
-          </div>
-          
-          <p className="text-xs text-gray-400 mt-2">
-            {completeness >= 80 
-              ? "Perfil completo! Todos os dados essenciais coletados."
-              : completeness >= 60 
-              ? "Bom progresso! Preencha mais campos para melhorar o CRM."
-              : "Perfil básico. Adicione mais informações para aproveitar todas as funcionalidades."
-            }
-          </p>
-        </div>
+
         
         {/* Informações Básicas - Grid Responsivo */}
         <div className="space-y-3">
@@ -402,13 +331,28 @@ export function CustomerForm({
         </div>
 
         {/* Endereço Fiscal Padronizado */}
-        <div className="border border-gray-600/30 rounded-lg px-4 pt-2 pb-0 bg-gray-900/20">
-          <div className="flex items-center gap-2 text-gray-200 mb-2 mt-2">
-            <MapPin className="w-4 h-4 text-primary-yellow" />
-            <h3 className="font-medium">Endereço (Fiscal & Delivery)</h3>
-          </div>
+        {/* Endereço Fiscal Padronizado (Collapsible) */}
+        <div className="border border-gray-600/30 rounded-lg bg-gray-900/20 overflow-hidden transition-all duration-300">
+          <button
+            type="button"
+            onClick={() => setShowAddress(!showAddress)}
+            className="w-full px-4 py-3 flex items-center justify-between hover:bg-white/5 transition-colors"
+          >
+            <div className="flex items-center gap-2 text-gray-200">
+              <MapPin className="w-4 h-4 text-primary-yellow" />
+              <h3 className="font-medium text-sm">Endereço (Fiscal & Delivery)</h3>
+            </div>
+             <span className="text-xs text-primary-yellow font-medium">
+              {showAddress ? 'Ocultar' : 'Adicionar Endereço'}
+            </span>
+          </button>
           
-          <FiscalAddressForm prefix="address" />
+          {showAddress && (
+            <div className="px-4 pb-4 animate-in slide-in-from-top-2 duration-300">
+              <div className="h-px w-full bg-gray-700/50 mb-4" />
+              <FiscalAddressForm prefix="address" />
+            </div>
+          )}
         </div>
 
         {/* Preferências de Contato */}

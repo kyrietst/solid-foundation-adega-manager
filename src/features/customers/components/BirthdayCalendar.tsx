@@ -6,7 +6,7 @@ import { Calendar, Gift, ChevronLeft, ChevronRight, Cake, Phone, Mail, Sparkles 
 import { useCustomers } from '@/features/customers/hooks/use-crm';
 import { LoadingSpinner } from '@/shared/ui/composite/loading-spinner';
 import { cn } from '@/core/config/utils';
-import { N8NPlaceholder } from './N8NPlaceholder';
+
 
 interface BirthdayCalendarProps {
   className?: string;
@@ -392,10 +392,9 @@ export const BirthdayCalendar = ({ className, showActions = true }: BirthdayCale
 
         {/* Automação de Campanhas */}
         {showActions && (
-          <N8NPlaceholder
-            automationType="birthday"
-            className="h-auto"
-          />
+          <div className="p-4 bg-gray-800/30 border border-gray-700/40 rounded-lg text-center">
+            <p className="text-gray-400 text-sm">Automação de aniversários em breve.</p>
+          </div>
         )}
       </div>
     </div>

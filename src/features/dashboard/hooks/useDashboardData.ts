@@ -46,9 +46,6 @@ export const useDashboardData = (periodDays: number = 30) => {
     retryDelay: 1000
   });
 
-  // Buscar despesas operacionais reais (MTD)
-  const { data: expensesData, isLoading: isLoadingExpenses } = useDashboardExpenses();
-
   // Query para contadores públicos com dados reais
   const { data: counts, isLoading: isLoadingCounts, error: countsError, refetch: refetchCounts } = useQuery({
     queryKey: ['dashboard', 'counts'],
@@ -66,7 +63,6 @@ export const useDashboardData = (periodDays: number = 30) => {
             .eq('delivery_status', 'pending')
         ]);
 
-        // Verificar erro na query de entregas
         if (deliveriesResult.error) {
           console.error('❌ Erro ao buscar entregas pendentes:', deliveriesResult.error);
           throw deliveriesResult.error;
@@ -83,53 +79,51 @@ export const useDashboardData = (periodDays: number = 30) => {
         throw error;
       }
     }, 'contadores do dashboard'),
-    staleTime: 5 * 60 * 1000, // 5 minutos
-    retry: false, // Error handler já faz retry
+    staleTime: 5 * 60 * 1000,
+    retry: false,
   });
 
-  // ✅ SSoT: Query para dados financeiros usando RPC otimizada
+  // ✅ SSoT: Query para dados financeiros usando v_sales_with_profit (Lucro Real)
   const { data: financials, isLoading: isLoadingFinancials, error: financialsError, refetch: refetchFinancials } = useQuery({
-    queryKey: ['dashboard', 'financials', periodDays, expensesData?.total_expenses],
+    queryKey: ['dashboard', 'financials', periodDays],
     queryFn: errorHandler.withErrorHandling('sales', async (): Promise<DashboardFinancials> => {
 
       // ✅ MTD Strategy: Sempre do dia 01 do mês atual até hoje (timezone São Paulo)
-      // Ignora o parâmetro periodDays - Dashboard mostra "fechamento de caixa" mensal
       const endDate = getNowSaoPaulo();
       const startDate = getMonthStartDate();
 
+      // ✅ Buscar dados financeiros via view otimizada (v_sales_with_profit)
+      const { data: salesData, error } = await supabase
+        .from('v_sales_with_profit')
+        .select('total_amount, total_cost, total_profit, final_amount')
+        .gte('created_at', startDate.toISOString())
+        .lte('created_at', endDate.toISOString())
+        .not('status', 'in', '("cancelled","returned")'); // Ignorar canceladas/devolvidas
 
-      // ✅ SSoT: Buscar dados financeiros via RPC (get_daily_cash_flow)
-      const { data: dailyData, error: rpcError } = await supabase
-        .rpc('get_daily_cash_flow', {
-          p_start_date: startDate.toISOString(),
-          p_end_date: endDate.toISOString()
-        });
-
-      if (rpcError) {
-        console.error('❌ Erro ao buscar dados financeiros:', rpcError);
-        throw rpcError;
+      if (error) {
+        console.error('❌ Erro ao buscar dados financeiros:', error);
+        throw error;
       }
 
-      // ✅ SSoT: Agregar dados diários
-      const totalRevenue = (dailyData || []).reduce((sum, day) => sum + (day.income || 0), 0);
-      const totalOutcome = (dailyData || []).reduce((sum, day) => sum + (day.outcome || 0), 0);
+      // ✅ SSoT: Agregar dados
+      // Se final_amount existir, use-o (considerando descontos), senão total_amount
+      const totalRevenue = (salesData || []).reduce((sum, sale) => sum + (sale.final_amount || sale.total_amount || 0), 0);
+      const cogs = (salesData || []).reduce((sum, sale) => sum + (sale.total_cost || 0), 0);
+      
+      // Lucro Bruto Real (Receita - Custo)
+      // Se total_profit vier nulo (vendas antigas), tentar calcular
+      const grossProfit = (salesData || []).reduce((sum, sale) => {
+        if (sale.total_profit != null) return sum + sale.total_profit;
+        return sum + ((sale.final_amount || sale.total_amount || 0) - (sale.total_cost || 0));
+      }, 0);
 
-      // COGS não está disponível nesta RPC, assumindo 0 ou calculando se possível
-      const cogs = 0;
-
-      // Lucro Bruto = Receita - COGS
-      const grossProfit = totalRevenue - cogs;
       const grossMargin = totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
 
-      // Usar despesas operacionais REAIS do sistema de gestão de despesas
-      // Se totalOutcome da RPC já inclui despesas, podemos usar ele, ou usar expensesData
-      // A RPC get_daily_cash_flow usa a tabela 'expenses' para outcome, então é compatível
-      const operationalExpenses = expensesData?.total_expenses || totalOutcome;
-
-      // Calcular lucro líquido (lucro bruto - despesas operacionais)
-      const netProfit = grossProfit - operationalExpenses;
-      const netMargin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
-
+      // Por decisão de design (Phase 4.1), ignoramos despesas operacionais no KPI de Lucro
+      // para focar no resultado operacional de vendas (Margem de Contribuição)
+      const operationalExpenses = 0;
+      const netProfit = grossProfit; // = Margem de Contribuição
+      const netMargin = grossMargin;
 
       return {
         totalRevenue,
@@ -139,14 +133,13 @@ export const useDashboardData = (periodDays: number = 30) => {
         operationalExpenses,
         netProfit,
         netMargin,
-        // Compatibilidade com código existente
+        // Compatibilidade
         profitMargin: grossMargin,
         operationalCosts: operationalExpenses,
       };
     }, 'dados financeiros'),
-    staleTime: 5 * 60 * 1000, // 5 minutos para dados mais atualizados
-    retry: false, // Error handler já faz retry
-    enabled: !isLoadingExpenses, // Aguarda os dados de despesas carregarem primeiro
+    staleTime: 5 * 60 * 1000,
+    retry: false,
   });
 
   // Query para dados de vendas por mês REAIS
@@ -175,7 +168,7 @@ export const useDashboardData = (periodDays: number = 30) => {
       // ✅ FIX: Aplicar lógica híbrida de status (mesma de get_dashboard_financials)
       const sales = (allSales || []).filter(sale => {
         // Excluir vendas canceladas ou devolvidas
-        if (sale.status === 'cancelled' || sale.status === 'returned') {
+        if (sale.status === 'cancelled' || sale.status === 'refunded') {
           return false;
         }
 
@@ -264,14 +257,14 @@ export const useDashboardData = (periodDays: number = 30) => {
     counts,
     financials,
     salesData,
-    expensesData,
+    expensesData: undefined, // Removido: undefined para compatibilidade
 
     // Estados de loading
-    isLoading: isLoadingCounts || isLoadingFinancials || isLoadingSales || isLoadingExpenses,
+    isLoading: isLoadingCounts || isLoadingFinancials || isLoadingSales,
     isLoadingCounts,
     isLoadingFinancials,
     isLoadingSales,
-    isLoadingExpenses,
+    isLoadingExpenses: false, // Removido: false para compatibilidade
 
     // Error handling
     errorState: errorHandler.errorState,

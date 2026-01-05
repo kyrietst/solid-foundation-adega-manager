@@ -30,6 +30,9 @@ const ActivitiesPage = lazy(() =>
   import('./pages/ActivitiesPage').then((m) => ({ default: m.ActivitiesPage }))
 );
 
+// Lazy load Marketing page
+const MarketingPage = lazy(() => import('./pages/MarketingPage'));
+
 // Optimized QueryClient configuration (Context7 best practices)
 const queryClient = new QueryClient({
   queryCache: new QueryCache({
@@ -297,7 +300,9 @@ const App = () => {
                             path="marketing"
                             element={
                               <RouteErrorBoundary routeName="Marketing">
-                                <div />
+                                <Suspense fallback={<div className="flex items-center justify-center min-h-screen bg-black"><div className="animate-spin rounded-full h-16 w-16 border-4 border-purple-500/30 border-t-purple-400"></div></div>}>
+                                  <MarketingPage />
+                                </Suspense>
                               </RouteErrorBoundary>
                             }
                           />

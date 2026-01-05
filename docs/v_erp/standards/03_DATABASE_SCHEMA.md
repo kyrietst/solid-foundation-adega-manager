@@ -83,6 +83,33 @@ government API is logged here.
 
 ---
 
+## 2. Finance Tables (Expenses)
+
+### `expenses`
+
+Operational costs (Cash Flow).
+
+- `id` (uuid, PK).
+- `date` (date): Competency date.
+- `description` (text).
+- `amount` (numeric).
+- `category_id` (uuid, FK): `expense_categories`.
+- `payment_status` (text): `paid` / `pending`.
+- `payment_method` (text).
+- `supplier_vendor` (text).
+- `receipt_url` (text).
+- `is_recurring` (boolean).
+- `budget_category` (text).
+- `user_id` (uuid).
+
+### `expense_categories`
+
+- `id` (uuid, PK).
+- `name` (text).
+- `is_active` (boolean).
+
+---
+
 ## 4. Enums & Types
 
 - **`sales_status_enum`**: `pending`, `completed`, `cancelled`.

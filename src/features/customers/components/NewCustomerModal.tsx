@@ -7,7 +7,7 @@
  */
 
 import React from 'react';
-import { BaseModal } from '@/shared/ui/composite';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/shared/ui/primitives/sheet";
 import { CustomerForm } from './CustomerForm';
 import { UserPlus } from 'lucide-react';
 
@@ -18,18 +18,22 @@ interface NewCustomerModalProps {
 
 export const NewCustomerModal: React.FC<NewCustomerModalProps> = ({ isOpen, onClose }) => {
   return (
-    <BaseModal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={<><UserPlus className="h-5 w-5 text-green-400" /> Novo Cliente</>}
-      description="Cadastre um novo cliente no sistema"
-      size="2xl"
-      className="max-h-content-2xl overflow-y-auto bg-black/95 backdrop-blur-sm border border-white/10"
-    >
-      <div className="p-1">
-        <CustomerForm onSuccess={onClose} />
-      </div>
-    </BaseModal>
+    <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <SheetContent side="right" className="w-full sm:max-w-[600px] overflow-y-auto bg-black/95 backdrop-blur-md border-l border-white/10 p-0">
+        <div className="h-full flex flex-col">
+          <SheetHeader className="px-6 py-4 border-b border-white/10 bg-black/50 sticky top-0 z-50 backdrop-blur-sm">
+            <SheetTitle className="text-2xl font-bold text-primary-yellow flex items-center gap-2">
+              <UserPlus className="h-6 w-6" /> Novo Cliente
+            </SheetTitle>
+            <div className="text-gray-400 text-sm">Cadastre um novo cliente no sistema</div>
+          </SheetHeader>
+          
+          <div className="flex-1 overflow-y-auto px-6 py-6">
+            <CustomerForm onSuccess={onClose} />
+          </div>
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 };
 

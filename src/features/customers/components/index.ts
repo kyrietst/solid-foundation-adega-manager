@@ -9,13 +9,12 @@ export { CustomerRow } from './CustomerRow';
 export { CustomerSegmentBadge } from './CustomerSegmentBadge';
 export { CustomerStats } from './CustomerStats';
 export { CustomerTable } from './CustomerTable';
-export { Customers } from './Customers';
+export { default as Customers } from './Customers';
 export { CrmDashboard } from './CrmDashboard';
 export { CustomerTagManager } from './CustomerTagManager';
 export { CustomerTagDisplay } from './CustomerTagDisplay';
-export { GoogleMapsPlaceholder } from './GoogleMapsPlaceholder';
-export { N8NPlaceholder } from './N8NPlaceholder';
-export { AutomationCenter } from './AutomationCenter';
+
+
 export { BirthdayCalendar } from './BirthdayCalendar';
 export { CustomerProfile } from './CustomerProfile';
 

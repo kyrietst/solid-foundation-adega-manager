@@ -15,8 +15,8 @@ const Customers = lazy(() => import('@/features/customers/components/Customers')
 const CrmDashboard = lazy(() =>
   import('@/features/customers/components/CrmDashboard').then(m => ({ default: m.CrmDashboard }))
 );
-const AutomationCenter = lazy(() =>
-  import('@/features/customers/components/AutomationCenter').then(m => ({ default: m.AutomationCenter }))
+const CampaignManager = lazy(() =>
+  import('@/features/marketing/components/CampaignManager').then(m => ({ default: m.CampaignManager }))
 );
 const CustomerProfile = lazy(() =>
   import('@/features/customers/components/CustomerProfile').then(m => ({ default: m.CustomerProfile }))
@@ -164,8 +164,8 @@ const Index = () => {
         ) : <AccessDenied />;
       case 'automations':
         return hasPermission(['admin']) ? (
-          <Suspense fallback={<LoadingScreen text="Carregando automações..." />}>
-            <AutomationCenter />
+          <Suspense fallback={<LoadingScreen text="Carregando campanhas..." />}>
+            <CampaignManager />
           </Suspense>
         ) : <AccessDenied />;
       case 'customer':

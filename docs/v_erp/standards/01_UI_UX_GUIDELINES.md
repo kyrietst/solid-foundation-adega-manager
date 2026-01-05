@@ -1,33 +1,32 @@
-# 01. UI/UX Guidelines & Visual Identity
+# 01. UI/UX Guidelines & Component Standards
 
-> [!IMPORTANT]
-> O AdegaManager utiliza um design system "Premium/Glassmorphism". **Não crie
-> estilos inline.** Siga estritamente os padrões abaixo.
+This document defines the visual language and interaction patterns for Adega
+Manager (Premium ERP).
 
-## 1. Stack Visual
+## 1. Patterns de Navegação (Sidebar)
 
-- **CSS Framework:** Tailwind CSS.
-- **Component Library:** Shadcn UI (Radix Primitives).
-- **Motion:** Framer Motion (obrigatório para modais e transições).
-- **Icons:** Lucide React (Stroke width: 2px padrão).
+A Sidebar é o principal meio de navegação e deve seguir o padrão **Collapsible
+Grouping** (Shadcn/UI).
+
+- **Estrutura:** Ícones à esquerda, Rótulos claros.
+- **Grupos:** "Frente de Loja", "Estoque & Compras", "Gestão", "Sistema".
+- **Comportamento:**
+  - **Expandida:** Mostra grupos colapsáveis (Accordions).
+  - **Colapsada:** Mostra apenas ícones em lista plana (Flat List).
+  - **Micro-interações:** Setas (Chevrons) rotacionam 90º ao abrir/fechar.
+- **Estado Inicial:** O primeiro grupo ("Frente de Loja") deve vir aberto por
+  padrão.
 
 ---
 
-## 2. O Padrão "Glassmorphism"
+## 2. Card Design (Glassmorphism)
 
-Nossa identidade visual se baseia em camadas translúcidas sobre um fundo
-escuro/vibrante.
+We use a subtle Glassmorphism effect to convey a premium feel.
 
-### Classes Utilitárias (`theme-utils.ts`)
-
-Para manter consistência, abstraímos as classes longas do Tailwind em helpers.
-**USE ESTES HELPERS, NÃO REINVENTE A RODA.**
-
-| Helper                           | Uso                          | Exemplo Visual                                                       |
-| :------------------------------- | :--------------------------- | :------------------------------------------------------------------- |
-| `getGlassCardClasses()`          | Todo Card principal de fundo | Fundo preto translúcido, borda fina branca/10                        |
-| `getGlassButtonClasses(variant)` | Botões de ação               | `primary` (Roxo Sólido), `secondary` (Glass), `outline` (Borda Roxo) |
-| `getHoverTransformClasses()`     | Interatividade               | `scale` (leve zoom) ou `lift` (elevação)                             |
+- **Background:** `bg-black/40` matches `slate-950` deeply.
+- **Border:** `border-white/10`.
+- **Blur:** `backdrop-blur-md`.
+- **Shadow:** `shadow-xl`.
 
 ### Exemplo de Uso:
 

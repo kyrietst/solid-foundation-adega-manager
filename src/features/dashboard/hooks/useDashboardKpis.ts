@@ -1,6 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
-import { useDashboardExpenses, useDashboardBudgetVariance } from './useDashboardExpenses';
 import { safeNumber, safePercentage, safeDelta, debugNaN } from '@/shared/utils/number-utils';
 import { getSaoPauloTimestamp } from '@/shared/hooks/common/use-brasil-timezone';
 
@@ -74,7 +73,7 @@ export function useSalesKpis(windowDays: number = 30) {
 
       // 1. Buscar dados financeiros atuais (RPC nova: get_daily_cash_flow)
       const { data: currentFinancials, error: currentError } = await supabase
-        .rpc('get_daily_cash_flow', {
+        .rpc('get_daily_cash_flow' as any, {
           p_start_date: dateRange.current.start,
           p_end_date: dateRange.current.end
         });
@@ -99,7 +98,7 @@ export function useSalesKpis(windowDays: number = 30) {
 
       // 3. Buscar dados financeiros anteriores
       const { data: prevFinancials, error: prevError } = await supabase
-        .rpc('get_daily_cash_flow', {
+        .rpc('get_daily_cash_flow' as any, {
           p_start_date: dateRange.previous.start,
           p_end_date: dateRange.previous.end
         });
@@ -117,11 +116,11 @@ export function useSalesKpis(windowDays: number = 30) {
         .lt('created_at', dateRange.previous.end); // Use lt to avoid overlap
 
       // Calcular totais agregando os dados diários
-      const revenue = (currentFinancials || []).reduce((sum, day) => sum + (day.income || 0), 0);
+      const revenue = (currentFinancials as any[] || []).reduce((sum, day) => sum + (day.income || 0), 0);
       const orders = currentOrders || 0;
       const avgTicket = orders > 0 ? revenue / orders : 0;
 
-      const revenuePrev = (prevFinancials || []).reduce((sum, day) => sum + (day.income || 0), 0);
+      const revenuePrev = (prevFinancials as any[] || []).reduce((sum, day) => sum + (day.income || 0), 0);
       const ordersPrev = prevOrders || 0;
       const avgTicketPrev = ordersPrev > 0 ? revenuePrev / ordersPrev : 0;
 
@@ -155,7 +154,7 @@ export function useCustomerKpis(windowDays: number = 30) {
       const dateRange = getSaoPauloDateRange(windowDays);
 
       // Buscar total de clientes
-      const { data: allCustomers, error: totalError } = await supabase
+      const { count: totalCustomers, error: totalError } = await supabase
         .from('customers')
         .select('id', { count: 'exact', head: true });
 
@@ -165,7 +164,7 @@ export function useCustomerKpis(windowDays: number = 30) {
       }
 
       // Buscar novos clientes no período (usando horário de São Paulo)
-      const { data: newCustomersData, error: newError } = await supabase
+      const { count: newCustomers, error: newError } = await supabase
         .from('customers')
         .select('id', { count: 'exact', head: true })
         .gte('created_at', dateRange.current.start)
@@ -177,7 +176,7 @@ export function useCustomerKpis(windowDays: number = 30) {
       }
 
       // Buscar clientes ativos (que fizeram compras no período)
-      const { data: activeCustomersData, error: activeError } = await supabase
+      const { count: activeCustomers, error: activeError } = await supabase
         .from('sales')
         .select('customer_id', { count: 'exact', head: true })
         .eq('status', 'completed')
@@ -190,15 +189,11 @@ export function useCustomerKpis(windowDays: number = 30) {
         // Não falhar se não conseguir buscar clientes ativos
       }
 
-      const totalCustomers = allCustomers?.count || 0;
-      const newCustomers = newCustomersData?.count || 0;
-      const activeCustomers = activeCustomersData?.count || 0;
-
 
       return {
-        totalCustomers,
-        newCustomers,
-        activeCustomers
+        totalCustomers: totalCustomers || 0,
+        newCustomers: newCustomers || 0,
+        activeCustomers: activeCustomers || 0
       };
     },
     staleTime: 5 * 60 * 1000,
@@ -213,7 +208,7 @@ export function useInventoryKpis() {
 
       // 1. Buscar valuation do estoque (RPC nova: get_inventory_financials)
       const { data: financials, error: valuationError } = await supabase
-        .rpc('get_inventory_financials');
+        .rpc('get_inventory_financials' as any);
 
       if (valuationError) {
         console.error('❌ Erro ao buscar inventory financials:', valuationError);
@@ -234,7 +229,7 @@ export function useInventoryKpis() {
       // 3. Buscar produtos com estoque baixo (Low Stock) usando lógica unificada
       // Regra: COALESCE(p.minimum_stock, c.default_min_stock, 10)
       const { data: lowStockCountData, error: lowStockError } = await supabase
-        .rpc('get_low_stock_count');
+        .rpc('get_low_stock_count' as any);
 
       if (lowStockError) {
         console.error('❌ Erro ao buscar contagem de estoque baixo:', lowStockError);
@@ -299,49 +294,7 @@ export function useOutOfStockProducts(limit: number = 10) {
 export interface LowStockKpi { count: number }
 export interface ActiveCustomersKpi { count: number }
 
-export function useExpenseKpis(windowDays: number = 30) {
-  const { data: expenses, isLoading: isLoadingExpenses } = useDashboardExpenses(windowDays);
-  const { data: budgetVariance, isLoading: isLoadingBudget } = useDashboardBudgetVariance();
-  const { data: salesData, isLoading: isLoadingSales } = useSalesKpis(windowDays);
 
-  return useQuery({
-    queryKey: ['kpis-expenses', windowDays],
-    queryFn: async (): Promise<ExpenseKpis> => {
-
-      const totalExpenses = safeNumber(expenses?.total_expenses);
-      const avgExpense = safeNumber(expenses?.avg_expense);
-      const topCategory = expenses?.top_category || 'N/A';
-      const topCategoryAmount = safeNumber(expenses?.top_category_amount);
-      const categoriesOverBudget = safeNumber(budgetVariance?.categories_over_budget);
-      const budgetStatus = budgetVariance?.status || 'ON_TRACK';
-      const budgetVariancePercent = safeNumber(budgetVariance?.variance_percentage);
-
-      // Calcular margem líquida com proteção anti-NaN
-      const revenue = safeNumber(salesData?.revenue);
-      // ✅ Correção: Cálculo direto da margem líquida
-      const netMargin = revenue > 0 ? safeNumber(((revenue - totalExpenses) / revenue) * 100) : 0;
-
-      // Calcular variação de despesas (para implementar depois com dados históricos)
-      const expensesDelta = 0; // Placeholder por enquanto
-
-
-      return {
-        totalExpenses: safeNumber(totalExpenses),
-        expensesDelta: safeNumber(expensesDelta),
-        avgExpense: safeNumber(avgExpense),
-        budgetVariance: safeNumber(budgetVariancePercent),
-        budgetStatus: budgetStatus as 'ON_TRACK' | 'WARNING' | 'OVER_BUDGET',
-        topCategory,
-        topCategoryAmount: safeNumber(topCategoryAmount),
-        categoriesOverBudget: safeNumber(categoriesOverBudget),
-        netMargin: safeNumber(netMargin)
-      };
-    },
-    staleTime: 5 * 60 * 1000,
-    refetchInterval: 5 * 60 * 1000,
-    enabled: !isLoadingExpenses && !isLoadingBudget && !isLoadingSales,
-  });
-}
 
 export function useOutOfStockKpi() {
   const { data, isLoading, error } = useInventoryKpis();

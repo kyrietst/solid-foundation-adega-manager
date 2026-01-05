@@ -12,7 +12,6 @@ import { PageHeader } from '@/shared/ui/composite/PageHeader';
 import { Users, TrendingUp, UserPlus, Download, BarChart3 } from 'lucide-react';
 import CustomerDataTable from './CustomerDataTable';
 import { NewCustomerModal } from './NewCustomerModal';
-import DataQualityDashboard from './DataQualityDashboard';
 import { useDataQualityMetrics } from '../hooks/useDataQuality';
 
 const CustomersLite = () => {
@@ -20,7 +19,6 @@ const CustomersLite = () => {
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [isNewCustomerModalOpen, setIsNewCustomerModalOpen] = useState(false);
-  const [showQualityDashboard, setShowQualityDashboard] = useState(false);
   
   // Usar hook básico de customers
   const { data: customers, isLoading, error } = useCustomers({ search });
@@ -202,33 +200,9 @@ const CustomersLite = () => {
             className="cursor-pointer transform hover:scale-105 transition-all duration-200 hover:shadow-xl hover:shadow-green-500/20"
           />
           
-          <StatCard
-            layout="crm"
-            variant={qualityMetrics.averageCompleteness >= 70 ? 'purple' : 'warning'}
-            title="Qualidade de Dados"
-            value={`${qualityMetrics.averageCompleteness}%`}
-            formatType="none"
-            description="📊 Completude média • Clique para ver detalhes"
-            icon={BarChart3}
-            onClick={() => setShowQualityDashboard(!showQualityDashboard)}
-            className="cursor-pointer transform hover:scale-105 transition-all duration-200 hover:shadow-xl hover:shadow-purple-500/20"
-          />
         </div>
 
-        {/* Dashboard de Qualidade de Dados - Colapsável */}
-        {showQualityDashboard && (
-          <div className="flex-shrink-0 bg-black/30 backdrop-blur-sm border border-white/5 rounded-lg p-4">
-            <DataQualityDashboard 
-              customers={customersData}
-              onViewDetails={() => {
-                // TODO: Implementar navegação para detalhes
-              }}
-              onFixIssues={(fieldKey) => {
-                // TODO: Implementar ações de correção
-              }}
-            />
-          </div>
-        )}
+
 
         {/* Tabela de Clientes */}
         <CardContent className="p-0 flex-1 min-h-0 overflow-visible relative w-full">

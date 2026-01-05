@@ -2,26 +2,21 @@
  * Apresentação pura de Movimentações
  * Componente sem lógica de negócio, apenas renderização
  * Inclui PAGINAÇÃO e scroll otimizado
+ * MODO AUDITORIA: Read-Only (Criação removida)
  */
 
 import React, { useMemo } from 'react';
 import { DateRange } from "react-day-picker";
-import { Button } from '@/shared/ui/primitives/button';
-import { Plus } from 'lucide-react';
-import { FormDialog } from '@/shared/ui/layout/FormDialog';
 import { PageHeader } from '@/shared/ui/composite/PageHeader';
 import { PaginationControls } from '@/shared/ui/composite/pagination-controls';
 import { DatePickerWithRange } from '@/shared/ui/composite/date-range-picker';
 import { MovementsTable } from './MovementsTable';
-import { MovementDialog } from './MovementDialog';
 import { InventoryMovement } from '@/core/types/inventory.types';
 import { Product, Customer, Sale } from '@/features/movements/hooks/useMovements';
-import { MovementFormData } from '@/features/movements/hooks/useMovementForm';
 
 export interface MovementsPresentationProps {
   // Dados processados
   movements: InventoryMovement[];
-  products: Product[];
   customers: Customer[];
   salesList: Sale[];
   productsMap: Record<string, { name: string; price: number }>;
@@ -42,25 +37,13 @@ export interface MovementsPresentationProps {
 
   // Estados
   isLoading: boolean;
-  isCreating: boolean;
-  isDialogOpen: boolean;
-
-  // Formulário
-  formData: MovementFormData;
 
   // Configuração
   userRole: string;
-  canCreateMovement: boolean;
-
-  // Handlers
-  onDialogOpenChange: (open: boolean) => void;
-  onFormDataChange: (updates: Partial<MovementFormData>) => void;
-  onFormSubmit: () => void;
 }
 
 export const MovementsPresentation: React.FC<MovementsPresentationProps> = ({
   movements,
-  products,
   customers,
   salesList,
   productsMap,
@@ -78,77 +61,40 @@ export const MovementsPresentation: React.FC<MovementsPresentationProps> = ({
   setDateRange,
   // Estados
   isLoading,
-  isCreating,
-  isDialogOpen,
-  formData,
-  userRole,
-  canCreateMovement,
-  onDialogOpenChange,
-  onFormDataChange,
-  onFormSubmit,
 }) => {
   // Criar mapa de vendas para lookup rápido de delivery_type
   const salesMap = useMemo(() => {
     return salesList.reduce((acc, sale) => {
-      acc[sale.id] = { delivery_type: (sale as any).delivery_type };
+      acc[sale.id] = sale;
       return acc;
-    }, {} as Record<string, { delivery_type?: string }>);
+    }, {} as Record<string, Sale>);
   }, [salesList]);
 
   return (
-    <div className="w-full h-full flex flex-col p-4 min-h-0">
-      {/* Header padronizado com PageHeader - mostra total real */}
-      <PageHeader
-        title="MOVIMENTAÇÕES DE ESTOQUE"
-        count={totalCount}
-        countLabel="movimentações"
-      >
-        <div className="flex items-center gap-2">
-          <DatePickerWithRange
-            date={dateRange}
-            setDate={setDateRange}
+    <div className="flex flex-col h-full bg-[#09090b] text-white overflow-hidden">
+      {/* Header Fixo */}
+      <div className="flex-none p-6 border-b border-white/10 bg-[#09090b]/95 backdrop-blur z-20">
+        <div className="flex flex-col lg:flex-row gap-6 items-start lg:items-center justify-between">
+          <PageHeader
+            title="Movimentações de Estoque"
+            description="Histórico completo de auditoria de estoque."
+            className="flex-1"
           />
 
-          {canCreateMovement && (
-            <FormDialog
-              open={isDialogOpen}
-              onOpenChange={onDialogOpenChange}
-              title="REGISTRAR MOVIMENTAÇÃO"
-              description="Adicione uma nova movimentação de estoque ao sistema"
-              onSubmit={onFormSubmit}
-              submitLabel="Salvar Movimentação"
-              cancelLabel="Cancelar"
-              loading={isCreating}
-              size="xl"
-              variant="premium"
-              glassEffect={true}
-              className="max-h-[90vh] overflow-y-auto"
-              trigger={
-                <Button
-                  className="bg-gradient-to-r from-primary-yellow to-yellow-500 text-black hover:from-yellow-300 hover:to-yellow-400 font-semibold shadow-lg hover:shadow-yellow-400/30 transition-all duration-200 hover:scale-105"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  NOVA MOVIMENTAÇÃO
-                </Button>
-              }
-            >
-              <MovementDialog
-                formData={formData}
-                products={products}
-                customers={customers}
-                salesList={salesList}
-                isCreating={false}
-                onFormDataChange={onFormDataChange}
-                onSubmit={() => { }}
-              />
-            </FormDialog>
-          )}
+          {/* Filtros */}
+          <div className="flex items-center gap-3">
+            <DatePickerWithRange
+              date={dateRange}
+              setDate={setDateRange}
+              className="w-full sm:w-[300px]"
+            />
+          </div>
         </div>
-      </PageHeader>
+      </div>
 
-      {/* Container principal com altura controlada e scroll */}
+      {/* Conteúdo com Scroll */}
       <section
-        className="flex-1 min-h-0 flex flex-col bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300 relative overflow-hidden group"
+        className="flex-1 flex flex-col min-h-0 m-6 rounded-2xl border border-white/10 bg-black/40 backdrop-blur-sm transition-all duration-300 relative overflow-hidden group"
         onMouseMove={(e) => {
           const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
           const x = ((e.clientX - rect.left) / rect.width) * 100;

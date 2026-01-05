@@ -34,8 +34,7 @@ const supplierSchema = z.object({
 
   delivery_time: z.string().optional(),
 
-  payment_methods: z.array(z.string())
-    .min(1, 'Pelo menos uma forma de pagamento deve ser selecionada'),
+  payment_methods: z.array(z.string()).optional(),
 
   minimum_order_value: z.number()
     .min(0, 'Valor mínimo deve ser positivo')

@@ -148,7 +148,7 @@ export const useMovements = (options: UseMovementsOptions = {}): UseMovementsRet
 
       // Finalizar query com order e range
       const { data, error, count } = await query
-        .order('date', { ascending: false })
+        .order('created_at', { ascending: false })
         .range(from, to);
 
       if (error) {

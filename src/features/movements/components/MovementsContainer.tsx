@@ -1,16 +1,16 @@
 /**
  * Container de Movimentações - Coordena dados e lógica
  * Implementa padrão Container/Presentational com PAGINAÇÃO
+ * MODO AUDITORIA: Read-Only (Lógica de criação removida)
  */
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useAuth } from '@/app/providers/AuthContext';
 import { useMovementsLogic } from '@/features/movements/hooks/useMovementsLogic';
 import { MovementsPresentation } from './MovementsPresentation';
 
 export const MovementsContainer: React.FC = () => {
   const { userRole } = useAuth();
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   // Lógica centralizada COM PAGINAÇÃO
   const {
@@ -33,32 +33,11 @@ export const MovementsContainer: React.FC = () => {
 
     // Estados
     isLoading,
-    isCreating,
-
-    // Formulário
-    form,
-    updateForm,
-
-    // Ações
-    handleSubmit,
-    handleSuccess,
 
     // Filtros
     dateRange,
     setDateRange
   } = useMovementsLogic();
-
-  // Handler para sucesso do formulário
-  const handleFormSuccess = () => {
-    handleSuccess();
-    setIsDialogOpen(false);
-  };
-
-  // Handler para submit do formulário
-  const handleFormSubmit = () => {
-    handleSubmit();
-    handleFormSuccess();
-  };
 
   // Preparar props para apresentação
   const presentationProps = {
@@ -85,20 +64,9 @@ export const MovementsContainer: React.FC = () => {
 
     // Estados
     isLoading,
-    isCreating,
-    isDialogOpen,
-
-    // Formulário
-    formData: form,
 
     // Configuração
     userRole,
-    canCreateMovement: userRole === 'admin',
-
-    // Handlers
-    onDialogOpenChange: setIsDialogOpen,
-    onFormDataChange: updateForm,
-    onFormSubmit: handleFormSubmit,
   };
 
   return <MovementsPresentation {...presentationProps} />;

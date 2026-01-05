@@ -38,7 +38,6 @@ export const useSales = (params?: {
             phone
           ),
           invoice_logs (
-            id,
             status,
             external_id,
             pdf_url,

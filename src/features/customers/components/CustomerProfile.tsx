@@ -25,24 +25,18 @@ import { Button } from '@/shared/ui/primitives/button';
 import {
   User,
   ShoppingBag,
-  Brain,
-  MessageSquare,
-  Zap,
-  ArrowLeft,
-  History
+  ArrowLeft
 } from 'lucide-react';
 
+// Importar componentes SSoT v3.0.0
 // Importar componentes SSoT v3.0.0
 import { CustomerProfileHeader } from './CustomerProfileHeader';
 import { CustomerOverviewTab } from './CustomerOverviewTab';
 import { CustomerPurchaseHistoryTab } from './CustomerPurchaseHistoryTab';
-import { CustomerInsightsTab } from './CustomerInsightsTab';
-import { CustomerCommunicationTab } from './CustomerCommunicationTab';
-import { CustomerActionsTab } from './CustomerActionsTab';
-import { CustomerHistoricalSalesTab } from './CustomerHistoricalSalesTab';
 import { EditCustomerModal } from './EditCustomerModal';
 import { DeleteCustomerModal } from './DeleteCustomerModal';
 
+// Hooks e dados
 // Hooks e dados
 import { useCustomer } from '@/features/customers/hooks/use-crm';
 import { useAuth } from '@/app/providers/AuthContext';
@@ -117,7 +111,7 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
   };
 
   const handleNewSale = () => {
-    const salesUrl = `/sales?customer_id=${id}&customer_name=${encodeURIComponent(customer?.cliente || '')}`;
+    const salesUrl = `/sales?customer_id=${id}&customer_name=${encodeURIComponent(customer?.name || '')}`;
     window.open(salesUrl, '_blank');
   };
 
@@ -168,9 +162,9 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
         customerId={id || ''}
       />
 
-      {/* Sistema de Tabs - Nova Estrutura 6 Tabs (admin tem acesso a Importar Vendas) */}
+      {/* Sistema de Tabs - Simplificado para MVP (Overview + Histórico) */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-6' : 'grid-cols-5'} bg-gray-800/50`}>
+        <TabsList className="grid w-full grid-cols-2 bg-gray-800/50">
           {/* Tab 1: Visão Geral (Dashboard + Timeline) */}
           <TabsTrigger value="overview" className="data-[state=active]:bg-blue-500 data-[state=active]:text-white">
             <div className="flex items-center gap-1">
@@ -186,40 +180,6 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
               <span className="hidden sm:inline">Histórico de Compras</span>
             </div>
           </TabsTrigger>
-
-          {/* Tab 3: Insights & Analytics (Analytics + IA unificados) */}
-          <TabsTrigger value="insights" className="data-[state=active]:bg-blue-500 data-[state=active]:text-white">
-            <div className="flex items-center gap-1">
-              <Brain className="h-4 w-4" />
-              <span className="hidden sm:inline">Insights & Analytics</span>
-            </div>
-          </TabsTrigger>
-
-          {/* Tab 4: Comunicação (Comunicação + Documentos) */}
-          <TabsTrigger value="communication" className="data-[state=active]:bg-blue-500 data-[state=active]:text-white">
-            <div className="flex items-center gap-1">
-              <MessageSquare className="h-4 w-4" />
-              <span className="hidden sm:inline">Comunicação</span>
-            </div>
-          </TabsTrigger>
-
-          {/* Tab 5: Ações Rápidas (Ferramentas de Vendas) */}
-          <TabsTrigger value="actions" className="data-[state=active]:bg-blue-500 data-[state=active]:text-white">
-            <div className="flex items-center gap-1">
-              <Zap className="h-4 w-4" />
-              <span className="hidden sm:inline">Ações Rápidas</span>
-            </div>
-          </TabsTrigger>
-
-          {/* Tab 6: Importar Vendas Históricas (ADMIN ONLY) */}
-          {isAdmin && (
-            <TabsTrigger value="historical" className="data-[state=active]:bg-orange-500 data-[state=active]:text-white">
-              <div className="flex items-center gap-1">
-                <History className="h-4 w-4" />
-                <span className="hidden sm:inline">Importar Vendas</span>
-              </div>
-            </TabsTrigger>
-          )}
         </TabsList>
 
         {/* Conteúdo das Tabs - Componentes SSoT */}
@@ -237,36 +197,6 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
               customerId={id || ''}
             />
           </TabsContent>
-
-          {/* Tab 3: Insights & Analytics - SSoT v3.1.0 ✅ */}
-          <TabsContent value="insights">
-            <CustomerInsightsTab
-              customerId={id || ''}
-            />
-          </TabsContent>
-
-          {/* Tab 4: Comunicação - Centro de comunicação SSoT v3.1.0 */}
-          <TabsContent value="communication">
-            <CustomerCommunicationTab
-              customerId={id || ''}
-            />
-          </TabsContent>
-
-          {/* Tab 5: Ações Rápidas - SSoT v3.1.0 Revenue Intelligence Center */}
-          <TabsContent value="actions">
-            <CustomerActionsTab
-              customerId={id || ''}
-            />
-          </TabsContent>
-
-          {/* Tab 6: Importar Vendas Históricas - ADMIN ONLY */}
-          {isAdmin && (
-            <TabsContent value="historical">
-              <CustomerHistoricalSalesTab
-                customerId={id || ''}
-              />
-            </TabsContent>
-          )}
         </div>
       </Tabs>
 
