@@ -26,7 +26,10 @@ complex Supabase joins):
 
 - **Pagination:** Server-side via `useExpensesList` hook.
 - **Filtering:** Date Range and Category.
-- **Dashboard:** "Fluxo de Caixa" uses this data to subtract from Gross Sales.
+- **Dashboard:** Tracks "Product Margin" (Revenue - COGS).
+- **Expenses Module:** Tracks "Operational Cash Flow" (Bill Payments).
+- **Full P&L:** The combination of both gives the true Net Business Profit
+  (available in advanced reports).
 
 ## 4. Business Logic
 

@@ -49,6 +49,13 @@ FUNCTION create_inventory_movement(
 
 Aggregates expenses within DB to avoid fetching thousands of rows.
 
-### `get_sales_chart_data`
+### `get_daily_cash_flow`
 
-Returns daily revenue and profit (Price - Cost) for charts.
+Returns daily financial performance for the dashboard. **Logic Update (v2.1):**
+
+- `income`: Total Sales Revenue (`final_amount`).
+- `outcome`: Total Cost of Goods Sold (`total_cost` from `v_sales_with_profit`).
+- `balance`: Gross Margin (`total_profit`).
+
+_Note: Does NOT include Operational Expenses (Rent, etc.) to ensure positive
+visibility of sales performance._

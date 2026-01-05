@@ -43,6 +43,16 @@ The immutable ledger of stock changes.
 - `type` (movement_type): `sale`, `adjustment`, `restock`, `loss`.
 - `reason` (text).
 
+### `v_sales_with_profit` (View)
+
+Optimization for Dashboard Performance. Pre-calculates financial metrics per
+sale.
+
+- `id`, `created_at`, `final_amount`: From `sales`.
+- `total_cost`: Sum of (Item Quantity * Product Cost Price).
+- `total_profit`: `final_amount` - `total_cost`.
+- `status`: Filtered to exclude cancelled/returned in queries.
+
 ---
 
 ## 2. Fiscal Tables
