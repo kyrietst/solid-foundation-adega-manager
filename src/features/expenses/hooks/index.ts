@@ -8,7 +8,8 @@ export {
   useMonthlyExpenses,
   useCreateExpense,
   useUpdateExpense,
-  useDeleteExpense
+  useDeleteExpense,
+  useToggleExpenseStatus
 } from './useExpenses';
 
 // Category Management
@@ -34,5 +35,5 @@ export {
 } from './useExpenseBudgets';
 
 // Type exports
-export type { ExpenseFilters, ExpenseSummary, MonthlyExpense } from './useExpenses';
+export type { ExpenseFilters, ExpenseSummary, MonthlyExpense, OperationalExpense } from './useExpenses';
 export type { BudgetVariance } from './useExpenseBudgets';

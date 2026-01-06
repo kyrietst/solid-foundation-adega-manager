@@ -20,8 +20,10 @@ import { text, shadows } from "@/core/config/theme";
 import { FiscalAddress } from '@/core/types/fiscal.types';
 
 import { Button } from '@/shared/ui/primitives/button';
+import { Switch } from '@/shared/ui/primitives/switch';
+import { Label } from '@/shared/ui/primitives/label';
 import { ScrollArea } from '@/shared/ui/primitives/scroll-area';
-import { Loader2, ShoppingCart, Trash2 } from 'lucide-react';
+import { Loader2, ShoppingCart, Trash2, AlertTriangle, Truck } from 'lucide-react';
 import type { SaleType } from './SalesPage';
 
 // Import New Sub-components
@@ -65,9 +67,7 @@ export function Cart({
       }
   });
 
-  // Data Fetching
-  const { data: deliveryPersons = [] } = useDeliveryPersons(saleType === 'delivery');
-
+  // State Definitions (Must be before conditional hooks)
   const [paymentMethodId, setPaymentMethodId] = useState<string>('');
   const [discount, setDiscount] = useState(0);
   const [cashReceived, setCashReceived] = useState<number>(0);
@@ -76,15 +76,25 @@ export function Cart({
   // Estados para delivery (Address movido para react-hook-form)
   const [deliveryFee, setDeliveryFee] = useState<number>(0);
   const [deliveryPersonId, setDeliveryPersonId] = useState<string>('');
+  
+  // New State for Fiado Delivery Toggle
+  const [isFiadoDelivery, setIsFiadoDelivery] = useState(false);
+
+  // Derivar isDelivery baseada no tipo de venda ou toggle
+  const isDelivery = saleType === 'delivery' || (saleType === 'pickup' && isFiadoDelivery);
+
+  // Data Fetching
+  // FIX: Enable query if isDelivery is true (regardless if it's native delivery or Fiado+Delivery)
+  const { data: deliveryPersons = [] } = useDeliveryPersons(isDelivery);
 
   const subtotal = useCartTotal();
 
   const total = useMemo(() => {
     const baseTotal = subtotal - (allowDiscounts ? discount : 0);
-    const deliveryTotal = saleType === 'delivery' ? deliveryFee : 0;
+    const deliveryTotal = isDelivery ? deliveryFee : 0;
     const calculatedTotal = baseTotal + deliveryTotal;
     return calculatedTotal > 0 ? calculatedTotal : 0;
-  }, [subtotal, discount, allowDiscounts, saleType, deliveryFee]);
+  }, [subtotal, discount, allowDiscounts, isDelivery, deliveryFee]);
 
   // Lógica para detectar pagamento em dinheiro
   const selectedPaymentMethod = paymentMethods.find(m => m.id === paymentMethodId);
@@ -105,14 +115,14 @@ export function Cart({
 
   // Autocomplete: Auto-selecionar entregador quando há apenas um disponível
   useEffect(() => {
-    if (saleType === 'delivery' && deliveryPersons.length === 1 && !deliveryPersonId) {
+    if (isDelivery && deliveryPersons.length === 1 && !deliveryPersonId) {
       setDeliveryPersonId(deliveryPersons[0].id);
     }
-  }, [saleType, deliveryPersons, deliveryPersonId]);
+  }, [isDelivery, deliveryPersons, deliveryPersonId]);
 
   // Autocomplete: Preencher endereço automaticamente do cliente selecionado
   useEffect(() => {
-    if (saleType === 'delivery' && selectedCustomer?.address) {
+    if (isDelivery && selectedCustomer?.address) {
       const addr = selectedCustomer.address;
       
       // Tentativa de mapeamento inteligente
@@ -135,7 +145,7 @@ export function Cart({
           if ((addr as any).complement) addressForm.setValue('complemento', (addr as any).complement);
       }
     }
-  }, [saleType, selectedCustomer, addressForm]);
+  }, [isDelivery, selectedCustomer, addressForm]);
 
   // Map internal variantes to Theme variants
   const getGlassVariant = (v: string) => {
@@ -166,8 +176,8 @@ export function Cart({
     subtotal,
     total,
     customerId,
-    saleType,
-    paymentMethodId,
+    saleType: isDelivery ? 'delivery' : saleType, // Override saleType if it's a Fiado Delivery
+    paymentMethodId: saleType === 'pickup' ? 'fiado' : paymentMethodId, // Internal marker for Fiado
     discount,
     allowDiscounts,
     deliveryAddress: addressForm.watch(), 
@@ -246,22 +256,44 @@ export function Cart({
       {/* Footer com Formulários */}
       <ScrollArea className="flex-shrink-0 max-h-[400px]">
         <div>
-          {/* Seção Pagamento */}
-          <CartPaymentSection
-            cartId={cartId}
-            paymentMethods={paymentMethods}
-            allowDiscounts={allowDiscounts}
-            paymentMethodId={paymentMethodId}
-            discount={discount}
-            cashReceived={cashReceived}
-            showCashInput={showCashInput}
-            onPaymentMethodChange={setPaymentMethodId}
-            onDiscountChange={(val) => setDiscount(Math.max(0, val))}
-            onCashReceivedChange={(val) => setCashReceived(Math.max(0, val))}
-          />
+          {/* Toggle de Delivery para Fiado - UX REQ: Phase 6 */}
+          {saleType === 'pickup' && (
+              <div className="px-4 py-2">
+                 <div className="flex items-center justify-between p-3 bg-gray-900/40 rounded-lg border border-gray-800">
+                    <div className="space-y-0.5">
+                        <Label htmlFor={`delivery-mode-${cartId}`} className="text-white flex items-center gap-2">
+                            <Truck className="h-4 w-4 text-purple-400" />
+                            É para entrega?
+                        </Label>
+                        <p className="text-xs text-gray-400">Habilita endereço e taxa de entrega</p>
+                    </div>
+                    <Switch
+                        id={`delivery-mode-${cartId}`}
+                        checked={isFiadoDelivery}
+                        onCheckedChange={setIsFiadoDelivery}
+                    />
+                 </div>
+              </div>
+          )}
+
+          {/* Seção Pagamento - Ocultar se for Fiado (Pickup) */}
+          {saleType !== 'pickup' && (
+            <CartPaymentSection
+                cartId={cartId}
+                paymentMethods={paymentMethods}
+                allowDiscounts={allowDiscounts}
+                paymentMethodId={paymentMethodId}
+                discount={discount}
+                cashReceived={cashReceived}
+                showCashInput={showCashInput}
+                onPaymentMethodChange={setPaymentMethodId}
+                onDiscountChange={(val) => setDiscount(Math.max(0, val))}
+                onCashReceivedChange={(val) => setCashReceived(Math.max(0, val))}
+            />
+          )}
 
           {/* Seção Delivery */}
-          {saleType === 'delivery' && (
+          {isDelivery && (
             <FormProvider {...addressForm}>
                  <CartDeliverySection
                     cartId={cartId}
@@ -284,14 +316,29 @@ export function Cart({
               cashReceived={cashReceived}
               change={change}
               showDiscount={allowDiscounts}
-              showDelivery={saleType === 'delivery'}
+              showDelivery={isDelivery}
               showChange={isCashPayment}
             />
 
+            {/* Alerta de Cliente Obrigatório para FIADO */}
+            {saleType === 'pickup' && !customerId && (
+              <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2">
+                <AlertTriangle className="h-4 w-4 text-red-400 flex-shrink-0" />
+                <p className="text-xs text-red-300 font-medium">
+                  Para vendas no FIADO, é obrigatório identificar o cliente.
+                </p>
+              </div>
+            )}
+
             <Button
               onClick={processSale}
-              disabled={isProcessing || !paymentMethodId || total <= 0}
-              className="w-full bg-primary-yellow text-black hover:bg-primary-yellow/90 font-semibold py-3"
+              disabled={isProcessing || (saleType !== 'pickup' && !paymentMethodId) || total <= 0 || (saleType === 'pickup' && !customerId)}
+              className={cn(
+                "w-full font-semibold py-3 transition-all",
+                (saleType === 'pickup' && !customerId)
+                  ? "bg-gray-800 text-gray-500 cursor-not-allowed border border-gray-700"
+                  : "bg-primary-yellow text-black hover:bg-primary-yellow/90"
+              )}
             >
               {isProcessing ? (
                 <>

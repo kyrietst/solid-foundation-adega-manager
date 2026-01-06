@@ -63,13 +63,17 @@ export function getValueClasses(size: 'sm' | 'md' | 'lg' = 'md', variant: StatCa
 /**
  * Glass Card Variants with different intensities
  */
-export function getGlassCardClasses(variant: 'default' | 'premium' | 'subtle' | 'strong' | 'yellow' = 'default') {
+export function getGlassCardClasses(variant: 'default' | 'premium' | 'subtle' | 'strong' | 'yellow' | 'success' | 'warning' | 'error' | 'card' = 'default') {
   const variants = {
     default: 'bg-black/60 backdrop-blur-sm border border-white/10 rounded-lg',
+    card: 'bg-black/60 backdrop-blur-sm border border-white/10 rounded-lg',
     premium: 'bg-black/40 backdrop-blur-sm border border-yellow-400/30 rounded-lg shadow-lg',
     subtle: 'bg-black/20 backdrop-blur-sm border border-gray-700/50 rounded-lg',
     strong: 'bg-black/80 backdrop-blur-sm border border-gray-600 rounded-lg',
-    yellow: 'bg-yellow-400/10 backdrop-blur-sm border border-yellow-400/30 rounded-lg'
+    yellow: 'bg-yellow-400/10 backdrop-blur-sm border border-yellow-400/30 rounded-lg',
+    success: 'bg-green-500/10 backdrop-blur-sm border border-green-400/30 rounded-lg',
+    warning: 'bg-yellow-500/10 backdrop-blur-sm border border-yellow-400/30 rounded-lg',
+    error: 'bg-red-500/10 backdrop-blur-sm border border-red-400/30 rounded-lg'
   };
   
   return variants[variant];

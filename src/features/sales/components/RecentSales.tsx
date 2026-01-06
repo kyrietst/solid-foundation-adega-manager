@@ -21,14 +21,24 @@ import {
   AlertDialogTitle,
 } from "@/shared/components/alert-dialog";
 
+import { Badge } from '@/shared/ui/primitives/badge';
+import { SettlementModal } from './SettlementModal';
+import { DollarSign } from 'lucide-react';
 import { SaleStatusBadge } from "./SaleStatusBadge";
 import { PaymentStatusBadge } from "./PaymentStatusBadge";
 import { FiscalStatusBadge } from "@/features/fiscal/components/FiscalStatusBadge";
 import { useFiscalEmission } from "@/features/fiscal/hooks/useFiscalEmission";
 import { LoadingSpinner } from "@/shared/ui/composite/loading-spinner";
 
-export function RecentSales() {
-  const { data: sales, isLoading } = useSales({ limit: 20 });
+interface RecentSalesProps {
+  filterStatus?: string;
+}
+
+export function RecentSales({ filterStatus }: RecentSalesProps) {
+  const { data: sales, isLoading } = useSales({ 
+    limit: 20,
+    paymentStatus: filterStatus 
+  });
   const { mutate: deleteSale, isPending: isDeleting } = useDeleteSale();
   const { user, userRole } = useAuth();
   const [saleToDelete, setSaleToDelete] = useState<{ id: string, number: number } | null>(null);
@@ -40,6 +50,17 @@ export function RecentSales() {
 
   const { emitInvoice, isLoading: isFiscalProcessing } = useFiscalEmission();
   const [processingSaleId, setProcessingSaleId] = useState<string | null>(null);
+
+  // Settlement State
+  const [settlementSale, setSettlementSale] = useState<{ id: string; total: number; customerName: string } | null>(null);
+
+  const handleOpenSettlement = (sale: any) => {
+    setSettlementSale({
+        id: sale.id,
+        total: sale.final_amount,
+        customerName: sale.customer?.name || 'Consumidor Final'
+    });
+  };
 
   // Alterna a exibição dos detalhes da venda
   const toggleSaleDetails = (saleId: string) => {
@@ -231,7 +252,16 @@ export function RecentSales() {
                       <h3 className={cn(text.h3, shadows.medium, "font-semibold text-lg")}>
                         {sale.delivery_type === 'delivery' ? 'Pedido' : 'Venda'} #{sale.order_number}
                       </h3>
-                      <SaleStatusBadge sale={sale} />
+                      {/* Hide Concluido badge for Fiado (pending) */}
+                      {sale.payment_status !== 'pending' && <SaleStatusBadge sale={sale} />}
+                      
+                      {/* Delivery Badge */}
+                      {sale.delivery_type === 'delivery' && (
+                           <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30 text-xs px-2 py-0.5">
+                               Entrega
+                           </Badge>
+                      )}
+
                       {/* Badge Fiscal */}
                       <FiscalStatusBadge status={sale.invoice?.status} />
                     </div>
@@ -243,6 +273,9 @@ export function RecentSales() {
                         </span>
                         <PaymentStatusBadge status={sale.payment_status} />
                       </div>
+                      
+                      {/* REMOVED DUPLICATE TIPO LINE HERE */}
+
                       <div className="flex items-center gap-2">
                         <User className="h-4 w-4 text-purple-400" />
                         <span className={cn(text.h6, shadows.subtle)}>
@@ -257,14 +290,35 @@ export function RecentSales() {
                       </div>
                       <div className="flex items-center gap-2">
                         {(() => {
+                          const isFiado = sale.payment_status === 'pending';
                           const IconComponent = getDeliveryTypeIcon(sale.delivery_type) === 'Store' ? Store :
                             getDeliveryTypeIcon(sale.delivery_type) === 'Truck' ? Truck : Package;
-                          return <IconComponent className="h-4 w-4 text-orange-400" />;
+                          return <IconComponent className={cn("h-4 w-4", isFiado ? "text-red-500" : "text-orange-400")} />;
                         })()}
-                        <span className={cn(text.h6, shadows.subtle)}>
-                          Tipo: {formatDeliveryType(sale.delivery_type)}
+                        <span className={cn(text.h6, shadows.subtle, sale.payment_status === 'pending' ? "text-red-400 font-medium" : "")}>
+                          Tipo: {sale.payment_status === 'pending' 
+                                  ? ((sale.delivery_type === 'delivery' || sale.delivery) ? 'Delivery Fiado' : 'Presencial Fiado') 
+                                  : formatDeliveryType(sale.delivery_type)}
                         </span>
                       </div>
+
+                       {/* Action Buttons */}
+                       <div className="flex items-center gap-2 mt-1">
+                          {sale.payment_status === 'pending' && sale.status !== 'cancelled' && (
+                              <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleOpenSettlement(sale);
+                                  }}
+                                  className="h-6 px-2 border-green-800/50 bg-green-900/10 text-green-500 hover:bg-green-900/30 hover:text-green-400 text-xs"
+                              >
+                                  <DollarSign className="h-3 w-3 mr-1" />
+                                  Quitar
+                              </Button>
+                          )}
+                       </div>
 
                       {/* Botão Fiscal Inline - AÇÃO RÁPIDA */}
                       <div className="flex items-center gap-2 mt-1">
@@ -461,6 +515,17 @@ export function RecentSales() {
           </div>
         )}
       </div>
+
+      {/* Modal de Quitação de Dívida (Phase 6) */}
+      {settlementSale && (
+          <SettlementModal
+              isOpen={!!settlementSale}
+              onClose={() => setSettlementSale(null)}
+              saleId={settlementSale.id}
+              saleTotal={settlementSale.total}
+              customerName={settlementSale.customerName}
+          />
+      )}
 
       {/* Diálogo de confirmação de exclusão */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>

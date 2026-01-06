@@ -83,13 +83,15 @@ import { getGlassCardClasses } from "@/core/config/theme-utils";
 
 ## 5. Terminologia (Glossário Enterprise)
 
-| Termo Proibido ❌ | Termo Correto ✅       | Contexto                      |
-| :---------------- | :--------------------- | :---------------------------- |
-| Criar             | Lançar / Registrar     | Ações financeiras             |
-| Apagar            | Arquivar / Estornar    | Dados sensíveis (Soft Delete) |
-| Motoqueiro        | Entregador / Logística | App de Entregas               |
-| Lucro             | Margem                 | Relatórios                    |
-| Configs           | Parâmetros             | Menu de Sistema               |
+| Termo Proibido ❌ | Termo Correto ✅         | Contexto                             |
+| :---------------- | :----------------------- | :----------------------------------- |
+| Criar             | Lançar / Registrar       | Ações financeiras                    |
+| Apagar            | Arquivar / Estornar      | Dados sensíveis (Soft Delete)        |
+| Motoqueiro        | Entregador / Logística   | App de Entregas                      |
+| Lucro             | Margem                   | Relatórios                           |
+| Configs           | Parâmetros               | Menu de Sistema                      |
+| Fiado / Pendura   | Conta Assinada / Crédito | Frente de Caixa (Interno vs Cliente) |
+| Pagar             | Quitar / Liquidar        | Baixa de Dívidas                     |
 
 _Consulte a matriz completa em `FULL_UI_CONSISTENCY_MATRIX.md` (Legado, mas
 válido)._

@@ -25,6 +25,7 @@ export interface DashboardFinancials {
   operationalExpenses: number;
   netProfit: number;
   netMargin: number;
+  accountsReceivable: number; // NEW: Fiado (A Receber)
   // Manter compatibilidade com código existente
   profitMargin: number; // = grossMargin para compatibilidade
   operationalCosts: number; // = operationalExpenses para compatibilidade
@@ -93,17 +94,28 @@ export const useDashboardData = (periodDays: number = 30) => {
       const startDate = getMonthStartDate();
 
       // ✅ Buscar dados financeiros via view otimizada (v_sales_with_profit)
-      const { data: salesData, error } = await supabase
-        .from('v_sales_with_profit')
-        .select('total_amount, total_cost, total_profit, final_amount')
-        .gte('created_at', startDate.toISOString())
-        .lte('created_at', endDate.toISOString())
-        .not('status', 'in', '("cancelled","returned")'); // Ignorar canceladas/devolvidas
+      // E também buscar A RECEBER (Fiado) em query paralela
+      const [salesResult, receivablesResult] = await Promise.all([
+        supabase
+          .from('v_sales_with_profit')
+          .select('total_amount, total_cost, total_profit, final_amount')
+          .gte('created_at', startDate.toISOString())
+          .lte('created_at', endDate.toISOString())
+          .not('status', 'in', '("cancelled","returned")'),
+        
+        // Query para "A Receber" (Fiado) - Todas as vendas não pagas, independente da data
+        supabase
+          .from('sales')
+          .select('final_amount')
+          .eq('payment_status', 'pending')
+          .neq('status', 'cancelled')
+      ]);
 
-      if (error) {
-        console.error('❌ Erro ao buscar dados financeiros:', error);
-        throw error;
-      }
+      if (salesResult.error) throw salesResult.error;
+      if (receivablesResult.error) throw receivablesResult.error;
+
+      const salesData = salesResult.data;
+      const receivablesData = receivablesResult.data;
 
       // ✅ SSoT: Agregar dados
       // Se final_amount existir, use-o (considerando descontos), senão total_amount
@@ -125,6 +137,9 @@ export const useDashboardData = (periodDays: number = 30) => {
       const netProfit = grossProfit; // = Margem de Contribuição
       const netMargin = grossMargin;
 
+      // Calcular Total a Receber (Fiado)
+      const accountsReceivable = (receivablesData || []).reduce((sum, sale) => sum + (Number(sale.final_amount) || 0), 0);
+
       return {
         totalRevenue,
         cogs,
@@ -133,6 +148,7 @@ export const useDashboardData = (periodDays: number = 30) => {
         operationalExpenses,
         netProfit,
         netMargin,
+        accountsReceivable,
         // Compatibilidade
         profitMargin: grossMargin,
         operationalCosts: operationalExpenses,

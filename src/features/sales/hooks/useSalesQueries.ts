@@ -8,6 +8,7 @@ export const useSales = (params?: {
     endDate?: Date;
     limit?: number;
     status?: string;
+    paymentStatus?: string;
 }) => {
     return useQuery({
         queryKey: ["sales", params],
@@ -63,6 +64,10 @@ export const useSales = (params?: {
             if (params?.status) {
                 // Cast to match sales table status column type
                 baseQuery = baseQuery.eq("status", params.status as any);
+            }
+
+            if (params?.paymentStatus) {
+                baseQuery = baseQuery.eq("payment_status", params.paymentStatus);
             }
 
             if (params?.limit) {
@@ -143,6 +148,7 @@ export const useSales = (params?: {
                     notes: sale.notes || null,
                     delivery: sale.delivery || false,
                     delivery_address: sale.delivery_address || null,
+                    delivery_type: sale.delivery_type || (sale.delivery ? 'delivery' : 'presencial'),
                     items: items
                 } as Sale;
             });

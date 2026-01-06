@@ -1,171 +1,125 @@
-import React, { useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/primitives/tabs';
+import { useState } from 'react';
+import { Card, CardContent } from "@/shared/ui/primitives/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/primitives/tabs";
+import { ExpensesTab } from './ExpensesTab';
+import { ExpenseReportsTab } from './ExpenseReportsTab';
+import { DateRangePicker } from '@/shared/ui/primitives/date-range-picker';
+import { startOfMonth, endOfMonth } from 'date-fns';
 import { Button } from '@/shared/ui/primitives/button';
-import { Calculator, Receipt, PieChart, BarChart3, Download } from 'lucide-react';
-import ExpensesTab from './ExpensesTab';
-import ExpenseReportsTab from './ExpenseReportsTab';
-import { useExpenseSummary } from '../hooks';
-import { format } from 'date-fns';
-import { StatCard } from '@/shared/ui/composite/stat-card';
-import { getGlassCardClasses, getGlassButtonClasses, getHoverTransformClasses } from '@/core/config/theme-utils';
+import { CalendarClock, Wand2, Settings2 } from 'lucide-react';
+import { useGenerateMonthlyExpenses } from '../hooks/useExpenses';
 import { cn } from '@/core/config/utils';
-import { LoadingScreen } from '@/shared/ui/composite/loading-spinner';
-import { PageHeader } from '@/shared/ui/composite/PageHeader';
+import { ExpenseTemplatesModal } from './ExpenseTemplatesModal';
 
-const ExpensesPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('expenses');
-  
-  // Dados do mês atual
-  const currentDate = new Date();
-  const currentMonth = currentDate.getMonth() + 1;
-  const currentYear = currentDate.getFullYear();
-  const monthStart = format(new Date(currentYear, currentMonth - 1, 1), 'yyyy-MM-dd');
-  const monthEnd = format(new Date(currentYear, currentMonth, 0), 'yyyy-MM-dd');
+interface DateRange {
+  from: Date;
+  to: Date;
+}
 
-  const { data: expenseSummary, isLoading: summaryLoading } = useExpenseSummary(monthStart, monthEnd);
+export const ExpensesPage = () => {
+  const [dateRange, setDateRange] = useState<DateRange>({
+    from: startOfMonth(new Date()),
+    to: endOfMonth(new Date())
+  });
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
+  const [isTemplatesModalOpen, setIsTemplatesModalOpen] = useState(false);
+  const generateMonthly = useGenerateMonthlyExpenses();
+
+  const handleGenerateClick = () => {
+    const targetMonth = dateRange.from.getMonth() + 1; // 1-12
+    const targetYear = dateRange.from.getFullYear();
+    generateMonthly.mutate({ month: targetMonth, year: targetYear });
   };
 
-
-
-  // Preparar dados para os KPIs usando StatCard - Versão Simplificada
-  const kpiData = [
-    {
-      title: 'Total de Despesas',
-      value: summaryLoading ? '...' : formatCurrency(expenseSummary?.total_expenses || 0),
-      subtitle: `${expenseSummary?.total_transactions || 0} transações este mês`,
-      icon: Receipt,
-      variant: 'default' as const,
-      href: '#expenses-tab'
-    },
-    {
-      title: 'Média por Transação', 
-      value: summaryLoading ? '...' : formatCurrency(expenseSummary?.avg_expense || 0),
-      subtitle: `Categoria top: ${expenseSummary?.top_category || 'N/A'}`,
-      icon: Calculator,
-      variant: 'success' as const,
-      href: '#reports-tab'
-    },
-    {
-      title: 'Categoria Principal',
-      value: summaryLoading ? '...' : (expenseSummary?.top_category || 'N/A'),
-      subtitle: formatCurrency(expenseSummary?.top_category_amount || 0),
-      icon: PieChart,
-      variant: 'purple' as const,
-      href: '#reports-tab'
-    }
-  ];
-
-  if (summaryLoading) {
-    return <LoadingScreen text="Carregando dados de despesas..." />;
-  }
-
   return (
-    <div className="w-full h-full flex flex-col">
-      {/* Header padronizado com botões de ação */}
-      <PageHeader title="GESTÃO DE DESPESAS">
-        <Button
-          onClick={() => setActiveTab('reports')}
-          className={cn(
-            getGlassButtonClasses('primary'),
-            getHoverTransformClasses('scale'),
-            "flex items-center gap-2"
-          )}
-        >
-          <BarChart3 className="h-4 w-4" />
-          Relatórios
-        </Button>
-        <Button
-          variant="outline"
-          className={cn(
-            getGlassButtonClasses('secondary'),
-            getHoverTransformClasses('scale'),
-            "flex items-center gap-2"
-          )}
-        >
-          <Download className="h-4 w-4" />
-          Exportar
-        </Button>
-      </PageHeader>
-
-      {/* Container principal com glassmorphism - ocupa altura restante */}
-      <div className="flex-1 min-h-0 bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-4 flex flex-col hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300 space-y-6"
-        onMouseMove={(e) => {
-          const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-          const x = ((e.clientX - rect.left) / rect.width) * 100;
-          const y = ((e.clientY - rect.top) / rect.height) * 100;
-          (e.currentTarget as HTMLElement).style.setProperty("--x", `${x}%`);
-          (e.currentTarget as HTMLElement).style.setProperty("--y", `${y}%`);
-        }}
-      >
-        {/* KPIs Resumo do Mês */}
-        <div className="flex-shrink-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {kpiData.map((kpi, index) => (
-            <StatCard
-              key={index}
-              {...kpi}
-              className={cn(
-                getGlassCardClasses(),
-                getHoverTransformClasses('scale'),
-                "cursor-pointer"
-              )}
-              onClick={() => {
-                if (kpi.href.includes('expenses')) setActiveTab('expenses');
-                if (kpi.href.includes('reports')) setActiveTab('reports');
-              }}
-            />
-          ))}
+    <div className="space-y-6 animate-in fade-in duration-500">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-white mb-1">
+            Gestão de Despesas
+          </h1>
+          <p className="text-muted-foreground">
+            Controle de custos operacionais e fixos.
+          </p>
         </div>
 
-        {/* Tabs de Navegação */}
-        <Tabs 
-          value={activeTab} 
-          onValueChange={setActiveTab} 
-          className="flex-1 space-y-6"
-        >
-        <TabsList className={cn(
-          getGlassCardClasses(),
-          "grid w-full grid-cols-2 p-1"
-        )}>
-          <TabsTrigger 
-            value="expenses" 
-            className={cn(
-              "data-[state=active]:bg-purple-500/20 data-[state=active]:text-white",
-              "data-[state=active]:shadow-lg data-[state=active]:shadow-purple-500/25",
-              "transition-all duration-300 ease-out"
-            )}
-          >
-            <Receipt className="h-4 w-4 mr-2" />
-            Despesas
-          </TabsTrigger>
-          <TabsTrigger 
-            value="reports"
-            className={cn(
-              "data-[state=active]:bg-purple-500/20 data-[state=active]:text-white",
-              "data-[state=active]:shadow-lg data-[state=active]:shadow-purple-500/25",
-              "transition-all duration-300 ease-out"
-            )}
-          >
-            <BarChart3 className="h-4 w-4 mr-2" />
-            Relatórios
-          </TabsTrigger>
+        <div className="flex items-center gap-2 bg-slate-900/50 p-1.5 rounded-lg border border-slate-800">
+          <DateRangePicker
+            dateRange={dateRange}
+            onDateRangeChange={(range) => {
+              if (range?.from && range?.to) {
+                setDateRange({ from: range.from, to: range.to });
+              }
+            }}
+          />
+        </div>
+      </div>
+
+      {/* RECURRENCE TOOLBAR */}
+      <Card className="bg-slate-900/40 border-slate-800/60">
+        <CardContent className="p-4 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="bg-emerald-500/10 p-2 rounded-full">
+              <CalendarClock className="w-5 h-5 text-emerald-400" />
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-emerald-100">Despesas Fixas</h3>
+              <p className="text-xs text-muted-foreground hidden sm:block">
+                Gerencie aluguel, internet e outros custos recorrentes.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-slate-700 hover:bg-slate-800 text-slate-300"
+              onClick={() => setIsTemplatesModalOpen(true)}
+            >
+              <Settings2 className="w-4 h-4 mr-2" />
+              Gerenciar Modelos
+            </Button>
+            
+            <Button
+              variant="secondary"
+              size="sm"
+              className={cn(
+                "bg-emerald-600 hover:bg-emerald-700 text-white border-none transition-all",
+                generateMonthly.isPending && "opacity-80 cursor-wait"
+              )}
+              onClick={handleGenerateClick}
+              disabled={generateMonthly.isPending}
+            >
+              <Wand2 className={cn("w-4 h-4 mr-2", generateMonthly.isPending && "animate-spin")} />
+              {generateMonthly.isPending ? 'Gerando...' : 'Gerar Fixas do Mês'}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+      
+      <Tabs defaultValue="list" className="space-y-4">
+        <TabsList className="bg-slate-800/50 border border-slate-700/50 p-1">
+          <TabsTrigger value="list" className="data-[state=active]:bg-slate-700">Explorar Lançamentos</TabsTrigger>
+          <TabsTrigger value="analytics" className="data-[state=active]:bg-slate-700">Análise Gráfica</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="expenses" className="space-y-6">
-          <ExpensesTab />
+        <TabsContent value="list" className="space-y-4 focus-visible:outline-none">
+          <ExpensesTab 
+            startDate={dateRange.from} 
+            endDate={dateRange.to} 
+          />
         </TabsContent>
 
-
-        <TabsContent value="reports" className="space-y-6">
+        <TabsContent value="analytics" className="focus-visible:outline-none">
           <ExpenseReportsTab />
         </TabsContent>
       </Tabs>
-      </div>
+
+      <ExpenseTemplatesModal 
+        isOpen={isTemplatesModalOpen}
+        onClose={() => setIsTemplatesModalOpen(false)}
+      />
     </div>
   );
 };

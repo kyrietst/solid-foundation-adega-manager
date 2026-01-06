@@ -17,6 +17,7 @@ import { Button } from '@/shared/ui/primitives/button';
 import { cn } from '@/core/config/utils';
 import { DateRange } from 'react-day-picker';
 import { useFinancialCharts } from '@/features/reports/hooks/useFinancialCharts';
+import { useDashboardData } from '@/features/dashboard/hooks/useDashboardData';
 
 // --- Types ---
 interface DailyFlow {
@@ -48,7 +49,9 @@ export const FinancialCashFlowDashboard: React.FC<FinancialCashFlowDashboardProp
     const [period, setPeriod] = useState<'daily' | 'weekly' | 'monthly'>('daily');
 
     // Data Fetching
-    const { dailyCashFlow, debtors, topExpenses } = useFinancialCharts(period);
+    // Data Fetching
+    const { dailyCashFlow, debtors, topExpenses } = useFinancialCharts(period, dateRange); // 🚀 Passed dateRange prop
+    const { financials } = useDashboardData(); // 🚀 SSoT: Reutilizando lógica do Dashboard para KPIs globais (DRY)
 
     // Safety check for hook results in case they are undefined during initial render/mocking
     const cashFlowData = dailyCashFlow?.data || [];
@@ -64,12 +67,15 @@ export const FinancialCashFlowDashboard: React.FC<FinancialCashFlowDashboardProp
 
     // Derived Metrics
     const totalRevenue = useMemo(() => {
-        return cashFlowData.reduce((acc: number, curr: any) => acc + (curr.total_amount || 0), 0);
+        // Now using 'income' from the RPC result
+        return cashFlowData.reduce((acc: number, curr: any) => acc + (curr.income || 0), 0);
     }, [cashFlowData]);
 
     const totalExpenses = useMemo(() => {
-        return topExpensesList.reduce((acc: number, curr: any) => acc + (curr.amount || 0), 0);
-    }, [topExpensesList]);
+        // Now using 'outcome' from the RPC result directly (or fallback to topExpensesList if not using RPC for total)
+        // But since we have the flow, let's use the flow data for consistency in "Paid Expenses" within the period
+        return cashFlowData.reduce((acc: number, curr: any) => acc + (curr.outcome || 0), 0);
+    }, [cashFlowData]);
 
     const netProfit = useMemo(() => {
         return totalRevenue - totalExpenses;
@@ -80,8 +86,8 @@ export const FinancialCashFlowDashboard: React.FC<FinancialCashFlowDashboardProp
         revenue: totalRevenue,
         expenses: totalExpenses,
         profit: netProfit,
-        receivables: 0
-    }), [totalRevenue, totalExpenses, netProfit]);
+        receivables: financials?.accountsReceivable || 0
+    }), [totalRevenue, totalExpenses, netProfit, financials?.accountsReceivable]);
 
     // Handlers
     const handlePeriodChange = (value: string) => {
@@ -94,6 +100,27 @@ export const FinancialCashFlowDashboard: React.FC<FinancialCashFlowDashboardProp
     const formatCurrency = (val: number) =>
         new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
 
+    const safeFormatDate = (dateStr: string) => {
+        if (!dateStr) return '';
+        // Split YYYY-MM-DD manually to create local date at 00:00:00 without UTC shift
+        const parts = dateStr.split('-');
+        if (parts.length === 3) {
+            const date = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+            return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+        }
+        return '';
+    };
+
+    const safeFormatFullDate = (dateStr: string) => {
+         if (!dateStr) return '';
+        const parts = dateStr.split('-');
+        if (parts.length === 3) {
+             const date = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+             return date.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
+        }
+        return dateStr;
+    };
+
     if (isLoading) {
         return <LoadingSpinner />;
     }
@@ -105,10 +132,10 @@ export const FinancialCashFlowDashboard: React.FC<FinancialCashFlowDashboardProp
                 <div className="space-y-1">
                     <h2 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
                         <DollarSign className="w-6 h-6 text-emerald-400" />
-                        Fluxo de Caixa
+                        Fluxo de Caixa (Real)
                     </h2>
                     <p className="text-sm text-gray-400">
-                        Visão consolidada de entradas, saídas e previsões.
+                        Visão consolidada de Entradas (Recebimentos) vs Saídas (Pagamentos).
                     </p>
                 </div>
 
@@ -118,9 +145,9 @@ export const FinancialCashFlowDashboard: React.FC<FinancialCashFlowDashboardProp
                             <SelectValue placeholder="Período" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="daily">Diário</SelectItem>
-                            <SelectItem value="weekly">Semanal</SelectItem>
-                            <SelectItem value="monthly">Mensal</SelectItem>
+                            <SelectItem value="daily">Últimos 30 Dias</SelectItem>
+                            <SelectItem value="weekly">Últimos 90 Dias</SelectItem>
+                            <SelectItem value="monthly">Último Ano</SelectItem>
                         </SelectContent>
                     </Select>
 
@@ -134,27 +161,27 @@ export const FinancialCashFlowDashboard: React.FC<FinancialCashFlowDashboardProp
             {/* 2. KPIs Principais */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <StatCard
-                    title="Faturamento Total"
+                    title="Entradas de Caixa"
                     value={kpis.revenue}
-                    description="Vendas confirmadas (Caixa)"
+                    description="Recebimentos confirmados"
                     icon={DollarSign}
-                    variant="default"
+                    variant="success"
                     formatType="currency"
                 />
 
                 <StatCard
-                    title="Despesas Pagas"
+                    title="Saídas de Caixa"
                     value={kpis.expenses}
-                    description="Saídas do período"
+                    description="Pagamentos realizados"
                     icon={Wallet}
                     variant="warning"
                     formatType="currency"
                 />
 
                 <StatCard
-                    title="Lucro Operacional"
+                    title="Saldo Líquido"
                     value={kpis.profit}
-                    description={kpis.profit >= 0 ? "Saldo positivo" : "Saldo negativo"}
+                    description={kpis.profit >= 0 ? "Superávit no período" : "Déficit no período"}
                     icon={kpis.profit >= 0 ? TrendingUp : TrendingDown}
                     variant={kpis.profit >= 0 ? "success" : "error"}
                     formatType="currency"
@@ -163,7 +190,7 @@ export const FinancialCashFlowDashboard: React.FC<FinancialCashFlowDashboardProp
                 <StatCard
                     title="A Receber (Fiado)"
                     value={kpis.receivables}
-                    description="Total em aberto com clientes"
+                    description="Vendas pendentes (Futuro)"
                     icon={Users}
                     variant="premium"
                     formatType="currency"
@@ -175,7 +202,7 @@ export const FinancialCashFlowDashboard: React.FC<FinancialCashFlowDashboardProp
                 <div className="flex items-center justify-between mb-6">
                     <h3 className="text-lg font-semibold text-white flex items-center gap-2">
                         <TrendingUp className="w-5 h-5 text-blue-400" />
-                        Fluxo Diário (Entradas vs Saídas)
+                        Dinâmica de Caixa (Entradas vs Saídas)
                     </h3>
                 </div>
 
@@ -184,12 +211,12 @@ export const FinancialCashFlowDashboard: React.FC<FinancialCashFlowDashboardProp
                         <BarChart data={cashFlowData}>
                             <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} />
                             <XAxis
-                                dataKey="created_at" // updated key
+                                dataKey="day" // Updated to use 'day' from RPC
                                 stroke="#9CA3AF"
                                 fontSize={12}
                                 tickLine={false}
                                 axisLine={false}
-                                tickFormatter={(val) => new Date(val).toLocaleDateString()}
+                                tickFormatter={safeFormatDate}
                             />
                             <YAxis
                                 stroke="#9CA3AF"
@@ -201,9 +228,14 @@ export const FinancialCashFlowDashboard: React.FC<FinancialCashFlowDashboardProp
                             <Tooltip
                                 contentStyle={{ backgroundColor: '#1F2937', borderColor: '#374151', color: '#F3F4F6' }}
                                 itemStyle={{ color: '#F3F4F6' }}
-                                formatter={(val: number) => formatCurrency(val)}
+                                formatter={(val: number, name: string) => [
+                                    formatCurrency(val), 
+                                    name === 'income' ? 'Entradas' : name === 'outcome' ? 'Saídas' : name
+                                ]}
+                                labelFormatter={safeFormatFullDate}
                             />
-                            <Bar dataKey="total_amount" name="Entradas" fill="#10B981" radius={[4, 4, 0, 0]} />
+                            <Bar dataKey="income" name="income" fill="#10B981" radius={[4, 4, 0, 0]} maxBarSize={50} />
+                            <Bar dataKey="outcome" name="outcome" fill="#EF4444" radius={[4, 4, 0, 0]} maxBarSize={50} />
                         </BarChart>
                     </ResponsiveContainer>
                 </div>

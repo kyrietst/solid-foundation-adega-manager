@@ -18,6 +18,11 @@ The central transaction record.
 - `total_amount` (numeric): Gross total.
 - `discount_amount` (numeric).
 - `final_amount` (numeric): Net total.
+- `payment_status` (text): `paid` (Standard) or `pending` (Fiado).
+- `paid_at` (timestamptz): When settlement occurred.
+- `delivery_type` (text): `presencial` or `delivery`.
+- `delivery_fee` (numeric): Added to final amount.
+- `delivery_address` (text): Json or Text.
 - `created_at` (timestamptz).
 
 ### `sale_items`

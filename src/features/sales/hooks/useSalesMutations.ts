@@ -27,21 +27,31 @@ export const useUpsertSale = () => {
                 throw new Error('Permissão negada ou perfil não encontrado.');
             }
 
-            // Fetch payment method details
-            const { data: paymentMethodDataVal } = await supabase
-                .from('payment_methods')
-                .select('name')
-                .eq('id', saleData.payment_method_id)
-                .maybeSingle();
+            // Fetch payment method details ONLY if it's a valid UUID
+            let paymentName = 'Outro';
+            const isFiadoId = saleData.payment_method_id === 'fiado';
+            
+            if (!isFiadoId && saleData.payment_method_id) {
+                const { data: paymentMethodDataVal } = await supabase
+                    .from('payment_methods')
+                    .select('name')
+                    .eq('id', saleData.payment_method_id)
+                    .maybeSingle();
 
-            const paymentMethodData = paymentMethodDataVal as { name: string };
-            const paymentName = paymentMethodData?.name || 'Outro';
+                const paymentMethodData = paymentMethodDataVal as { name: string };
+                paymentName = paymentMethodData?.name || 'Outro';
+            } else if (isFiadoId) {
+                paymentName = 'Fiado';
+            }
 
             const totalAmount = saleData.total_amount || 0;
             const discountAmount = saleData.discount_amount || 0;
             const finalAmount = totalAmount - discountAmount;
             const isDelivery = saleData.saleType === 'delivery' || !!saleData.deliveryData;
-            
+            // FIADO Logic: 'pickup' mapped to 'pending' payment, OR if ID explicitly passed as 'fiado'
+            const isFiado = saleData.saleType === 'pickup' || isFiadoId; 
+            const paymentStatus = isFiado ? 'pending' : 'paid';
+
             // Prepare Common Data
             const deliveryAddress = saleData.delivery_address || saleData.deliveryData?.address || null;
             const deliveryFee = saleData.delivery_fee || saleData.deliveryData?.deliveryFee || 0;
@@ -55,7 +65,7 @@ export const useUpsertSale = () => {
                     discount_amount: discountAmount,
                     final_amount: finalAmount,
                     payment_method: paymentName,
-                    payment_status: 'paid',
+                    payment_status: paymentStatus,
                     status: 'completed',
                     updated_at: new Date().toISOString(),
                     delivery: isDelivery,
@@ -81,7 +91,7 @@ export const useUpsertSale = () => {
                 if (!updatedSaleVal) throw new Error('Venda não encontrada após atualização.');
 
                 // Log Audit
-                await supabase.from('audit_logs').insert({
+                await supabase.from('audit_logs' as any).insert({
                     user_id: user.id,
                     action: 'update_sale',
                     table_name: 'sales',
@@ -109,8 +119,10 @@ export const useUpsertSale = () => {
                     })),
                     p_total_amount: totalAmount,
                     p_final_amount: finalAmount,
-                    p_payment_method_id: saleData.payment_method_id,
+                    // Pass NULL if it's Fiado (the string 'fiado' is not a valid UUID)
+                    p_payment_method_id: isFiadoId ? null : saleData.payment_method_id,
                     p_discount_amount: discountAmount,
+                    p_payment_status: paymentStatus, // Injected FIADO status
                     p_notes: saleData.notes || '',
                     p_is_delivery: isDelivery,
                     p_delivery_fee: deliveryFee,
@@ -184,7 +196,11 @@ export const useDeleteSale = () => {
                 throw new Error('Apenas administradores podem cancelar vendas.');
             }
 
-            const { error } = await supabase.rpc('delete_sale_with_items', { p_sale_id: saleId });
+            // SUBSTITUIÇÃO RPC LEGADO: Agora usamos Cascade Delete no banco
+            const { error } = await supabase
+                .from('sales')
+                .delete()
+                .eq('id', saleId);
 
             if (error) throw error;
             return true;
@@ -206,4 +222,41 @@ export const useDeleteSale = () => {
             });
         }
     });
+};
+
+export const useSettlePayment = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ saleId, paymentMethod }: { saleId: string; paymentMethod: string }) => {
+      const { data, error } = await supabase.rpc('settle_payment' as any, {
+        p_sale_id: saleId,
+        p_payment_method: paymentMethod
+      });
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sales'] });
+      queryClient.invalidateQueries({ queryKey: ['financial-metrics'] });
+      // Invalidate specifically the receivables query if possible
+      
+      toast({
+        title: 'Dívida Quitada',
+        description: 'O pagamento foi registrado com sucesso.',
+        variant: 'default', // success equivalent in Shadcn usually default or specific custom
+        className: 'bg-green-600 border-green-700 text-white' 
+      });
+    },
+    onError: (error: Error) => {
+      console.error('Erro ao quitar dívida:', error);
+      toast({
+        title: 'Erro na baixa',
+        description: error.message || 'Falha ao registrar pagamento.',
+        variant: 'destructive'
+      });
+    }
+  });
 };

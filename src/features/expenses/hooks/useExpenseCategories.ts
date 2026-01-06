@@ -5,17 +5,25 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
 import { toast } from 'sonner';
-import type { Database } from '@/core/api/supabase/types';
+// Manual definition since it's missing in generated types
+export interface ExpenseCategory {
+  id: string;
+  name: string;
+  description: string | null;
+  color: string | null;
+  icon: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
 
-type ExpenseCategory = Database['public']['Tables']['expense_categories']['Row'];
-type CategoryInsert = Database['public']['Tables']['expense_categories']['Insert'];
-type CategoryUpdate = Database['public']['Tables']['expense_categories']['Update'];
+type CategoryInsert = Partial<ExpenseCategory>;
+type CategoryUpdate = Partial<ExpenseCategory>;
 
 export const useExpenseCategories = () => {
   return useQuery({
     queryKey: ['expense-categories'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('expense_categories')
         .select('*')
         .order('name');
@@ -25,7 +33,7 @@ export const useExpenseCategories = () => {
         throw error;
       }
 
-      return data || [];
+      return (data || []) as unknown as ExpenseCategory[];
     }
   });
 };
@@ -34,7 +42,7 @@ export const useExpenseCategory = (id: string) => {
   return useQuery({
     queryKey: ['expense-category', id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('expense_categories')
         .select('*')
         .eq('id', id)
@@ -55,7 +63,7 @@ export const useCategoryExpenseSummary = (categoryId: string, startDate: string,
   return useQuery({
     queryKey: ['category-expense-summary', categoryId, startDate, endDate],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('expenses')
         .select('amount, expense_date')
         .eq('category_id', categoryId)
@@ -88,7 +96,7 @@ export const useCreateExpenseCategory = () => {
 
   return useMutation({
     mutationFn: async (category: CategoryInsert) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('expense_categories')
         .insert([category])
         .select()
@@ -117,7 +125,7 @@ export const useUpdateExpenseCategory = () => {
 
   return useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: CategoryUpdate }) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('expense_categories')
         .update(updates)
         .eq('id', id)
@@ -149,7 +157,7 @@ export const useDeleteExpenseCategory = () => {
   return useMutation({
     mutationFn: async (id: string) => {
       // Verificar se há despesas associadas
-      const { data: expenses, error: checkError } = await supabase
+      const { data: expenses, error: checkError } = await (supabase as any)
         .from('expenses')
         .select('id')
         .eq('category_id', id)
@@ -163,7 +171,7 @@ export const useDeleteExpenseCategory = () => {
         throw new Error('Não é possível excluir categoria com despesas associadas');
       }
 
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('expense_categories')
         .delete()
         .eq('id', id);

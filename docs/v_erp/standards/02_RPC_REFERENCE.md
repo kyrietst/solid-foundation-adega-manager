@@ -11,21 +11,39 @@ Atomic transaction for Sales.
 ```sql
 FUNCTION process_sale(
     p_user_id uuid,
-    p_items jsonb,                 -- Array: [{ product_id, quantity, unit_price }]
-    p_payment_method payment_method_enum,
+    p_items jsonb,                 -- Array: [{ product_id, quantity, unit_price, sale_type, ... }]
+    p_payment_method_id uuid,
     p_discount_amount numeric,
     p_final_amount numeric,
     p_is_delivery boolean,
+    p_payment_status text DEFAULT 'paid', -- 'paid' or 'pending' (Fiado)
     p_customer_id uuid DEFAULT NULL,
-    p_notes text DEFAULT NULL
+    p_notes text DEFAULT NULL,
+    p_delivery_fee numeric DEFAULT 0,
+    p_delivery_address text DEFAULT NULL,
+    p_delivery_person_id uuid DEFAULT NULL
 ) RETURNS jsonb
 ```
 
 **Triggers:**
 
 - Lowers Stock (via `create_inventory_movement`).
-- Creates `sale_header`.
+- Creates `sale_header` with correct `delivery_type` and `payment_status`.
 - Creates `sale_items` (Snapshot of price).
+
+### `settle_payment`
+
+Updates a pending sale ("Fiado") to paid.
+
+```sql
+FUNCTION settle_payment(
+    p_sale_id uuid,
+    p_payment_method text
+)
+```
+
+- Logic: Updates `payment_status` -> `paid`, `paid_at` -> `NOW()`,
+  `payment_method` -> `p_payment_method`.
 
 ## Core: Inventory
 
@@ -38,7 +56,7 @@ FUNCTION create_inventory_movement(
     p_product_id uuid,
     p_quantity_change integer,   -- Negative for Out, Positive for In
     p_type text,                 -- 'sale', 'adjustment', 'purchase'
-    p_reason text,
+    p_metadata jsonb DEFAULT '{}'::jsonb, -- Context (e.g., sale_id)
     p_movement_type text DEFAULT 'unit' -- 'unit' or 'package'
 )
 ```

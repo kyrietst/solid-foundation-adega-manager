@@ -7,17 +7,21 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/primitives
 import { Button } from '@/shared/ui/primitives/button';
 import { Badge } from '@/shared/ui/primitives/badge';
 import {
+
   Plus,
   Filter,
   Edit,
   Trash2,
-  Calendar
+  Calendar,
+  Check,
+  Clock,
+  RefreshCw
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { PaginationControls, LoadingSpinner, EmptyState } from '@/shared/ui/composite';
 import { usePagination } from '@/shared/hooks/common/use-pagination';
-import { useExpenses, useDeleteExpense, type ExpenseFilters } from '../hooks';
+import { useExpenses, useDeleteExpense, useToggleExpenseStatus, type ExpenseFilters, type OperationalExpense } from '../hooks';
 import { NewExpenseModal } from './NewExpenseModal';
 import { EditExpenseModal } from './EditExpenseModal';
 import { ExpenseFiltersModal } from './ExpenseFiltersModal';
@@ -25,7 +29,12 @@ import { ExpensesEmptyState } from './ExpensesEmptyState';
 import { getGlassCardClasses, getGlassButtonClasses, getHoverTransformClasses } from '@/core/config/theme-utils';
 import { cn } from '@/core/config/utils';
 
-export const ExpensesTab: React.FC = () => {
+interface ExpensesTabProps {
+  startDate: Date;
+  endDate: Date;
+}
+
+export const ExpensesTab: React.FC<ExpensesTabProps> = ({ startDate, endDate }) => {
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
@@ -34,14 +43,21 @@ export const ExpensesTab: React.FC = () => {
 
   const pagination = usePagination();
 
+  // Convert Dates to string YYYY-MM-DD for API
+  const formattedStartDate = format(startDate, 'yyyy-MM-dd');
+  const formattedEndDate = format(endDate, 'yyyy-MM-dd');
+
   const expenseFilters: ExpenseFilters = {
     ...filters,
+    start_date: formattedStartDate,
+    end_date: formattedEndDate,
     page: pagination.currentPage,
     limit: pagination.itemsPerPage
   };
 
   const { data: expensesData, isLoading } = useExpenses(expenseFilters);
   const deleteExpenseMutation = useDeleteExpense();
+  const toggleStatusMutation = useToggleExpenseStatus();
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -72,6 +88,25 @@ export const ExpensesTab: React.FC = () => {
       } catch (error) {
         console.error('Erro ao excluir despesa:', error);
       }
+    }
+  };
+
+  const handleToggleStatus = async (expense: OperationalExpense) => {
+    // Regra: Pendente -> Pago ou Pago -> Pendente
+    // Se estiver Pago, vira Pendente. Se estiver Pendente, vira Pago.
+    // Lógica de Negócio: NÃO alterar a data. Manter a data original.
+    
+    // Fallback safe defaults (se null)
+    const currentStatus = expense.payment_status || 'pending';
+    const newStatus = currentStatus === 'paid' ? 'pending' : 'paid';
+
+    try {
+      await toggleStatusMutation.mutateAsync({
+        id: expense.id,
+        newStatus
+      });
+    } catch (error) {
+           console.error('Erro ao alternar status:', error);
     }
   };
 
@@ -148,6 +183,7 @@ export const ExpensesTab: React.FC = () => {
                     <th className="p-4 text-gray-300 font-semibold font-sf-pro text-sm">Data</th>
                     <th className="p-4 text-gray-300 font-semibold font-sf-pro text-sm">Descrição</th>
                     <th className="p-4 text-gray-300 font-semibold font-sf-pro text-sm">Categoria</th>
+                    <th className="p-4 text-gray-300 font-semibold font-sf-pro text-sm text-center">Status</th>
                     <th className="p-4 text-gray-300 font-semibold font-sf-pro text-sm">Valor</th>
                     <th className="p-4 text-gray-300 font-semibold font-sf-pro text-sm text-center">Ações</th>
                   </tr>
@@ -176,6 +212,35 @@ export const ExpensesTab: React.FC = () => {
                         >
                           {expense.expense_categories?.name || 'N/A'}
                         </Badge>
+                      </td>
+                      <td className="p-4 text-center">
+                         <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleToggleStatus(expense);
+                            }}
+                            disabled={toggleStatusMutation.isPending}
+                            className={cn(
+                              "h-8 w-auto min-w-[100px] border transition-all duration-300",
+                              expense.payment_status === 'paid' 
+                                ? "bg-green-500/10 text-green-400 border-green-500/30 hover:bg-green-500/20" 
+                                : "bg-yellow-500/10 text-yellow-400 border-yellow-500/30 hover:bg-yellow-500/20"
+                            )}
+                          >
+                            {expense.payment_status === 'paid' ? (
+                              <>
+                                <Check className="h-4 w-4 mr-2" />
+                                Pago
+                              </>
+                            ) : (
+                              <>
+                                <Clock className="h-4 w-4 mr-2" />
+                                Pendente
+                              </>
+                            )}
+                          </Button>
                       </td>
                       <td className="p-4">
                         <div className="text-white font-semibold">

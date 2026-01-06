@@ -1,17 +1,19 @@
 # System Overview & Architecture
 
-**Project:** Adega Manager ERP (v2.0 - Solid Foundation) **Stack:** React 19,
-TypeScript, Supabase (Postgres + Edge Functions), TanStack Query.
+**Project:** Adega Manager ERP (v3.0 - Professional Standard) **Stack:** React
+19, TypeScript, Supabase (Postgres + Edge Functions), TanStack Query.
 
 ## 1. Vision & Philosophy
 
-We are building a **Professional ERP**, not a prototype.
+We are building a **Professional ERP**, interacting with SEFAZ and Nuvem Fiscal.
 
 - **Single Source of Truth:** The Database (Supabase) is the authority. Frontend
   is just a view.
 - **Zero Trust:** Backend (RPCs/Edge Functions) validates everything. Frontend
   validation is for UX only.
 - **Fiscal First:** Sales are designed to be fiscal-compliant from day one.
+- **Integrated Logistics:** Delivery and "Fiado" (Credit) are core operational
+  flows, not plugins.
 
 ## 2. Technical Stack
 
@@ -27,11 +29,16 @@ We are building a **Professional ERP**, not a prototype.
 
 ### A. RPC-Centric Write Operations
 
+### A. RPC-Centric Write Operations
+
 We **DO NOT** use `supabase.from('table').insert()` in the frontend for complex
 operations (Sales, Inventory). Instead, we call PostgreSQL Functions (RPCs):
 
-- `process_sale(...)`: Handles transaction atomicity for sales + inventory.
+- `process_sale(...)`: **The Master Function**. Handles Presential, Delivery,
+  Fiado, and Fiscal triggers.
 - `create_inventory_movement(...)`: Centralizes stock logic.
+- `settle_payment(...)`: Handles debt settlement (Fiado -> Paid) with financial
+  atomicity.
 
 ### B. Read-Only Audit Logs
 
@@ -49,6 +56,7 @@ Logs** on the main screen.
 
 ## 4. Directory Structure
 
-- `src/features/`: Domain-driven modules (Sales, Inventory, CRM).
+- `src/features/`: Domain-driven modules (Sales, Inventory, CRM, Reports,
+  Fiscal).
 - `src/core/`: Singleton services (Supabase Client, Types).
 - `src/shared/`: Reusable primitives (Buttons, Inputs, Dialogs).

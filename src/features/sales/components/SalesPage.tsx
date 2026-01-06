@@ -6,7 +6,7 @@ import { Cart } from "./Cart";
 import { RecentSales } from "./RecentSales";
 import { ReceiptModal } from "./ReceiptModal";
 import React, { useState, useRef } from "react";
-import { ShoppingCart, Store, Truck, Package, Printer } from "lucide-react";
+import { ShoppingCart, Store, Truck, Package, Printer, Clock, CreditCard } from "lucide-react";
 import { useCart, useCartItemCount } from "@/features/sales/hooks/use-cart";
 import { cn } from '@/core/config/utils';
 import { getGlassCardClasses, getSFProTextClasses } from '@/core/config/theme-utils';
@@ -18,7 +18,7 @@ import { useBarcode } from '@/features/inventory/hooks/use-barcode';
 export type SaleType = 'presencial' | 'delivery' | 'pickup';
 
 interface SalesPageProps {
-  variant?: 'default' | 'premium' | 'subtle' | 'strong' | 'yellow';
+  variant?: 'default' | 'premium' | 'success' | 'warning' | 'error';
   glassEffect?: boolean;
 }
 
@@ -127,17 +127,17 @@ function SalesPage({
                 VENDAS RECENTES
               </button>
               <button
-                onClick={() => setActiveTab('print-test')}
+                onClick={() => setActiveTab('charges')}
                 className={cn(
-                  getSFProTextClasses('action', activeTab === 'print-test' ? 'accent' : 'secondary'),
+                  getSFProTextClasses('action', activeTab === 'charges' ? 'accent' : 'secondary'),
                   "inline-flex items-center gap-2 justify-center whitespace-nowrap rounded-sm px-3 py-1.5 transition-all",
-                  activeTab === 'print-test'
+                  activeTab === 'charges'
                     ? "bg-yellow-400/20 text-yellow-400 shadow-sm"
                     : "text-gray-300 hover:text-yellow-300"
                 )}
               >
-                <Printer className="h-3 w-3" />
-                TESTE IMPRESSÃO
+                <CreditCard className="h-3 w-3" />
+                COBRANÇAS
               </button>
             </div>
 
@@ -211,8 +211,8 @@ function SalesPage({
                       : "text-gray-400 hover:text-white hover:bg-white/5"
                   )}
                 >
-                  <Package className="h-4 w-4" />
-                  Retirada
+                  <Clock className="h-4 w-4" />
+                  FIADO (A Prazo)
                 </button>
               </div>
             </div>
@@ -307,22 +307,18 @@ function SalesPage({
             </div>
           )}
 
-          {activeTab === 'print-test' && (
-            <div className="h-full flex flex-col min-h-0 p-2">
-              <div className="text-center">
-                <h2 className={cn(
-                  getSFProTextClasses('h2', 'accent'),
-                  "text-transparent bg-clip-text bg-gradient-to-r from-[#FF2400] via-[#FFDA04] to-[#FF2400]"
-                )}>
-                  🖨️ TESTE DE IMPRESSÃO TÉRMICA
-                </h2>
-                <p className={cn(getSFProTextClasses('body', 'secondary'), "mt-4")}>
-                  Funcionalidade de teste de impressão removida.
-                </p>
-                <p className={cn(getSFProTextClasses('body', 'secondary'), "mt-2")}>
-                  Use "Vendas Recentes" → "Imprimir Cupom" para testar a impressora.
-                </p>
-              </div>
+          {activeTab === 'charges' && (
+            <div className="h-full flex flex-col min-h-0">
+               <div className="flex-shrink-0 mb-4 px-2">
+                  <h3 className="text-xl font-bold text-yellow-400 flex items-center gap-2">
+                    <Clock className="h-5 w-5" />
+                    Contas a Receber (Fiado)
+                  </h3>
+                  <p className="text-sm text-gray-400">
+                    Gerencie vendas com pagamento pendente.
+                  </p>
+               </div>
+               <RecentSales filterStatus="pending" />
             </div>
           )}
         </div>

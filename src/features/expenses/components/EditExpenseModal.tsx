@@ -87,12 +87,12 @@ export const EditExpenseModal: React.FC<EditExpenseModalProps> = ({
         subcategory: expense.subcategory || '',
         description: expense.description,
         amount: Number(expense.amount),
-        expense_date: expense.expense_date,
-        payment_method: expense.payment_method,
+        expense_date: expense.date, // Correct mapping from DB 'date' to form 'expense_date'
+        payment_method: expense.payment_method || '',
         supplier_vendor: expense.supplier_vendor || '',
         receipt_url: expense.receipt_url || '',
-        is_recurring: expense.is_recurring || false,
-        recurring_frequency: expense.recurring_frequency as 'monthly' | 'quarterly' | 'yearly' || undefined,
+        is_recurring: (expense as any).is_recurring || false, // Cast to any to handle legacy/audit field
+        recurring_frequency: (expense as any).recurring_frequency || undefined, // Cast to any
         budget_category: expense.budget_category || ''
       });
     }
@@ -116,17 +116,20 @@ export const EditExpenseModal: React.FC<EditExpenseModalProps> = ({
 
   const onSubmit = async (data: ExpenseFormData) => {
     try {
+      const { expense_date, ...restOfData } = data;
+      
       await updateExpenseMutation.mutateAsync({
         id: expenseId,
         updates: {
-          ...data,
+          ...restOfData,
+          date: expense_date,
           amount: Number(data.amount),
           recurring_frequency: data.is_recurring ? data.recurring_frequency : null,
           receipt_url: data.receipt_url || null,
           supplier_vendor: data.supplier_vendor || null,
           subcategory: data.subcategory || null,
           budget_category: data.budget_category || null
-        }
+        } as any // Cast to any to allow legacy/extra fields in payload
       });
       
       onClose();

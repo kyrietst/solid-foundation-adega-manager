@@ -101,29 +101,56 @@ export const useCreateHistoricalSale = () => {
       // Validar input com Zod
       const validated = HistoricalSaleSchema.parse(input);
 
-      // Chamar stored procedure via RPC
-      const { data, error } = await supabase.rpc('create_historical_sale', {
+      // Chamar stored procedure Unificada via RPC
+      const { data, error } = await supabase.rpc('process_sale', {
         p_customer_id: validated.customer_id,
         p_user_id: validated.user_id,
-        p_items: validated.items,
+        p_items: validated.items.map(item => ({
+          product_id: item.product_id,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          sale_type: item.sale_type
+        })),
         p_total_amount: validated.total_amount,
+        p_final_amount: validated.total_amount, // Histórico não tem desconto separado no input atual
+        p_discount_amount: 0,
         p_payment_method: validated.payment_method,
-        p_sale_date: validated.sale_date,
+        p_payment_method_id: null, // Será resolvido pelo nome
+        p_is_delivery: validated.delivery,
         p_notes: validated.notes || null,
-        p_delivery: validated.delivery,
         p_delivery_fee: validated.delivery_fee,
+        p_payment_status: 'paid', // Histórico sempre nasce pago
+        p_status: 'completed',
+        p_created_at: validated.sale_date // Backdating Critical
       });
 
       if (error) {
         throw new Error(error.message);
       }
 
-      // Verificar se a resposta indica sucesso
-      if (!data || !data.success) {
-        throw new Error(data?.error || 'Erro ao criar venda histórica');
-      }
+      // Definir tipo de retorno esperado da RPC
+        type ProcessSaleResponse = {
+          sale_id: string;
+          status: string;
+          message: string;
+        };
 
-      return data as HistoricalSaleResult;
+        const responseData = data as unknown as ProcessSaleResponse;
+
+        // Verificar se a resposta indica sucesso
+        // Adaptação: process_sale retorna { sale_id: uuid, status: 'success' }
+        if (!responseData || responseData.status !== 'success') {
+          throw new Error('Erro ao criar venda histórica');
+        }
+
+        // Adapter para retornar no formato esperado pelo HistoricalSaleResult
+        return {
+          success: true,
+          sale_id: responseData.sale_id,
+          items_count: validated.items.length,
+          total_amount: validated.total_amount,
+          sale_date: validated.sale_date
+        };
     },
 
     onSuccess: (data, variables) => {

@@ -8,9 +8,19 @@ The Point of Sale (PDV) is designed for speed and reliability.
 
 ### Key Components
 
-- **Cart:** Manages items in memory.
-- **Checkout:** Selects Payment Method and Customer.
+### Key Components
+
+- **Cart:** Manages items in memory. Handles "Delivery" toggle and "Fiado"
+  logic.
+- **Checkout:** Selects Payment Method (hidden for Fiado) and Customer.
 - **Submission:** Calls `process_sale` RPC.
+
+### Sales Types
+
+1. **Presential (Standard):** Immediate payment (Pix/Cash/Card).
+2. **Delivery:** Requires Address + Delivery Fee.
+3. **Fiado (Credit):** Payment Status = `pending`. Requires Customer.
+4. **Fiado + Delivery:** Hybrid mode. Status `pending`, Type `delivery`.
 
 ### Critical Rules
 
@@ -38,7 +48,39 @@ Integrated with **Nuvem Fiscal** via Supabase Edge Function.
 - **CPF:** Required for values > R$ 10.000 (configurable) or upon customer
   request.
 
-## 3. Data Structure
+## 2.1 Settlement (Fiado / Cobranças)
+
+The system handles "Accounts Receivable" via the **Settlement Flow**.
+
+## 4. Payment Flows
+
+### A. Immediate Payment (Pix, Card, Cash)
+
+- Status: `paid` (upon creation).
+- Cash Flow: Impact immediate (`paid_at` = `created_at`).
+
+### B. Fiado (Store Credit / Pending)
+
+- **Status:** `pending` (FOREVER until paid).
+- **UI Representation:**
+  - **Badge:** "Pendente" (Yellow).
+  - **Type Line:** "Presencial Fiado" or "Delivery Fiado" (Red Text + Icon).
+  - **Payment Method:** "Fiado".
+- **Settlement:**
+  - Action: "Receber Pagamento" (via Modal).
+  - RPC: `settle_payment(sale_id, payment_method_id)`.
+  - Result: Status updates to `paid`, `paid_at` set to NOW.
+- **Financial Impact:**
+  - Does NOT appear in "Received" (Income) until settled.
+  - Appears in "A Receber" (Receivables).
+
+## 5. Fiscal Integration (Nuvem Fiscal)
+
+- **Trigger:** Automatic upon sale confirmation (if properly configured).
+- **Handler:** Edge Function `fiscal-handler`.
+- **Status:** `fiscal_issuer_status` (pending, authorized, error).
+
+## 6. Data Structure
 
 ### Table: `sales`
 

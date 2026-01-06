@@ -14,7 +14,7 @@ import { SalesChartSection } from './SalesChartSection';
 import { InventoryKpis } from '@/features/dashboard/hooks/useDashboardKpis';
 import { LowStockAlertCard } from './LowStockAlertCard';
 import { InventoryInsightCard } from './InventoryInsightCard';
-import { DollarSign, TrendingUp, Truck, Store, Users, CreditCard } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, Wallet, CreditCard, AlertCircle, ShoppingBag, ArrowUpRight, ArrowDownRight, Package, Users, Clock, Truck, Store } from "lucide-react";
 import { PageHeader } from '@/shared/ui/composite/PageHeader';
 import { StatCard } from '@/shared/ui/composite/stat-card';
 import { getDataPeriodLabel, getNowSaoPaulo } from '../utils/dateHelpers';
@@ -272,34 +272,27 @@ function UnifiedKpiSection({ kpiData, loadingStates }: UnifiedKpiSectionProps) {
             />
           </div>
 
-          {/* 4. Ticket Médio - com breakdown por canal */}
+          {/* 4. A Receber (Fiado) - Substitui Ticket Médio */}
           <div className="h-full">
             <StatCard
-              title="Ticket Médio"
-              value={ticketMedio}
+              title="A Receber (Fiado)"
+              value={safeValue(financials?.accountsReceivable, 0)}
               description={
-                <span className="flex flex-col gap-0.5 text-xs">
+                <span className="flex flex-col gap-0.5 text-xs text-amber-200/80">
                   <span className="flex items-center gap-1.5">
-                    <Truck className="h-3 w-3 text-blue-400" />
-                    <span className={ticketDelivery >= ticketStore ? 'text-emerald-400 font-medium' : 'text-gray-400'}>
-                      {formatCurrency(ticketDelivery)}
-                    </span>
-                    <span className="text-gray-600">|</span>
-                    <Store className="h-3 w-3 text-green-400" />
-                    <span className={ticketStore > ticketDelivery ? 'text-emerald-400 font-medium' : 'text-gray-400'}>
-                      {formatCurrency(ticketStore)}
-                    </span>
+                    <Clock className="h-3 w-3 text-amber-500" />
+                    <span>Vendas Pendentes</span>
                   </span>
-                  <span className="text-gray-500 text-[10px]">
-                    {totalOrders} pedidos no mês
+                  <span className="text-[10px] text-gray-500">
+                    Acumulado total
                   </span>
                 </span>
               }
               icon={CreditCard}
-              variant="default"
+              variant="warning"
               layout="crm"
-              className={cn("h-full", loadingChannels && 'animate-pulse')}
-              onClick={() => navigate('/reports?tab=sales')}
+              className={cn("h-full", isLoadingFinancials && 'animate-pulse')}
+              onClick={() => navigate('/sales?tab=history')} // TODO: Linkar para filtro de não pagos
               formatType="currency"
             />
           </div>

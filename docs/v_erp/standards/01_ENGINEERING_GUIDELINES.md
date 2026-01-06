@@ -26,7 +26,13 @@ The Frontend is "Insecure". Never trust data coming from it.
 - **Good:** `const { sellProduct } = useSales()` where the hook handles
   validation logic.
 
-### B. Supabase Client Isolation
+### B. Unified Sales RPC (Golden Rule)
+
+- **ALL** Sales (Presential, Delivery, Fiado) MUST go through `process_sale`.
+- **Reason:** It guarantees Inventory, Finance, and Fiscal data are always in
+  sync.
+
+### C. Supabase Client Isolation
 
 - To avoid TypeScript "Deep Instantiation" errors, cast `supabase as any` inside
   Hooks, then explicity cast the return.
