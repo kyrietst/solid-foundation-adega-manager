@@ -7,6 +7,11 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "13.0.5"
+  }
   public: {
     Tables: {
       accounts_receivable: {
@@ -66,500 +71,196 @@ export type Database = {
             referencedRelation: "sales"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "accounts_receivable_sale_id_fkey"
-            columns: ["sale_id"]
-            isOneToOne: false
-            referencedRelation: "v_sales_with_profit"
-            referencedColumns: ["id"]
-          },
         ]
       }
-      addresses: {
+      campaign_templates: {
         Row: {
-          city: string
-          complement: string | null
-          country: string
-          created_at: string | null
-          id: string
-          neighborhood: string
-          number: string
-          postal_code: string
-          state: string
-          street: string
-          updated_at: string | null
-        }
-        Insert: {
-          city: string
-          complement?: string | null
-          country?: string
-          created_at?: string | null
-          id?: string
-          neighborhood: string
-          number: string
-          postal_code: string
-          state?: string
-          street: string
-          updated_at?: string | null
-        }
-        Update: {
-          city?: string
-          complement?: string | null
-          country?: string
-          created_at?: string | null
-          id?: string
-          neighborhood?: string
-          number?: string
-          postal_code?: string
-          state?: string
-          street?: string
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      categories: {
-        Row: {
-          created_at: string | null
+          channel: Database["public"]["Enums"]["marketing_channel"]
+          content: string
+          created_at: string
           description: string | null
           id: string
           name: string
-          updated_at: string | null
+          tags: string[] | null
+          updated_at: string
+          variables: string[] | null
         }
         Insert: {
-          created_at?: string | null
+          channel: Database["public"]["Enums"]["marketing_channel"]
+          content: string
+          created_at?: string
           description?: string | null
           id?: string
           name: string
-          updated_at?: string | null
+          tags?: string[] | null
+          updated_at?: string
+          variables?: string[] | null
         }
         Update: {
-          created_at?: string | null
+          channel?: Database["public"]["Enums"]["marketing_channel"]
+          content?: string
+          created_at?: string
           description?: string | null
           id?: string
           name?: string
-          updated_at?: string | null
+          tags?: string[] | null
+          updated_at?: string
+          variables?: string[] | null
         }
         Relationships: []
-      }
-      companies: {
-        Row: {
-          cnpj: string
-          created_at: string | null
-          dba_name: string
-          id: string
-          legal_name: string
-          updated_at: string | null
-        }
-        Insert: {
-          cnpj: string
-          created_at?: string | null
-          dba_name: string
-          id?: string
-          legal_name: string
-          updated_at?: string | null
-        }
-        Update: {
-          cnpj?: string
-          created_at?: string | null
-          dba_name?: string
-          id?: string
-          legal_name?: string
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      contatos: {
-        Row: {
-          bairro: string | null
-          celular: string
-          cidade: string | null
-          complemento: string | null
-          created_at: string | null
-          data_nascimento: string | null
-          id: string
-          latitude: number | null
-          logradouro: string | null
-          longitude: number | null
-          nome: string
-          numero: string | null
-          status: string | null
-          tipo: string
-          uf: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          bairro?: string | null
-          celular: string
-          cidade?: string | null
-          complemento?: string | null
-          created_at?: string | null
-          data_nascimento?: string | null
-          id?: string
-          latitude?: number | null
-          logradouro?: string | null
-          longitude?: number | null
-          nome: string
-          numero?: string | null
-          status?: string | null
-          tipo: string
-          uf?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          bairro?: string | null
-          celular?: string
-          cidade?: string | null
-          complemento?: string | null
-          created_at?: string | null
-          data_nascimento?: string | null
-          id?: string
-          latitude?: number | null
-          logradouro?: string | null
-          longitude?: number | null
-          nome?: string
-          numero?: string | null
-          status?: string | null
-          tipo?: string
-          uf?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      customer_events: {
-        Row: {
-          created_at: string | null
-          customer_id: string | null
-          event_data: Json | null
-          event_type: string
-          id: string
-        }
-        Insert: {
-          created_at?: string | null
-          customer_id?: string | null
-          event_data?: Json | null
-          event_type: string
-          id?: string
-        }
-        Update: {
-          created_at?: string | null
-          customer_id?: string | null
-          event_data?: Json | null
-          event_type?: string
-          id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "customer_events_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "customers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "customer_events_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "mv_customer_segmentation_kpis"
-            referencedColumns: ["customer_id"]
-          },
-          {
-            foreignKeyName: "customer_events_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "v_customer_stats"
-            referencedColumns: ["customer_id"]
-          },
-        ]
-      }
-      customer_interactions: {
-        Row: {
-          associated_sale_id: string | null
-          created_at: string
-          created_by: string
-          customer_id: string
-          description: string
-          id: string
-          interaction_type: string
-        }
-        Insert: {
-          associated_sale_id?: string | null
-          created_at?: string
-          created_by: string
-          customer_id: string
-          description: string
-          id?: string
-          interaction_type: string
-        }
-        Update: {
-          associated_sale_id?: string | null
-          created_at?: string
-          created_by?: string
-          customer_id?: string
-          description?: string
-          id?: string
-          interaction_type?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "customer_interactions_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "customers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "customer_interactions_associated_sale_id_fkey"
-            columns: ["associated_sale_id"]
-            isOneToOne: false
-            referencedRelation: "sales"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
-      customer_segments: {
-        Row: {
-          created_at: string | null
-          customer_id: string
-          last_calculated_at: string | null
-          segment_type: string
-        }
-        Insert: {
-          created_at?: string | null
-          customer_id: string
-          last_calculated_at?: string | null
-          segment_type: string
-        }
-        Update: {
-          created_at?: string | null
-          customer_id?: string
-          last_calculated_at?: string | null
-          segment_type?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "customer_segments_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: true
-            referencedRelation: "customers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "customer_segments_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: true
-            referencedRelation: "mv_customer_segmentation_kpis"
-            referencedColumns: ["customer_id"]
-          },
-          {
-            foreignKeyName: "customer_segments_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: true
-            referencedRelation: "v_customer_stats"
-            referencedColumns: ["customer_id"]
-          },
-        ]
       }
       customers: {
         Row: {
-          address: Json | null
-          birthday: string | null
-          contact_permission: boolean
-          contact_preference: string | null
-          created_at: string | null
-          email: string | null
-          favorite_category: string | null
-          favorite_product: string | null
-          first_purchase_date: string | null
-          id: string
-          last_purchase_date: string | null
-          lifetime_value: number
-          name: string
-          notes: string | null
-          phone: string | null
-          purchase_frequency: string | null
-          segment: string | null
-          tags: string[] | null
-          updated_at: string | null
+          address: string | null
           cpf_cnpj: string | null
-          ie: string | null
-          indicador_ie: number | null
-        }
-        Insert: {
-          address?: Json | null
-          birthday?: string | null
-          contact_permission?: boolean
-          contact_preference?: string | null
-          created_at?: string | null
-          email?: string | null
-          favorite_category?: string | null
-          favorite_product?: string | null
-          first_purchase_date?: string | null
-          id?: string
-          last_purchase_date?: string | null
-          lifetime_value?: number
-          name: string
-          notes?: string | null
-          phone?: string | null
-          purchase_frequency?: string | null
-          segment?: string | null
-          updated_at?: string | null
-          cpf_cnpj?: string | null
-          ie?: string | null
-          indicador_ie?: number | null
-        }
-        Update: {
-          address?: Json | null
-          birthday?: string | null
-          contact_permission?: boolean
-          contact_preference?: string | null
-          created_at?: string | null
-          email?: string | null
-          favorite_category?: string | null
-          favorite_product?: string | null
-          first_purchase_date?: string | null
-          id?: string
-          last_purchase_date?: string | null
-          lifetime_value?: number
-          name?: string
-          notes?: string | null
-          phone?: string | null
-          purchase_frequency?: string | null
-          segment?: string | null
-          updated_at?: string | null
-          cpf_cnpj?: string | null
-          ie?: string | null
-          indicador_ie?: number | null
-        }
-        Relationships: []
-      }
-      dashboard_kpis: {
-        Row: {
-          average_ticket: number
-          calculated_at: string | null
-          id: string
-          period_end: string
-          period_start: string
-          total_revenue: number
-          total_sales: number
-        }
-        Insert: {
-          average_ticket: number
-          calculated_at?: string | null
-          id?: string
-          period_end: string
-          period_start: string
-          total_revenue: number
-          total_sales: number
-        }
-        Update: {
-          average_ticket?: number
-          calculated_at?: string | null
-          id?: string
-          period_end?: string
-          period_start?: string
-          total_revenue?: number
-          total_sales?: number
-        }
-        Relationships: []
-      }
-      delivery_tracking: {
-        Row: {
-          created_at: string | null
-          created_by: string | null
-          id: string
-          latitude: number | null
-          longitude: number | null
-          notes: string | null
-          photo_url: string | null
-          sale_id: string | null
-          status: string
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          created_by?: string | null
-          id?: string
-          latitude?: number | null
-          longitude?: number | null
-          notes?: string | null
-          photo_url?: string | null
-          sale_id?: string | null
-          status?: string
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          created_by?: string | null
-          id?: string
-          latitude?: number | null
-          longitude?: number | null
-          notes?: string | null
-          photo_url?: string | null
-          sale_id?: string | null
-          status?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "delivery_tracking_sale_id_fkey"
-            columns: ["sale_id"]
-            isOneToOne: false
-            referencedRelation: "sales"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "delivery_tracking_sale_id_fkey"
-            columns: ["sale_id"]
-            isOneToOne: false
-            referencedRelation: "v_sales_with_profit"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      inventory_movements: {
-        Row: {
           created_at: string
+          deleted_at: string | null
+          email: string | null
           id: string
-          metadata: Json
-          movement_type: string | null
-          new_stock_quantity: number
-          previous_stock: number
-          product_id: string
-          quantity_change: number
-          reason: string | null
-          related_sale_id: string | null
-          sale_id: string | null
-          type_enum: Database["public"]["Enums"]["movement_type"]
+          name: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          cpf_cnpj?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          email?: string | null
+          id?: string
+          name: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          cpf_cnpj?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          email?: string | null
+          id?: string
+          name?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      delivery_stats: {
+        Row: {
+          active_delivery_people: number | null
+          avg_delivery_time_minutes: number | null
+          completed_deliveries_today: number | null
+          id: string
+          last_updated: string | null
+          pending_deliveries: number | null
+          total_delivery_fees_today: number | null
+        }
+        Insert: {
+          active_delivery_people?: number | null
+          avg_delivery_time_minutes?: number | null
+          completed_deliveries_today?: number | null
+          id?: string
+          last_updated?: string | null
+          pending_deliveries?: number | null
+          total_delivery_fees_today?: number | null
+        }
+        Update: {
+          active_delivery_people?: number | null
+          avg_delivery_time_minutes?: number | null
+          completed_deliveries_today?: number | null
+          id?: string
+          last_updated?: string | null
+          pending_deliveries?: number | null
+          total_delivery_fees_today?: number | null
+        }
+        Relationships: []
+      }
+      expenses: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          date: string
+          deleted_at: string | null
+          description: string
+          id: string
+          payment_method: string
+          status: string
+          updated_at: string
           user_id: string | null
         }
         Insert: {
+          amount: number
+          category: string
           created_at?: string
+          date: string
+          deleted_at?: string | null
+          description: string
           id?: string
-          metadata?: Json
-          movement_type?: string | null
-          new_stock_quantity: number
-          previous_stock: number
-          product_id: string
-          quantity_change: number
-          reason?: string | null
-          related_sale_id?: string | null
-          sale_id?: string | null
-          type_enum: Database["public"]["Enums"]["movement_type"]
+          payment_method: string
+          status?: string
+          updated_at?: string
           user_id?: string | null
         }
         Update: {
+          amount?: number
+          category?: string
           created_at?: string
+          date?: string
+          deleted_at?: string | null
+          description?: string
           id?: string
-          metadata?: Json
-          movement_type?: string | null
-          new_stock_quantity?: number
-          previous_stock?: number
+          payment_method?: string
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      inventory_movements: {
+        Row: {
+          cost_price: number | null
+          created_at: string
+          deleted_at: string | null
+          id: string
+          metadata: Json | null
+          product_id: string
+          quantity_change: number
+          reason: string
+          stock_after: number
+          stock_before: number
+          type: Database["public"]["Enums"]["movement_type"]
+          unit_type: string
+          user_id: string | null
+        }
+        Insert: {
+          cost_price?: number | null
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          metadata?: Json | null
+          product_id: string
+          quantity_change: number
+          reason: string
+          stock_after: number
+          stock_before: number
+          type: Database["public"]["Enums"]["movement_type"]
+          unit_type: string
+          user_id?: string | null
+        }
+        Update: {
+          cost_price?: number | null
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          metadata?: Json | null
           product_id?: string
           quantity_change?: number
-          reason?: string | null
-          related_sale_id?: string | null
-          sale_id?: string | null
-          type_enum?: Database["public"]["Enums"]["movement_type"]
+          reason?: string
+          stock_after?: number
+          stock_before?: number
+          type?: Database["public"]["Enums"]["movement_type"]
+          unit_type?: string
           user_id?: string | null
         }
         Relationships: [
@@ -570,75 +271,43 @@ export type Database = {
             referencedRelation: "products"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "inventory_movements_related_sale_id_fkey"
-            columns: ["related_sale_id"]
-            isOneToOne: false
-            referencedRelation: "sales"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inventory_movements_related_sale_id_fkey"
-            columns: ["related_sale_id"]
-            isOneToOne: false
-            referencedRelation: "v_sales_with_profit"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inventory_movements_sale_id_fkey"
-            columns: ["sale_id"]
-            isOneToOne: false
-            referencedRelation: "sales"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inventory_movements_sale_id_fkey"
-            columns: ["sale_id"]
-            isOneToOne: false
-            referencedRelation: "v_sales_with_profit"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inventory_movements_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
         ]
       }
       invoice_logs: {
         Row: {
-          created_at: string | null
+          created_at: string
           error_message: string | null
           external_id: string | null
           id: string
           pdf_url: string | null
-          sale_id: string | null
-          status: string
-          updated_at: string | null
+          provider: string
+          sale_id: string
+          status: string | null
+          updated_at: string
           xml_url: string | null
         }
         Insert: {
-          created_at?: string | null
+          created_at?: string
           error_message?: string | null
           external_id?: string | null
           id?: string
           pdf_url?: string | null
-          sale_id?: string | null
-          status: string
-          updated_at?: string | null
+          provider?: string
+          sale_id: string
+          status?: string | null
+          updated_at?: string
           xml_url?: string | null
         }
         Update: {
-          created_at?: string | null
+          created_at?: string
           error_message?: string | null
           external_id?: string | null
           id?: string
           pdf_url?: string | null
-          sale_id?: string | null
-          status?: string
-          updated_at?: string | null
+          provider?: string
+          sale_id?: string
+          status?: string | null
+          updated_at?: string
           xml_url?: string | null
         }
         Relationships: [
@@ -648,214 +317,305 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "sales"
             referencedColumns: ["id"]
-          }
+          },
         ]
-      },
+      }
+      marketing_campaigns: {
+        Row: {
+          audience_filters: Json | null
+          budget_spent: number | null
+          channel: Database["public"]["Enums"]["marketing_channel"]
+          clicks_count: number | null
+          conversions_count: number | null
+          cost_per_conversion: number | null
+          created_at: string
+          end_date: string | null
+          id: string
+          messages_sent: number | null
+          name: string
+          revenue_generated: number | null
+          roi: number | null
+          schedule_type: string | null
+          scheduled_for: string | null
+          start_date: string | null
+          status: Database["public"]["Enums"]["campaign_status"]
+          target_audience_size: number | null
+          template_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          audience_filters?: Json | null
+          budget_spent?: number | null
+          channel: Database["public"]["Enums"]["marketing_channel"]
+          clicks_count?: number | null
+          conversions_count?: number | null
+          cost_per_conversion?: number | null
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          messages_sent?: number | null
+          name: string
+          revenue_generated?: number | null
+          roi?: number | null
+          schedule_type?: string | null
+          scheduled_for?: string | null
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["campaign_status"]
+          target_audience_size?: number | null
+          template_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          audience_filters?: Json | null
+          budget_spent?: number | null
+          channel?: Database["public"]["Enums"]["marketing_channel"]
+          clicks_count?: number | null
+          conversions_count?: number | null
+          cost_per_conversion?: number | null
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          messages_sent?: number | null
+          name?: string
+          revenue_generated?: number | null
+          roi?: number | null
+          schedule_type?: string | null
+          scheduled_for?: string | null
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["campaign_status"]
+          target_audience_size?: number | null
+          template_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_campaigns_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           created_at: string | null
           id: string
+          is_read: boolean | null
           message: string
-          read: boolean | null
           title: string
           type: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string | null
           id?: string
+          is_read?: boolean | null
           message: string
-          read?: boolean | null
           title: string
           type: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string | null
           id?: string
+          is_read?: boolean | null
           message?: string
-          read?: boolean | null
           title?: string
           type?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      payment_methods: {
-        Row: {
-          active: boolean | null
-          created_at: string | null
-          id: string
-          name: string
-          type: string
-          updated_at: string | null
-        }
-        Insert: {
-          active?: boolean | null
-          created_at?: string | null
-          id?: string
-          name: string
-          type: string
-          updated_at?: string | null
-        }
-        Update: {
-          active?: boolean | null
-          created_at?: string | null
-          id?: string
-          name?: string
-          type?: string
-          updated_at?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
       products: {
         Row: {
           barcode: string | null
-          category_id: string | null
+          category: string
+          category_id: string
+          cest: string | null
+          cfop: string | null
           cost_price: number | null
-          created_at: string | null
+          created_at: string
           deleted_at: string | null
           description: string | null
+          has_package_tracking: boolean | null
+          has_unit_tracking: boolean | null
           id: string
           image_url: string | null
+          is_package: boolean | null
+          last_sale_date: string | null
+          markup: number | null
           min_stock_level: number | null
           minimum_stock: number | null
           name: string
-          package_units: number | null
-          price: number
-          stock_packages: number
-          stock_quantity: number
-          stock_units_loose: number
-          supplier_id: string | null
-          units_per_package: number | null
-          updated_at: string | null
           ncm: string | null
-          cest: string | null
-          cfop: string | null
-          origin: string | null
+          origin: number | null
+          package_barcode: string | null
+          package_price: number | null
+          package_size: number | null
+          price: number
+          stock_packages: number | null
+          stock_quantity: number
+          stock_units_loose: number | null
+          store1_holding_packages: number | null
+          store1_holding_units_loose: number | null
+          store2_holding_packages: number | null
+          store2_holding_units_loose: number | null
+          supplier_id: string | null
+          total_sales_count: number | null
+          track_stock: boolean | null
+          turnover_rate: string | null
+          unit_type: string | null
+          units_per_package: number | null
+          updated_at: string
+          volume_ml: number | null
         }
         Insert: {
           barcode?: string | null
-          category_id?: string | null
+          category: string
+          category_id?: string
+          cest?: string | null
+          cfop?: string | null
           cost_price?: number | null
-          created_at?: string | null
+          created_at?: string
           deleted_at?: string | null
           description?: string | null
+          has_package_tracking?: boolean | null
+          has_unit_tracking?: boolean | null
           id?: string
           image_url?: string | null
+          is_package?: boolean | null
+          last_sale_date?: string | null
+          markup?: number | null
           min_stock_level?: number | null
           minimum_stock?: number | null
           name: string
-          package_units?: number | null
-          price?: number
-          stock_packages?: number
+          ncm?: string | null
+          origin?: number | null
+          package_barcode?: string | null
+          package_price?: number | null
+          package_size?: number | null
+          price: number
+          stock_packages?: number | null
           stock_quantity?: number
-          stock_units_loose?: number
+          stock_units_loose?: number | null
+          store1_holding_packages?: number | null
+          store1_holding_units_loose?: number | null
+          store2_holding_packages?: number | null
+          store2_holding_units_loose?: number | null
           supplier_id?: string | null
+          total_sales_count?: number | null
+          track_stock?: boolean | null
+          turnover_rate?: string | null
+          unit_type?: string | null
           units_per_package?: number | null
-          updated_at?: string | null
+          updated_at?: string
+          volume_ml?: number | null
         }
         Update: {
           barcode?: string | null
-          category_id?: string | null
+          category?: string
+          category_id?: string
+          cest?: string | null
+          cfop?: string | null
           cost_price?: number | null
-          created_at?: string | null
+          created_at?: string
           deleted_at?: string | null
           description?: string | null
+          has_package_tracking?: boolean | null
+          has_unit_tracking?: boolean | null
           id?: string
           image_url?: string | null
+          is_package?: boolean | null
+          last_sale_date?: string | null
+          markup?: number | null
           min_stock_level?: number | null
           minimum_stock?: number | null
           name?: string
-          package_units?: number | null
+          ncm?: string | null
+          origin?: number | null
+          package_barcode?: string | null
+          package_price?: number | null
+          package_size?: number | null
           price?: number
-          stock_packages?: number
+          stock_packages?: number | null
           stock_quantity?: number
-          stock_units_loose?: number
+          stock_units_loose?: number | null
+          store1_holding_packages?: number | null
+          store1_holding_units_loose?: number | null
+          store2_holding_packages?: number | null
+          store2_holding_units_loose?: number | null
           supplier_id?: string | null
+          total_sales_count?: number | null
+          track_stock?: boolean | null
+          turnover_rate?: string | null
+          unit_type?: string | null
           units_per_package?: number | null
-          updated_at?: string | null
+          updated_at?: string
+          volume_ml?: number | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "products_category_id_fkey"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "categories"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "products_supplier_id_fkey"
-            columns: ["supplier_id"]
-            isOneToOne: false
-            referencedRelation: "suppliers"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       profiles: {
         Row: {
-          created_at: string | null
+          created_at: string
           email: string | null
           id: string
           name: string | null
-          phone: string | null
-          role: Database["public"]["Enums"]["user_role"]
-          updated_at: string | null
+          role: Database["public"]["Enums"]["user_role"] | null
+          updated_at: string
         }
         Insert: {
-          created_at?: string | null
+          created_at?: string
           email?: string | null
           id: string
           name?: string | null
-          phone?: string | null
-          role?: Database["public"]["Enums"]["user_role"]
-          updated_at?: string | null
+          role?: Database["public"]["Enums"]["user_role"] | null
+          updated_at?: string
         }
         Update: {
-          created_at?: string | null
+          created_at?: string
           email?: string | null
           id?: string
           name?: string | null
-          phone?: string | null
-          role?: Database["public"]["Enums"]["user_role"]
-          updated_at?: string | null
+          role?: Database["public"]["Enums"]["user_role"] | null
+          updated_at?: string
         }
         Relationships: []
       }
       sale_items: {
         Row: {
-          created_at: string | null
+          created_at: string
           id: string
-          package_units: number | null
+          product_base_price: number | null
           product_id: string
           quantity: number
           sale_id: string
           sale_type: string | null
+          total_price: number
           unit_price: number
-          units_sold: number | null
         }
         Insert: {
-          created_at?: string | null
+          created_at?: string
           id?: string
-          package_units?: number | null
+          product_base_price?: number | null
           product_id: string
           quantity: number
           sale_id: string
           sale_type?: string | null
+          total_price: number
           unit_price: number
-          units_sold?: number | null
         }
         Update: {
-          created_at?: string | null
+          created_at?: string
           id?: string
-          package_units?: number | null
+          product_base_price?: number | null
           product_id?: string
           quantity?: number
           sale_id?: string
           sale_type?: string | null
+          total_price?: number
           unit_price?: number
-          units_sold?: number | null
         }
         Relationships: [
           {
@@ -872,74 +632,76 @@ export type Database = {
             referencedRelation: "sales"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "sale_items_sale_id_fkey"
-            columns: ["sale_id"]
-            isOneToOne: false
-            referencedRelation: "v_sales_with_profit"
-            referencedColumns: ["id"]
-          },
         ]
       }
       sales: {
         Row: {
-          created_at: string | null
+          created_at: string
           customer_id: string | null
           delivery: boolean | null
-          delivery_address: Json | null
+          delivery_address: string | null
+          delivery_address_json: Json | null
+          delivery_completed_at: string | null
           delivery_fee: number | null
           delivery_person_id: string | null
+          delivery_started_at: string | null
           delivery_status: string | null
-          delivery_type: string | null
           discount_amount: number | null
           final_amount: number
           id: string
+          is_delivery: boolean | null
           notes: string | null
           payment_method: string
-          payment_status: string
+          payment_method_id: string | null
           status: Database["public"]["Enums"]["sales_status_enum"] | null
+          subtotal: number | null
           total_amount: number
-          updated_at: string | null
           user_id: string
         }
         Insert: {
-          created_at?: string | null
+          created_at?: string
           customer_id?: string | null
           delivery?: boolean | null
-          delivery_address?: Json | null
+          delivery_address?: string | null
+          delivery_address_json?: Json | null
+          delivery_completed_at?: string | null
           delivery_fee?: number | null
           delivery_person_id?: string | null
+          delivery_started_at?: string | null
           delivery_status?: string | null
-          delivery_type?: string | null
           discount_amount?: number | null
           final_amount: number
           id?: string
+          is_delivery?: boolean | null
           notes?: string | null
           payment_method: string
-          payment_status?: string
+          payment_method_id?: string | null
           status?: Database["public"]["Enums"]["sales_status_enum"] | null
+          subtotal?: number | null
           total_amount: number
-          updated_at?: string | null
           user_id: string
         }
         Update: {
-          created_at?: string | null
+          created_at?: string
           customer_id?: string | null
           delivery?: boolean | null
-          delivery_address?: Json | null
+          delivery_address?: string | null
+          delivery_address_json?: Json | null
+          delivery_completed_at?: string | null
           delivery_fee?: number | null
           delivery_person_id?: string | null
+          delivery_started_at?: string | null
           delivery_status?: string | null
-          delivery_type?: string | null
           discount_amount?: number | null
           final_amount?: number
           id?: string
+          is_delivery?: boolean | null
           notes?: string | null
           payment_method?: string
-          payment_status?: string
+          payment_method_id?: string | null
           status?: Database["public"]["Enums"]["sales_status_enum"] | null
+          subtotal?: number | null
           total_amount?: number
-          updated_at?: string | null
           user_id?: string
         }
         Relationships: [
@@ -980,84 +742,24 @@ export type Database = {
           },
         ]
       }
-      store_settings: {
-        Row: {
-          id: string
-          created_at: string | null
-          updated_at: string | null
-          environment: string
-          business_name: string | null
-          trade_name: string | null
-          cnpj: string | null
-          ie: string | null
-          address_street: string | null
-          address_number: string | null
-          address_complement: string | null
-          address_neighborhood: string | null
-          address_city: string | null
-          address_state: string | null
-          address_zip_code: string | null
-          crt: string | null
-        }
-        Insert: {
-          id?: string
-          created_at?: string | null
-          updated_at?: string | null
-          environment?: string
-          business_name?: string | null
-          trade_name?: string | null
-          cnpj?: string | null
-          ie?: string | null
-          address_street?: string | null
-          address_number?: string | null
-          address_complement?: string | null
-          address_neighborhood?: string | null
-          address_city?: string | null
-          address_state?: string | null
-          address_zip_code?: string | null
-          crt?: string | null
-        }
-        Update: {
-          id?: string
-          created_at?: string | null
-          updated_at?: string | null
-          environment?: string
-          business_name?: string | null
-          trade_name?: string | null
-          cnpj?: string | null
-          ie?: string | null
-          address_street?: string | null
-          address_number?: string | null
-          address_complement?: string | null
-          address_neighborhood?: string | null
-          address_city?: string | null
-          address_state?: string | null
-          address_zip_code?: string | null
-          crt?: string | null
-        }
-        Relationships: []
-      },
       suppliers: {
         Row: {
           contact_info: string | null
-          created_at: string | null
+          created_at: string
           id: string
           name: string
-          updated_at: string | null
         }
         Insert: {
           contact_info?: string | null
-          created_at?: string | null
+          created_at?: string
           id?: string
           name: string
-          updated_at?: string | null
         }
         Update: {
           contact_info?: string | null
-          created_at?: string | null
+          created_at?: string
           id?: string
           name?: string
-          updated_at?: string | null
         }
         Relationships: []
       }
@@ -1067,12 +769,21 @@ export type Database = {
         Row: {
           avg_ticket: number | null
           customer_id: string | null
+          days_since_first_purchase: number | null
           days_since_last_purchase: number | null
+          customer_journey_days: number | null
+          frequency_category: string | null
+          is_active: boolean | null
+          is_churned: boolean | null
+          is_new: boolean | null
+          is_recurring: boolean | null
+          is_vip: boolean | null
           last_purchase_date: string | null
-          purchase_frequency_days: number | null
-          segment_type: string | null
-          total_orders: number | null
-          total_revenue: number | null
+          purchase_frequency: number | null
+          recency_category: string | null
+          total_spent: number | null
+          total_visits: number | null
+          value_category: string | null
         }
         Relationships: [
           {
@@ -1081,20 +792,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "customers"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "sales_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "mv_customer_segmentation_kpis"
-            referencedColumns: ["customer_id"]
-          },
-          {
-            foreignKeyName: "sales_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "v_customer_stats"
-            referencedColumns: ["customer_id"]
           },
         ]
       }
@@ -1102,12 +799,10 @@ export type Database = {
         Row: {
           avg_ticket: number | null
           customer_id: string | null
-          customer_name: string | null
-          first_purchase: string | null
-          last_purchase: string | null
-          total_discount: number | null
-          total_orders: number | null
-          total_revenue: number | null
+          days_since_last_purchase: number | null
+          last_purchase_date: string | null
+          total_spent: number | null
+          total_visits: number | null
         }
         Relationships: [
           {
@@ -1116,86 +811,42 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "customers"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "sales_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "mv_customer_segmentation_kpis"
-            referencedColumns: ["customer_id"]
-          },
-          {
-            foreignKeyName: "sales_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "v_customer_stats"
-            referencedColumns: ["customer_id"]
           },
         ]
       }
-      v_sales_with_profit: {
+      v_financial_metrics: {
         Row: {
-          created_at: string | null
-          customer_id: string | null
-          delivery: boolean | null
-          delivery_fee: number | null
-          discount_amount: number | null
-          final_amount: number | null
-          final_amount_clean: number | null
-          id: string | null
-          notes: string | null
-          payment_method: string | null
-          payment_status: string | null
-          status: Database["public"]["Enums"]["sales_status_enum"] | null
-          total_amount: number | null
+          avg_ticket: number | null
+          metric_date: string | null
+          total_cost: number | null
+          total_discount: number | null
+          total_margin: number | null
+          total_profit: number | null
+          total_revenue: number | null
+          transaction_count: number | null
+        }
+        Relationships: []
+      }
+      v_product_analytics: {
+        Row: {
+          avg_ticket: number | null
+          current_stock_quantity: number | null
+          last_sale_date: string | null
+          product_id: string | null
+          product_name: string | null
+          profit_margin: number | null
           total_cost: number | null
           total_profit: number | null
-          user_id: string | null
+          total_revenue: number | null
+          total_units_sold: number | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "sales_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "customers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "sales_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "mv_customer_segmentation_kpis"
-            referencedColumns: ["customer_id"]
-          },
-          {
-            foreignKeyName: "sales_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "v_customer_stats"
-            referencedColumns: ["customer_id"]
-          },
-          {
-            foreignKeyName: "sales_delivery_person_id_fkey"
-            columns: ["delivery_person_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "sales_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
     }
     Functions: {
-      calculate_dashboard_kpis: {
+      calculate_campaign_metrics: {
         Args: {
-          p_period_start: string
-          p_period_end: string
+          campaign_uuid: string
         }
         Returns: Json
       }
@@ -1204,110 +855,134 @@ export type Database = {
           p_product_id: string
           p_quantity_change: number
           p_type: Database["public"]["Enums"]["movement_type"]
-          p_reason: string
+          p_reason?: string
           p_metadata?: Json
-          p_movement_type?: string
+          p_cost_price?: number
         }
-        Returns: Json
+        Returns: {
+          stock_after: number
+          movement_id: string
+        }[]
       }
-      create_sale_with_items: {
+      create_pre_sale: {
         Args: {
+          p_user_id: string
           p_customer_id: string
           p_items: Json
-          p_user_id: string
           p_total_amount: number
+          p_final_amount: number
+          p_discount_amount: number
           p_payment_method: string
+          p_is_delivery: boolean
+          p_notes: string
+          p_delivery_fee?: number
+          p_delivery_address?: string
         }
-        Returns: Json
+        Returns: string
       }
-      delete_sale_with_items: {
+      dashboard_kpis: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          total_revenue_today: number
+          sales_count_today: number
+          avg_ticket_today: number
+          top_product_name: string
+        }[]
+      }
+      delete_sale_cascade: {
         Args: {
-          p_sale_id: string
+          sale_uuid: string
+        }
+        Returns: {
+          sale_items: number
+          inventory_movements: number
+        }[]
+      }
+      delete_user: {
+        Args: {
+          user_id: string
         }
         Returns: undefined
       }
-      get_dashboard_data: {
+      get_monthly_expenses: {
         Args: {
-          p_start_date: string
-          p_end_date: string
-          p_previous_start_date: string
-          p_previous_end_date: string
+          year: number
+          month: number
         }
-        Returns: Json
-      }
-      get_dashboard_metrics: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      get_sales_by_period: {
-        Args: {
-          period_type: string
-        }
-        Returns: Json[]
+        Returns: {
+          category: string
+          total_amount: number
+        }[]
       }
       process_sale: {
         Args: {
-          p_customer_id: string
           p_user_id: string
-          p_items: Json[]
+          p_customer_id: string
+          p_items: Json
           p_total_amount: number
           p_final_amount: number
+          p_discount_amount: number
           p_payment_method_id: string
-          p_discount_amount?: number
-          p_notes?: string
-          p_is_delivery?: boolean
-          p_delivery_fee?: number
-          p_delivery_address?: string
-          p_delivery_person_id?: string
-          p_delivery_instructions?: string
+          p_is_delivery: boolean
+          p_notes: string
         }
-        Returns: Json
+        Returns: string
       }
-      recalc_customer_insights: {
-        Args: {
-          p_customer_id: string
-        }
-        Returns: undefined
-      }
-      update_product_stock: {
-        Args: {
-          p_product_id: string
-          p_quantity_change: number
-          p_type: Database["public"]["Enums"]["movement_type"]
-          p_reason: string
-        }
-        Returns: Json
-      }
-      update_updated_at_column: {
+      refresh_materialized_views: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      update_delivery_status: {
+        Args: {
+          p_sale_id: string
+          p_status: string
+          p_notes: string
+          p_delivery_person_id?: string
+        }
+        Returns: boolean
+      }
+      update_sale_items: {
+        Args: {
+          p_sale_id: string
+          p_final_amount: number
+          p_items: Json
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      movement_type:
-        | "sale"
-        | "initial_stock"
-        | "inventory_adjustment"
-        | "return"
-        | "stock_transfer_out"
-        | "stock_transfer_in"
-        | "personal_consumption"
-      payment_method_enum:
-        | "cash"
-        | "credit"
-        | "debit"
-        | "pix"
-        | "bank_transfer"
-        | "check"
-        | "other"
-      report_period_type: "day" | "week" | "month" | "year"
-      sales_status_enum:
-        | "pending"
-        | "processing"
-        | "completed"
-        | "cancelled"
-        | "refunded"
-      user_role: "admin" | "employee" | "delivery"
+      campaign_status: ["draft", "scheduled", "active", "completed", "cancelled"]
+      marketing_channel: ["whatsapp", "email", "sms", "push"]
+      movement_type: [
+        "sale",
+        "initial_stock",
+        "inventory_adjustment",
+        "return",
+        "stock_transfer_out",
+        "stock_transfer_in",
+        "personal_consumption",
+        "purchase",
+        "loss",
+        "damaged"
+      ]
+      payment_method_enum: [
+        "cash",
+        "credit",
+        "debit",
+        "pix",
+        "bank_transfer",
+        "check",
+        "other"
+      ]
+      report_period_type: ["day", "week", "month", "year"]
+      sales_status_enum: [
+        "pending",
+        "processing",
+        "completed",
+        "cancelled",
+        "refunded"
+      ]
+      user_role: ["admin", "employee", "delivery"]
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1316,16 +991,17 @@ export type Database = {
 }
 
 type PublicSchema = Database[Extract<keyof Database, "public">]
+type DatabaseSchemaKeys = Exclude<keyof Database, "__InternalSupabase">
 
 export type Tables<
   PublicTableNameOrOptions extends
     | keyof (PublicSchema["Tables"] & PublicSchema["Views"])
-    | { schema: keyof Database },
-  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
+    | { schema: DatabaseSchemaKeys },
+  TableName extends PublicTableNameOrOptions extends { schema: DatabaseSchemaKeys }
     ? keyof (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
         Database[PublicTableNameOrOptions["schema"]]["Views"])
     : never = never,
-> = PublicTableNameOrOptions extends { schema: keyof Database }
+> = PublicTableNameOrOptions extends { schema: DatabaseSchemaKeys }
   ? (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
       Database[PublicTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
@@ -1345,69 +1021,106 @@ export type Tables<
 export type TablesInsert<
   PublicTableNameOrOptions extends
     | keyof PublicSchema["Tables"]
-    | { schema: keyof Database },
-  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
+    | { schema: DatabaseSchemaKeys },
+  TableName extends PublicTableNameOrOptions extends { schema: DatabaseSchemaKeys }
     ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = PublicTableNameOrOptions extends { schema: keyof Database }
+> = PublicTableNameOrOptions extends { schema: DatabaseSchemaKeys }
   ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Insert: infer I
     }
     ? I
     : never
   : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
-  ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
-      Insert: infer I
-    }
-    ? I
+    ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
     : never
-  : never
 
 export type TablesUpdate<
   PublicTableNameOrOptions extends
     | keyof PublicSchema["Tables"]
-    | { schema: keyof Database },
-  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
+    | { schema: DatabaseSchemaKeys },
+  TableName extends PublicTableNameOrOptions extends { schema: DatabaseSchemaKeys }
     ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = PublicTableNameOrOptions extends { schema: keyof Database }
+> = PublicTableNameOrOptions extends { schema: DatabaseSchemaKeys }
   ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Update: infer U
     }
     ? U
     : never
   : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
-  ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
-      Update: infer U
-    }
-    ? U
+    ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
     : never
-  : never
 
 export type Enums<
   PublicEnumNameOrOptions extends
     | keyof PublicSchema["Enums"]
-    | { schema: keyof Database },
-  EnumName extends PublicEnumNameOrOptions extends { schema: keyof Database }
+    | { schema: DatabaseSchemaKeys },
+  EnumName extends PublicEnumNameOrOptions extends { schema: DatabaseSchemaKeys }
     ? keyof Database[PublicEnumNameOrOptions["schema"]]["Enums"]
     : never = never,
-> = PublicEnumNameOrOptions extends { schema: keyof Database }
+> = PublicEnumNameOrOptions extends { schema: DatabaseSchemaKeys }
   ? Database[PublicEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : PublicEnumNameOrOptions extends keyof PublicSchema["Enums"]
-  ? PublicSchema["Enums"][PublicEnumNameOrOptions]
-  : never
+    ? PublicSchema["Enums"][PublicEnumNameOrOptions]
+    : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof PublicSchema["CompositeTypes"]
-    | { schema: keyof Database },
+    | { schema: DatabaseSchemaKeys },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
-    schema: keyof Database
+    schema: DatabaseSchemaKeys
   }
     ? keyof Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
     : never = never,
-> = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
+> = PublicCompositeTypeNameOrOptions extends { schema: DatabaseSchemaKeys }
   ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof PublicSchema["CompositeTypes"]
-  ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
-  : never
+    ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {
+      movement_type: [
+        "sale",
+        "initial_stock",
+        "inventory_adjustment",
+        "return",
+        "stock_transfer_out",
+        "stock_transfer_in",
+        "personal_consumption",
+        "purchase",
+        "loss",
+        "damaged"
+      ],
+      payment_method_enum: [
+        "cash",
+        "credit",
+        "debit",
+        "pix",
+        "bank_transfer",
+        "check",
+        "other",
+      ],
+      report_period_type: ["day", "week", "month", "year"],
+      sales_status_enum: [
+        "pending",
+        "processing",
+        "completed",
+        "cancelled",
+        "refunded",
+      ],
+      user_role: ["admin", "employee", "delivery"],
+    },
+  },
+} as const

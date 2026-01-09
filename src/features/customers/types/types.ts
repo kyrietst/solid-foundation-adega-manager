@@ -13,6 +13,8 @@ import {
 export interface CustomerStatsProps {
   totalCustomers: number;
   vipCustomers: number;
+  newCustomersCount: number;
+  retentionRate: number;
   totalRevenue: number;
   averageTicket: number;
   activeCustomers: number;
@@ -20,12 +22,18 @@ export interface CustomerStatsProps {
 
 export interface CustomerFiltersProps {
   searchTerm: string;
-  onSearchChange: (term: string) => void;
+  onSearchChange: (value: string) => void;
   segmentFilter: string;
-  onSegmentFilterChange: (segment: string) => void;
+  onSegmentFilterChange: (value: string) => void;
+  statusFilter: string;
+  onStatusFilterChange: (value: string) => void;
+  lastPurchaseFilter: string;
+  onLastPurchaseFilterChange: (value: string) => void;
+  birthdayFilter: string;
+  onBirthdayFilterChange: (value: string) => void;
   uniqueSegments: string[];
-  isOpen: boolean;
-  onToggle: () => void;
+  isOpen?: boolean;
+  onToggle?: () => void;
 }
 
 export interface CustomerGridProps {

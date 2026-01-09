@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Adega Anita's Inventory Mgmt V3</title>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Theme Configuration -->
+<script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#f9cb15",
+              "background-light": "#f8f8f5",
+              "background-dark": "#09090b",
+            },
+            fontFamily: {
+              "display": ["Inter", "sans-serif"]
+            },
+            borderRadius: {"DEFAULT": "0.5rem", "lg": "1rem", "xl": "1.5rem", "2xl": "1rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        /* Custom scrollbar for a cleaner look in dark mode */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #09090b; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #27272a; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3f3f46; 
+        }
+    </style>
+</head>
+<body class="bg-[#09090b] text-white font-display antialiased min-h-screen flex overflow-hidden">
+<!-- Sidebar -->
+<aside class="w-20 lg:w-72 border-r border-white/5 flex-col bg-[#0c0c0e] hidden md:flex shrink-0 transition-all duration-300">
+<div class="h-full flex flex-col justify-between p-6">
+<div class="flex flex-col gap-8">
+<!-- Branding -->
+<div class="flex items-center gap-4">
+<div class="relative flex items-center justify-center size-10 rounded-full bg-gradient-to-br from-[#f9cb15] to-[#b38f00] shadow-[0_0_15px_rgba(249,203,21,0.3)] shrink-0">
+<span class="material-symbols-outlined text-black font-bold">wine_bar</span>
+</div>
+<div class="flex flex-col hidden lg:flex">
+<h1 class="text-white text-lg font-bold leading-none tracking-tight">Adega Anita</h1>
+<p class="text-zinc-500 text-xs font-medium tracking-wide mt-1">Luxury ERP v3.0</p>
+</div>
+</div>
+<!-- Navigation -->
+<nav class="flex flex-col gap-2">
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-zinc-400 hover:bg-white/5 hover:text-white transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">pie_chart</span>
+<span class="text-sm font-medium hidden lg:block">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl bg-primary/10 text-[#f9cb15] border border-[#f9cb15]/20 shadow-[0_0_10px_rgba(249,203,21,0.1)]" href="#">
+<span class="material-symbols-outlined fill-1">inventory_2</span>
+<span class="text-sm font-bold hidden lg:block">Inventário</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-zinc-400 hover:bg-white/5 hover:text-white transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">shopping_cart</span>
+<span class="text-sm font-medium hidden lg:block">Vendas</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-zinc-400 hover:bg-white/5 hover:text-white transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">description</span>
+<span class="text-sm font-medium hidden lg:block">Relatórios</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-zinc-400 hover:bg-white/5 hover:text-white transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">settings</span>
+<span class="text-sm font-medium hidden lg:block">Configurações</span>
+</a>
+</nav>
+</div>
+<!-- New Order Button -->
+<button class="w-full flex items-center justify-center gap-2 bg-[#f9cb15] hover:bg-[#ffe04f] text-black font-bold h-12 rounded-xl shadow-[0_0_20px_rgba(249,203,21,0.2)] transition-all hover:scale-[1.02] active:scale-[0.98]">
+<span class="material-symbols-outlined">add_circle</span>
+<span class="hidden lg:inline">Novo Pedido</span>
+</button>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="flex-1 flex flex-col h-screen overflow-hidden relative">
+<!-- Header Section -->
+<header class="flex-none px-6 py-6 md:px-10 md:pt-10 md:pb-6 z-10">
+<div class="flex flex-wrap justify-between items-end gap-4 mb-8">
+<div class="flex flex-col gap-1">
+<p class="text-zinc-500 text-sm font-medium tracking-widest uppercase">Módulo de Logística</p>
+<h2 class="text-white text-3xl md:text-4xl font-bold leading-tight tracking-tight">GESTÃO DE ESTOQUE</h2>
+</div>
+<div class="flex gap-3">
+<button class="flex items-center justify-center gap-2 h-10 px-4 rounded-xl bg-zinc-900 border border-zinc-700 text-white text-sm font-semibold hover:border-[#f9cb15] hover:text-[#f9cb15] transition-colors">
+<span class="material-symbols-outlined text-[20px]">cloud_download</span>
+<span>Exportar</span>
+</button>
+<button class="flex items-center justify-center gap-2 h-10 px-6 rounded-xl bg-white text-black text-sm font-bold shadow-lg hover:bg-zinc-200 transition-colors">
+<span class="material-symbols-outlined text-[20px]">add</span>
+<span>Adicionar Produto</span>
+</button>
+</div>
+</div>
+<!-- Controls: Tabs & Filters -->
+<div class="flex flex-col gap-4">
+<!-- Navigation Tabs -->
+<div class="flex overflow-x-auto pb-1 no-scrollbar">
+<div class="inline-flex p-1 bg-white/5 rounded-xl border border-white/10 backdrop-blur-sm">
+<button class="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#f9cb15] text-black shadow-lg font-bold text-sm transition-all">
+<span>Todos os Vinhos</span>
+<span class="bg-black/20 text-black px-1.5 py-0.5 rounded text-[10px] font-extrabold">842</span>
+</button>
+<button class="flex items-center gap-2 px-4 py-2 rounded-lg text-zinc-400 hover:text-white hover:bg-white/5 transition-all text-sm font-medium">
+<span>Estoque Baixo</span>
+<span class="bg-red-500 text-white px-1.5 py-0.5 rounded text-[10px] font-bold">4</span>
+</button>
+<button class="flex items-center gap-2 px-4 py-2 rounded-lg text-zinc-400 hover:text-white hover:bg-white/5 transition-all text-sm font-medium">
+<span>Entradas Recentes</span>
+<span class="bg-white/10 text-white px-1.5 py-0.5 rounded text-[10px] font-bold">12</span>
+</button>
+<button class="flex items-center gap-2 px-4 py-2 rounded-lg text-zinc-400 hover:text-white hover:bg-white/5 transition-all text-sm font-medium">
+<span>Arquivados</span>
+</button>
+</div>
+</div>
+<!-- Filter Bar -->
+<div class="flex flex-col md:flex-row gap-4">
+<!-- Search -->
+<div class="relative flex-1 min-w-[240px]">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500">search</span>
+<input class="w-full h-12 pl-12 pr-4 bg-[#09090b] border border-white/10 rounded-xl text-white placeholder:text-zinc-500 focus:outline-none focus:border-[#f9cb15]/50 focus:ring-1 focus:ring-[#f9cb15]/50 transition-all text-sm" placeholder="Buscar por nome, SKU ou safra..." type="text"/>
+</div>
+<!-- Category Filter -->
+<div class="relative w-full md:w-64">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500">filter_list</span>
+<select class="w-full h-12 pl-12 pr-10 appearance-none bg-[#09090b] border border-white/10 rounded-xl text-white focus:outline-none focus:border-[#f9cb15]/50 focus:ring-1 focus:ring-[#f9cb15]/50 transition-all text-sm cursor-pointer">
+<option>Todas Categorias</option>
+<option>Vinho Tinto</option>
+<option>Vinho Branco</option>
+<option>Espumante</option>
+</select>
+<span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none text-[20px]">expand_more</span>
+</div>
+<!-- Store Toggle -->
+<div class="flex p-1 bg-white/5 rounded-xl border border-white/10 backdrop-blur-sm shrink-0">
+<button class="px-4 py-2 rounded-lg bg-[#f9cb15] text-black shadow-lg font-bold text-sm transition-all whitespace-nowrap">
+                            Loja Lisboa
+                        </button>
+<button class="px-4 py-2 rounded-lg text-zinc-400 hover:text-white hover:bg-white/5 transition-all text-sm font-medium whitespace-nowrap">
+                            Armazém Central
+                        </button>
+</div>
+</div>
+</div>
+</header>
+<!-- Scrollable Grid Content -->
+<div class="flex-1 overflow-y-auto px-6 md:px-10 pb-20">
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
+<!-- Card 1 -->
+<div class="group relative flex flex-col bg-zinc-900/40 backdrop-blur-md border border-white/5 rounded-2xl hover:border-[#f9cb15]/30 transition-all duration-300 hover:shadow-[0_4px_24px_-12px_rgba(249,203,21,0.1)] p-4 gap-4">
+<div class="flex gap-4">
+<div class="size-20 rounded-xl bg-center bg-cover bg-no-repeat shrink-0 border border-white/10" data-alt="Dark red wine bottle label detail" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDB6P5kmlUXh2RXWl5vLLqqdmSA0tYiMwtLnheO0LEfkEFY26y7a_5PgIY2jb7mAM0Kl8TRxLsXPuOBPmRAqE3SAEHpUT1Shaww53hQUHrxHzzQNr_8AwIjQL65z3Gs8ejIf_81h7yxPUd40dXl60DrF2hIJwonYVaT9U88D36-rXhaW1XRTxRcHJsJM8Qy6ShTGvkqqKeqjvyAm3I8j7nddvu3rgDvnA6wo6pUUEHvMmzLxQFQdS34eNfMG5kPjZZa02hkf1YbCg');"></div>
+<div class="flex flex-col justify-center min-w-0">
+<h3 class="text-white text-base font-bold leading-tight truncate pr-2 group-hover:text-[#f9cb15] transition-colors">Quinta do Crasto Reserva</h3>
+<p class="text-zinc-400 text-xs font-medium mt-1">Douro, Portugal • 2019</p>
+<span class="text-xs text-zinc-600 font-mono mt-1">SKU: #VT-2019-CR</span>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-3">
+<!-- Inventory Block -->
+<div class="flex flex-col gap-1 bg-black/40 rounded-lg p-3 border border-white/5">
+<div class="flex items-center gap-2 text-zinc-400 text-xs uppercase tracking-wider font-semibold">
+<span class="material-symbols-outlined text-[16px]">inventory_2</span> Estoque
+                            </div>
+<div class="flex items-baseline gap-1 mt-1">
+<span class="text-white text-xl font-bold">42</span>
+<span class="text-zinc-500 text-xs">unid.</span>
+</div>
+<div class="text-xs text-zinc-600">7 Caixas (6un)</div>
+</div>
+<!-- Finance Block -->
+<div class="flex flex-col gap-1 bg-black/40 rounded-lg p-3 border border-white/5">
+<div class="flex items-center gap-2 text-zinc-400 text-xs uppercase tracking-wider font-semibold">
+<span class="material-symbols-outlined text-[16px]">attach_money</span> Preço
+                            </div>
+<div class="flex items-baseline gap-1 mt-1">
+<span class="text-white text-xl font-bold">€32</span>
+<span class="text-zinc-500 text-xs">.00</span>
+</div>
+<div class="text-xs text-zinc-600">Custo: €18.50</div>
+</div>
+</div>
+<div class="pt-2 border-t border-white/5 flex items-center justify-between gap-2">
+<div class="flex gap-1">
+<button class="size-9 flex items-center justify-center rounded-lg text-zinc-400 hover:bg-white/10 hover:text-white transition-colors" title="Ver Detalhes">
+<span class="material-symbols-outlined text-[20px]">visibility</span>
+</button>
+<button class="size-9 flex items-center justify-center rounded-lg text-zinc-400 hover:bg-white/10 hover:text-white transition-colors" title="Editar Produto">
+<span class="material-symbols-outlined text-[20px]">edit</span>
+</button>
+<button class="size-9 flex items-center justify-center rounded-lg text-blue-400 hover:bg-blue-500/10 hover:text-blue-300 transition-colors" title="Transferir">
+<span class="material-symbols-outlined text-[20px]">swap_horiz</span>
+</button>
+</div>
+<button class="flex items-center gap-2 px-3 py-2 rounded-lg border border-[#f9cb15] text-[#f9cb15] text-xs font-bold uppercase tracking-wide hover:bg-[#f9cb15] hover:text-black transition-all">
+<span class="material-symbols-outlined text-[16px]">tune</span> Ajustar
+                        </button>
+</div>
+</div>
+<!-- Card 2 (Alert) -->
+<div class="group relative flex flex-col bg-zinc-900/40 backdrop-blur-md border border-red-900/30 rounded-2xl hover:border-red-500/50 transition-all duration-300 p-4 gap-4">
+<div class="absolute -right-1 -top-1">
+<span class="relative flex h-3 w-3">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+<span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+</span>
+</div>
+<div class="flex gap-4">
+<div class="size-20 rounded-xl bg-center bg-cover bg-no-repeat shrink-0 border border-white/10" data-alt="Champagne bottle neck with gold foil" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuARN-wuk_QCGjc6nXDanIPa3APVHS_iLopjYU0_IXQ1bM8YvOrsm3NLIcqS82IDDchbTQUzv80UAMp6O7JZdaAOwiDkmqvHAU7gMw_AwlWp36no-MMeamOaNSBPsVc3lWFFHAi98KwkIpxBd3SNaDNcCHDiUFHtbdpFjS6z9E-bkdCvHrcvu58MMpeofSDynUwGvjlEDBG5qE4hr2YOqjpaaSEuRUmrf0tXSuE59eJD2vqv5CkmxZMgi6LnM2E-LmniGx7clkQ28A');"></div>
+<div class="flex flex-col justify-center min-w-0">
+<h3 class="text-white text-base font-bold leading-tight truncate pr-2 group-hover:text-red-400 transition-colors">Moët &amp; Chandon Impérial</h3>
+<p class="text-zinc-400 text-xs font-medium mt-1">Champagne, França • NV</p>
+<span class="text-xs text-zinc-600 font-mono mt-1">SKU: #SP-NV-MC</span>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-3">
+<div class="flex flex-col gap-1 bg-red-500/10 rounded-lg p-3 border border-red-500/20">
+<div class="flex items-center gap-2 text-red-400 text-xs uppercase tracking-wider font-semibold">
+<span class="material-symbols-outlined text-[16px]">warning</span> Baixo
+                            </div>
+<div class="flex items-baseline gap-1 mt-1">
+<span class="text-red-500 text-xl font-bold">03</span>
+<span class="text-red-400/70 text-xs">unid.</span>
+</div>
+<div class="text-xs text-red-400/60">Min: 12 un</div>
+</div>
+<div class="flex flex-col gap-1 bg-black/40 rounded-lg p-3 border border-white/5">
+<div class="flex items-center gap-2 text-zinc-400 text-xs uppercase tracking-wider font-semibold">
+<span class="material-symbols-outlined text-[16px]">attach_money</span> Preço
+                            </div>
+<div class="flex items-baseline gap-1 mt-1">
+<span class="text-white text-xl font-bold">€49</span>
+<span class="text-zinc-500 text-xs">.90</span>
+</div>
+<div class="text-xs text-zinc-600">Custo: €32.10</div>
+</div>
+</div>
+<div class="pt-2 border-t border-white/5 flex items-center justify-between gap-2">
+<div class="flex gap-1">
+<button class="size-9 flex items-center justify-center rounded-lg text-zinc-400 hover:bg-white/10 hover:text-white transition-colors" title="Ver Detalhes">
+<span class="material-symbols-outlined text-[20px]">visibility</span>
+</button>
+<button class="size-9 flex items-center justify-center rounded-lg text-zinc-400 hover:bg-white/10 hover:text-white transition-colors" title="Editar Produto">
+<span class="material-symbols-outlined text-[20px]">edit</span>
+</button>
+<button class="size-9 flex items-center justify-center rounded-lg text-blue-400 hover:bg-blue-500/10 hover:text-blue-300 transition-colors" title="Transferir">
+<span class="material-symbols-outlined text-[20px]">swap_horiz</span>
+</button>
+</div>
+<button class="flex items-center gap-2 px-3 py-2 rounded-lg border border-[#f9cb15] text-[#f9cb15] text-xs font-bold uppercase tracking-wide hover:bg-[#f9cb15] hover:text-black transition-all">
+<span class="material-symbols-outlined text-[16px]">add_shopping_cart</span> Repor
+                        </button>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="group relative flex flex-col bg-zinc-900/40 backdrop-blur-md border border-white/5 rounded-2xl hover:border-[#f9cb15]/30 transition-all duration-300 hover:shadow-[0_4px_24px_-12px_rgba(249,203,21,0.1)] p-4 gap-4">
+<div class="flex gap-4">
+<div class="size-20 rounded-xl bg-center bg-cover bg-no-repeat shrink-0 border border-white/10" data-alt="White wine glass and bottle on table" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAi3U-Y-RbAtoWH7hredpyFV0nxksu7wDVxP19gWHWMonLioEz55PqH_TCPtOhCSQLbs-heCM3x5GVfMb-DPdEPS-g5uNkvyuZzGFV-WNR_r9430cmrha1iskdjRUDSfeaGJqcJ3vK7zrSx2pV0pfOi2t55Ln8IN9A_mwuckKjDwnIHbNJkYYtZH5s8cq8vOI4AM659zOtPnra9N-t7QY6l9jHcGF08l03pJFIQkTiGlruYJvCjx6zIAeBiRyQ3rewwxHhlh8k1SQ');"></div>
+<div class="flex flex-col justify-center min-w-0">
+<h3 class="text-white text-base font-bold leading-tight truncate pr-2 group-hover:text-[#f9cb15] transition-colors">Pêra-Manca Branco</h3>
+<p class="text-zinc-400 text-xs font-medium mt-1">Alentejo, Portugal • 2020</p>
+<span class="text-xs text-zinc-600 font-mono mt-1">SKU: #VB-2020-PM</span>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-3">
+<div class="flex flex-col gap-1 bg-black/40 rounded-lg p-3 border border-white/5">
+<div class="flex items-center gap-2 text-zinc-400 text-xs uppercase tracking-wider font-semibold">
+<span class="material-symbols-outlined text-[16px]">inventory_2</span> Estoque
+                            </div>
+<div class="flex items-baseline gap-1 mt-1">
+<span class="text-white text-xl font-bold">18</span>
+<span class="text-zinc-500 text-xs">unid.</span>
+</div>
+<div class="text-xs text-zinc-600">3 Caixas (6un)</div>
+</div>
+<div class="flex flex-col gap-1 bg-black/40 rounded-lg p-3 border border-white/5">
+<div class="flex items-center gap-2 text-zinc-400 text-xs uppercase tracking-wider font-semibold">
+<span class="material-symbols-outlined text-[16px]">attach_money</span> Preço
+                            </div>
+<div class="flex items-baseline gap-1 mt-1">
+<span class="text-white text-xl font-bold">€55</span>
+<span class="text-zinc-500 text-xs">.00</span>
+</div>
+<div class="text-xs text-zinc-600">Custo: €38.00</div>
+</div>
+</div>
+<div class="pt-2 border-t border-white/5 flex items-center justify-between gap-2">
+<div class="flex gap-1">
+<button class="size-9 flex items-center justify-center rounded-lg text-zinc-400 hover:bg-white/10 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[20px]">visibility</span>
+</button>
+<button class="size-9 flex items-center justify-center rounded-lg text-zinc-400 hover:bg-white/10 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[20px]">edit</span>
+</button>
+<button class="size-9 flex items-center justify-center rounded-lg text-blue-400 hover:bg-blue-500/10 hover:text-blue-300 transition-colors">
+<span class="material-symbols-outlined text-[20px]">swap_horiz</span>
+</button>
+</div>
+<button class="flex items-center gap-2 px-3 py-2 rounded-lg border border-[#f9cb15] text-[#f9cb15] text-xs font-bold uppercase tracking-wide hover:bg-[#f9cb15] hover:text-black transition-all">
+<span class="material-symbols-outlined text-[16px]">tune</span> Ajustar
+                        </button>
+</div>
+</div>
+<!-- Card 4 -->
+<div class="group relative flex flex-col bg-zinc-900/40 backdrop-blur-md border border-white/5 rounded-2xl hover:border-[#f9cb15]/30 transition-all duration-300 hover:shadow-[0_4px_24px_-12px_rgba(249,203,21,0.1)] p-4 gap-4">
+<div class="flex gap-4">
+<div class="size-20 rounded-xl bg-center bg-cover bg-no-repeat shrink-0 border border-white/10" data-alt="Rows of wine bottles in cellar" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCqFV0leoxRgm_rELEhhfZwNlveaRnnR-kyBJGfxcMSBjD7XVnGxB3QXjfwgrQcdYRiNbc0G7IVBafHY_6RrfzVctdy66psd9KI9G_rUK5Nb8yXNBUI0JOBkFWc0-gkkmZIUGSAo9c_H4-0mi0OWwlOdjmErl_nHQHQpTKQw_RSyO2e9TANFTj-edfEwN7rn5I-wPuEwE2Jhk_8yvrC6K0YsERH1NhlqslQ3QKLiZZIrl8v0IO12fCm9UMUdxgUSdNuDBPR2Ru03A');"></div>
+<div class="flex flex-col justify-center min-w-0">
+<h3 class="text-white text-base font-bold leading-tight truncate pr-2 group-hover:text-[#f9cb15] transition-colors">Vega Sicilia Único</h3>
+<p class="text-zinc-400 text-xs font-medium mt-1">Ribera del Duero, Esp. • 2012</p>
+<span class="text-xs text-zinc-600 font-mono mt-1">SKU: #VT-2012-VS</span>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-3">
+<div class="flex flex-col gap-1 bg-black/40 rounded-lg p-3 border border-white/5">
+<div class="flex items-center gap-2 text-zinc-400 text-xs uppercase tracking-wider font-semibold">
+<span class="material-symbols-outlined text-[16px]">inventory_2</span> Estoque
+                            </div>
+<div class="flex items-baseline gap-1 mt-1">
+<span class="text-white text-xl font-bold">06</span>
+<span class="text-zinc-500 text-xs">unid.</span>
+</div>
+<div class="text-xs text-zinc-600">1 Caixa (6un)</div>
+</div>
+<div class="flex flex-col gap-1 bg-black/40 rounded-lg p-3 border border-white/5">
+<div class="flex items-center gap-2 text-zinc-400 text-xs uppercase tracking-wider font-semibold">
+<span class="material-symbols-outlined text-[16px]">attach_money</span> Preço
+                            </div>
+<div class="flex items-baseline gap-1 mt-1">
+<span class="text-white text-xl font-bold">€395</span>
+<span class="text-zinc-500 text-xs">.00</span>
+</div>
+<div class="text-xs text-zinc-600">Custo: €280.00</div>
+</div>
+</div>
+<div class="pt-2 border-t border-white/5 flex items-center justify-between gap-2">
+<div class="flex gap-1">
+<button class="size-9 flex items-center justify-center rounded-lg text-zinc-400 hover:bg-white/10 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[20px]">visibility</span>
+</button>
+<button class="size-9 flex items-center justify-center rounded-lg text-zinc-400 hover:bg-white/10 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[20px]">edit</span>
+</button>
+<button class="size-9 flex items-center justify-center rounded-lg text-blue-400 hover:bg-blue-500/10 hover:text-blue-300 transition-colors">
+<span class="material-symbols-outlined text-[20px]">swap_horiz</span>
+</button>
+</div>
+<button class="flex items-center gap-2 px-3 py-2 rounded-lg border border-[#f9cb15] text-[#f9cb15] text-xs font-bold uppercase tracking-wide hover:bg-[#f9cb15] hover:text-black transition-all">
+<span class="material-symbols-outlined text-[16px]">tune</span> Ajustar
+                        </button>
+</div>
+</div>
+<!-- Card 5 -->
+<div class="group relative flex flex-col bg-zinc-900/40 backdrop-blur-md border border-white/5 rounded-2xl hover:border-[#f9cb15]/30 transition-all duration-300 hover:shadow-[0_4px_24px_-12px_rgba(249,203,21,0.1)] p-4 gap-4">
+<div class="flex gap-4">
+<div class="size-20 rounded-xl bg-center bg-cover bg-no-repeat shrink-0 border border-white/10" data-alt="Red wine being poured into glass" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCmmUK8x4_mSYhJRFYb9AgEzFHbFs2hOHrEEecQmM5oPullC_tkcRUmHw9q4EAK4_g9qti09jMxU_scTf5gS8G5Rj3kv0Nk3HciUVBjA1Su_G_PZFky2Tt8GP0w9SfqJRt9UCpAPkkKHRh3eTFdRwuv0HNA4L4z7lzCR6nipwJEIK2sIBklBkcU2X4ufuJHu6ADdevW4RJ6cPkmT295Hrv1EG3SZ_88_sCRN5HEqmO38RrWMv_nNlGd7_rR2r68di5aSggHHKgsUg');"></div>
+<div class="flex flex-col justify-center min-w-0">
+<h3 class="text-white text-base font-bold leading-tight truncate pr-2 group-hover:text-[#f9cb15] transition-colors">Barca Velha</h3>
+<p class="text-zinc-400 text-xs font-medium mt-1">Douro, Portugal • 2011</p>
+<span class="text-xs text-zinc-600 font-mono mt-1">SKU: #VT-2011-BV</span>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-3">
+<div class="flex flex-col gap-1 bg-black/40 rounded-lg p-3 border border-white/5">
+<div class="flex items-center gap-2 text-zinc-400 text-xs uppercase tracking-wider font-semibold">
+<span class="material-symbols-outlined text-[16px]">inventory_2</span> Estoque
+                            </div>
+<div class="flex items-baseline gap-1 mt-1">
+<span class="text-white text-xl font-bold">02</span>
+<span class="text-zinc-500 text-xs">unid.</span>
+</div>
+<div class="text-xs text-zinc-600">0 Caixas</div>
+</div>
+<div class="flex flex-col gap-1 bg-black/40 rounded-lg p-3 border border-white/5">
+<div class="flex items-center gap-2 text-zinc-400 text-xs uppercase tracking-wider font-semibold">
+<span class="material-symbols-outlined text-[16px]">attach_money</span> Preço
+                            </div>
+<div class="flex items-baseline gap-1 mt-1">
+<span class="text-white text-xl font-bold">€750</span>
+<span class="text-zinc-500 text-xs">.00</span>
+</div>
+<div class="text-xs text-zinc-600">Custo: €520.00</div>
+</div>
+</div>
+<div class="pt-2 border-t border-white/5 flex items-center justify-between gap-2">
+<div class="flex gap-1">
+<button class="size-9 flex items-center justify-center rounded-lg text-zinc-400 hover:bg-white/10 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[20px]">visibility</span>
+</button>
+<button class="size-9 flex items-center justify-center rounded-lg text-zinc-400 hover:bg-white/10 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[20px]">edit</span>
+</button>
+<button class="size-9 flex items-center justify-center rounded-lg text-blue-400 hover:bg-blue-500/10 hover:text-blue-300 transition-colors">
+<span class="material-symbols-outlined text-[20px]">swap_horiz</span>
+</button>
+</div>
+<button class="flex items-center gap-2 px-3 py-2 rounded-lg border border-[#f9cb15] text-[#f9cb15] text-xs font-bold uppercase tracking-wide hover:bg-[#f9cb15] hover:text-black transition-all">
+<span class="material-symbols-outlined text-[16px]">tune</span> Ajustar
+                        </button>
+</div>
+</div>
+<!-- Card 6 -->
+<div class="group relative flex flex-col bg-zinc-900/40 backdrop-blur-md border border-white/5 rounded-2xl hover:border-[#f9cb15]/30 transition-all duration-300 hover:shadow-[0_4px_24px_-12px_rgba(249,203,21,0.1)] p-4 gap-4">
+<div class="flex gap-4">
+<div class="size-20 rounded-xl bg-center bg-cover bg-no-repeat shrink-0 border border-white/10" data-alt="Dark wine cellar atmosphere" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuC61-mTFsRjW7S44VtlC4locvzTzn1r7i5zlRmnVQaobaiSaqYk7n5OpVW2oDOBF49gy1-mRCJFlztbgzFvcmX0AHBX63yMNZrYE3vgzc_erL6J2Duu8A2FO-O-8UzbsFnzQyDlQIwz3kaY4W5WyDFSCUGYiJ7c6fw2jo9aNznbg_FgykBHVz28RFnBOIrc1sScI_QLJxHqlXlUyv-rm756auIy5h9q7Dc_tQxOEmVBkBE0aKthFbz7L-KN_z0b3xkGgMbmxjfZfg');"></div>
+<div class="flex flex-col justify-center min-w-0">
+<h3 class="text-white text-base font-bold leading-tight truncate pr-2 group-hover:text-[#f9cb15] transition-colors">Cartuxa Pêra-Manca</h3>
+<p class="text-zinc-400 text-xs font-medium mt-1">Alentejo, Portugal • 2015</p>
+<span class="text-xs text-zinc-600 font-mono mt-1">SKU: #VT-2015-PM</span>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-3">
+<div class="flex flex-col gap-1 bg-black/40 rounded-lg p-3 border border-white/5">
+<div class="flex items-center gap-2 text-zinc-400 text-xs uppercase tracking-wider font-semibold">
+<span class="material-symbols-outlined text-[16px]">inventory_2</span> Estoque
+                            </div>
+<div class="flex items-baseline gap-1 mt-1">
+<span class="text-white text-xl font-bold">15</span>
+<span class="text-zinc-500 text-xs">unid.</span>
+</div>
+<div class="text-xs text-zinc-600">2 Caixas + 3</div>
+</div>
+<div class="flex flex-col gap-1 bg-black/40 rounded-lg p-3 border border-white/5">
+<div class="flex items-center gap-2 text-zinc-400 text-xs uppercase tracking-wider font-semibold">
+<span class="material-symbols-outlined text-[16px]">attach_money</span> Preço
+                            </div>
+<div class="flex items-baseline gap-1 mt-1">
+<span class="text-white text-xl font-bold">€450</span>
+<span class="text-zinc-500 text-xs">.00</span>
+</div>
+<div class="text-xs text-zinc-600">Custo: €310.00</div>
+</div>
+</div>
+<div class="pt-2 border-t border-white/5 flex items-center justify-between gap-2">
+<div class="flex gap-1">
+<button class="size-9 flex items-center justify-center rounded-lg text-zinc-400 hover:bg-white/10 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[20px]">visibility</span>
+</button>
+<button class="size-9 flex items-center justify-center rounded-lg text-zinc-400 hover:bg-white/10 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[20px]">edit</span>
+</button>
+<button class="size-9 flex items-center justify-center rounded-lg text-blue-400 hover:bg-blue-500/10 hover:text-blue-300 transition-colors">
+<span class="material-symbols-outlined text-[20px]">swap_horiz</span>
+</button>
+</div>
+<button class="flex items-center gap-2 px-3 py-2 rounded-lg border border-[#f9cb15] text-[#f9cb15] text-xs font-bold uppercase tracking-wide hover:bg-[#f9cb15] hover:text-black transition-all">
+<span class="material-symbols-outlined text-[16px]">tune</span> Ajustar
+                        </button>
+</div>
+</div>
+</div>
+<!-- Pagination -->
+<div class="flex items-center justify-between mt-10 pt-6 border-t border-white/5">
+<p class="text-zinc-500 text-sm">Mostrando 1-6 de 842 produtos</p>
+<div class="flex items-center gap-2">
+<button class="size-10 flex items-center justify-center rounded-lg bg-black border border-white/10 text-zinc-400 hover:text-white hover:border-white/20 transition-all">
+<span class="material-symbols-outlined">chevron_left</span>
+</button>
+<button class="size-10 flex items-center justify-center rounded-lg bg-[#f9cb15] text-black font-bold shadow-[0_0_10px_rgba(249,203,21,0.2)]">1</button>
+<button class="size-10 flex items-center justify-center rounded-lg bg-black border border-white/10 text-zinc-400 hover:text-white hover:border-white/20 transition-all hover:bg-white/5">2</button>
+<button class="size-10 flex items-center justify-center rounded-lg bg-black border border-white/10 text-zinc-400 hover:text-white hover:border-white/20 transition-all hover:bg-white/5">3</button>
+<span class="text-zinc-600 px-1">...</span>
+<button class="size-10 flex items-center justify-center rounded-lg bg-black border border-white/10 text-zinc-400 hover:text-white hover:border-white/20 transition-all hover:bg-white/5">14</button>
+<button class="size-10 flex items-center justify-center rounded-lg bg-black border border-white/10 text-zinc-400 hover:text-white hover:border-white/20 transition-all">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</main>
+</body></html>

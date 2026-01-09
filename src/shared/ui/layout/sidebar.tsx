@@ -1,10 +1,10 @@
+
 "use client";
 
 import { cn } from "@/core/config/utils";
 import React, { useState, createContext, useContext } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { Menu, X, Lock, ChevronRight, ChevronLeft } from "lucide-react";
-import { getSFProTextClasses } from "@/core/config/theme-utils";
+import { Menu, X, Lock } from "lucide-react";
 
 interface Links {
   label: string;
@@ -86,17 +86,24 @@ export const DesktopSidebar = ({
   children,
   ...props
 }: Omit<React.ComponentProps<typeof motion.div>, "children"> & { children: React.ReactNode }) => {
-  const { open, setOpen, animate } = useSidebar();
+  const { open, animate } = useSidebar();
   return (
     <motion.div
       className={cn(
         // Glassy sidebar matching cards style with hero spotlight effect
-        "h-full px-3 py-4 hidden md:flex md:flex-col bg-black/70 backdrop-blur-xl border-r border-white/20 shadow-lg w-[300px] flex-shrink-0 z-20 hero-spotlight relative",
+        "h-full py-4 hidden md:flex md:flex-col !bg-[#09090b] border-r border-white/5 shadow-2xl w-[300px] flex-shrink-0 z-20 relative overflow-hidden",
+        open ? "px-3" : "px-2",
         className
       )}
       animate={{
         width: animate ? (open ? "300px" : "60px") : "300px",
       }}
+      style={{
+        '--x': '50%',
+        '--y': '50%',
+        backgroundImage: 'radial-gradient(circle at var(--x, 50%) var(--y, 50%), rgba(250, 204, 21, 0.12) 0%, transparent 40%)',
+        backgroundColor: '#09090b',
+      } as React.CSSProperties}
       onMouseMove={(e) => {
         const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
         const x = ((e.clientX - rect.left) / rect.width) * 100;
@@ -123,7 +130,7 @@ export const MobileSidebar = ({
       <motion.div
         className={cn(
           // Mobile top bar matching cards style
-          "h-12 px-4 py-3 flex flex-row md:hidden items-center justify-between bg-black/70 backdrop-blur-xl border-b border-white/20 shadow-lg w-full"
+          "h-12 px-4 py-3 flex flex-row md:hidden items-center justify-between bg-surface/80 backdrop-blur-xl border-b border-white/10 shadow-lg w-full"
         )}
         {...props}
       >
@@ -132,7 +139,7 @@ export const MobileSidebar = ({
             onClick={() => setOpen(!open)}
             aria-label="Abrir menu de navegação"
             aria-expanded={open}
-            className="p-2 text-adega-gold hover:bg-white/10 rounded focus:outline-none focus:ring-2 focus:ring-adega-gold transition-colors"
+            className="p-2 text-brand hover:bg-white/10 rounded focus:outline-none focus:ring-2 focus:ring-brand transition-colors"
           >
             <Menu className="h-6 w-6" aria-hidden="true" />
           </button>
@@ -148,7 +155,7 @@ export const MobileSidebar = ({
                 ease: "easeInOut",
               }}
               className={cn(
-                "fixed h-full w-full inset-0 bg-black/80 backdrop-blur-xl border border-white/20 shadow-2xl p-10 z-nav flex flex-col justify-between hero-spotlight",
+                "fixed h-full w-full inset-0 bg-background/95 backdrop-blur-xl border border-white/10 shadow-2xl p-10 z-nav flex flex-col justify-between hero-spotlight",
                 className
               )}
               onMouseMove={(e) => {
@@ -162,7 +169,7 @@ export const MobileSidebar = ({
               <button
                 onClick={() => setOpen(!open)}
                 aria-label="Fechar menu de navegação"
-                className="absolute right-10 top-10 z-50 p-2 text-adega-gold hover:bg-white/10 rounded focus:outline-none focus:ring-2 focus:ring-adega-gold transition-colors"
+                className="absolute right-10 top-10 z-50 p-2 text-brand hover:bg-white/10 rounded focus:outline-none focus:ring-2 focus:ring-brand transition-colors"
               >
                 <X className="h-6 w-6" aria-hidden="true" />
               </button>
@@ -211,10 +218,13 @@ export const SidebarLink = ({
   return (
     <div
       className={cn(
-        "flex items-center justify-start gap-2 group/sidebar py-2 px-2 rounded-lg transition-all duration-200",
+        "flex items-center gap-2 group/sidebar transition-all duration-200",
+        open 
+          ? "w-full justify-start py-2 px-2 rounded-lg" 
+          : "w-10 h-10 justify-center rounded-xl mx-auto p-0",
         disabled
           ? "cursor-not-allowed pointer-events-none opacity-60"
-          : "cursor-pointer hover:transform hover:-translate-y-0.5",
+          : "cursor-pointer hover:bg-[#f9cb15]/5",
         className
       )}
       onClick={handleClick}
@@ -227,13 +237,14 @@ export const SidebarLink = ({
     >
       {/* Ícone do link com estilo condicional */}
       <div className={cn(
-        "transition-all duration-200",
-        disabled && "opacity-50"
+        "transition-all duration-200 text-muted-foreground group-hover/sidebar:text-foreground",
+        disabled && "text-muted-foreground/50",
+        "h-5 w-5 flex items-center justify-center"
       )}>
         {React.isValidElement<React.HTMLAttributes<HTMLElement>>(link.icon) && React.cloneElement(link.icon, {
           className: cn(
             link.icon.props.className,
-            disabled && "text-gray-500"
+            disabled && "text-muted-foreground/50"
           )
         })}
       </div>
@@ -244,10 +255,10 @@ export const SidebarLink = ({
           opacity: animate ? (open ? 1 : 0) : 1,
         }}
         className={cn(
-          getSFProTextClasses('label', 'neutral'),
+          "text-sm font-medium",
           disabled
-            ? "text-gray-500"
-            : "text-gray-100 group-hover/sidebar:translate-x-1",
+            ? "text-muted-foreground/50"
+            : "text-muted-foreground group-hover/sidebar:text-brand",
           "transition duration-150 whitespace-pre inline-block !p-0 !m-0"
         )}
       >
@@ -263,7 +274,7 @@ export const SidebarLink = ({
           }}
           className="ml-auto"
         >
-          <Lock className="h-4 w-4 text-gray-500" aria-hidden="true" />
+          <Lock className="h-3 w-3 text-muted-foreground/40" aria-hidden="true" />
         </motion.div>
       )}
     </div>

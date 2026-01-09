@@ -3,76 +3,14 @@
  * Integra dados de vendas, clientes e rastreamento de entrega
  * 
  * @author Adega Manager Team
- * @version 1.0.0
+ * @version 1.1.0 - Realtime & Type Hygiene
  */
 
+import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/core/api/supabase/client';
 import { useToast } from '@/shared/hooks/common/use-toast';
-
-export interface DeliveryOrder {
-  id: string;
-  customer: {
-    id: string;
-    name: string;
-    phone?: string;
-  } | null;
-  total_amount: number;
-  delivery_fee: number;
-  final_amount: number;
-  delivery_status: 'pending' | 'preparing' | 'out_for_delivery' | 'delivered' | 'cancelled';
-  delivery_address: any;
-  delivery_instructions?: string;
-  estimated_delivery_time?: string;
-  delivery_started_at?: string;
-  delivery_completed_at?: string;
-  delivery_person?: {
-    id: string;
-    name: string;
-  } | null;
-  delivery_zone?: {
-    id: string;
-    name: string;
-  } | null;
-  items: Array<{
-    id: string;
-    product_name: string;
-    quantity: number;
-    unit_price: number;
-    subtotal: number;
-  }>;
-  tracking: Array<{
-    id: string;
-    status: string;
-    notes: string;
-    created_at: string;
-    created_by_name?: string;
-  }>;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface DeliveryMetrics {
-  totalOrders: number;
-  pendingOrders: number;
-  inTransitOrders: number;
-  deliveredOrders: number;
-  cancelledOrders: number;
-  totalRevenue: number;
-  totalDeliveryFees: number;
-  avgDeliveryTime: number;
-  onTimeRate: number;
-  // Novas métricas financeiras
-  avgOrderValue: number;
-  avgTicketWithDelivery: number;
-  deliveryFeeRevenue: number;
-  revenueGrowthRate: number;
-  topZoneRevenue: {
-    zoneName: string;
-    revenue: number;
-    orderCount: number;
-  } | null;
-}
+import { DeliveryOrder, DeliveryMetrics } from '@/features/delivery/types';
 
 /**
  * Hook para buscar pedidos de delivery com filtros
@@ -83,6 +21,36 @@ export const useDeliveryOrders = (params?: {
   limit?: number;
   deliveryPersonId?: string;
 }) => {
+  const queryClient = useQueryClient();
+
+  // ✅ REALTIME SUBSCRIPTION
+  useEffect(() => {
+    const channel = supabase
+      .channel('delivery-orders-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // INSERT, UPDATE, DELETE
+          schema: 'public',
+          table: 'sales',
+          filter: 'delivery_type=eq.delivery' // Escuta apenas deliveries
+        },
+        (payload) => {
+          console.log('🔔 Alteração de Delivery detectada:', payload.eventType);
+          
+          // Invalida cache para forçar recarregamento imediato
+          queryClient.invalidateQueries({ queryKey: ['delivery-orders'] });
+          queryClient.invalidateQueries({ queryKey: ['delivery-metrics'] });
+          queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
   return useQuery({
     queryKey: ['delivery-orders', params],
     queryFn: async (): Promise<DeliveryOrder[]> => {
@@ -184,6 +152,7 @@ export const useDeliveryOrders = (params?: {
           } : null,
           total_amount: parseFloat(sale.total_amount) || 0,
           delivery_fee: parseFloat(sale.delivery_fee) || 0,
+          discount_amount: parseFloat(sale.discount_amount) || 0,
           final_amount: parseFloat(sale.final_amount) || 0,
           delivery_status: sale.delivery_status || 'pending',
           delivery_address: sale.delivery_address,
@@ -226,10 +195,20 @@ export const useDeliveryOrders = (params?: {
         throw error;
       }
     },
-    staleTime: 30 * 1000, // 30 segundos
-    refetchInterval: 2 * 60 * 1000, // Refetch a cada 2 minutos
+    // Removendo polling agressivo em favor do Realtime, mantendo staleTime curto para navegação
+    staleTime: 1000 * 30, 
   });
 };
+
+// Interface para o retorno raw da RPC (snake_case do banco)
+interface DeliveryMetricsRaw {
+  total_deliveries: number;
+  total_delivery_revenue: number;
+  total_delivery_fees: number;
+  avg_delivery_time_minutes: number;
+  on_time_rate: number;
+  avg_delivery_ticket: number;
+}
 
 /**
  * Hook para buscar métricas de delivery
@@ -246,8 +225,8 @@ export const useDeliveryMetrics = (period: number = 7) => {
         startDate.setDate(endDate.getDate() - period);
 
         // Usar RPC otimizada para métricas (SSoT)
-        const { data: rpcData, error: rpcError } = await supabase
-          .rpc('get_delivery_metrics', {
+        const { data: rpcResponse, error: rpcError } = await supabase
+          .rpc('get_delivery_metrics' as any, {
             p_start_date: startDate.toISOString(),
             p_end_date: endDate.toISOString()
           })
@@ -257,6 +236,9 @@ export const useDeliveryMetrics = (period: number = 7) => {
           console.error('❌ Erro ao buscar métricas via RPC:', rpcError);
           throw rpcError;
         }
+
+        // Cast seguro para a interface definida
+        const rpcData = rpcResponse as unknown as DeliveryMetricsRaw;
 
         // Buscar contagens por status (RPC não retorna isso)
         const { data: statusCounts } = await supabase
@@ -295,7 +277,8 @@ export const useDeliveryMetrics = (period: number = 7) => {
         throw error;
       }
     },
-    staleTime: 5 * 60 * 1000, // 5 minutos
+    // Metrics também atualizam via invalidação do Realtime acima
+    staleTime: 1000 * 60 * 5, 
   });
 };
 
@@ -320,7 +303,7 @@ export const useUpdateDeliveryStatus = () => {
     }) => {
 
       // Usar stored procedure para atualização com tracking
-      const { data, error } = await supabase.rpc('update_delivery_status', {
+      const { data, error } = await supabase.rpc('update_delivery_status' as any, {
         p_sale_id: saleId,
         p_new_status: newStatus,
         p_notes: notes || `Status alterado para ${newStatus}`
@@ -345,12 +328,13 @@ export const useUpdateDeliveryStatus = () => {
       // Cancelar queries pendentes para evitar conflitos
       await queryClient.cancelQueries({ queryKey: ['delivery-orders'] });
 
-      // Snapshot do estado anterior
-      const previousDeliveries = queryClient.getQueryData(['delivery-orders']);
+      // Snapshot do estado anterior (precisamos pegar de todas as queries ativas)
+      // Simplificação: vamos snapshotar apenas a query principal sem filtros ou tentar pegar todas
+      const previousDeliveries = queryClient.getQueriesData({ queryKey: ['delivery-orders'] });
 
-      // Atualização otimista
-      queryClient.setQueryData(['delivery-orders'], (old: any) => {
-        if (!old) return old;
+      // Atualização otimista em TODAS as queries de delivery que contêm este pedido
+      queryClient.setQueriesData({ queryKey: ['delivery-orders'] }, (old: any) => {
+        if (!old || !Array.isArray(old)) return old;
 
         return old.map((delivery: any) =>
           delivery.id === saleId
@@ -406,13 +390,16 @@ export const useUpdateDeliveryStatus = () => {
 
       // Rollback em caso de erro
       if (context?.previousDeliveries) {
-        queryClient.setQueryData(['delivery-orders'], context.previousDeliveries);
+         context.previousDeliveries.forEach(([queryKey, data]: [any, any]) => {
+            queryClient.setQueryData(queryKey, data);
+         });
       }
 
       toast({
         title: "Erro ao atualizar status",
         description: error.message || "Ocorreu um erro inesperado.",
         variant: "destructive",
+        duration: 5000 // Toasts de erro devem durar mais
       });
     },
     onSettled: () => {

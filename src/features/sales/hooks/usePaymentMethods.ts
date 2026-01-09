@@ -7,6 +7,7 @@ export interface PaymentMethod {
     name: string;
     slug: string;
     is_active: boolean;
+    type?: string;
 }
 
 export const usePaymentMethods = () => {
@@ -20,7 +21,22 @@ export const usePaymentMethods = () => {
                 .order('name');
 
             if (error) throw error;
-            return data as unknown as PaymentMethod[];
+
+            // Map 'type' from DB to 'slug' for frontend compatibility
+            // CRITICAL: Distinguish 'Fiado' (code FI) from 'Outros' (code 99) even if both are type 'other'
+            return (data || []).map((m: any) => {
+                let derivedSlug = m.type || m.slug;
+                
+                // Override for Fiado to ensure distinct slug
+                if (m.code === 'FI' || m.name.toLowerCase() === 'fiado') {
+                    derivedSlug = 'fiado';
+                }
+
+                return {
+                    ...m,
+                    slug: derivedSlug
+                };
+            }) as PaymentMethod[];
         },
         staleTime: 1000 * 60 * 30, // 30 minutes
     });

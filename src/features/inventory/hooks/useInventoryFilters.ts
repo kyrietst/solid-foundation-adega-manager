@@ -80,6 +80,7 @@ export function useInventoryFilters({ products }: UseInventoryFiltersProps) {
     missingCostsCount,
     filteredProducts: paginatedProducts,
     totalItems: filteredProducts.length,
-    totalPages
+    totalPages,
+    itemsPerPage
   };
 }

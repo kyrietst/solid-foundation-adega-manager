@@ -3,7 +3,7 @@ import { useAuth } from '@/app/providers/AuthContext';
 import { useDashboardData } from '@/features/dashboard/hooks/useDashboardData';
 import { useInventoryKpis } from '@/features/dashboard/hooks/useDashboardKpis';
 import { useChannelData } from '@/features/dashboard/hooks/useChannelData';
-import { useSalesChart, useTopProducts } from '@/features/dashboard/hooks/useDashboardMetrics';
+import { useSalesChart, useTopProducts, useLowStockAlerts } from '@/features/dashboard/hooks/useDashboardMetrics';
 import { DashboardPresentation } from './DashboardPresentation';
 
 export const DashboardContainer: React.FC = () => {
@@ -45,6 +45,13 @@ export const DashboardContainer: React.FC = () => {
     error: topProductsError
   } = useTopProducts(5);
 
+  // 6. ✅ SSoT: Alertas de Estoque (Para lógica de severidade)
+  const {
+    data: lowStockProducts,
+    isLoading: isLoadingLowStock,
+    error: lowStockError
+  } = useLowStockAlerts(10);
+
   // Preparar dados centralizados para o componente de apresentação
   const presentationProps = {
     // Dados Consolidados
@@ -58,6 +65,7 @@ export const DashboardContainer: React.FC = () => {
     // Dados de Gráficos e Listas
     chartData: salesChartData || [],
     topProducts: topProductsData || [],
+    lowStockProducts: lowStockProducts || [],
 
     // Estados de loading consolidados
     loadingStates: {
@@ -67,13 +75,15 @@ export const DashboardContainer: React.FC = () => {
       financials: isLoadingFinancials,
       inventory: isLoadingInventory,
       channels: isLoadingChannels,
-      topProducts: isLoadingTopProducts
+      topProducts: isLoadingTopProducts,
+      lowStock: isLoadingLowStock
     },
 
     // Estados de erro (Novo)
     errors: {
       salesChart: salesChartError,
-      topProducts: topProductsError
+      topProducts: topProductsError,
+      lowStock: lowStockError
     },
 
     // Configuração de apresentação

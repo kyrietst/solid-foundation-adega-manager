@@ -1,63 +1,47 @@
 import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/primitives/card';
 import { Button } from '@/shared/ui/primitives/button';
 import { LoadingScreen } from '@/shared/ui/composite/loading-spinner';
 import { useCustomers } from '@/features/customers/hooks/use-crm';
-import { SearchBar21st } from '@/shared/ui/thirdparty/search-bar-21st';
-import { getGlassCardClasses, getGlassButtonClasses, getHoverTransformClasses } from '@/core/config/theme-utils';
-import { cn } from '@/core/config/utils';
-import { StatCard } from '@/shared/ui/composite/stat-card';
-import { PageHeader } from '@/shared/ui/composite/PageHeader';
-import { Users, TrendingUp, UserPlus, Download, BarChart3 } from 'lucide-react';
+import { PremiumBackground } from '@/shared/ui/composite/PremiumBackground';
+import { Download, Plus } from 'lucide-react';
 import CustomerDataTable from './CustomerDataTable';
 import { NewCustomerModal } from './NewCustomerModal';
-import { useDataQualityMetrics } from '../hooks/useDataQuality';
+import { CustomerStats } from './CustomerStats';
+import { CustomerFilters } from './CustomerFilters';
+import { StandardPageHeader } from '@/shared/ui/composite/StandardPageHeader';
 
 const CustomersLite = () => {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
-  const [search, setSearch] = useState('');
+  // State for Modal
   const [isNewCustomerModalOpen, setIsNewCustomerModalOpen] = useState(false);
+  const [loading, setLoading] = useState(false); // Restore loading state for actions
+  
+  // State for Filters
+  const [search, setSearch] = useState('');
+  const [segmentFilter, setSegmentFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [lastPurchaseFilter, setLastPurchaseFilter] = useState('');
+  const [birthdayFilter, setBirthdayFilter] = useState('');
   
   // Usar hook básico de customers
-  const { data: customers, isLoading, error } = useCustomers({ search });
+  // Note: We might want to unify data fetching, but for now we keep existing pattern
+  const { data: customers = [], isLoading, error } = useCustomers({ search });
 
-  // Converter customers para formato compatível com sistema de qualidade
-  const customersData = React.useMemo(() => {
+  const uniqueSegments = useMemo(() => {
     if (!customers) return [];
-    return customers.map(customer => ({
-      id: customer.id,
-      name: customer.name,
-      email: customer.email,
-      phone: customer.phone,
-      address: customer.address,
-      birthday: customer.birthday,
-      first_purchase_date: customer.first_purchase_date,
-      last_purchase_date: customer.last_purchase_date,
-      purchase_frequency: customer.purchase_frequency,
-      favorite_category: customer.favorite_category,
-      favorite_product: customer.favorite_product,
-      notes: customer.notes,
-      contact_permission: customer.contact_permission,
-      created_at: customer.created_at
-    }));
+    return Array.from(new Set(customers.map(c => c.segment).filter(Boolean))) as string[];
   }, [customers]);
-
-  // Métricas de qualidade
-  const qualityMetrics = useDataQualityMetrics(customersData);
-
-  // Removemos a tabela antiga e manteremos apenas a nova tabela 21st.dev
 
   const activeCount = useMemo(() => {
     if (!customers) return 0;
+    // Assuming 'status' or 'segment' field exists and logic matches existing
+    // 'status' does not exist on CustomerProfile, using 'segment' as proxy for now or if we add status later 
     return customers.filter((c) => c.segment !== 'Inativo').length;
   }, [customers]);
 
-  // Calcular novos clientes nos últimos 30 dias usando dados reais
   const newClientsCount = useMemo(() => {
     if (!customers) return 0;
-    
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     
@@ -68,53 +52,21 @@ const CustomersLite = () => {
     }).length;
   }, [customers]);
 
-  // Função para navegar para relatórios CRM - Total de Clientes
-  const handleNavigateToCustomerReports = () => {
-    // Navegar para a página de relatórios na aba CRM
-    navigate('/reports?tab=crm#total-clientes-kpi');
-    
-    // Após um pequeno delay, fazer scroll para o elemento específico
-    setTimeout(() => {
-      const element = document.getElementById('total-clientes-kpi');
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        // Adicionar um destaque temporário no elemento
-        element.style.animation = 'pulse 2s ease-in-out';
-      }
-    }, 300);
-  };
+  const vipCount = useMemo(() => {
+    if (!customers) return 0;
+    return customers.filter(c => c.segment === 'VIP').length;
+  }, [customers]);
 
-  // Função para navegar para relatórios CRM - Clientes Ativos
-  const handleNavigateToActiveCustomersReports = () => {
-    // Navegar para a página de relatórios na aba CRM
-    navigate('/reports?tab=crm#clientes-ativos-kpi');
-    
-    // Após um pequeno delay, fazer scroll para o elemento específico
-    setTimeout(() => {
-      const element = document.getElementById('clientes-ativos-kpi');
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        // Adicionar um destaque temporário no elemento
-        element.style.animation = 'pulse 2s ease-in-out';
-      }
-    }, 300);
-  };
+  const retentionRate = useMemo(() => {
+    if (!customers || customers.length === 0) return 0;
+    return (activeCount / customers.length) * 100;
+  }, [customers, activeCount]);
 
-  // Função para navegar para relatórios CRM - Novos Clientes (Últimos 30 dias)
-  const handleNavigateToNewCustomersReports = () => {
-    // Navegar para a página de relatórios na aba CRM
-    navigate('/reports?tab=crm#novos-clientes-kpi');
-    
-    // Após um pequeno delay, fazer scroll para o elemento específico
-    setTimeout(() => {
-      const element = document.getElementById('novos-clientes-kpi');
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        // Adicionar um destaque temporário no elemento
-        element.style.animation = 'pulse 2s ease-in-out';
-      }
-    }, 300);
-  };
+
+  // Placeholder calculations for revenue since strict types might miss it in this hook
+  // In a real refactor we'd ensure useCustomers returns this or use a specific hook
+  const totalRevenue = 0; 
+  const averageTicket = 0;
 
   if (isLoading) {
     return <LoadingScreen text="Carregando clientes..." />;
@@ -122,95 +74,94 @@ const CustomersLite = () => {
 
   if (error) {
     return (
-      <div className="p-8">
-        <Card className="bg-red-900/20 border-red-500/30">
-          <CardContent className="p-6">
-            <h2 className="text-lg font-semibold text-red-400 mb-2">
-              Erro ao carregar clientes
-            </h2>
-            <p className="text-red-300">
-              {error.message || 'Ocorreu um erro inesperado'}
-            </p>
-          </CardContent>
-        </Card>
+      <div className="p-8 flex items-center justify-center h-screen bg-black text-red-500">
+        Erro ao carregar clientes: {error.message}
       </div>
     );
   }
 
   return (
-    <div className="w-full h-full flex flex-col p-4 overflow-x-hidden min-w-0">
-      {/* Header padronizado com PageHeader */}
-      <PageHeader
-        title="GESTÃO DE CLIENTES"
-        count={customers?.length || 0}
-        countLabel="clientes"
-      >
-        <Button
-          className={`${getGlassButtonClasses('outline', 'md')} ${getHoverTransformClasses('lift')}`}
-          onClick={() => { /* TODO: export */ }}
-        >
-          <Download className="h-4 w-4 mr-2" />
-          Exportar
-        </Button>
-        <Button
-          className={`${getGlassButtonClasses('primary', 'md')} ${getHoverTransformClasses('scale')} shadow-lg hover:shadow-yellow-400/30 font-semibold`}
-          onClick={() => setIsNewCustomerModalOpen(true)}
-        >
-          <UserPlus className="h-4 w-4 mr-2" />
-          NOVO CLIENTE
-        </Button>
-      </PageHeader>
+    <>
+      {/* Background Fixed Layer */}
+      <PremiumBackground className="fixed inset-0 z-0 pointer-events-none" />
 
-      {/* Container principal com glassmorphism - KPIs + Tabela */}
-      <section
-        className="flex-1 min-h-0 bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-4 flex flex-col hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-colors duration-300 overflow-visible space-y-6"
-      >
-        {/* KPIs Resumo - Padronizados com StatCard v2.0.0 */}
-        <div className="flex-shrink-0 grid grid-cols-1 md:grid-cols-4 gap-4">
-          <StatCard
-            layout="crm"
-            variant="default"
-            title="Total de Clientes"
-            value={customers?.length || 0}
-            description="📊 Base completa • Clique para ver relatórios"
-            icon={Users}
-            onClick={handleNavigateToCustomerReports}
-            className="cursor-pointer transform hover:scale-105 transition-all duration-200 hover:shadow-xl hover:shadow-blue-500/20"
-          />
-          
-          <StatCard
-            layout="crm"
-            variant="warning"
-            title="Clientes Ativos"
-            value={activeCount}
-            description="⚡ Segmento ativo • Clique para ver relatórios"
-            icon={TrendingUp}
-            onClick={handleNavigateToActiveCustomersReports}
-            className="cursor-pointer transform hover:scale-105 transition-all duration-200 hover:shadow-xl hover:shadow-purple-500/20"
-          />
-          
-          <StatCard
-            layout="crm"
-            variant="success"
-            title="Últimos 30 dias"
-            value={`+${newClientsCount}`}
-            description="🚀 Novos cadastros • Clique para ver relatórios"
-            icon={UserPlus}
-            onClick={handleNavigateToNewCustomersReports}
-            className="cursor-pointer transform hover:scale-105 transition-all duration-200 hover:shadow-xl hover:shadow-green-500/20"
-          />
-          
-        </div>
+      {/* Main Content Layer */}
+      <div className="relative z-10 flex flex-col h-screen overflow-hidden bg-transparent">
+        
+        {/* Header Section */}
+        {/* Header Section */}
+        <header className="flex-none px-8 py-6 pt-8 pb-6 z-10 w-full">
+          <div className="flex flex-wrap justify-between items-end gap-4 mb-6">
+             <div className="flex flex-col gap-1">
+               <p className="text-zinc-500 text-sm font-medium tracking-widest uppercase">Módulo de Gestão</p>
+               <h2 className="text-white text-3xl md:text-4xl font-bold leading-tight tracking-tight">GESTÃO DE CLIENTES</h2>
+             </div>
+             <div className="flex gap-3">
+               <Button 
+                variant="outline"
+                className="flex items-center justify-center gap-2 h-10 px-4 rounded-xl bg-zinc-900 border border-zinc-700 text-white text-sm font-semibold hover:border-[#f9cb15] hover:text-[#f9cb15] transition-colors"
+                onClick={() => { /* TODO: Implement export */ }}
+               >
+                <Download className="w-[18px] h-[18px]" />
+                <span className="hidden sm:inline">Exportar</span>
+               </Button>
+               
+               <Button 
+                onClick={() => setIsNewCustomerModalOpen(true)}
+                className="flex items-center justify-center gap-2 h-10 px-6 rounded-xl bg-white text-black text-sm font-bold shadow-lg hover:bg-zinc-200 transition-colors"
+               >
+                <Plus className="w-[18px] h-[18px]" />
+                <span className="hidden sm:inline">Novo Cliente</span>
+               </Button>
+             </div>
+          </div>
+        </header>
 
+        {/* Scrollable Content */}
+        <main className="flex-1 overflow-y-auto px-8 pb-8 custom-scrollbar flex flex-col gap-8">
+            {/* KPI/Stats Grid */}
+            <div className="shrink-0">
+                <CustomerStats 
+                    totalCustomers={customers?.length || 0}
+                    vipCustomers={vipCount}
+                    totalRevenue={totalRevenue}
+                    averageTicket={averageTicket}
+                    activeCustomers={activeCount}
+                    newCustomersCount={newClientsCount}
+                    retentionRate={retentionRate}
+                />
+            </div>
 
+            {/* Filters */}
+            <CustomerFilters 
+                searchTerm={search}
+                onSearchChange={setSearch}
+                segmentFilter={segmentFilter}
+                onSegmentFilterChange={setSegmentFilter}
+                statusFilter={statusFilter}
+                onStatusFilterChange={setStatusFilter}
+                lastPurchaseFilter={lastPurchaseFilter}
+                onLastPurchaseFilterChange={setLastPurchaseFilter}
+                birthdayFilter={birthdayFilter}
+                onBirthdayFilterChange={setBirthdayFilter}
+                uniqueSegments={uniqueSegments}
+                isOpen={true}
+            />
+            
+            {/* Table */}
+            <div className="flex-1 min-h-[500px]">
+                 <CustomerDataTable 
+                    searchTerm={search}
+                    segmentFilter={segmentFilter}
+                    statusFilter={statusFilter}
+                    lastPurchaseFilter={lastPurchaseFilter}
+                    birthdayFilter={birthdayFilter}
+                 />
+            </div>
+        </main>
+      </div>
 
-        {/* Tabela de Clientes */}
-        <CardContent className="p-0 flex-1 min-h-0 overflow-visible relative w-full">
-          <CustomerDataTable />
-        </CardContent>
-      </section>
-
-      {/* Modal Novo Cliente */}
+      {/* Modal & Overlays */}
       <NewCustomerModal
         isOpen={isNewCustomerModalOpen}
         onClose={() => setIsNewCustomerModalOpen(false)}
@@ -218,18 +169,10 @@ const CustomersLite = () => {
 
       {loading && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-adega-charcoal p-6 rounded-lg border border-white/10">
-            <p className="text-adega-platinum">Funcionalidade em desenvolvimento...</p>
-            <Button 
-              className="mt-4 w-full" 
-              onClick={() => setLoading(false)}
-            >
-              Fechar
-            </Button>
-          </div>
+          <LoadingScreen text="Processando..." />
         </div>
       )}
-    </div>
+    </>
   );
 };
 

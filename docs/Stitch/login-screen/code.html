@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Adega Anita's Living Login V3</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Noto+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#ffd11a",
+                        "background-light": "#f8f8f5",
+                        "background-dark": "#09090b",
+                        "gold-muted": "#cec18d",
+                        "surface-dark": "#18181b",
+                    },
+                    fontFamily: {
+                        "display": ["Space Grotesk", "sans-serif"],
+                        "body": ["Noto Sans", "sans-serif"],
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                    animation: {
+                        'breathe': 'breathe 7s ease-in-out infinite',
+                        'float': 'float 20s ease-in-out infinite',
+                        'rise': 'rise 10s linear infinite',
+                        'shimmer': 'shimmer 4s linear infinite',
+                    },
+                    keyframes: {
+                        breathe: {
+                            '0%, 100%': { transform: 'scale(1)', opacity: '0.2' },
+                            '50%': { transform: 'scale(1.15)', opacity: '0.5' },
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translate(0, 0) scale(1.1)' },
+                            '33%': { transform: 'translate(2%, 2%) scale(1.15)' },
+                            '66%': { transform: 'translate(-2%, 1%) scale(1.12)' },
+                        },
+                        rise: {
+                            '0%': { transform: 'translateY(110vh) scale(0)', opacity: '0' },
+                            '10%': { opacity: '0.6' },
+                            '90%': { opacity: '0.6' },
+                            '100%': { transform: 'translateY(-20vh) scale(1)', opacity: '0' },
+                        },
+                        shimmer: {
+                            '0%': { backgroundPosition: '200% center' },
+                            '100%': { backgroundPosition: '-200% center' },
+                        }
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom scrollbar hide for cleaner UI */
+        body::-webkit-scrollbar {
+            display: none;
+        }
+        body {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .glass-card {
+            background: rgba(15, 15, 15, 0.65);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+        }
+        .text-gold-gradient {
+            background: linear-gradient(135deg, #ffd11a 20%, #bf9b30 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .input-focus-gold:focus {
+            border-color: #ffd11a;
+            box-shadow: 0 0 0 1px #ffd11a;
+        }
+        .btn-shimmer {
+            background-size: 200% auto;
+            background-image: linear-gradient(110deg, #ffd11a 0%, #ffeaa7 45%, #ffd11a 55%, #ffd11a 100%);
+        }
+    </style>
+</head>
+<body class="bg-background-dark font-display h-screen w-screen overflow-hidden relative selection:bg-primary selection:text-black">
+<!-- Layer 1: Abstract Living Background Image -->
+<div class="absolute inset-0 w-full h-full overflow-hidden pointer-events-none z-0">
+<!-- Using a transform scale to allow movement room for 'living' effect -->
+<div class="w-full h-full bg-cover bg-center animate-float opacity-30 mix-blend-screen" data-alt="Abstract flowing gold liquid on black background" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBI54TbnQYT5uOZOeR_17Zd7KbsAahWSE6iY1Y3rwad3IV7_4VEP3s-7Rtxv2bkOadcLGiO-FHVdr0XfJx5nba22PhGOlmjCJ8Z2Bh_fbT0B6PwoLS5bCAHpv8TJ3Ro0DPtjNmlHPOU1Tca8D9X9XzF8C_k-QA2sn85NKdU_ce10TQbcwXmRoLF_lMPlyRcHLTy04JUbAcBL3fj4UIUTe8VDVXole8bUUS_c9nnrRJLws3EDgOBAk2XtGoxXnrMLsLULztliLPWRw'); transform-origin: center center;">
+</div>
+<!-- Gradient Overlay to darken edges and ensure text readability -->
+<div class="absolute inset-0 bg-gradient-to-b from-black/70 via-black/40 to-black/90"></div>
+</div>
+<!-- Layer 2: Breathing Radial Gradient Pulse (Behind Card) -->
+<!-- This creates the 'breathing' halo effect behind the login card -->
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] pointer-events-none z-0">
+<div class="w-full h-full rounded-full bg-[#ffd11a] blur-[140px] animate-breathe mix-blend-color-dodge opacity-20"></div>
+</div>
+<!-- Layer 3: Champagne Bubbles (CSS Particles) -->
+<!-- Creating several bubbles with different durations and delays for organic feel -->
+<div class="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+<div class="absolute bottom-0 left-[10%] w-2 h-2 rounded-full bg-primary/40 animate-rise" style="animation-duration: 15s; animation-delay: 0s;"></div>
+<div class="absolute bottom-0 left-[20%] w-3 h-3 rounded-full bg-primary/30 animate-rise" style="animation-duration: 12s; animation-delay: 2s;"></div>
+<div class="absolute bottom-0 left-[35%] w-1.5 h-1.5 rounded-full bg-primary/50 animate-rise" style="animation-duration: 18s; animation-delay: 5s;"></div>
+<div class="absolute bottom-0 left-[50%] w-2.5 h-2.5 rounded-full bg-primary/40 animate-rise" style="animation-duration: 14s; animation-delay: 1s;"></div>
+<div class="absolute bottom-0 left-[65%] w-4 h-4 rounded-full bg-primary/20 animate-rise" style="animation-duration: 20s; animation-delay: 3s;"></div>
+<div class="absolute bottom-0 left-[80%] w-2 h-2 rounded-full bg-primary/40 animate-rise" style="animation-duration: 16s; animation-delay: 7s;"></div>
+<div class="absolute bottom-0 left-[90%] w-3 h-3 rounded-full bg-primary/30 animate-rise" style="animation-duration: 13s; animation-delay: 4s;"></div>
+</div>
+<!-- Layer 4: Foreground Content -->
+<div class="relative z-10 flex h-full w-full flex-col items-center justify-center p-4">
+<!-- Login Card Component -->
+<div class="glass-card w-full max-w-[440px] rounded-2xl p-8 sm:p-12 flex flex-col gap-8 transition-all duration-500 hover:shadow-[0_25px_60px_-12px_rgba(255,209,26,0.15)]">
+<!-- Header Section -->
+<div class="text-center space-y-2">
+<div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 mb-2 border border-primary/20 shadow-[0_0_15px_rgba(255,209,26,0.1)]">
+<span class="material-symbols-outlined text-primary text-2xl">wine_bar</span>
+</div>
+<h1 class="text-4xl font-black tracking-tight text-white leading-tight">
+                    Adega <span class="text-gold-gradient">Anita's</span>
+</h1>
+<p class="text-gold-muted text-sm font-medium tracking-[0.2em] uppercase opacity-80">
+                    Enterprise Resource Planning
+                </p>
+</div>
+<!-- Form Section -->
+<form class="flex flex-col gap-5 w-full" onsubmit="event.preventDefault()">
+<!-- Email Input -->
+<div class="space-y-2 group">
+<label class="text-white text-sm font-semibold ml-1 tracking-wide" for="email">Email / Username</label>
+<div class="relative">
+<div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-gold-muted/50 group-focus-within:text-primary transition-colors duration-300">person</span>
+</div>
+<input class="input-focus-gold w-full bg-[#09090b]/60 border border-[#444030] text-white placeholder-gold-muted/30 text-base rounded-lg h-14 pl-11 pr-4 focus:outline-none transition-all duration-300" id="email" placeholder="sommelier@adegaanitas.com" type="email"/>
+</div>
+</div>
+<!-- Password Input -->
+<div class="space-y-2 group">
+<div class="flex justify-between items-center ml-1">
+<label class="text-white text-sm font-semibold tracking-wide" for="password">Password</label>
+<a class="text-xs text-primary/80 hover:text-primary transition-colors font-medium" href="#">Forgot Access?</a>
+</div>
+<div class="relative">
+<div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-gold-muted/50 group-focus-within:text-primary transition-colors duration-300">lock</span>
+</div>
+<input class="input-focus-gold w-full bg-[#09090b]/60 border border-[#444030] text-white placeholder-gold-muted/30 text-base rounded-lg h-14 pl-11 pr-4 focus:outline-none transition-all duration-300" id="password" placeholder="••••••••" type="password"/>
+<button class="absolute inset-y-0 right-0 pr-4 flex items-center text-gold-muted/50 hover:text-white transition-colors cursor-pointer" type="button">
+<span class="material-symbols-outlined text-[20px]">visibility</span>
+</button>
+</div>
+</div>
+<!-- Action Button -->
+<button class="btn-shimmer animate-shimmer w-full h-12 mt-4 rounded-lg text-[#24200f] font-bold text-base tracking-wide shadow-[0_0_20px_rgba(255,209,26,0.3)] hover:shadow-[0_0_35px_rgba(255,209,26,0.5)] transition-shadow duration-300 flex items-center justify-center gap-2 group/btn cursor-pointer" type="submit">
+<span>Sign In</span>
+<span class="material-symbols-outlined text-xl transition-transform duration-300 group-hover/btn:translate-x-1">arrow_forward</span>
+</button>
+</form>
+<!-- Footer Section -->
+<div class="text-center pt-2">
+<p class="text-[10px] text-white/30 font-light tracking-[0.2em] uppercase">
+                    v3.0.0 Living Edition
+                </p>
+</div>
+</div>
+<!-- Floating Security Badge/Element for extra 'Cyber' feel -->
+<div class="absolute bottom-8 flex items-center gap-2 px-4 py-2 rounded-full bg-black/20 backdrop-blur-md border border-white/5 text-white/30 text-xs font-mono animate-pulse">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_5px_#10b981]"></span>
+            SECURE_NODE_03
+        </div>
+</div>
+</body></html>

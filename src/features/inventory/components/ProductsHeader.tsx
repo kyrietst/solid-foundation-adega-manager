@@ -69,13 +69,16 @@ export const ProductsHeader: React.FC<ProductsHeaderProps> = ({
 };
 
 // Componente separado para o botão de adicionar produto
-export const AddProductButton: React.FC<{ onAddProduct?: () => void }> = ({ onAddProduct }) => {
+export const AddProductButton: React.FC<{ onAddProduct?: () => void; className?: string }> = ({ onAddProduct, className }) => {
   if (!onAddProduct) return null;
   
   return (
     <Button 
       onClick={onAddProduct}
-      className="bg-gradient-to-r from-primary-yellow to-yellow-500 text-black hover:from-yellow-300 hover:to-yellow-400 font-semibold shadow-lg hover:shadow-yellow-400/30 transition-all duration-200 hover:scale-105"
+      className={cn(
+        "bg-gradient-to-r from-primary-yellow to-yellow-500 text-black hover:from-yellow-300 hover:to-yellow-400 font-semibold shadow-lg hover:shadow-yellow-400/30 transition-all duration-200 hover:scale-105",
+        className
+      )}
     >
       <Plus className="h-4 w-4 mr-2" />
       Adicionar Produto

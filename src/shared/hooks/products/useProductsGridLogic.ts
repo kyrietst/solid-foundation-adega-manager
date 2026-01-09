@@ -23,6 +23,12 @@ export interface ProductsGridConfig {
     desktop: number;
   };
   className?: string;
+
+  // Controlled State Props
+  controlledSearchTerm?: string;
+  onControlledSearchChange?: (value: string) => void;
+  controlledCategory?: string;
+  onControlledCategoryChange?: (value: string) => void;
 }
 
 export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
@@ -34,7 +40,11 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
     stockFilter = 'all',
     onProductSelect,
     gridColumns = { mobile: 1, tablet: 2, desktop: 3 },
-    className
+    className,
+    controlledSearchTerm,
+    onControlledSearchChange,
+    controlledCategory,
+    onControlledCategoryChange
   } = config;
 
   const { addItem, addFromVariantSelection } = useCart();
@@ -42,24 +52,54 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
   const queryClient = useQueryClient();
 
   // 1. Estados de Filtro (Server-Side)
-  const [searchTerm, setSearchTerm] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState(initialCategory);
+  // Se controlado, usa o valor da prop. Se não, usa estado local.
+  const [localSearchTerm, setLocalSearchTerm] = useState('');
+  const [localDebouncedSearch, setLocalDebouncedSearch] = useState('');
+  const [localCategory, setLocalCategory] = useState(initialCategory);
+
+  const isControlledSearch = controlledSearchTerm !== undefined;
+  const isControlledCategory = controlledCategory !== undefined;
+
+  const searchTerm = isControlledSearch ? controlledSearchTerm : localSearchTerm;
+  const selectedCategory = isControlledCategory ? controlledCategory : localCategory;
+
+  // Handler para mudança de busca
+  const handleSearchChange = useCallback((value: string) => {
+    if (isControlledSearch && onControlledSearchChange) {
+      onControlledSearchChange(value);
+    } else {
+      setLocalSearchTerm(value);
+    }
+  }, [isControlledSearch, onControlledSearchChange]);
+
+  // Handler para mudança de categoria
+  const handleCategoryChange = useCallback((value: string) => {
+    if (isControlledCategory && onControlledCategoryChange) {
+      onControlledCategoryChange(value);
+    } else {
+      setLocalCategory(value);
+    }
+  }, [isControlledCategory, onControlledCategoryChange]);
+
 
   // UI States
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
 
-  // Debounce search term
+  // Debounce search term (Unified for both controlled and local)
+  // Nota: Se for controlado, o Pai já deve estar cuidando do debounce SE ele quiser,
+  // MAS para garantir que a query só dispare com delay, mantemos um debounce local do valor efetivo.
+  const [effectiveDebouncedSearch, setEffectiveDebouncedSearch] = useState('');
+
   useEffect(() => {
     const timer = setTimeout(() => {
-      setDebouncedSearch(searchTerm);
+      setEffectiveDebouncedSearch(searchTerm);
     }, 400); // 400ms debounce
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  const hasActiveFilters = debouncedSearch !== '' || selectedCategory !== 'all' || stockFilter !== 'all';
+  const hasActiveFilters = effectiveDebouncedSearch !== '' || selectedCategory !== 'all' || stockFilter !== 'all';
   const filterDescription = hasActiveFilters ?
-    `${debouncedSearch ? `Busca: "${debouncedSearch}"` : ''} ${selectedCategory !== 'all' ? `Categoria: ${selectedCategory}` : ''}`.trim()
+    `${effectiveDebouncedSearch ? `Busca: "${effectiveDebouncedSearch}"` : ''} ${selectedCategory !== 'all' ? `Categoria: ${selectedCategory}` : ''}`.trim()
     : undefined;
 
   // 2. Data Fetching (Infinite Query)
@@ -71,7 +111,7 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
     isLoading,
     isError
   } = useProductList({
-    search: debouncedSearch,
+    search: effectiveDebouncedSearch,
     category: selectedCategory,
     stockFilter,
     storeFilter,
@@ -101,10 +141,10 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
 
   // Ações de Filtro
   const clearFilters = useCallback(() => {
-    setSearchTerm('');
-    setSelectedCategory('all');
-    setDebouncedSearch('');
-  }, []);
+    handleSearchChange('');
+    handleCategoryChange('all');
+    // If local, we also clear debounced immediately to update UI? No, effect handles it.
+  }, [handleSearchChange, handleCategoryChange]);
 
   // Handler para código de barras escaneado
   const handleBarcodeScanned = async (barcode: string) => {
@@ -258,8 +298,8 @@ export const useProductsGridLogic = (config: ProductsGridConfig = {}) => {
     selectedProduct,
 
     // Actions
-    setSearchTerm,
-    setSelectedCategory,
+    setSearchTerm: handleSearchChange,
+    setSelectedCategory: handleCategoryChange,
     setIsFiltersOpen,
     clearFilters,
     handleBarcodeScanned,

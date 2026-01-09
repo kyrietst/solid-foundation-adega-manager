@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Adega Anita's Sidebar V2</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Theme Configuration -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#f9cb15",
+                        "background-light": "#f8f8f5",
+                        "background-dark": "#09090b",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.5rem", 
+                        "lg": "1rem", 
+                        "xl": "1.5rem", 
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #000; /* Fallback */
+            background-image: 
+                radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
+                radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), 
+                radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
+            background-size: cover;
+            min-height: 100vh;
+        }
+        
+        /* Custom scrollbar for sidebar */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.02);
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body class="flex items-start justify-start h-screen overflow-hidden text-white bg-background-dark">
+<!-- Sidebar Container -->
+<!-- Applying Glassmorphism & Neon style: bg-[#09090b]/95, backdrop-blur-xl, border-r border-white/5 -->
+<aside class="flex flex-col w-72 h-full bg-[#09090b]/95 backdrop-blur-xl border-r border-white/5 shadow-2xl relative z-20">
+<!-- Header Section -->
+<div class="px-6 py-8 border-b border-white/5 flex flex-col gap-1">
+<div class="flex items-center gap-3 mb-1">
+<div class="relative flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 border border-primary/20 shadow-[0_0_15px_rgba(250,204,21,0.2)]">
+<span class="material-symbols-outlined text-primary" style="font-size: 24px;">wine_bar</span>
+</div>
+<h1 class="text-white text-lg font-semibold tracking-tight">Adega Anita's</h1>
+</div>
+<p class="text-zinc-500 text-[10px] uppercase tracking-[0.2em] pl-[3.25rem] font-bold">Sistema de Gerenciamento</p>
+</div>
+<!-- Navigation Section -->
+<nav class="flex-1 px-4 py-6 overflow-y-auto custom-scrollbar space-y-6">
+<!-- Group 1: DASHBOARD -->
+<div>
+<h3 class="text-[10px] font-bold uppercase tracking-widest text-zinc-500 mb-3 mt-2 px-3">Main</h3>
+<div class="flex flex-col gap-1">
+<!-- Active State Example -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 bg-primary/10 text-primary border border-primary/20 shadow-[0_0_15px_rgba(250,204,21,0.15)] group" href="#">
+<span class="material-symbols-outlined fill-current" style="font-size: 20px; font-variation-settings: 'FILL' 1;">dashboard</span>
+<span>Overview</span>
+<!-- Subtle indicator dot for active state -->
+<span class="ml-auto w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(250,204,21,0.8)]"></span>
+</a>
+<!-- Inactive State -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 text-zinc-400 hover:text-zinc-100 hover:bg-white/5 group" href="#">
+<span class="material-symbols-outlined group-hover:text-white transition-colors" style="font-size: 20px;">analytics</span>
+<span>Analytics</span>
+</a>
+</div>
+</div>
+<!-- Group 2: INVENTORY -->
+<div>
+<h3 class="text-[10px] font-bold uppercase tracking-widest text-zinc-500 mb-3 px-3">Inventory</h3>
+<div class="flex flex-col gap-1">
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 text-zinc-400 hover:text-zinc-100 hover:bg-white/5 group" href="#">
+<span class="material-symbols-outlined group-hover:text-white transition-colors" style="font-size: 20px;">wine_bar</span>
+<span>Wines / Catalog</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 text-zinc-400 hover:text-zinc-100 hover:bg-white/5 group" href="#">
+<span class="material-symbols-outlined group-hover:text-white transition-colors" style="font-size: 20px;">local_shipping</span>
+<span>Suppliers</span>
+</a>
+<a class="flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 text-zinc-400 hover:text-zinc-100 hover:bg-white/5 group" href="#">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined group-hover:text-white transition-colors" style="font-size: 20px;">notifications_active</span>
+<span>Stock Alerts</span>
+</div>
+<span class="flex items-center justify-center w-5 h-5 rounded bg-red-500/10 text-red-400 text-[10px] font-bold border border-red-500/20">3</span>
+</a>
+</div>
+</div>
+<!-- Group 3: SALES & CRM -->
+<div>
+<h3 class="text-[10px] font-bold uppercase tracking-widest text-zinc-500 mb-3 px-3">Sales &amp; CRM</h3>
+<div class="flex flex-col gap-1">
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 text-zinc-400 hover:text-zinc-100 hover:bg-white/5 group" href="#">
+<span class="material-symbols-outlined group-hover:text-white transition-colors" style="font-size: 20px;">attach_money</span>
+<span>Orders</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 text-zinc-400 hover:text-zinc-100 hover:bg-white/5 group" href="#">
+<span class="material-symbols-outlined group-hover:text-white transition-colors" style="font-size: 20px;">diamond</span>
+<span>VIP Clients</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 text-zinc-400 hover:text-zinc-100 hover:bg-white/5 group" href="#">
+<span class="material-symbols-outlined group-hover:text-white transition-colors" style="font-size: 20px;">receipt_long</span>
+<span>Invoices</span>
+</a>
+</div>
+</div>
+</nav>
+<!-- Floating Footer -->
+<div class="mt-auto border-t border-white/5 p-4 bg-black/20 backdrop-blur-md">
+<div class="flex items-center gap-3 p-2 rounded-xl transition-colors duration-200 hover:bg-white/5 cursor-pointer group/user">
+<!-- Avatar -->
+<div class="relative">
+<div class="w-10 h-10 rounded-full bg-cover bg-center ring-2 ring-white/5 group-hover/user:ring-primary/40 transition-all duration-300" data-alt="Profile picture of sommelier Anita R." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDrB3E81Ywd1N3oI_q4dASuB70gCwoJDganiamoXUgKmxIhB558NVZaoQjMXxR6QZrCwDoKdUQVjWzQZQawsiJEnQoj6Pn6-h9yXkg69IpGfy4E0kLURaHk2ZZiWFfdLf4ky5sWOk2Hk8qhKj77x5kw_jvNmZr059Z5r4OFEjm7M3BI0zh-_H78uBlGhLPvVxKsiv0UCbA5a--g8nhsAYShopudENsFGQu2mw9yDEw93Fqn_e-e7WBegw4JEtwszDwttQkdrhFhtg');"></div>
+<div class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-[#18181b] rounded-full"></div>
+</div>
+<!-- User Info -->
+<div class="flex flex-col flex-1 overflow-hidden">
+<p class="text-sm font-semibold text-zinc-200 truncate group-hover/user:text-white">Anita R.</p>
+<p class="text-xs text-zinc-500 truncate">Head Sommelier</p>
+</div>
+<!-- Logout Action -->
+<button aria-label="Logout" class="flex items-center justify-center w-8 h-8 rounded-lg text-zinc-500 hover:text-red-400 hover:bg-red-400/10 transition-all duration-200">
+<span class="material-symbols-outlined" style="font-size: 20px;">logout</span>
+</button>
+</div>
+</div>
+</aside>
+<!-- Main Content Area Placeholder (To show context) -->
+<main class="flex-1 h-full p-10 overflow-y-auto relative">
+<div class="absolute inset-0 z-0 bg-background-dark/80 backdrop-blur-sm pointer-events-none"></div>
+<div class="relative z-10 flex flex-col items-center justify-center h-full opacity-30 text-center">
+<span class="material-symbols-outlined text-zinc-600 mb-4" style="font-size: 64px;">wine_bar</span>
+<h2 class="text-2xl font-light text-zinc-500">Main Application Area</h2>
+<p class="text-zinc-600 mt-2">Select an item from the sidebar to begin.</p>
+</div>
+</main>
+</body></html>

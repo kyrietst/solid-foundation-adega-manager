@@ -14,8 +14,8 @@ export interface InventoryHeaderProps {
     medium: number;
     slow: number;
   };
-  viewMode: 'grid' | 'table';
-  onViewModeChange: (mode: 'grid' | 'table') => void;
+  viewMode: 'grid' | 'table' | 'list';
+  onViewModeChange: (mode: 'grid' | 'table' | 'list') => void;
   onCreateProduct: () => void;
   canCreateProduct: boolean;
 }
@@ -90,9 +90,9 @@ export interface InventoryCalculations {
 }
 
 export interface InventoryViewState {
-  viewMode: 'grid' | 'table';
+  viewMode: 'grid' | 'table' | 'list';
   itemsPerPage: number;
-  setViewMode: (mode: 'grid' | 'table') => void;
+  setViewMode: (mode: 'grid' | 'table' | 'list') => void;
   setItemsPerPage: (count: number) => void;
 }
 

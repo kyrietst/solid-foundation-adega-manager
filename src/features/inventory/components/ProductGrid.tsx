@@ -44,8 +44,8 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
 }) => {
   const parentRef = useRef<HTMLDivElement>(null);
 
-  // PERFORMANCE: Calcular items por row baseado no gridColumns.desktop
-  const ITEMS_PER_ROW = gridColumns.desktop || 3;
+  // PERFORMANCE: Calcular items por row baseado no maximo de colunas (XL)
+  const ITEMS_PER_ROW = 5;
 
   // Agrupar produtos em rows para virtualização
   const rows: Product[][] = [];
@@ -57,7 +57,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
   const rowVirtualizer = useVirtualizer({
     count: rows.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 450, // Ajustado para altura aproximada do card
+    estimateSize: () => 500, // Safe estimate to prevent overlap before measurement
     overscan: 2,
   });
 
@@ -80,7 +80,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
     <div
       ref={parentRef}
       className={cn(
-        'h-full overflow-y-auto p-6 pb-32',
+        'h-full overflow-y-auto p-4 pb-32 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent',
         className
       )}
     >
@@ -99,9 +99,11 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
           return (
             <div
               key={virtualRow.index}
+              data-index={virtualRow.index}
+              ref={rowVirtualizer.measureElement}
               className={cn(
-                'grid gap-6 absolute top-0 left-0 w-full pb-6',
-                `grid-cols-${gridColumns.mobile} md:grid-cols-${gridColumns.tablet} lg:grid-cols-${gridColumns.desktop}`
+                'grid absolute top-0 left-0 w-full pb-3',
+                'grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3'
               )}
               style={{
                 transform: `translateY(${virtualRow.start}px)`,

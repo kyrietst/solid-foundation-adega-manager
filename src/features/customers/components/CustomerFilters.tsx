@@ -1,123 +1,125 @@
-/**
- * Componente de filtros de clientes
- * Extraído do CustomersNew.tsx para separar responsabilidades
- */
-
 import React from 'react';
-import { Card, CardContent } from '@/shared/ui/primitives/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/primitives/select';
-import { SearchInput } from '@/shared/ui/composite/search-input';
-import { FilterToggle } from '@/shared/ui/composite/filter-toggle';
-import { Badge } from '@/shared/ui/primitives/badge';
+import { Search, ChevronDown, Filter } from 'lucide-react';
+import { cn } from '@/core/config/utils';
 import { CustomerFiltersProps } from './types';
+
+// Components for the filter bar
+const FilterSelect = ({ 
+  value, 
+  onChange, 
+  options, 
+  placeholder, 
+  icon: Icon 
+}: { 
+  value: string; 
+  onChange: (val: string) => void; 
+  options: { label: string; value: string }[]; 
+  placeholder: string;
+  icon?: React.ElementType;
+}) => (
+  <div className="relative group">
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="appearance-none bg-[#09090b]/40 border border-white/10 text-zinc-300 text-sm rounded-full pl-4 pr-10 py-2 focus:ring-1 focus:ring-[#f9cb15]/50 focus:border-[#f9cb15]/50 cursor-pointer hover:border-white/20 hover:bg-[#09090b]/60 transition-all outline-none"
+    >
+      <option value="" className="bg-[#09090b]">{placeholder}: Todos</option>
+      {options.map((opt) => (
+        <option key={opt.value} value={opt.value} className="bg-[#09090b]">
+          {opt.label}
+        </option>
+      ))}
+    </select>
+    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 w-4 h-4 pointer-events-none group-hover:text-zinc-400 transition-colors" />
+  </div>
+);
 
 export const CustomerFilters: React.FC<CustomerFiltersProps> = ({
   searchTerm,
   onSearchChange,
   segmentFilter,
   onSegmentFilterChange,
+  statusFilter,
+  onStatusFilterChange,
+  lastPurchaseFilter,
+  onLastPurchaseFilterChange,
+  birthdayFilter,
+  onBirthdayFilterChange,
   uniqueSegments,
-  isOpen,
+  isOpen, 
   onToggle,
 }) => {
-  const activeFiltersCount = (segmentFilter !== 'all' ? 1 : 0);
-
   return (
-    <div className="space-y-4">
-      {/* Barra de Busca e Controles */}
-      <Card className="bg-adega-charcoal/20 border-white/10">
-        <CardContent className="p-4">
-          <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
-            <div className="flex items-center space-x-4">
-              <div className="w-64">
-                <SearchInput
-                  value={searchTerm}
-                  onChange={onSearchChange}
-                  placeholder="Buscar clientes..."
-                  debounceMs={150}
-                />
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <FilterToggle
-                  isOpen={isOpen}
-                  onToggle={onToggle}
-                  label="Filtros"
-                />
-                {activeFiltersCount > 0 && (
-                  <Badge variant="secondary" className="ml-1">
-                    {activeFiltersCount}
-                  </Badge>
-                )}
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+    <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-4 backdrop-blur-sm">
+      <div className="w-full flex flex-col md:flex-row gap-4 items-center justify-between">
+        
+        {/* Search Input */}
+        <div className="relative w-full md:w-96 group">
+          <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-500 group-focus-within:text-[#f9cb15] transition-colors">
+            <Search className="w-5 h-5" />
+          </span>
+          <input
+            value={searchTerm}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="w-full bg-[#09090b]/40 border border-white/10 text-white rounded-full py-2.5 pl-10 pr-4 text-sm focus:ring-1 focus:ring-[#f9cb15]/50 focus:border-[#f9cb15]/50 placeholder-zinc-600 transition-all outline-none hover:bg-[#09090b]/60"
+            placeholder="Buscar por nome, email ou telefone..."
+            type="text"
+          />
+        </div>
 
-      {/* Filtros Avançados */}
-      {isOpen && (
-        <Card className="bg-adega-charcoal/20 border-white/10">
-          <CardContent className="p-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Filtro por Segmento */}
-              <div className="space-y-2">
-                <label htmlFor="segment-filter" className="text-sm font-medium text-adega-platinum">
-                  Segmento
-                </label>
-                <Select value={segmentFilter} onValueChange={onSegmentFilterChange}>
-                  <SelectTrigger id="segment-filter" className="bg-adega-charcoal/30 border-white/10">
-                    <SelectValue placeholder="Todos os segmentos" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos os segmentos</SelectItem>
-                    {uniqueSegments.map((segment) => (
-                      <SelectItem key={segment} value={segment}>
-                        {segment}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+        {/* Filters Group */}
+        <div className="flex items-center gap-3 w-full md:w-auto overflow-x-auto pb-2 md:pb-0 no-scrollbar">
+            {/* Status Filter */}
+            <FilterSelect
+                value={statusFilter}
+                onChange={onStatusFilterChange}
+                placeholder="Status"
+                options={[
+                    { label: 'Ativo', value: 'Ativo' },
+                    { label: 'Inativo', value: 'Inativo' },
+                    { label: 'VIP', value: 'VIP' },
+                    { label: 'Novo', value: 'Novo' },
+                    { label: 'Recorrente', value: 'Recorrente' },
+                    { label: 'Churn', value: 'Churn' }
+                ]}
+            />
 
-              {/* Futuras expansões de filtros */}
-              <div className="space-y-2">
-                <label htmlFor="status-filter" className="text-sm font-medium text-adega-platinum/60">
-                  Status (Em breve)
-                </label>
-                <Select disabled>
-                  <SelectTrigger id="status-filter" className="bg-adega-charcoal/20 border-white/5 opacity-50">
-                    <SelectValue placeholder="Todos os status" />
-                  </SelectTrigger>
-                </Select>
-              </div>
+            {/* Segment Filter */}
+            <FilterSelect
+                value={segmentFilter === 'all' ? '' : segmentFilter}
+                onChange={(val) => onSegmentFilterChange(val || 'all')}
+                placeholder="Segmento"
+                options={uniqueSegments.map(s => ({ label: s, value: s }))}
+            />
 
-              <div className="space-y-2">
-                <label htmlFor="category-filter" className="text-sm font-medium text-adega-platinum/60">
-                  Categoria Favorita (Em breve)
-                </label>
-                <Select disabled>
-                  <SelectTrigger id="category-filter" className="bg-adega-charcoal/20 border-white/5 opacity-50">
-                    <SelectValue placeholder="Todas as categorias" />
-                  </SelectTrigger>
-                </Select>
-              </div>
-            </div>
+            {/* Birthday Filter */}
+            <FilterSelect
+                value={birthdayFilter}
+                onChange={onBirthdayFilterChange}
+                placeholder="Aniversariantes"
+                options={[
+                    { label: 'Hoje 🎉', value: 'today' },
+                    { label: 'Próximos 7 dias 🎂', value: 'week' },
+                    { label: 'Próximos 30 dias 🎈', value: 'month' },
+                    { label: 'Próximos 90 dias', value: 'quarter' }
+                ]}
+            />
 
-            {/* Botão para Limpar Filtros */}
-            {activeFiltersCount > 0 && (
-              <div className="mt-4 pt-4 border-t border-white/10">
-                <button
-                  onClick={() => onSegmentFilterChange('all')}
-                  className="text-sm text-adega-gold hover:text-adega-gold/80 transition-colors"
-                >
-                  Limpar todos os filtros ({activeFiltersCount})
-                </button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
+            {/* Last Purchase Filter */}
+            <FilterSelect
+                 value={lastPurchaseFilter}
+                 onChange={onLastPurchaseFilterChange}
+                 placeholder="Última Compra"
+                 options={[
+                     { label: 'Últimos 7 dias', value: '7days' },
+                     { label: 'Últimos 30 dias', value: '30days' },
+                     { label: 'Últimos 90 dias', value: '90days' },
+                     { label: 'Últimos 180 dias', value: '180days' },
+                     { label: 'Mais de 180 dias', value: 'over180' }
+                 ]}
+            />
+        </div>
+      </div>
     </div>
   );
 };

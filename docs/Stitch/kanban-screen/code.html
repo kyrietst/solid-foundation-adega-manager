@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Delivery Kanban Board</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Config -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#f9cb15",
+                        "background-light": "#f8f8f5",
+                        "background-dark": "#09090b", // Deep black requested
+                        "card-dark": "#121214",
+                    },
+                    fontFamily: {
+                        "display": ["Space Grotesk", "sans-serif"],
+                        "mono": ["ui-monospace", "SFMono-Regular", "Menlo", "Monaco", "Consolas", "Liberation Mono", "Courier New", "monospace"],
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.5rem",
+                        "lg": "0.75rem",
+                        "xl": "1rem",
+                        "2xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom Scrollbar for dark theme */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #09090b; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #27272a; 
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3f3f46; 
+        }
+        
+        /* Glassmorphism Utilities */
+        .glass-panel {
+            background: rgba(24, 24, 27, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        /* Neon Glow Effects */
+        .glow-hover:hover {
+            box-shadow: 0 0 15px rgba(249, 203, 21, 0.15);
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white font-display overflow-hidden h-screen flex flex-col selection:bg-primary selection:text-black">
+<!-- Main Container -->
+<div class="flex-1 flex flex-col h-full w-full p-6 gap-6 relative">
+<!-- Header & KPI Section -->
+<header class="flex flex-col gap-6 shrink-0 z-10">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="bg-primary p-1.5 rounded-lg text-black">
+<span class="material-symbols-outlined text-2xl">local_shipping</span>
+</div>
+<h1 class="text-2xl font-bold tracking-tight text-white uppercase">Controle de Entregas</h1>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-900 border border-white/10 text-xs text-zinc-400">
+<span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                        System Online
+                    </div>
+<div class="size-10 rounded-full bg-cover bg-center border border-white/10" data-alt="User Avatar" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCmPyXfsqnKRKmOdTcilbkOcmTBQmEgaPEzXaiuHeE-aOZ1nTouver4F-34w6dttzc6wz3UPw7KiI19iLEbxdY_rqVKvWU0Yz1q4B7-ImtugN-8fu_cN8UFgfHfwrdVV3g3vqgeWPhhqUHeLOjS62ImbZHTjfju6NVY2_veGNmtvVHHoSdKbEe811UbO1Iu4EN9AHqjrtBL7Pe8j8w6YJvQj8XfojEGZF9J-UFFaXh6gmvFa3YherWD4Quuj4Bsd_-fCfIUD40t_e81');"></div>
+</div>
+</div>
+<!-- KPI Bar (HUD Metrics) -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 glass-panel p-4 rounded-xl">
+<!-- KPI 1 -->
+<div class="flex items-center gap-4 border-r border-white/5 pr-4 last:border-0">
+<div class="bg-primary/10 text-primary p-3 rounded-lg flex items-center justify-center aspect-square h-12 w-12">
+<span class="material-symbols-outlined">shopping_cart</span>
+</div>
+<div>
+<p class="text-zinc-500 text-xs uppercase tracking-wider font-semibold">Pedidos Hoje</p>
+<div class="flex items-end gap-2">
+<p class="text-2xl font-bold text-white leading-none">124</p>
+<span class="text-green-500 text-xs font-medium mb-0.5">+12%</span>
+</div>
+</div>
+</div>
+<!-- KPI 2 -->
+<div class="flex items-center gap-4 border-r border-white/5 pr-4 last:border-0">
+<div class="bg-primary/10 text-primary p-3 rounded-lg flex items-center justify-center aspect-square h-12 w-12">
+<span class="material-symbols-outlined">timer</span>
+</div>
+<div>
+<p class="text-zinc-500 text-xs uppercase tracking-wider font-semibold">Atrasados</p>
+<div class="flex items-end gap-2">
+<p class="text-2xl font-bold text-white leading-none">8</p>
+<span class="text-red-500 text-xs font-medium mb-0.5">+2</span>
+</div>
+</div>
+</div>
+<!-- KPI 3 -->
+<div class="flex items-center gap-4 border-r border-white/5 pr-4 last:border-0">
+<div class="bg-primary/10 text-primary p-3 rounded-lg flex items-center justify-center aspect-square h-12 w-12">
+<span class="material-symbols-outlined">sports_motorsports</span>
+</div>
+<div>
+<p class="text-zinc-500 text-xs uppercase tracking-wider font-semibold">Entregadores</p>
+<div class="flex items-end gap-2">
+<p class="text-2xl font-bold text-white leading-none">14</p>
+<span class="text-zinc-500 text-xs font-medium mb-0.5">/ 18</span>
+</div>
+</div>
+</div>
+<!-- KPI 4 -->
+<div class="flex items-center gap-4 last:border-0">
+<div class="bg-primary/10 text-primary p-3 rounded-lg flex items-center justify-center aspect-square h-12 w-12">
+<span class="material-symbols-outlined">payments</span>
+</div>
+<div>
+<p class="text-zinc-500 text-xs uppercase tracking-wider font-semibold">Ticket Médio</p>
+<div class="flex items-end gap-2">
+<p class="text-2xl font-bold text-white leading-none">R$ 42,50</p>
+<span class="text-green-500 text-xs font-medium mb-0.5">+5%</span>
+</div>
+</div>
+</div>
+</div>
+</header>
+<!-- Kanban Board Area -->
+<main class="flex-1 overflow-x-auto overflow-y-hidden pb-2">
+<div class="grid grid-cols-4 gap-6 h-full min-w-[1200px]">
+<!-- Column 1: Pending (Yellow) -->
+<div class="flex flex-col h-full bg-zinc-900/20 rounded-2xl border border-white/5 overflow-hidden">
+<div class="p-4 border-b-2 border-b-yellow-500/50 bg-zinc-900/40 backdrop-blur-sm sticky top-0 z-10 flex justify-between items-center">
+<h3 class="font-bold text-zinc-100 flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-yellow-500"></span>
+                            Pendente
+                        </h3>
+<span class="bg-white/10 text-white px-3 py-0.5 rounded-full text-xs font-medium">4</span>
+</div>
+<div class="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar">
+<!-- Card 1 -->
+<div class="group relative bg-[#09090b] border border-white/10 rounded-xl shadow-lg hover:border-primary/50 transition-all duration-200 cursor-grab active:cursor-grabbing overflow-hidden flex flex-col">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-yellow-500/20 group-hover:bg-primary transition-colors"></div>
+<div class="p-4 flex flex-col gap-3">
+<div class="flex justify-between items-start">
+<span class="font-mono text-zinc-400 text-sm">#1234</span>
+<span class="text-red-500 font-bold text-sm animate-pulse flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">schedule</span> 42m
+                                    </span>
+</div>
+<div>
+<h4 class="text-primary font-semibold truncate text-lg">Tech Solutions Ltd</h4>
+<div class="flex items-center gap-1 mt-1 text-zinc-400 text-xs">
+<span class="material-symbols-outlined text-[14px]">location_on</span>
+<span class="truncate">Av. Paulista, 1000 - Bela Vista</span>
+</div>
+</div>
+<div class="bg-white/5 rounded-lg p-2.5 text-xs text-zinc-300">
+<p class="line-clamp-2">2x X-Bacon Artesanal, 1x Coca-Cola 2L, 1x Porção Batata Frita Grande</p>
+</div>
+</div>
+<div class="mt-auto border-t border-white/5 bg-white/[0.02] p-2 flex justify-between items-center">
+<div class="flex items-center gap-2 text-zinc-500 text-xs px-2">
+<span class="material-symbols-outlined text-[18px]">person_off</span>
+<span>Unassigned</span>
+</div>
+<div class="flex gap-1">
+<button class="p-1.5 rounded-lg hover:bg-white/10 text-zinc-400 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[18px]">print</span>
+</button>
+<button class="p-1.5 rounded-lg hover:bg-green-500/10 text-zinc-400 hover:text-green-500 transition-colors">
+<span class="material-symbols-outlined text-[18px]">chat</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="group relative bg-[#09090b] border border-white/10 rounded-xl shadow-lg hover:border-primary/50 transition-all duration-200 cursor-grab active:cursor-grabbing overflow-hidden flex flex-col">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-yellow-500/20 group-hover:bg-primary transition-colors"></div>
+<div class="p-4 flex flex-col gap-3">
+<div class="flex justify-between items-start">
+<span class="font-mono text-zinc-400 text-sm">#1235</span>
+<span class="text-zinc-400 font-medium text-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">schedule</span> 12m
+                                    </span>
+</div>
+<div>
+<h4 class="text-primary font-semibold truncate text-lg">Ana Silva</h4>
+<div class="flex items-center gap-1 mt-1 text-zinc-400 text-xs">
+<span class="material-symbols-outlined text-[14px]">location_on</span>
+<span class="truncate">Rua Augusta, 500 - Consolação</span>
+</div>
+</div>
+<div class="bg-white/5 rounded-lg p-2.5 text-xs text-zinc-300">
+<p class="line-clamp-2">1x Pizza Calabresa, 1x Guaraná 2L</p>
+</div>
+</div>
+<div class="mt-auto border-t border-white/5 bg-white/[0.02] p-2 flex justify-between items-center">
+<div class="flex items-center gap-2 text-zinc-500 text-xs px-2">
+<span class="material-symbols-outlined text-[18px]">person_off</span>
+<span>Unassigned</span>
+</div>
+<div class="flex gap-1">
+<button class="p-1.5 rounded-lg hover:bg-white/10 text-zinc-400 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[18px]">print</span>
+</button>
+<button class="p-1.5 rounded-lg hover:bg-green-500/10 text-zinc-400 hover:text-green-500 transition-colors">
+<span class="material-symbols-outlined text-[18px]">chat</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Column 2: Preparing (Blue) -->
+<div class="flex flex-col h-full bg-zinc-900/20 rounded-2xl border border-white/5 overflow-hidden">
+<div class="p-4 border-b-2 border-b-blue-500/50 bg-zinc-900/40 backdrop-blur-sm sticky top-0 z-10 flex justify-between items-center">
+<h3 class="font-bold text-zinc-100 flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                            Preparando
+                        </h3>
+<span class="bg-white/10 text-white px-3 py-0.5 rounded-full text-xs font-medium">2</span>
+</div>
+<div class="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar">
+<!-- Card 3 -->
+<div class="group relative bg-[#09090b] border border-white/10 rounded-xl shadow-lg hover:border-primary/50 transition-all duration-200 cursor-grab active:cursor-grabbing overflow-hidden flex flex-col">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-blue-500/20 group-hover:bg-blue-500 transition-colors"></div>
+<div class="p-4 flex flex-col gap-3">
+<div class="flex justify-between items-start">
+<span class="font-mono text-zinc-400 text-sm">#1230</span>
+<span class="text-zinc-400 font-medium text-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">schedule</span> 25m
+                                    </span>
+</div>
+<div>
+<h4 class="text-primary font-semibold truncate text-lg">Office Tower Block B</h4>
+<div class="flex items-center gap-1 mt-1 text-zinc-400 text-xs">
+<span class="material-symbols-outlined text-[14px]">location_on</span>
+<span class="truncate">Av. Faria Lima, 2200 - Pinheiros</span>
+</div>
+</div>
+<div class="bg-white/5 rounded-lg p-2.5 text-xs text-zinc-300">
+<p class="line-clamp-2">5x Combo Almoço Executivo</p>
+</div>
+</div>
+<div class="mt-auto border-t border-white/5 bg-white/[0.02] p-2 flex justify-between items-center">
+<div class="flex items-center gap-2 px-2">
+<div class="w-6 h-6 rounded-full bg-cover bg-center border border-white/20" data-alt="Driver Avatar" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCgSOppwOezFp-Xhpw1_PioO4kNisqKFfuBl0Rf8XfxxSBAGnpaQcWOCAaGhu7sUwwSYC8JIPkIDiDddAjCDj5lz1ccyTkpz7ta8hvMXsRqs_Rqb-UcZxanKb1Ca17Mq2uioW-tFqboAmQrh49eV5tay9Jxv24A6K0S6Z5pi09RwuDI6pyGzs4HHXPQqMgfm5kZ8DQ1-eCqzUl1biqeqU4Wnjue4d93fXHkxOTdliw-i2_eS4NluAa-l4jb4sbYKbkbvwblN1Z18PZn');"></div>
+<span class="text-zinc-300 text-xs">Carlos M.</span>
+</div>
+<div class="flex gap-1">
+<button class="p-1.5 rounded-lg hover:bg-white/10 text-zinc-400 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[18px]">print</span>
+</button>
+<button class="p-1.5 rounded-lg hover:bg-green-500/10 text-zinc-400 hover:text-green-500 transition-colors">
+<span class="material-symbols-outlined text-[18px]">chat</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Card 4 -->
+<div class="group relative bg-[#09090b] border border-white/10 rounded-xl shadow-lg hover:border-primary/50 transition-all duration-200 cursor-grab active:cursor-grabbing overflow-hidden flex flex-col">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-blue-500/20 group-hover:bg-blue-500 transition-colors"></div>
+<div class="p-4 flex flex-col gap-3">
+<div class="flex justify-between items-start">
+<span class="font-mono text-zinc-400 text-sm">#1228</span>
+<span class="text-zinc-400 font-medium text-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">schedule</span> 31m
+                                    </span>
+</div>
+<div>
+<h4 class="text-primary font-semibold truncate text-lg">Roberto Carlos</h4>
+<div class="flex items-center gap-1 mt-1 text-zinc-400 text-xs">
+<span class="material-symbols-outlined text-[14px]">location_on</span>
+<span class="truncate">Rua dos Pinheiros, 100</span>
+</div>
+</div>
+<div class="bg-white/5 rounded-lg p-2.5 text-xs text-zinc-300">
+<p class="line-clamp-2">1x Sushi Combo Premium</p>
+</div>
+</div>
+<div class="mt-auto border-t border-white/5 bg-white/[0.02] p-2 flex justify-between items-center">
+<div class="flex items-center gap-2 text-zinc-500 text-xs px-2">
+<span class="material-symbols-outlined text-[18px]">person_off</span>
+<span>Unassigned</span>
+</div>
+<div class="flex gap-1">
+<button class="p-1.5 rounded-lg hover:bg-white/10 text-zinc-400 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[18px]">print</span>
+</button>
+<button class="p-1.5 rounded-lg hover:bg-green-500/10 text-zinc-400 hover:text-green-500 transition-colors">
+<span class="material-symbols-outlined text-[18px]">chat</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Column 3: In Route (Purple) -->
+<div class="flex flex-col h-full bg-zinc-900/20 rounded-2xl border border-white/5 overflow-hidden">
+<div class="p-4 border-b-2 border-b-purple-500/50 bg-zinc-900/40 backdrop-blur-sm sticky top-0 z-10 flex justify-between items-center">
+<h3 class="font-bold text-zinc-100 flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-purple-500"></span>
+                            Em Rota
+                        </h3>
+<span class="bg-white/10 text-white px-3 py-0.5 rounded-full text-xs font-medium">3</span>
+</div>
+<div class="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar">
+<!-- Card 5 -->
+<div class="group relative bg-[#09090b] border border-white/10 rounded-xl shadow-lg hover:border-primary/50 transition-all duration-200 cursor-grab active:cursor-grabbing overflow-hidden flex flex-col">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-purple-500/20 group-hover:bg-purple-500 transition-colors"></div>
+<div class="p-4 flex flex-col gap-3">
+<div class="flex justify-between items-start">
+<span class="font-mono text-zinc-400 text-sm">#1225</span>
+<span class="text-purple-400 font-medium text-sm flex items-center gap-1 animate-pulse-slow">
+<span class="material-symbols-outlined text-[16px]">sports_motorsports</span> On Way
+                                    </span>
+</div>
+<div>
+<h4 class="text-primary font-semibold truncate text-lg">Condomínio Viver</h4>
+<div class="flex items-center gap-1 mt-1 text-zinc-400 text-xs">
+<span class="material-symbols-outlined text-[14px]">location_on</span>
+<span class="truncate">Av. Ibirapuera, 2033</span>
+</div>
+</div>
+<div class="bg-white/5 rounded-lg p-2.5 text-xs text-zinc-300">
+<p class="line-clamp-2">3x Pizza Grande Meio a Meio</p>
+</div>
+</div>
+<div class="mt-auto border-t border-white/5 bg-white/[0.02] p-2 flex justify-between items-center">
+<div class="flex items-center gap-2 px-2">
+<div class="w-6 h-6 rounded-full bg-cover bg-center border border-white/20" data-alt="Driver Avatar" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDr4v2_X95MMPLe-CrtTJcqoONbg_CpMZpqeneLAuhwQxkqs2nfAkCRXgNS9hxz6Z9E_QsGtB1HLz-EIhL0mUuveYU9ECHaRagC3yU6xGOA9ZLYq5bKFhHVnk3Wo1UaOp0Wsk0G6AJcIFweksdNf_c1x0wzeF7leskDSp3-zWLnLaEEiJaRPqbUzPLlgPKwFYxGCmu7ApEYtU696HNY3V6EJ0uoN88JdTG5Qa7gtI8cx-WgOZOBoYtzmoQjBxj5uOIC6RIq_wDiSppD');"></div>
+<span class="text-zinc-300 text-xs">João Silva</span>
+</div>
+<div class="flex gap-1">
+<button class="p-1.5 rounded-lg hover:bg-white/10 text-zinc-400 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[18px]">print</span>
+</button>
+<button class="p-1.5 rounded-lg hover:bg-green-500/10 text-zinc-400 hover:text-green-500 transition-colors">
+<span class="material-symbols-outlined text-[18px]">chat</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Card 6 -->
+<div class="group relative bg-[#09090b] border border-white/10 rounded-xl shadow-lg hover:border-primary/50 transition-all duration-200 cursor-grab active:cursor-grabbing overflow-hidden flex flex-col">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-purple-500/20 group-hover:bg-purple-500 transition-colors"></div>
+<div class="p-4 flex flex-col gap-3">
+<div class="flex justify-between items-start">
+<span class="font-mono text-zinc-400 text-sm">#1222</span>
+<span class="text-purple-400 font-medium text-sm flex items-center gap-1 animate-pulse-slow">
+<span class="material-symbols-outlined text-[16px]">sports_motorsports</span> On Way
+                                    </span>
+</div>
+<div>
+<h4 class="text-primary font-semibold truncate text-lg">Hospital Sírio</h4>
+<div class="flex items-center gap-1 mt-1 text-zinc-400 text-xs">
+<span class="material-symbols-outlined text-[14px]">location_on</span>
+<span class="truncate">Rua Dona Adma Jafet, 91</span>
+</div>
+</div>
+<div class="bg-white/5 rounded-lg p-2.5 text-xs text-zinc-300">
+<p class="line-clamp-2">10x Cafés, 5x Pães de Queijo</p>
+</div>
+</div>
+<div class="mt-auto border-t border-white/5 bg-white/[0.02] p-2 flex justify-between items-center">
+<div class="flex items-center gap-2 px-2">
+<div class="w-6 h-6 rounded-full bg-cover bg-center border border-white/20" data-alt="Driver Avatar" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDzhziLg8v6H27DM9ugUEcEWX-xdjwEk9cdSUT4avtLj-FHDDMZxTVL1j5XkVwB9QGku3t2QvtoaT_xosWoOuRePHxY2XGjGN18IknaEoHkMEkyNU_DAwaQtVqboz-s9J6-w1brwi4yPzWbLkGPR4p1GfYF3sN9zAUKKw98aXFff6plQHzISqezotMPT768kNcTDcGR5D8vqjsXUhFzd5wnSBBx-y0_fTucl9It_XElOacVGfgKUH-kiFD_eGJN-1E5GpmMIOGMg4Ow');"></div>
+<span class="text-zinc-300 text-xs">Marcos P.</span>
+</div>
+<div class="flex gap-1">
+<button class="p-1.5 rounded-lg hover:bg-white/10 text-zinc-400 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[18px]">print</span>
+</button>
+<button class="p-1.5 rounded-lg hover:bg-green-500/10 text-zinc-400 hover:text-green-500 transition-colors">
+<span class="material-symbols-outlined text-[18px]">chat</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Card 7 -->
+<div class="group relative bg-[#09090b] border border-white/10 rounded-xl shadow-lg hover:border-primary/50 transition-all duration-200 cursor-grab active:cursor-grabbing overflow-hidden flex flex-col">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-purple-500/20 group-hover:bg-purple-500 transition-colors"></div>
+<div class="p-4 flex flex-col gap-3">
+<div class="flex justify-between items-start">
+<span class="font-mono text-zinc-400 text-sm">#1218</span>
+<span class="text-red-500 font-bold text-sm animate-pulse flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">schedule</span> 55m
+                                    </span>
+</div>
+<div>
+<h4 class="text-primary font-semibold truncate text-lg">Startup Hub</h4>
+<div class="flex items-center gap-1 mt-1 text-zinc-400 text-xs">
+<span class="material-symbols-outlined text-[14px]">location_on</span>
+<span class="truncate">Rua Fradique Coutinho, 300</span>
+</div>
+</div>
+<div class="bg-white/5 rounded-lg p-2.5 text-xs text-zinc-300">
+<p class="line-clamp-2">2x Açaí 500ml Completo</p>
+</div>
+</div>
+<div class="mt-auto border-t border-white/5 bg-white/[0.02] p-2 flex justify-between items-center">
+<div class="flex items-center gap-2 px-2">
+<div class="w-6 h-6 rounded-full bg-cover bg-center border border-white/20" data-alt="Driver Avatar" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDNfFedGWKPtyjCO972H2qxtfPj9rKt4M1_jAkGmcTNojk5czgLzvgVLMU3E7Lw8EZdNsxPCgWpjDwvLZpJytUIxneYeYV5qvYimW1Ef2EtFeKnlKpbv0yKzG-y0dKOBDqAojmM553Hl1W12exMdJYblaivOF3DH-9ttvr1rcUHkohds3j9-AtWRFsGW0bjIBsduGcfTAnlQdHh1nBrwd4AKm23kffxBymx2Cz-QtJBGJxyvrTZv8qHvxw9ZrZAOzLgA9wtaFYw1zFY');"></div>
+<span class="text-zinc-300 text-xs">Lucas T.</span>
+</div>
+<div class="flex gap-1">
+<button class="p-1.5 rounded-lg hover:bg-white/10 text-zinc-400 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[18px]">print</span>
+</button>
+<button class="p-1.5 rounded-lg hover:bg-green-500/10 text-zinc-400 hover:text-green-500 transition-colors">
+<span class="material-symbols-outlined text-[18px]">chat</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Column 4: Delivered (Green) -->
+<div class="flex flex-col h-full bg-zinc-900/20 rounded-2xl border border-white/5 overflow-hidden">
+<div class="p-4 border-b-2 border-b-green-500/50 bg-zinc-900/40 backdrop-blur-sm sticky top-0 z-10 flex justify-between items-center">
+<h3 class="font-bold text-zinc-100 flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-green-500"></span>
+                            Entregue
+                        </h3>
+<span class="bg-white/10 text-white px-3 py-0.5 rounded-full text-xs font-medium">1</span>
+</div>
+<div class="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar">
+<!-- Card 8 -->
+<div class="group relative bg-[#09090b] border border-white/10 rounded-xl shadow-lg hover:border-primary/50 transition-all duration-200 cursor-grab active:cursor-grabbing overflow-hidden flex flex-col opacity-60 hover:opacity-100">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-green-500/20 group-hover:bg-green-500 transition-colors"></div>
+<div class="p-4 flex flex-col gap-3">
+<div class="flex justify-between items-start">
+<span class="font-mono text-zinc-400 text-sm">#1210</span>
+<span class="text-green-500 font-medium text-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">check_circle</span> Done
+                                    </span>
+</div>
+<div>
+<h4 class="text-zinc-300 font-semibold truncate text-lg">Casa da Moeda</h4>
+<div class="flex items-center gap-1 mt-1 text-zinc-500 text-xs">
+<span class="material-symbols-outlined text-[14px]">location_on</span>
+<span class="truncate">Av. Paulista, 2000</span>
+</div>
+</div>
+<div class="bg-white/5 rounded-lg p-2.5 text-xs text-zinc-400">
+<p class="line-clamp-2">50x Mini Pastéis</p>
+</div>
+</div>
+<div class="mt-auto border-t border-white/5 bg-white/[0.02] p-2 flex justify-between items-center">
+<div class="flex items-center gap-2 px-2">
+<div class="w-6 h-6 rounded-full bg-cover bg-center border border-white/20" data-alt="Driver Avatar" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCkljbTr9_AckX4DLsy48LPsc-ipnm7PCx75EJ_qDng8vPgBMbmXhaGksdBoQipyCWqVN2Qhdje_f1jHU0fKR7DjwIsP-AP0DsAYTS-VXkvhIGQQ1xZkR7JPSzu_zy1NVinRNzEffbLiMTJv2CrcWGvgeKuun7WL5GfqbPgIBLsJdBPLjtugsFkO7hy07wMM81ZaiMajixz4o8-rB_hG7SmSq6gVUu_CTLflRARvbAEhOcxjG9-9-EeI4vG_qHLdi5po6bj3geeUflj');"></div>
+<span class="text-zinc-400 text-xs">Pedro S.</span>
+</div>
+<div class="flex gap-1">
+<button class="p-1.5 rounded-lg hover:bg-white/10 text-zinc-500 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[18px]">history</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

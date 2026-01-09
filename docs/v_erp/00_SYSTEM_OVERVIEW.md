@@ -56,7 +56,10 @@ Logs** on the main screen.
 
 ## 4. Directory Structure
 
-- `src/features/`: Domain-driven modules (Sales, Inventory, CRM, Reports,
-  Fiscal).
+- `src/features/`: Domain-driven modules.
+- `docs/v_erp/`:
+  - `06_LATEST_CHANGELOG.md`: **Start Here** for recent updates (Stitch, Fiado).
+  - `standards/01_UI_UX_GUIDELINES.md`: The "Stitch" Design System.
+  - `modules/01_SALES_AND_FISCAL.md`: PDV & Fiscal Flows.
 - `src/core/`: Singleton services (Supabase Client, Types).
 - `src/shared/`: Reusable primitives (Buttons, Inputs, Dialogs).

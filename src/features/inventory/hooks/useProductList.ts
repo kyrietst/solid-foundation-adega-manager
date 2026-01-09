@@ -27,7 +27,8 @@ export const useProductList = ({
 
             let query = supabase
                 .from('products')
-                .select('*', { count: 'exact' });
+                .select('*', { count: 'exact' })
+                .is('deleted_at', null); // 🛡️ Security: Only active products
 
             // Apply Search Filter (Name or Barcode)
             if (search.trim()) {

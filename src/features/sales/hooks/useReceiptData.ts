@@ -33,7 +33,8 @@ export const useReceiptData = (saleId: string | null) => {
           customers (
             name,
             phone,
-            address
+            address,
+            cpf_cnpj
           ),
           profiles (
             name
@@ -81,7 +82,7 @@ export const useReceiptData = (saleId: string | null) => {
 
       // Buscar nome do usuário logado atual se não houver vendedor na venda
       let currentUserName = null;
-      if (!saleData.profiles?.name && user) {
+      if (!(saleData as any).profiles?.name && user) {
         const { data: currentUserProfile } = await supabase
           .from('profiles')
           .select('name')
@@ -128,9 +129,13 @@ export const useReceiptData = (saleId: string | null) => {
 
         // Fallback: usar endereço cadastral do cliente
         if (!formattedAddress && saleData.customers?.address) {
-          formattedAddress = saleData.customers.address;
+          formattedAddress = saleData.customers.address as string;
         }
       }
+
+      // Supabase Type Workaround for profiles relationship ambiguity
+      // We know the query is correct at runtime, but types are strict.
+      const sellerName = (saleData as any).profiles?.name || currentUserName;
 
       const receiptData: ReceiptData = {
         id: saleData.id,
@@ -142,7 +147,8 @@ export const useReceiptData = (saleId: string | null) => {
         delivery: saleData.delivery || false,
         customer_name: saleData.customers?.name,
         customer_phone: saleData.customers?.phone,
-        seller_name: saleData.profiles?.name || currentUserName,
+        customer_cpf_cnpj: saleData.customers?.cpf_cnpj,
+        seller_name: sellerName,
         items,
         delivery_fee: saleData.delivery_fee ? Number(saleData.delivery_fee) : undefined,
         address: formattedAddress,

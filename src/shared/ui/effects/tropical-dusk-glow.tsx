@@ -1,4 +1,5 @@
 import React from 'react';
+import { useLocation } from 'react-router-dom';
 
 /**
  * TropicalDuskGlow - Background otimizado para performance
@@ -13,6 +14,25 @@ import React from 'react';
  * - CSS nativo do navegador com aceleração de hardware
  */
 export const TropicalDuskGlow: React.FC = () => {
+  const location = useLocation();
+  const isInventory = location.pathname.includes('inventory');
+  const isDashboard = location.pathname.includes('dashboard');
+
+  // Se estiver no Dashboard, não renderiza nada (pois o Dashboard já tem seu fundo próprio "Beautiful")
+  if (isDashboard) {
+    return null;
+  }
+
+  // Se estiver no inventário, retorna um fundo preto SÓLIDO e OPACO (Stitch Theme: Deep Black)
+  if (isInventory) {
+    return (
+      <div
+        className="absolute inset-0 z-0 pointer-events-none bg-[#09090b]"
+        aria-hidden="true"
+      />
+    );
+  }
+
   return (
     <div
       className="absolute inset-0 z-0 pointer-events-none"

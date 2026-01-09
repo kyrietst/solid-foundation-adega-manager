@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Adega Anita's POS - Checkout</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#f4ca25",
+                        "primary-dark": "#dcb315",
+                        "background-light": "#f8f8f5",
+                        "background-dark": "#09090b",
+                        "surface-dark": "#18181b",
+                        "surface-glass": "rgba(24, 24, 27, 0.7)",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: { "DEFAULT": "0.5rem", "lg": "0.75rem", "xl": "1rem", "2xl": "1.5rem", "full": "9999px" },
+                    backdropBlur: {
+                        'xs': '2px',
+                    }
+                },
+            },
+        }
+    </script>
+<style>body {
+    font-family: "Inter", sans-serif;
+    background-color: #121212;
+    /* Fallback */
+    background-image: url(https://lh3.googleusercontent.com/aida-public/AB6AXuDSr8gyKyrCVfrnnBoAUH1eC38KPl8gQz8fIJs05Bvi66yoOXQdbYP3V8mGBp0UuMNDBZe0S5Y6Lr2vjbVqxdwjLU00sl0gpeqKI6YUydIv0yxwqwpqRHXte5uvoH7PmiBJdaIbAXZXEfPaQViuuFrxOEsC5nFWxYlh5Zg0j6gHafqWpc3nGx2WQJCEvd3CXHxYWI3XkX_egBYQu5_-bdOqTXMueIH1TpxzonK0vfRdROYQ6WQeI4dsu3cEN83eNfAeWqojIxP4aQ);
+    background-size: cover;
+    background-position: center;
+    background-blend-mode: overlay
+    }
+/* Glassmorphism Scrollbar */
+::-webkit-scrollbar {
+    width: 6px
+    }
+::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1)
+    }
+::-webkit-scrollbar-thumb {
+    background: rgba(244, 202, 37, 0.3);
+    border-radius: 10px
+    }
+.glass-panel {
+    background: rgba(9, 9, 11, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5)
+    }
+.input-minimal {
+    background: transparent;
+    border-bottom: 1px solid #3f3f46;
+    border-radius: 0;
+    padding-left: 0;
+    transition: all 0.2s
+    }
+.input-minimal:focus {
+    border-bottom-color: #f4ca25;
+    box-shadow: none
+    }
+/* Checkbox styling specifically for payment cards */
+.payment-radio:checked + div {
+    border-color: #f4ca25;
+    background-color: rgba(244, 202, 37, 0.1)
+    }
+.payment-radio:checked + div .icon-box {
+    background-color: #f4ca25;
+    color: #09090b
+    }
+.tab-radio:checked + span {
+    background-color: #27272a;
+    color: #f4ca25;
+    font-weight: 600
+    }</style>
+</head>
+<body class="bg-black min-h-screen overflow-hidden flex items-center justify-center">
+<!-- Background context image representing the wine store -->
+<div class="fixed inset-0 z-0 opacity-40 bg-black" data-alt="Dimmed background of a luxury wine store interior"></div>
+<!-- Main Content Area (Blurred out POS context) -->
+<div class="relative w-full h-full flex flex-col p-8 opacity-30 pointer-events-none">
+<div class="grid grid-cols-12 gap-6 h-full">
+<div class="col-span-8 bg-surface-dark rounded-2xl h-full border border-white/5 p-6"></div>
+<div class="col-span-4 bg-surface-dark rounded-2xl h-full border border-white/5 p-6"></div>
+</div>
+</div>
+<!-- Checkout Drawer Overlay -->
+<div class="fixed inset-y-0 right-0 z-50 w-full max-w-[600px] flex flex-col glass-panel animate-in slide-in-from-right duration-500">
+<!-- Header -->
+<div class="flex items-center justify-between px-8 py-6 border-b border-white/5">
+<div>
+<h2 class="text-white text-2xl font-bold tracking-tight">Finalizar Venda</h2>
+<p class="text-zinc-400 text-sm mt-1">Pedido #ANITA-8921</p>
+</div>
+<button class="text-zinc-400 hover:text-white transition-colors p-2 rounded-full hover:bg-white/5">
+<span class="material-symbols-outlined text-2xl">close</span>
+</button>
+</div>
+<!-- Scrollable Content -->
+<div class="flex-1 overflow-y-auto px-8 py-6 space-y-8">
+<!-- 1. Sale Type Tabs -->
+<section>
+<div class="flex bg-zinc-900/50 p-1 rounded-xl border border-white/5">
+<label class="flex-1 cursor-pointer">
+<input checked="" class="peer hidden tab-radio" name="sale_type" type="radio" value="presencial"/>
+<span class="flex items-center justify-center py-2.5 rounded-lg text-zinc-400 text-sm transition-all duration-200 hover:text-zinc-200">
+<span class="material-symbols-outlined text-[18px] mr-2">storefront</span>
+                            Presencial
+                        </span>
+</label>
+<label class="flex-1 cursor-pointer">
+<input class="peer hidden tab-radio" name="sale_type" type="radio" value="delivery"/>
+<span class="flex items-center justify-center py-2.5 rounded-lg text-zinc-400 text-sm transition-all duration-200 hover:text-zinc-200">
+<span class="material-symbols-outlined text-[18px] mr-2">local_shipping</span>
+                            Delivery
+                        </span>
+</label>
+<label class="flex-1 cursor-pointer">
+<input class="peer hidden tab-radio" name="sale_type" type="radio" value="fiado"/>
+<span class="flex items-center justify-center py-2.5 rounded-lg text-zinc-400 text-sm transition-all duration-200 hover:text-zinc-200">
+<span class="material-symbols-outlined text-[18px] mr-2">receipt_long</span>
+                            Fiado
+                        </span>
+</label>
+</div>
+</section>
+<!-- 2. Delivery Details (Would be conditional in JS, shown here for design) -->
+<!-- Using opacity-50 and hidden class concept to simulate conditional state, but keeping visible for this demo but maybe simplified -->
+<!-- Let's pretend user selected Delivery for a moment to show the inputs, or I'll add a 'hidden' class to simulate state if needed. 
+                 The prompt says "shown conditionally", I will show it as if it IS conditional but currently visible or just minimized. 
+                 Let's assume "Presencial" is selected by default so this section might be hidden, BUT the prompt asks to design the components.
+                 I will display it but with a clear visual header that implies it expands. Actually, let's just show it as if Delivery was clicked for the sake of the demo showing all UI.
+            -->
+<section class="space-y-4">
+<div class="flex items-center gap-2 text-primary text-sm font-medium opacity-50">
+<span class="material-symbols-outlined text-[18px]">info</span>
+<span>Dados de Entrega (Se Delivery)</span>
+</div>
+<div class="grid grid-cols-4 gap-6">
+<div class="col-span-1 group">
+<label class="block text-xs font-medium text-zinc-500 mb-1 group-focus-within:text-primary transition-colors">CEP</label>
+<input class="input-minimal w-full bg-transparent text-white placeholder-zinc-600 focus:ring-0 text-sm py-2" placeholder="00000-000" type="text"/>
+</div>
+<div class="col-span-3 group">
+<label class="block text-xs font-medium text-zinc-500 mb-1 group-focus-within:text-primary transition-colors">Endereço</label>
+<input class="input-minimal w-full bg-transparent text-white placeholder-zinc-600 focus:ring-0 text-sm py-2" placeholder="Rua das Videiras" type="text"/>
+</div>
+<div class="col-span-1 group">
+<label class="block text-xs font-medium text-zinc-500 mb-1 group-focus-within:text-primary transition-colors">Número</label>
+<input class="input-minimal w-full bg-transparent text-white placeholder-zinc-600 focus:ring-0 text-sm py-2" placeholder="120" type="text"/>
+</div>
+<div class="col-span-3 group">
+<label class="block text-xs font-medium text-zinc-500 mb-1 group-focus-within:text-primary transition-colors">Complemento</label>
+<input class="input-minimal w-full bg-transparent text-white placeholder-zinc-600 focus:ring-0 text-sm py-2" placeholder="Apto 402" type="text"/>
+</div>
+</div>
+</section>
+<!-- 3. Payment Method -->
+<section class="space-y-4">
+<h3 class="text-white text-lg font-semibold flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">payments</span>
+                    Pagamento
+                </h3>
+<div class="grid grid-cols-2 gap-3">
+<!-- PIX -->
+<label class="cursor-pointer relative group">
+<input class="peer hidden payment-radio" name="payment_method" type="radio" value="pix"/>
+<div class="h-20 rounded-xl border border-white/10 bg-zinc-900/40 hover:bg-zinc-800/60 flex items-center px-4 gap-4 transition-all duration-200">
+<div class="icon-box w-10 h-10 rounded-full bg-zinc-800 text-zinc-400 flex items-center justify-center transition-colors">
+<span class="material-symbols-outlined text-[20px]">qr_code_2</span>
+</div>
+<span class="text-zinc-300 font-medium group-hover:text-white">Pix</span>
+</div>
+</label>
+<!-- Crédito -->
+<label class="cursor-pointer relative group">
+<input checked="" class="peer hidden payment-radio" name="payment_method" type="radio" value="credito"/>
+<div class="h-20 rounded-xl border border-white/10 bg-zinc-900/40 hover:bg-zinc-800/60 flex items-center px-4 gap-4 transition-all duration-200">
+<div class="icon-box w-10 h-10 rounded-full bg-zinc-800 text-zinc-400 flex items-center justify-center transition-colors">
+<span class="material-symbols-outlined text-[20px]">credit_card</span>
+</div>
+<span class="text-zinc-300 font-medium group-hover:text-white">Crédito</span>
+</div>
+</label>
+<!-- Débito -->
+<label class="cursor-pointer relative group">
+<input class="peer hidden payment-radio" name="payment_method" type="radio" value="debito"/>
+<div class="h-20 rounded-xl border border-white/10 bg-zinc-900/40 hover:bg-zinc-800/60 flex items-center px-4 gap-4 transition-all duration-200">
+<div class="icon-box w-10 h-10 rounded-full bg-zinc-800 text-zinc-400 flex items-center justify-center transition-colors">
+<span class="material-symbols-outlined text-[20px]">credit_card</span>
+</div>
+<span class="text-zinc-300 font-medium group-hover:text-white">Débito</span>
+</div>
+</label>
+<!-- Dinheiro -->
+<label class="cursor-pointer relative group">
+<input class="peer hidden payment-radio" name="payment_method" type="radio" value="dinheiro"/>
+<div class="h-20 rounded-xl border border-white/10 bg-zinc-900/40 hover:bg-zinc-800/60 flex items-center px-4 gap-4 transition-all duration-200">
+<div class="icon-box w-10 h-10 rounded-full bg-zinc-800 text-zinc-400 flex items-center justify-center transition-colors">
+<span class="material-symbols-outlined text-[20px]">payments</span>
+</div>
+<span class="text-zinc-300 font-medium group-hover:text-white">Dinheiro</span>
+</div>
+</label>
+</div>
+<!-- Conditional Input for Cash (Visual representation) -->
+<div class="mt-4 pt-4 border-t border-dashed border-white/10 hidden">
+<label class="block text-xs font-medium text-zinc-400 mb-2">Valor Recebido</label>
+<div class="relative">
+<span class="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 font-semibold">R$</span>
+<input class="w-full bg-zinc-900 border border-white/10 rounded-lg py-3 pl-10 pr-4 text-white font-mono text-lg focus:border-primary focus:ring-1 focus:ring-primary outline-none" placeholder="0,00" type="text"/>
+</div>
+</div>
+</section>
+<!-- 4. Totals Section -->
+<section class="mt-8 pt-6 border-t border-white/10">
+<div class="space-y-4">
+<!-- Discount Row -->
+<div class="flex items-center justify-between group">
+<div class="flex items-center gap-2 text-zinc-400">
+<span class="material-symbols-outlined text-[20px]">percent</span>
+<span class="text-sm">Desconto</span>
+</div>
+<div class="w-32">
+<input class="text-right w-full bg-transparent border-b border-zinc-700 focus:border-primary text-zinc-300 text-sm py-1 outline-none transition-colors" type="text" value="R$ 0,00"/>
+</div>
+</div>
+<!-- Subtotal Row -->
+<div class="flex items-center justify-between text-zinc-400">
+<span class="text-sm">Subtotal</span>
+<span class="text-sm font-medium">R$ 1.250,00</span>
+</div>
+<!-- Total Row -->
+<div class="flex items-center justify-between pt-4">
+<span class="text-lg font-bold text-white uppercase tracking-wider">Total</span>
+<div class="text-right">
+<span class="block text-4xl font-extrabold text-primary tracking-tight">R$ 1.250,00</span>
+</div>
+</div>
+<!-- Change Row (Muted when 0) -->
+<div class="flex items-center justify-between pt-2 opacity-50">
+<span class="text-sm text-zinc-500 font-medium uppercase">Troco</span>
+<span class="text-lg font-mono text-zinc-500">R$ 0,00</span>
+</div>
+</div>
+</section>
+</div>
+<!-- Footer Actions -->
+<div class="p-8 border-t border-white/5 bg-zinc-900/30 backdrop-blur-md">
+<div class="grid grid-cols-3 gap-4">
+<button class="col-span-1 rounded-xl border border-white/10 text-zinc-400 font-medium hover:bg-white/5 hover:text-white transition-all h-14 flex items-center justify-center">
+                    Voltar
+                </button>
+<button class="col-span-2 rounded-xl bg-primary hover:bg-primary-dark text-black font-bold text-lg shadow-[0_0_20px_rgba(244,202,37,0.2)] hover:shadow-[0_0_30px_rgba(244,202,37,0.4)] transition-all h-14 flex items-center justify-center gap-2">
+<span class="material-symbols-outlined font-bold">check</span>
+                    Finalizar Venda
+                </button>
+</div>
+</div>
+</div>
+</body></html>

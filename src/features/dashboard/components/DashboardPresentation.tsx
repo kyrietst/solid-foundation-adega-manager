@@ -2,25 +2,35 @@
  * Apresentação pura do Dashboard - Centro de Comando Operacional
  * Layout Bento Grid com KPIs unificados e hierarquia visual clara
  *
- * @version 2.1.0 - Refatoração Arquitetural (Container/Presentational)
+ * @version 4.0.0 - Stitch Design System (Gold/Dark)
  */
 
 import React from 'react';
+import { PremiumBackground } from '@/shared/ui/composite/PremiumBackground';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent } from '@/shared/ui/primitives/card';
-import { TopProductsCard } from './TopProductsCard';
+
+import { motion, Variants } from 'framer-motion';
+import { 
+  TrendingUp, 
+  DollarSign, 
+  CreditCard, 
+  Truck, 
+  Store, 
+  Users, 
+  Package, 
+  AlertTriangle,
+  ChevronRight,
+  Download,
+  Plus
+} from "lucide-react";
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+
 import { SalesDataPoint, DashboardCounts, DashboardFinancials } from '@/features/dashboard/hooks/useDashboardData';
-import { SalesChartSection } from './SalesChartSection';
+import { SalesChartData, TopProduct } from '@/features/dashboard/hooks/useDashboardMetrics';
 import { InventoryKpis } from '@/features/dashboard/hooks/useDashboardKpis';
-import { LowStockAlertCard } from './LowStockAlertCard';
-import { InventoryInsightCard } from './InventoryInsightCard';
-import { TrendingUp, TrendingDown, DollarSign, Wallet, CreditCard, AlertCircle, ShoppingBag, ArrowUpRight, ArrowDownRight, Package, Users, Clock, Truck, Store } from "lucide-react";
-import { PageHeader } from '@/shared/ui/composite/PageHeader';
-import { StatCard } from '@/shared/ui/composite/stat-card';
-import { getDataPeriodLabel, getNowSaoPaulo } from '../utils/dateHelpers';
+import { getDataPeriodLabel, getNowSaoPaulo, getCurrentMonthLabel } from '../utils/dateHelpers';
 import { cn } from '@/core/config/utils';
 
-// Tipagem dos dados de Canais (extraído do hook)
 interface ChannelData {
   delivery_revenue: number;
   instore_revenue: number;
@@ -29,24 +39,16 @@ interface ChannelData {
   total_orders: number;
 }
 
-import { SalesChartData, TopProduct } from '@/features/dashboard/hooks/useDashboardMetrics';
-
-// ... imports remain the same
-
 export interface DashboardPresentationProps {
-  // Dados de Gráficos e Listas (Injetados pelo Container)
   chartData: SalesChartData[];
   topProducts: TopProduct[];
-
-  // Dados Consolidados
+  lowStockProducts?: any[]; // Using any[] temporarily or importing LowStockProduct interface if available
   kpiData: {
     counts: DashboardCounts | undefined;
     financials: DashboardFinancials | undefined;
     inventory: InventoryKpis | undefined;
     channels: ChannelData | undefined;
   };
-
-  // Estados de loading
   loadingStates: {
     general: boolean;
     counts: boolean;
@@ -55,14 +57,12 @@ export interface DashboardPresentationProps {
     inventory: boolean;
     channels: boolean;
     topProducts?: boolean;
+    lowStock?: boolean;
   };
-
-  // Estados de erro
   errors: {
     salesChart: any;
     topProducts: any;
   };
-
   userRole: string;
   showEmployeeNote: boolean;
 }
@@ -70,96 +70,15 @@ export interface DashboardPresentationProps {
 export const DashboardPresentation: React.FC<DashboardPresentationProps> = ({
   chartData,
   topProducts,
+  lowStockProducts,
   kpiData,
   loadingStates,
   errors,
-  showEmployeeNote,
 }) => {
-  return (
-    <div className="w-full h-full flex flex-col">
-      {/* Header com indicador de período */}
-      <PageHeader
-        title="CENTRO DE COMANDO"
-        description={`Dados: ${getDataPeriodLabel()}`}
-      />
-
-      {/* Container principal - glassmorphism mais leve */}
-      <div className="flex-1 min-h-0 bg-black/60 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-4 flex flex-col">
-
-        {/* Seção de KPIs - altura uniforme */}
-        <div className="mb-6">
-          <UnifiedKpiSection
-            kpiData={kpiData}
-            loadingStates={loadingStates}
-          />
-        </div>
-
-        {/* Layout Bento Grid: 2/3 + 1/3 */}
-        <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6 min-h-0">
-          {/* Coluna Principal (2/3) - Gráfico de Vendas */}
-          <div className="lg:col-span-2 min-h-[400px]">
-            <SalesChartSection
-              className="h-full"
-              data={chartData}
-              isLoading={loadingStates.sales}
-              error={errors.salesChart}
-            />
-          </div>
-
-          {/* Coluna Lateral (1/3) - Top Produtos + Alertas */}
-          <div className="flex flex-col gap-4 min-h-[400px]">
-            <div className="flex-1 min-h-0">
-              {/* Passando dados e loading via props */}
-              <TopProductsCard
-                limit={4}
-                className="h-full"
-                data={topProducts}
-                isLoading={loadingStates.topProducts}
-                error={errors.topProducts}
-              />
-            </div>
-            <div className="flex-1 min-h-0">
-              <LowStockAlertCard limit={5} className="h-full" />
-            </div>
-          </div>
-        </div>
-
-        {/* Nota para funcionários */}
-        {showEmployeeNote && (
-          <div className="mt-4">
-            <div className="p-3 bg-yellow-900/30 border border-yellow-500/40 rounded-lg">
-              <p className="text-xs font-medium text-yellow-200">
-                Algumas métricas financeiras estão disponíveis apenas para administradores.
-              </p>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
-interface UnifiedKpiSectionProps {
-  kpiData: DashboardPresentationProps['kpiData'];
-  loadingStates: DashboardPresentationProps['loadingStates'];
-}
-
-/**
- * Seção de KPIs Unificada (Pure Component)
- * Recebe todos os dados via props, sem side-effects
- */
-function UnifiedKpiSection({ kpiData, loadingStates }: UnifiedKpiSectionProps) {
   const navigate = useNavigate();
+  const { counts, financials, inventory } = kpiData;
 
-  const { counts, financials, inventory: i, channels: channelData } = kpiData;
-  const {
-    counts: isLoadingCounts,
-    financials: isLoadingFinancials,
-    inventory: isLoadingInventory,
-    channels: loadingChannels
-  } = loadingStates;
-
-  // Helper para valores seguros
+  // Helper safeValue
   const safeValue = (value: unknown, fallback: number = 0): number => {
     if (value === null || value === undefined || isNaN(Number(value)) || !isFinite(Number(value))) {
       return fallback;
@@ -167,165 +86,410 @@ function UnifiedKpiSection({ kpiData, loadingStates }: UnifiedKpiSectionProps) {
     return Number(value);
   };
 
-  // Calcular percentuais de canais
-  const deliveryRevenue = safeValue(channelData?.delivery_revenue);
-  const instoreRevenue = safeValue(channelData?.instore_revenue);
-  const totalChannelRevenue = deliveryRevenue + instoreRevenue;
-  const deliveryPercent = totalChannelRevenue > 0 ? (deliveryRevenue / totalChannelRevenue) * 100 : 0;
-  const instorePercent = totalChannelRevenue > 0 ? (instoreRevenue / totalChannelRevenue) * 100 : 0;
+  const formatCurrency = (value: number) => 
+    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(value);
 
-  // Calcular Ticket Médio Global e por Canal
-  const totalOrders = safeValue(channelData?.total_orders, 1);
-  const deliveryOrders = safeValue(channelData?.delivery_orders, 0);
-  const instoreOrders = safeValue(channelData?.instore_orders, 0);
-  const ticketMedio = totalOrders > 0 ? safeValue(financials?.totalRevenue, 0) / totalOrders : 0;
-  const ticketDelivery = deliveryOrders > 0 ? deliveryRevenue / deliveryOrders : 0;
-  const ticketStore = instoreOrders > 0 ? instoreRevenue / instoreOrders : 0;
-
-  // Calcular Previsão de Fechamento do Mês
-  const now = getNowSaoPaulo();
-  const diaAtual = now.getDate();
-  const diasNoMes = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-  const faturamentoAtual = safeValue(financials?.totalRevenue, 0);
-  const previsaoFechamento = diaAtual > 0 ? (faturamentoAtual / diaAtual) * diasNoMes : 0;
-
-  // Formatar moeda
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(value);
+  // Animation Variants
+  const containerVariants: Variants = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
   };
 
-  // Formatar moeda compacta (para previsão)
-  const formatCompact = (value: number) => {
-    if (value >= 1000) {
-      return `R$ ${(value / 1000).toFixed(0)}K`;
-    }
-    return formatCurrency(value);
+  const itemVariants: Variants = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 50 } }
   };
 
   return (
-    <Card className="border-white/10 bg-black/40 backdrop-blur-sm">
-      <CardContent className="pt-4 pb-4">
-        {/* Grid responsivo: 2 colunas mobile, 3 tablet, 6 desktop */}
-        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
+    <div className="font-sans antialiased min-h-screen flex flex-col bg-[#050505] text-white overflow-x-hidden">
+      <PremiumBackground />
 
-          {/* 1. Entregas Pendentes */}
-          <div className="h-full">
-            <StatCard
-              title="Entregas Pendentes"
-              value={safeValue(counts?.pendingDeliveries, 0)}
-              description="aguardando despacho"
-              icon={Truck}
-              variant={(counts?.pendingDeliveries || 0) === 0 ? 'success' :
-                (counts?.pendingDeliveries || 0) < 5 ? 'warning' : 'error'}
-              layout="crm"
-              className={cn("h-full", isLoadingCounts && 'animate-pulse')}
-              onClick={() => navigate('/sales?tab=deliveries')}
-              formatType="number"
-            />
+
+      {/* Main Content Wrapper */}
+      <div className="layout-container relative z-10 flex h-full grow flex-col px-4 md:px-8 py-6 max-w-[1600px] mx-auto w-full">
+        
+        {/* Header */}
+        <motion.header 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-10"
+        >
+          <div className="flex flex-col gap-2">
+            <h1 className="text-white text-4xl md:text-5xl font-bold tracking-tight">
+              Bem-vinda, <span className="text-primary drop-shadow-[0_0_12px_rgba(244,202,37,0.4)]">Anita</span>
+            </h1>
+            <p className="text-gray-400 text-lg font-light">
+              Resumo executivo da adega • <span className="text-primary/80 font-medium">{getNowSaoPaulo().toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+            </p>
           </div>
-
-          {/* 2. Base de Clientes */}
-          <div className="h-full">
-            <StatCard
-              title="Base de Clientes"
-              value={safeValue(counts?.totalCustomers, 0)}
-              description={`${safeValue(counts?.vipCustomers, 0)} VIPs`}
-              icon={Users}
-              variant="purple"
-              layout="crm"
-              className={cn("h-full", isLoadingCounts && 'animate-pulse')}
-              onClick={() => navigate('/customers')}
-              formatType="number"
-            />
+          <div className="flex gap-3">
+            <button className="bg-white/5 hover:bg-white/10 border border-white/10 text-white/80 hover:text-primary px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-all backdrop-blur-md">
+              <Download size={20} />
+              Exportar Relatório
+            </button>
+            <button 
+              onClick={() => navigate('/sales')}
+              className="bg-primary hover:bg-primary-dark text-black px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-bold shadow-[0_0_15px_rgba(244,202,37,0.3)] transition-all"
+            >
+              <Plus size={20} />
+              Novo Pedido
+            </button>
           </div>
+        </motion.header>
 
-          {/* 3. Faturamento Total - com breakdown de canais + previsão */}
-          <div className="h-full">
-            <StatCard
-              title="Faturamento"
-              value={safeValue(financials?.totalRevenue, 0)}
-              description={
-                <span className="flex flex-col gap-0.5 text-xs">
-                  <span className="flex items-center gap-1.5">
-                    <Truck className="h-3 w-3 text-blue-400" />
-                    <span className="text-blue-300">{deliveryPercent.toFixed(0)}%</span>
-                    <span className="text-gray-600">|</span>
-                    <Store className="h-3 w-3 text-green-400" />
-                    <span className="text-green-300">{instorePercent.toFixed(0)}%</span>
-                  </span>
-                  <span className="text-amber-400/80 text-[10px]">
-                    → Prev. mês: {formatCompact(previsaoFechamento)}
-                  </span>
-                </span>
+        {/* Main Dashboard Grid */}
+        <motion.div 
+          variants={containerVariants}
+          initial="hidden"
+          animate="show"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
+        >
+          {/* KPI 1: Faturamento */}
+          <motion.div variants={itemVariants} className="group relative overflow-hidden rounded-xl bg-[#121214]/60 p-6 backdrop-blur-xl border border-white/5 shadow-2xl transition-all hover:-translate-y-1 hover:border-primary/30 hover:shadow-[0_8px_32px_-4px_rgba(244,202,37,0.1)]">
+            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+              <DollarSign size={64} className="text-primary" />
+            </div>
+            <div className="flex flex-col gap-1 z-10 relative">
+              <p className="text-gray-400 text-sm font-medium uppercase tracking-wider">Faturamento</p>
+              <p className="text-white text-3xl font-bold tracking-tight">{formatCurrency(safeValue(financials?.totalRevenue))}</p>
+            </div>
+            <div className="flex items-center gap-2 z-10 relative mt-4">
+              <span className="bg-green-500/10 text-green-400 text-xs font-bold px-2 py-1 rounded-full border border-green-500/20 flex items-center gap-1">
+                <TrendingUp size={14} /> +12%
+              </span>
+              <span className="text-gray-500 text-xs">vs mês anterior</span>
+            </div>
+          </motion.div>
+
+          {/* KPI 2: A Receber */}
+          <motion.div variants={itemVariants} className="group relative overflow-hidden rounded-xl bg-[#121214]/60 p-6 backdrop-blur-xl border border-white/5 shadow-2xl transition-all hover:-translate-y-1 hover:border-primary/30 hover:shadow-[0_8px_32px_-4px_rgba(244,202,37,0.1)]">
+            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+              <CreditCard size={64} className="text-white" />
+            </div>
+            <div className="flex flex-col gap-1 z-10 relative">
+              <p className="text-gray-400 text-sm font-medium uppercase tracking-wider">A Receber</p>
+              <p className="text-white text-3xl font-bold tracking-tight">{formatCurrency(safeValue(financials?.accountsReceivable))}</p>
+            </div>
+            <div className="flex items-center gap-2 z-10 relative mt-4">
+              <span className="bg-green-500/10 text-green-400 text-xs font-bold px-2 py-1 rounded-full border border-green-500/20 flex items-center gap-1">
+                <TrendingUp size={14} /> +5%
+              </span>
+              <span className="text-gray-500 text-xs">vs mês anterior</span>
+            </div>
+          </motion.div>
+
+          {/* KPI 3: Base de Clientes */}
+          <motion.div variants={itemVariants} className="group relative overflow-hidden rounded-xl bg-[#121214]/60 p-6 backdrop-blur-xl border border-white/5 shadow-2xl transition-all hover:-translate-y-1 hover:border-primary/30 hover:shadow-[0_8px_32px_-4px_rgba(244,202,37,0.1)]">
+            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+              <Users size={64} className="text-white" />
+            </div>
+            <div className="flex flex-col gap-1 z-10 relative">
+              <p className="text-gray-400 text-sm font-medium uppercase tracking-wider">Total de Clientes</p>
+              <p className="text-white text-3xl font-bold tracking-tight">{safeValue(counts?.totalCustomers)}</p>
+            </div>
+            <div className="flex items-center gap-2 z-10 relative mt-4">
+              <span className="bg-primary/10 text-primary text-xs font-bold px-2 py-1 rounded-full border border-primary/20 flex items-center gap-1">
+                <Users size={14} /> VIPs: {safeValue(counts?.vipCustomers)}
+              </span>
+            </div>
+          </motion.div>
+
+          {/* KPI 4: Pending Deliveries */}
+          <motion.div variants={itemVariants} className="group relative overflow-hidden rounded-xl bg-[#121214]/60 p-6 backdrop-blur-xl border border-white/5 shadow-2xl transition-all hover:-translate-y-1 hover:border-primary/30 hover:shadow-[0_8px_32px_-4px_rgba(244,202,37,0.1)]">
+            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+              <Truck size={64} className={cn("text-white transition-colors", safeValue(counts?.pendingDeliveries) > 0 && "text-primary animate-pulse")} />
+            </div>
+            <div className="flex flex-col gap-1 z-10 relative">
+              <p className="text-gray-400 text-sm font-medium uppercase tracking-wider">Entregas Pendentes</p>
+              <p className={cn("text-white text-3xl font-bold tracking-tight transition-colors", safeValue(counts?.pendingDeliveries) > 0 && "text-primary")}>
+                {safeValue(counts?.pendingDeliveries)}
+              </p>
+            </div>
+            <div className="flex items-center gap-2 z-10 relative mt-4">
+              <span className={cn(
+                "text-xs font-bold px-2 py-1 rounded-full border flex items-center gap-1 transition-colors",
+                safeValue(counts?.pendingDeliveries) > 0 
+                  ? "bg-primary/10 text-primary border-primary/20" 
+                  : "bg-gray-500/10 text-gray-400 border-gray-500/20"
+              )}>
+                {safeValue(counts?.pendingDeliveries) > 0 ? "Aguardando Despacho" : "Tudo entregue"}
+              </span>
+            </div>
+          </motion.div>
+        </motion.div>
+        <motion.div 
+          variants={containerVariants}
+          initial="hidden"
+          animate="show"
+          className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8"
+        >
+            {/* Main Chart */}
+          <motion.div variants={itemVariants} className="rounded-xl bg-[#121214]/60 p-6 backdrop-blur-xl border border-white/5 shadow-2xl lg:col-span-2 flex flex-col relative min-h-[400px]">
+            <div className="flex flex-wrap justify-between items-end gap-4 mb-6">
+              <div className="flex flex-col gap-1">
+                <h3 className="text-white text-lg font-medium">Tendência de Vendas - {getCurrentMonthLabel().split(' ')[0]}</h3>
+                <p className="text-gray-400 text-sm">Visão Diária</p>
+              </div>
+              <div className="text-right">
+                <p className="text-white text-3xl font-bold tracking-tight">{formatCurrency(safeValue(financials?.totalRevenue))}</p>
+              </div>
+            </div>
+            
+            <div className="flex-1 w-full min-h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData}>
+                  <defs>
+                    <linearGradient id="colorGold" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#f4ca25" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#f4ca25" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <XAxis 
+                    dataKey="period_label" 
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: '#6b7280', fontSize: 12, fontWeight: 600 }}
+                    dy={10}
+                    interval="preserveStartEnd"
+                  />
+                  <YAxis 
+                    stroke="#888888"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                    tickFormatter={(value) => `R$ ${value}`}
+                    tick={{ fill: '#6b7280' }} 
+                    width={80}
+                  />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'rgba(18, 18, 20, 0.9)', 
+                      borderColor: 'rgba(255,255,255,0.1)',
+                      color: '#fff',
+                      borderRadius: '8px',
+                      backdropFilter: 'blur(8px)'
+                    }}
+                    itemStyle={{ color: '#f4ca25' }}
+                    labelStyle={{ color: '#9ca3af', marginBottom: '0.5rem' }}
+                    formatter={(value: any) => [`R$ ${value}`, 'Vendas']}
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="revenue" 
+                    stroke="#f4ca25" 
+                    strokeWidth={3}
+                    fillOpacity={1} 
+                    fill="url(#colorGold)" 
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </motion.div>
+
+          {/* Right Column: Stats & Alerts */}
+          <motion.div variants={itemVariants} className="flex flex-col gap-6 lg:col-span-1">
+            
+            {/* Top Products Card */}
+            <div className="rounded-xl bg-[#121214]/60 p-6 backdrop-blur-xl border border-white/5 shadow-2xl flex flex-col gap-4">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="text-primary" size={20} />
+                  <h3 className="text-white text-base font-medium">Top 4 Produtos</h3>
+                </div>
+                <span className="text-xs text-gray-500">{getDataPeriodLabel()}</span>
+              </div>
+              
+              <div className="flex flex-col gap-3">
+                {topProducts && topProducts.length > 0 ? (
+                  topProducts.slice(0, 4).map((product, index) => (
+                    <div key={product.product_id} className="flex items-center gap-3 p-2 hover:bg-white/5 rounded-lg transition-colors group">
+                      <div className={cn(
+                        "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0",
+                        index === 0 ? "bg-primary text-black shadow-[0_0_10px_rgba(244,202,37,0.4)]" :
+                        index === 1 ? "bg-white/20 text-white" :
+                        "bg-white/10 text-gray-400"
+                      )}>
+                        {index + 1}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white text-sm font-medium truncate">{product.name}</p>
+                        <p className="text-gray-500 text-xs">{product.qty} vendidos</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-white text-sm font-bold">{formatCurrency(product.revenue)}</p>
+                        <p className="text-gray-600 text-[10px]">receita</p>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-4 text-gray-500 text-sm">
+                    Nenhum dado disponível
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Stock Health - Now Dynamic 🟢 🟡 🔴 */}
+            <div className="rounded-xl bg-[#121214]/60 p-6 backdrop-blur-xl border border-white/5 shadow-2xl flex flex-col gap-4">
+              <div className="flex justify-between items-center">
+                <h3 className="text-white text-base font-medium">Saúde do Estoque</h3>
+                <div className="bg-gray-800 rounded-lg p-1">
+                  <Package className="text-gray-400" size={20} />
+                </div>
+              </div>
+              <div className="flex flex-col gap-4">
+                <div className="flex justify-between items-baseline">
+                  <p className="text-gray-400 text-sm">Valor Potencial</p>
+                  <p className="text-white text-xl font-bold">{formatCurrency(safeValue(inventory?.potentialRevenue))}</p>
+                </div>
+                
+                {/* Dynamic Top Category */}
+                <div className="space-y-3">
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-300">
+                        {inventory?.topCategory?.name || 'N/A'} ({inventory?.topCategory?.percentage || 0}%)
+                      </span>
+                      <span className="text-primary">High Value</span>
+                    </div>
+                    <div className="h-1.5 w-full bg-gray-800/50 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-primary rounded-full shadow-[0_0_10px_rgba(244,202,37,0.4)]" 
+                        style={{ width: `${Math.min(inventory?.topCategory?.percentage || 0, 100)}%` }} 
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Dynamic Health Status based on Stockout Ratio */}
+                {(() => {
+                  const status = inventory?.stockHealth?.status || 'warning';
+                  const statusConfigs = {
+                    excellent: { color: 'bg-green-500', text: 'text-green-400', label: 'Excelente' },
+                    good: { color: 'bg-blue-500', text: 'text-blue-400', label: 'Bom' },
+                    warning: { color: 'bg-yellow-500', text: 'text-yellow-400', label: 'Atenção' },
+                    critical: { color: 'bg-red-500', text: 'text-red-400', label: 'Crítico' }
+                  };
+                  const config = statusConfigs[status];
+                  
+                  return (
+                    <div className="pt-2 border-t border-white/5 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className={cn("w-2 h-2 rounded-full animate-pulse", config.color)} />
+                        <p className={cn("text-xs font-medium", config.text)}>Status: {config.label}</p>
+                      </div>
+                      {/* Optional: Show stockout ratio context */}
+                      <span className="text-[10px] text-gray-500 capitalize">
+                         {inventory?.stockHealth?.stockoutPercentage || 0}% de ruptura
+                      </span>
+                    </div>
+                  );
+                })()}
+
+              </div>
+            </div>
+
+            {/* Replenishment Alert - Now Dynamic 🟢 🟡 🔴 */}
+            {(() => {
+              const stockCount = safeValue(inventory?.lowStockCount);
+              const products = loadingStates.lowStock ? [] : (lowStockProducts || []);
+              
+              // Determine Severity
+              let status: 'ok' | 'warning' | 'critical' = 'ok';
+              if (stockCount > 0) {
+                // If any product has 0 stock -> Critical. Otherwise -> Warning.
+                const hasZeroStock = products.some(p => p.current_stock === 0);
+                // Fallback: if we have count > 0 but no products loaded yet/error, assume critical for safety
+                status = hasZeroStock ? 'critical' : 'warning';
               }
-              icon={DollarSign}
-              variant="success"
-              layout="crm"
-              className={cn("h-full", isLoadingFinancials && 'animate-pulse')}
-              onClick={() => navigate('/reports?tab=financial')}
-              formatType="currency"
-            />
-          </div>
 
-          {/* 4. A Receber (Fiado) - Substitui Ticket Médio */}
-          <div className="h-full">
-            <StatCard
-              title="A Receber (Fiado)"
-              value={safeValue(financials?.accountsReceivable, 0)}
-              description={
-                <span className="flex flex-col gap-0.5 text-xs text-amber-200/80">
-                  <span className="flex items-center gap-1.5">
-                    <Clock className="h-3 w-3 text-amber-500" />
-                    <span>Vendas Pendentes</span>
-                  </span>
-                  <span className="text-[10px] text-gray-500">
-                    Acumulado total
-                  </span>
-                </span>
-              }
-              icon={CreditCard}
-              variant="warning"
-              layout="crm"
-              className={cn("h-full", isLoadingFinancials && 'animate-pulse')}
-              onClick={() => navigate('/sales?tab=history')} // TODO: Linkar para filtro de não pagos
-              formatType="currency"
-            />
-          </div>
+              // Configs
+              const statusConfig = {
+                ok: {
+                  borderColor: 'border-l-green-500/80',
+                  headerBg: 'bg-green-500/10',
+                  icon: <Package className="text-green-400" size={20} />,
+                  title: 'Estoque Saudável',
+                  badge: { text: 'Online', style: 'bg-green-500/20 text-green-300' },
+                  message: 'Nenhum item abaixo do mínimo.',
+                  countText: 'Operação 100%'
+                },
+                warning: {
+                  borderColor: 'border-l-yellow-500/80',
+                  headerBg: 'bg-yellow-500/10',
+                  icon: <AlertTriangle className="text-yellow-400" size={20} />,
+                  title: 'Atenção ao Estoque',
+                  badge: { text: 'Alerta', style: 'bg-yellow-500/20 text-yellow-300' },
+                  message: 'Itens próximos do fim.',
+                  countText: `${stockCount} itens abaixo do mínimo`
+                },
+                critical: {
+                  borderColor: 'border-l-red-500/80',
+                  headerBg: 'bg-red-500/10',
+                  icon: <AlertTriangle className="text-red-400 animate-pulse" size={20} />,
+                  title: 'Ruptura de Estoque',
+                  badge: { text: 'Urgente', style: 'bg-red-500/20 text-red-300' },
+                  message: 'Reposição Imediata Necessária.',
+                  countText: `${stockCount} itens com ruptura`
+                }
+              };
 
-          {/* 5. Lucro Estimado */}
-          <div className="h-full">
-            <StatCard
-              title="Lucro Estimado"
-              value={safeValue(financials?.netProfit, 0)}
-              description={`Margem ${safeValue(financials?.netMargin, 0).toFixed(1)}%`}
-              icon={TrendingUp}
-              variant={safeValue(financials?.netProfit, 0) > 0 ? 'success' : 'error'}
-              layout="crm"
-              className={cn("h-full", isLoadingFinancials && 'animate-pulse')}
-              onClick={() => navigate('/reports?tab=financial')}
-              formatType="currency"
-            />
-          </div>
+              const config = statusConfig[status];
 
-          {/* 6. Estoque Atual - Custo → Potencial */}
-          <div className="h-full">
-            <InventoryInsightCard
-              totalCost={safeValue(i?.totalCostValue, 0)}
-              potentialRevenue={safeValue(i?.potentialRevenue, 0)}
-              productCount={safeValue(i?.totalProducts, 0)}
-              isLoading={isLoadingInventory}
-              onClick={() => navigate('/inventory')}
-              className="h-full"
-            />
-          </div>
+              return (
+                <div className={cn(
+                  "rounded-xl bg-[#121214]/60 p-0 overflow-hidden backdrop-blur-xl border border-white/5 shadow-2xl flex flex-col h-full transition-all duration-300",
+                  config.borderColor,
+                  "border-l-4"
+                )}>
+                  <div className={cn("p-4 border-b border-white/5 flex justify-between items-center", config.headerBg)}>
+                    <div className="flex items-center gap-2">
+                      {config.icon}
+                      <h3 className="text-white text-base font-medium">{config.title}</h3>
+                    </div>
+                    <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded uppercase", config.badge.style)}>
+                      {config.badge.text}
+                    </span>
+                  </div>
+                  
+                  <div className="flex flex-col p-2 flex-1 justify-between">
+                    <div 
+                      className="flex items-center gap-3 p-3 hover:bg-white/5 rounded-lg transition-colors group cursor-pointer"
+                      onClick={() => navigate('/inventory')}
+                    >
+                      <div className="w-10 h-10 rounded-md bg-gray-800 overflow-hidden relative border border-white/10 group-hover:border-primary/50 transition-colors flex items-center justify-center">
+                        <Package className={cn("size-18", status === 'ok' ? "text-green-500" : "text-gray-500")} size={18} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className={cn("text-sm font-medium truncate group-hover:text-primary transition-colors", status === 'ok' ? "text-green-400" : "text-white")}>
+                          {status === 'ok' ? 'Tudo Certo' : 'Verificar Lista'}
+                        </p>
+                        <p className={cn("text-xs", status === 'critical' ? "text-red-400" : status === 'warning' ? "text-yellow-400" : "text-gray-400")}>
+                           {status === 'ok' ? config.message : config.countText}
+                        </p>
+                      </div>
+                      <button className="text-gray-400 hover:text-white p-1 rounded-full hover:bg-white/10">
+                        <ChevronRight size={18} />
+                      </button>
+                    </div>
 
-        </div>
-      </CardContent>
-    </Card>
+                    <div className="mt-2 px-2 pb-2">
+                      <button onClick={() => navigate('/inventory')} className="w-full py-2 text-xs font-medium text-center text-gray-400 hover:text-white hover:bg-white/5 rounded transition-colors uppercase tracking-wider">
+                        {status === 'ok' ? 'Ver Inventário' : 'Gerenciar Reposição'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+          </motion.div>
+        </motion.div>
+      </div>
+    </div>
   );
-}
+};

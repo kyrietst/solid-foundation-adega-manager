@@ -45,3 +45,5 @@ interface FiscalAddress {
   (History Sales).
 - **Simplified Tabs:** We removed complex tabs (Insights, AI) to focus on speed
   and clarity.
+- **Typography:** Enforced `Inter` font across all tables and modals to ensure
+  legibility and brand consistency, removing legacy `font-mono` styles.

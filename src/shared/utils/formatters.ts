@@ -8,7 +8,10 @@ export const formatCurrency = (value: number | undefined | null): string => {
     }).format(Number(value || 0));
 };
 
+import { convertToSaoPaulo } from "./timezone-saopaulo";
+
 export const formatDate = (date: string | Date | null | undefined, formatStr: string = "dd/MM/yyyy 'às' HH:mm"): string => {
     if (!date) return "";
-    return format(new Date(date), formatStr, { locale: ptBR });
+    const spDate = convertToSaoPaulo(date);
+    return format(spDate, formatStr, { locale: ptBR });
 };

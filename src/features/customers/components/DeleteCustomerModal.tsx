@@ -270,7 +270,7 @@ export const DeleteCustomerModal: React.FC<DeleteCustomerModalProps> = ({
               {mode === 'soft' && (
                 <div className="bg-gray-700/50 border-2 border-yellow-500/50 rounded-lg p-3">
                   <p className="text-xs text-gray-400 mb-1">Nome a ser digitado:</p>
-                  <p className="text-lg font-bold text-white font-mono select-all">
+                  <p className="text-lg font-bold text-white select-all">
                     {config.confirmText}
                   </p>
                   <p className="text-xs text-yellow-400 mt-1">

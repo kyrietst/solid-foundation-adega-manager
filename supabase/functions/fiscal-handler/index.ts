@@ -263,9 +263,17 @@ Deno.serve(async (req) => {
     // DEBUG: Log resolved tPag
     console.log(`[Fiscal] Resolved tPag: ${tPag}`)
 
+    // Payment Indicator Logic
+    // 0 = A Vista, 1 = A Prazo
+    // Logic: If installments > 1 OR Payment is explicitly "Fiado" (Credit) -> Prazo
+    const installments = sale.installments || 1;
+    const isPrazo = installments > 1 || tPag === '03' || tPag === '99' && sale.payment_method_enum === 'credit'; 
+    const indPag = isPrazo ? 1 : 0;
+
     const paymentDet: Record<string, unknown> = {
         tPag: tPag,
-        vPag: totalVendaNumber
+        vPag: totalVendaNumber,
+        indPag: indPag // Added Payment Indicator
     }
 
     // Regra 1: Se for '99' (Outros), exige descrição (Erro 441)
@@ -289,11 +297,15 @@ Deno.serve(async (req) => {
 
 
 
-    // Destinatário Logic (NEW)
+    // Destinatário Logic (NEW v3.0 - Delivery Aware)
     let dest: Record<string, unknown> | undefined = undefined;
     const customer = sale.customers;
 
-    if (customer && (customer.cpf_cnpj || customer.name)) {
+    // Delivery Address Priority: Use sale-specific address if available, else fallback to customer profile
+    // This allows "Gifting" or "One-off Delivery" without changing customer profile
+    const targetAddress = sale.delivery_address || (customer && typeof customer.address === 'object' ? customer.address : null);
+
+    if (customer && (customer.cpf_cnpj || customer.name || targetAddress)) {
         dest = {};
         
         // Identificação Basic
@@ -311,20 +323,27 @@ Deno.serve(async (req) => {
         if (customer.ie) dest.IE = customer.ie.replace(/\D/g, '');
         if (customer.email) dest.email = customer.email;
 
-        // Endereço Logic
-        if (customer.address && typeof customer.address === 'object') {
-            const addr = customer.address;
-            // Check if it's FiscalAddress (has logradouro)
-            if (addr.logradouro) {
+        // Endereço Logic (Fiscal Address Structure)
+        if (targetAddress) {
+            // Support both new Fiscal keys (PT-BR) and legacy keys (EN)
+            const logradouro = targetAddress.logradouro || targetAddress.street;
+            const numero = targetAddress.numero || targetAddress.number || 'S/N';
+            const bairro = targetAddress.bairro || targetAddress.neighborhood;
+            const municipio = targetAddress.nome_municipio || targetAddress.city;
+            const uf = targetAddress.uf || targetAddress.state;
+            const cep = targetAddress.cep || targetAddress.zipCode;
+            const codMun = targetAddress.codigo_municipio || targetAddress.ibge || "3548708"; // Fallback to SBC
+
+            if (logradouro) {
                 dest.enderDest = {
-                    xLgr: addr.logradouro.substring(0, 60),
-                    nro: addr.numero || 'S/N',
-                    xCpl: addr.complemento ? addr.complemento.substring(0, 60) : undefined,
-                    xBairro: addr.bairro.substring(0, 60),
-                    cMun: addr.codigo_municipio, // IBGE!
-                    xMun: addr.nome_municipio.substring(0, 60),
-                    UF: addr.uf,
-                    CEP: addr.cep ? addr.cep.replace(/\D/g, '') : undefined,
+                    xLgr: logradouro.substring(0, 60),
+                    nro: numero,
+                    xCpl: targetAddress.complemento ? targetAddress.complemento.substring(0, 60) : (targetAddress.complement ? targetAddress.complement.substring(0, 60) : undefined),
+                    xBairro: bairro.substring(0, 60),
+                    cMun: codMun, 
+                    xMun: municipio.substring(0, 60),
+                    UF: uf,
+                    CEP: cep ? cep.replace(/\D/g, '') : undefined,
                     cPais: "1058",
                     xPais: "BRASIL"
                 };
@@ -355,7 +374,7 @@ Deno.serve(async (req) => {
                 indFinal: 1, // NUMBER
                 indPres: 1, // NUMBER
                 procEmi: 0, // NUMBER
-                verProc: "FiscalHandler v2.3"
+                verProc: "FiscalHandler v2.5"
             },
             emit: {
                 CNPJ: settings.cnpj.replace(/\D/g, ''),

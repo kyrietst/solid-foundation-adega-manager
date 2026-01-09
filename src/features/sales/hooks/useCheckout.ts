@@ -31,10 +31,13 @@ export interface UseCheckoutProps {
     isCashPayment: boolean;
     cashReceived: number;
 
-    // Callbacks
+    // Callback
     onSuccess: (saleId: string) => void;
     clearCart: () => void;
     resetState: () => void;
+    
+    // Credit Card props
+    installments?: number;
 }
 
 export const useCheckout = ({
@@ -51,6 +54,7 @@ export const useCheckout = ({
     deliveryPersonId,
     isCashPayment,
     cashReceived,
+    installments = 1,
     onSuccess,
     clearCart,
     resetState
@@ -61,6 +65,16 @@ export const useCheckout = ({
     const [error, setError] = useState<Error | null>(null);
 
     const processSale = async () => {
+        // ... (validation logic) ...
+        // Note: Validation logic lines 64-156 are skipped in this replacement block for brevity but assumed unchanged unless we need to scroll verify.
+        // Actually, replacing the whole function head to destruct props is safer.
+        // But since I can't see the whole file in the tool implementation detail (sometimes), I will target the specific areas.
+        
+        // Wait, replace tool requires contiguous block.
+        // I will replace from prop definition start to the usage in saleData.
+        // This is a large block.
+        // Let's do it in 2 chunks if possible or just careful large chunk.
+        
         setError(null);
 
         if (!user) {
@@ -155,6 +169,14 @@ export const useCheckout = ({
                 }
             }
 
+            let notes = `Desconto aplicado: R$ ${allowDiscounts ? discount.toFixed(2) : '0.00'}`;
+            
+            // Append change info for cash payments
+            if (isCashPayment && cashReceived > total) {
+                const change = cashReceived - total;
+                notes += ` | Recebido: R$ ${cashReceived.toFixed(2)} | Troco: R$ ${change.toFixed(2)}`;
+            }
+
             const saleData = {
                 customer_id: customerId || null,
                 total_amount: subtotal,
@@ -175,7 +197,8 @@ export const useCheckout = ({
                     sale_type: (item.variant_type === 'package' ? 'package' : 'unit') as 'package' | 'unit',
                     package_units: item.packageUnits
                 })),
-                notes: `Desconto aplicado: R$ ${allowDiscounts ? discount.toFixed(2) : '0.00'}`
+                notes: notes,
+                installments: installments || 1 // Pass installments to payload
             };
 
             const result = await upsertSale.mutateAsync({

@@ -3,7 +3,7 @@ import React from 'react';
 import { Button } from '@/shared/ui/primitives/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/primitives/select';
 import { SearchInput } from '@/shared/ui/composite/search-input';
-import { Store, Warehouse, Filter, AlertCircle } from 'lucide-react';
+import { Store, Warehouse, Filter, AlertCircle, Search as SearchIcon } from 'lucide-react';
 
 interface InventoryFiltersProps {
   searchQuery: string;
@@ -31,87 +31,82 @@ export const InventoryFilters: React.FC<InventoryFiltersProps> = ({
   missingCostsCount
 }) => {
   return (
-    <div className="flex flex-col gap-4 mb-4">
-      {/* Search Bar */}
-      <div>
-        <SearchInput
-          value={searchQuery}
-          onChange={onSearchChange}
-          placeholder="Buscar por nome ou código de barras..."
-          className="w-full"
+    <div className="flex flex-col md:flex-row gap-4 mb-4">
+      {/* Search - Glass Input */}
+      <div className="relative flex-1 min-w-[240px]">
+        {/* Usando input direto para garantir fidelidade visual ao tema Stitch */}
+        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none">
+             <SearchIcon className="h-5 w-5" />
+        </div>
+        <input 
+            type="text"
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
+            placeholder="Buscar por nome, SKU ou código de barras..."
+            className="w-full h-12 pl-12 pr-4 bg-[#09090b] border border-white/10 rounded-xl text-white placeholder:text-zinc-500 focus:outline-none focus:border-[#f9cb15]/50 focus:ring-1 focus:ring-[#f9cb15]/50 transition-all text-sm"
         />
       </div>
 
-      {/* Toggle Loja 1 (Active) / Loja 2 (Holding) + Filtro por Categoria */}
-      <div className="flex items-center justify-between gap-2 pb-4 border-b border-white/10">
-        {/* Botões de Loja */}
-        <div className="flex gap-2">
-          <Button
-            variant={selectedStore === 1 ? 'default' : 'outline'}
-            onClick={() => onStoreChange(1)}
-            className="flex items-center gap-2"
-            size="sm"
-          >
-            <Store className="h-4 w-4" />
-            Loja 1 (Vendas)
-          </Button>
-
-          <Button
-            variant={selectedStore === 2 ? 'default' : 'outline'}
-            onClick={() => onStoreChange(2)}
-            className="flex items-center gap-2"
-            size="sm"
-          >
-            <Warehouse className="h-4 w-4" />
-            Loja 2 (Depósito)
-          </Button>
-        </div>
-
-        {/* Filtro por Categoria e Auditoria */}
-        <div className="flex items-center gap-3">
-          {/* Botão "Sem Custo" para Auditoria Rápida */}
-          {missingCostsCount > 0 && (
-            <button
-              onClick={onToggleMissingCosts}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg font-medium text-sm transition-all duration-200 border-2 hover:scale-[1.02] active:scale-[0.98] ${showMissingCostsOnly
-                ? "bg-amber-500/20 border-amber-500 text-amber-400 shadow-lg shadow-amber-500/20"
-                : "bg-transparent border-amber-500/50 text-amber-400/70 hover:border-amber-500 hover:text-amber-400"
-                }`}
-              title="Filtrar apenas produtos sem preço de custo cadastrado"
-            >
-              <AlertCircle className="h-4 w-4" />
-              <span>Sem Custo</span>
-              <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${showMissingCostsOnly
-                ? "bg-amber-500 text-black"
-                : "bg-amber-500/30 text-amber-400"
-                }`}>
-                {missingCostsCount}
-              </span>
-            </button>
-          )}
-
-          <Filter className="h-4 w-4 text-gray-400" />
+      {/* Category Filter - Glass Select */}
+      <div className="relative w-full md:w-64">
+         <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 z-10 pointer-events-none">
+            <Filter className="h-5 w-5" />
+         </div>
           <Select value={selectedCategory} onValueChange={onCategoryChange}>
-            <SelectTrigger className="w-48 h-8 bg-black/40 border-white/20 text-white text-sm">
+            <SelectTrigger className="w-full h-12 pl-12 bg-[#09090b] border-white/10 rounded-xl text-white text-sm hover:bg-white/5 focus:ring-[#f9cb15]/50 placeholder:text-zinc-500">
               <SelectValue placeholder="Todas as categorias" />
             </SelectTrigger>
-            <SelectContent className="bg-gray-900/95 border-white/20 backdrop-blur-xl">
-              <SelectItem value="all" className="text-white hover:bg-white/10">
-                📂 Todas as Categorias
-              </SelectItem>
+            <SelectContent className="bg-[#09090b] border-white/10 text-white">
+              <SelectItem value="all" className="hover:bg-white/10 focus:bg-white/10 cursor-pointer">📂 Todas as Categorias</SelectItem>
               {categories.map((category) => (
                 <SelectItem
                   key={category.id}
                   value={category.name}
-                  className="text-white hover:bg-white/10"
+                  className="hover:bg-white/10 focus:bg-white/10 cursor-pointer"
                 >
                   {category.name}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
-        </div>
       </div>
+
+      {/* Store Toggle - Tab Style */}
+      <div className="flex p-1 bg-white/5 rounded-xl border border-white/10 backdrop-blur-sm shrink-0">
+          <button 
+            onClick={() => onStoreChange(1)}
+            className={`px-4 py-2 rounded-lg font-bold text-sm transition-all whitespace-nowrap flex items-center gap-2 ${selectedStore === 1 
+                ? 'bg-[#f9cb15] text-black shadow-lg hover:bg-[#ffe04f]' 
+                : 'text-zinc-400 hover:text-white hover:bg-white/5 font-medium'}`}
+          >
+             <Store className="h-4 w-4" />
+             Loja 1
+          </button>
+          <button 
+            onClick={() => onStoreChange(2)}
+            className={`px-4 py-2 rounded-lg font-bold text-sm transition-all whitespace-nowrap flex items-center gap-2 ${selectedStore === 2 
+                ? 'bg-[#f9cb15] text-black shadow-lg hover:bg-[#ffe04f]' 
+                : 'text-zinc-400 hover:text-white hover:bg-white/5 font-medium'}`}
+          >
+             <Warehouse className="h-4 w-4" />
+             Loja 2
+          </button>
+      </div>
+      
+      {/* Botão Extra de Missing Costs (Auditoria) */}
+      {missingCostsCount > 0 && (
+            <button
+              onClick={onToggleMissingCosts}
+              className={`flex items-center gap-2 px-3 py-2 rounded-xl border transition-all ${showMissingCostsOnly
+                ? "bg-amber-500/10 border-amber-500 text-amber-500"
+                : "bg-transparent border-white/10 text-zinc-500 hover:text-amber-500 hover:border-amber-500/50"
+                }`}
+              title="Produtos sem custo"
+            >
+              <AlertCircle className="h-5 w-5" />
+              <span className="font-bold text-sm">{missingCostsCount}</span>
+            </button>
+      )}
     </div>
   );
 };

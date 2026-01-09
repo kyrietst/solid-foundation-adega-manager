@@ -6,6 +6,7 @@ import { LoadingScreen } from '@/shared/ui/composite/loading-spinner';
 import SalesPage from '@/features/sales/components/SalesPage';
 import { WhitePageShell } from '@/shared/ui/layout/WhitePageShell';
 import { useRealtimeSync } from '@/shared/hooks/common/useRealtimeSync';
+import { cn } from '@/core/config/utils';
 
 // Lazy loading dos componentes principais para code splitting
 const Dashboard = lazy(() => import('@/features/dashboard/components/Dashboard'));
@@ -217,8 +218,8 @@ const Index = () => {
 
       {/* Main content area */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        <main className="flex-1 overflow-y-auto overflow-x-hidden">
-          <div className="p-2 lg:p-4 h-full w-full">
+        <main className={cn("flex-1 overflow-x-hidden", (activeTab === 'inventory' || activeTab === 'sales') ? "overflow-y-hidden" : "overflow-y-auto")}>
+          <div className={cn("h-full w-full", (activeTab !== 'dashboard' && activeTab !== 'inventory' && activeTab !== 'sales') && "p-2 lg:p-4")}>
             <div className="w-full h-full min-w-0 overflow-x-hidden">
               {renderContent()}
             </div>

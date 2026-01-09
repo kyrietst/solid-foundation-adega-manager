@@ -1,5 +1,4 @@
-@import url('./assets/fonts/sf-pro-display.css');
-
+@import url("./assets/fonts/sf-pro-display.css");
 
 @tailwind base;
 @tailwind components;
@@ -12,96 +11,68 @@
     /* purple */
     --brand-2: 196 91% 48%;
     /* cyan/blue */
-    --background: 0 0% 0% / 0;
-    --foreground: 222.2 84% 4.9%;
+    /* ========================================================================== */
+    /* SEMANTIC TOKENS (Adega Enterprise Theme) */
+    /* ========================================================================== */
+    --brand: 48 100% 50%; /* #FFD700 */
+    --brand-foreground: 0 0% 0%;
+    --brand-highlight: 48 100% 60%; /* Lighter Gold */
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --surface: 240 10% 3.9%; /* #09090b (Deep Black/Zinc-950) */
+    --surface-foreground: 0 0% 98%;
+    --surface-glass: 240 10% 3.9% / 0.8;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    /* Base Colors mapped to Semantic */
+    --background: 240 10% 3.9%; /* #09090b (Deep Black) */
+    --foreground: 0 0% 93%; /* #ededed */
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 93%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 93%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --primary: 48 100% 50%; /* Maps to Brand */
+    --primary-foreground: 0 0% 0%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --secondary: 240 5% 26%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 240 5% 26%;
+    --muted-foreground: 240 5% 65%;
+
+    --accent: 240 5% 26%;
+    --accent-foreground: 0 0% 98%;
 
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
+    --ring: 48 100% 50%;
 
     --radius: 0.5rem;
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 0 0% 8%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 48 100% 50%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 0 0% 15%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 0 0% 20%;
+    --sidebar-ring: 48 100% 50%;
 
-    /* ========================================================================== */
-    /* GLASS MORPHISM VARIABLES - Sistema v2.1 */
-    /* ========================================================================== */
-    --glass-black: rgba(0, 0, 0, 0.8);
-    --glass-yellow: rgba(255, 215, 0, 0.1);
-    --glass-overlay: rgba(17, 24, 39, 0.9);
-
-    /* ========================================================================== */
-    /* PERFORMANCE VARIABLES - Responsive Glassmorphism */
-    /* ========================================================================== */
+    /* Performance Settings */
     --glass-blur-radius: 16px;
-    /* Padrão desktop potente */
     --glass-shadow-intensity: 0.5;
   }
 
   .dark {
-    --background: 0 0% 0% / 0;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Em modo dark, usamos as mesmas cores pois o tema é Dark Default */
+    --background: 0 0% 0%;
+    --foreground: 0 0% 98%;
+    /* ...outras variáveis já herdam do :root se não sobrescritas, 
+       mas por segurança mantemos a consistência se necessário */
   }
 }
 
@@ -123,53 +94,44 @@
   /* ========================================================================== */
   /* CORES PRIMÁRIAS - Substituir azul padrão por amarelo Adega */
   /* ========================================================================== */
-  --rdp-accent-color: #FFD700 !important;
-  /* primary-yellow */
-  --rdp-accent-color-dark: #FFD700 !important;
-  --rdp-accent-background-color: rgba(255, 215, 0, 0.1) !important;
-  /* yellow/10 glass */
+  --rdp-accent-color: hsl(var(--brand)) !important;
+  --rdp-accent-color-dark: hsl(var(--brand)) !important;
+  --rdp-accent-background-color: hsl(var(--brand) / 0.1) !important;
 
   /* ========================================================================== */
   /* CORES DE RANGE - Início e fim da seleção */
   /* ========================================================================== */
-  --rdp-range_start-date-background-color: #FFD700 !important;
-  /* yellow solid */
-  --rdp-range_start-color: #000000 !important;
-  /* texto preto sobre yellow */
-  --rdp-range_end-date-background-color: #FFD700 !important;
-  --rdp-range_end-color: #000000 !important;
+  --rdp-range_start-date-background-color: hsl(var(--brand)) !important;
+  --rdp-range_start-color: hsl(var(--brand-foreground)) !important;
+  --rdp-range_end-date-background-color: hsl(var(--brand)) !important;
+  --rdp-range_end-color: hsl(var(--brand-foreground)) !important;
 
   /* ========================================================================== */
   /* CORES DE RANGE MIDDLE - Dias intermediários da seleção */
   /* ========================================================================== */
-  --rdp-range_middle-background-color: rgba(255, 215, 0, 0.1) !important;
-  /* yellow/10 */
-  --rdp-range_middle-color: #FFD700 !important;
-  /* texto yellow */
+  --rdp-range_middle-background-color: hsl(var(--brand) / 0.1) !important;
+  --rdp-range_middle-color: hsl(var(--brand)) !important;
 
   /* ========================================================================== */
   /* TODAY INDICATOR - Dia atual */
   /* ========================================================================== */
-  --rdp-today-color: #FFD700 !important;
-  /* yellow text */
+  --rdp-today-color: hsl(var(--brand)) !important;
 
   /* ========================================================================== */
   /* SELECTED BORDER - Borda do dia selecionado */
   /* ========================================================================== */
-  --rdp-selected-border: 2px solid rgba(255, 215, 0, 0.5) !important;
-  /* yellow/50 */
+  --rdp-selected-border: 2px solid hsl(var(--brand) / 0.5) !important;
 
   /* ========================================================================== */
   /* OUTLINE - Estados de foco (acessibilidade) */
   /* ========================================================================== */
-  --rdp-outline: 2px solid rgba(255, 215, 0, 0.5) !important;
-  --rdp-outline-selected: 2px solid #FFD700 !important;
+  --rdp-outline: 2px solid hsl(var(--brand) / 0.5) !important;
+  --rdp-outline-selected: 2px solid hsl(var(--brand)) !important;
 
   /* ========================================================================== */
   /* BACKGROUND - Fundo do calendário (glass morphism) */
   /* ========================================================================== */
-  --rdp-background-color: rgba(17, 24, 39, 0.8) !important;
-  /* gray-900/80 */
+  --rdp-background-color: hsl(var(--surface) / 0.8) !important;
 }
 
 /* ============================================================================ */
@@ -180,57 +142,43 @@
 /* Range Start/End - Fundo amarelo sólido com texto preto */
 .rdp-root .rdp-range_start .rdp-day_button,
 .rdp-root .rdp-range_end .rdp-day_button {
-  background-color: #FFD700 !important;
-  /* yellow solid */
-  color: #000000 !important;
-  /* texto preto legível - WCAG AAA */
-  border: 2px solid rgba(255, 215, 0, 0.5) !important;
-  /* yellow border */
+  background-color: hsl(var(--brand)) !important;
+  color: hsl(var(--brand-foreground)) !important;
+  border: 2px solid hsl(var(--brand) / 0.5) !important;
   font-weight: 600 !important;
-  /* destaque visual */
 }
 
 /* Range Middle - Fundo amarelo transparente com texto yellow */
 .rdp-root .rdp-range_middle {
-  background-color: rgba(255, 215, 0, 0.1) !important;
-  /* yellow/10 glass */
+  background-color: hsl(var(--brand) / 0.1) !important;
 }
 
 .rdp-root .rdp-range_middle .rdp-day_button {
-  color: #FFD700 !important;
-  /* texto yellow */
+  color: hsl(var(--brand)) !important;
   background-color: transparent !important;
-  /* sem fundo no button */
 }
 
 /* Today Indicator - Texto amarelo para dia atual */
 .rdp-root .rdp-today:not(.rdp-outside) {
-  color: #FFD700 !important;
-  /* texto yellow */
+  color: hsl(var(--brand)) !important;
   font-weight: 600 !important;
-  /* destaque sutil */
 }
 
 /* Selected Day - Borda amarela para dia selecionado */
 .rdp-root .rdp-selected .rdp-day_button {
-  border: 2px solid rgba(255, 215, 0, 0.5) !important;
-  /* yellow border */
-  background-color: rgba(255, 215, 0, 0.2) !important;
-  /* yellow/20 glass */
+  border: 2px solid hsl(var(--brand) / 0.5) !important;
+  background-color: hsl(var(--brand) / 0.2) !important;
 }
 
 /* Hover State - Amarelo transparente no hover */
 .rdp-root .rdp-day_button:hover:not(:disabled) {
-  background-color: rgba(255, 215, 0, 0.1) !important;
-  /* yellow/10 */
-  border-color: rgba(255, 215, 0, 0.3) !important;
-  /* yellow/30 */
+  background-color: hsl(var(--brand) / 0.1) !important;
+  border-color: hsl(var(--brand) / 0.3) !important;
 }
 
 /* Chevron Icons - Navegação amarela */
 .rdp-root .rdp-chevron {
-  fill: #FFD700 !important;
-  /* yellow */
+  fill: hsl(var(--brand)) !important;
 }
 
 /* ============================================================================ */
@@ -280,7 +228,6 @@
 /* ============================================================================ */
 
 @layer components {
-
   /* Spotlight hover effect for cards/sections */
   .hero-spotlight {
     position: relative;
@@ -288,12 +235,16 @@
     overflow: hidden;
     /* Prevent gradient from bleeding outside card */
     background:
-      radial-gradient(600px circle at var(--x, 50%) var(--y, 50%),
+      radial-gradient(
+        600px circle at var(--x, 50%) var(--y, 50%),
         hsl(var(--brand) / 0.18),
-        transparent 40%),
-      radial-gradient(1200px circle at 50% -10%,
-        hsl(var(--brand-2) / 0.12),
-        transparent 50%);
+        transparent 40%
+      ),
+      radial-gradient(
+      1200px circle at 50% -10%,
+      hsl(var(--brand-2) / 0.12),
+      transparent 50%
+    );
     transition: background-position 120ms ease-out;
   }
 
@@ -309,9 +260,11 @@
     background: #1f2937;
 
     /* Enhanced fallback for modern browsers without backdrop-filter */
-    background: linear-gradient(135deg,
-        rgba(17, 24, 39, 0.95),
-        rgba(31, 41, 55, 0.85));
+    background: linear-gradient(
+      135deg,
+      rgba(17, 24, 39, 0.95),
+      rgba(31, 41, 55, 0.85)
+    );
 
     /* Glass effect for supported browsers - PERFORMANCE OPTIMIZED */
     background: rgba(17, 24, 39, 0.8);
@@ -338,9 +291,11 @@
 
   /* Glass Premium with Gradient - PERFORMANCE OPTIMIZED */
   .glass-premium {
-    background: linear-gradient(135deg,
-        rgba(0, 0, 0, 0.8),
-        rgba(17, 24, 39, 0.6));
+    background: linear-gradient(
+      135deg,
+      rgba(0, 0, 0, 0.8),
+      rgba(17, 24, 39, 0.6)
+    );
     backdrop-filter: blur(var(--glass-blur-radius));
     -webkit-backdrop-filter: blur(var(--glass-blur-radius));
     border: 1px solid rgba(255, 215, 0, 0.2);
@@ -391,8 +346,7 @@
 }
 
 /* Small devices & reduced motion preference - Eliminate blur */
-@media (max-width: 768px),
-(prefers-reduced-motion: reduce) {
+@media (max-width: 768px), (prefers-reduced-motion: reduce) {
   :root {
     --glass-blur-radius: 0px;
     /* SEM blur */
@@ -424,21 +378,24 @@
 
 @supports not (backdrop-filter: blur(16px)) {
   .glass-card {
-    background: linear-gradient(135deg,
-        rgba(17, 24, 39, 0.95),
-        rgba(31, 41, 55, 0.9));
+    background: linear-gradient(
+      135deg,
+      rgba(17, 24, 39, 0.95),
+      rgba(31, 41, 55, 0.9)
+    );
   }
 
   .glass-yellow {
-    background: linear-gradient(135deg,
-        rgba(255, 215, 0, 0.1),
-        rgba(255, 215, 0, 0.05));
+    background: linear-gradient(
+      135deg,
+      rgba(255, 215, 0, 0.1),
+      rgba(255, 215, 0, 0.05)
+    );
   }
 }
 
 /* Mobile Performance Optimization */
 @media (max-width: 768px) {
-
   .glass-card,
   .glass-yellow,
   .glass-premium {
@@ -500,14 +457,15 @@
 }
 
 @keyframes pulse-glow {
-
   0%,
   100% {
     box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
   }
 
   50% {
-    box-shadow: 0 0 30px rgba(255, 215, 0, 0.5), 0 0 40px rgba(255, 215, 0, 0.2);
+    box-shadow:
+      0 0 30px rgba(255, 215, 0, 0.5),
+      0 0 40px rgba(255, 215, 0, 0.2);
   }
 }
 
@@ -526,7 +484,6 @@
 
 /* LGPD Soft Pulse Animation */
 @keyframes lgpd-soft-pulse {
-
   0%,
   100% {
     opacity: 1;
@@ -548,7 +505,6 @@
 /* ============================================================================ */
 
 @layer base {
-
   /* Global scrollbar styles - Apply dark theme by default */
   * {
     /* Firefox scrollbar */

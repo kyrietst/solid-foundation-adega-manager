@@ -32,11 +32,19 @@ The Frontend is "Insecure". Never trust data coming from it.
 - **Reason:** It guarantees Inventory, Finance, and Fiscal data are always in
   sync.
 
-### C. Supabase Client Isolation
+### C. Supabase Client Isolation & Type Hygiene
 
-- To avoid TypeScript "Deep Instantiation" errors, cast `supabase as any` inside
-  Hooks, then explicity cast the return.
-- **File:** `src/core/api/supabase/client.ts` is the only initialized client.
+- **Client:** `src/core/api/supabase/client.ts` is the only initialized client.
+- **Strict Casting:** Do NOT rely on inferred types for complex RPCs. Define a
+  local interface (e.g., `DeliveryMetricsRaw`) and cast the result explicitly to
+  ensure TS knows the shape.
+  ```typescript
+  const { data: rpcResponse } = await supabase.rpc(...)
+  const rpcData = rpcResponse as unknown as MyInterface;
+  ```
+- **Reason:** Supabase generated types often miss computed columns or JSON
+  joins. Explicit interfaces prevent "possibly null" errors and "deep
+  instantiation" warnings.
 
 ### C. Folder Structure
 

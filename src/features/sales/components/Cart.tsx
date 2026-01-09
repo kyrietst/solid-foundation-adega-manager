@@ -1,44 +1,25 @@
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 /* eslint-disable jsx-a11y/no-static-element-interactions */
-/* eslint-disable jsx-a11y/label-has-associated-control */
 /**
- * Componente Cart completo - Refatorado e Fragmentado
- * Usado no POS principal onde precisa de todas as funcionalidades
- * Modernizado com glass morphism e nova paleta preto/dourado
+ * Componente Cart (Shopping Sidebar) - Refatorado para Stitch Design
+ * Exibe apenas itens e totais, delegando checkout para o Drawer.
  */
 
-import { useState, useMemo, useEffect, useId } from 'react';
-import { useForm, FormProvider } from 'react-hook-form';
+import { useId, useMemo } from 'react';
 import { useCart, useCartTotal } from '@/features/sales/hooks/use-cart';
 import { useCustomer } from '@/features/customers/hooks/use-crm';
-import { usePaymentMethods } from '@/features/sales/hooks/use-sales';
-import { useCheckout } from '@/features/sales/hooks/useCheckout';
-import { useDeliveryPersons } from '@/features/delivery/hooks/useDeliveryPersons';
-import { cn } from '@/core/config/utils';
-import { getGlassCardClasses, getValueClasses } from '@/core/config/theme-utils';
-import { text, shadows } from "@/core/config/theme";
-import { FiscalAddress } from '@/core/types/fiscal.types';
+import { cn, formatCurrency } from '@/core/config/utils';
 
 import { Button } from '@/shared/ui/primitives/button';
-import { Switch } from '@/shared/ui/primitives/switch';
-import { Label } from '@/shared/ui/primitives/label';
-import { ScrollArea } from '@/shared/ui/primitives/scroll-area';
-import { Loader2, ShoppingCart, Trash2, AlertTriangle, Truck } from 'lucide-react';
+import { ShoppingCart, Trash2 } from 'lucide-react';
 import type { SaleType } from './SalesPage';
 
-// Import New Sub-components
 import { CartItemList } from './CartItemList';
 import { CartCustomerSelector } from './CartCustomerSelector';
-import { CartPaymentSection } from './CartPaymentSection';
-import { CartDeliverySection } from './CartDeliverySection';
-import { CartTotals } from './CartTotals';
 
 export interface CartProps {
   className?: string;
-  showCustomerSearch?: boolean; // Prop mantida para compatibilidade, mas o controle agora é interno no CartCustomerSelector
-  allowDiscounts?: boolean;
-  onSaleComplete?: (saleId: string) => void;
-  maxItems?: number;
+  onCheckout: () => void;
   variant?: 'default' | 'premium' | 'success' | 'warning' | 'error';
   glassEffect?: boolean;
   saleType?: SaleType;
@@ -46,163 +27,28 @@ export interface CartProps {
 
 export function Cart({
   className = '',
-  allowDiscounts = true,
-  onSaleComplete,
-  maxItems = 50,
+  onCheckout,
   variant = 'default',
   glassEffect = true,
-  saleType = 'presencial'
 }: CartProps) {
-  // ✅ ACCESSIBILITY FIX: Generate unique ID prefix to prevent duplicate IDs when Cart is rendered multiple times
   const cartId = useId();
   const { items, updateItemQuantity, removeItem, customerId, setCustomer, clearCart } = useCart();
-  const { data: paymentMethods = [], isLoading: isLoadingPaymentMethods } = usePaymentMethods();
   const { data: selectedCustomer } = useCustomer(customerId || '');
 
-  // Form System for Address
-  const addressForm = useForm<FiscalAddress>({
-      defaultValues: {
-          pais: 'Brasil',
-          codigo_pais: '1058'
-      }
-  });
-
-  // State Definitions (Must be before conditional hooks)
-  const [paymentMethodId, setPaymentMethodId] = useState<string>('');
-  const [discount, setDiscount] = useState(0);
-  const [cashReceived, setCashReceived] = useState<number>(0);
-  const [showCashInput, setShowCashInput] = useState(false);
-
-  // Estados para delivery (Address movido para react-hook-form)
-  const [deliveryFee, setDeliveryFee] = useState<number>(0);
-  const [deliveryPersonId, setDeliveryPersonId] = useState<string>('');
-  
-  // New State for Fiado Delivery Toggle
-  const [isFiadoDelivery, setIsFiadoDelivery] = useState(false);
-
-  // Derivar isDelivery baseada no tipo de venda ou toggle
-  const isDelivery = saleType === 'delivery' || (saleType === 'pickup' && isFiadoDelivery);
-
-  // Data Fetching
-  // FIX: Enable query if isDelivery is true (regardless if it's native delivery or Fiado+Delivery)
-  const { data: deliveryPersons = [] } = useDeliveryPersons(isDelivery);
-
+  // Totals
   const subtotal = useCartTotal();
-
-  const total = useMemo(() => {
-    const baseTotal = subtotal - (allowDiscounts ? discount : 0);
-    const deliveryTotal = isDelivery ? deliveryFee : 0;
-    const calculatedTotal = baseTotal + deliveryTotal;
-    return calculatedTotal > 0 ? calculatedTotal : 0;
-  }, [subtotal, discount, allowDiscounts, isDelivery, deliveryFee]);
-
-  // Lógica para detectar pagamento em dinheiro
-  const selectedPaymentMethod = paymentMethods.find(m => m.id === paymentMethodId);
-  const isCashPayment = selectedPaymentMethod?.slug === 'dinheiro' || selectedPaymentMethod?.code === '01' || selectedPaymentMethod?.name === 'Dinheiro';
-
-  // Cálculo do troco
-  const change = useMemo(() => {
-    return isCashPayment && cashReceived > 0 ? Math.max(0, cashReceived - total) : 0;
-  }, [isCashPayment, cashReceived, total]);
-
-  // Effect para mostrar/ocultar campo de dinheiro
-  useEffect(() => {
-    setShowCashInput(isCashPayment);
-    if (!isCashPayment) {
-      setCashReceived(0);
-    }
-  }, [isCashPayment]);
-
-  // Autocomplete: Auto-selecionar entregador quando há apenas um disponível
-  useEffect(() => {
-    if (isDelivery && deliveryPersons.length === 1 && !deliveryPersonId) {
-      setDeliveryPersonId(deliveryPersons[0].id);
-    }
-  }, [isDelivery, deliveryPersons, deliveryPersonId]);
-
-  // Autocomplete: Preencher endereço automaticamente do cliente selecionado
-  useEffect(() => {
-    if (isDelivery && selectedCustomer?.address) {
-      const addr = selectedCustomer.address;
-      
-      // Tentativa de mapeamento inteligente
-      if (typeof addr === 'string') {
-          // Fallback legacy string
-          addressForm.setValue('logradouro', addr); 
-          addressForm.setValue('cep', ''); 
-      } else if (typeof addr === 'object' && addr !== null) {
-          // If customer has structured data (even partial)
-          // We map what we can. 
-          // Note: In future, customer address should strictly be FiscalAddress too.
-          if ((addr as any).street) addressForm.setValue('logradouro', (addr as any).street);
-          if ((addr as any).number) addressForm.setValue('numero', (addr as any).number);
-          if ((addr as any).neighborhood) addressForm.setValue('bairro', (addr as any).neighborhood);
-          if ((addr as any).city) addressForm.setValue('nome_municipio', (addr as any).city);
-          if ((addr as any).state) addressForm.setValue('uf', (addr as any).state);
-          // If we had IBGE recorded, we would set it here too
-          if ((addr as any).ibge) addressForm.setValue('codigo_municipio', (addr as any).ibge);
-          if ((addr as any).zip_code) addressForm.setValue('cep', (addr as any).zip_code);
-          if ((addr as any).complement) addressForm.setValue('complemento', (addr as any).complement);
-      }
-    }
-  }, [isDelivery, selectedCustomer, addressForm]);
-
-  // Map internal variantes to Theme variants
-  const getGlassVariant = (v: string) => {
-    switch (v) {
-      case 'success': return 'strong';
-      case 'warning': return 'yellow';
-      case 'error': return 'strong';
-      case 'premium': return 'premium';
-      default: return 'default';
-    }
-  };
-
-  const glassClasses = glassEffect ? getGlassCardClasses(getGlassVariant(variant)) : '';
-
-  // Reset state function
-  const resetLocalState = () => {
-    setPaymentMethodId('');
-    setDiscount(0);
-    setCashReceived(0);
-    setShowCashInput(false);
-    addressForm.reset();
-    setDeliveryFee(0);
-    setDeliveryPersonId('');
-  };
-
-  const { processSale, isProcessing } = useCheckout({
-    items,
-    subtotal,
-    total,
-    customerId,
-    saleType: isDelivery ? 'delivery' : saleType, // Override saleType if it's a Fiado Delivery
-    paymentMethodId: saleType === 'pickup' ? 'fiado' : paymentMethodId, // Internal marker for Fiado
-    discount,
-    allowDiscounts,
-    deliveryAddress: addressForm.watch(), 
-    deliveryFee,
-    deliveryPersonId,
-    isCashPayment: !!isCashPayment,
-    cashReceived,
-    onSuccess: (saleId) => onSaleComplete?.(saleId),
-    clearCart,
-    resetState: resetLocalState
-  });
+  // No Shopping Cart phase, we typically show just the subtotal. 
+  // Discounts and Delivery fees are applied in the Checkout Drawer.
+  const total = subtotal;
 
   if (items.length === 0) {
     return (
-      <div className={cn('bg-black/70 backdrop-blur-xl border border-white/20 rounded-lg py-16 px-8 text-center', className)}>
-        <div className="space-y-8">
-          <div className="mx-auto w-24 h-24 bg-gray-800/50 rounded-full flex items-center justify-center border-2 border-gray-600/30 backdrop-blur-sm">
-            <ShoppingCart className="h-12 w-12 text-gray-400" aria-hidden="true" />
+      <div className={cn('bg-surface-dark border border-white/5 rounded-2xl overflow-hidden shadow-2xl relative h-full flex flex-col', className)}>
+        <div className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-4 opacity-50">
+          <div className="size-16 rounded-full bg-white/5 flex items-center justify-center">
+            <ShoppingCart className="h-8 w-8 text-gray-400" />
           </div>
-          <div className="space-y-3">
-            <h3 className="text-2xl font-bold text-white">Carrinho vazio</h3>
-            <p className="text-gray-400 text-lg leading-relaxed">
-              Adicione produtos para começar uma venda
-            </p>
-          </div>
+          <p className="text-gray-400 font-medium">Seu carrinho está vazio</p>
         </div>
       </div>
     );
@@ -211,150 +57,71 @@ export function Cart({
   return (
     <div
       className={cn(
-        'bg-black/70 backdrop-blur-xl border border-white/20 shadow-lg rounded-lg flex flex-col hero-spotlight',
-        'h-[calc(100vh-120px)] min-h-[600px] max-h-[900px]',
+        'w-full max-w-[420px] flex flex-col h-full bg-surface-dark border border-white/5 rounded-2xl overflow-hidden shadow-2xl relative',
         className
       )}
-      onMouseMove={(e) => {
-        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-        const x = ((e.clientX - rect.left) / rect.width) * 100;
-        const y = ((e.clientY - rect.top) / rect.height) * 100;
-        (e.currentTarget as HTMLElement).style.setProperty("--x", `${x}%`);
-        (e.currentTarget as HTMLElement).style.setProperty("--y", `${y}%`);
-      }}
     >
-      {/* Header Fixo */}
-      <div className="flex-shrink-0 flex items-center justify-between p-4 border-b border-white/20">
-        <h3 className={cn(text.h3, shadows.medium, "text-lg font-semibold")}>
-          Carrinho ({items.length}/{maxItems})
-        </h3>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={clearCart}
-          className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
-          aria-label="Limpar carrinho completamente"
-        >
-          <Trash2 className="h-4 w-4" aria-hidden="true" />
-        </Button>
+      {/* Cart Header & Client Select */}
+      <div className="p-4 border-b border-white/5 bg-white/5 backdrop-blur-md z-10 flex-shrink-0">
+        <div className="mb-4">
+          {/* Label movida para dentro do seletor ou removida pois o card é auto-explicativo */}
+          {/* <label className="block text-xs font-medium text-gray-400 mb-1.5 uppercase tracking-wide">Cliente</label> */}
+          <CartCustomerSelector
+            selectedCustomer={selectedCustomer}
+            onSelectCustomer={setCustomer}
+          />
+        </div>
+
+        <div className="flex justify-between items-end">
+          <h2 className="text-white text-lg font-bold">Carrinho</h2>
+          <div className="flex items-center gap-2">
+            <span className="text-primary text-sm font-medium bg-primary/10 px-2 py-0.5 rounded-md">
+              {items.length} {items.length === 1 ? 'item' : 'itens'}
+            </span>
+            <button
+              onClick={clearCart}
+              className="p-1 text-gray-500 hover:text-red-400 transition-colors"
+              title="Limpar carrinho"
+            >
+              <Trash2 size={16} />
+            </button>
+          </div>
+        </div>
       </div>
 
-      {/* Seção Cliente */}
-      <CartCustomerSelector
-        selectedCustomer={selectedCustomer}
-        onSelectCustomer={setCustomer}
-      />
-
-      {/* Lista de Produtos */}
+      {/* Cart Items List */}
       <CartItemList
         items={items}
-        maxItems={maxItems}
+        maxItems={99}
         onUpdateQuantity={updateItemQuantity}
         onRemoveItem={removeItem}
       />
 
-      {/* Footer com Formulários */}
-      <ScrollArea className="flex-shrink-0 max-h-[400px]">
-        <div>
-          {/* Toggle de Delivery para Fiado - UX REQ: Phase 6 */}
-          {saleType === 'pickup' && (
-              <div className="px-4 py-2">
-                 <div className="flex items-center justify-between p-3 bg-gray-900/40 rounded-lg border border-gray-800">
-                    <div className="space-y-0.5">
-                        <Label htmlFor={`delivery-mode-${cartId}`} className="text-white flex items-center gap-2">
-                            <Truck className="h-4 w-4 text-purple-400" />
-                            É para entrega?
-                        </Label>
-                        <p className="text-xs text-gray-400">Habilita endereço e taxa de entrega</p>
-                    </div>
-                    <Switch
-                        id={`delivery-mode-${cartId}`}
-                        checked={isFiadoDelivery}
-                        onCheckedChange={setIsFiadoDelivery}
-                    />
-                 </div>
-              </div>
-          )}
-
-          {/* Seção Pagamento - Ocultar se for Fiado (Pickup) */}
-          {saleType !== 'pickup' && (
-            <CartPaymentSection
-                cartId={cartId}
-                paymentMethods={paymentMethods}
-                allowDiscounts={allowDiscounts}
-                paymentMethodId={paymentMethodId}
-                discount={discount}
-                cashReceived={cashReceived}
-                showCashInput={showCashInput}
-                onPaymentMethodChange={setPaymentMethodId}
-                onDiscountChange={(val) => setDiscount(Math.max(0, val))}
-                onCashReceivedChange={(val) => setCashReceived(Math.max(0, val))}
-            />
-          )}
-
-          {/* Seção Delivery */}
-          {isDelivery && (
-            <FormProvider {...addressForm}>
-                 <CartDeliverySection
-                    cartId={cartId}
-                    deliveryFee={deliveryFee}
-                    deliveryPersonId={deliveryPersonId}
-                    deliveryPersons={deliveryPersons}
-                    onFeeChange={setDeliveryFee}
-                    onDeliveryPersonChange={setDeliveryPersonId}
-                 />
-            </FormProvider>
-          )}
-
-          {/* Totais e Botão Final */}
-          <div className="p-4 space-y-4">
-            <CartTotals
-              subtotal={subtotal}
-              discount={discount}
-              deliveryFee={deliveryFee}
-              total={total}
-              cashReceived={cashReceived}
-              change={change}
-              showDiscount={allowDiscounts}
-              showDelivery={isDelivery}
-              showChange={isCashPayment}
-            />
-
-            {/* Alerta de Cliente Obrigatório para FIADO */}
-            {saleType === 'pickup' && !customerId && (
-              <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2">
-                <AlertTriangle className="h-4 w-4 text-red-400 flex-shrink-0" />
-                <p className="text-xs text-red-300 font-medium">
-                  Para vendas no FIADO, é obrigatório identificar o cliente.
-                </p>
-              </div>
-            )}
-
-            <Button
-              onClick={processSale}
-              disabled={isProcessing || (saleType !== 'pickup' && !paymentMethodId) || total <= 0 || (saleType === 'pickup' && !customerId)}
-              className={cn(
-                "w-full font-semibold py-3 transition-all",
-                (saleType === 'pickup' && !customerId)
-                  ? "bg-gray-800 text-gray-500 cursor-not-allowed border border-gray-700"
-                  : "bg-primary-yellow text-black hover:bg-primary-yellow/90"
-              )}
-            >
-              {isProcessing ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin text-black" />
-                  Finalizando...
-                </>
-              ) : (
-                'Finalizar Venda'
-              )}
-            </Button>
+      {/* Footer: Totals & Checkout */}
+      <div className="bg-black/60 border-t border-white/10 p-5 backdrop-blur-xl flex-shrink-0">
+        <div className="space-y-2 mb-4">
+          <div className="flex justify-between text-gray-400 text-sm">
+            <span>Subtotal</span>
+            <span>{formatCurrency(subtotal)}</span>
+          </div>
+          {/* We can show "Calculated at checkout" for discounts if needed, or just hide */}
+          <div className="flex justify-between text-white text-lg font-bold pt-2 border-t border-white/5">
+            <span>Total</span>
+            <span className="text-primary text-xl">{formatCurrency(total)}</span>
           </div>
         </div>
-      </ScrollArea>
+
+        <button
+          onClick={onCheckout}
+          className="w-full bg-primary hover:bg-[#e0b71f] text-black h-14 rounded-xl font-bold text-lg shadow-[0_4px_20px_rgba(244,202,37,0.3)] transition-all transform active:scale-[0.98] flex items-center justify-between px-6"
+        >
+          <span>IR PARA PAGAMENTO</span>
+          <span className="bg-black/10 px-2 py-1 rounded text-base">{formatCurrency(total)}</span>
+        </button>
+      </div>
     </div>
   );
 }
 
-// Legacy alias for backward compatibility
+// Legacy alias
 export const FullCart = Cart;

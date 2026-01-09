@@ -6,7 +6,6 @@ import { FileText, Download, CalendarDays, CreditCard, ChevronRight, User, Truck
 import { useAuth } from "@/app/providers/AuthContext";
 import { useState } from "react";
 import { useToast } from "@/shared/hooks/common/use-toast";
-import { text, shadows } from "@/core/config/theme";
 import { cn } from "@/core/config/utils";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
@@ -29,6 +28,8 @@ import { PaymentStatusBadge } from "./PaymentStatusBadge";
 import { FiscalStatusBadge } from "@/features/fiscal/components/FiscalStatusBadge";
 import { useFiscalEmission } from "@/features/fiscal/hooks/useFiscalEmission";
 import { LoadingSpinner } from "@/shared/ui/composite/loading-spinner";
+import { ReceiptModal } from "./ReceiptModal";
+import { FiscalResponse } from "@/features/fiscal/hooks/useFiscalEmission";
 
 interface RecentSalesProps {
   filterStatus?: string;
@@ -50,6 +51,11 @@ export function RecentSales({ filterStatus }: RecentSalesProps) {
 
   const { emitInvoice, isLoading: isFiscalProcessing } = useFiscalEmission();
   const [processingSaleId, setProcessingSaleId] = useState<string | null>(null);
+
+  // Receipt Modal State
+  const [receiptModalOpen, setReceiptModalOpen] = useState(false);
+  const [selectedSaleId, setSelectedSaleId] = useState<string | null>(null);
+  const [fiscalResponseData, setFiscalResponseData] = useState<FiscalResponse['data'] | null>(null);
 
   // Settlement State
   const [settlementSale, setSettlementSale] = useState<{ id: string; total: number; customerName: string } | null>(null);
@@ -77,9 +83,14 @@ export function RecentSales({ filterStatus }: RecentSalesProps) {
     if (processingSaleId) return;
 
     setProcessingSaleId(saleId);
-    await emitInvoice(saleId, () => {
-      // Atualiza a lista para mostrar o novo status
+    await emitInvoice(saleId, (data) => {
+      // Atualiza a lista
       queryClient.invalidateQueries({ queryKey: ["sales"] });
+      
+      // Abre o modal de recibo com os dados fiscais
+      setSelectedSaleId(saleId);
+      setFiscalResponseData(data);
+      setReceiptModalOpen(true);
     });
     setProcessingSaleId(null);
   };
@@ -187,10 +198,10 @@ export function RecentSales({ filterStatus }: RecentSalesProps) {
       <div className="flex-shrink-0 mb-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h2 className={cn(text.h2, shadows.medium, "text-2xl font-bold tracking-tight")}>
+            <h2 className="text-2xl font-bold tracking-tight text-foreground shadow-sm">
               Vendas Recentes
             </h2>
-            <p className={cn(text.h6, shadows.subtle, "text-sm")}>
+            <p className="text-sm text-muted-foreground shadow-sm">
               Visualize as últimas transações realizadas ({sales?.length || 0} vendas)
             </p>
           </div>
@@ -199,7 +210,7 @@ export function RecentSales({ filterStatus }: RecentSalesProps) {
               <Download className="h-4 w-4" />
               <span className="hidden sm:inline">Exportar</span>
             </Button>
-            <Button size="sm" className="gap-2">
+            <Button size="sm" className="gap-2 bg-brand text-brand-foreground hover:bg-brand/90">
               <span className="hidden sm:inline">Nova Venda</span>
               <span className="sm:hidden">+</span>
             </Button>
@@ -210,21 +221,21 @@ export function RecentSales({ filterStatus }: RecentSalesProps) {
       {/* Área scrollável */}
       <div className="flex-1 min-h-0">
         {sales?.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 bg-black/30 border border-white/20 backdrop-blur-xl rounded-lg">
-            <FileText className="h-12 w-12 text-gray-400 mb-4" />
-            <h3 className={cn(text.h4, shadows.medium, "text-lg font-medium")}>
+          <div className="flex flex-col items-center justify-center py-12 bg-surface/50 border border-white/20 backdrop-blur-xl rounded-lg">
+            <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-medium text-foreground shadow-sm">
               Nenhuma venda encontrada
             </h3>
-            <p className={cn(text.h6, shadows.subtle, "text-sm text-center max-w-md mt-1")}>
+            <p className="text-sm text-center max-w-md mt-1 text-muted-foreground shadow-sm">
               Quando você realizar vendas, elas aparecerão aqui.
             </p>
           </div>
         ) : (
-          <div className="h-full overflow-y-auto pr-2 space-y-3 scrollbar-thin scrollbar-thumb-amber-400/30 scrollbar-track-transparent hover:scrollbar-thumb-amber-400/50 scroll-smooth">
+          <div className="h-full overflow-y-auto pr-2 space-y-3 scrollbar-thin scrollbar-thumb-brand/30 scrollbar-track-transparent hover:scrollbar-thumb-brand/50 scroll-smooth">
             {/* Indicador de scroll (aparece quando há scroll) */}
             <div className="sticky top-0 z-10 mb-2 opacity-50 hover:opacity-100 transition-opacity">
-              <div className="bg-gradient-to-r from-transparent via-amber-400/20 to-transparent h-px w-full" />
-              <div className="text-center text-xs text-amber-400/60 mt-1">
+              <div className="bg-gradient-to-r from-transparent via-brand/20 to-transparent h-px w-full" />
+              <div className="text-center text-xs text-brand/60 mt-1">
                 {sales && sales.length > 10 ? '⬇ Role para ver mais vendas ⬇' : ''}
               </div>
             </div>
@@ -232,7 +243,7 @@ export function RecentSales({ filterStatus }: RecentSalesProps) {
             {sales?.map((sale) => (
               <div
                 key={sale.id}
-                className="bg-black/70 backdrop-blur-xl border border-white/20 shadow-lg rounded-lg p-4 hover:shadow-xl transition-all duration-200 hero-spotlight"
+                className="bg-surface/70 backdrop-blur-xl border border-white/20 shadow-lg rounded-lg p-4 hover:shadow-xl transition-all duration-200 hero-spotlight"
                 onMouseMove={(e) => {
                   const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
                   const x = ((e.clientX - rect.left) / rect.width) * 100;
@@ -249,7 +260,7 @@ export function RecentSales({ filterStatus }: RecentSalesProps) {
                       ) : (
                         <Store className="h-5 w-5 text-blue-400" />
                       )}
-                      <h3 className={cn(text.h3, shadows.medium, "font-semibold text-lg")}>
+                      <h3 className="font-semibold text-lg text-foreground shadow-sm">
                         {sale.delivery_type === 'delivery' ? 'Pedido' : 'Venda'} #{sale.order_number}
                       </h3>
                       {/* Hide Concluido badge for Fiado (pending) */}
@@ -268,23 +279,31 @@ export function RecentSales({ filterStatus }: RecentSalesProps) {
                     <div className="flex flex-col gap-2 text-sm">
                       <div className="flex items-center gap-2">
                         <CreditCard className="h-4 w-4 text-blue-400" />
-                        <span className={cn(text.h6, shadows.subtle)}>
+                        <span className="text-muted-foreground shadow-sm">
                           {formatPaymentMethod(sale.payment_method)}
                         </span>
-                        <PaymentStatusBadge status={sale.payment_status} />
+                        
+                        {/* Installment Badge for Credit Card - Simplified */}
+                        {(sale.payment_method_enum === 'credit' || sale.payment_method === 'Cartão de Crédito') && sale.installments && sale.installments > 1 ? (
+                            <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 text-xs px-2 py-0.5 hover:bg-blue-500/30">
+                                {sale.installments}x
+                            </Badge>
+                        ) : (
+                            <PaymentStatusBadge status={sale.payment_status} />
+                        )}
                       </div>
                       
                       {/* REMOVED DUPLICATE TIPO LINE HERE */}
 
                       <div className="flex items-center gap-2">
                         <User className="h-4 w-4 text-purple-400" />
-                        <span className={cn(text.h6, shadows.subtle)}>
+                        <span className="text-muted-foreground shadow-sm">
                           Vendedor: {sale.seller?.name || 'Não informado'}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <User className="h-4 w-4 text-amber-400" />
-                        <span className={cn(text.h6, shadows.subtle)}>
+                        <User className="h-4 w-4 text-brand" />
+                        <span className="text-muted-foreground shadow-sm">
                           Cliente: {sale.customer?.name || 'Não informado'}
                         </span>
                       </div>
@@ -293,9 +312,9 @@ export function RecentSales({ filterStatus }: RecentSalesProps) {
                           const isFiado = sale.payment_status === 'pending';
                           const IconComponent = getDeliveryTypeIcon(sale.delivery_type) === 'Store' ? Store :
                             getDeliveryTypeIcon(sale.delivery_type) === 'Truck' ? Truck : Package;
-                          return <IconComponent className={cn("h-4 w-4", isFiado ? "text-red-500" : "text-orange-400")} />;
+                          return <IconComponent className={cn("h-4 w-4", isFiado ? "text-destructive" : "text-brand")} />;
                         })()}
-                        <span className={cn(text.h6, shadows.subtle, sale.payment_status === 'pending' ? "text-red-400 font-medium" : "")}>
+                        <span className={cn("text-muted-foreground shadow-sm", sale.payment_status === 'pending' ? "text-destructive font-medium" : "")}>
                           Tipo: {sale.payment_status === 'pending' 
                                   ? ((sale.delivery_type === 'delivery' || sale.delivery) ? 'Delivery Fiado' : 'Presencial Fiado') 
                                   : formatDeliveryType(sale.delivery_type)}
@@ -355,7 +374,7 @@ export function RecentSales({ filterStatus }: RecentSalesProps) {
 
                       <div className="flex items-center gap-2">
                         <CalendarDays className="h-4 w-4 text-emerald-400" />
-                        <span className={cn(text.h6, shadows.subtle)}>
+                        <span className="text-muted-foreground shadow-sm">
                           {formatDate(sale.created_at)}
                         </span>
                       </div>
@@ -364,7 +383,7 @@ export function RecentSales({ filterStatus }: RecentSalesProps) {
                       {sale.customer?.phone && (
                         <div className="flex items-center gap-2">
                           <Package className="h-4 w-4 text-blue-400" />
-                          <span className={cn(text.h6, shadows.subtle)}>
+                          <span className="text-muted-foreground shadow-sm">
                             Tel: {sale.customer.phone}
                           </span>
                         </div>
@@ -377,8 +396,8 @@ export function RecentSales({ filterStatus }: RecentSalesProps) {
                           {sale.delivery_address && (
                             <div className="flex items-center gap-2">
                               <Package className="h-4 w-4 text-green-400" />
-                              <span className={cn(text.h6, shadows.subtle)}>
-                                Endereço: {`${sale.delivery_address.street}, ${sale.delivery_address.number}${sale.delivery_address.complement ? ` - ${sale.delivery_address.complement}` : ''} - ${sale.delivery_address.neighborhood}`}
+                              <span className="text-muted-foreground shadow-sm">
+                                Endereço: {`${sale.delivery_address.logradouro || sale.delivery_address.street}, ${sale.delivery_address.numero || sale.delivery_address.number}${sale.delivery_address.complemento || sale.delivery_address.complement ? ` - ${sale.delivery_address.complemento || sale.delivery_address.complement}` : ''} - ${sale.delivery_address.bairro || sale.delivery_address.neighborhood}, ${sale.delivery_address.nome_municipio || sale.delivery_address.city}/${sale.delivery_address.uf || sale.delivery_address.state}`}
                               </span>
                             </div>
                           )}
@@ -386,8 +405,8 @@ export function RecentSales({ filterStatus }: RecentSalesProps) {
                           {/* Taxa de entrega */}
                           {sale.delivery_fee && sale.delivery_fee > 0 && (
                             <div className="flex items-center gap-2">
-                              <Package className="h-4 w-4 text-yellow-400" />
-                              <span className={cn(text.h6, shadows.subtle)}>
+                              <Package className="h-4 w-4 text-brand" />
+                              <span className="text-muted-foreground shadow-sm">
                                 Taxa: {formatCurrency(sale.delivery_fee)}
                               </span>
                             </div>
@@ -397,7 +416,7 @@ export function RecentSales({ filterStatus }: RecentSalesProps) {
                           {sale.delivery_person?.name && (
                             <div className="flex items-center gap-2">
                               <Truck className="h-4 w-4 text-purple-400" />
-                              <span className={cn(text.h6, shadows.subtle)}>
+                              <span className="text-muted-foreground shadow-sm">
                                 Entregador: {sale.delivery_person.name}
                               </span>
                             </div>
@@ -407,14 +426,14 @@ export function RecentSales({ filterStatus }: RecentSalesProps) {
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-1">
-                    <p className={cn(text.h1, shadows.strong, "text-xl font-bold text-right")}>
+                    <p className="text-xl font-bold text-right text-foreground shadow-sm">
                       {formatCurrency(sale.final_amount || sale.total_amount)}
                     </p>
                     <div className="flex gap-2">
                       <Button
                         variant="outline"
                         size="sm"
-                        className="h-8 bg-black/50 border-blue-400/30 text-blue-400 hover:bg-blue-400/10 hover:border-blue-400/50 hover:text-blue-300 transition-all duration-200 backdrop-blur-sm"
+                        className="h-8 bg-surface/50 border-blue-400/30 text-blue-400 hover:bg-blue-400/10 hover:border-blue-400/50 hover:text-blue-300 transition-all duration-200 backdrop-blur-sm"
                         onClick={() => toggleSaleDetails(sale.id)}
                       >
                         <Eye className="h-3 w-3 mr-1" />
@@ -424,7 +443,7 @@ export function RecentSales({ filterStatus }: RecentSalesProps) {
                         <Button
                           variant="outline"
                           size="sm"
-                          className="h-8 w-8 p-0 bg-black/50 border-red-400/30 text-red-400 hover:bg-red-400/10 hover:border-red-400/50 hover:text-red-300 transition-all duration-200 backdrop-blur-sm disabled:opacity-50"
+                          className="h-8 w-8 p-0 bg-surface/50 border-red-400/30 text-red-400 hover:bg-red-400/10 hover:border-red-400/50 hover:text-red-300 transition-all duration-200 backdrop-blur-sm disabled:opacity-50"
                           onClick={() => handleDeleteClick(sale.id, sale.order_number)}
                           disabled={isDeleting}
                         >
@@ -441,7 +460,7 @@ export function RecentSales({ filterStatus }: RecentSalesProps) {
                   <div className="mt-4 pt-4 border-t border-white/20 bg-white/5 backdrop-blur-sm rounded-lg p-4 animate-in slide-in-from-top-2 duration-300">
                     <div className="flex items-center gap-2 mb-3">
                       <Package className="h-4 w-4 text-emerald-400" />
-                      <h4 className={cn(text.h4, shadows.medium, "font-medium text-emerald-400")}>
+                      <h4 className="font-medium text-emerald-400 shadow-sm">
                         Itens da venda ({sale.items?.length || 0})
                       </h4>
                     </div>
@@ -454,7 +473,7 @@ export function RecentSales({ filterStatus }: RecentSalesProps) {
                                 {item.quantity}
                               </div>
                               <div>
-                                <span className={cn(text.h5, shadows.light, "font-medium text-white")}>
+                                <span className="font-medium text-white shadow-sm">
                                   {item.product?.name || 'Produto não encontrado'}
                                 </span>
                                 <div className="text-xs text-gray-400">
@@ -462,19 +481,19 @@ export function RecentSales({ filterStatus }: RecentSalesProps) {
                                 </div>
                               </div>
                             </div>
-                            <div className={cn(text.h4, shadows.light, "font-bold text-emerald-400")}>
+                            <div className="font-bold text-emerald-400 shadow-sm">
                               {formatCurrency(item.subtotal)}
                             </div>
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <div className="text-center py-6 bg-amber-500/10 rounded-lg border border-amber-400/30">
-                        <Package className="h-8 w-8 text-amber-400 mx-auto mb-2" />
-                        <p className={cn(text.h6, shadows.subtle, "text-sm text-amber-300 font-medium")}>
+                      <div className="text-center py-6 bg-brand/10 rounded-lg border border-brand/30">
+                        <Package className="h-8 w-8 text-brand mx-auto mb-2" />
+                        <p className="text-sm text-brand font-medium shadow-sm">
                           Venda sem itens registrados
                         </p>
-                        <p className={cn(text.h6, shadows.subtle, "text-xs text-amber-400/70 mt-1")}>
+                        <p className="text-xs text-brand/70 mt-1 shadow-sm">
                           Esta venda pode ter sido criada antes da implementação do sistema de itens ou teve seus itens removidos.
                         </p>
                       </div>
@@ -483,13 +502,13 @@ export function RecentSales({ filterStatus }: RecentSalesProps) {
                     {sale.notes && (
                       <div className="mt-4 pt-4 border-t border-white/20">
                         <div className="flex items-center gap-2 mb-2">
-                          <FileText className="h-4 w-4 text-amber-400" />
-                          <h4 className={cn(text.h5, shadows.medium, "font-medium text-amber-400")}>
+                          <FileText className="h-4 w-4 text-brand" />
+                          <h4 className="font-medium text-brand shadow-sm">
                             Observações:
                           </h4>
                         </div>
                         <div className="bg-black/30 rounded-lg p-3 border border-white/10">
-                          <p className={cn(text.h6, shadows.subtle, "text-sm text-gray-300")}>
+                          <p className="text-sm text-gray-300 shadow-sm">
                             {sale.notes}
                           </p>
                         </div>
@@ -505,7 +524,7 @@ export function RecentSales({ filterStatus }: RecentSalesProps) {
               <Button
                 variant="outline"
                 size="sm"
-                className="gap-2 bg-black/50 border-amber-400/30 text-amber-400 hover:bg-amber-400/10 hover:border-amber-400/50 transition-all duration-300"
+                className="gap-2 bg-surface/50 border-brand/30 text-brand hover:bg-brand/10 hover:border-brand/50 transition-all duration-300"
                 onClick={handleViewFullHistory}
               >
                 Ver histórico completo
@@ -527,6 +546,17 @@ export function RecentSales({ filterStatus }: RecentSalesProps) {
           />
       )}
 
+      {/* Modal de Recibo / Fiscal */}
+      <ReceiptModal
+        isOpen={receiptModalOpen}
+        onClose={() => {
+          setReceiptModalOpen(false);
+          setFiscalResponseData(null); // Limpa dados fiscais ao fechar
+        }}
+        saleId={selectedSaleId}
+        initialFiscalData={fiscalResponseData}
+      />
+
       {/* Diálogo de confirmação de exclusão */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
@@ -540,20 +570,20 @@ export function RecentSales({ filterStatus }: RecentSalesProps) {
               <br />• Restaurar o estoque dos produtos
               <br />• Registrar a operação no log de auditoria
               <br /><br />
-              <span className="text-amber-400">Esta ação não pode ser desfeita.</span>
+              <span className="text-brand">Esta ação não pode ser desfeita.</span>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel
               onClick={handleCancelDelete}
               disabled={isDeleting}
-              className="bg-black/50 border-white/20 text-white hover:bg-white/10 hover:border-white/40 transition-all duration-200"
+              className="bg-surface/50 border-white/20 text-white hover:bg-white/10 hover:border-white/40 transition-all duration-200"
             >
               Cancelar
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmDelete}
-              className="bg-red-600 text-white hover:bg-red-700 border-red-500/50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 border-destructive/50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={isDeleting}
             >
               {isDeleting ? (

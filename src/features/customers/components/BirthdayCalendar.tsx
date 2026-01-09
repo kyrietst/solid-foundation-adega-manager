@@ -187,7 +187,7 @@ export const BirthdayCalendar = ({ className, showActions = true }: BirthdayCale
                 {upcomingBirthdays.length > 2 && upcomingBirthdays.length <= 5 && "🎈 "}
                 {upcomingBirthdays.length > 0 && upcomingBirthdays.length <= 2 && "📅 "}
                 {upcomingBirthdays.length === 0 && "😴 "}
-                <span className="font-mono">
+                <span className="font-bold">
                   {upcomingBirthdays.length}
                 </span>
                 {upcomingBirthdays.length === 1 ? " próximo" : " próximos"}
@@ -335,7 +335,7 @@ export const BirthdayCalendar = ({ className, showActions = true }: BirthdayCale
               <span className="text-gray-400">Total com aniversário:</span>
               <Badge 
                 variant="outline" 
-                className="bg-gray-600/20 border-gray-500/40 text-gray-200 font-mono font-bold px-2 py-1"
+                className="bg-gray-600/20 border-gray-500/40 text-gray-200 font-bold px-2 py-1"
               >
                 {birthdayCustomers.length}
               </Badge>
@@ -345,7 +345,7 @@ export const BirthdayCalendar = ({ className, showActions = true }: BirthdayCale
               <Badge 
                 variant="outline" 
                 className={cn(
-                  "font-mono font-bold px-2 py-1 transition-all duration-300",
+                  "font-bold px-2 py-1 transition-all duration-300",
                   thisMonthBirthdays.length === 0 && "bg-gray-600/20 border-gray-500/40 text-gray-300",
                   thisMonthBirthdays.length > 0 && "bg-blue-500/20 border-blue-400/50 text-blue-200 shadow-sm shadow-blue-400/10"
                 )}
@@ -358,7 +358,7 @@ export const BirthdayCalendar = ({ className, showActions = true }: BirthdayCale
               <Badge 
                 variant="outline" 
                 className={cn(
-                  "font-mono font-bold px-2 py-1 transition-all duration-300",
+                  "font-bold px-2 py-1 transition-all duration-300",
                   birthdayCustomers.filter(c => c.daysUntil <= 30).length === 0 && "bg-gray-600/20 border-gray-500/40 text-gray-300",
                   birthdayCustomers.filter(c => c.daysUntil <= 30).length > 0 && birthdayCustomers.filter(c => c.daysUntil <= 30).length <= 3 && "bg-purple-500/20 border-purple-400/50 text-purple-200 shadow-sm shadow-purple-400/10",
                   birthdayCustomers.filter(c => c.daysUntil <= 30).length > 3 && "bg-yellow-500/25 border-yellow-400/60 text-yellow-200 shadow-md shadow-yellow-400/15"
@@ -375,7 +375,7 @@ export const BirthdayCalendar = ({ className, showActions = true }: BirthdayCale
               <Badge 
                 variant="outline" 
                 className={cn(
-                  "font-mono font-bold px-2 py-1 transition-all duration-300",
+                  "font-bold px-2 py-1 transition-all duration-300",
                   birthdayCustomers.filter(c => c.isToday).length === 0 && "bg-gray-600/20 border-gray-500/40 text-gray-300",
                   birthdayCustomers.filter(c => c.isToday).length > 0 && "bg-gradient-to-r from-yellow-500/30 to-orange-500/25 border-yellow-400/70 text-yellow-200 shadow-lg shadow-yellow-400/30 animate-bounce"
                 )}

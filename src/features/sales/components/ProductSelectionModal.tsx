@@ -175,239 +175,211 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
     <BaseModal
       isOpen={isOpen}
       onClose={onClose}
-      title={
-        <>
-          <ShoppingCart className="h-5 w-5 text-primary-yellow" />
-          Selecionar Tipo de Venda
-        </>
-      }
-      description="Escolha como deseja adicionar este produto ao carrinho"
+      title={null}
+      showHeader={false}
+      showCloseButton={false}
       size="md"
-      className={cn(
-        getGlassCardClasses(),
-        "border-white/20 bg-gray-900/95 backdrop-blur-xl"
-      )}
+      className="!bg-transparent !border-0 !p-0 !shadow-none [&>button]:hidden ring-0"
     >
-      {/* Loading State */}
-      {isLoadingProduct && (
-        <div className="flex items-center justify-center py-8">
-          <Loader2 className="h-6 w-6 animate-spin text-primary-yellow" />
-          <span className="ml-2 text-white">Carregando produto...</span>
-        </div>
-      )}
-
-      {/* Error State */}
-      {productError && (
-        <div className="flex flex-col items-center justify-center py-8">
-          <AlertTriangle className="h-8 w-8 text-red-400 mb-2" />
-          <p className="text-red-400 text-center mb-4">Erro ao carregar produto</p>
-          <Button
-            onClick={() => refetchProduct()}
-            variant="outline"
-            size="sm"
-            className="border-white/20 text-white hover:bg-white/10"
-          >
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Tentar novamente
-          </Button>
-        </div>
-      )}
-
-      {/* Product Content */}
-      {product && stockInfo && (
-        <>
-          {/* Informações do Produto */}
-          <div className="bg-black/40 rounded-lg p-4 border border-white/10 mb-4">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-12 h-12 rounded-lg bg-gradient-to-r from-purple-500 to-blue-500 flex items-center justify-center">
-                <Wine className="h-6 w-6 text-white" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-white line-clamp-2">{product.name}</h3>
-                <p className="text-sm text-gray-400">{product.category}</p>
-              </div>
-            </div>
-
-            {/* Informações de Estoque - ESPELHO DA PRATELEIRA */}
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div className="text-center p-2 bg-white/5 rounded">
-                <p className="text-gray-400">Unidades Soltas</p>
-                <div className="font-semibold text-white">
-                  {stockInfo.stockUnitsLoose} unidades
-                </div>
-              </div>
-              <div className="text-center p-2 bg-white/5 rounded">
-                <p className="text-gray-400">Pacotes Disponíveis</p>
-                <div className="font-semibold text-white">
-                  {stockInfo.stockPackages} pacotes
-                </div>
-              </div>
-            </div>
-
-            {/* ✅ ULTRA-SIMPLIFICAÇÃO: Sem conversões automáticas */}
+      {/* Container Principal com Estilo Stitch (Movido para dentro) */}
+      <div className="flex flex-col w-full h-full bg-zinc-950 border border-white/10 rounded-2xl overflow-hidden shadow-2xl ring-1 ring-black/50">
+        
+        {/* Loading State */}
+        {isLoadingProduct && (
+          <div className="flex flex-col items-center justify-center py-12 space-y-4">
+            <Loader2 className="h-8 w-8 animate-spin text-primary-yellow" />
+            <span className="text-gray-400 font-medium">Carregando catálogo...</span>
           </div>
+        )}
 
-          {/* Seleção do Tipo */}
-          <RadioGroup value={selectionType} onValueChange={(value) => setSelectionType(value as 'unit' | 'package')}>
-            {/* Opção Unidade */}
-            {stockInfo.canSellUnits && (
-              <div className={cn(
-                "flex items-center space-x-3 rounded-lg border p-4 transition-all duration-200",
-                selectionType === 'unit'
-                  ? "border-primary-yellow bg-primary-yellow/10"
-                  : "border-white/20 bg-black/20 hover:bg-white/5",
-                !stockInfo.canSellUnits && "opacity-50"
-              )}>
-                <RadioGroupItem
-                  value="unit"
-                  id="unit"
-                  disabled={!stockInfo.canSellUnits}
-                />
-                <div className="flex-1">
-                  <Label htmlFor="unit" className={cn("cursor-pointer", !stockInfo.canSellUnits && "cursor-not-allowed")}>
-                    <div className="flex items-center gap-2 mb-1">
-                      <Wine className="h-4 w-4 text-blue-400" />
-                      <span className="font-semibold text-white">Unidade Individual</span>
-                    </div>
-                    <div className="text-sm text-gray-400">
-                      {formatCurrency(stockInfo.unitPrice)} cada •
-                      <span className="text-gray-400 ml-1">{stockInfo.stockUnitsLoose}</span> em estoque
-                    </div>
-                  </Label>
-                </div>
-                {selectionType === 'unit' && stockInfo.canSellUnits && (
-                  <CheckCircle className="h-5 w-5 text-primary-yellow" />
-                )}
-              </div>
-            )}
-
-            {/* Opção Pacote */}
-            {stockInfo.canSellPackages && (
-              <div className={cn(
-                "flex items-center space-x-3 rounded-lg border p-4 transition-all duration-200",
-                selectionType === 'package'
-                  ? "border-primary-yellow bg-primary-yellow/10"
-                  : "border-white/20 bg-black/20 hover:bg-white/5"
-              )}>
-                <RadioGroupItem
-                  value="package"
-                  id="package"
-                />
-                <div className="flex-1">
-                  <Label htmlFor="package" className="cursor-pointer">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Package className="h-4 w-4 text-green-400" />
-                      <span className="font-semibold text-white">Fardo/Pacote Completo</span>
-                    </div>
-                    <div className="text-sm text-gray-400">
-                      {formatCurrency(stockInfo.packagePrice)} fardo • {stockInfo.stockPackages} disponíveis
-                    </div>
-                  </Label>
-                </div>
-                {selectionType === 'package' && (
-                  <CheckCircle className="h-5 w-5 text-primary-yellow" />
-                )}
-              </div>
-            )}
-
-            {/* Caso nenhuma variante esteja disponível */}
-            {!stockInfo.canSellUnits && !stockInfo.canSellPackages && (
-              <div className="text-center py-4 text-gray-400">
-                <AlertTriangle className="h-8 w-8 mx-auto mb-2 text-orange-400" />
-                <p>Produto sem estoque disponível</p>
-              </div>
-            )}
-          </RadioGroup>
-
-          {/* Seleção de Quantidade */}
-          <div className="space-y-2">
-            <Label className="text-white font-medium">Quantidade</Label>
-            <div className="flex items-center gap-3">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleQuantityChange(quantity - 1)}
-                disabled={quantity <= 1}
-                className="border-white/20 text-white hover:bg-white/10"
-              >
-                <Minus className="h-4 w-4" />
-              </Button>
-
-              <Input
-                type="number"
-                value={quantity}
-                onChange={(e) => handleQuantityChange(parseInt(e.target.value) || 1)}
-                className="text-center bg-black/40 border-white/20 text-white w-20"
-                min="1"
-                max={maxQuantity}
-              />
-
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleQuantityChange(quantity + 1)}
-                disabled={quantity >= maxQuantity}
-                className="border-white/20 text-white hover:bg-white/10"
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-
-              <div className="flex-1 text-right">
-                <p className="text-sm text-gray-400">
-                  Máximo: {maxQuantity} {selectionType === 'unit' ? 'unidades' : 'fardos'}
-                </p>
-              </div>
+        {/* Error State */}
+        {productError && (
+          <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
+            <div className="rounded-full bg-red-500/10 p-4 mb-4">
+              <AlertTriangle className="h-8 w-8 text-red-500" />
             </div>
-          </div>
-
-          {/* Resumo do Preço */}
-          <div className="bg-primary-yellow/10 border border-primary-yellow/20 rounded-lg p-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-white font-medium">Total a pagar:</span>
-              <span className="text-xl font-bold text-primary-yellow">
-                {formatCurrency(totalPrice)}
-              </span>
-            </div>
-            <div className="text-sm text-gray-400">
-              {quantity} {selectionType === 'unit' ? 'unidade(s)' : 'fardo(s)'} × {formatCurrency(selectionType === 'unit' ? stockInfo.unitPrice : stockInfo.packagePrice)}
-            </div>
-            {selectionType === 'package' && (
-              <div className="text-xs text-gray-500 mt-1">
-                Total: {quantity} fardo(s)
-              </div>
-            )}
-            {isLoadingAvailability && (
-              <div className="text-xs text-gray-500 mt-1 flex items-center gap-1">
-                <Loader2 className="h-3 w-3 animate-spin" />
-                Verificando disponibilidade...
-              </div>
-            )}
-          </div>
-
-          {/* Botões de Ação */}
-          <div className="flex gap-3 pt-4">
+            <p className="text-white font-semibold mb-2">Erro ao carregar produto</p>
+            <p className="text-gray-400 text-sm mb-6 max-w-xs">Não foi possível sincronizar o estoque deste item.</p>
             <Button
+              onClick={() => refetchProduct()}
               variant="outline"
-              onClick={onClose}
-              className="flex-1 border-white/20 text-white hover:bg-white/10"
+              className="border-white/20 text-white hover:bg-white/10"
             >
-              Cancelar
-            </Button>
-            <Button
-              onClick={handleConfirm}
-              disabled={!isValidSelection || isLoadingProduct || isLoadingAvailability}
-              className="flex-1 bg-primary-yellow text-black hover:bg-primary-yellow/80 font-semibold disabled:opacity-50"
-            >
-              {isLoadingAvailability ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <ShoppingCart className="h-4 w-4 mr-2" />
-              )}
-              Adicionar ao Carrinho
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Tentar novamente
             </Button>
           </div>
-        </>
-      )}
+        )}
+
+        {/* Product Content */}
+        {product && stockInfo && (
+          <div className="flex flex-col h-full bg-zinc-950">
+              
+            {/* 1. Header Premium (Single Layer) */}
+            <div className="relative p-6 pb-8 bg-zinc-900/50 border-b border-white/5">
+              <button 
+                  onClick={onClose}
+                  className="absolute top-4 right-4 p-2 text-gray-400 hover:text-white transition-colors z-50 rounded-full hover:bg-white/10"
+              >
+                  <span className="sr-only">Fechar</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+              </button>
+
+              <div className="flex flex-col gap-2">
+                  <h2 className="text-xl font-bold text-white leading-tight pr-8">
+                      {product.name}
+                  </h2>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                      {/* Stat Badge: Units */}
+                      <div className="flex items-center gap-2 bg-black/40 border border-white/5 rounded px-2 py-1">
+                        <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.8)]"></div>
+                        <span className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">SOLTOS:</span>
+                        <span className="text-sm font-bold text-white tabular-nums">{stockInfo.stockUnitsLoose}</span>
+                      </div>
+                      {/* Stat Badge: Packages */}
+                      <div className="flex items-center gap-2 bg-black/40 border border-white/5 rounded px-2 py-1">
+                        <div className="h-1.5 w-1.5 rounded-full bg-blue-500 shadow-[0_0_6px_rgba(59,130,246,0.8)]"></div>
+                        <span className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">CAIXAS:</span>
+                        <span className="text-sm font-bold text-white tabular-nums">{stockInfo.stockPackages}</span>
+                      </div>
+                  </div>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-6">
+                {/* 2. Selection Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Card: Unidade */}
+                    <div 
+                      onClick={() => stockInfo.canSellUnits && setSelectionType('unit')}
+                      className={cn(
+                          "relative flex flex-col p-4 rounded-xl border-2 cursor-pointer transition-all duration-200",
+                          selectionType === 'unit' 
+                            ? "border-emerald-500/50 bg-emerald-950/20"
+                            : "border-zinc-800 bg-zinc-900/40 hover:bg-zinc-900/60 hover:border-zinc-700",
+                          !stockInfo.canSellUnits && "opacity-40 cursor-not-allowed grayscale"
+                      )}
+                    >
+                          <div className="flex justify-between items-start mb-4">
+                              <div className={cn(
+                                  "p-2 rounded-lg",
+                                  selectionType === 'unit' ? "bg-emerald-500/20 text-emerald-400" : "bg-zinc-800 text-gray-400"
+                              )}>
+                                  <Wine className="w-5 h-5" />
+                              </div>
+                              {selectionType === 'unit' && (
+                                  <CheckCircle className="w-5 h-5 text-emerald-400" />
+                              )}
+                          </div>
+                          <div className="space-y-1">
+                              <h3 className="text-white font-bold text-lg">Unidade</h3>
+                              <p className="text-xs text-gray-400">Venda avulsa</p>
+                          </div>
+                          <div className="mt-4 pt-4 border-t border-white/5">
+                              <span className={cn(
+                                  "text-xl font-bold",
+                                  selectionType === 'unit' ? "text-emerald-400" : "text-white"
+                              )}>
+                                  {formatCurrency(stockInfo.unitPrice)}
+                              </span>
+                          </div>
+                    </div>
+
+                    {/* Card: Pacote */}
+                    <div 
+                      onClick={() => stockInfo.canSellPackages && setSelectionType('package')}
+                      className={cn(
+                          "relative flex flex-col p-4 rounded-xl border-2 cursor-pointer transition-all duration-200",
+                          selectionType === 'package' 
+                            ? "border-blue-500/50 bg-blue-950/20"
+                            : "border-zinc-800 bg-zinc-900/40 hover:bg-zinc-900/60 hover:border-zinc-700",
+                          !stockInfo.canSellPackages && "opacity-40 cursor-not-allowed grayscale"
+                      )}
+                    >
+                          <div className="flex justify-between items-start mb-4">
+                              <div className={cn(
+                                  "p-2 rounded-lg",
+                                  selectionType === 'package' ? "bg-blue-500/20 text-blue-400" : "bg-zinc-800 text-gray-400"
+                              )}>
+                                  <Package className="w-5 h-5" />
+                              </div>
+                              {selectionType === 'package' && (
+                                  <CheckCircle className="w-5 h-5 text-blue-400" />
+                              )}
+                          </div>
+                          <div className="space-y-1">
+                              <h3 className="text-white font-bold text-lg">Fardo Fechado</h3>
+                              <p className="text-xs text-gray-400">{product.units_per_package || 12} unidades/cx</p>
+                          </div>
+                          <div className="mt-4 pt-4 border-t border-white/5">
+                              <span className={cn(
+                                  "text-xl font-bold",
+                                  selectionType === 'package' ? "text-blue-400" : "text-white"
+                              )}>
+                                  {formatCurrency(stockInfo.packagePrice)}
+                              </span>
+                          </div>
+                    </div>
+                </div>
+
+                {/* 3. Quantity & Action */}
+                <div className="pt-2 space-y-4">
+                    
+                  {/* Quantity Control - Darker, cleaner */}
+                  <div className="flex items-center justify-between bg-zinc-900 rounded-xl p-1.5 border border-zinc-800">
+                      <button
+                          onClick={() => handleQuantityChange(quantity - 1)}
+                          disabled={quantity <= 1}
+                          className="h-12 w-14 flex items-center justify-center rounded-lg bg-zinc-800/50 text-white hover:bg-zinc-800 active:scale-95 disabled:opacity-30 disabled:pointer-events-none transition-all"
+                      >
+                          <Minus className="h-5 w-5" />
+                      </button>
+                      
+                      <div className="flex flex-col items-center">
+                          <span className="text-2xl font-bold text-white tabular-nums tracking-tight">
+                              {quantity}
+                          </span>
+                          <span className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">
+                              {selectionType === 'unit' ? 'UNIDADES' : 'FARDOS'}
+                          </span>
+                      </div>
+
+                      <button
+                          onClick={() => handleQuantityChange(quantity + 1)}
+                          disabled={quantity >= maxQuantity}
+                          className="h-12 w-14 flex items-center justify-center rounded-lg bg-zinc-800/50 text-white hover:bg-zinc-800 active:scale-95 disabled:opacity-30 disabled:pointer-events-none transition-all"
+                      >
+                          <Plus className="h-5 w-5" />
+                      </button>
+                  </div>
+
+                  {/* Total Price & CTA */}
+                  <div className="flex items-center justify-between pt-2">
+                      <div className="flex flex-col">
+                          <span className="text-xs text-gray-500 font-medium uppercase tracking-wide">Total Estimado</span>
+                          <span className="text-2xl font-bold text-white">
+                              {formatCurrency(totalPrice)}
+                          </span>
+                      </div>
+
+                      <Button
+                          onClick={handleConfirm}
+                          disabled={!isValidSelection || isLoadingProduct || isLoadingAvailability}
+                          className="h-14 px-8 text-base bg-[#FACC15] hover:bg-[#EAB308] text-black font-bold rounded-xl shadow-lg transition-all"
+                      >
+                          {isLoadingAvailability ? (
+                              <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                          ) : (
+                              <ShoppingCart className="h-5 w-5 mr-2" />
+                          )}
+                          Adicionar
+                      </Button>
+                  </div>
+                </div>
+            </div>
+          </div>
+        )}
+      </div>
     </BaseModal>
   );
 };

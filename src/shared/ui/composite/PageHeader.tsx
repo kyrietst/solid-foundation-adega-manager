@@ -1,3 +1,4 @@
+
 /**
  * PageHeader - Componente padronizado para cabeçalhos de página
  *
@@ -30,7 +31,7 @@ export interface PageHeaderProps {
 
 /**
  * Componente de cabeçalho padronizado com:
- * - Gradiente usando tokens do design system (accent-red → primary-yellow → accent-red)
+ * - Gradiente usando tokens do design system
  * - Glassmorphism com backdrop-blur
  * - Animação de entrada BlurIn
  * - Sublinhado elegante com múltiplas camadas
@@ -64,10 +65,8 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
         <div className="w-full sm:w-auto flex-shrink-0">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
 
-            {/* Header Container sem glassmorphism para teste */}
+            {/* Header Container */}
             <div className={cn("relative w-full p-4", getAlignment())}>
-
-
               <div className="relative">
                 {/* Título animado com gradiente padronizado */}
                 <BlurIn
@@ -77,22 +76,22 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
                     hidden: { filter: "blur(15px)", opacity: 0 },
                     visible: { filter: "blur(0px)", opacity: 1 }
                   }}
-                  className="font-sf-black text-3xl leading-tight text-transparent bg-clip-text bg-gradient-to-r from-gradient-fire-from via-gradient-fire-via to-gradient-fire-to drop-shadow-lg"
+                  className="font-sf-black text-3xl leading-tight text-transparent bg-clip-text bg-gradient-to-r from-brand via-brand-foreground to-brand drop-shadow-lg"
                 />
 
                 {/* Descrição opcional */}
                 {description && (
-                  <p className="mt-2 text-sm text-gray-300/80 max-w-2xl">
+                  <p className="mt-2 text-sm text-muted-foreground/80 max-w-2xl">
                     {description}
                   </p>
                 )}
 
                 {/* Sublinhado elegante usando tokens do design system */}
                 <div className="w-full h-6 relative mt-2">
-                  <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-gradient-fire-from/80 to-transparent h-deco-line w-full blur-sm" />
-                  <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-gradient-fire-from to-transparent h-deco-thin w-full" />
-                  <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-gradient-fire-via/80 to-transparent h-deco-border w-3/4 blur-sm mx-auto" />
-                  <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-gradient-fire-via to-transparent h-deco-thin w-3/4 mx-auto" />
+                  <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-brand/80 to-transparent h-deco-line w-full blur-sm" />
+                  <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-brand to-transparent h-deco-thin w-full" />
+                  <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-brand-foreground/80 to-transparent h-deco-border w-3/4 blur-sm mx-auto" />
+                  <div className="absolute inset-x-0 top-0 bg-gradient-to-r from-transparent via-brand-foreground to-transparent h-deco-thin w-3/4 mx-auto" />
                 </div>
               </div>
             </div>
@@ -106,9 +105,9 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
 
             {/* Contador opcional */}
             {count !== undefined && countLabel && (
-              <div className="bg-black/50 backdrop-blur-sm border border-yellow-400/30 rounded-full px-4 py-2 shadow-lg">
-                <span className="text-sm font-bold text-gray-100">{count}</span>
-                <span className="text-xs ml-1 opacity-75 text-gray-300">{countLabel}</span>
+              <div className="bg-surface/50 backdrop-blur-sm border border-brand/30 rounded-full px-4 py-2 shadow-lg">
+                <span className="text-sm font-bold text-foreground">{count}</span>
+                <span className="text-xs ml-1 opacity-75 text-muted-foreground">{countLabel}</span>
               </div>
             )}
 

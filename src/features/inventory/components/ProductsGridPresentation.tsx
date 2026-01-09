@@ -145,19 +145,7 @@ export const ProductsGridPresentation: React.FC<ProductsGridPresentationProps> =
           </div>
         )}
 
-        {!showHeader && showSearch && (
-          <div className="flex justify-end">
-            <div className="sm:w-64">
-              <SearchBar21st
-                value={searchTerm}
-                onChange={onSearchChange}
-                placeholder="Buscar produtos..."
-                debounceMs={150}
-                disableResizeAnimation={true}
-              />
-            </div>
-          </div>
-        )}
+
 
         {/* Código de barras, filtro de categoria e botão adicionar na mesma linha */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">

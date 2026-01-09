@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CRM Pro - Customer Management</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<!-- Icons -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Config -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#f9cb15",
+              "background-light": "#f8f8f5", // Not used in this specific dark-only design request but kept for config compliance
+              "background-dark": "#09090b",
+            },
+            fontFamily: {
+              "display": ["Space Grotesk", "sans-serif"],
+              "body": ["Inter", "sans-serif"],
+              "mono": ["Space Grotesk", "monospace"], // Using Space Grotesk for numbers as requested
+            },
+            borderRadius: {
+              "DEFAULT": "0.5rem",
+              "lg": "1rem", 
+              "xl": "1.5rem",
+              "2xl": "2rem",
+              "full": "9999px"
+            },
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        h1, h2, h3, h4, h5, h6, .font-display {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+        .glass-panel {
+            background: rgba(24, 24, 27, 0.4);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        .neon-shadow {
+            box-shadow: 0 0 15px rgba(249,203,21,0.3);
+        }
+        
+        /* Custom scrollbar for table */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #18181b; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #3f3f46; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #52525b; 
+        }
+    </style>
+</head>
+<body class="bg-[#09090b] text-white min-h-screen flex flex-col antialiased selection:bg-[#f9cb15] selection:text-black">
+<!-- Top Navigation -->
+<nav class="w-full border-b border-white/5 bg-[#09090b]/80 backdrop-blur-md sticky top-0 z-50">
+<div class="max-w-[1440px] mx-auto px-6 h-16 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="size-8 rounded-lg bg-[#f9cb15] flex items-center justify-center text-black">
+<span class="material-symbols-outlined text-[20px]">dataset</span>
+</div>
+<h2 class="text-white text-lg font-bold font-display tracking-tight">CRM Pro</h2>
+</div>
+<div class="flex items-center gap-6">
+<div class="hidden md:flex items-center gap-6 text-sm font-medium text-zinc-400">
+<a class="text-white" href="#">Dashboard</a>
+<a class="hover:text-white transition-colors" href="#">Clientes</a>
+<a class="hover:text-white transition-colors" href="#">Vendas</a>
+<a class="hover:text-white transition-colors" href="#">Relatórios</a>
+</div>
+<div class="h-6 w-px bg-white/10"></div>
+<div class="flex items-center gap-3">
+<button class="size-8 rounded-full hover:bg-white/5 flex items-center justify-center text-zinc-400 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[20px]">notifications</span>
+</button>
+<div class="size-8 rounded-full bg-cover bg-center ring-2 ring-white/5" data-alt="User profile picture" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuArRbb4ZE45q7KcrsuMlupkK65yIs1tQW5OwWMtg5FYnbYU_ATdyMr8N4VTgEZe3yC-nm2ewfNpAkr8FZRh0hbgbW04qzUQfQ2lwPrSnUrAIxqmuOLcm2BNBG3Cs-RIgj-yW8bNIo_OupkQ1O96CTIHb_cftvyRiPeAhVkWAl1RPqYBu82z8Om7WZwEj_nxHiJ8sgXOIu80XF2fiM2QwklJTt-qZS0MHRrtYktHaDyMlhDMDFR0Z3MeWxkkkDQYVg3piswMy9dFMfX6');"></div>
+</div>
+</div>
+</div>
+</nav>
+<!-- Main Content -->
+<main class="flex-1 w-full max-w-[1440px] mx-auto px-6 py-8 flex flex-col gap-8">
+<!-- Header Section -->
+<header class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+<div>
+<h1 class="text-2xl font-bold tracking-tight text-white font-display">GESTÃO DE CLIENTES</h1>
+<p class="text-zinc-400 text-sm mt-1">Visão geral do relacionamento e métricas de desempenho.</p>
+</div>
+<div class="flex items-center gap-3">
+<button class="flex items-center justify-center h-10 px-5 rounded-full border border-white/10 text-zinc-400 hover:text-white hover:border-white/20 hover:bg-white/5 transition-all text-sm font-medium font-display">
+<span class="material-symbols-outlined text-[18px] mr-2">download</span>
+                    Exportar
+                </button>
+<button class="flex items-center justify-center h-10 px-5 rounded-full bg-[#f9cb15] text-[#09090b] hover:bg-[#f9cb15]/90 transition-all neon-shadow text-sm font-bold font-display">
+<span class="material-symbols-outlined text-[18px] mr-2">add</span>
+                    Novo Cliente
+                </button>
+</div>
+</header>
+<!-- KPI/Stats Grid -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+<!-- Card 1 -->
+<div class="glass-panel border border-white/5 rounded-xl p-5 hover:border-[#f9cb15]/30 transition-all group">
+<div class="flex justify-between items-start mb-2">
+<span class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold">Total Clientes</span>
+<span class="material-symbols-outlined text-[#f9cb15] text-[20px] opacity-70 group-hover:opacity-100 transition-opacity">group</span>
+</div>
+<div class="text-2xl font-mono font-bold text-white tracking-tight">1,204</div>
+<div class="flex items-center gap-1 mt-2 text-[#4ade80] text-xs font-medium">
+<span class="material-symbols-outlined text-[14px]">trending_up</span>
+<span>+12%</span>
+<span class="text-zinc-600 ml-1 font-normal">vs mês anterior</span>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="glass-panel border border-white/5 rounded-xl p-5 hover:border-[#f9cb15]/30 transition-all group">
+<div class="flex justify-between items-start mb-2">
+<span class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold">Novos (Mês)</span>
+<span class="material-symbols-outlined text-[#f9cb15] text-[20px] opacity-70 group-hover:opacity-100 transition-opacity">person_add</span>
+</div>
+<div class="text-2xl font-mono font-bold text-white tracking-tight">48</div>
+<div class="flex items-center gap-1 mt-2 text-[#4ade80] text-xs font-medium">
+<span class="material-symbols-outlined text-[14px]">trending_up</span>
+<span>+5%</span>
+<span class="text-zinc-600 ml-1 font-normal">vs mês anterior</span>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="glass-panel border border-white/5 rounded-xl p-5 hover:border-[#f9cb15]/30 transition-all group">
+<div class="flex justify-between items-start mb-2">
+<span class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold">Clientes VIP</span>
+<span class="material-symbols-outlined text-[#f9cb15] text-[20px] opacity-70 group-hover:opacity-100 transition-opacity">diamond</span>
+</div>
+<div class="text-2xl font-mono font-bold text-white tracking-tight">86</div>
+<div class="flex items-center gap-1 mt-2 text-[#f87171] text-xs font-medium">
+<span class="material-symbols-outlined text-[14px]">trending_down</span>
+<span>-2%</span>
+<span class="text-zinc-600 ml-1 font-normal">vs mês anterior</span>
+</div>
+</div>
+<!-- Card 4 -->
+<div class="glass-panel border border-white/5 rounded-xl p-5 hover:border-[#f9cb15]/30 transition-all group">
+<div class="flex justify-between items-start mb-2">
+<span class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold">Receita Média</span>
+<span class="material-symbols-outlined text-[#f9cb15] text-[20px] opacity-70 group-hover:opacity-100 transition-opacity">payments</span>
+</div>
+<div class="text-2xl font-mono font-bold text-white tracking-tight">R$ 4.2k</div>
+<div class="flex items-center gap-1 mt-2 text-[#4ade80] text-xs font-medium">
+<span class="material-symbols-outlined text-[14px]">trending_up</span>
+<span>+8%</span>
+<span class="text-zinc-600 ml-1 font-normal">vs mês anterior</span>
+</div>
+</div>
+<!-- Card 5 -->
+<div class="glass-panel border border-white/5 rounded-xl p-5 hover:border-[#f9cb15]/30 transition-all group">
+<div class="flex justify-between items-start mb-2">
+<span class="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold">Retenção</span>
+<span class="material-symbols-outlined text-[#f9cb15] text-[20px] opacity-70 group-hover:opacity-100 transition-opacity">donut_large</span>
+</div>
+<div class="text-2xl font-mono font-bold text-white tracking-tight">98%</div>
+<div class="flex items-center gap-1 mt-2 text-[#4ade80] text-xs font-medium">
+<span class="material-symbols-outlined text-[14px]">trending_up</span>
+<span>+1%</span>
+<span class="text-zinc-600 ml-1 font-normal">vs mês anterior</span>
+</div>
+</div>
+</div>
+<!-- Filters Section -->
+<div class="sticky top-[80px] z-40 bg-[#09090b]/80 backdrop-blur-md py-2 -mx-6 px-6 border-y border-white/5">
+<div class="w-full flex flex-col md:flex-row gap-3 items-center justify-between">
+<div class="relative w-full md:w-96 group">
+<span class="absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-500 group-focus-within:text-[#f9cb15] transition-colors">
+<span class="material-symbols-outlined text-[20px]">search</span>
+</span>
+<input class="w-full bg-[#18181b] border border-white/10 text-white rounded-full py-2.5 pl-10 pr-4 text-sm focus:ring-1 focus:ring-[#f9cb15] focus:border-[#f9cb15] placeholder-zinc-600 transition-all" placeholder="Buscar por nome, email ou telefone..." type="text"/>
+</div>
+<div class="flex items-center gap-3 w-full md:w-auto overflow-x-auto pb-2 md:pb-0 no-scrollbar">
+<div class="relative">
+<select class="appearance-none bg-[#18181b] border border-white/10 text-zinc-300 text-sm rounded-full pl-4 pr-10 py-2 focus:ring-1 focus:ring-[#f9cb15] focus:border-[#f9cb15] cursor-pointer hover:border-white/20 transition-all">
+<option>Status: Todos</option>
+<option>Ativo</option>
+<option>Inativo</option>
+<option>Pendente</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 text-[18px] pointer-events-none">expand_more</span>
+</div>
+<div class="relative">
+<select class="appearance-none bg-[#18181b] border border-white/10 text-zinc-300 text-sm rounded-full pl-4 pr-10 py-2 focus:ring-1 focus:ring-[#f9cb15] focus:border-[#f9cb15] cursor-pointer hover:border-white/20 transition-all">
+<option>Segmento: Todos</option>
+<option>VIP</option>
+<option>Corporativo</option>
+<option>Varejo</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 text-[18px] pointer-events-none">expand_more</span>
+</div>
+<div class="relative">
+<select class="appearance-none bg-[#18181b] border border-white/10 text-zinc-300 text-sm rounded-full pl-4 pr-10 py-2 focus:ring-1 focus:ring-[#f9cb15] focus:border-[#f9cb15] cursor-pointer hover:border-white/20 transition-all">
+<option>Aniversariantes: Mês Atual</option>
+<option>Próximo Mês</option>
+<option>Hoje</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 text-[18px] pointer-events-none">expand_more</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Data Table -->
+<div class="bg-zinc-900/20 border border-white/5 rounded-2xl overflow-hidden shadow-2xl">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-white/[0.02] border-b border-white/5">
+<th class="px-6 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wider font-display">Cliente</th>
+<th class="px-6 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wider font-display">Telefone</th>
+<th class="px-6 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wider font-display">Segmento</th>
+<th class="px-6 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wider font-display">Status</th>
+<th class="px-6 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wider font-display w-32">Perfil</th>
+<th class="px-6 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wider font-display text-right">Última Compra</th>
+<th class="px-6 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wider font-display text-right w-20">Ações</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-white/[0.02]">
+<!-- Row 1 -->
+<tr class="group hover:bg-white/[0.03] transition-colors">
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center gap-3">
+<div class="size-10 rounded-full bg-cover bg-center ring-1 ring-white/10" data-alt="Portrait of Ana Silva" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCzV9NUebQ7Sa7iQKjpmuT0xiCg6uNZvtoUK8_vm6jkyr7xCqADrRrwH9hWPlreTM9Q-zmGSjeDIZlNWeVLkcyptkau8yHV_Ozwo7zLTBcP195O_xXTel0VXcZvWwY6v6FzTpHkEEudJnkSni_6_tX2bjX3QwCv4wWaP70mUZScrtKENnJPoVJ109Tfz_EuofJCyQyy6p6ye8FpERaHhOxFtX7wpXAHohefmHbMEx17rad-o8CKgnN_R-1c1q1bF1EkCtj8sfppqKx3');"></div>
+<div>
+<div class="text-sm font-medium text-zinc-200">Ana Silva</div>
+<div class="text-xs text-zinc-500">ana.silva@email.com</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-zinc-400 font-mono">
+                                (11) 98765-4321
+                            </td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-500/10 text-yellow-500 border border-yellow-500/20">
+                                    VIP
+                                </span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-500/10 text-green-400 border border-green-500/20">
+<span class="size-1.5 rounded-full bg-green-400"></span>
+                                    Ativo
+                                </span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap align-middle">
+<div class="flex items-center gap-2">
+<div class="flex-1 h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden">
+<div class="h-full bg-green-500 rounded-full" style="width: 100%"></div>
+</div>
+<span class="text-[10px] text-zinc-500 font-mono">100%</span>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-zinc-400 text-right font-mono">
+                                20/05/2024
+                            </td>
+<td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+<div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-1.5 rounded-md hover:bg-white/10 text-zinc-400 hover:text-white transition-colors" title="Editar">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+<button class="p-1.5 rounded-md hover:bg-white/10 text-zinc-400 hover:text-white transition-colors" title="Ver Perfil">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="group hover:bg-white/[0.03] transition-colors">
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center gap-3">
+<div class="size-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold ring-1 ring-white/10" data-alt="Abstract gradient avatar">RC</div>
+<div>
+<div class="text-sm font-medium text-zinc-200">Roberto Costa</div>
+<div class="text-xs text-zinc-500">roberto.c@tech.co</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-zinc-400 font-mono">
+                                (21) 99887-1122
+                            </td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                                    Novo
+                                </span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-500/10 text-green-400 border border-green-500/20">
+<span class="size-1.5 rounded-full bg-green-400"></span>
+                                    Ativo
+                                </span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap align-middle">
+<div class="flex items-center gap-2">
+<div class="flex-1 h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden">
+<div class="h-full bg-yellow-500 rounded-full" style="width: 60%"></div>
+</div>
+<span class="text-[10px] text-zinc-500 font-mono">60%</span>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-zinc-400 text-right font-mono">
+                                18/05/2024
+                            </td>
+<td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+<div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-1.5 rounded-md hover:bg-white/10 text-zinc-400 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+<button class="p-1.5 rounded-md hover:bg-white/10 text-zinc-400 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="group hover:bg-white/[0.03] transition-colors">
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center gap-3">
+<div class="size-10 rounded-full bg-cover bg-center ring-1 ring-white/10" data-alt="Portrait of Carlos Mendez" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuB5U1fSkJa67ATjWkoD1rV1tS6z4-Pr4_agORgA2SDTtIIYt3hZX1C_e0Zrt2lEj7nKXYd52TPTPIF90KbZUC4aSJXiB6vPkATmfuq6Q89Jd8kzdxL0L8mGXsqEGRJzcziKTUoJaU5FGJI-I4ULTQ3wbJg5chfDyDQ8pBtKORbM3N5pgrqdwQn9soaGTeBqOJylv8SzzY6JDFsZlyZKSv7OIFQDR7dmR2faAEyB56xyGLwmmE-iK3BO4LRCv1O0JAl9BuLGhrKOL7bZ');"></div>
+<div>
+<div class="text-sm font-medium text-zinc-200">Carlos Mendez</div>
+<div class="text-xs text-zinc-500">c.mendez@corp.net</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-zinc-400 font-mono">
+                                (31) 97766-5544
+                            </td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-zinc-800 text-zinc-400 border border-zinc-700">
+                                    Padrão
+                                </span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-zinc-500/10 text-zinc-500 border border-zinc-500/20">
+<span class="size-1.5 rounded-full bg-zinc-500"></span>
+                                    Inativo
+                                </span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap align-middle">
+<div class="flex items-center gap-2">
+<div class="flex-1 h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden">
+<div class="h-full bg-red-500 rounded-full" style="width: 25%"></div>
+</div>
+<span class="text-[10px] text-zinc-500 font-mono">25%</span>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-zinc-400 text-right font-mono">
+                                12/02/2024
+                            </td>
+<td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+<div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-1.5 rounded-md hover:bg-white/10 text-zinc-400 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+<button class="p-1.5 rounded-md hover:bg-white/10 text-zinc-400 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="group hover:bg-white/[0.03] transition-colors">
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center gap-3">
+<div class="size-10 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-600 flex items-center justify-center text-white text-xs font-bold ring-1 ring-white/10" data-alt="Abstract gradient avatar">ML</div>
+<div>
+<div class="text-sm font-medium text-zinc-200">Mariana Lima</div>
+<div class="text-xs text-zinc-500">mari.lima@design.io</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-zinc-400 font-mono">
+                                (41) 91122-3344
+                            </td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-500/10 text-yellow-500 border border-yellow-500/20">
+                                    VIP
+                                </span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-500/10 text-green-400 border border-green-500/20">
+<span class="size-1.5 rounded-full bg-green-400"></span>
+                                    Ativo
+                                </span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap align-middle">
+<div class="flex items-center gap-2">
+<div class="flex-1 h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden">
+<div class="h-full bg-green-500 rounded-full" style="width: 95%"></div>
+</div>
+<span class="text-[10px] text-zinc-500 font-mono">95%</span>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-zinc-400 text-right font-mono">
+                                19/05/2024
+                            </td>
+<td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+<div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-1.5 rounded-md hover:bg-white/10 text-zinc-400 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+<button class="p-1.5 rounded-md hover:bg-white/10 text-zinc-400 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 5 -->
+<tr class="group hover:bg-white/[0.03] transition-colors">
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center gap-3">
+<div class="size-10 rounded-full bg-cover bg-center ring-1 ring-white/10" data-alt="Portrait of Julian Rogers" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuC7s7pxe8fdokaHS6nxNyWRWZrYym4UeEYqUup8_WtC0lJmqTaX3Ez-37xKMnFovMOTLw1EdCNR-4arlZxPwyjLpU-mHlY3YtSQeRrygo_MBjJ1idnHma0ouNEAH7xmuRhlnJbAGS9R6RaXoJAru71TDSYkCo3z6cBQ5_pGR9kXDLuezp7ShYZkRPgyKbWmcaFCeiO-g68sDAhSNlR8vXKx50I5evecrloEN7PeDZAecrIw4vMFKCsv8CLhoylYJMBPaV99yGO5hzhZ');"></div>
+<div>
+<div class="text-sm font-medium text-zinc-200">Julian Rogers</div>
+<div class="text-xs text-zinc-500">j.rogers@consult.me</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-zinc-400 font-mono">
+                                (51) 93344-5566
+                            </td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                                    Novo
+                                </span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-500/10 text-orange-400 border border-orange-500/20">
+<span class="size-1.5 rounded-full bg-orange-400"></span>
+                                    Pendente
+                                </span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap align-middle">
+<div class="flex items-center gap-2">
+<div class="flex-1 h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden">
+<div class="h-full bg-yellow-500 rounded-full" style="width: 45%"></div>
+</div>
+<span class="text-[10px] text-zinc-500 font-mono">45%</span>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-zinc-400 text-right font-mono">
+                                -
+                            </td>
+<td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+<div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-1.5 rounded-md hover:bg-white/10 text-zinc-400 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+<button class="p-1.5 rounded-md hover:bg-white/10 text-zinc-400 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Table Footer / Pagination -->
+<div class="px-6 py-4 border-t border-white/5 bg-white/[0.02] flex items-center justify-between">
+<div class="text-xs text-zinc-500">
+                    Mostrando <span class="font-medium text-white">1</span> a <span class="font-medium text-white">5</span> de <span class="font-medium text-white">1,204</span> resultados
+                </div>
+<div class="flex items-center gap-2">
+<button class="px-3 py-1.5 rounded-lg border border-white/10 text-zinc-400 text-xs hover:bg-white/5 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors" disabled="">
+                        Anterior
+                    </button>
+<button class="px-3 py-1.5 rounded-lg border border-white/10 text-zinc-400 text-xs hover:bg-white/5 hover:text-white transition-colors">
+                        Próximo
+                    </button>
+</div>
+</div>
+</div>
+</main>
+</body></html>

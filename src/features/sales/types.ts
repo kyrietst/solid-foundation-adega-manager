@@ -24,6 +24,7 @@ export type Sale = {
     discount_amount: number;
     final_amount: number;
     payment_method: string;
+    payment_method_enum?: 'credit' | 'debit' | 'cash' | 'pix' | 'other' | null;
     payment_status: 'pending' | 'paid' | 'cancelled';
     order_number: number; // Added based on DB schema
     status: 'pending' | 'completed' | 'cancelled' | 'delivering' | 'delivered' | 'returned' | 'refunded';
@@ -35,6 +36,7 @@ export type Sale = {
     delivery_user_id: string | null;
     delivery_person_id?: string | null; // Added based on DB schema
     notes: string | null;
+    installments?: number; // Added for Credit Card Installments
     created_at: string;
     updated_at: string;
     // Fiscal Data
@@ -96,6 +98,7 @@ export type UpsertSaleInput = {
         package_units?: number;
     }[];
     notes?: string;
+    installments?: number; // Added
     saleType: SaleType;
     deliveryData?: DeliveryData;
     delivery_address?: string | null;

@@ -1,7 +1,7 @@
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 import React, { useState, useEffect, useCallback } from 'react';
-import { Check, ChevronsUpDown, UserPlus } from 'lucide-react';
+import { Check, ChevronsUpDown, UserPlus, Search } from 'lucide-react';
 import { Button } from '@/shared/ui/primitives/button';
 import {
   Command,
@@ -35,31 +35,30 @@ export function CustomerSearch({
   selectedCustomer,
   onSelect,
   onAddNew,
+  embedded = false,
   variant = 'default',
   glassEffect = true,
   className = ''
-}: CustomerSearchProps) {
+}: CustomerSearchProps & { embedded?: boolean }) {
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
   const { data: customers = [], isLoading, refetch } = useCustomers({
     search: debouncedSearchTerm,
-    limit: 50, // Limitar para performance
-    enabled: true, // Sempre habilitado para busca em tempo real
+    limit: 50,
+    enabled: true,
   });
 
-  // Estabilizar refetch para evitar re-execuções desnecessárias
   const stableRefetch = useCallback(() => {
     refetch();
   }, [refetch]);
 
-  // When the popover opens, ensure fresh data
   useEffect(() => {
-    if (open) {
+    if (open || embedded) {
       stableRefetch();
     }
-  }, [open, stableRefetch]);
+  }, [open, embedded, stableRefetch]);
 
   const handleSelect = useCallback((customer: CustomerProfile) => {
     onSelect(customer);
@@ -67,102 +66,121 @@ export function CustomerSearch({
     setSearchTerm('');
   }, [onSelect]);
 
-  const glassClasses = glassEffect ? getGlassCardClasses(variant) : '';
+  const removeCustomer = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onSelect(null);
+  }, [onSelect]);
+
+  const SearchContent = (
+    <Command className={cn("bg-transparent text-white", embedded ? "border-none" : "")}>
+      <div className="relative border-b border-white/10 px-1">
+        <CommandInput
+          placeholder="Buscar cliente (Nome, CPF ou Email)..."
+          value={searchTerm}
+          onValueChange={setSearchTerm}
+          name="customer_search_query"
+          className={cn(
+            "pl-3 text-base text-white placeholder:text-muted-foreground/60",
+            "bg-transparent h-11 border-none focus:ring-0 focus:outline-none"
+          )}
+        />
+      </div>
+
+      <CommandList className={cn("bg-transparent text-white mt-2", embedded ? "max-h-[300px]" : "max-h-[280px]")}>
+        <CommandEmpty className="py-8 text-center text-sm text-gray-500">
+          {isLoading ? 'Buscando...' : 'Nenhum cliente encontrado.'}
+        </CommandEmpty>
+        <CommandGroup className="bg-transparent p-0">
+          {customers?.map((customer) => (
+            <CommandItem
+              key={customer.id}
+              value={`${customer.name} ${customer.email} ${customer.phone || ''} ${customer.cpf_cnpj || ''}`}
+              onSelect={() => handleSelect(customer)}
+              className={cn(
+                "bg-transparent text-white cursor-pointer transition-all duration-200",
+                "hover:bg-[#FACC15]/20 hover:text-white",
+                "aria-selected:bg-[#FACC15]/20 aria-selected:text-white",
+                "px-3 py-2.5 mx-1 rounded-md mb-1"
+              )}
+            >
+              <div className="flex items-center w-full">
+                <div className={cn(
+                  "flex items-center justify-center size-8 rounded-full mr-3 shrink-0",
+                  selectedCustomer?.id === customer.id ? "bg-[#FACC15] text-black" : "bg-white/10 text-gray-400"
+                )}>
+                  <Check className={cn(
+                    "h-4 w-4 transition-all scale-100",
+                    selectedCustomer?.id === customer.id ? "opacity-100" : "opacity-0 scale-0"
+                  )} />
+                  {/* If not selected, maybe show initials? But keeping simple check logic is fine */}
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm leading-tight truncate">
+                    {customer.name}
+                  </p>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                    {customer.cpf_cnpj && <span>{customer.cpf_cnpj}</span>}
+                    {customer.email && <span className="truncate opacity-70">{customer.email}</span>}
+                  </div>
+                </div>
+              </div>
+            </CommandItem>
+          ))}
+        </CommandGroup>
+      </CommandList>
+    </Command>
+  );
+
+  if (embedded) {
+    return (
+      <div className="w-full">
+        {SearchContent}
+      </div>
+    );
+  }
 
   return (
-    <div
-      className={cn(
-        'flex items-center space-x-2 p-3 rounded-lg bg-black/70 backdrop-blur-xl border border-white/20 shadow-lg hero-spotlight',
-        className
-      )}
-      onMouseMove={(e) => {
-        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-        const x = ((e.clientX - rect.left) / rect.width) * 100;
-        const y = ((e.clientY - rect.top) / rect.height) * 100;
-        (e.currentTarget as HTMLElement).style.setProperty("--x", `${x}%`);
-        (e.currentTarget as HTMLElement).style.setProperty("--y", `${y}%`);
-      }}
-    >
+    <div className={cn('flex items-center', className)}>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
             variant="outline"
             role="combobox"
             aria-expanded={open}
-            className="w-full justify-between font-normal bg-black/50 backdrop-blur-sm border-amber-400/30 text-gray-200 hover:bg-amber-400/10 hover:border-amber-400/50 transition-all duration-200"
+            className="w-full justify-between font-normal bg-white/5 border-white/10 text-gray-200 hover:bg-white/10 hover:border-[#FACC15]/50 hover:text-white transition-all"
           >
             {selectedCustomer
-              ? <span className="text-white font-medium">{selectedCustomer.name}</span>
-              : <span className="text-gray-400">Buscar cliente...</span>}
-            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 text-amber-400/70" />
+              ? <div className="flex items-center gap-2 overflow-hidden">
+                <span className="font-medium truncate">{selectedCustomer.name}</span>
+              </div>
+              : <span className="text-muted-foreground">Buscar cliente...</span>}
+            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+
+            {/* Quick Remove X if selected */}
+            {selectedCustomer && (
+              <div
+                role="button"
+                onClick={removeCustomer}
+                className="ml-1 p-0.5 hover:bg-white/20 rounded-full transition-colors"
+              >
+                <Check className="h-3 w-3 text-transparent" /> {/* Spacer/Hack or use X */}
+              </div>
+            )}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[--radix-popover-trigger-width] p-0 bg-black/95 backdrop-blur-xl border border-amber-400/30 shadow-2xl shadow-amber-400/10">
-          <Command className="bg-transparent text-white">
-            <CommandInput
-              placeholder="Buscar por nome, email ou telefone..."
-              value={searchTerm}
-              onValueChange={setSearchTerm}
-              name="customer_search_query"
-              aria-label="Buscar cliente por nome, email ou telefone"
-              className={cn(
-                "text-white placeholder:text-gray-400 border-amber-400/20 focus:border-amber-400/40",
-                "bg-transparent h-12 px-3"
-              )}
-            />
-            <CommandList className="bg-transparent text-white max-h-[280px]">
-              <CommandEmpty className="py-6 text-center text-sm text-gray-300">
-                {isLoading ? 'Buscando clientes...' : 'Nenhum cliente encontrado.'}
-              </CommandEmpty>
-              <CommandGroup className="bg-transparent">
-                {customers?.map((customer) => (
-                  <CommandItem
-                    key={customer.id}
-                    value={`${customer.name} ${customer.email} ${customer.phone || ''}`}
-                    onSelect={() => handleSelect(customer)}
-                    className={cn(
-                      "bg-transparent text-white cursor-pointer transition-all duration-200",
-                      "hover:bg-amber-400/15 hover:shadow-md hover:shadow-amber-400/20",
-                      "data-[selected=true]:bg-amber-400/20 data-[selected=true]:text-white",
-                      "border-l-2 border-transparent hover:border-amber-400/50",
-                      "px-3 py-3 mx-1 rounded-lg my-1"
-                    )}
-                  >
-                    <Check
-                      className={cn(
-                        'mr-3 h-4 w-4 text-amber-400 transition-opacity duration-200',
-                        selectedCustomer?.id === customer.id ? 'opacity-100' : 'opacity-0'
-                      )}
-                    />
-                    <div
-                      className="flex-1 min-w-0"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        handleSelect(customer);
-                      }}
-                    >
-                      <p className="font-semibold text-white text-sm leading-tight truncate">
-                        {customer.name}
-                      </p>
-                      <p className="text-gray-300 text-xs mt-1 truncate">
-                        {customer.email || customer.phone}
-                      </p>
-                    </div>
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            </CommandList>
-          </Command>
+        <PopoverContent className="w-[--radix-popover-trigger-width] p-0 bg-[#09090b] border border-white/10 backdrop-blur-xl shadow-2xl">
+          {SearchContent}
         </PopoverContent>
       </Popover>
+
       {onAddNew && (
         <Button
           size="icon"
           variant="outline"
           onClick={onAddNew}
-          aria-label="Adicionar novo cliente"
-          className="border-amber-400/30 text-amber-400 hover:bg-amber-400/10 hover:border-amber-400/50 transition-all duration-200 bg-black/50 backdrop-blur-sm"
+          className="ml-2 border-white/10 bg-white/5 text-muted-foreground hover:text-[#FACC15] hover:border-[#FACC15]/50"
         >
           <UserPlus className="h-4 w-4" />
         </Button>

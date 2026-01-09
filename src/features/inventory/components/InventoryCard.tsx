@@ -1,16 +1,7 @@
-/**
- * Card ULTRA SIMPLIFICADO para gestão de estoque
- * Apenas 2 números: Pacotes e Unidades Soltas
- * Zero complexidade, zero conversões
- */
-
 import React from 'react';
 import { Button } from '@/shared/ui/primitives/button';
-import { Badge } from '@/shared/ui/primitives/badge';
-import { Eye, Edit, Package, Box, AlertTriangle, ArrowRightLeft } from 'lucide-react';
-import { cn } from '@/core/config/utils';
-import { getHoverTransformClasses } from '@/core/config/theme-utils';
-import { useGlassmorphismEffect } from '@/shared/hooks/ui/useGlassmorphismEffect';
+import { Eye, Edit, Package, Archive, ArrowRightLeft, SlidersHorizontal, AlertTriangle } from 'lucide-react';
+import { cn, formatCurrency } from '@/core/config/utils';
 import { OptimizedImage } from '@/shared/ui/composite/optimized-image';
 import type { Product } from '@/core/types/inventory.types';
 
@@ -19,164 +10,155 @@ interface InventoryCardProps {
   onViewDetails: (product: Product) => void;
   onEdit: (product: Product) => void;
   onAdjustStock?: (product: Product) => void;
-  onTransfer?: (product: Product) => void; // 🏪 v3.4.0 - Transferência entre lojas
-  storeFilter?: string; // Legacy: não usado // 🏪 v3.4.0 - Qual loja está sendo exibida
+  onTransfer?: (product: Product) => void;
+  storeFilter?: string; // Legacy
   variant?: 'default' | 'premium' | 'success' | 'warning' | 'error';
   glassEffect?: boolean;
 }
-
-// Função ultra simples para status do estoque
-const getSimpleStockStatus = (packages: number, units: number, minStock: number = 10) => {
-  const total = packages + units;
-  if (total === 0) return { status: 'out', label: 'Sem Estoque', color: 'bg-red-500/20 text-red-400 border-red-400/30' };
-  if (total <= minStock) return { status: 'low', label: 'Estoque Baixo', color: 'bg-yellow-500/20 text-yellow-400 border-yellow-400/30' };
-  return { status: 'available', label: 'Disponível', color: 'bg-green-500/20 text-green-400 border-green-400/30' };
-};
 
 export const InventoryCard: React.FC<InventoryCardProps> = ({
   product,
   onViewDetails,
   onEdit,
   onAdjustStock,
-  onTransfer, // Legacy: mantido para compatibilidade
-  storeFilter, // Legacy: não usado
+  onTransfer,
   variant = 'default',
-  glassEffect = true,
 }) => {
-  // ✅ Usar campos legacy consolidados
   const stockPackages = product.stock_packages || 0;
   const stockUnitsLoose = product.stock_units_loose || 0;
-
-  // ✅ SSoT: minimum_stock agora vem do banco (coluna criada em 2025-11-21)
-  const stockStatus = getSimpleStockStatus(stockPackages, stockUnitsLoose, product.minimum_stock);
-  const { handleMouseMove } = useGlassmorphismEffect();
-
-  // Classes para glass morphism
-  const glassClasses = glassEffect ? 'bg-black/70 backdrop-blur-md border border-white/20 shadow-[0_8px_24px_rgba(0,0,0,0.6)]' : 'bg-gray-800 border border-gray-700';
+  const totalUnits = stockPackages * (product.units_per_package || 1) + stockUnitsLoose;
+  const minStock = product.minimum_stock || 0;
+  const isLowStock = totalUnits <= minStock;
 
   return (
-    <div
-      className={cn(
-        "group hero-spotlight rounded-2xl text-card-foreground transition-all duration-300",
-        getHoverTransformClasses('lift'),
-        glassClasses,
-        "overflow-hidden",
-        "hover:shadow-2xl hover:shadow-purple-500/20 hover:border-purple-400/60"
-      )}
-      onMouseMove={handleMouseMove}
-    >
-      {/* Imagem do produto com status overlay */}
-      <div className="relative h-32 bg-gray-700/50 flex items-center justify-center">
-        {product.image_url ? (
-          <OptimizedImage
-            src={product.image_url}
-            alt={product.name}
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <Package className="h-12 w-12 text-gray-400" />
+    <div className={cn(
+      "group relative flex flex-col bg-zinc-900/40 backdrop-blur-md border border-white/5 rounded-2xl transition-all duration-300 p-4 gap-4",
+      "hover:border-[#f9cb15]/30 hover:shadow-[0_4px_24px_-12px_rgba(249,203,21,0.1)]",
+      isLowStock ? "border-red-900/30 hover:border-red-500/50" : ""
+    )}>
+        
+        {/* Low Stock Indicator Ping */}
+        {isLowStock && (
+            <div className="absolute -right-1 -top-1">
+                <span className="relative flex h-3 w-3">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                </span>
+            </div>
         )}
 
-        {/* Badge de status no canto superior direito */}
-        <div className="absolute top-2 right-2">
-          <Badge className={cn("text-xs font-medium", stockStatus.color)}>
-            {stockStatus.label}
-          </Badge>
+      <div className="flex gap-4">
+        {/* Product Image */}
+        <div className="size-20 rounded-xl bg-black/20 shrink-0 border border-white/10 overflow-hidden flex items-center justify-center">
+            {product.image_url ? (
+                <OptimizedImage
+                    src={product.image_url}
+                    alt={product.name}
+                    className="w-full h-full object-cover"
+                />
+            ) : (
+                <Package className="h-8 w-8 text-zinc-600" />
+            )}
+        </div>
+
+        {/* Product Info */}
+        <div className="flex flex-col justify-center min-w-0">
+          <h3 className={cn(
+               "text-white text-base font-bold leading-tight truncate pr-2 transition-colors",
+               isLowStock ? "group-hover:text-red-400" : "group-hover:text-[#f9cb15]"
+           )}>
+            {product.name}
+          </h3>
+          <p className="text-zinc-400 text-xs font-medium mt-1">
+             {product.category || 'Sem Categoria'}
+          </p>
+          <span className="text-xs text-zinc-600 font-mono mt-1">
+             SKU: {product.barcode || '---'}
+          </span>
         </div>
       </div>
 
-      {/* Informações do produto */}
-      <div className="p-4 space-y-3">
-        {/* Nome do produto */}
-        <div>
-          <h3 className="font-semibold text-gray-100 line-clamp-2 text-sm">
-            {product.name}
-          </h3>
-          <p className="text-xs text-gray-400 truncate">
-            {product.barcode || 'Sem código'}
-          </p>
+      {/* Grid Stats */}
+      <div className="grid grid-cols-2 gap-3">
+        {/* Inventory Block */}
+        <div className={cn(
+            "flex flex-col gap-1 rounded-lg p-3 border",
+            isLowStock ? "bg-red-500/10 border-red-500/20" : "bg-black/40 border-white/5"
+        )}>
+           <div className={cn(
+               "flex items-center gap-2 text-xs uppercase tracking-wider font-semibold",
+               isLowStock ? "text-red-400" : "text-zinc-400"
+           )}>
+              {isLowStock ? <AlertTriangle className="text-[16px]" /> : <Archive className="text-[16px]" />}
+              {isLowStock ? 'Baixo' : 'Estoque'}
+           </div>
+           <div className="flex items-baseline gap-1 mt-1">
+              <span className={cn("text-xl font-bold", isLowStock ? "text-red-500" : "text-white")}>
+                 {stockUnitsLoose}
+              </span>
+              <span className={cn("text-xs", isLowStock ? "text-red-400/70" : "text-zinc-500")}>unid.</span>
+           </div>
+           <div className={cn("text-xs", isLowStock ? "text-red-400/60" : "text-zinc-600")}>
+               {stockPackages} Caixas
+           </div>
         </div>
 
-        {/* ESTOQUE ULTRA SIMPLIFICADO - APENAS 2 NÚMEROS */}
-        <div className="grid grid-cols-2 gap-2 mt-auto">
-          {/* Pacotes */}
-          <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-2 flex flex-col items-center justify-center h-20 hover:bg-blue-500/20 transition-colors">
-            <div className="flex items-center gap-1 mb-1">
-              <Box className="h-3.5 w-3.5 text-blue-400" />
-              <span className="text-xs text-blue-400 font-medium">Pacotes</span>
-            </div>
-            <p className="text-2xl font-bold text-blue-400 leading-none">
-              {stockPackages}
-            </p>
-          </div>
-
-          {/* Unidades Soltas */}
-          <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-2 flex flex-col items-center justify-center h-20 hover:bg-green-500/20 transition-colors">
-            <div className="flex items-center gap-1 mb-1">
-              <Package className="h-3.5 w-3.5 text-green-400" />
-              <span className="text-xs text-green-400 font-medium">Unidades</span>
-            </div>
-            <p className="text-2xl font-bold text-green-400 leading-none">
-              {stockUnitsLoose}
-            </p>
-          </div>
+        {/* Price Block */}
+        <div className="flex flex-col gap-1 bg-black/40 rounded-lg p-3 border border-white/5">
+           <div className="flex items-center gap-2 text-zinc-400 text-xs uppercase tracking-wider font-semibold">
+              <span className="material-symbols-outlined text-[16px]">$</span> Preço
+           </div>
+           <div className="flex items-baseline gap-1 mt-1">
+              <span className="text-white text-xl font-bold">
+                 {/* Only showing integer part for style? No, let's show full formatCurrency but stripped for style if needed. 
+                     FormatCurrency returns "R$ 10,00". Let's just render it normally for now as splitting currency components is risky without robust logic.
+                  */}
+                 {formatCurrency(product.price)}
+              </span>
+           </div>
+           <div className="text-xs text-zinc-600">
+               Custo: {product.cost_price ? formatCurrency(product.cost_price) : '--'}
+           </div>
         </div>
+      </div>
 
-        {/* Alerta de estoque baixo */}
-        {stockStatus.status === 'low' && (
-          <div className="flex items-center gap-1 text-xs text-yellow-400">
-            <AlertTriangle className="h-3 w-3" />
-            <span>Estoque baixo (Mín: {product.minimum_stock})</span>
-          </div>
-        )}
+      {/* Footer Actions */}
+      <div className="pt-2 border-t border-white/5 flex items-center justify-between gap-2">
+         <div className="flex gap-1">
+            <button 
+                onClick={() => onViewDetails(product)}
+                className="size-9 flex items-center justify-center rounded-lg text-zinc-400 hover:bg-white/10 hover:text-white transition-colors" 
+                title="Ver Detalhes"
+            >
+               <Eye className="h-5 w-5" />
+            </button>
+            <button 
+                onClick={() => onEdit(product)}
+                className="size-9 flex items-center justify-center rounded-lg text-zinc-400 hover:bg-white/10 hover:text-white transition-colors" 
+                title="Editar Produto"
+            >
+               <Edit className="h-5 w-5" />
+            </button>
+             {onTransfer && (
+                <button 
+                    onClick={() => onTransfer(product)}
+                    className="size-9 flex items-center justify-center rounded-lg text-blue-400 hover:bg-blue-500/10 hover:text-blue-300 transition-colors" 
+                    title="Transferir"
+                >
+                   <ArrowRightLeft className="h-5 w-5" />
+                </button>
+             )}
+         </div>
 
-        {/* Ações operacionais simplificadas */}
-        <div className="flex gap-1 pt-2">
-          <Button
-            onClick={() => onViewDetails(product)}
-            size="sm"
-            variant="outline"
-            className="flex-1 bg-gray-800/60 border-gray-600 text-gray-100 hover:bg-gray-700/80 transition-all duration-200 text-xs"
-          >
-            <Eye className="h-3 w-3 mr-1" />
-            Ver
-          </Button>
-
-          <Button
-            onClick={() => onEdit(product)}
-            size="sm"
-            variant="outline"
-            className="flex-1 bg-yellow-400/10 border-yellow-400/30 text-yellow-400 hover:bg-yellow-400/20 transition-all duration-200 text-xs"
-          >
-            <Edit className="h-3 w-3 mr-1" />
-            Editar
-          </Button>
-        </div>
-
-        {/* Botão de ajuste de estoque (se disponível) */}
-        {onAdjustStock && (
-          <Button
-            onClick={() => onAdjustStock(product)}
-            size="sm"
-            variant="ghost"
-            className="w-full text-gray-400 hover:text-gray-100 hover:bg-gray-800/60 transition-all duration-200 text-xs"
-          >
-            📦 Ajustar
-          </Button>
-        )}
-
-        {/* Botão de transferência entre lojas - v3.4.0 Multi-Store */}
-        {onTransfer && (
-          <Button
-            onClick={() => onTransfer(product)}
-            size="sm"
-            variant="ghost"
-            className="w-full bg-gradient-to-r from-blue-500/20 to-purple-500/20 hover:from-blue-500/30 hover:to-purple-500/30 text-blue-400 hover:text-blue-300 transition-all duration-200 text-xs"
-          >
-            <ArrowRightLeft className="h-3 w-3 mr-1" />
-            Transferir
-          </Button>
-        )}
+         {onAdjustStock && (
+             <button 
+                onClick={() => onAdjustStock(product)}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg border border-[#f9cb15] text-[#f9cb15] text-xs font-bold uppercase tracking-wide hover:bg-[#f9cb15] hover:text-black transition-all"
+             >
+                <SlidersHorizontal className="h-4 w-4" /> 
+                Ajustar
+             </button>
+         )}
       </div>
     </div>
   );

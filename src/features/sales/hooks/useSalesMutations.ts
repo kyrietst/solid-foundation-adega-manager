@@ -130,7 +130,9 @@ export const useUpsertSale = () => {
                         ? JSON.stringify(deliveryAddress) 
                         : (deliveryAddress as string || null),
                     p_delivery_person_id: saleData.delivery_person_id || null,
-                    p_delivery_instructions: deliveryInstructions
+                    p_delivery_instructions: deliveryInstructions,
+                    p_installments: saleData.installments || 1,
+                    p_status: isDelivery ? 'pending' : 'completed' // 'pending' for Kanban flow, 'completed' for Presencial
                 };
 
                 const { data: rpcData, error: rpcError } = await supabase.rpc('process_sale', rpcPayload);

@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import type { Product } from '@/types/inventory.types';
+import type { Product } from '@/core/types/inventory.types';
 import { ProductsGridContainer } from '../../inventory/components/ProductsGridContainer';
 
 export interface ProductsGridProps {
@@ -23,6 +23,10 @@ export interface ProductsGridProps {
   className?: string;
   variant?: 'default' | 'premium' | 'success' | 'warning' | 'error';
   glassEffect?: boolean;
+  controlledSearchTerm?: string;
+  onControlledSearchChange?: (value: string) => void;
+  controlledCategory?: string;
+  onControlledCategoryChange?: (value: string) => void;
 }
 
 export function ProductsGrid(props: ProductsGridProps) {

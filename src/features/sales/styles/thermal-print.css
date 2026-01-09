@@ -1,15 +1,17 @@
 /**
- * CSS para impressão térmica - Versão MATEMÁTICA FÍSICA (42MM)
- * Otimizado para Atomo MO-5812: Área imprimível de 48mm
- * Cálculo: 42mm (conteúdo) + 2mm (margem) = 44mm < 48mm ✓
+ * CSS para impressão térmica - Padrão 80MM (Industry Standard)
+ * Otimizado para EPSON TM-T20 ou similar
+ * Largura do Papel: 80mm
+ * Área Imprimível Segura: 72mm
  */
 
-@media print {
+@import url("https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&display=swap");
 
+@media print {
   /* ===== PAPEL FÍSICO ===== */
   @page {
     margin: 0 !important;
-    size: 58mm auto;
+    size: 80mm auto;
   }
 
   /* ===== RESET GLOBAL ===== */
@@ -31,30 +33,42 @@
     visibility: visible !important;
   }
 
+  /* ===== RESET DE MODAL (Fix Vertical Centering) ===== */
+  /* Neutraliza o posicionamento do Shadcn/Radix Dialog */
+  [role="dialog"], 
+  [data-state="open"],
+  .fixed, 
+  .absolute {
+    position: static !important;
+    transform: none !important;
+    top: auto !important;
+    left: auto !important;
+    display: block !important;
+  }
+
   /* ===== POSICIONAMENTO ESTRATÉGICO ===== */
   .print-area {
     position: absolute !important;
     top: 0 !important;
     left: 0 !important;
-    /* LARGURA SEGURA: 42mm */
-    width: 42mm !important;
-    /* RECUO MÍNIMO: 2mm (foge da borda sem estourar 48mm) */
-    margin-left: 2mm !important;
+    /* LARGURA SEGURA: 74mm para impressoras de 80mm */
+    width: 74mm !important;
+    /* Centralização Manual: (80mm - 74mm) / 2 = 3mm */
+    margin-left: 3mm !important;
     margin-top: 0 !important;
-    margin-right: 0 !important;
-    margin-bottom: 0 !important;
     padding: 0 !important;
     background: white !important;
+    transform: none !important;
   }
 
   /* ===== CONTAINER DO CUPOM ===== */
   .receipt-print {
     width: 100% !important;
-    /* Fonte Arial Bold para legibilidade em 203dpi */
-    font-family: Arial, Helvetica, sans-serif !important;
-    font-size: 11px !important;
-    font-weight: bold !important;
-    line-height: 1.1 !important;
+    /* Fonte Monospace para alinhamento tabular perfeito */
+    font-family: "Courier Prime", "Courier New", monospace !important;
+    font-size: 12px !important;
+    font-weight: normal !important;
+    line-height: 1.2 !important;
     color: #000 !important;
     background: white !important;
     height: auto !important;
@@ -69,21 +83,23 @@
   /* ===== HEADER & FOOTER ===== */
   .receipt-header {
     text-align: center !important;
-    margin-bottom: 5px !important;
+    margin-bottom: 8px !important;
+    font-weight: bold !important;
+    text-transform: uppercase !important;
   }
 
   .receipt-footer {
     text-align: center !important;
-    margin-top: 5px !important;
+    margin-top: 8px !important;
   }
 
   /* ===== SEPARADORES ===== */
   .receipt-line {
-    border-top: 2px solid #000 !important;
-    margin: 2px 0 !important;
+    border-top: 1px dashed #000 !important; /* Separador pontilhado clássico */
+    margin: 4px 0 !important;
     width: 100% !important;
     display: block !important;
-    height: 0 !important;
+    height: 1px !important;
   }
 
   /* ===== ROWS ===== */
@@ -94,29 +110,57 @@
     margin-bottom: 2px !important;
   }
 
-  /* ===== TAMANHOS DE TEXTO (ajustados para largura reduzida) ===== */
+  /* ===== TAMANHOS DE TEXTO (ajustados para 80mm) ===== */
   .text-lg {
-    font-size: 12px !important;
-    text-transform: uppercase !important;
+    font-size: 16px !important;
+    font-weight: bold !important;
   }
 
   .text-md {
-    font-size: 11px !important;
+    font-size: 12px !important;
   }
 
   .text-sm {
     font-size: 10px !important;
   }
 
+  .text-xs {
+    font-size: 9px !important;
+  }
+
+  .font-bold {
+    font-weight: bold !important;
+  }
+
   .text-center {
     text-align: center !important;
   }
 
+  .uppercase {
+    text-transform: uppercase !important;
+  }
+
   /* ===== BOX PARA ENDEREÇO ===== */
   .address-box {
-    border: 1px solid #000 !important;
-    padding: 2px !important;
-    margin-top: 2px !important;
+    border: 1px dashed #000 !important;
+    padding: 5px !important;
+    margin-top: 5px !important;
+    font-size: 11px !important;
+  }
+
+  /* ===== QR CODE FIX ===== */
+  .qrcode-container {
+    display: flex !important;
+    justify-content: center !important;
+    margin: 10px 0 !important;
+    width: 100% !important;
+  }
+
+  /* Forçar tamanho exato do SVG do QR Code */
+  .receipt-print svg {
+    width: 35mm !important;
+    height: 35mm !important;
+    display: block !important;
   }
 
   /* ===== ZONA DE CORTE ===== */

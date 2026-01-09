@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Adega Anita's POS - Shopping Grid V3</title>
+<!-- Fonts and Icons -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Theme Config -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#f4ca25",
+                        "background-light": "#f8f8f5",
+                        "background-dark": "#09090b",
+                        "surface-dark": "#18181b",
+                        "glass-dark": "rgba(24, 24, 27, 0.6)",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"],
+                        "sans": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.5rem",
+                        "lg": "0.75rem",
+                        "xl": "1rem",
+                        "2xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    backdropBlur: {
+                        xs: '2px',
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom scrollbar for webkit */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #3f3f46; 
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #52525b; 
+        }
+        .glass-panel {
+            background: rgba(24, 24, 27, 0.4);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white h-screen flex overflow-hidden selection:bg-primary selection:text-black">
+<!-- Main Container -->
+<div class="flex w-full h-full p-4 gap-4">
+<!-- LEFT COLUMN: Product Grid (65%) -->
+<div class="flex flex-col flex-1 h-full min-w-0">
+<!-- Header Section: Search & Tabs -->
+<div class="flex flex-col gap-4 mb-4">
+<!-- Top Bar with Search -->
+<div class="flex items-center justify-between gap-4">
+<div class="flex items-center gap-3">
+<div class="size-10 bg-primary rounded-xl flex items-center justify-center text-black font-bold text-xl shadow-[0_0_15px_rgba(244,202,37,0.3)]">
+<span class="material-symbols-outlined">wine_bar</span>
+</div>
+<h1 class="text-xl font-bold tracking-tight text-white hidden sm:block">Adega Anita's</h1>
+</div>
+<!-- Glass Search Bar -->
+<div class="flex-1 max-w-2xl relative group">
+<div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-gray-400 group-focus-within:text-primary transition-colors">search</span>
+</div>
+<input class="block w-full pl-11 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all backdrop-blur-md hover:bg-white/10" placeholder="Buscar vinho, safra, produtor ou SKU..." type="text"/>
+<div class="absolute inset-y-0 right-0 pr-3 flex items-center">
+<button class="p-1 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[20px]">filter_list</span>
+</button>
+</div>
+</div>
+<!-- User Profile / Settings -->
+<div class="flex items-center gap-2">
+<button class="size-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-300 hover:text-white hover:bg-white/10 transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="size-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-300 hover:text-white hover:bg-white/10 transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</button>
+</div>
+</div>
+<!-- Category Tabs -->
+<div class="glass-panel rounded-xl p-1.5 flex gap-1 overflow-x-auto no-scrollbar">
+<button class="px-6 py-2 rounded-lg bg-primary text-black font-semibold text-sm transition-all shadow-lg shadow-primary/20">Todos</button>
+<button class="px-6 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 font-medium text-sm transition-all whitespace-nowrap">Tinto</button>
+<button class="px-6 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 font-medium text-sm transition-all whitespace-nowrap">Branco</button>
+<button class="px-6 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 font-medium text-sm transition-all whitespace-nowrap">Rosé</button>
+<button class="px-6 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 font-medium text-sm transition-all whitespace-nowrap">Espumante</button>
+<button class="px-6 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 font-medium text-sm transition-all whitespace-nowrap">Kits &amp; Presentes</button>
+<button class="px-6 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 font-medium text-sm transition-all whitespace-nowrap">Destilados</button>
+</div>
+</div>
+<!-- Dense Product Grid -->
+<div class="flex-1 overflow-y-auto pr-2 pb-2">
+<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+<!-- Product Card 1 -->
+<div class="group relative bg-white/5 border border-white/5 hover:border-primary/50 rounded-xl p-3 cursor-pointer transition-all hover:bg-white/10 hover:shadow-[0_0_20px_rgba(0,0,0,0.5)] hover:-translate-y-1 overflow-hidden">
+<div class="aspect-[3/4] w-full mb-3 relative rounded-lg overflow-hidden bg-black/20">
+<div class="w-full h-full bg-center bg-contain bg-no-repeat transition-transform duration-500 group-hover:scale-110" data-alt="Bottle of high end red wine dark background" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCct1f05KF_PrNU4T-NKkItMaJYD40hQu4z-QKa-fCamhK1rbHrGeuVPDq5SPn7hzSIfAvzbcZaEiEJj3DWJ13J4if5AqZXvDS0SyJQb0qWtEsCtPAWwcpN_coHeW9Zf7KTI1uw22KjxigIrXjmoJY6ipv0PKhXFZJ_cVnwGMsEMDoy9eqlQ21d_sTxrKdzZB8EbISSF6BezZz-_IEAm4-GKYc-0tLU9QV0voCldWQ-3XpXn8o2CsX83dvGC96prTRIyLCMO9zKPw');"></div>
+<button class="absolute bottom-2 right-2 size-8 rounded-full bg-primary text-black flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg scale-90 group-hover:scale-100">
+<span class="material-symbols-outlined text-[20px]">add</span>
+</button>
+</div>
+<div class="space-y-1">
+<div class="flex justify-between items-start">
+<h3 class="text-white text-sm font-medium leading-tight line-clamp-2">Angelica Zapata Malbec Alta 2018</h3>
+</div>
+<div class="flex items-end justify-between pt-1">
+<p class="text-xs text-gray-400">750ml</p>
+<p class="text-primary font-bold text-sm">R$ 450,00</p>
+</div>
+</div>
+</div>
+<!-- Product Card 2 -->
+<div class="group relative bg-white/5 border border-white/5 hover:border-primary/50 rounded-xl p-3 cursor-pointer transition-all hover:bg-white/10 hover:shadow-[0_0_20px_rgba(0,0,0,0.5)] hover:-translate-y-1 overflow-hidden">
+<div class="aspect-[3/4] w-full mb-3 relative rounded-lg overflow-hidden bg-black/20">
+<div class="w-full h-full bg-center bg-contain bg-no-repeat transition-transform duration-500 group-hover:scale-110" data-alt="Elegant white wine bottle" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuC9hWLy03KmTpTzdc0Ufi20Xjs27w3X3j3vHDz4ZrPrUlLi4XqHRt_3JzUazGwoD2thfuXaIK62xTzZ4ob_ytVwLvoY40kLZE489jAlDky_jhLAjyw33PQvpu0FuSk4e1xEDJa4sJ1I-G7SPJ8R2ejYW1093AhXdqct5NLrwW94Ij8DTY0jwSb5XN7Epw-g3X8lxwU_FSRlCfRo-GV-aFALJJtYZ1siZsilAjShP9wwHumHnvbZ0xwQRRxufM47mehnP3IjlFF7Tg');"></div>
+<button class="absolute bottom-2 right-2 size-8 rounded-full bg-primary text-black flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg scale-90 group-hover:scale-100">
+<span class="material-symbols-outlined text-[20px]">add</span>
+</button>
+</div>
+<div class="space-y-1">
+<h3 class="text-white text-sm font-medium leading-tight line-clamp-2">DV Catena Cabernet Malbec</h3>
+<div class="flex items-end justify-between pt-1">
+<p class="text-xs text-gray-400">750ml</p>
+<p class="text-primary font-bold text-sm">R$ 180,00</p>
+</div>
+</div>
+</div>
+<!-- Product Card 3 -->
+<div class="group relative bg-white/5 border border-white/5 hover:border-primary/50 rounded-xl p-3 cursor-pointer transition-all hover:bg-white/10 hover:shadow-[0_0_20px_rgba(0,0,0,0.5)] hover:-translate-y-1 overflow-hidden">
+<div class="aspect-[3/4] w-full mb-3 relative rounded-lg overflow-hidden bg-black/20">
+<div class="w-full h-full bg-center bg-contain bg-no-repeat transition-transform duration-500 group-hover:scale-110" data-alt="Premium Champagne bottle with gold foil" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDL_e5cCE40-L15Wha2h3MV0qDhs-3H6ugUyaV31nQFahgPGVI5sYSj1tY1DQvUVGIBxKZ6tTxe4EIfXVqrHl8y3_V8V3ARCO_HqMiG95o4-D_v3ik6pqkcNEbPik6poBus05VJ9IwgYCAGaVdfVNyf7jv43kgVJhb807PD5o-p71XWyFATl3hbE6hNTYrcT0uTms-QBRf-loSR-To0T8xntSAPyxJ58saE7pVmz3mwfn2DKGFCDr61Rq3f3CUSHe_PFged7LukpA');"></div>
+<button class="absolute bottom-2 right-2 size-8 rounded-full bg-primary text-black flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg scale-90 group-hover:scale-100">
+<span class="material-symbols-outlined text-[20px]">add</span>
+</button>
+</div>
+<div class="space-y-1">
+<h3 class="text-white text-sm font-medium leading-tight line-clamp-2">Moët &amp; Chandon Impérial Brut</h3>
+<div class="flex items-end justify-between pt-1">
+<p class="text-xs text-gray-400">750ml</p>
+<p class="text-primary font-bold text-sm">R$ 450,00</p>
+</div>
+</div>
+</div>
+<!-- Product Card 4 -->
+<div class="group relative bg-white/5 border border-white/5 hover:border-primary/50 rounded-xl p-3 cursor-pointer transition-all hover:bg-white/10 hover:shadow-[0_0_20px_rgba(0,0,0,0.5)] hover:-translate-y-1 overflow-hidden">
+<div class="aspect-[3/4] w-full mb-3 relative rounded-lg overflow-hidden bg-black/20">
+<div class="w-full h-full bg-center bg-contain bg-no-repeat transition-transform duration-500 group-hover:scale-110" data-alt="Dark red wine bottle vintage look" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAli-tEBQCbvfZTlKohviUxSXftua3gm2_Him2D8QNc2MXNoMHYWEeE0H2lXKQ5pKAYq4BxSCLnb15R2BqL4xzgB4Utkpbxh5b2TFizZ1d4FTSDCySKZQr24GfPXx7YuLNQFuZrRdB4wZ4v0MJuQRtlg1w-NnQ1lL9dMQUg4Seq7IQBXQh_FqUg2IYI2jsSl2zeeeSFUMUlPLIbzAv-lXtQiycqATdXJhfLZWE2hr63OyZ87n8fLTS1_sot9KLPxtdvfSkzGIix8A');"></div>
+<button class="absolute bottom-2 right-2 size-8 rounded-full bg-primary text-black flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg scale-90 group-hover:scale-100">
+<span class="material-symbols-outlined text-[20px]">add</span>
+</button>
+</div>
+<div class="space-y-1">
+<h3 class="text-white text-sm font-medium leading-tight line-clamp-2">Pera Manca Alentejo Tinto 2015</h3>
+<div class="flex items-end justify-between pt-1">
+<p class="text-xs text-gray-400">750ml</p>
+<p class="text-primary font-bold text-sm">R$ 3.500,00</p>
+</div>
+</div>
+</div>
+<!-- Product Card 5 -->
+<div class="group relative bg-white/5 border border-white/5 hover:border-primary/50 rounded-xl p-3 cursor-pointer transition-all hover:bg-white/10 hover:shadow-[0_0_20px_rgba(0,0,0,0.5)] hover:-translate-y-1 overflow-hidden">
+<div class="aspect-[3/4] w-full mb-3 relative rounded-lg overflow-hidden bg-black/20">
+<div class="w-full h-full bg-center bg-contain bg-no-repeat transition-transform duration-500 group-hover:scale-110" data-alt="Italian red wine bottle" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCvWxot2kWa9i48QF5elU90Md1mX7cVliEq68AOEuld_YqjaOaProj4apFktA3YeNsbSfim3AkmgR8PJeCmEjCRJVxntD7T9448yCA818YTnzBIFfC9jtvG_NXnQZr9_BcqmPB0zXNRNUYh3lHhYM3D4f4Fhx-7EMZu6liNo5kBhh1rXU5I27N4IDazdeBwd5gBHhyhPgW1BIZNYOADOPqpVxwCvRcweFuWZIV_ptVGFX2NOnAFg_zQjsmkMDkd08O5rukXzdfaSA');"></div>
+<button class="absolute bottom-2 right-2 size-8 rounded-full bg-primary text-black flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg scale-90 group-hover:scale-100">
+<span class="material-symbols-outlined text-[20px]">add</span>
+</button>
+</div>
+<div class="space-y-1">
+<h3 class="text-white text-sm font-medium leading-tight line-clamp-2">Tignanello Toscana IGT 2019</h3>
+<div class="flex items-end justify-between pt-1">
+<p class="text-xs text-gray-400">750ml</p>
+<p class="text-primary font-bold text-sm">R$ 1.900,00</p>
+</div>
+</div>
+</div>
+<!-- Product Card 6 -->
+<div class="group relative bg-white/5 border border-white/5 hover:border-primary/50 rounded-xl p-3 cursor-pointer transition-all hover:bg-white/10 hover:shadow-[0_0_20px_rgba(0,0,0,0.5)] hover:-translate-y-1 overflow-hidden">
+<div class="aspect-[3/4] w-full mb-3 relative rounded-lg overflow-hidden bg-black/20">
+<div class="w-full h-full bg-center bg-contain bg-no-repeat transition-transform duration-500 group-hover:scale-110" data-alt="Chablis white wine bottle" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuB20jS9-tgfXDH5bKaZrhqZ20_s4vIJAIV1gOslVkSJ9KxaBXwzm_8p0ApajlvfctlbLWeuwQ0kE2m50UFgOSr17pVDlOSLsdEDHlYgPuZ-4UMZSpbWo2BNsmz2suGWlOwnC1WErMLgIWqy-KMDkvdKjQILePQ4VA7HxU-eN3Ejnea-9-CLGcgL7pl_zckY2xpEU3wtP4zuQFlYD9BLKqr-H_7VcWhEZUZzuBfWGRplo8noegqJ3o28V3mLIMovNz5f3HKpvuZRFg');"></div>
+<button class="absolute bottom-2 right-2 size-8 rounded-full bg-primary text-black flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg scale-90 group-hover:scale-100">
+<span class="material-symbols-outlined text-[20px]">add</span>
+</button>
+</div>
+<div class="space-y-1">
+<h3 class="text-white text-sm font-medium leading-tight line-clamp-2">Chablis Grand Cru Les Clos</h3>
+<div class="flex items-end justify-between pt-1">
+<p class="text-xs text-gray-400">750ml</p>
+<p class="text-primary font-bold text-sm">R$ 750,00</p>
+</div>
+</div>
+</div>
+<!-- Product Card 7 -->
+<div class="group relative bg-white/5 border border-white/5 hover:border-primary/50 rounded-xl p-3 cursor-pointer transition-all hover:bg-white/10 hover:shadow-[0_0_20px_rgba(0,0,0,0.5)] hover:-translate-y-1 overflow-hidden">
+<div class="aspect-[3/4] w-full mb-3 relative rounded-lg overflow-hidden bg-black/20">
+<div class="w-full h-full bg-center bg-contain bg-no-repeat transition-transform duration-500 group-hover:scale-110" data-alt="Rosé wine bottle" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuD5QfZOYGr0DaYHGUuq0es1tj_wDBZoHuzP8BJDmv6BmDBGBiAxAsMILO1Ibb9an78Bp6ZY9ypprfn8mcoWPw7i9ou0vOB3sR66jHa3wk6Eq-UEertDIK4_wwt6HldwGu2r9Dd2__sPObyTCp9xJIPdYIRvbpeYvmN10l0XXPZ7qPeXkAbCvXwL5J3j2Xw-ydNVkxof14DN80grOBn0Zbpvqwc4vdEpOusIbvJjxwfg_eCrKsVdtT5Ejt9xYCXQGjAwA1eLaBrrEA');"></div>
+<button class="absolute bottom-2 right-2 size-8 rounded-full bg-primary text-black flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg scale-90 group-hover:scale-100">
+<span class="material-symbols-outlined text-[20px]">add</span>
+</button>
+</div>
+<div class="space-y-1">
+<h3 class="text-white text-sm font-medium leading-tight line-clamp-2">Miraval Provence Rosé 2020</h3>
+<div class="flex items-end justify-between pt-1">
+<p class="text-xs text-gray-400">750ml</p>
+<p class="text-primary font-bold text-sm">R$ 290,00</p>
+</div>
+</div>
+</div>
+<!-- Product Card 8 -->
+<div class="group relative bg-white/5 border border-white/5 hover:border-primary/50 rounded-xl p-3 cursor-pointer transition-all hover:bg-white/10 hover:shadow-[0_0_20px_rgba(0,0,0,0.5)] hover:-translate-y-1 overflow-hidden">
+<div class="aspect-[3/4] w-full mb-3 relative rounded-lg overflow-hidden bg-black/20">
+<div class="w-full h-full bg-center bg-contain bg-no-repeat transition-transform duration-500 group-hover:scale-110" data-alt="Red wine bottle close up" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCoinXcl2K08nVjAjbG7-cAx25CN6sYctHL1xSlo9g8knPY4z8eDfcAqeBpWZw-quytw9SSxQxeDU3Dd1hOjOtNNcJERRulQ4RsA_RNdcWlmitED_q_nl6_hril5qYkk3sUvaLGrtX9kl7jWqp_hJYpYFuoTsVIK-7SpvyfLDFQIuo52GxCFjDW3IlOQ4TRXycwTg0He3rKhlauD9dcaQNQSwpjSEq3QPfWC85qG_RWnOlUGoxWBkQLILQn7RX63HbzE3_buP9gEQ');"></div>
+<button class="absolute bottom-2 right-2 size-8 rounded-full bg-primary text-black flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg scale-90 group-hover:scale-100">
+<span class="material-symbols-outlined text-[20px]">add</span>
+</button>
+</div>
+<div class="space-y-1">
+<h3 class="text-white text-sm font-medium leading-tight line-clamp-2">Sassicaia Bolgheri Sassicaia 2017</h3>
+<div class="flex items-end justify-between pt-1">
+<p class="text-xs text-gray-400">750ml</p>
+<p class="text-primary font-bold text-sm">R$ 2.800,00</p>
+</div>
+</div>
+</div>
+<!-- Product Card 9 -->
+<div class="group relative bg-white/5 border border-white/5 hover:border-primary/50 rounded-xl p-3 cursor-pointer transition-all hover:bg-white/10 hover:shadow-[0_0_20px_rgba(0,0,0,0.5)] hover:-translate-y-1 overflow-hidden">
+<div class="aspect-[3/4] w-full mb-3 relative rounded-lg overflow-hidden bg-black/20">
+<div class="w-full h-full bg-center bg-contain bg-no-repeat transition-transform duration-500 group-hover:scale-110" data-alt="Wine tasting glass and bottle" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuC2_KVg7pOrydQfATrEIYQMhCUmZzLCCtoTQRlnOO7s-4DXR0eSBJbq6__9Mjg2eqMCVsVS63u2v7gdUSC4vqI4UZkJG8UimIbxqJrqHeLIZO97F4M6rQ4Qys0jcnT74Vwj5cHKYsQbbjQL2Mkks-CfKHL-35abnGRhC6Gp2mDQUHyNiC1AtmcsJZfWwSYHpC4AHNi4xtD1GSCW3FO6aUR1Yl1c49Rqy7JGIy2Ti_gr-uGJNp_EeJlUJFOMx6YgW6ioZea_YyWT1A');"></div>
+<button class="absolute bottom-2 right-2 size-8 rounded-full bg-primary text-black flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg scale-90 group-hover:scale-100">
+<span class="material-symbols-outlined text-[20px]">add</span>
+</button>
+</div>
+<div class="space-y-1">
+<h3 class="text-white text-sm font-medium leading-tight line-clamp-2">Barolo Mascarello Giuseppe</h3>
+<div class="flex items-end justify-between pt-1">
+<p class="text-xs text-gray-400">750ml</p>
+<p class="text-primary font-bold text-sm">R$ 1.500,00</p>
+</div>
+</div>
+</div>
+<!-- Product Card 10 -->
+<div class="group relative bg-white/5 border border-white/5 hover:border-primary/50 rounded-xl p-3 cursor-pointer transition-all hover:bg-white/10 hover:shadow-[0_0_20px_rgba(0,0,0,0.5)] hover:-translate-y-1 overflow-hidden">
+<div class="aspect-[3/4] w-full mb-3 relative rounded-lg overflow-hidden bg-black/20">
+<div class="w-full h-full bg-center bg-contain bg-no-repeat transition-transform duration-500 group-hover:scale-110" data-alt="Wine bottle with wooden background" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDup63rO_NyFTRxzP_NOyMze9Z_mH6rHFvi5kfQk_52Xq9OU0EjluXMStEtQRekLYwmCpFJjU9fghD346LoDlICJcRzhV9ANZji_SjAbMtJosMo6Sv1_cUWg82n2A00QQ29jfoIaR8ouJuj8KtUzho1Jx8HCznNjc2fkGThlbmhPsI6EvOJCytjDJ0Q8Kiff9_8IRgjB92d5LCV8mUIJ6xgp28VfmmnLD6qcFeqN6W4BmI2hQekutk2eFmZfVEO1s7G3UKwG-vHfA');"></div>
+<button class="absolute bottom-2 right-2 size-8 rounded-full bg-primary text-black flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg scale-90 group-hover:scale-100">
+<span class="material-symbols-outlined text-[20px]">add</span>
+</button>
+</div>
+<div class="space-y-1">
+<h3 class="text-white text-sm font-medium leading-tight line-clamp-2">Brunello di Montalcino Biondi-Santi</h3>
+<div class="flex items-end justify-between pt-1">
+<p class="text-xs text-gray-400">750ml</p>
+<p class="text-primary font-bold text-sm">R$ 980,00</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- RIGHT COLUMN: Smart Cart (35%) -->
+<div class="w-[420px] shrink-0 flex flex-col h-full bg-surface-dark border border-white/5 rounded-2xl overflow-hidden shadow-2xl relative">
+<!-- Cart Header & Client Select -->
+<div class="p-4 border-b border-white/5 bg-white/5 backdrop-blur-md z-10">
+<div class="mb-4">
+<label class="block text-xs font-medium text-gray-400 mb-1.5 uppercase tracking-wide">Cliente</label>
+<div class="relative group cursor-pointer">
+<div class="flex items-center justify-between bg-black/40 border border-white/10 rounded-xl p-3 hover:border-primary/50 transition-colors">
+<div class="flex items-center gap-3">
+<div class="size-8 rounded-full bg-primary/20 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]">person</span>
+</div>
+<div>
+<p class="text-white text-sm font-semibold">Consumidor Final</p>
+<p class="text-xs text-gray-400">CPF não informado</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-gray-500 group-hover:text-primary">edit</span>
+</div>
+</div>
+</div>
+<div class="flex justify-between items-end">
+<h2 class="text-white text-lg font-bold">Carrinho</h2>
+<span class="text-primary text-sm font-medium bg-primary/10 px-2 py-0.5 rounded-md">4 itens</span>
+</div>
+</div>
+<!-- Cart Items List (Scrollable) -->
+<div class="flex-1 overflow-y-auto p-4 space-y-3">
+<!-- Cart Item 1 -->
+<div class="flex items-center gap-3 bg-white/5 p-3 rounded-xl border border-transparent hover:border-white/10 transition-colors group">
+<div class="h-14 w-10 bg-black/30 rounded-md bg-center bg-cover shrink-0" data-alt="Small thumbnail of red wine" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuC4_fr9QTvJbXEkc84rwIu3vYLEg5D5iK794jUGtlBzyuxW_W-PEg06w-kt7wkOvZUOpTIUAX71nT_NZAdybobYkrZuzkYbtC71RQjhVQL_ioKvZ0RMTzB0Mm3RF-lYrY0KiCT5klH64yJaz0P39XvcKw4WYy12MWXKbRAvI7YwhCNwZ08qoydewfhsr20VjGzCwN0qWO9OdxNEUJpCpCOGMi07IIknUg_Z0XHFW1Kex6dKvT4jBEWLVRZjyOMNVe0I3WH--H5IMw');"></div>
+<div class="flex-1 min-w-0">
+<h4 class="text-white text-sm font-medium truncate">Angelica Zapata 2018</h4>
+<p class="text-xs text-gray-400">R$ 450,00 un</p>
+</div>
+<div class="flex flex-col items-end gap-1">
+<div class="flex items-center bg-black/40 rounded-lg p-0.5 border border-white/5">
+<button class="size-6 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 rounded-md transition-colors"><span class="material-symbols-outlined text-[16px]">remove</span></button>
+<span class="w-6 text-center text-sm font-medium text-white">2</span>
+<button class="size-6 flex items-center justify-center text-primary hover:bg-primary/20 rounded-md transition-colors"><span class="material-symbols-outlined text-[16px]">add</span></button>
+</div>
+<p class="text-sm font-bold text-white">R$ 900,00</p>
+</div>
+<button class="ml-1 text-gray-600 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all p-1">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+</button>
+</div>
+<!-- Cart Item 2 -->
+<div class="flex items-center gap-3 bg-white/5 p-3 rounded-xl border border-transparent hover:border-white/10 transition-colors group">
+<div class="h-14 w-10 bg-black/30 rounded-md bg-center bg-cover shrink-0" data-alt="Small thumbnail of champagne" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAnuRtSwJve4-LNxlfXqsNme-FHJ3SESI4z18YTzYjG9j83MLHFgfFpYYrEOzDJcU19edG6czDeZ3ZQJShYnG0XqVtMfLkYsz_xc8O0Az39MHWu0bc_m6mJbmEcybk9MwASrWewYfhkRiu9HzGxzH_pg6jCT54qNc_ppsViY0qBxzbnG2Nsx1wDAdtGLu3NdURHtly7JS7yqjH7UK3sEMmt6DQiHFCrzuhHBxE2UxObvWmkpuccV97C8WLX2HwL4oV-7as7isBWdw');"></div>
+<div class="flex-1 min-w-0">
+<h4 class="text-white text-sm font-medium truncate">Moët &amp; Chandon Brut</h4>
+<p class="text-xs text-gray-400">R$ 450,00 un</p>
+</div>
+<div class="flex flex-col items-end gap-1">
+<div class="flex items-center bg-black/40 rounded-lg p-0.5 border border-white/5">
+<button class="size-6 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 rounded-md transition-colors"><span class="material-symbols-outlined text-[16px]">remove</span></button>
+<span class="w-6 text-center text-sm font-medium text-white">1</span>
+<button class="size-6 flex items-center justify-center text-primary hover:bg-primary/20 rounded-md transition-colors"><span class="material-symbols-outlined text-[16px]">add</span></button>
+</div>
+<p class="text-sm font-bold text-white">R$ 450,00</p>
+</div>
+<button class="ml-1 text-gray-600 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all p-1">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+</button>
+</div>
+<!-- Cart Item 3 -->
+<div class="flex items-center gap-3 bg-white/5 p-3 rounded-xl border border-transparent hover:border-white/10 transition-colors group">
+<div class="h-14 w-10 bg-black/30 rounded-md bg-center bg-cover shrink-0" data-alt="Small thumbnail of DV Catena" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBp_qMLJ93whxZhIALTuIxjBUMjhyB7VV5hNS9YdslEL5ec50Zsc1JJvRK_ZbpbX8-3vVWc7VljvM7s0yA3Zi7SzeP-67NOUwBybxlXjOoN_0IdHytUb8F-KcOKXz-045pKRBw0nW63M6wwzLAY61moNK3j2K7WByJqSPLTRHifzaHQSNi9suc7DuqCxOqLvaz2Sl9uL6SpUziFfulokY2pjvToqv_aFUOK7Iu0VdYh1uDSaN4dKcORQ9hdGOva55juY8DQRAC0tw');"></div>
+<div class="flex-1 min-w-0">
+<h4 class="text-white text-sm font-medium truncate">DV Catena Malbec</h4>
+<p class="text-xs text-gray-400">R$ 180,00 un</p>
+</div>
+<div class="flex flex-col items-end gap-1">
+<div class="flex items-center bg-black/40 rounded-lg p-0.5 border border-white/5">
+<button class="size-6 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 rounded-md transition-colors"><span class="material-symbols-outlined text-[16px]">remove</span></button>
+<span class="w-6 text-center text-sm font-medium text-white">1</span>
+<button class="size-6 flex items-center justify-center text-primary hover:bg-primary/20 rounded-md transition-colors"><span class="material-symbols-outlined text-[16px]">add</span></button>
+</div>
+<p class="text-sm font-bold text-white">R$ 180,00</p>
+</div>
+<button class="ml-1 text-gray-600 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all p-1">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+</button>
+</div>
+</div>
+<!-- Footer: Totals & Checkout -->
+<div class="bg-black/60 border-t border-white/10 p-5 backdrop-blur-xl">
+<div class="space-y-2 mb-4">
+<div class="flex justify-between text-gray-400 text-sm">
+<span>Subtotal</span>
+<span>R$ 1.530,00</span>
+</div>
+<div class="flex justify-between text-gray-400 text-sm">
+<span>Desconto</span>
+<span class="text-red-400">- R$ 0,00</span>
+</div>
+<div class="flex justify-between text-white text-lg font-bold pt-2 border-t border-white/5">
+<span>Total</span>
+<span class="text-primary text-xl">R$ 1.530,00</span>
+</div>
+</div>
+<button class="w-full bg-primary hover:bg-[#e0b71f] text-black h-14 rounded-xl font-bold text-lg shadow-[0_4px_20px_rgba(244,202,37,0.3)] transition-all transform active:scale-[0.98] flex items-center justify-between px-6">
+<span>IR PARA PAGAMENTO</span>
+<span class="bg-black/10 px-2 py-1 rounded text-base">R$ 1.530,00</span>
+</button>
+</div>
+</div>
+</div>
+</body></html>

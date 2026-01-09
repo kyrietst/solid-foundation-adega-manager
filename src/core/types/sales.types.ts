@@ -18,6 +18,17 @@ export interface DeliveryAddress {
   zipCode: string;
   deliveryInstructions?: string;
   contactPhone?: string;
+  // Fiscal / Portuguese fields (Optional for backward compatibility)
+  logradouro?: string;
+  numero?: string;
+  complemento?: string;
+  bairro?: string;
+  nome_municipio?: string;
+  uf?: string;
+  cep?: string;
+  codigo_municipio?: string;
+  pais?: string;
+  codigo_pais?: string;
 }
 
 // Re-exportar tipos do enums.types para compatibilidade

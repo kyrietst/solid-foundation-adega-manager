@@ -40,20 +40,48 @@ CREATE VIEW v_sales_with_profit AS
 SELECT 
     s.id,
     s.created_at,
-    s.final_amount,
-    -- ... other fields
-    (COALESCE(s.final_amount, 0) - (SELECT SUM(si.quantity * p.cost_price)...)) as total_profit
-FROM sales s;
-```
+## 2. Technical Architecture
 
-### B. The RPC: `get_daily_cash_flow`
+The Dashboard is **100% Data-Driven**. No mock data is allowed.
 
-This legacy function was repurposed to align with the new logic. Despite the
-name "Cash Flow", in the Dashboard context, it returns:
+### A. Data Fetching (Hooks & RPCs)
 
-- `income`: Daily Revenue.
-- `outcome`: Daily COGS (Cost of sold goods).
-- `balance`: Daily Profit (Margin).
+We use `TanStack Query` to manage server state with aggressive caching (5min) to prevent database overload.
+
+| Hook | RPC / Source | Purpose |
+| :--- | :--- | :--- |
+| `useSalesKpis` | `get_daily_cash_flow` | Revenue, Orders, Average Ticket (Current vs Previous). |
+| `useInventoryKpis` | `get_inventory_financials` | **Stock Health Engine**: Valuation, Top Category, Rupture %. |
+| `useLowStockAlerts` | `get_low_stock_products` | **Restock Logic**: Items below min stock (Category-based). |
+| `useSalesChart` | `get_sales_chart_data` | Daily revenue/orders breakdown (MTD). |
+
+### B. Logic: "Restock Alerts"
+
+The system uses a **Hybrid Rule Engine** to decide if a product needs restocking:
+
+1.  **Product Override:** Does the product have a specific `minimum_stock` set?
+    - **YES:** Use that number.
+    - **NO:** Fallback to **Category Defaults** (e.g., "Beer" requires 20 packages).
+2.  **Severity Calculation:**
+    - **Critical (Red):** Zero stock (Rupture).
+    - **Warning (Yellow):** Stock > 0 but below minimum.
+    - **Healthy (Green):** Stock above minimum.
+
+*(Logic Source: Postgres Function `get_low_stock_count` & `get_low_stock_products`)*
+
+### C. Logic: "Stock Health"
+
+Evaluates the quality of the inventory investment.
+
+1.  **Top Category:** Identifies the category with the highest capital tied up (`SUM(stock * cost)`).
+2.  **Health Score (Rupture Logic):**
+    - Calculated as: `(Items with Zero Stock / Total Active Items) * 100`
+    - **< 5%:** Excellent (Green)
+    - **< 10%:** Good (Blue)
+    - **< 20%:** Warning (Yellow)
+    - **>= 20%:** Critical (Red)
+
+*(Logic Source: Postgres Function `get_inventory_financials`)*
 
 ## 3. Key Components
 
@@ -72,3 +100,4 @@ The dashboard uses a granular error handling strategy
 (`useDashboardErrorHandling.ts`). If the Financial chart fails, the Stock Alerts
 might still load. We avoid a "White Screen of Death" by compartmentalizing
 sections.
+```

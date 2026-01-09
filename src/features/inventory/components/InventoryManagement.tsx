@@ -1,19 +1,18 @@
 
 /**
  * Componente principal de gerenciamento de inventário
- * v4.0: Refatorado para usar Sub-componentes (SRP)
+ * v4.0: Refatorado para usar Sub-componentes (SRP) e Design System v2
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/core/api/supabase/client';
-import { useGlassmorphismEffect } from '@/shared/hooks/ui/useGlassmorphismEffect';
 import { PageHeader } from '@/shared/ui/composite/PageHeader';
 import { AddProductButton } from './ProductsHeader';
 import { Button } from '@/shared/ui/primitives/button';
 import { Loader2 } from 'lucide-react';
 import { PaginationControls } from '@/shared/ui/composite/pagination-controls';
+import { PremiumBackground } from '@/shared/ui/composite/PremiumBackground';
 import { useCategories } from '@/shared/hooks/common/use-categories';
 
 // Modais
@@ -30,6 +29,7 @@ import { InventoryGrid } from './InventoryGrid';
 import { LoadingScreen } from '@/shared/ui/composite/loading-spinner';
 import { EmptySearchResults } from '@/shared/ui/composite/empty-state';
 import { InventoryCountSheet } from './InventoryCountSheet';
+import { InventoryPagination } from './InventoryPagination';
 
 // New Sub-components
 import { InventoryFilters } from './InventoryFilters';
@@ -40,9 +40,10 @@ import { useDeletedProducts } from '../hooks/useDeletedProducts';
 import { useAuth } from '@/app/providers/AuthContext';
 import { useLowStockProducts } from '../hooks/useLowStockProducts';
 import { useGlobalBarcodeScanner } from '@/shared/hooks/common/useGlobalBarcodeScanner';
-import { useInventoryActions, SimpleEditProductFormData } from '../hooks/useInventoryActions';
+import { useInventoryActions } from '../hooks/useInventoryActions';
 import { useInventoryData } from '../hooks/useInventoryData';
 import { useInventoryFilters } from '../hooks/useInventoryFilters';
+import { cn } from '@/core/config/utils';
 
 import type { Product } from '@/core/types/inventory.types';
 
@@ -75,7 +76,6 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({ className }) 
 
   // Hooks & Context
   const queryClient = useQueryClient();
-  const { handleMouseMove } = useGlassmorphismEffect();
   const { userRole, loading } = useAuth();
   const { data: categories = [] } = useCategories();
   const isAdmin = !loading && userRole === 'admin';
@@ -97,7 +97,8 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({ className }) 
     missingCostsCount,
     filteredProducts: filteredAndMappedProducts,
     totalItems,
-    totalPages
+    totalPages,
+    itemsPerPage
   } = useInventoryFilters({ products: allProducts });
 
   // Actions Hook
@@ -124,11 +125,6 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({ className }) 
     const fresh = await fetchFreshProduct(product.id);
     if (fresh) { setSelectedProduct(fresh); setIsDetailsModalOpen(true); }
   };
-  const handleSuccess = (productName: string, updatedData?: Partial<Product>) => {
-    // ... (updates state)
-    // Ensure updatedData matches expected shape if needed, or is partial
-    console.log('Product updated:', productName, updatedData);
-  };
 
   const handleEditProduct = async (product: Product) => {
     const fresh = await fetchFreshProduct(product.id);
@@ -139,113 +135,140 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({ className }) 
   const handleTransfer = (product: Product) => { setProductToTransfer(product); setIsTransferModalOpen(true); };
 
   return (
-    <div className={`w-full h-full flex flex-col ${className || ''}`}>
-      <PageHeader title="GESTÃO DE ESTOQUE" count={allProducts?.length || 0} countLabel="produtos">
-        {viewMode === 'active' && <AddProductButton onAddProduct={() => setIsAddProductOpen(true)} />}
-      </PageHeader>
-
-      <div
-        className="flex-1 min-h-0 bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg hero-spotlight p-4 flex flex-col transition-all duration-300"
-        onMouseMove={handleMouseMove}
-      >
-        {isAdmin && (
-          <InventoryTabs
-            viewMode={viewMode}
-            onViewModeChange={setViewMode}
-            activeCount={allProducts?.length || 0}
-            deletedCount={deletedProducts.length}
-            lowStockCount={lowStockQuery.totalLoaded}
-          />
-        )}
-
-        {viewMode === 'active' && (
-          <div className="flex-1 min-h-0 flex flex-col">
-            <InventoryFilters
-              searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
-              selectedStore={selectedStore}
-              onStoreChange={setSelectedStore}
-              selectedCategory={selectedCategory}
-              onCategoryChange={setSelectedCategory}
-              showMissingCostsOnly={showMissingCostsOnly}
-              onToggleMissingCosts={() => setShowMissingCostsOnly(!showMissingCostsOnly)}
-              categories={categories as any[]}
-              missingCostsCount={missingCostsCount}
-            />
-
-            {isLoadingAllProducts ? (
-              <LoadingScreen text={`Carregando produtos da Loja ${selectedStore}...`} />
-            ) : filteredAndMappedProducts.length === 0 ? (
-              <EmptySearchResults searchTerm="produtos" onClearSearch={() => setSearchQuery('')} />
-            ) : (
-              <>
-                <div className="flex-1 overflow-y-auto">
-                  <InventoryGrid
-                    products={filteredAndMappedProducts}
-                    gridColumns={{ mobile: 1, tablet: 2, desktop: 3 }}
-                    onViewDetails={handleViewDetails}
-                    onEdit={handleEditProduct}
-                    onAdjustStock={handleAdjustStock}
-                    onTransfer={selectedStore === 1 ? handleTransfer : undefined}
-                    variant="default"
-                    glassEffect={true}
-                  />
-                </div>
-                {totalPages > 1 && (
-                  <div className="mt-4 flex justify-center">
-                    <PaginationControls currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
-                  </div>
-                )}
-                <div className="mt-2 text-center text-sm text-white/50">
-                  Mostrando {filteredAndMappedProducts.length} de {filteredAndMappedProducts.length} produtos
-                </div>
-              </>
-            )}
+    <div className={cn("w-full h-[100dvh] flex flex-col relative z-10 overflow-hidden", className)}>
+      <PremiumBackground />
+      {/* Header Section */}
+      <header className="flex-none px-8 py-6 pt-8 pb-6 z-10">
+          <div className="flex flex-wrap justify-between items-end gap-4 mb-12">
+             <div className="flex flex-col gap-1">
+               <p className="text-zinc-500 text-sm font-medium tracking-widest uppercase">Módulo de Logística</p>
+               <h2 className="text-white text-3xl md:text-4xl font-bold leading-tight tracking-tight">GESTÃO DE ESTOQUE</h2>
+             </div>
+             <div className="flex gap-3">
+               <Button className="flex items-center justify-center gap-2 h-10 px-4 rounded-xl bg-zinc-900 border border-zinc-700 text-white text-sm font-semibold hover:border-[#f9cb15] hover:text-[#f9cb15] transition-colors">
+                 <span className="material-symbols-outlined text-[20px]">cloud_download</span>
+                 <span>Exportar</span>
+               </Button>
+               {viewMode === 'active' && (
+                 <AddProductButton 
+                   onAddProduct={() => setIsAddProductOpen(true)} 
+                   className="flex items-center justify-center gap-2 h-10 px-6 rounded-xl bg-white text-black text-sm font-bold shadow-lg hover:bg-zinc-200 transition-colors"
+                 />
+               )}
+             </div>
           </div>
-        )}
-
-        {viewMode === 'deleted' && (
-          <DeletedProductsGrid
-            products={deletedProducts}
-            isLoading={isLoadingDeleted}
-            onRestore={handleRestoreProduct}
-            restoringProductId={restoringProductId}
-          />
-        )}
-
-        {viewMode === 'alerts' && (
-          <div className="flex-1 min-h-0 flex flex-col">
-            {lowStockQuery.isLoading ? (
-              <LoadingScreen text="Carregando alertas..." />
-            ) : lowStockQuery.products.length === 0 ? (
-              <EmptySearchResults searchTerm="alertas" onClearSearch={() => setViewMode('active')} />
-            ) : (
-              <>
-                <div className="flex-1 overflow-y-auto">
-                  <InventoryGrid
-                    products={lowStockQuery.products}
-                    gridColumns={{ mobile: 1, tablet: 2, desktop: 3 }}
-                    onViewDetails={handleViewDetails}
-                    onEdit={handleEditProduct}
-                    onAdjustStock={handleAdjustStock}
-                    variant="warning"
-                    glassEffect={true}
-                  />
-                </div>
-                {lowStockQuery.hasMore && (
-                  <div className="mt-4 flex justify-center">
-                    <Button onClick={() => lowStockQuery.loadMore()} disabled={lowStockQuery.isLoadingMore} variant="outline" className="text-amber-300 border-amber-500/30">
-                      {lowStockQuery.isLoadingMore ? <Loader2 className="animate-spin mr-2" /> : 'Carregar Mais'}
-                    </Button>
-                  </div>
-                )}
-              </>
-            )}
+              
+          <div className="flex flex-col gap-4">
+             {isAdmin && (
+                <InventoryTabs
+                  viewMode={viewMode}
+                  onViewModeChange={setViewMode}
+                  activeCount={allProducts?.length || 0}
+                  deletedCount={deletedProducts.length}
+                  lowStockCount={lowStockQuery.totalLoaded}
+                />
+             )}
+              
+             {viewMode === 'active' && (
+                <InventoryFilters
+                  searchQuery={searchQuery}
+                  onSearchChange={setSearchQuery}
+                  selectedStore={selectedStore}
+                  onStoreChange={setSelectedStore}
+                  selectedCategory={selectedCategory}
+                  onCategoryChange={setSelectedCategory}
+                  showMissingCostsOnly={showMissingCostsOnly}
+                  onToggleMissingCosts={() => setShowMissingCostsOnly(!showMissingCostsOnly)}
+                  categories={categories as any[]}
+                  missingCostsCount={missingCostsCount}
+               />
+             )}
           </div>
-        )}
+        </header>
 
-        {viewMode === 'count-sheet' && <InventoryCountSheet />}
-      </div>
+        {/* Scrollable Grid Content */}
+        <div className="flex-1 overflow-y-auto px-6 md:px-10 pb-40 scroll-smooth">
+          {viewMode === 'active' && (
+             <>
+               {isLoadingAllProducts ? (
+                  <LoadingScreen text={`Carregando produtos da Loja ${selectedStore}...`} />
+                ) : filteredAndMappedProducts.length === 0 ? (
+                  <EmptySearchResults searchTerm="produtos" onClearSearch={() => setSearchQuery('')} />
+                ) : (
+                  <>
+                    <InventoryGrid
+                       products={filteredAndMappedProducts}
+                       gridColumns={{ mobile: 1, tablet: 2, desktop: 3 }}
+                       onViewDetails={handleViewDetails}
+                       onEdit={handleEditProduct}
+                       onAdjustStock={handleAdjustStock}
+                       onTransfer={selectedStore === 1 ? handleTransfer : undefined}
+                       glassEffect={false} // Card handles its own glass style now
+                    />
+
+                  </>
+                )}
+             </>
+          )}
+
+          {viewMode === 'deleted' && (
+             <DeletedProductsGrid
+               products={deletedProducts}
+               isLoading={isLoadingDeleted}
+               onRestore={handleRestoreProduct}
+               restoringProductId={restoringProductId}
+             />
+          )}
+
+          {viewMode === 'alerts' && (
+             <div className="flex-1 min-h-0 flex flex-col">
+               {lowStockQuery.isLoading ? (
+                 <LoadingScreen text="Carregando alertas..." />
+               ) : lowStockQuery.products.length === 0 ? (
+                 <EmptySearchResults searchTerm="alertas" onClearSearch={() => setViewMode('active')} />
+               ) : (
+                 <>
+                   <div className="flex-1">
+                     <InventoryGrid
+                       products={lowStockQuery.products}
+                       gridColumns={{ mobile: 1, tablet: 2, desktop: 3 }}
+                       onViewDetails={handleViewDetails}
+                       onEdit={handleEditProduct}
+                       onAdjustStock={handleAdjustStock}
+                       variant="warning"
+                       glassEffect={false}
+                     />
+                   </div>
+                   {lowStockQuery.hasMore && (
+                     <div className="mt-4 flex justify-center">
+                       <Button onClick={() => lowStockQuery.loadMore()} disabled={lowStockQuery.isLoadingMore} variant="outline" className="text-brand border-brand/30">
+                         {lowStockQuery.isLoadingMore ? <Loader2 className="animate-spin mr-2" /> : 'Carregar Mais'}
+                       </Button>
+                     </div>
+                   )}
+                 </>
+               )}
+             </div>
+          )}
+
+          {viewMode === 'count-sheet' && <InventoryCountSheet />}
+
+        </div>
+
+      {/* Floating Pagination Dock (Fixo no Rodapé) */}
+      {viewMode === 'active' && totalPages > 1 && (
+        <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-[#050505] via-[#050505]/95 to-transparent z-50 flex justify-center pb-8 pt-12 pointer-events-none">
+            <div className="pointer-events-auto">
+                <InventoryPagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  totalItems={totalItems}
+                  itemsPerPage={itemsPerPage}
+                  onPageChange={setCurrentPage}
+                />
+            </div>
+        </div>
+      )}
 
       {/* Modals */}
       <NewProductModal isOpen={isAddProductOpen} onClose={() => setIsAddProductOpen(false)} onSuccess={() => queryClient.invalidateQueries({ queryKey: ['products'] })} />

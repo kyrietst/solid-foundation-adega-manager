@@ -5,6 +5,9 @@
  *
  * PHASE 4 ENHANCEMENT - Design Token Integration
  * Enhanced with TypeScript design token validation and type safety
+ * 
+ * // DEPRECATED: Do not use in new components. Scheduled for removal in v2.1.
+ * // Use Semantic Tokens (bg-surface, text-brand) instead.
  */
 
 import { type ClassValue, clsx } from 'clsx';

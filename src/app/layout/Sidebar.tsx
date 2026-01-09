@@ -16,6 +16,7 @@ import {
   Receipt,
   History,
   ChevronRight,
+  Store,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { cn } from "@/core/config/utils";
@@ -185,13 +186,13 @@ export function AppSidebar() {
                     link={{
                       label: "Dashboard",
                       href: "dashboard",
-                      icon: <BarChart3 className="h-5 w-5 shrink-0 text-primary-yellow" />,
+                      icon: <BarChart3 className="h-5 w-5 shrink-0 text-[#f9cb15]" />,
                     }}
                     onClick={(e: any) => handleLinkClick("dashboard", e)}
                     className={cn(
                       location.pathname === "/dashboard"
-                        ? "bg-primary-yellow/10 text-primary-yellow border border-primary-yellow/20"
-                        : "hover:bg-white/10"
+                        ? "bg-[#f9cb15]/10 text-[#f9cb15] border border-[#f9cb15]/20 shadow-[0_0_10px_rgba(249,203,21,0.1)]"
+                        : "hover:bg-[#f9cb15]/5 text-zinc-400 hover:text-[#f9cb15] transition-colors"
                     )}
                   />
               )}
@@ -222,8 +223,8 @@ export function AppSidebar() {
                               onClick={(e: any) => handleLinkClick(link.href, e)}
                               className={cn(
                                 location.pathname === `/${link.href}` && !isDisabled
-                                  ? "bg-primary-yellow/10 text-primary-yellow border border-primary-yellow/20"
-                                  : !isDisabled && "hover:bg-white/10"
+                                  ? "bg-[#f9cb15]/10 text-[#f9cb15] border border-[#f9cb15]/20 shadow-[0_0_10px_rgba(249,203,21,0.1)]"
+                                  : !isDisabled && "hover:bg-[#f9cb15]/5 text-zinc-400 hover:text-[#f9cb15] transition-colors"
                               )}
                             />
                           );
@@ -256,8 +257,8 @@ export function AppSidebar() {
                             className={cn(
                               "pl-2 border-l border-white/5 ml-1", // Indentação visual hierárquica
                               location.pathname === `/${link.href}` && !isDisabled
-                                ? "text-primary-yellow font-medium"
-                                : !isDisabled && "hover:bg-white/5 hover:text-white text-gray-400"
+                                ? "text-[#f9cb15] font-medium drop-shadow-[0_0_8px_rgba(249,203,21,0.5)]"
+                                : !isDisabled && "hover:bg-[#f9cb15]/5 hover:text-[#f9cb15] text-gray-400 transition-colors"
                             )}
                           />
                         );
@@ -269,32 +270,45 @@ export function AppSidebar() {
             </nav>
           </div>
           
-          <div className="border-t border-white/10 pt-3 space-y-2">
-            {/* User Info */}
-            <SidebarLink
-              link={{
-                label: user?.email || "Usuário",
-                href: "#",
-                icon: (
-                  <div className="h-5 w-5 shrink-0 rounded-md bg-gradient-to-r from-primary-yellow to-accent-gold-90 flex items-center justify-center text-black-100 text-xs font-bold shadow-lg">
-                    {user?.email?.[0]?.toUpperCase() || 'U'}
+          <div className="mt-auto border-t border-white/5 p-4 bg-black/20 backdrop-blur-md mx-[-12px] mb-[-16px]">
+            {open ? (
+              <div className="flex items-center gap-3 p-2 rounded-xl transition-colors duration-200 hover:bg-white/5 cursor-pointer group">
+                <div className="relative">
+                  <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center border border-white/10 group-hover:border-[#f9cb15]/50 transition-colors">
+                     {/* Fallback Avatar */}
+                     <span className="text-xs font-bold text-[#f9cb15]">{user?.email?.[0]?.toUpperCase() || 'A'}</span>
                   </div>
-                ),
-              }}
-              className="hover:bg-white/10"
-            />
-            {/* Logout */}
-            <SidebarLink
-              link={{
-                label: "Sair",
-                href: "#",
-                icon: (
-                  <LogOut className="h-5 w-5 shrink-0 text-accent-red" />
-                ),
-              }}
-              onClick={handleLogout}
-              className="hover:bg-accent-red/20 hover:text-accent-red"
-            />
+                  <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-[#18181b] rounded-full"></div>
+                </div>
+                <div className="flex flex-col flex-1 overflow-hidden">
+                  <p className="text-sm font-semibold text-zinc-200 truncate group-hover:text-white">{user?.email || 'Admin'}</p>
+                  <p className="text-xs text-zinc-500 truncate">Gerente</p>
+                </div>
+                <button 
+                  onClick={handleLogout} 
+                  className="flex items-center justify-center w-8 h-8 rounded-lg text-zinc-500 hover:text-red-400 hover:bg-red-400/10 transition-all"
+                  title="Sair do Sistema"
+                >
+                  <LogOut size={18} />
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center gap-4">
+                 <div className="relative group cursor-pointer" title={user?.email || 'Admin'}>
+                    <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center border border-white/10 group-hover:border-[#f9cb15]/50 transition-colors">
+                       <span className="text-xs font-bold text-[#f9cb15]">{user?.email?.[0]?.toUpperCase() || 'A'}</span>
+                    </div>
+                    <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-[#18181b] rounded-full"></div>
+                 </div>
+                 <button 
+                  onClick={handleLogout} 
+                  className="flex items-center justify-center w-8 h-8 rounded-lg text-zinc-500 hover:text-red-400 hover:bg-red-400/10 transition-all"
+                  title="Sair do Sistema"
+                 >
+                   <LogOut size={18} />
+                 </button>
+              </div>
+            )}
           </div>
         </SidebarBody>
       </Sidebar>
@@ -304,26 +318,17 @@ export function AppSidebar() {
 
 export const Logo = ({ onClick }: { onClick?: () => void }) => {
   return (
-    <div className="relative z-20 flex items-center space-x-3 py-2">
-      <motion.div
-        onClick={onClick}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        className="h-10 w-10 shrink-0 rounded-xl bg-gradient-to-r from-primary-yellow to-accent-gold-90 shadow-lg cursor-pointer hover:shadow-yellow-400/20"
-      />
-      <motion.div
-        initial={{ opacity: 0, x: -20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.3, ease: "easeOut" }}
-        className="flex flex-col"
-      >
-        <span className={cn(getSFProTextClasses('h3', 'neutral'), "text-white leading-tight")}>
-          Adega Anita's
-        </span>
-        <span className={cn(getSFProTextClasses('caption', 'primary'), "text-primary-yellow")}>
-          SISTEMA DE GERENCIAMENTO
-        </span>
-      </motion.div>
+    <div className="px-6 py-8 border-b border-white/5 flex flex-col gap-1">
+      <div className="flex items-center gap-3 mb-1">
+        <div 
+          onClick={onClick}
+          className="relative flex items-center justify-center w-10 h-10 rounded-full bg-[#f9cb15]/10 border border-[#f9cb15]/20 shadow-[0_0_15px_rgba(250,204,21,0.2)] cursor-pointer hover:bg-[#f9cb15]/20 transition-colors"
+        >
+          <Store className="text-[#f9cb15]" size={20} />
+        </div>
+        <h1 className="text-white text-lg font-semibold tracking-tight">Adega Anita's</h1>
+      </div>
+      <p className="text-zinc-500 text-[10px] uppercase tracking-[0.2em] pl-[3.25rem] font-bold">Sistema de Gerenciamento</p>
     </div>
   );
 };
@@ -331,12 +336,12 @@ export const Logo = ({ onClick }: { onClick?: () => void }) => {
 export const LogoIcon = ({ onClick }: { onClick?: () => void }) => {
   return (
     <div className="relative z-20 flex items-center justify-center py-2">
-      <motion.div
+      <div 
         onClick={onClick}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        className="h-10 w-10 shrink-0 rounded-xl bg-gradient-to-r from-primary-yellow to-accent-gold-90 shadow-lg cursor-pointer hover:shadow-yellow-400/20"
-      />
+        className="relative flex shrink-0 items-center justify-center w-10 h-10 rounded-xl bg-[#f9cb15]/10 border border-[#f9cb15]/20 shadow-[0_0_15px_rgba(250,204,21,0.2)] cursor-pointer hover:bg-[#f9cb15]/20 transition-colors"
+      >
+        <Store className="text-[#f9cb15]" size={20} />
+      </div>
     </div>
   );
 };

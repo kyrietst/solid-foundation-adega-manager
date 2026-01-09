@@ -49,6 +49,18 @@ export interface InventoryKpis {
   totalCostValue: number; // Renamed for clarity: capital investido
   potentialRevenue: number; // NEW: receita potencial se todo estoque for vendido
   lowStockCount: number; // Ultra-simplificação: representa produtos SEM estoque (stock = 0)
+  // New Fields for Real Stock Health
+  topCategory?: {
+    name: string;
+    value: number;
+    percentage: number;
+  };
+  stockHealth?: {
+    totalItems: number;
+    stockoutCount: number;
+    stockoutPercentage: number;
+    status: 'excellent' | 'good' | 'warning' | 'critical';
+  };
 }
 
 export interface ExpenseKpis {
@@ -203,7 +215,7 @@ export function useCustomerKpis(windowDays: number = 30) {
 
 export function useInventoryKpis() {
   return useQuery({
-    queryKey: ['kpis-inventory'],
+    queryKey: ['kpis-inventory', 'v2'],
     queryFn: async (): Promise<InventoryKpis> => {
 
       // 1. Buscar valuation do estoque (RPC nova: get_inventory_financials)
@@ -212,7 +224,7 @@ export function useInventoryKpis() {
 
       if (valuationError) {
         console.error('❌ Erro ao buscar inventory financials:', valuationError);
-        throw valuationError;
+         throw valuationError;
       }
 
       // 2. Buscar contagem total de produtos
@@ -223,29 +235,46 @@ export function useInventoryKpis() {
 
       if (countError) {
         console.error('❌ Erro ao buscar total de produtos:', countError);
-        throw countError;
+         throw countError;
       }
 
       // 3. Buscar produtos com estoque baixo (Low Stock) usando lógica unificada
       // Regra: COALESCE(p.minimum_stock, c.default_min_stock, 10)
       const { data: lowStockCountData, error: lowStockError } = await supabase
-        .rpc('get_low_stock_count' as any);
+         .rpc('get_low_stock_count' as any);
 
       if (lowStockError) {
-        console.error('❌ Erro ao buscar contagem de estoque baixo:', lowStockError);
+         console.error('❌ Erro ao buscar contagem de estoque baixo:', lowStockError);
       }
 
       const lowStockCount = (lowStockCountData as unknown as number) || 0;
 
       // Parse JSON result from RPC
-      const totalCostValue = safeNumber((financials as any)?.total_cost || 0);
-      const potentialRevenue = safeNumber((financials as any)?.potential_revenue || 0);
+      const result = financials as any;
+      const totalCostValue = safeNumber(result?.total_cost || 0);
+      const potentialRevenue = safeNumber(result?.potential_revenue || 0);
+
+      // Parse New Health Data
+      const topCategory = result?.top_category ? {
+         name: result.top_category.name,
+         value: safeNumber(result.top_category.value),
+         percentage: safeNumber(result.top_category.percentage)
+      } : undefined;
+
+      const stockHealth = result?.stock_health ? {
+         totalItems: safeNumber(result.stock_health.total_items),
+         stockoutCount: safeNumber(result.stock_health.stockout_count),
+         stockoutPercentage: safeNumber(result.stock_health.stockout_percentage),
+         status: result.stock_health.status as 'excellent' | 'good' | 'warning' | 'critical'
+      } : undefined;
 
       return {
         totalProducts: totalProducts || 0,
         totalCostValue,
         potentialRevenue,
-        lowStockCount: lowStockCount || 0
+        lowStockCount: lowStockCount || 0,
+        topCategory,
+        stockHealth
       };
     },
     staleTime: 5 * 60 * 1000,

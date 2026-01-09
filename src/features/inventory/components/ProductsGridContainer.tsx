@@ -23,6 +23,12 @@ export interface ProductsGridContainerProps extends ProductsGridConfig {
   onTransfer?: (product: Product) => void; // 🏪 v3.4.0 - Transferência entre lojas
   variant?: 'default' | 'premium' | 'success' | 'warning' | 'error';
   glassEffect?: boolean;
+  
+  // Controlled State Props (Passthrough to hook)
+  controlledSearchTerm?: string;
+  onControlledSearchChange?: (value: string) => void;
+  controlledCategory?: string;
+  onControlledCategoryChange?: (value: string) => void;
 }
 
 export const ProductsGridContainer: React.FC<ProductsGridContainerProps> = ({
@@ -38,6 +44,10 @@ export const ProductsGridContainer: React.FC<ProductsGridContainerProps> = ({
   onTransfer, // 🏪 v3.4.0
   variant = 'default',
   glassEffect = true,
+  controlledSearchTerm,
+  onControlledSearchChange,
+  controlledCategory,
+  onControlledCategoryChange,
   ...config
 }) => {
   // Lógica centralizada
@@ -93,7 +103,15 @@ export const ProductsGridContainer: React.FC<ProductsGridContainerProps> = ({
     hasNextPage,
     isFetchingNextPage,
     isError
-  } = useProductsGridLogic({ ...config, storeFilter, stockFilter });
+  } = useProductsGridLogic({ 
+    ...config, 
+    storeFilter, 
+    stockFilter,
+    controlledSearchTerm,
+    onControlledSearchChange,
+    controlledCategory,
+    onControlledCategoryChange
+  });
 
   // Preparar props para apresentação
   const presentationProps = {

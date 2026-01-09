@@ -9,7 +9,6 @@ import { ErrorBoundary } from "@/shared/components/ErrorBoundary";
 import { RouteErrorBoundary } from "@/shared/components/RouteErrorBoundary";
 import { AuthErrorBoundary } from "@/shared/components/AuthErrorBoundary";
 import { QueryErrorBoundary } from "@/shared/ui/layout/QueryErrorBoundary";
-import { TropicalDuskGlow } from "@/shared/ui/effects/tropical-dusk-glow";
 import { TempPasswordHandler } from "@/shared/components/TempPasswordHandler";
 import { toast } from "@/shared/hooks/common/use-toast";
 // Lazy load major pages to reduce initial bundle size (-60% bundle)
@@ -137,10 +136,8 @@ const App = () => {
               <AuthErrorBoundary>
                 <AuthProvider>
                   <div className="min-h-screen w-full relative overflow-x-hidden min-w-0">
-                    {/* Background tropical dusk glow - Performance optimized */}
-                    <div className="fixed inset-0 z-0">
-                      <TropicalDuskGlow />
-                    </div>
+                    {/* Background tropical dusk glow - REMOVED */}
+
                     <Toaster />
                     <TailwindColorClasses />
                     <TempPasswordHandler />

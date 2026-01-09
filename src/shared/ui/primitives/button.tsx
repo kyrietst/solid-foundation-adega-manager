@@ -3,26 +3,24 @@ import { Slot } from "@radix-ui/react-slot"
 import { cva, type VariantProps } from "class-variance-authority"
 
 import { cn } from "@/core/config/utils"
-import { getSFProTextClasses } from "@/core/config/theme-utils"
 
 const buttonVariants = cva(
-  cn(
-    getSFProTextClasses('action'),
-    "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md transition-all duration-200 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0"
-  ),
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 ring-offset-background",
   {
     variants: {
       variant: {
         default: "bg-primary text-primary-foreground hover:bg-primary/90",
-        yellow: "bg-primary-yellow text-black-100 hover:bg-yellow-90 hover:transform hover:-translate-y-1 focus-visible:ring-2 focus-visible:ring-primary-yellow/20",
+        yellow: "bg-brand text-brand-foreground hover:bg-brand/90 hover:transform hover:-translate-y-0.5 shadow-sm hover:shadow-brand/20",
         destructive:
           "bg-destructive text-destructive-foreground hover:bg-destructive/90",
         outline:
-          "border-2 border-primary-yellow text-primary-yellow hover:bg-primary-yellow hover:text-black-100 hover:transform hover:-translate-y-1 focus-visible:ring-2 focus-visible:ring-primary-yellow/20",
+          "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        ghost: "bg-gray-900/50 border border-gray-700/50 backdrop-blur-sm text-gray-100 hover:bg-gray-800/80 hover:backdrop-blur-lg hover:transform hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-primary-yellow/20",
+        ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
+        // Legacy variant mapping for smoother transition
+        glass: "bg-surface/50 border border-white/10 backdrop-blur-sm text-foreground hover:bg-surface/80 hover:transform hover:-translate-y-0.5",
       },
       size: {
         default: "h-10 px-4 py-2",

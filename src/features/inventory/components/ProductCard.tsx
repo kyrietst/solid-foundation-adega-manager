@@ -1,16 +1,13 @@
 /**
- * Card ULTRA SIMPLIFICADO do produto para POS/Vendas
- * Apenas 2 números: Pacotes e Unidades Soltas
- * Zero complexidade, decisão simples do usuário
+ * Card PREMIUM "Stitch Design" para POS/Vendas
+ * Aspect Ratio 3/4, Glassmorphism e Interações Refinadas
  */
 
 import React from 'react';
-import { Button } from '@/shared/ui/primitives/button';
 import { Badge } from '@/shared/ui/primitives/badge';
-import { Plus, Package, Box, AlertTriangle } from 'lucide-react';
+import { Plus, Package, AlertTriangle } from 'lucide-react';
 import type { Product } from '@/core/types/inventory.types';
 import { formatCurrency, cn } from '@/core/config/utils';
-import { getGlassCardClasses, getHoverTransformClasses } from '@/core/config/theme-utils';
 import { OptimizedImage } from '@/shared/ui/composite/optimized-image';
 
 interface ProductCardProps {
@@ -25,134 +22,109 @@ export const ProductCard = React.memo<ProductCardProps>(({
   product,
   onAddToCart,
   onOpenSelection,
-  variant = 'default',
-  glassEffect = false,  // PERFORMANCE: Desabilitado por padrão em grids
 }) => {
-  // Map ProductCard variants to supported GlassCard variants
-  const getGlassVariant = (v: string): 'default' | 'premium' | 'yellow' => {
-    if (v === 'premium') return 'premium';
-    if (v === 'warning') return 'yellow';
-    return 'default';
-  };
 
-  const glassClasses = glassEffect ? getGlassCardClasses(getGlassVariant(variant)) : '';
-
-  // ✅ v3.5.4 - Sistema unificado de estoque (colunas legacy)
+  // Dados unificados de estoque
   const stockPackages = product.stock_packages || 0;
   const stockUnitsLoose = product.stock_units_loose || 0;
 
   const isOutOfStock = stockPackages === 0 && stockUnitsLoose === 0;
   const hasMultipleOptions = stockPackages > 0 && stockUnitsLoose > 0;
 
-  // Decidir como adicionar ao carrinho - ULTRA SIMPLES
-  const handleAddClick = () => {
+  // Handler de clique
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isOutOfStock) return;
+    
     if (hasMultipleOptions && onOpenSelection) {
-      // Se tem ambos, deixar usuário escolher
       onOpenSelection(product);
     } else {
-      // Senão, adicionar direto
       onAddToCart(product);
     }
   };
 
   return (
     <div
-      className={cn(
-        "group rounded-xl border border-white/20 bg-black/70 backdrop-blur-md text-card-foreground shadow-lg overflow-hidden transition-all duration-200 hover:shadow-xl",
-        getHoverTransformClasses('lift'),
-        glassClasses
-      )}
+      onClick={handleClick}
+      className="group relative bg-white/5 border border-white/5 hover:border-primary/50 rounded-xl p-3 cursor-pointer transition-all hover:bg-white/10 hover:shadow-[0_0_20px_rgba(0,0,0,0.5)] hover:-translate-y-1 overflow-hidden"
     >
-      {/* Imagem do produto */}
-      <div className="aspect-video bg-gray-700/50 relative overflow-hidden flex items-center justify-center">
-        {product.image_url ? (
-          <OptimizedImage
-            src={product.image_url}
-            alt={product.name}
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <Package className="h-12 w-12 text-gray-400" />
+      {/* Imagem (Aspect Ratio 3/4) com Zoom Effect */}
+      <div className="aspect-[3/4] w-full mb-3 relative rounded-lg overflow-hidden bg-black/20">
+        <div className="w-full h-full transition-transform duration-500 group-hover:scale-110 flex items-center justify-center bg-gray-900/40">
+           {product.image_url ? (
+            <OptimizedImage
+              src={product.image_url}
+              alt={product.name}
+              className="w-full h-full object-cover"
+            />
+           ) : (
+            <Package className="h-12 w-12 text-gray-600" />
+           )}
+        </div>
+
+        {/* Floating Add Button - Aparece no Hover */}
+        {!isOutOfStock && (
+            <button 
+                onClick={handleClick}
+                className="absolute bottom-2 right-2 size-8 rounded-full bg-primary text-black flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg scale-90 group-hover:scale-100 hover:bg-[#e0b71f]"
+            >
+                <Plus className="h-5 w-5" />
+            </button>
         )}
 
-        {/* Status badge */}
-        <div className="absolute top-2 right-2">
-          {isOutOfStock ? (
-            <Badge className="bg-red-500/80 text-white text-xs">
-              Esgotado
-            </Badge>
-          ) : (
-            <Badge className="bg-green-500/80 text-white text-xs">
-              Disponível
-            </Badge>
-          )}
-        </div>
+        {/* Status Badges - Smart Inventory Logic */}
+        <>
+            {/* Out of Stock - Center/Overlay? No, Keep Top Right for consistency, or overlay */}
+            {isOutOfStock && (
+                <div className="absolute top-2 right-2 z-10">
+                    <Badge className="bg-red-500/90 text-white text-[10px] uppercase font-bold px-2 py-0.5 backdrop-blur-md border border-red-500/30 shadow-lg">
+                        <AlertTriangle className="h-3 w-3 mr-1" />
+                        Esgotado
+                    </Badge>
+                </div>
+            )}
+
+            {!isOutOfStock && (
+                <>
+                    {/* Unit Badge (Top-Left) - Green */}
+                    {stockUnitsLoose > 0 && (
+                        <div className="absolute top-2 left-2 z-10">
+                            <Badge className="bg-emerald-500/90 hover:bg-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 backdrop-blur-md border border-emerald-500/30 shadow-sm">
+                                {stockUnitsLoose} un
+                            </Badge>
+                        </div>
+                    )}
+
+                    {/* Package Badge (Top-Right) - Blue */}
+                    {stockPackages > 0 && (
+                        <div className="absolute top-2 right-2 z-10">
+                            <Badge className="bg-blue-600/90 hover:bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 backdrop-blur-md border border-blue-500/30 shadow-sm">
+                                <Package className="h-3 w-3 mr-1 inline-block" />
+                                CX: {stockPackages}
+                            </Badge>
+                        </div>
+                    )}
+                </>
+            )}
+        </>
       </div>
 
-      {/* Informações do produto ULTRA SIMPLIFICADAS */}
-      <div className="p-4 space-y-3">
-        {/* Nome */}
-        <h3 className="font-semibold text-white text-sm line-clamp-2">
-          {product.name}
-        </h3>
-
-        {/* Preço */}
-        <div className="text-xl font-bold text-primary-yellow">
-          {formatCurrency(product.price)}
+      {/* Product Info */}
+      <div className="space-y-1">
+        <div className="flex justify-between items-start">
+             <h3 className="text-white text-sm font-medium leading-tight line-clamp-2 min-h-[2.5em]" title={product.name}>
+                {product.name}
+             </h3>
         </div>
-
-        {/* ESTOQUE ULTRA SIMPLIFICADO - APENAS 2 NÚMEROS */}
-        <div className="grid grid-cols-2 gap-2">
-          {/* Pacotes */}
-          <div className="bg-blue-500/10 border border-blue-500/20 rounded p-2 text-center">
-            <div className="flex items-center justify-center gap-1">
-              <Box className="h-3 w-3 text-blue-400" />
-              <span className="text-xs text-blue-400">Pacotes</span>
-            </div>
-            <p className="text-sm font-bold text-blue-400">{stockPackages}</p>
-          </div>
-
-          {/* Unidades Soltas */}
-          <div className="bg-green-500/10 border border-green-500/20 rounded p-2 text-center">
-            <div className="flex items-center justify-center gap-1">
-              <Package className="h-3 w-3 text-green-400" />
-              <span className="text-xs text-green-400">Unidades</span>
-            </div>
-            <p className="text-sm font-bold text-green-400">{stockUnitsLoose}</p>
-          </div>
+        
+        <div className="flex items-end justify-between pt-1 border-t border-white/5 mt-2">
+            <p className="text-xs text-gray-400">
+                {product.volume || product.volume_ml || 'Unitário'}
+            </p>
+            <p className="text-primary font-bold text-sm">
+                {formatCurrency(product.price)}
+            </p>
         </div>
-
-        {/* Botão ULTRA SIMPLES */}
-        <Button
-          size="sm"
-          onClick={handleAddClick}
-          disabled={isOutOfStock}
-          className={cn(
-            'w-full text-xs',
-            isOutOfStock
-              ? 'bg-gray-600/30 text-gray-400 cursor-not-allowed'
-              : hasMultipleOptions
-                ? 'bg-orange-500 hover:bg-orange-600 text-white'
-                : 'bg-primary-yellow hover:bg-yellow-400 text-black'
-          )}
-        >
-          {isOutOfStock ? (
-            <>
-              <AlertTriangle className="h-3 w-3 mr-1" />
-              Esgotado
-            </>
-          ) : hasMultipleOptions ? (
-            <>
-              <Plus className="h-3 w-3 mr-1" />
-              Escolher
-            </>
-          ) : (
-            <>
-              <Plus className="h-3 w-3 mr-1" />
-              Adicionar
-            </>
-          )}
-        </Button>
       </div>
     </div>
   );

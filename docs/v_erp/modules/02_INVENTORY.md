@@ -14,7 +14,10 @@ history.
 The `Movements` screen (`/movements`) is a **READ-ONLY Audit Log**.
 
 - **Purpose:** To view history, track shrinkage, and audit employee actions.
-- **UI:** No "Create Button". Filters by date, type, and product only.
+- **UI Structure:**
+  - **Header:** Fixed at top (`z-10`).
+  - **Grid:** Scrollable area with `pb-40` padding.
+  - **Dock:** Fixed Pagination at bottom (`z-50`) with gradient fade.
 
 ## 3. Adjustments & Operations
 
