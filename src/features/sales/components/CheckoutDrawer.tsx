@@ -13,24 +13,27 @@ import { FiscalAddress } from '@/core/types/fiscal.types';
 
 import { Button } from '@/shared/ui/primitives/button';
 import { Input } from '@/shared/ui/primitives/input';
+import { Switch } from '@/shared/ui/primitives/switch';
 import { Label } from '@/shared/ui/primitives/label';
 import { ScrollArea } from '@/shared/ui/primitives/scroll-area';
 import {
-    X, Store, Truck, CreditCard, User, Search,
-    MapPin, DollarSign, Wallet, Bike, Loader2, AlertTriangle
+    X, Store, Truck, CreditCard, User, Search, Trash2,
+    MapPin, DollarSign, Wallet, Bike, Loader2, AlertTriangle, FileText
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 // Icons mapping for payment methods
 import { QrCode, Banknote } from 'lucide-react';
+import { useToast } from '@/shared/hooks/common/use-toast';
 
 interface CheckoutDrawerProps {
     isOpen: boolean;
     onClose: () => void;
-    onSuccess?: (saleId: string) => void;
+    onSuccess?: (saleId: string, extraData?: any) => void;
 }
 
 export function CheckoutDrawer({ isOpen, onClose, onSuccess }: CheckoutDrawerProps) {
+    const { toast } = useToast();
     const drawerId = useId();
     const { items, customerId, clearCart } = useCart();
     const { data: customer } = useCustomer(customerId || '');
@@ -46,6 +49,16 @@ export function CheckoutDrawer({ isOpen, onClose, onSuccess }: CheckoutDrawerPro
     const [deliveryPersonId, setDeliveryPersonId] = useState<string>('');
     const [installments, setInstallments] = useState<number>(1); // Added State
     const [isLoadingCep, setIsLoadingCep] = useState(false);
+
+    // CPF na Nota State
+    const [cpfNaNotaEnabled, setCpfNaNotaEnabled] = useState(false);
+    const [cpfNaNotaValue, setCpfNaNotaValue] = useState('');
+
+    // State for Split Payment
+    const [isMultiPayment, setIsMultiPayment] = useState(false);
+    const [payments, setPayments] = useState<Array<{ methodId: string; methodName: string; amount: number; installments: number; methodCode?: string }>>([]);
+    const [partialAmount, setPartialAmount] = useState<string>(''); // For input binding
+
 
     // Address Form
     const addressForm = useForm<FiscalAddress>({
@@ -146,6 +159,48 @@ export function CheckoutDrawer({ isOpen, onClose, onSuccess }: CheckoutDrawerPro
         }
     }, [isCreditCard]);
 
+    // Split Payment Helpers
+    const totalPaid = payments.reduce((acc, p) => acc + p.amount, 0);
+    const remainingToPay = Math.max(0, total - totalPaid);
+
+    const handleAddPayment = (methodId: string, methodName: string, methodSlug: string, methodCode: string) => {
+        if (!isMultiPayment) {
+            // SINGLE MODE: Reset and select only this one (Visual only, logic handled at checkout)
+            setPaymentMethodId(methodId);
+            return;
+        }
+
+        // MULTI MODE
+        const amountToAdd = partialAmount ? parseFloat(partialAmount) : remainingToPay;
+        if (amountToAdd <= 0) {
+            toast({ title: "Valor inválido", description: "Informe um valor maior que zero.", variant: "destructive" });
+            return;
+        }
+
+        if (totalPaid + amountToAdd > total + 0.05) { // Tolerance
+             toast({ title: "Valor excede o total", description: "A soma dos pagamentos não pode exceder o valor da venda.", variant: "destructive" });
+             return;
+        }
+
+        const newPayment = {
+            methodId,
+            methodName,
+            methodCode,
+            amount: amountToAdd,
+            installments: methodSlug.includes('credit') ? installments : 1
+        };
+
+        setPayments([...payments, newPayment]);
+        setPartialAmount(''); // Reset input
+        setPaymentMethodId(''); // Reset selection highlight
+    };
+
+    const handleRemovePayment = (index: number) => {
+        const newPayments = [...payments];
+        newPayments.splice(index, 1);
+        setPayments(newPayments);
+    };
+
     const change = isCash && cashReceived > total ? cashReceived - total : 0;
 
     // Checkout Hook
@@ -158,49 +213,78 @@ export function CheckoutDrawer({ isOpen, onClose, onSuccess }: CheckoutDrawerPro
         // 'pickup' in UI means "Fiado/Conta".
         // Backend expects 'presencial' channel for in-store sales.
         // We map UI 'pickup' -> 'presencial' (or 'delivery' if toggled) but with 'Fiado' payment method.
-        saleType: saleType === 'pickup' ? fiadoChannel : saleType,
-        paymentMethodId: saleType === 'pickup' ? (fiadoMethod?.id || '') : paymentMethodId,
+        saleType,
+        paymentMethodId,
         discount,
-        allowDiscounts: true,
-        deliveryAddress: addressForm.watch(),
-        deliveryFee: isDelivery ? deliveryFee : 0,
-        deliveryPersonId: isDelivery ? deliveryPersonId : undefined,
-        isCashPayment: !!isCash,
+        allowDiscounts: true, // Configurable?
+        deliveryAddress: addressForm.getValues(), // Get address from form, fallback inside hook
+        deliveryFee,
+        deliveryPersonId,
+        isCashPayment: isCash,
         cashReceived,
-        installments, // Pass to hook
-        onSuccess: (id) => {
-            onSuccess?.(id);
-            onClose(); // Close drawer
+        installments,
+        cpfNaNota: cpfNaNotaEnabled ? cpfNaNotaValue : undefined,
+        payments: isMultiPayment ? payments.map(p => ({
+            method_id: p.methodId,
+            amount: p.amount,
+            installments: p.installments
+        })) : undefined, // NEW: Pass payments array
+        onSuccess: (saleId, extraData) => {
+            onSuccess?.(saleId, extraData);
+            onClose();
         },
         clearCart,
-        resetState: () => { 
-            setInstallments(1);
+        resetState: () => {
+            setPaymentMethodId('');
             setDiscount(0);
             setCashReceived(0);
-            setPaymentMethodId('');
-        },
+            setDeliveryFee(0);
+            setDeliveryPersonId('');
+            addressForm.reset();
+            setInstallments(1);
+            setCpfNaNotaEnabled(false);
+            setCpfNaNotaValue('');
+            setIsMultiPayment(false);
+            setPayments([]);
+        }
     });
 
     // Validation
     const isValid = useMemo(() => {
         if (items.length === 0) return false;
+        
+        // 1. Delivery Validation
         if (isDelivery) {
-            // Address must contain at least street and number
-            const addr = addressForm.watch();
+            const addr = addressForm.getValues(); // Use getValues to avoid render loops if not watched
             if (!addr?.logradouro || !addr?.numero) return false;
             if (!deliveryPersonId) return false;
         }
 
-        // If sale is delivery or presencial (standard), need payment method
-        if (saleType !== 'pickup' && !paymentMethodId) return false;
-
-        // If sale is 'pickup' (Fiado), need Customer and Fiado Method must exist
+        // 2. Fiado Validation (Pickup/Term Check)
         if (saleType === 'pickup') {
             if (!customerId) return false;
-            if (!fiadoMethod) return false; // Safety check
+            if (!fiadoMethod) return false; 
+            return true; 
         }
+
+        // 3. Payment Validation (Split vs Single)
+        if (isMultiPayment) {
+            // Split Mode: Validate Sum
+            if (payments.length === 0) return false;
+            
+            const currentTotalPaid = payments.reduce((acc, p) => acc + p.amount, 0);
+            const diff = Math.abs(total - currentTotalPaid);
+            
+            // Tolerance for floating point errors (0.05 cents)
+            if (diff > 0.05) return false;
+            
+        } else {
+            // Single Mode: Must have selected method
+            if (!paymentMethodId) return false;
+        }
+
         return true;
-    }, [items, saleType, addressForm.getValues(), paymentMethodId, customerId, fiadoMethod, deliveryPersonId]); // using getValues/watch correctly
+    }, [items, saleType, addressForm, paymentMethodId, customerId, fiadoMethod, deliveryPersonId, isMultiPayment, payments, total, isDelivery]);
 
     // Icons Helper
     const getPaymentIcon = (slug: string) => {
@@ -513,10 +597,74 @@ export function CheckoutDrawer({ isOpen, onClose, onSuccess }: CheckoutDrawerPro
                                     </motion.div>
                                 )}
 
-                                {/* 4. Payment Methods (Conditional: Not for Fiado) */}
+                                {/* 4. Payment Methods Options */}
                                 {saleType !== 'pickup' && (
                                     <div className="space-y-4 pt-4 border-t border-white/5">
-                                        <Label className="uppercase text-xs text-gray-500 font-bold tracking-wider">Pagamento</Label>
+                                        
+                                        <div className="flex items-center justify-between mb-2">
+                                            <Label className="uppercase text-xs text-gray-500 font-bold tracking-wider">Pagamento</Label>
+                                            
+                                            {/* Enable Multi Payment Switch */}
+                                            <div className="flex items-center gap-2">
+                                                <span className={`text-xs ${isMultiPayment ? 'text-primary' : 'text-gray-500'}`}>
+                                                    Dividir Pagamento
+                                                </span>
+                                                <Switch 
+                                                    checked={isMultiPayment}
+                                                    onCheckedChange={(checked) => {
+                                                        setIsMultiPayment(checked);
+                                                        setPayments([]); // Clear on toggle
+                                                        setPaymentMethodId('');
+                                                    }}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* Multi Payment: List of Added Payments */}
+                                        {isMultiPayment && (
+                                            <div className="space-y-2 mb-4 bg-black/20 p-3 rounded-lg border border-white/5">
+                                                {payments.length === 0 && (
+                                                    <p className="text-xs text-gray-500 text-center italic">Nenhum pagamento adicionado.</p>
+                                                )}
+                                                {payments.map((p, idx) => (
+                                                    <div key={idx} className="flex justify-between items-center text-sm">
+                                                        <span className="text-gray-300">{p.methodName} {p.installments > 1 ? `(${p.installments}x)` : ''}</span>
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="font-mono text-white">{formatCurrency(p.amount)}</span>
+                                                            <button 
+                                                                onClick={() => handleRemovePayment(idx)}
+                                                                className="text-red-500 hover:text-red-400"
+                                                            >
+                                                                <Trash2 className="w-4 h-4" />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                                <div className="border-t border-white/10 pt-2 flex justify-between items-center font-bold">
+                                                    <span className={remainingToPay > 0.05 ? "text-red-400" : "text-green-400"}>
+                                                        {remainingToPay > 0.05 ? "Faltam:" : "Ok:"}
+                                                    </span>
+                                                    <span className={remainingToPay > 0.05 ? "text-red-400" : "text-green-400"}>
+                                                        {formatCurrency(remainingToPay)}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Multi Payment: Amount Input for Next Payment */}
+                                        {isMultiPayment && remainingToPay > 0.05 && (
+                                            <div className="mb-3">
+                                                <Label className="text-xs text-gray-400">Valor para este método</Label>
+                                                <Input 
+                                                    type="number" 
+                                                    value={partialAmount}
+                                                    placeholder={remainingToPay.toFixed(2)}
+                                                    onChange={(e) => setPartialAmount(e.target.value)}
+                                                    className="bg-white/5 border-white/10 text-white"
+                                                />
+                                            </div>
+                                        )}
+
                                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                                             {paymentMethods
                                                 .filter(m => 
@@ -526,10 +674,10 @@ export function CheckoutDrawer({ isOpen, onClose, onSuccess }: CheckoutDrawerPro
                                                 .map(method => (
                                                 <button
                                                     key={method.id}
-                                                    onClick={() => setPaymentMethodId(method.id)}
+                                                    onClick={() => handleAddPayment(method.id, method.name, method.slug, method.code)}
                                                     className={cn(
                                                         "flex flex-col items-center justify-center gap-2 p-3 rounded-xl border transition-all h-20",
-                                                        paymentMethodId === method.id
+                                                        !isMultiPayment && paymentMethodId === method.id
                                                             ? "bg-primary/20 border-primary text-primary"
                                                             : "bg-white/5 border-white/5 text-gray-400 hover:bg-white/10"
                                                     )}
@@ -650,6 +798,50 @@ export function CheckoutDrawer({ isOpen, onClose, onSuccess }: CheckoutDrawerPro
                                         )}
                                      </div>
                                 )}
+
+                                {/* CPF na Nota (Universal) */}
+                                <div className="space-y-3 pt-4 border-t border-white/5">
+                                    <div className="flex items-center justify-between">
+                                        <Label className="uppercase text-xs text-gray-500 font-bold tracking-wider flex items-center gap-2">
+                                            <FileText className="h-4 w-4" /> CPF na Nota
+                                        </Label>
+                                        <div className="flex items-center gap-2">
+                                            <Label htmlFor="cpf-switch" className="text-xs text-gray-400 cursor-pointer">
+                                                {cpfNaNotaEnabled ? 'Ativado' : 'Não informar'}
+                                            </Label>
+                                            <Switch
+                                                id="cpf-switch"
+                                                checked={cpfNaNotaEnabled}
+                                                onCheckedChange={setCpfNaNotaEnabled}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {cpfNaNotaEnabled && (
+                                        <div className="animate-in fade-in slide-in-from-top-2">
+                                            <Input
+                                                placeholder="000.000.000-00"
+                                                className="bg-white/5 border-white/10 text-white"
+                                                value={cpfNaNotaValue}
+                                                onChange={(e) => {
+                                                    let v = e.target.value.replace(/\D/g, '');
+                                                    if (v.length > 11) v = v.slice(0, 11);
+                                                    if (v.length > 9) v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+                                                    else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d{3})/, '$1.$2.$3');
+                                                    else if (v.length > 3) v = v.replace(/(\d{3})(\d{3})/, '$1.$2');
+                                                    setCpfNaNotaValue(v);
+                                                }}
+                                                maxLength={14}
+                                            />
+                                            {/* Validation Hint */}
+                                            {cpfNaNotaValue.replace(/\D/g, '').length === 11 ? (
+                                                <p className="text-[10px] text-green-400 mt-1">CPF completo</p>
+                                            ) : (
+                                                 <p className="text-[10px] text-amber-500 mt-1">Digite os 11 números</p>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
 
                                 <div className="h-4"></div> {/* Spacer */}
                             </div>

@@ -9,6 +9,7 @@ const AUTH_URL = 'https://auth.nuvemfiscal.com.br/oauth/token'
 // Types
 interface FiscalPayload {
   sale_id: string;
+  cpfNaNota?: string; // Optional manual CPF
   [key: string]: unknown;
 }
 
@@ -106,7 +107,7 @@ Deno.serve(async (req) => {
 
     // 4. Parse Request
     const body = await req.json() as FiscalPayload
-    const { sale_id } = body
+    const { sale_id, cpfNaNota } = body
     
     sale_id_for_log = sale_id // Capture ID for global error logging
     if (!sale_id) {
@@ -123,6 +124,14 @@ Deno.serve(async (req) => {
           *,
           payment_methods (
             code
+          ),
+          sale_payments (
+             amount,
+             installments,
+             payment_methods (
+                code,
+                name
+             )
           ),
           sale_items (
             *,
@@ -254,74 +263,103 @@ Deno.serve(async (req) => {
     const totalBC = 0.00
     const totalICMS = 0.00
 
-    // Lógica Avançada de Pagamento
-    // Robust extraction: Handle if payment_methods is array or object
-    const pmraw = sale.payment_methods
-    const pm = Array.isArray(pmraw) ? pmraw[0] : pmraw
-    const tPag = pm?.code || '99'
-    
-    // DEBUG: Log resolved tPag
-    console.log(`[Fiscal] Resolved tPag: ${tPag}`)
+    // Lógica Avançada de Pagamento (Split Payment Support v2 - Multi-Pagamento)
+    const paymentDetList: Record<string, unknown>[] = [];
+    const rawPayments = sale.sale_payments || [];
 
-    // Payment Indicator Logic
-    // 0 = A Vista, 1 = A Prazo
-    // Logic: If installments > 1 OR Payment is explicitly "Fiado" (Credit) -> Prazo
-    const installments = sale.installments || 1;
-    const isPrazo = installments > 1 || tPag === '03' || tPag === '99' && sale.payment_method_enum === 'credit'; 
-    const indPag = isPrazo ? 1 : 0;
+    // Helper para processar um método de pagamento
+    const processPayment = (code: string, amount: number, methodEnum?: string, installmentsCount: number = 1) => {
+        const tPag = code || '99';
+        
+        // IndPag Logic: 0=A Vista, 1=A Prazo
+        const isPrazo = installmentsCount > 1 || tPag === '03' || (tPag === '99' && methodEnum === 'credit');
+        const indPag = isPrazo ? 1 : 0;
 
-    const paymentDet: Record<string, unknown> = {
-        tPag: tPag,
-        vPag: totalVendaNumber,
-        indPag: indPag // Added Payment Indicator
-    }
+        const det: Record<string, unknown> = {
+            tPag: tPag,
+            vPag: parseFloat(amount.toFixed(2)),
+            indPag: indPag
+        };
 
-    // Regra 1: Se for '99' (Outros), exige descrição (Erro 441)
-    if (tPag === '99') {
-        paymentDet.xPag = 'Outros'
-    }
-
-    // Regra 2: Se for Cartão (03 ou 04), exige grupo 'card' (Erro 391)
-    if (tPag === '03' || tPag === '04') {
-        paymentDet.card = {
-            tpIntegra: 2, // 2 = Não Integrado (Maquininha POS avulsa)
+        // Regra 1: Se for '99' (Outros), exige descrição (Erro 441)
+        if (tPag === '99') {
+            det.xPag = 'Outros';
         }
+
+        // Regra 2: Se for Cartão (03 ou 04), exige grupo 'card' (Erro 391)
+        if (tPag === '03' || tPag === '04') {
+            det.card = {
+                tpIntegra: 2, // 2 = Não Integrado (Maquininha POS avulsa)
+            };
+        }
+
+        // Regra 3 (Workaround): PIX (17) -> Tratar como 99 para evitar Erro 391 em Sandbox/Homologação
+        // SEFAZ as vezes rejeita 17 pedindo cartão em alguns ambientes.
+        if (tPag === '17') {
+            det.tPag = '99';
+            det.xPag = 'Pagamento Instantaneo (Pix)';
+        }
+
+        return det;
+    };
+
+    if (rawPayments.length > 0) {
+        // Multi-Payment Flow
+        rawPayments.forEach((p: { payment_methods: { code: string; name: string }; amount: number; installments: number }) => {
+            const methodCode = p.payment_methods?.code || '99';
+            const methodEnum = p.payment_methods?.name === 'Crédito' ? 'credit' : undefined; // Simplificação
+            paymentDetList.push(processPayment(methodCode, p.amount, methodEnum, p.installments));
+        });
+    } else {
+        // Legacy Fallback (Single Payment from Sales Header)
+        const pmraw = sale.payment_methods;
+        const pm = Array.isArray(pmraw) ? pmraw[0] : pmraw;
+        const legacyCode = pm?.code || '99';
+        
+        // Tenta inferir enum do header se existir
+        const legacyEnum = sale.payment_method_enum; 
+        
+        paymentDetList.push(processPayment(legacyCode, totalVendaNumber, legacyEnum, sale.installments));
     }
-
-    // Regra 3 (Workaround): PIX (17) -> Tratar como 99 para evitar Erro 391 em Sandbox/Homologação
-    // SEFAZ as vezes rejeita 17 pedindo cartão em alguns ambientes.
-    if (tPag === '17') {
-        paymentDet.tPag = '99'
-        paymentDet.xPag = 'Pagamento Instantaneo (Pix)'
-    }
+    
+    // DEBUG: Log payments count
+    console.log(`[Fiscal] Resolved Payments: ${paymentDetList.length} item(s)`)
 
 
 
-    // Destinatário Logic (NEW v3.0 - Delivery Aware)
+    // Destinatário Logic (NEW v4.0 - Unidentified Consumer Support)
     let dest: Record<string, unknown> | undefined = undefined;
     const customer = sale.customers;
 
     // Delivery Address Priority: Use sale-specific address if available, else fallback to customer profile
-    // This allows "Gifting" or "One-off Delivery" without changing customer profile
     const targetAddress = sale.delivery_address || (customer && typeof customer.address === 'object' ? customer.address : null);
 
-    if (customer && (customer.cpf_cnpj || customer.name || targetAddress)) {
+    // Determine Target CPF (Priority to manual input "cpfNaNota")
+    const manualCpf = cpfNaNota ? cpfNaNota.replace(/\D/g, '') : '';
+    const customerCpf = customer?.cpf_cnpj ? customer.cpf_cnpj.replace(/\D/g, '') : '';
+    const finalCpf = manualCpf || customerCpf;
+
+    const hasValidCpf = finalCpf.length === 11 || finalCpf.length === 14;
+
+    // ONLY create dest if we have a valid CPF (Requirement for "Unidentified Consumer" consistency in NFC-e)
+    if (hasValidCpf) {
         dest = {};
         
-        // Identificação Basic
-        if (customer.name) dest.xNome = customer.name.substring(0, 60);
-        
-        // CPF/CNPJ Logic
-        const doc = customer.cpf_cnpj ? customer.cpf_cnpj.replace(/\D/g, '') : null;
-        if (doc) {
-            if (doc.length === 11) dest.CPF = doc;
-            else if (doc.length === 14) dest.CNPJ = doc;
-        }
+        // Identificação (CPF/CNPJ)
+        if (finalCpf.length === 11) dest.CPF = finalCpf;
+        else if (finalCpf.length === 14) dest.CNPJ = finalCpf;
 
-        // IE logic
-        if (customer.indicador_ie) dest.indIEDest = customer.indicador_ie;
-        if (customer.ie) dest.IE = customer.ie.replace(/\D/g, '');
-        if (customer.email) dest.email = customer.email;
+        // Name Logic: Use Customer Name if available
+        if (customer?.name) {
+             dest.xNome = customer.name.substring(0, 60);
+        }
+        
+        // IE logic (Only if using Customer Profile and NOT manual override)
+        if (!manualCpf && customer) {
+             if (customer.indicador_ie) dest.indIEDest = customer.indicador_ie;
+             if (customer.ie) dest.IE = customer.ie.replace(/\D/g, '');
+             if (customer.email) dest.email = customer.email;
+        }
 
         // Endereço Logic (Fiscal Address Structure)
         if (targetAddress) {
@@ -332,7 +370,7 @@ Deno.serve(async (req) => {
             const municipio = targetAddress.nome_municipio || targetAddress.city;
             const uf = targetAddress.uf || targetAddress.state;
             const cep = targetAddress.cep || targetAddress.zipCode;
-            const codMun = targetAddress.codigo_municipio || targetAddress.ibge || "3548708"; // Fallback to SBC
+            const codMun = targetAddress.codigo_municipio || targetAddress.ibge || "3548708"; 
 
             if (logradouro) {
                 dest.enderDest = {
@@ -350,6 +388,8 @@ Deno.serve(async (req) => {
             }
         }
     }
+
+
 
     // 10. Construct Payload (SEFAZ Standard)
     const nfcePayload = {
@@ -453,7 +493,7 @@ Deno.serve(async (req) => {
             },
             transp: { modFrete: 9 }, // NUMBER (Era "9")
             pag: {
-                detPag: [ paymentDet ]
+                detPag: paymentDetList
             }
         }
     }

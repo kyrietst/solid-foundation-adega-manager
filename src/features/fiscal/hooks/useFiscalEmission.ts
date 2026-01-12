@@ -23,13 +23,13 @@ export const useFiscalEmission = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  const emitInvoice = async (saleId: string, onSuccess?: (data: FiscalResponse['data']) => void) => {
+  const emitInvoice = async (saleId: string, onSuccess?: (data: FiscalResponse['data']) => void, extraPayload?: Record<string, any>) => {
     if (!saleId) return;
     
     setIsLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('fiscal-handler', {
-        body: { sale_id: saleId }
+        body: { sale_id: saleId, ...extraPayload }
       });
 
       if (error) throw error;

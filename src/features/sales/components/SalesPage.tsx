@@ -39,6 +39,7 @@ function SalesPage({
 
   const [receiptModalOpen, setReceiptModalOpen] = useState(false);
   const [completedSaleId, setCompletedSaleId] = useState<string | null>(null);
+  const [receiptContext, setReceiptContext] = useState<{ cpf?: string } | null>(null); // New State
 
   // Controlled Search State for ProductsGrid
   const [searchTerm, setSearchTerm] = useState('');
@@ -88,8 +89,9 @@ function SalesPage({
   });
 
   // Handler para quando uma venda é completada
-  const handleSaleComplete = (saleId: string) => {
+  const handleSaleComplete = (saleId: string, extraData?: { cpf: string }) => {
     setCompletedSaleId(saleId);
+    setReceiptContext(extraData || null); // Store extra context
     setReceiptModalOpen(true);
     setIsCartOpen(false);
   };
@@ -329,8 +331,10 @@ function SalesPage({
         onClose={() => {
           setReceiptModalOpen(false);
           setCompletedSaleId(null);
+          setReceiptContext(null); // Reset context
         }}
         saleId={completedSaleId}
+        cpfNaNota={receiptContext?.cpf} // Pass CPF
         autoClose={true}
       />
 

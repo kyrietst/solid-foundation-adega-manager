@@ -31,13 +31,25 @@ export interface UseCheckoutProps {
     isCashPayment: boolean;
     cashReceived: number;
 
-    // Callback
-    onSuccess: (saleId: string) => void;
-    clearCart: () => void;
-    resetState: () => void;
-    
     // Credit Card props
     installments?: number;
+    
+    // New Feature: CPF na Nota
+    cpfNaNota?: string;
+
+    // New Feature: Split Payments
+    payments?: Array<{
+        method_id: string;
+        amount: number;
+        installments: number;
+    }>;
+
+    // Callback
+    onSuccess: (saleId: string, extraData?: { cpf: string }) => void; // Updated signature
+    
+    // Actions
+    clearCart: () => void;
+    resetState: () => void;
 }
 
 export const useCheckout = ({
@@ -55,6 +67,8 @@ export const useCheckout = ({
     isCashPayment,
     cashReceived,
     installments = 1,
+    cpfNaNota,
+    payments, // Destructured
     onSuccess,
     clearCart,
     resetState
@@ -87,7 +101,8 @@ export const useCheckout = ({
         }
 
         // Validações básicas
-        if (!paymentMethodId) {
+        const hasPayment = paymentMethodId || (payments && payments.length > 0);
+        if (!hasPayment) {
             toast({
                 title: "Erro",
                 description: "Selecione um método de pagamento",
@@ -198,7 +213,8 @@ export const useCheckout = ({
                     package_units: item.packageUnits
                 })),
                 notes: notes,
-                installments: installments || 1 // Pass installments to payload
+                installments: installments || 1, // Legacy/Prop
+                payments: payments || [], // PASS PAYMENTS TO MUTATION ADAPTER
             };
 
             const result = await upsertSale.mutateAsync({
@@ -214,7 +230,9 @@ export const useCheckout = ({
 
                 clearCart();
                 resetState();
-                onSuccess(result.id);
+                onSuccess(result.id, { 
+                    cpf: cpfNaNota || '' // Pass CPF to caller 
+                });
             }
         } catch (err: any) {
             console.error('Erro ao finalizar venda:', err);

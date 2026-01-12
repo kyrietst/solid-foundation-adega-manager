@@ -85,7 +85,12 @@ export type SaleItemInput = {
 
 export type UpsertSaleInput = {
     customer_id: string | null;
-    payment_method_id: string;
+    payment_method_id?: string; // @deprecated
+    payments: Array<{
+        method_id: string;
+        amount: number;
+        installments: number;
+    }>;
     total_amount: number;
     discount_amount?: number;
     items: {
@@ -98,7 +103,7 @@ export type UpsertSaleInput = {
         package_units?: number;
     }[];
     notes?: string;
-    installments?: number; // Added
+    installments?: number; // @deprecated
     saleType: SaleType;
     deliveryData?: DeliveryData;
     delivery_address?: string | null;

@@ -21,6 +21,7 @@ interface ReceiptModalProps {
   saleId: string | null;
   autoClose?: boolean;
   initialFiscalData?: FiscalResponse['data'] | null;
+  cpfNaNota?: string; // New Prop
 }
 
 export const ReceiptModal: React.FC<ReceiptModalProps> = ({
@@ -28,7 +29,8 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
   onClose,
   saleId,
   autoClose = false,
-  initialFiscalData
+  initialFiscalData,
+  cpfNaNota
 }) => {
   const { toast } = useToast();
   const { data: receiptData, isLoading, error } = useReceiptData(saleId);
@@ -105,6 +107,9 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
 
   const handleEmitFiscal = async () => {
     if (!saleId) return;
+    // Pass custom payload if CPF na Nota exists
+    const extraPayload = cpfNaNota ? { cpfNaNota } : undefined;
+    
     await emitInvoice(saleId, (data) => {
       setFiscalData(data);
       
