@@ -146,6 +146,24 @@
 
 ---
 
+### J. Split Payment Implementation (Jan 12, 2026)
+
+- **Feature:** Enabled multi-method payments (e.g., Cash + Credit) in a single
+  sale.
+- **Frontend:**
+  - Added "Dividir Pagamento" switch in `CheckoutDrawer`.
+  - Implemented dynamic payment list with `SUM` validation vs Total.
+- **Backend:**
+  - Created `sale_payments` table (1:N).
+  - Updated `process_sale` RPC to accept `jsonb` array.
+  - **Robustness:** Fixed critical "Null Enum" bug (P0001) by implementing
+    `COALESCE` fallbacks for legacy `payment_method` (text) and
+    `payment_method_enum` columns.
+- **Fiscal:** `fiscal-handler` updated to map multiple payments to NFC-e
+  `detPag` array (e.g. `tPag: 01` + `tPag: 03`).
+
+---
+
 ## 3. Next Steps (Roadmap)
 
 1. **Dashboard Refinement:** Apply virtualization to the "Recent Sales" list if

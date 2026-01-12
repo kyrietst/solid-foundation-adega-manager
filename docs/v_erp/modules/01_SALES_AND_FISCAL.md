@@ -123,7 +123,18 @@ The system handles "Accounts Receivable" via the **Settlement Flow**.
 - Status: `paid` (upon creation).
 - Cash Flow: Impact immediate (`paid_at` = `created_at`).
 
-### B. Fiado (Store Credit / Pending)
+### C. Split Payments (Multi-Meios)
+
+- **UI:** Checkout Drawer Toggle ("Dividir Pagamento").
+- **Logic:**
+  - Allows N payment methods per sale.
+  - Validation: `SUM(payments) == total_sale` (tolerance 0.05).
+- **Backend Storage:**
+  - `sales` table: Stores the **first** method as the "Main" method (Legacy
+    Support).
+  - `sale_payments` table: Stores **all** individual payment records.
+- **Fiscal:** `fiscal-handler` iterates over `sale_payments` to map `detPag`
+  array for NFC-e.
 
 - **Status:** `pending` (FOREVER until paid).
 - **UI Representation:**
@@ -152,6 +163,18 @@ The system handles "Accounts Receivable" via the **Settlement Flow**.
 - `fiscal_status`: `pending`, `authorized`, `rejected`, `canceled`.
 - `fiscal_key`: The 44-digit NFe key (once authorized).
 - `payment_method_code`: The mapped code sent to SEFAZ.
+- **Legacy Compatibility:**
+  - `payment_method_id`: Stores the ID of the _first_ payment method (Main).
+  - `payment_method`: Stores the Name of the _first_ payment method (Text).
+  - `payment_method_enum`: Stores the Type of the _first_ payment method.
+
+### Table: `sale_payments` (New - Split Payment)
+
+- `id`: UUID (PK).
+- `sale_id`: UUID (FK -> sales).
+- `payment_method_id`: UUID (FK -> payment_methods).
+- `amount`: Numeric (Amount paid with this method).
+- `installments`: Integer (Default 1).
 
 ### Table: `sale_items`
 
