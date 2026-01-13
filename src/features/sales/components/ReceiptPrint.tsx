@@ -110,6 +110,12 @@ export const ReceiptPrint: React.FC<ReceiptPrintProps> = ({
     }
   };
 
+  const formatCnpj = (value: string) => {
+    return value
+      .replace(/\D/g, '')
+      .replace(/^(\d{2})(\d{3})?(\d{3})?(\d{4})?(\d{2})?/, "$1.$2.$3/$4-$5");
+  };
+
   return (
     <div className="print-area bg-white text-black">
       <div className="receipt-print">
@@ -118,8 +124,9 @@ export const ReceiptPrint: React.FC<ReceiptPrintProps> = ({
         <div className="receipt-header">
           {isFiscal ? (
             <>
-              <div className="font-bold text-sm uppercase">{store.business_name}</div>
-              <div className="text-[10px]">CNPJ: {store.cnpj}</div>
+              {/* Force "ADEGA ANITA'S LTDA" per user request, while keeping address dynamic */}
+              <div className="font-bold text-sm uppercase">ADEGA ANITA'S LTDA</div>
+              <div className="text-[10px]">CNPJ: {formatCnpj(store.cnpj)}</div>
               <div className="text-[10px] uppercase">
                 {store.address.street}, {store.address.number}
                 {store.address.neighborhood ? ` - ${store.address.neighborhood}` : ''}
