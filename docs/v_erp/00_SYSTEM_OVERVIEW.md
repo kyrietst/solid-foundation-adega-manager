@@ -39,6 +39,8 @@ operations (Sales, Inventory). Instead, we call PostgreSQL Functions (RPCs):
 - `create_inventory_movement(...)`: Centralizes stock logic.
 - `settle_payment(...)`: Handles debt settlement (Fiado -> Paid) with financial
   atomicity.
+- `cancel_sale(...)`: **Safe Cancellation**. Reverses inventory and soft-deletes
+  sale.
 
 ### B. Read-Only Audit Logs
 

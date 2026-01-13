@@ -230,13 +230,16 @@ export const useDeleteSale = () => {
                 throw new Error('Apenas administradores podem cancelar vendas.');
             }
 
-            // SUBSTITUIÇÃO RPC LEGADO: Agora usamos Cascade Delete no banco
-            const { error } = await supabase
-                .from('sales')
-                .delete()
-                .eq('id', saleId);
+            // USANDO RPC DE CANCELAMENTO (RECUPERA ESTOQUE)
+            const { data, error } = await supabase.rpc('cancel_sale' as any, {
+                p_sale_id: saleId,
+                p_reason: 'Cancelamento por administrador'
+            });
 
             if (error) throw error;
+            if (data && !(data as any).success) {
+                throw new Error((data as any).message || 'Erro ao cancelar venda');
+            }
             return true;
         },
         onSuccess: () => {

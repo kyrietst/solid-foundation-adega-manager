@@ -243,7 +243,10 @@ export function RecentSales({ filterStatus }: RecentSalesProps) {
             {sales?.map((sale) => (
               <div
                 key={sale.id}
-                className="bg-surface/70 backdrop-blur-xl border border-white/20 shadow-lg rounded-lg p-4 hover:shadow-xl transition-all duration-200 hero-spotlight"
+                className={cn(
+                    "bg-surface/70 backdrop-blur-xl border border-white/20 shadow-lg rounded-lg p-4 hover:shadow-xl transition-all duration-200 hero-spotlight relative overflow-hidden",
+                    sale.status === 'cancelled' && "opacity-75 bg-surface/40"
+                )}
                 onMouseMove={(e) => {
                   const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
                   const x = ((e.clientX - rect.left) / rect.width) * 100;
@@ -252,17 +255,25 @@ export function RecentSales({ filterStatus }: RecentSalesProps) {
                   (e.currentTarget as HTMLElement).style.setProperty("--y", `${y}%`);
                 }}
               >
+                {sale.status === 'cancelled' && (
+                    <div className="absolute top-0 right-0 bg-destructive/20 text-destructive px-3 py-1 rounded-bl-lg text-xs font-bold border-l border-b border-destructive/30 z-10">
+                        CANCELADA
+                    </div>
+                )}
+
                 <div className="flex flex-col sm:flex-row justify-between gap-4">
                   <div className="space-y-1">
                     <div className="flex items-center gap-3">
                       {sale.delivery_type === 'delivery' ? (
-                        <Truck className="h-5 w-5 text-green-400" />
+                        <Truck className={cn("h-5 w-5", sale.status === 'cancelled' ? "text-muted-foreground" : "text-green-400")} />
                       ) : (
-                        <Store className="h-5 w-5 text-blue-400" />
+                        <Store className={cn("h-5 w-5", sale.status === 'cancelled' ? "text-muted-foreground" : "text-blue-400")} />
                       )}
-                      <h3 className="font-semibold text-lg text-foreground shadow-sm">
+                      
+                      <h3 className={cn("font-semibold text-lg shadow-sm", sale.status === 'cancelled' ? "text-muted-foreground line-through decoration-destructive/50" : "text-foreground")}>
                         {sale.delivery_type === 'delivery' ? 'Pedido' : 'Venda'} #{sale.order_number}
                       </h3>
+
                       {/* Hide Concluido badge for Fiado (pending) */}
                       {sale.payment_status !== 'pending' && <SaleStatusBadge sale={sale} />}
                       
@@ -426,7 +437,7 @@ export function RecentSales({ filterStatus }: RecentSalesProps) {
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-1">
-                    <p className="text-xl font-bold text-right text-foreground shadow-sm">
+                    <p className={cn("text-xl font-bold text-right shadow-sm", sale.status === 'cancelled' ? "text-muted-foreground" : "text-foreground")}>
                       {formatCurrency(sale.final_amount || sale.total_amount)}
                     </p>
                     <div className="flex gap-2">
@@ -439,7 +450,9 @@ export function RecentSales({ filterStatus }: RecentSalesProps) {
                         <Eye className="h-3 w-3 mr-1" />
                         {expandedSaleId === sale.id ? 'Ocultar' : 'Detalhes'}
                       </Button>
-                      {(userRole === 'admin' || userRole === 'employee') && (
+                      
+                      {/* Cancel/Delete Button */}
+                      {(userRole === 'admin' || userRole === 'employee') && sale.status !== 'cancelled' && (
                         <Button
                           variant="outline"
                           size="sm"
@@ -448,7 +461,7 @@ export function RecentSales({ filterStatus }: RecentSalesProps) {
                           disabled={isDeleting}
                         >
                           <Trash2 className="h-3 w-3" />
-                          <span className="sr-only">Excluir</span>
+                          <span className="sr-only">Cancelar</span>
                         </Button>
                       )}
                     </div>
@@ -473,7 +486,7 @@ export function RecentSales({ filterStatus }: RecentSalesProps) {
                                 {item.quantity}
                               </div>
                               <div>
-                                <span className="font-medium text-white shadow-sm">
+                                <span className={cn("font-medium shadow-sm", sale.status === 'cancelled' ? "text-gray-400" : "text-white")}>
                                   {item.product?.name || 'Produto não encontrado'}
                                 </span>
                                 <div className="text-xs text-gray-400">
@@ -561,16 +574,16 @@ export function RecentSales({ filterStatus }: RecentSalesProps) {
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Excluir venda</AlertDialogTitle>
+            <AlertDialogTitle>Cancelar venda</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir o pedido #{saleToDelete?.number}?
+              Tem certeza que deseja cancelar o pedido #{saleToDelete?.number}?
               <br /><br />
               <strong>Esta ação irá:</strong>
-              <br />• Remover a venda do sistema
-              <br />• Restaurar o estoque dos produtos
-              <br />• Registrar a operação no log de auditoria
+              <br />• Alterar o status da venda para 'Cancelada'
+              <br />• Restaurar o estoque dos produtos imediatamente
+              <br />• Manter o registro da venda para auditoria
               <br /><br />
-              <span className="text-brand">Esta ação não pode ser desfeita.</span>
+              <span className="text-brand">O estoque será devolvido automaticamente.</span>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -579,7 +592,7 @@ export function RecentSales({ filterStatus }: RecentSalesProps) {
               disabled={isDeleting}
               className="bg-surface/50 border-white/20 text-white hover:bg-white/10 hover:border-white/40 transition-all duration-200"
             >
-              Cancelar
+              Voltar
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmDelete}
@@ -589,10 +602,10 @@ export function RecentSales({ filterStatus }: RecentSalesProps) {
               {isDeleting ? (
                 <div className="flex items-center gap-2">
                   <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white"></div>
-                  Excluindo...
+                  Processando...
                 </div>
               ) : (
-                'Excluir'
+                'Confirmar Cancelamento'
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

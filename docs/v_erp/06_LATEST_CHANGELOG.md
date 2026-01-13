@@ -164,11 +164,67 @@
 
 ---
 
-## 3. Next Steps (Roadmap)
+### K. Fiscal Authorization & MEI Strategy (Jan 13, 2026)
 
-1. **Dashboard Refinement:** Apply virtualization to the "Recent Sales" list if
-   it grows too large.
-2. **Mobile Optimization:** Further refine touch targets for the "Stitch" grid
-   on small phones (<375px).
-3. **Fiscal Automation:** Enable auto-emission background jobs for authorized
-   clients.
+- **Authorization Success:** First real NFC-e authorized (Green status) via
+  Nuvem Fiscal.
+- **MEI Simplification Protocol:**
+  - **Issue:** SEFAZ rejected standard ST codes (CFOP 5405 / CSOSN 500) for MEI
+    issuers with "CRT=4".
+  - **Solution:** Implemented a backend translation layer that forces **CFOP
+    5102** and **CSOSN 102** for all items in the XML payload.
+  - **Benefit:** Ensures 100% approval rate without corrupting the internal
+    database (which maintains 5405 for inventory/cost control).
+- **Data Integrity (Hard Reset):**
+  - Audited 583 products.
+  - Mass-updated NCM/CEST codes for 22 categories using a SQL strategy to fix
+    NULL values.
+  - Corrected outliers (Non-Alcoholic Beer, Tonic Water).
+
+---
+
+### L. Sales Cancellation & Stock Restoration (Jan 13, 2026)
+
+- **RPC Implementation:** `cancel_sale` function created to handle atomic
+  cancellations.
+- **Stock Restoration:**
+  - **Guaranteed Return:** Cancellation now iterates through all items and
+    triggers `create_inventory_movement` with type `'return'` and **positive**
+    quantity.
+  - **Traceability:** Logs the movement as a correction linked to the sale.
+- **Frontend Sync:** UI now disables "Delete" (Hard Delete) and uses "Cancel"
+  (Soft Delete) with visual integrity (Strikethrough + Badge).
+- **Fiscal Safoguard:** RPC checks `invoice_logs` and prevents cancellation if a
+  valid NFC-e exists (Optional/Configurable).
+
+---
+
+### M. Customer Metrics Automation (Jan 13, 2026)
+
+- **Problem:** Customer "Total Spent" and "Last Purchase" were obsolete (zeroed)
+  because the legacy View `v_customer_stats` was missing and the column
+  `lifetime_value` had no updater.
+- **Solution (Performance):**
+  - **Database Trigger:** Implemented `trg_update_customer_metrics` on `sales`
+    table. It recalculates metrics only for the affected customer on every
+    Insert/Update/Delete.
+  - **Backfill:** Executed a one-time script into `adega_prod` and `adega_dev`
+    to regenerate historical data.
+- **Result:** Dashboard now reads directly from `customers` table (O(1)) instead
+  of calculating aggregates on the fly.
+
+---
+
+### N. Database Parity & Security Synchronization (Jan 13, 2026)
+
+- **Audit Scale:** Strict comparison between `adega` (Prod) and `adega-dev`
+  (Test).
+- **Synchronization Executed:**
+  - **Schema:** Added missing columns to `batch_units` (Traceability) and
+    `store_settings` (Fiscal) in Dev to match Prod.
+  - **Security (Promoted to Prod):** Promoted `validate_stock_update` trigger
+    from Dev to Prod.
+    - **Impact:** Prevents ANY manual update to `stock_quantity`. Stock can ONLY
+      be changed via `create_inventory_movement` RPC (Audit Trail).
+- **Standard:** "Zero Trust" policy now enforced identically in both
+  environments.

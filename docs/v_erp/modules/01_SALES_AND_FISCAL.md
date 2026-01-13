@@ -66,6 +66,18 @@ Integrated with **Nuvem Fiscal** via Supabase Edge Function.
   applicable.
 - **Timezone:** Strict `America/Sao_Paulo` enforcement for all timestamps.
 
+### MEI Specific Logic (Fiscal Simplification)
+
+- **Strategy:** To prevent rejection by SEFAZ-SP (Error 386/400), we apply a
+  "Fiscal Translation" layer for MEI issuers (CRT=4).
+- **Rule:** Regardless of the product's internal classification (e.g., CFOP 5405
+  for ST control), the NFC-e payload is **forced** to:
+  - **CFOP:** `5102` (Venda de mercadoria adquirida de terceiros).
+  - **CSOSN:** `102` (Tributada pelo Simples Nacional sem permissão de crédito).
+- **Reasoning:** Simples Nacional (MEI) pays taxes based on gross revenue
+  (PGDAS), ignoring individual item taxation rules (ST) at the POS emission
+  moment for typical retail scenarios.
+
 ### Fiscal Address Structure (v2.1)
 
 To comply with **Nuvem Fiscal / SEFAZ**, we utilize a strict JSONB structure in
@@ -155,7 +167,35 @@ The system handles "Accounts Receivable" via the **Settlement Flow**.
 - **Handler:** Edge Function `fiscal-handler`.
 - **Status:** `fiscal_issuer_status` (pending, authorized, error).
 
-## 6. Data Structure
+## 6. Cancellation & Returns Protocol
+
+To ensure inventory accuracy and fiscal traceability, the "Delete" action has
+been replaced by a "Cancel" flow.
+
+### A. The Cancellation RPC (`cancel_sale`)
+
+- **Trigger:** Admin/Manager clicks "Cancelar" in Recent Sales.
+- **Process:**
+  1. **Validation:** Checks if Sale exists, is not already cancelled, and
+     (optionally) if no NFC-e is authorized.
+  2. **Inventory Reversal:**
+     - Iterates through all `sale_items`.
+     - Calls `create_inventory_movement(qty, 'return')`.
+     - **Result:** Stock is immediately credited back to `products`
+       (Loose/Package units respecting `sale_type`).
+  3. **Status Update:**
+     - Sets `sales.status = 'cancelled'`.
+     - Sets `sales.status_enum = 'cancelled'`.
+     - Soft Delete: Record remains in DB for audit.
+
+### B. UI Representation
+
+- **List View:** Cancelled sales appear with `opacity-50`, strikethrough text,
+  and a red "CANCELADA" badge.
+- **Actions:** Cancellation button is hidden for already-cancelled sales to
+  prevent double-restoration.
+
+## 7. Data Structure
 
 ### Table: `sales`
 

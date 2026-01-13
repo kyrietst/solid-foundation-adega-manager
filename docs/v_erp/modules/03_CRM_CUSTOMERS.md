@@ -15,6 +15,13 @@ The CRM is the foundation for:
 - **Unified Form:** `CustomerForm.tsx` handles both Create and Edit.
 - **Hook:** `use-crm.ts` manages API calls and sanitation.
 - **Types:** Strict interface `CustomerProfile`.
+- **Metrics Automation:**
+  - `lifetime_value` and `last_purchase_date` are physical columns in the
+    `customers` table.
+  - **Trigger:** `trg_update_customer_metrics` (on table `sales`) keeps these
+    columns in sync automatically.
+  - **Performance:** Frontend reads these columns directly (O(1)), avoiding
+    heavy aggregations.
 
 ## 3. Fiscal Requirements
 

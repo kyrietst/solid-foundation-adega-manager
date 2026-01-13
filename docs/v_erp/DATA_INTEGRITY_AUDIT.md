@@ -12,6 +12,9 @@ e componentes placeholder. O sistema encontra-se em estágio avançado de
 integridade, com a grande maioria dos módulos consumindo dados reais do Supabase
 via RPCs ou Query Builder.
 
+**Update (13/01/2026):** Realizada Auditoria de Paridade entre Prod e Dev.
+Sincronização de schema (Tabelas e Segurança) concluída com sucesso.
+
 ---
 
 ## 2. Detalhamento por Módulo
