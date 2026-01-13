@@ -11,6 +11,20 @@ export interface ReceiptItem {
   category?: string;
 }
 
+export interface StoreInfo {
+  trade_name: string;
+  business_name: string;
+  cnpj: string;
+  address: {
+    street: string;
+    number: string;
+    neighborhood: string;
+    city: string;
+    state: string;
+    zip_code: string;
+  }
+}
+
 export interface ReceiptData {
   id: string;
   created_at: string;
@@ -27,6 +41,7 @@ export interface ReceiptData {
   address?: string;
   deliveryInstructions?: string;
   customer_cpf_cnpj?: string; // Added for Fiscal
+  store_info?: StoreInfo;
 }
 
 // Minimal fiscal data interface needed for printing
@@ -80,6 +95,21 @@ export const ReceiptPrint: React.FC<ReceiptPrintProps> = ({
   // Determine valid QR Code URL
   const qrValue = fiscalData?.qrcode_url || fiscalData?.url_consulta_qrcode || fiscalData?.chave || '';
 
+  // Store Fallback (if missing from hook) to avoid crash, but prefer empty or safe default
+  const store = data.store_info || {
+    trade_name: "ADEGA ANITA'S",
+    business_name: "ADEGA ANITA'S LTDA",
+    cnpj: "00.000.000/0000-00",
+    address: {
+      street: "Endereço não configurado",
+      number: "",
+      neighborhood: "",
+      city: "",
+      state: "",
+      zip_code: ""
+    }
+  };
+
   return (
     <div className="print-area bg-white text-black">
       <div className="receipt-print">
@@ -88,10 +118,15 @@ export const ReceiptPrint: React.FC<ReceiptPrintProps> = ({
         <div className="receipt-header">
           {isFiscal ? (
             <>
-              <div className="font-bold text-sm">ADEGA ANITA'S LTDA</div>
-              <div className="text-[10px]">CNPJ: 58.129.680/0001-20</div>
-              <div className="text-[10px]">Av. do Taboão, 4450 - Taboão</div>
-              <div className="text-[10px] mb-1">São Bernardo do Campo - SP</div>
+              <div className="font-bold text-sm uppercase">{store.business_name}</div>
+              <div className="text-[10px]">CNPJ: {store.cnpj}</div>
+              <div className="text-[10px] uppercase">
+                {store.address.street}, {store.address.number}
+                {store.address.neighborhood ? ` - ${store.address.neighborhood}` : ''}
+              </div>
+              <div className="text-[10px] mb-1 uppercase">
+                {store.address.city} - {store.address.state}
+              </div>
               <div className="font-bold text-xs border-y border-black py-1 my-1">
                 DANFE NFC-e - Documento Auxiliar<br/>
                 da Nota Fiscal de Consumidor Eletrônica
@@ -102,8 +137,8 @@ export const ReceiptPrint: React.FC<ReceiptPrintProps> = ({
             </>
           ) : (
             <>
-              <div className="text-lg">ADEGA ANITA'S</div>
-              <div>é tudo que precisamos</div>
+              <div className="text-lg uppercase">{store.trade_name}</div>
+              <div style={{ fontSize: '10px' }}>{store.address.street}, {store.address.number}</div>
               {data.delivery && (
                 <div className="text-lg" style={{ marginTop: '2px' }}>★ DELIVERY ★</div>
               )}

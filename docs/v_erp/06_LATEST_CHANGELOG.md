@@ -228,3 +228,18 @@
       be changed via `create_inventory_movement` RPC (Audit Trail).
 - **Standard:** "Zero Trust" policy now enforced identically in both
   environments.
+
+### O. Critical Hotfixes & Stability (Jan 13, 2026)
+
+- **RPC Overloading Resolution (Error PGRST203):**
+  - **Issue:** Database contained 4 conflicting versions of `process_sale` due
+    to split-payment migrations.
+  - **Fix:** Dropped all versions and re-applied the single authoritative RPC.
+- **Missing Table Restoration (Error P0001):**
+  - **Issue:** `sale_payments` table was missing in Production despite being
+    referenced by the RPC.
+  - **Fix:** Created table with strict RLS policies and FK constraints to
+    `sales` and `payment_methods`.
+  - **Result:** Split Payment flow now fully operational in Production.
+
+---

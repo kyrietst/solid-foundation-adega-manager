@@ -7,6 +7,22 @@ import { supabase } from '@/core/api/supabase/client';
 import { useAuth } from '@/app/providers/AuthContext';
 import type { ReceiptData, ReceiptItem } from '../components/ReceiptPrint';
 
+
+
+// Helper for store settings (could be a separate hook, but keeping it co-located for now to ensure receipt atomicity)
+async function fetchStoreSettings() {
+  const { data, error } = await supabase
+    .from('store_settings')
+    .select('*')
+    .single();
+    
+  if (error) {
+    console.warn('Could not fetch store settings for receipt:', error);
+    return null;
+  }
+  return data;
+}
+
 export const useReceiptData = (saleId: string | null) => {
   const { user } = useAuth();
 
@@ -15,33 +31,38 @@ export const useReceiptData = (saleId: string | null) => {
     queryFn: async (): Promise<ReceiptData | null> => {
       if (!saleId) return null;
 
+      // Parallel fetch: Sale Data + Store Settings
+      const [saleResponse, storeResponse] = await Promise.all([
+        supabase
+          .from('sales')
+          .select(`
+            id,
+            created_at,
+            total_amount,
+            final_amount,
+            discount_amount,
+            payment_method,
+            delivery,
+            delivery_fee,
+            delivery_address,
+            delivery_instructions,
+            customers (
+              name,
+              phone,
+              address,
+              cpf_cnpj
+            ),
+            profiles (
+              name
+            )
+          `)
+          .eq('id', saleId)
+          .single(),
+        fetchStoreSettings()
+      ]);
 
-      // Buscar dados principais da venda
-      const { data: saleData, error: saleError } = await supabase
-        .from('sales')
-        .select(`
-          id,
-          created_at,
-          total_amount,
-          final_amount,
-          discount_amount,
-          payment_method,
-          delivery,
-          delivery_fee,
-          delivery_address,
-          delivery_instructions,
-          customers (
-            name,
-            phone,
-            address,
-            cpf_cnpj
-          ),
-          profiles (
-            name
-          )
-        `)
-        .eq('id', saleId)
-        .single();
+      const { data: saleData, error: saleError } = saleResponse;
+      const storeSettings = storeResponse;
 
       if (saleError) {
         console.error('❌ Erro ao buscar dados da venda:', saleError);
@@ -152,7 +173,22 @@ export const useReceiptData = (saleId: string | null) => {
         items,
         delivery_fee: saleData.delivery_fee ? Number(saleData.delivery_fee) : undefined,
         address: formattedAddress,
-        deliveryInstructions: saleData.delivery_instructions || undefined
+        deliveryInstructions: saleData.delivery_instructions || undefined,
+        
+        // Dynamic Store Info
+        store_info: storeSettings ? {
+          trade_name: storeSettings.trade_name || 'Adega',
+          business_name: storeSettings.business_name || 'Adega',
+          cnpj: storeSettings.cnpj || '',
+          address: {
+            street: storeSettings.address_street || '',
+            number: storeSettings.address_number || '',
+            neighborhood: storeSettings.address_neighborhood || '',
+            city: storeSettings.address_city || '',
+            state: storeSettings.address_state || '',
+            zip_code: storeSettings.address_zip_code || ''
+          }
+        } : undefined
       };
 
       return receiptData;
