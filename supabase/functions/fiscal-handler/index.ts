@@ -687,6 +687,7 @@ Deno.serve(async (req) => {
                                  external_id: recoveredNote.id || 'RECOVERED',
                                  xml_url: recoveredXmlUrl,
                                  pdf_url: recoveredPdfUrl,
+                                 qrcode_url: recoveredNote.url_consulta_qrcode || recoveredNote.qrcode_url || null,
                                  error_message: null, 
                                  updated_at: new Date().toISOString()
                                }, { onConflict: 'sale_id' })
@@ -820,6 +821,7 @@ Deno.serve(async (req) => {
                 external_id: apiData.id || 'UNKNOWN',
                 xml_url: bestXmlUrl,
                 pdf_url: bestPdfUrl, // NOW USING STORAGE URL
+                qrcode_url: apiData.url_consulta_qrcode || apiData.qrcode_url || null,
                 error_message: null, 
                 updated_at: new Date().toISOString()
             }, { onConflict: 'sale_id' })

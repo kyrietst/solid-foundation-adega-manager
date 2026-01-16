@@ -46,6 +46,7 @@ export type Sale = {
         external_id?: string | null;
         xml_url?: string | null;
         pdf_url?: string | null;
+        qrcode_url?: string | null;
     } | null;
     customer?: {
         id: string;

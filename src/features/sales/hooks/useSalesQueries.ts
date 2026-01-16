@@ -42,7 +42,8 @@ export const useSales = (params?: {
             status,
             external_id,
             pdf_url,
-            xml_url
+            xml_url,
+            qrcode_url
           )
         `)
                 .order('created_at', { ascending: false });
