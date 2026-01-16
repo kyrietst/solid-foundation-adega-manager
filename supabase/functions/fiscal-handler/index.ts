@@ -71,6 +71,7 @@ interface PaymentMethod {
 }
 
 Deno.serve(async (req) => {
+  console.log('[Fiscal] Handler v2.1 - QR Code Fix Loaded') // Force Deploy Hash Change
   // 1. Handle CORS
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
