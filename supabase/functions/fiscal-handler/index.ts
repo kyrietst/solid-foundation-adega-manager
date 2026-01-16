@@ -750,6 +750,37 @@ Deno.serve(async (req) => {
     console.log('[Fiscal] Authorized! Updating log...')
     console.log('[Fiscal Debug] API Data Keys:', Object.keys(apiData))
     if (apiData.sefazUrlQrCode) console.log('[Fiscal Debug] Found sefazUrlQrCode')
+
+    // --- QR CODE RESCUE MISSION ---
+    let qrFromRescue = null
+    // If we don't have the explicit QR Code, we MUST fetch the full details
+    const hasDirectQr = apiData.url_consulta_qrcode || apiData.qrcode_url || apiData.url_qrcode || apiData.link_qrcode || apiData.sefazUrlQrCode
+    
+    if (!hasDirectQr && apiData.id) {
+        console.log('[Fiscal] QR Code missing in initial response. Fetching full details...')
+        try {
+            // Small delay to ensure propagation
+            await new Promise(r => setTimeout(r, 500))
+            
+            const detailRes = await fetch(`${BASE_API_URL}/nfce/${apiData.id}`, {
+                 headers: { 'Authorization': `Bearer ${access_token}` }
+            })
+            if (detailRes.ok) {
+                const detailData = await detailRes.json()
+                console.log('[Fiscal Debug] Rescue Keys:', Object.keys(detailData))
+                // Try to find it in the detailed object
+                qrFromRescue = detailData.url_consulta_qrcode || detailData.qrcode_url || detailData.sefazUrlQrCode
+                
+                // Deep search in nested objects if needed (e.g. infNFeSupl)
+                if (!qrFromRescue && detailData.infNFeSupl) {
+                     qrFromRescue = detailData.infNFeSupl.qrCode
+                }
+                console.log('[Fiscal] Rescue Result:', qrFromRescue ? 'FOUND' : 'FAILED')
+            }
+        } catch (rescueErr) {
+            console.error('[Fiscal] Rescue Failed:', rescueErr)
+        }
+    }
         // --- PROXY PDF STORAGE (Nuvem Fiscal -> Supabase Storage) ---
         let finalPdfUrl = null
         
@@ -824,7 +855,7 @@ Deno.serve(async (req) => {
                 external_id: apiData.id || 'UNKNOWN',
                 xml_url: bestXmlUrl,
                 pdf_url: bestPdfUrl, // NOW USING STORAGE URL
-                qrcode_url: apiData.url_consulta_qrcode || apiData.qrcode_url || apiData.url_qrcode || apiData.link_qrcode || apiData.sefazUrlQrCode || null,
+                qrcode_url: apiData.url_consulta_qrcode || apiData.qrcode_url || apiData.url_qrcode || apiData.link_qrcode || apiData.sefazUrlQrCode || qrFromRescue || null,
                 error_message: null, 
                 updated_at: new Date().toISOString()
             }, { onConflict: 'sale_id' })
