@@ -50,17 +50,22 @@ Logs** on the main screen.
 - Manual adjustments are forced into specific contexts (e.g., "Product Card" >
   "Adjustment") to ensure intent capture.
 
-### C. Fiscal Integration
+### C. Fiscal Integration (Hybrid)
 
 - **Vendor:** Nuvem Fiscal (API).
 - **Security:** Credentials stored in Supabase Secrets.
-- **Flow:** Frontend -> RPC (Sale) -> Edge Function (Fiscal Emission) -> API.
+- **Flow:**
+  - **Emission:** Frontend -> RPC (Sale) -> Edge Function (Fiscal Emission).
+  - **Cancellation:** Hybrid Flow (Fiscal calls API first, Non-Fiscal calls RPC
+    direct).
+- **Documentation:** See `NUVEM_FISCAL_INTEGRATION.md` for strict protocols.
 
 ## 4. Directory Structure
 
 - `src/features/`: Domain-driven modules.
 - `docs/v_erp/`:
   - `06_LATEST_CHANGELOG.md`: **Start Here** for recent updates (Stitch, Fiado).
+  - `NUVEM_FISCAL_INTEGRATION.md`: **MUST READ** for any fiscal work.
   - `standards/01_UI_UX_GUIDELINES.md`: The "Stitch" Design System.
   - `modules/01_SALES_AND_FISCAL.md`: PDV & Fiscal Flows.
 - `src/core/`: Singleton services (Supabase Client, Types).

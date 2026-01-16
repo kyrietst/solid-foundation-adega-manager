@@ -251,7 +251,7 @@ Deno.serve(async (req) => {
         let cancelData;
         try {
              cancelData = JSON.parse(cancelTxt);
-        } catch (e) {
+        } catch (_e) {
              cancelData = { error: { message: cancelTxt } };
         }
 

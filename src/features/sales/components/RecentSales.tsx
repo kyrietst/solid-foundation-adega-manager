@@ -463,7 +463,7 @@ export function RecentSales({ filterStatus }: RecentSalesProps) {
                       </Button>
                       
                       {/* Cancel/Delete Button */}
-                      {(userRole === 'admin' || userRole === 'employee' || userRole === 'manager') && sale.status !== 'cancelled' && (
+                      {((userRole as string) === 'admin' || (userRole as string) === 'employee' || (userRole as string) === 'manager') && sale.status !== 'cancelled' && (
                         <Button
                           variant="outline"
                           size="sm"

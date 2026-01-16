@@ -225,16 +225,21 @@ export const ReceiptPrint: React.FC<ReceiptPrintProps> = ({
              </div>
              
              {/* QR CODE CENTERED */}
-             <div className="flex justify-center mb-2">
-                {qrValue && (
-                   <QRCode 
-                      value={qrValue} 
-                      size={120}
-                      style={{ height: "auto", maxWidth: "100%", width: "100%" }}
-                      viewBox={`0 0 256 256`}
-                    />
-                )}
-             </div>
+              <div className="flex justify-center mb-2">
+                 {qrValue ? (
+                    <QRCode 
+                       value={qrValue} 
+                       size={120}
+                       style={{ height: "auto", maxWidth: "100%", width: "100%" }}
+                       viewBox={`0 0 256 256`}
+                     />
+                 ) : (
+                    /* Fallback when URL is missing */
+                    <div className="text-[10px] italic text-center p-2 border border-dashed border-gray-400">
+                        QR Code Indisponível<br/>Consulte pela Chave
+                    </div>
+                 )}
+              </div>
 
              <div className="text-[10px] font-bold mb-1">
                 Chave de Acesso
@@ -264,10 +269,12 @@ export const ReceiptPrint: React.FC<ReceiptPrintProps> = ({
                 <div>Protocolo de Autorização: {fiscalData.protocolo_autorizacao || fiscalData.autorizacao?.protocolo}</div>
              </div>
              
-             {/* AMBIENTE DE HOMOLOGAÇÃO */}
-             <div className="mt-4 text-xs font-bold uppercase border border-black p-1">
-                AMBIENTE DE HOMOLOGAÇÃO - SEM VALOR FISCAL
-             </div>
+             {/* AMBIENTE DE HOMOLOGAÇÃO - Display ONLY if explicitly in testing mode */}
+             {fiscalData.is_homologacao && (
+               <div className="mt-4 text-xs font-bold uppercase border border-black p-1">
+                  AMBIENTE DE HOMOLOGAÇÃO - SEM VALOR FISCAL
+               </div>
+             )}
           </div>
         ) : (
           // --- MANAGERIAL FOOTER ---

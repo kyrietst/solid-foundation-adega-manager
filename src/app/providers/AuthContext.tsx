@@ -218,7 +218,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (user.email === 'adm@adega.com') return true;
     if (!userRole) return false;
 
-    const roleHierarchy = { admin: 3, employee: 2, delivery: 1 };
+    const roleHierarchy: Record<string, number> = { admin: 3, manager: 3, employee: 2, delivery: 1 };
 
     if (Array.isArray(requiredRole)) {
       return requiredRole.includes(userRole);
