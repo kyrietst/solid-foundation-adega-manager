@@ -238,8 +238,10 @@ Deno.serve(async (req) => {
 
         // CALL NUVEM FISCAL CANCEL
         const cancelUrl = `${BASE_API_URL}/nfce/${externalId}/cancelar`;
+        console.log(`[Fiscal] Cancel URL: ${cancelUrl} [Method: POST]`);
+        
         const cancelRes = await fetch(cancelUrl, {
-            method: 'PUT',
+            method: 'POST',
             headers: {
                 'Authorization': `Bearer ${access_token}`,
                 'Content-Type': 'application/json'

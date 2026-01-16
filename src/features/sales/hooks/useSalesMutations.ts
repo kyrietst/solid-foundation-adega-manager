@@ -273,6 +273,8 @@ export const useDeleteSale = () => {
 
                 if (!response.ok) {
                     const errorText = await response.text();
+                    console.error('[Fiscal] Fetch failed:', response.status, errorText);
+                    
                     let errorMessage = 'Erro ao contactar SEFAZ.';
                     try {
                         const errorJson = JSON.parse(errorText);
@@ -280,7 +282,15 @@ export const useDeleteSale = () => {
                     } catch (e) {
                          errorMessage = errorText;
                     }
-                    throw new Error(errorMessage); // ABORT: Do not proceed to stock restore
+                    
+                    // CRITICAL SECURITY: Ensure we throw to prevent DB cancellation
+                    throw new Error(errorMessage); 
+                }
+
+                // Double check business logic success even if 200 OK (some APIs return 200 with error info)
+                const responseData = await response.json();
+                if (responseData.error || (responseData.data && responseData.data.status === 'erro')) {
+                     throw new Error(responseData.error || 'Erro na resposta da SEFAZ.');
                 }
             }
 

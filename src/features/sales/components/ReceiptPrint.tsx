@@ -92,8 +92,8 @@ export const ReceiptPrint: React.FC<ReceiptPrintProps> = ({
 
   const isFiscal = mode === 'fiscal' && fiscalData;
 
-  // Determine valid QR Code URL
-  const qrValue = fiscalData?.qrcode_url || fiscalData?.url_consulta_qrcode || fiscalData?.chave || '';
+  // Determine valid QR Code URL (Prioritize explicit URL from SEFAZ/Nuvem Fiscal)
+  const qrValue = fiscalData?.url_consulta_qrcode || fiscalData?.qrcode_url || fiscalData?.chave || '';
 
   // Store Fallback (if missing from hook) to avoid crash, but prefer empty or safe default
   const store = data.store_info || {
