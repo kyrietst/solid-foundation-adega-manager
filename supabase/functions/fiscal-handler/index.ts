@@ -237,7 +237,7 @@ Deno.serve(async (req) => {
         console.log(`[Fiscal] Cancelling Invoice ID: ${externalId}`);
 
         // CALL NUVEM FISCAL CANCEL
-        const cancelUrl = `${BASE_API_URL}/nfce/${externalId}/cancelar`;
+        const cancelUrl = `${BASE_API_URL}/nfce/${externalId}/cancelamento`;
         console.log(`[Fiscal] Cancel URL: ${cancelUrl} [Method: POST]`);
         
         const cancelRes = await fetch(cancelUrl, {
