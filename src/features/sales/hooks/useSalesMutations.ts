@@ -256,7 +256,7 @@ export const useDeleteSale = () => {
 
                 // Dynamically find env to hit correct endpoint (Not strictly needed if we assume standard path, but good for safety)
                 // Use a direct fetch to the function URL
-                const functionUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/fiscal-handler`;
+                const functionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/fiscal-handler`;
                 
                 const response = await fetch(functionUrl, {
                     method: 'POST',
