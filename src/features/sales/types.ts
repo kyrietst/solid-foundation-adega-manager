@@ -4,7 +4,7 @@ import { DeliveryData } from "@/features/sales/components/DeliveryOptionsModal";
 
 // --- Types extracted from use-sales.ts ---
 
-export type AllowedRole = 'admin' | 'employee';
+export type AllowedRole = 'admin' | 'manager' | 'employee';
 
 export type PaymentMethod = {
     id: string;

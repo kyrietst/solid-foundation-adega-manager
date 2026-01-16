@@ -215,8 +215,8 @@ export const useDeleteSale = () => {
     const { toast } = useToast();
 
     return useMutation({
-        mutationFn: async ({ saleId, user }: { saleId: string; user: { id: string } }) => {
-            const allowedRoles: AllowedRole[] = ['admin'];
+        mutationFn: async ({ saleId, user, manualReason }: { saleId: string; user: { id: string }; manualReason?: string }) => {
+            const allowedRoles: AllowedRole[] = ['admin', 'manager']; // Expanded roles for cancellation
 
             const { data: profileVal } = await supabase
                 .from('profiles')
@@ -230,10 +230,66 @@ export const useDeleteSale = () => {
                 throw new Error('Apenas administradores podem cancelar vendas.');
             }
 
-            // USANDO RPC DE CANCELAMENTO (RECUPERA ESTOQUE)
+            // --- HYBRID CANCELLATION LOGIC (Fiscal vs Interno) ---
+            
+            // 1. Check Fiscal Status via Invoice Logs
+            // We need to know if there is an AUTHORIZED invoice for this sale.
+            const { data: logObj } = await supabase
+                .from('invoice_logs')
+                .select('status')
+                .eq('sale_id', saleId)
+                .eq('status', 'authorized')
+                .maybeSingle();
+            
+            const isFiscal = !!logObj;
+
+            if (isFiscal) {
+                // FLUXO A: FISCAL (COM NOTA)
+                if (!manualReason || manualReason.length < 15) {
+                    throw new Error('Para cancelar uma venda com Nota Fiscal, é obrigatório informar uma justificativa (mínimo 15 caracteres).');
+                }
+
+                // Call Edge Function
+                // UX: User is notified via LOADING state in the button/toast externally managed or via mutation state
+                const { data: { session } } = await supabase.auth.getSession();
+                const token = session?.access_token;
+
+                // Dynamically find env to hit correct endpoint (Not strictly needed if we assume standard path, but good for safety)
+                // Use a direct fetch to the function URL
+                const functionUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/fiscal-handler`;
+                
+                const response = await fetch(functionUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        sale_id: saleId,
+                        action: 'cancel',
+                        reason: manualReason
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    let errorMessage = 'Erro ao contactar SEFAZ.';
+                    try {
+                        const errorJson = JSON.parse(errorText);
+                        errorMessage = errorJson.error?.message || errorJson.data?.error?.message || errorMessage;
+                    } catch (e) {
+                         errorMessage = errorText;
+                    }
+                    throw new Error(errorMessage); // ABORT: Do not proceed to stock restore
+                }
+            }
+
+            // FLUXO B: INTERNO (RPC)
+            // If we reached here, either it was non-fiscal OR fiscal cancellation succeeded.
+            // Proceed to Database Restoration
             const { data, error } = await supabase.rpc('cancel_sale' as any, {
                 p_sale_id: saleId,
-                p_reason: 'Cancelamento por administrador'
+                p_reason: manualReason || 'Cancelamento manual'
             });
 
             if (error) throw error;
@@ -248,7 +304,7 @@ export const useDeleteSale = () => {
             queryClient.invalidateQueries({ queryKey: ['financial-metrics'] });
             toast({
                 title: 'Venda cancelada',
-                description: 'A venda foi removida e o estoque restaurado.',
+                description: 'A venda foi estornada e o estoque restaurado.',
             });
         },
         onError: (error: Error) => {

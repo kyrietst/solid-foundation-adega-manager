@@ -10,6 +10,8 @@ const AUTH_URL = 'https://auth.nuvemfiscal.com.br/oauth/token'
 interface FiscalPayload {
   sale_id: string;
   cpfNaNota?: string; // Optional manual CPF
+  action?: 'emit' | 'cancel';
+  reason?: string; 
   [key: string]: unknown;
 }
 
@@ -113,14 +115,14 @@ Deno.serve(async (req) => {
 
     // 4. Parse Request
     const body = await req.json() as FiscalPayload
-    const { sale_id, cpfNaNota } = body
+    const { sale_id, cpfNaNota, action, reason } = body
     
     sale_id_for_log = sale_id // Capture ID for global error logging
     if (!sale_id) {
        throw new Error('Missing sale_id in request body')
     }
 
-    console.log(`[Fiscal] Starting emission for Sale ID: ${sale_id}`)
+    console.log(`[Fiscal] Starting operation for Sale ID: ${sale_id} | Action: ${action || 'emit'}`)
 
     // 5. Data Fetching (Parallel)
     const [saleResponse, settingsResponse] = await Promise.all([
@@ -128,7 +130,6 @@ Deno.serve(async (req) => {
         .from('sales')
         .select(`
           *,
-
           sale_items (
             *,
             fiscal_snapshot,
@@ -166,26 +167,6 @@ Deno.serve(async (req) => {
 
     const sale = saleResponse.data
     const settings = settingsResponse.data
-
-    // 5b. Fetch Payment Method Manually (Fix Join Issue)
-    let paymentCode = '01'; // Default Cash
-    if (sale.payment_method_id) {
-        const { data: pm } = await supabaseClient
-            .from('payment_methods')
-            .select('code')
-            .eq('id', sale.payment_method_id)
-            .single();
-        if (pm) paymentCode = pm.code;
-    } else if (sale.payment_method === 'pix') {
-        paymentCode = '17';
-    } else if (sale.payment_method === 'credit') {
-        paymentCode = '03';
-    } else if (sale.payment_method === 'debit') {
-        paymentCode = '04';
-    }
-    // Inject into sale object for downstream logic
-    // deno-lint-ignore no-explicit-any
-    (sale as any).payment_methods = { code: paymentCode };
 
     // 6. Config Environment Logic (Dynamic)
     const envSetting = settings.environment?.toLowerCase() || 'development';
@@ -231,6 +212,72 @@ Deno.serve(async (req) => {
 
     const { access_token } = await authRes.json()
     if (!access_token) throw new Error('Falha ao obter access_token')
+
+    // --- CANCELLATION BLOCK ---
+    if (action === 'cancel') {
+        console.log('[Fiscal] Starting Cancellation Flow...');
+        
+        if (!reason || reason.length < 15) {
+            throw new Error('Justificativa de cancelamento inválida (Mínimo 15 caracteres).');
+        }
+
+        // Fetch authorized invoice log to get External ID
+        const { data: logObj, error: logError } = await supabaseClient
+            .from('invoice_logs')
+            .select('external_id, status')
+            .eq('sale_id', sale_id)
+            .eq('status', 'authorized')
+            .single();
+
+        if (logError || !logObj) {
+             throw new Error('Nota Fiscal não encontrada ou não autorizada. Não é possível cancelar.');
+        }
+
+        const externalId = logObj.external_id;
+        console.log(`[Fiscal] Cancelling Invoice ID: ${externalId}`);
+
+        // CALL NUVEM FISCAL CANCEL
+        const cancelUrl = `${BASE_API_URL}/nfce/${externalId}/cancelar`;
+        const cancelRes = await fetch(cancelUrl, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${access_token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ justificativa: reason })
+        });
+
+        const cancelTxt = await cancelRes.text();
+        let cancelData;
+        try {
+             cancelData = JSON.parse(cancelTxt);
+        } catch (e) {
+             cancelData = { error: { message: cancelTxt } };
+        }
+
+        if (!cancelRes.ok || cancelData.status === 'erro' || cancelData.status === 'rejeitado') {
+             const errorMsg = cancelData.error?.message || cancelData.motivo_status || 'Erro no cancelamento.';
+             throw new Error(`Erro Nuvem Fiscal: ${errorMsg}`);
+        }
+
+        console.log('[Fiscal] Cancellation Approved by SEFAZ.');
+
+        // Update Logs
+        await supabaseClient
+            .from('invoice_logs')
+            .update({ 
+                status: 'cancelled', 
+                error_message: `CANCELADO: ${reason}`,
+                updated_at: new Date().toISOString()
+            })
+            .eq('sale_id', sale_id);
+
+        return new Response(
+            JSON.stringify({ success: true, message: 'Nota Fiscal Cancelada com Sucesso.' }),
+            { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+    }
+    // --- END CANCELLATION BLOCK ---
 
     // 9. The Great Mapping (JSON Factory)
     

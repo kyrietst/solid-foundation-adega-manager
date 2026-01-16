@@ -42,7 +42,8 @@ export function RecentSales({ filterStatus }: RecentSalesProps) {
   });
   const { mutate: deleteSale, isPending: isDeleting } = useDeleteSale();
   const { user, userRole } = useAuth();
-  const [saleToDelete, setSaleToDelete] = useState<{ id: string, number: number } | null>(null);
+  const [saleToDelete, setSaleToDelete] = useState<{ id: string, number: number, isFiscal: boolean } | null>(null);
+  const [cancellationReason, setCancellationReason] = useState("");
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [expandedSaleId, setExpandedSaleId] = useState<string | null>(null);
   const { toast } = useToast();
@@ -73,8 +74,9 @@ export function RecentSales({ filterStatus }: RecentSalesProps) {
     setExpandedSaleId(expandedSaleId === saleId ? null : saleId);
   };
 
-  const handleDeleteClick = (saleId: string, saleNumber: number) => {
-    setSaleToDelete({ id: saleId, number: saleNumber });
+  const handleDeleteClick = (saleId: string, saleNumber: number, isFiscal: boolean) => {
+    setSaleToDelete({ id: saleId, number: saleNumber, isFiscal });
+    setCancellationReason(""); // Reset reason
     setIsDeleteDialogOpen(true);
   };
 
@@ -112,8 +114,17 @@ export function RecentSales({ filterStatus }: RecentSalesProps) {
       return;
     }
 
+    if (saleToDelete.isFiscal && cancellationReason.length < 15) {
+        toast({
+            title: "Justificativa Curta",
+            description: "Para nota fiscal, a justificativa deve ter pelo menos 15 caracteres.",
+            variant: "destructive",
+        });
+        return;
+    }
+
     // Executa a mutação de exclusão
-    deleteSale({ saleId: saleToDelete.id, user }, {
+    deleteSale({ saleId: saleToDelete.id, user, manualReason: cancellationReason }, {
       onSuccess: () => {
         setIsDeleteDialogOpen(false);
         setSaleToDelete(null);
@@ -127,7 +138,7 @@ export function RecentSales({ filterStatus }: RecentSalesProps) {
         console.error('Erro na exclusão:', error);
         toast({
           title: "Erro na exclusão",
-          description: "Não foi possível excluir a venda. Tente novamente.",
+          description: error.message || "Não foi possível excluir a venda. Tente novamente.",
           variant: "destructive",
         });
       }
@@ -452,12 +463,12 @@ export function RecentSales({ filterStatus }: RecentSalesProps) {
                       </Button>
                       
                       {/* Cancel/Delete Button */}
-                      {(userRole === 'admin' || userRole === 'employee') && sale.status !== 'cancelled' && (
+                      {(userRole === 'admin' || userRole === 'employee' || userRole === 'manager') && sale.status !== 'cancelled' && (
                         <Button
                           variant="outline"
                           size="sm"
                           className="h-8 w-8 p-0 bg-surface/50 border-red-400/30 text-red-400 hover:bg-red-400/10 hover:border-red-400/50 hover:text-red-300 transition-all duration-200 backdrop-blur-sm disabled:opacity-50"
-                          onClick={() => handleDeleteClick(sale.id, sale.order_number)}
+                          onClick={() => handleDeleteClick(sale.id, sale.order_number, sale.invoice?.status === 'authorized')}
                           disabled={isDeleting}
                         >
                           <Trash2 className="h-3 w-3" />
@@ -574,16 +585,55 @@ export function RecentSales({ filterStatus }: RecentSalesProps) {
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Cancelar venda</AlertDialogTitle>
+            <AlertDialogTitle>
+                {saleToDelete?.isFiscal ? 'Cancelar Nota Fiscal' : 'Cancelar Venda'}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja cancelar o pedido #{saleToDelete?.number}?
-              <br /><br />
-              <strong>Esta ação irá:</strong>
-              <br />• Alterar o status da venda para 'Cancelada'
-              <br />• Restaurar o estoque dos produtos imediatamente
-              <br />• Manter o registro da venda para auditoria
-              <br /><br />
-              <span className="text-brand">O estoque será devolvido automaticamente.</span>
+              {saleToDelete?.isFiscal ? (
+                  <div className="bg-red-500/10 border border-red-500/20 rounded p-3 mb-4 text-red-300">
+                    <strong>Atenção:</strong> Esta venda possui Nota Fiscal Autorizada.
+                    O cancelamento será enviado para a SEFAZ e é irreversível.
+                  </div>
+              ) : (
+                  'Tem certeza que deseja cancelar esta venda?'
+              )}
+              
+              <div className="mt-2 space-y-2">
+                  <p>
+                    Pedido #{saleToDelete?.number} - {saleToDelete?.isFiscal ? 'Estorno Fiscal + Estoque' : 'Estorno de Estoque'}
+                  </p>
+                  
+                  {saleToDelete?.isFiscal && (
+                      <div className="mt-4">
+                          <label className="text-xs uppercase font-bold text-muted-foreground mb-1 block">
+                            Justificativa (Obrigatório, min. 15 caracteres)
+                          </label>
+                          <textarea
+                              className="w-full bg-black/20 border border-white/10 rounded-md p-2 text-sm text-foreground focus:outline-none focus:border-brand/50 resize-none h-24"
+                              placeholder="Motivo do cancelamento (ex: Erro no preenchimento de valores)"
+                              value={cancellationReason}
+                              onChange={(e) => setCancellationReason(e.target.value)}
+                          />
+                          <p className="text-right text-[10px] text-muted-foreground mt-1">
+                              {cancellationReason.length}/15
+                          </p>
+                      </div>
+                  )}
+
+                  {!saleToDelete?.isFiscal && (
+                     <div className="mt-4">
+                          <label className="text-xs uppercase font-bold text-muted-foreground mb-1 block">
+                            Justificativa (Opcional)
+                          </label>
+                          <textarea
+                              className="w-full bg-black/20 border border-white/10 rounded-md p-2 text-sm text-foreground focus:outline-none focus:border-brand/50 resize-none h-20"
+                              placeholder="Motivo do cancelamento..."
+                              value={cancellationReason}
+                              onChange={(e) => setCancellationReason(e.target.value)}
+                          />
+                      </div>
+                  )}
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -601,8 +651,8 @@ export function RecentSales({ filterStatus }: RecentSalesProps) {
             >
               {isDeleting ? (
                 <div className="flex items-center gap-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white"></div>
-                  Processando...
+                  <LoadingSpinner size="sm" color="white" />
+                  {saleToDelete?.isFiscal ? 'Aguardando SEFAZ...' : 'Cancelando...'}
                 </div>
               ) : (
                 'Confirmar Cancelamento'
