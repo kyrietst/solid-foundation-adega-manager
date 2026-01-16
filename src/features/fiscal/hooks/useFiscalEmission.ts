@@ -5,7 +5,7 @@ import { useToast } from '@/shared/hooks/common/use-toast';
 export interface FiscalResponse {
   message: string;
   data: {
-    status: 'authorized' | 'rejected' | 'pending' | 'cancelled';
+    status: 'authorized' | 'rejected' | 'pending' | 'cancelled' | 'autorizado';
     external_id: string;
     xml_url: string;
     pdf_url: string;

@@ -114,7 +114,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
       setFiscalData(data);
       
       // Se autorizado, mudar para modo fiscal e imprimir
-      if (data.status === 'authorized') {
+      if (data.status === 'authorized' || data.status === 'autorizado') {
         setPrintMode('fiscal');
         
         // Aguardar renderização e imprimir
