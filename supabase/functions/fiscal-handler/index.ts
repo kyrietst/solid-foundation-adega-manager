@@ -748,6 +748,8 @@ Deno.serve(async (req) => {
     // Map response fields (adjust based on actual Nuvem Fiscal response structure)
     // 12. Success
     console.log('[Fiscal] Authorized! Updating log...')
+    console.log('[Fiscal Debug] API Data Keys:', Object.keys(apiData))
+    if (apiData.sefazUrlQrCode) console.log('[Fiscal Debug] Found sefazUrlQrCode')
         // --- PROXY PDF STORAGE (Nuvem Fiscal -> Supabase Storage) ---
         let finalPdfUrl = null
         
@@ -822,7 +824,7 @@ Deno.serve(async (req) => {
                 external_id: apiData.id || 'UNKNOWN',
                 xml_url: bestXmlUrl,
                 pdf_url: bestPdfUrl, // NOW USING STORAGE URL
-                qrcode_url: apiData.url_consulta_qrcode || apiData.qrcode_url || null,
+                qrcode_url: apiData.url_consulta_qrcode || apiData.qrcode_url || apiData.url_qrcode || apiData.link_qrcode || apiData.sefazUrlQrCode || null,
                 error_message: null, 
                 updated_at: new Date().toISOString()
             }, { onConflict: 'sale_id' })

@@ -40,7 +40,7 @@ export const useFiscalEmission = () => {
       const responseStatus = data?.data?.status || data?.status;
       const responseMessage = data?.message || "Nota autorizada";
 
-      if (responseStatus === 'authorized') {
+      if (responseStatus === 'authorized' || responseStatus === 'autorizado') {
         toast({
           title: "✅ Nota Fiscal Autorizada!",
           description: responseMessage,
