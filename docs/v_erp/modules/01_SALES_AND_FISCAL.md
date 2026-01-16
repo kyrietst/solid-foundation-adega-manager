@@ -100,29 +100,25 @@ type FiscalAddress = {
 > This structure is auto-hydrated from `customers.address` JSONB or manually
 > input via CEP Search during checkout.
 
-### Printing Architecture (Hybrid Mode) - _Planned Impl._
+### Printing Architecture (Managerial vs Fiscal)
 
 To support both **Simple Receipt** (Non-Fiscal) and **NFC-e** (Fiscal) printing
 on thermal printers (58mm/80mm), we use a hybrid approach:
 
-1. **Non-Fiscal (Receipt):**
+1. **Non-Fiscal (Management Recibo):**
    - **Method:** `window.print()`.
    - **Styling:** CSS `@media print` isolation (`thermal-print.css`).
-   - **Content:** The existing Visible Modal Content is printed.
+   - **Data Source:** **Dynamic**. Pulls directly from `store_settings` (Header)
+     and `sales` (Items). No hardcoded strings.
+   - **Content:** Visible Modal Content is printed.
 
 2. **Fiscal (NFC-e):**
    - **Constraint:** Nuvem Fiscal returns a PDF URL. Browsers cannot "silently"
      print cross-origin PDFs without opening new tabs.
-   - **Solution:** We will implement an **HTML Renderer (DANFE View)** inside
-     the app.
-   - **Flow:**
-     1. Fetch XML/JSON from Nuvem Fiscal.
-     2. Render a "Secret" hidden component (HTML) that mimics the standard DANFE
-        Simplified layout.
-     3. Use the _same_ `window.print()` mechanism to target this specific fiscal
-        component.
-     4. **Benefit:** Eliminates the need for external PDF viewers and allows
-        generic thermal printing.
+   - **Current State:** Opens PDF in new tab.
+   - **Future:** We will implement an **HTML Renderer (DANFE View)** inside the
+     app to mimic the PDF layout, allowing silent thermal printing via the same
+     CSS mechanism.
 
 ## 2.1 Settlement (Fiado / Cobranças)
 

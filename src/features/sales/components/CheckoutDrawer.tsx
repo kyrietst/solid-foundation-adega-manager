@@ -229,6 +229,7 @@ export function CheckoutDrawer({ isOpen, onClose, onSuccess }: CheckoutDrawerPro
             amount: p.amount,
             installments: p.installments
         })) : undefined, // NEW: Pass payments array
+        isDelivery, // Pass derived delivery state (handles Fiado Delivery)
         onSuccess: (saleId, extraData) => {
             onSuccess?.(saleId, extraData);
             onClose();

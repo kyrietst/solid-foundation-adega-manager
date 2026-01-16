@@ -44,6 +44,9 @@ export interface UseCheckoutProps {
         installments: number;
     }>;
 
+    // Override specifically for Fiado Delivery cases
+    isDelivery?: boolean;
+
     // Callback
     onSuccess: (saleId: string, extraData?: { cpf: string }) => void; // Updated signature
     
@@ -69,6 +72,7 @@ export const useCheckout = ({
     installments = 1,
     cpfNaNota,
     payments, // Destructured
+    isDelivery: isDeliveryProp, // Destructured
     onSuccess,
     clearCart,
     resetState
@@ -174,7 +178,7 @@ export const useCheckout = ({
         try {
             // Prepared Address Payload
             let finalDeliveryAddress: string | null = null;
-            if (saleType === 'delivery' && deliveryAddress) {
+            if ((saleType === 'delivery' || isDeliveryProp) && deliveryAddress) {
                 if (typeof deliveryAddress === 'string') {
                      // Legacy or simple string fallback
                      finalDeliveryAddress = deliveryAddress;
@@ -200,8 +204,8 @@ export const useCheckout = ({
                 saleType: saleType,
                 // Dados de delivery (se aplicável)
                 delivery_address: finalDeliveryAddress,
-                delivery_fee: saleType === 'delivery' ? deliveryFee : 0,
-                delivery_person_id: saleType === 'delivery' ? (deliveryPersonId || null) : null,
+                delivery_fee: (saleType === 'delivery' || isDeliveryProp) ? deliveryFee : 0,
+                delivery_person_id: (saleType === 'delivery' || isDeliveryProp) ? (deliveryPersonId || null) : null,
                 items: items.map(item => ({
                     product_id: item.id,
                     variant_id: item.variant_id,

@@ -47,7 +47,7 @@ export const useUpsertSale = () => {
             const totalAmount = saleData.total_amount || 0;
             const discountAmount = saleData.discount_amount || 0;
             const finalAmount = totalAmount - discountAmount;
-            const isDelivery = saleData.saleType === 'delivery' || !!saleData.deliveryData;
+            const isDelivery = saleData.saleType === 'delivery' || !!saleData.deliveryData || !!saleData.delivery_address || (saleData as any).isDelivery === true;
             // FIADO Logic: 'pickup' mapped to 'pending' payment, OR if ID explicitly passed as 'fiado'
             const isFiado = saleData.saleType === 'pickup' || isFiadoId; 
             const paymentStatus = isFiado ? 'pending' : 'paid';

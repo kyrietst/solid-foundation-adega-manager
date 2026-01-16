@@ -243,3 +243,18 @@
   - **Result:** Split Payment flow now fully operational in Production.
 
 ---
+### P. Receipt Printing Intelligence (Jan 13, 2026)
+- **Dynamic Data Injection:**
+  - **Issue:** Receipt header had hardcoded placeholders (e.g. "Av do Taboão").
+  - **Fix:** Implemented `fetchStoreSettings` in `useReceiptData`. Now printing
+    pulls real-time Business Name, CNPJ, and Address from the database.
+- **Visual Compliance:**
+  - Restored "ADEGA ANITA'S LTDA" header for formal presentation.
+  - Implemented `formatCnpj` utility for correct masking (`XX.XXX.XXX/0001-XX`).
+### Q. Global "Mock Data" Extermination (Jan 13, 2026)
+- **Audit Scope:** Full `src/` scan for "Lorem", "9999-9999", "admin@teste".
+- **Result:**
+  - Confirmed 100% of production UI is data-driven.
+  - Login screen (`Auth.tsx`) confirmed clean of debug credentials.
+  - No residual hardcoded phone numbers or generic addresses in user-facing code.
+---
