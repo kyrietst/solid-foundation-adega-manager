@@ -2,7 +2,22 @@ import { useSales, useDeleteSale } from "@/features/sales/hooks/use-sales";
 import { Skeleton } from "@/shared/ui/composite/skeleton";
 import { formatCurrency, formatDate } from "@/shared/utils/formatters";
 import { Button } from "@/shared/ui/primitives/button";
-import { FileText, Download, CalendarDays, CreditCard, ChevronRight, User, Truck, Trash2, Eye, Package, Store, QrCode } from "lucide-react";
+import { 
+  FileText, 
+  ChevronDown, 
+  ChevronUp,
+  User, 
+  Truck, 
+  Trash2, 
+  Package, 
+  Store, 
+  QrCode,
+  ShoppingBag,
+  DollarSign,
+  Ban,
+  Receipt,
+  CreditCard
+} from "lucide-react";
 import { useAuth } from "@/app/providers/AuthContext";
 import { useState } from "react";
 import { useToast } from "@/shared/hooks/common/use-toast";
@@ -20,16 +35,10 @@ import {
   AlertDialogTitle,
 } from "@/shared/components/alert-dialog";
 
-import { Badge } from '@/shared/ui/primitives/badge';
 import { SettlementModal } from './SettlementModal';
-import { DollarSign } from 'lucide-react';
-import { SaleStatusBadge } from "./SaleStatusBadge";
-import { PaymentStatusBadge } from "./PaymentStatusBadge";
-import { FiscalStatusBadge } from "@/features/fiscal/components/FiscalStatusBadge";
-import { useFiscalEmission } from "@/features/fiscal/hooks/useFiscalEmission";
+import { useFiscalEmission, FiscalResponse } from "@/features/fiscal/hooks/useFiscalEmission";
 import { LoadingSpinner } from "@/shared/ui/composite/loading-spinner";
 import { ReceiptModal } from "./ReceiptModal";
-import { FiscalResponse } from "@/features/fiscal/hooks/useFiscalEmission";
 
 interface RecentSalesProps {
   filterStatus?: string;
@@ -69,7 +78,6 @@ export function RecentSales({ filterStatus }: RecentSalesProps) {
     });
   };
 
-  // Alterna a exibição dos detalhes da venda
   const toggleSaleDetails = (saleId: string) => {
     setExpandedSaleId(expandedSaleId === saleId ? null : saleId);
   };
@@ -81,15 +89,12 @@ export function RecentSales({ filterStatus }: RecentSalesProps) {
   };
 
   const handleEmitFiscal = async (saleId: string, e: React.MouseEvent) => {
-    e.stopPropagation(); // Evita expandir o card
+    e.stopPropagation();
     if (processingSaleId) return;
 
     setProcessingSaleId(saleId);
     await emitInvoice(saleId, (data) => {
-      // Atualiza a lista
       queryClient.invalidateQueries({ queryKey: ["sales"] });
-      
-      // Abre o modal de recibo com os dados fiscais
       setSelectedSaleId(saleId);
       setFiscalResponseData(data);
       setReceiptModalOpen(true);
@@ -123,7 +128,6 @@ export function RecentSales({ filterStatus }: RecentSalesProps) {
         return;
     }
 
-    // Executa a mutação de exclusão
     deleteSale({ saleId: saleToDelete.id, user, manualReason: cancellationReason }, {
       onSuccess: () => {
         setIsDeleteDialogOpen(false);
@@ -151,23 +155,8 @@ export function RecentSales({ filterStatus }: RecentSalesProps) {
   };
 
   const handleViewFullHistory = () => {
-    // Navega para página de movimentações (histórico completo)
     navigate('/movements');
   };
-
-  if (isLoading) {
-    return (
-      <div className="space-y-4">
-        <div className="flex justify-between items-center">
-          <Skeleton className="h-8 w-48" />
-          <Skeleton className="h-9 w-32" />
-        </div>
-        {[...Array(5)].map((_, i) => (
-          <Skeleton key={i} className="h-28 w-full rounded-lg" />
-        ))}
-      </div>
-    );
-  }
 
   const formatPaymentMethod = (method: string) => {
     const methods: Record<string, string> = {
@@ -181,486 +170,426 @@ export function RecentSales({ filterStatus }: RecentSalesProps) {
     return methods[method] || method;
   };
 
-  const formatDeliveryType = (type: string) => {
-    const typeMap: Record<string, string> = {
-      'presencial': 'Presencial',
-      'delivery': 'Delivery',
-      'pickup': 'Retirada'
-    };
-    return typeMap[type] || type;
-  };
-
-  const getDeliveryTypeIcon = (type: string) => {
-    switch (type) {
-      case 'presencial':
-        return 'Store';
-      case 'delivery':
-        return 'Truck';
-      case 'pickup':
-        return 'Package';
-      default:
-        return 'Store';
-    }
-  };
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        {[...Array(5)].map((_, i) => (
+          <Skeleton key={i} className="h-24 w-full rounded-xl bg-zinc-900/50" />
+        ))}
+      </div>
+    );
+  }
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Header fixo */}
-      <div className="flex-shrink-0 mb-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight text-foreground shadow-sm">
-              Vendas Recentes
-            </h2>
-            <p className="text-sm text-muted-foreground shadow-sm">
-              Visualize as últimas transações realizadas ({sales?.length || 0} vendas)
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" className="gap-2">
-              <Download className="h-4 w-4" />
-              <span className="hidden sm:inline">Exportar</span>
-            </Button>
-            <Button size="sm" className="gap-2 bg-brand text-brand-foreground hover:bg-brand/90">
-              <span className="hidden sm:inline">Nova Venda</span>
-              <span className="sm:hidden">+</span>
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Área scrollável */}
-      <div className="flex-1 min-h-0">
-        {sales?.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 bg-surface/50 border border-white/20 backdrop-blur-xl rounded-lg">
-            <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium text-foreground shadow-sm">
+    <div className="flex flex-col h-full space-y-4 pr-2">
+       {/* Empty State */}
+       {sales?.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 bg-zinc-900/40 border border-white/5 backdrop-blur-xl rounded-xl">
+            <div className="bg-zinc-800/50 p-4 rounded-full mb-4">
+               <ShoppingBag className="h-8 w-8 text-zinc-500" />
+            </div>
+            <h3 className="text-lg font-bold text-zinc-300">
               Nenhuma venda encontrada
             </h3>
-            <p className="text-sm text-center max-w-md mt-1 text-muted-foreground shadow-sm">
-              Quando você realizar vendas, elas aparecerão aqui.
+            <p className="text-sm text-center max-w-md mt-1 text-zinc-500">
+              As transações recentes aparecerão aqui.
             </p>
           </div>
         ) : (
-          <div className="h-full overflow-y-auto pr-2 space-y-3 scrollbar-thin scrollbar-thumb-brand/30 scrollbar-track-transparent hover:scrollbar-thumb-brand/50 scroll-smooth">
-            {/* Indicador de scroll (aparece quando há scroll) */}
-            <div className="sticky top-0 z-10 mb-2 opacity-50 hover:opacity-100 transition-opacity">
-              <div className="bg-gradient-to-r from-transparent via-brand/20 to-transparent h-px w-full" />
-              <div className="text-center text-xs text-brand/60 mt-1">
-                {sales && sales.length > 10 ? '⬇ Role para ver mais vendas ⬇' : ''}
-              </div>
-            </div>
+          <div className="flex-1 w-full space-y-4 overflow-y-auto pr-1 pb-20 scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent">
+            {sales?.map((sale) => {
+              const isExpanded = expandedSaleId === sale.id;
+              const isCancelled = sale.status === 'cancelled';
+              const isPending = sale.payment_status === 'pending';
+              const isPaid = sale.payment_status === 'paid';
+              const isDelivery = sale.delivery_type === 'delivery';
 
-            {sales?.map((sale) => (
-              <div
-                key={sale.id}
-                className={cn(
-                    "bg-surface/70 backdrop-blur-xl border border-white/20 shadow-lg rounded-lg p-4 hover:shadow-xl transition-all duration-200 hero-spotlight relative overflow-hidden",
-                    sale.status === 'cancelled' && "opacity-75 bg-surface/40"
-                )}
-                onMouseMove={(e) => {
-                  const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                  const x = ((e.clientX - rect.left) / rect.width) * 100;
-                  const y = ((e.clientY - rect.top) / rect.height) * 100;
-                  (e.currentTarget as HTMLElement).style.setProperty("--x", `${x}%`);
-                  (e.currentTarget as HTMLElement).style.setProperty("--y", `${y}%`);
-                }}
-              >
-                {sale.status === 'cancelled' && (
-                    <div className="absolute top-0 right-0 bg-destructive/20 text-destructive px-3 py-1 rounded-bl-lg text-xs font-bold border-l border-b border-destructive/30 z-10">
-                        CANCELADA
-                    </div>
-                )}
-
-                <div className="flex flex-col sm:flex-row justify-between gap-4">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-3">
-                      {sale.delivery_type === 'delivery' ? (
-                        <Truck className={cn("h-5 w-5", sale.status === 'cancelled' ? "text-muted-foreground" : "text-green-400")} />
-                      ) : (
-                        <Store className={cn("h-5 w-5", sale.status === 'cancelled' ? "text-muted-foreground" : "text-blue-400")} />
-                      )}
-                      
-                      <h3 className={cn("font-semibold text-lg shadow-sm", sale.status === 'cancelled' ? "text-muted-foreground line-through decoration-destructive/50" : "text-foreground")}>
-                        {sale.delivery_type === 'delivery' ? 'Pedido' : 'Venda'} #{sale.order_number}
-                      </h3>
-
-                      {/* Hide Concluido badge for Fiado (pending) */}
-                      {sale.payment_status !== 'pending' && <SaleStatusBadge sale={sale} />}
-                      
-                      {/* Delivery Badge */}
-                      {sale.delivery_type === 'delivery' && (
-                           <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30 text-xs px-2 py-0.5">
-                               Entrega
-                           </Badge>
-                      )}
-
-                      {/* Badge Fiscal */}
-                      <FiscalStatusBadge status={sale.invoice?.status} />
-                    </div>
-                    <div className="flex flex-col gap-2 text-sm">
-                      <div className="flex items-center gap-2">
-                        <CreditCard className="h-4 w-4 text-blue-400" />
-                        <span className="text-muted-foreground shadow-sm">
-                          {formatPaymentMethod(sale.payment_method)}
-                        </span>
+              return (
+                <div 
+                    key={sale.id}
+                    className={cn(
+                        "group relative flex flex-col rounded-xl transition-all duration-300 border backdrop-blur-xl",
+                        isCancelled 
+                            ? "bg-red-950/10 border-red-500/10 hover:bg-red-950/20" 
+                            : "bg-zinc-900/40 border-white/5 hover:bg-zinc-900/60 hover:border-white/10"
+                    )}
+                >
+                    {/* Main Row Content */}
+                    <div className="flex flex-col lg:flex-row gap-4 p-5 items-start lg:items-center justify-between">
                         
-                        {/* Installment Badge for Credit Card - Simplified */}
-                        {(sale.payment_method_enum === 'credit' || sale.payment_method === 'Cartão de Crédito') && sale.installments && sale.installments > 1 ? (
-                            <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 text-xs px-2 py-0.5 hover:bg-blue-500/30">
-                                {sale.installments}x
-                            </Badge>
-                        ) : (
-                            <PaymentStatusBadge status={sale.payment_status} />
-                        )}
-                      </div>
-                      
-                      {/* REMOVED DUPLICATE TIPO LINE HERE */}
-
-                      <div className="flex items-center gap-2">
-                        <User className="h-4 w-4 text-purple-400" />
-                        <span className="text-muted-foreground shadow-sm">
-                          Vendedor: {sale.seller?.name || 'Não informado'}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <User className="h-4 w-4 text-brand" />
-                        <span className="text-muted-foreground shadow-sm">
-                          Cliente: {sale.customer?.name || 'Não informado'}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {(() => {
-                          const isFiado = sale.payment_status === 'pending';
-                          const IconComponent = getDeliveryTypeIcon(sale.delivery_type) === 'Store' ? Store :
-                            getDeliveryTypeIcon(sale.delivery_type) === 'Truck' ? Truck : Package;
-                          return <IconComponent className={cn("h-4 w-4", isFiado ? "text-destructive" : "text-brand")} />;
-                        })()}
-                        <span className={cn("text-muted-foreground shadow-sm", sale.payment_status === 'pending' ? "text-destructive font-medium" : "")}>
-                          Tipo: {sale.payment_status === 'pending' 
-                                  ? ((sale.delivery_type === 'delivery' || sale.delivery) ? 'Delivery Fiado' : 'Presencial Fiado') 
-                                  : formatDeliveryType(sale.delivery_type)}
-                        </span>
-                      </div>
-
-                       {/* Action Buttons */}
-                       <div className="flex items-center gap-2 mt-1">
-                          {sale.payment_status === 'pending' && sale.status !== 'cancelled' && (
-                              <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleOpenSettlement(sale);
-                                  }}
-                                  className="h-6 px-2 border-green-800/50 bg-green-900/10 text-green-500 hover:bg-green-900/30 hover:text-green-400 text-xs"
-                              >
-                                  <DollarSign className="h-3 w-3 mr-1" />
-                                  Quitar
-                              </Button>
-                          )}
-                       </div>
-
-                      {/* Botão Fiscal Inline - AÇÃO RÁPIDA */}
-                      <div className="flex items-center gap-2 mt-1">
-                        {sale.invoice && sale.invoice.status === 'authorized' ? (
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="h-6 px-2 text-green-400 hover:text-green-300 hover:bg-green-400/10 text-xs"
-                            onClick={(e) => handleViewFiscal(sale.invoice!.pdf_url || '', e)}
-                          >
-                            <FileText className="h-3 w-3 mr-1" />
-                            Ver NFC-e
-                          </Button>
-                        ) : (
-                           // Mostrar botão de emitir apenas se não estiver cancelado ou reembolsado
-                           (sale.status !== 'cancelled' && sale.status !== 'refunded') && (
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="h-6 px-2 text-blue-400 hover:text-blue-300 hover:bg-blue-400/10 text-xs"
-                              disabled={isFiscalProcessing && processingSaleId === sale.id}
-                              onClick={(e) => handleEmitFiscal(sale.id, e)}
-                            >
-                              {isFiscalProcessing && processingSaleId === sale.id ? (
-                                <LoadingSpinner size="sm" color="default" />
-                              ) : (
-                                <QrCode className="h-3 w-3 mr-1" />
-                              )}
-                              {isFiscalProcessing && processingSaleId === sale.id ? 'Emitindo...' : 'Emitir Cupom Fiscal'}
-                            </Button>
-                           )
-                        )}
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <CalendarDays className="h-4 w-4 text-emerald-400" />
-                        <span className="text-muted-foreground shadow-sm">
-                          {formatDate(sale.created_at)}
-                        </span>
-                      </div>
-
-                      {/* Telefone do cliente */}
-                      {sale.customer?.phone && (
-                        <div className="flex items-center gap-2">
-                          <Package className="h-4 w-4 text-blue-400" />
-                          <span className="text-muted-foreground shadow-sm">
-                            Tel: {sale.customer.phone}
-                          </span>
-                        </div>
-                      )}
-
-                      {/* Informações específicas de delivery */}
-                      {sale.delivery_type === 'delivery' && (
-                        <>
-                          {/* Endereço de entrega */}
-                          {sale.delivery_address && (
-                            <div className="flex items-center gap-2">
-                              <Package className="h-4 w-4 text-green-400" />
-                              <span className="text-muted-foreground shadow-sm">
-                                Endereço: {`${sale.delivery_address.logradouro || sale.delivery_address.street}, ${sale.delivery_address.numero || sale.delivery_address.number}${sale.delivery_address.complemento || sale.delivery_address.complement ? ` - ${sale.delivery_address.complemento || sale.delivery_address.complement}` : ''} - ${sale.delivery_address.bairro || sale.delivery_address.neighborhood}, ${sale.delivery_address.nome_municipio || sale.delivery_address.city}/${sale.delivery_address.uf || sale.delivery_address.state}`}
-                              </span>
+                        {/* 1. Identity Section */}
+                        <div className="flex items-start gap-4 min-w-[280px]">
+                            {/* Icon Box */}
+                            <div className={cn(
+                                "flex items-center justify-center rounded-xl shrink-0 w-12 h-12 border transition-all duration-300",
+                                isCancelled ? "bg-red-500/10 text-red-500 border-red-500/10" :
+                                isPending ? "bg-rose-500/10 text-rose-500 border-rose-500/10 drop-shadow-[0_0_8px_rgba(244,63,94,0.5)]" :
+                                isDelivery ? "bg-amber-500/10 text-amber-400 border-amber-500/10 drop-shadow-[0_0_8px_rgba(251,191,36,0.5)]" :
+                                "bg-emerald-500/10 text-emerald-400 border-emerald-500/10 drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]"
+                            )}>
+                                {isCancelled ? <Ban className="h-6 w-6" /> :
+                                 isDelivery ? <Truck className="h-6 w-6" /> : 
+                                 <Store className="h-6 w-6" />}
                             </div>
-                          )}
 
-                          {/* Taxa de entrega */}
-                          {sale.delivery_fee && sale.delivery_fee > 0 && (
-                            <div className="flex items-center gap-2">
-                              <Package className="h-4 w-4 text-brand" />
-                              <span className="text-muted-foreground shadow-sm">
-                                Taxa: {formatCurrency(sale.delivery_fee)}
-                              </span>
-                            </div>
-                          )}
-
-                          {/* Entregador */}
-                          {sale.delivery_person?.name && (
-                            <div className="flex items-center gap-2">
-                              <Truck className="h-4 w-4 text-purple-400" />
-                              <span className="text-muted-foreground shadow-sm">
-                                Entregador: {sale.delivery_person.name}
-                              </span>
-                            </div>
-                          )}
-                        </>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex flex-col items-end gap-1">
-                    <p className={cn("text-xl font-bold text-right shadow-sm", sale.status === 'cancelled' ? "text-muted-foreground" : "text-foreground")}>
-                      {formatCurrency(sale.final_amount || sale.total_amount)}
-                    </p>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-8 bg-surface/50 border-blue-400/30 text-blue-400 hover:bg-blue-400/10 hover:border-blue-400/50 hover:text-blue-300 transition-all duration-200 backdrop-blur-sm"
-                        onClick={() => toggleSaleDetails(sale.id)}
-                      >
-                        <Eye className="h-3 w-3 mr-1" />
-                        {expandedSaleId === sale.id ? 'Ocultar' : 'Detalhes'}
-                      </Button>
-                      
-                      {/* Cancel/Delete Button */}
-                      {((userRole as string) === 'admin' || (userRole as string) === 'employee' || (userRole as string) === 'manager') && sale.status !== 'cancelled' && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-8 w-8 p-0 bg-surface/50 border-red-400/30 text-red-400 hover:bg-red-400/10 hover:border-red-400/50 hover:text-red-300 transition-all duration-200 backdrop-blur-sm disabled:opacity-50"
-                          onClick={() => handleDeleteClick(sale.id, sale.order_number, sale.invoice?.status === 'authorized')}
-                          disabled={isDeleting}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                          <span className="sr-only">Cancelar</span>
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Detalhes expandidos da venda */}
-                {expandedSaleId === sale.id && (
-                  <div className="mt-4 pt-4 border-t border-white/20 bg-white/5 backdrop-blur-sm rounded-lg p-4 animate-in slide-in-from-top-2 duration-300">
-                    <div className="flex items-center gap-2 mb-3">
-                      <Package className="h-4 w-4 text-emerald-400" />
-                      <h4 className="font-medium text-emerald-400 shadow-sm">
-                        Itens da venda ({sale.items?.length || 0})
-                      </h4>
-                    </div>
-                    {sale.items && sale.items.length > 0 ? (
-                      <div className="space-y-3">
-                        {sale.items.map((item) => (
-                          <div key={item.id} className="flex justify-between items-center text-sm bg-black/30 rounded-lg p-3 border border-white/10">
-                            <div className="flex items-center gap-3">
-                              <div className="bg-blue-500/20 text-blue-400 rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold">
-                                {item.quantity}
-                              </div>
-                              <div>
-                                <span className={cn("font-medium shadow-sm", sale.status === 'cancelled' ? "text-gray-400" : "text-white")}>
-                                  {item.product?.name || 'Produto não encontrado'}
-                                </span>
-                                <div className="text-xs text-gray-400">
-                                  {formatCurrency(item.unit_price)} por unidade
+                            <div className="flex flex-col">
+                                <div className="flex items-center gap-2">
+                                    <span className={cn(
+                                        "text-lg font-bold tracking-tight",
+                                        isCancelled ? "text-zinc-500 line-through" : "text-zinc-100"
+                                    )}>
+                                        {isDelivery ? 'Pedido' : 'Venda'} #{sale.order_number}
+                                    </span>
                                 </div>
-                              </div>
-                            </div>
-                            <div className="font-bold text-emerald-400 shadow-sm">
-                              {formatCurrency(item.subtotal)}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-6 bg-brand/10 rounded-lg border border-brand/30">
-                        <Package className="h-8 w-8 text-brand mx-auto mb-2" />
-                        <p className="text-sm text-brand font-medium shadow-sm">
-                          Venda sem itens registrados
-                        </p>
-                        <p className="text-xs text-brand/70 mt-1 shadow-sm">
-                          Esta venda pode ter sido criada antes da implementação do sistema de itens ou teve seus itens removidos.
-                        </p>
-                      </div>
-                    )}
+                                <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                                    {/* Status Badge */}
+                                    {isCancelled ? (
+                                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-red-500/10 text-red-400 border border-red-500/20">
+                                            Cancelado
+                                        </span>
+                                    ) : isPending ? (
+                                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                                            Pendente
+                                        </span>
+                                    ) : (
+                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                                            Pago
+                                        </span>
+                                    )}
 
-                    {sale.notes && (
-                      <div className="mt-4 pt-4 border-t border-white/20">
-                        <div className="flex items-center gap-2 mb-2">
-                          <FileText className="h-4 w-4 text-brand" />
-                          <h4 className="font-medium text-brand shadow-sm">
-                            Observações:
-                          </h4>
-                        </div>
-                        <div className="bg-black/30 rounded-lg p-3 border border-white/10">
-                          <p className="text-sm text-gray-300 shadow-sm">
-                            {sale.notes}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            ))}
+                                    {/* Actions Required Badge (Payment) */}
+                                    {isPending && !isCancelled && (
+                                        <button 
+                                            onClick={(e) => { e.stopPropagation(); handleOpenSettlement(sale); }}
+                                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-yellow-500/10 text-yellow-500 border border-yellow-500/30 hover:bg-yellow-500/20 transition-colors cursor-pointer"
+                                        >
+                                            <DollarSign className="w-3 h-3" />
+                                            Quitar
+                                        </button>
+                                    )}
 
-            {/* Botão Ver histórico dentro da área scrollável */}
+                                    {/* Fiscal Badge */}
+                                    {sale.invoice && sale.invoice.status === 'authorized' ? (
+                                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-sky-500/10 text-sky-400 border border-sky-500/20">
+                                            NFC-e Emitida
+                                        </span>
+                                    ) : (
+                                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-zinc-800 text-zinc-500 border border-zinc-700">
+                                            S/ Nota
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 2. Metadata Grid */}
+                        <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-y-4 gap-x-4 text-sm w-full lg:w-auto border-t lg:border-t-0 lg:border-l border-white/5 pt-4 lg:pt-0 lg:pl-6">
+                            <div className="flex flex-col">
+                                <span className="text-zinc-500 text-xs">Data</span>
+                                <span className="text-zinc-300 font-medium">
+                                    {formatDate(sale.created_at)}
+                                </span>
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-zinc-500 text-xs">Vendedor</span>
+                                <span className="text-zinc-300 truncate">
+                                    {sale.seller?.name?.split(' ')[0] || 'N/A'}
+                                </span>
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-zinc-500 text-xs">Cliente / Entrega</span>
+                                <div className="flex flex-col">
+                                    <span className="text-zinc-300 truncate font-medium" title={sale.customer?.name || 'Consumidor Final'}>
+                                        {sale.customer?.name 
+                                            ? (sale.customer.name.length > 15 ? sale.customer.name.substring(0, 15) + '...' : sale.customer.name)
+                                            : 'Consumidor Final'}
+                                    </span>
+                                    
+                                    {/* Delivery Info Snippet */}
+                                    {isDelivery && (
+                                        <div className="flex flex-col mt-0.5 space-y-0.5">
+                                            {sale.delivery_fee > 0 && (
+                                                <span className="text-[10px] text-amber-400 font-bold flex items-center gap-1">
+                                                    + {formatCurrency(sale.delivery_fee)} (Entrega)
+                                                </span>
+                                            )}
+                                            {sale.delivery_address && (
+                                                <span className="text-[10px] text-zinc-500 truncate max-w-[140px]" title={`${sale.delivery_address.street}, ${sale.delivery_address.neighborhood}`}>
+                                                    {sale.delivery_address.neighborhood || 'Endereço não inf.'}
+                                                </span>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-zinc-500 text-xs">Método</span>
+                                <div className="flex items-center gap-1 text-zinc-300">
+                                    <CreditCard className="w-3 h-3 opacity-70" />
+                                    <span className="truncate">{formatPaymentMethod(sale.payment_method)}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 3. Totals & Actions */}
+                        <div className="flex items-center justify-between lg:justify-end gap-6 w-full lg:w-auto pt-4 lg:pt-0 border-t lg:border-t-0 lg:border-white/5">
+                            <div className="text-right">
+                                <p className="text-zinc-500 text-xs mb-0.5">Total</p>
+                                <p className={cn(
+                                    "text-lg font-bold",
+                                    isCancelled ? "text-zinc-500 line-through decoration-red-500/50" : "text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.3)]"
+                                )}>
+                                    {formatCurrency(sale.final_amount || sale.total_amount)}
+                                </p>
+                            </div>
+
+                            <div className="flex items-center gap-1">
+                                {/* Fiscal Action */}
+                                {sale.invoice && sale.invoice.status === 'authorized' ? (
+                                     <button 
+                                        className="p-2 text-zinc-500 hover:text-sky-400 hover:bg-sky-500/10 rounded-lg transition-colors"
+                                        title="Ver NFC-e"
+                                        onClick={(e) => handleViewFiscal(sale.invoice!.pdf_url || '', e)}
+                                    >
+                                        <Receipt className="w-5 h-5" />
+                                    </button>
+                                ) : (
+                                    !isCancelled && (
+                                        <button 
+                                            className="p-2 text-zinc-500 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors disabled:opacity-50"
+                                            title="Emitir Cupom Fiscal"
+                                            onClick={(e) => handleEmitFiscal(sale.id, e)}
+                                            disabled={isFiscalProcessing && processingSaleId === sale.id}
+                                        >
+                                            {isFiscalProcessing && processingSaleId === sale.id ? (
+                                                <LoadingSpinner size="sm" />
+                                            ) : (
+                                                <QrCode className="w-5 h-5" />
+                                            )}
+                                        </button>
+                                    )
+                                )}
+
+                                {/* Cancel Action */}
+                                {((userRole as string) === 'admin' || (userRole as string) === 'employee' || (userRole as string) === 'manager') && !isCancelled && (
+                                    <button 
+                                        className="p-2 text-zinc-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                                        title="Cancelar Venda"
+                                        onClick={(e) => { e.stopPropagation(); handleDeleteClick(sale.id, sale.order_number, sale.invoice?.status === 'authorized'); }}
+                                    >
+                                        <Ban className="w-5 h-5" />
+                                    </button>
+                                )}
+
+                                {/* Expand Toggle */}
+                                <button 
+                                    className={cn(
+                                        "p-2 rounded-lg transition-colors",
+                                        isExpanded ? "bg-white/10 text-white" : "text-zinc-500 hover:text-white hover:bg-white/5"
+                                    )}
+                                    title={isExpanded ? "Recolher" : "Expandir"}
+                                    onClick={() => toggleSaleDetails(sale.id)}
+                                >
+                                    {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Expanded Content */}
+                    {isExpanded && (
+                       <div className="border-t border-white/5 bg-black/40 p-4 lg:px-6 lg:pb-6 rounded-b-xl animate-in fade-in slide-in-from-top-2 duration-300">
+                           <div className="flex items-center justify-between mb-4">
+                               <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Itens da Venda</h3>
+                           </div>
+                           
+                           <div className="overflow-hidden rounded-lg border border-white/5 bg-zinc-900/30">
+                               <table className="w-full text-left border-collapse">
+                                   <thead className="bg-white/5 text-zinc-400 text-xs uppercase font-semibold">
+                                       <tr>
+                                           <th className="px-4 py-3 font-medium">Produto</th>
+                                           <th className="px-4 py-3 font-medium text-center w-24">Qtd</th>
+                                           <th className="px-4 py-3 font-medium text-right w-32">Valor Unit.</th>
+                                           <th className="px-4 py-3 font-medium text-right w-32">Subtotal</th>
+                                       </tr>
+                                   </thead>
+                                   <tbody className="divide-y divide-white/5 text-sm">
+                                       {sale.items?.map((item) => (
+                                           <tr key={item.id} className="hover:bg-white/5 transition-colors">
+                                               <td className="px-4 py-3 text-zinc-300">
+                                                   <div className="flex items-center gap-3">
+                                                       <div className="w-8 h-8 rounded bg-zinc-800 flex items-center justify-center text-zinc-600">
+                                                            <Package className="w-4 h-4" />
+                                                       </div>
+                                                       <span>{item.product?.name || 'Item desconhecido'}</span>
+                                                   </div>
+                                               </td>
+                                               <td className="px-4 py-3 text-center text-zinc-400">{item.quantity}</td>
+                                               <td className="px-4 py-3 text-right text-zinc-400">{formatCurrency(item.unit_price)}</td>
+                                               <td className="px-4 py-3 text-right text-zinc-100 font-medium">{formatCurrency(item.subtotal)}</td>
+                                           </tr>
+                                       ))}
+                                   </tbody>
+                               </table>
+                           </div>
+                           
+                           <div className="mt-4 flex flex-col md:flex-row justify-between gap-6 text-sm text-zinc-400 border-t border-white/5 pt-4">
+                               <div className="flex-1">
+                                    {sale.notes && (
+                                        <div className="bg-zinc-800/30 rounded p-3 border border-white/5">
+                                            <p className="text-xs text-zinc-500 uppercase font-bold mb-1">Observações</p>
+                                            <p className="text-zinc-300 italic">"{sale.notes}"</p>
+                                        </div>
+                                    )}
+                               </div>
+                               <div className="min-w-[200px] space-y-2">
+                                   <div className="flex justify-between gap-8">
+                                       <span>Subtotal</span>
+                                       <span>{formatCurrency(sale.total_amount)}</span>
+                                   </div>
+                                    {/* Exibir Taxa de Entrega no Resumo Completo também */}
+                                   {isDelivery && sale.delivery_fee > 0 && (
+                                        <div className="flex justify-between gap-8 text-amber-400/80">
+                                            <span>Taxa de Entrega</span>
+                                            <span>+ {formatCurrency(sale.delivery_fee)}</span>
+                                        </div>
+                                   )}
+                                   <div className="flex justify-between gap-8">
+                                       <span>Desconto</span>
+                                       <span>{formatCurrency(sale.discount_amount || 0)}</span>
+                                   </div>
+                                   <div className="flex justify-between gap-8 font-bold text-white text-base">
+                                       <span>Total Final</span>
+                                       <span>{formatCurrency(sale.final_amount)}</span>
+                                   </div>
+                               </div>
+                           </div>
+                       </div>
+                    )}
+                </div>
+              );
+            })}
+
+            {/* View Full History Button - Preserved */}
             <div className="flex justify-center pt-6 pb-2">
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
-                className="gap-2 bg-surface/50 border-brand/30 text-brand hover:bg-brand/10 hover:border-brand/50 transition-all duration-300"
+                className="gap-2 text-zinc-500 hover:text-white transition-all duration-300 hover:bg-white/5"
                 onClick={handleViewFullHistory}
               >
-                Ver histórico completo
-                <ChevronRight className="h-4 w-4" />
+                <div className="animate-pulse">
+                     <ChevronDown className="h-4 w-4" />
+                </div>
+                Carregar histórico completo
               </Button>
             </div>
           </div>
         )}
-      </div>
 
-      {/* Modal de Quitação de Dívida (Phase 6) */}
-      {settlementSale && (
-          <SettlementModal
-              isOpen={!!settlementSale}
-              onClose={() => setSettlementSale(null)}
-              saleId={settlementSale.id}
-              saleTotal={settlementSale.total}
-              customerName={settlementSale.customerName}
-          />
-      )}
+       {/* Modais */}
+       {settlementSale && (
+           <SettlementModal
+               isOpen={!!settlementSale}
+               onClose={() => setSettlementSale(null)}
+               saleId={settlementSale.id}
+               saleTotal={settlementSale.total}
+               customerName={settlementSale.customerName}
+           />
+       )}
 
-      {/* Modal de Recibo / Fiscal */}
-      <ReceiptModal
-        isOpen={receiptModalOpen}
-        onClose={() => {
-          setReceiptModalOpen(false);
-          setFiscalResponseData(null); // Limpa dados fiscais ao fechar
-        }}
-        saleId={selectedSaleId}
-        initialFiscalData={fiscalResponseData}
-      />
+       {/* Receipt Modal */}
+       <ReceiptModal
+         isOpen={receiptModalOpen}
+         onClose={() => {
+           setReceiptModalOpen(false);
+           setFiscalResponseData(null);
+         }}
+         saleId={selectedSaleId}
+         initialFiscalData={fiscalResponseData}
+       />
 
-      {/* Diálogo de confirmação de exclusão */}
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-                {saleToDelete?.isFiscal ? 'Cancelar Nota Fiscal' : 'Cancelar Venda'}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {saleToDelete?.isFiscal ? (
-                  <div className="bg-red-500/10 border border-red-500/20 rounded p-3 mb-4 text-red-300">
-                    <strong>Atenção:</strong> Esta venda possui Nota Fiscal Autorizada.
-                    O cancelamento será enviado para a SEFAZ e é irreversível.
-                  </div>
-              ) : (
-                  'Tem certeza que deseja cancelar esta venda?'
-              )}
-              
-              <div className="mt-2 space-y-2">
-                  <p>
-                    Pedido #{saleToDelete?.number} - {saleToDelete?.isFiscal ? 'Estorno Fiscal + Estoque' : 'Estorno de Estoque'}
-                  </p>
-                  
-                  {saleToDelete?.isFiscal && (
+       {/* AlertDialog - Delete/Cancel */}
+       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+         <AlertDialogContent className="bg-zinc-900 border-white/10">
+           <AlertDialogHeader>
+             <AlertDialogTitle className="text-white">
+                 {saleToDelete?.isFiscal ? 'Cancelar Nota Fiscal' : 'Cancelar Venda'}
+             </AlertDialogTitle>
+             <AlertDialogDescription className="text-zinc-400">
+               {saleToDelete?.isFiscal ? (
+                   <div className="bg-red-500/10 border border-red-500/20 rounded p-3 mb-4 text-red-300">
+                     <strong>Atenção:</strong> Esta venda possui Nota Fiscal Autorizada.
+                     O cancelamento será enviado para a SEFAZ e é irreversível.
+                   </div>
+               ) : (
+                   'Tem certeza que deseja cancelar esta venda?'
+               )}
+               
+               <div className="mt-2 space-y-2">
+                   <p>
+                     Pedido #{saleToDelete?.number} - {saleToDelete?.isFiscal ? 'Estorno Fiscal + Estoque' : 'Estorno de Estoque'}
+                   </p>
+                   
+                   {saleToDelete?.isFiscal && (
+                       <div className="mt-4">
+                           <label className="text-xs uppercase font-bold text-zinc-500 mb-1 block">
+                             Justificativa (Obrigatório, min. 15 caracteres)
+                           </label>
+                           <textarea
+                               className="w-full bg-black/20 border border-white/10 rounded-md p-2 text-sm text-white focus:outline-none focus:border-emerald-500/50 resize-none h-24"
+                               placeholder="Motivo do cancelamento (ex: Erro no preenchimento de valores)"
+                               value={cancellationReason}
+                               onChange={(e) => setCancellationReason(e.target.value)}
+                           />
+                           <p className="text-right text-[10px] text-zinc-500 mt-1">
+                               {cancellationReason.length}/15
+                           </p>
+                       </div>
+                   )}
+
+                   {!saleToDelete?.isFiscal && (
                       <div className="mt-4">
-                          <label className="text-xs uppercase font-bold text-muted-foreground mb-1 block">
-                            Justificativa (Obrigatório, min. 15 caracteres)
-                          </label>
-                          <textarea
-                              className="w-full bg-black/20 border border-white/10 rounded-md p-2 text-sm text-foreground focus:outline-none focus:border-brand/50 resize-none h-24"
-                              placeholder="Motivo do cancelamento (ex: Erro no preenchimento de valores)"
-                              value={cancellationReason}
-                              onChange={(e) => setCancellationReason(e.target.value)}
-                          />
-                          <p className="text-right text-[10px] text-muted-foreground mt-1">
-                              {cancellationReason.length}/15
-                          </p>
-                      </div>
-                  )}
-
-                  {!saleToDelete?.isFiscal && (
-                     <div className="mt-4">
-                          <label className="text-xs uppercase font-bold text-muted-foreground mb-1 block">
-                            Justificativa (Opcional)
-                          </label>
-                          <textarea
-                              className="w-full bg-black/20 border border-white/10 rounded-md p-2 text-sm text-foreground focus:outline-none focus:border-brand/50 resize-none h-20"
-                              placeholder="Motivo do cancelamento..."
-                              value={cancellationReason}
-                              onChange={(e) => setCancellationReason(e.target.value)}
-                          />
-                      </div>
-                  )}
-              </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel
-              onClick={handleCancelDelete}
-              disabled={isDeleting}
-              className="bg-surface/50 border-white/20 text-white hover:bg-white/10 hover:border-white/40 transition-all duration-200"
-            >
-              Voltar
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleConfirmDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 border-destructive/50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={isDeleting}
-            >
-              {isDeleting ? (
-                <div className="flex items-center gap-2">
-                  <LoadingSpinner size="sm" color="white" />
-                  {saleToDelete?.isFiscal ? 'Aguardando SEFAZ...' : 'Cancelando...'}
-                </div>
-              ) : (
-                'Confirmar Cancelamento'
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+                           <label className="text-xs uppercase font-bold text-zinc-500 mb-1 block">
+                             Justificativa (Opcional)
+                           </label>
+                           <textarea
+                               className="w-full bg-black/20 border border-white/10 rounded-md p-2 text-sm text-white focus:outline-none focus:border-brand/50 resize-none h-20"
+                               placeholder="Motivo do cancelamento..."
+                               value={cancellationReason}
+                               onChange={(e) => setCancellationReason(e.target.value)}
+                           />
+                       </div>
+                   )}
+               </div>
+             </AlertDialogDescription>
+           </AlertDialogHeader>
+           <AlertDialogFooter>
+             <AlertDialogCancel
+               onClick={handleCancelDelete}
+               disabled={isDeleting}
+               className="bg-zinc-800 border-white/10 text-white hover:bg-zinc-700"
+             >
+               Voltar
+             </AlertDialogCancel>
+             <AlertDialogAction
+               onClick={handleConfirmDelete}
+               className="bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500/20 disabled:opacity-50"
+               disabled={isDeleting}
+             >
+               {isDeleting ? (
+                 <div className="flex items-center gap-2">
+                   <LoadingSpinner size="sm" color="white" />
+                   {saleToDelete?.isFiscal ? 'Aguardando SEFAZ...' : 'Cancelando...'}
+                 </div>
+               ) : (
+                 'Confirmar Cancelamento'
+               )}
+             </AlertDialogAction>
+           </AlertDialogFooter>
+         </AlertDialogContent>
+       </AlertDialog>
     </div>
   );
 }

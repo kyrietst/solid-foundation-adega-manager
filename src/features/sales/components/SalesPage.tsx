@@ -279,18 +279,9 @@ function SalesPage({
           )}
 
           {appMode === 'recent' && (
-            <div className="absolute inset-0 z-10 bg-background-dark overflow-hidden p-6 animate-in slide-in-from-right-4 fade-in duration-300">
-              <div className="max-w-7xl mx-auto h-full flex flex-col">
-                <div className="flex items-center gap-4 mb-8">
-                  <button onClick={() => setAppMode('pos')} className="p-2 hover:bg-white/10 rounded-full transition-colors">
-                    <LogOut className="rotate-180 size-6 text-gray-400" />
-                  </button>
-                  <div>
-                    <h2 className="text-3xl font-bold text-white tracking-tight">Histórico de Vendas</h2>
-                    <p className="text-gray-400">Consulte vendas passadas e reimprima comprovantes.</p>
-                  </div>
-                </div>
-                <div className="flex-1 min-h-0 bg-surface/50 border border-white/5 rounded-2xl overflow-hidden shadow-2xl">
+            <div className="absolute inset-0 z-10 overflow-hidden p-6 animate-in slide-in-from-right-4 fade-in duration-300">
+              <div className="w-full h-full flex flex-col">
+                <div className="flex-1 min-h-0 bg-surface/50 border border-white/5 rounded-2xl overflow-hidden shadow-2xl backdrop-blur-md">
                   <RecentSales />
                 </div>
               </div>
@@ -298,21 +289,9 @@ function SalesPage({
           )}
 
           {appMode === 'charges' && (
-            <div className="absolute inset-0 z-10 bg-background-dark overflow-hidden p-6 animate-in slide-in-from-right-4 fade-in duration-300">
-              <div className="max-w-7xl mx-auto h-full flex flex-col">
-                <div className="flex items-center gap-4 mb-8">
-                  <button onClick={() => setAppMode('pos')} className="p-2 hover:bg-white/10 rounded-full transition-colors">
-                    <LogOut className="rotate-180 size-6 text-gray-400" />
-                  </button>
-                  <div>
-                    <h2 className="text-3xl font-bold text-brand tracking-tight flex items-center gap-3">
-                      <CreditCard className="size-8" />
-                      Contas a Receber (Fiado)
-                    </h2>
-                    <p className="text-gray-400">Gerencie pagamentos pendentes e clientes.</p>
-                  </div>
-                </div>
-                <div className="flex-1 min-h-0 bg-surface/50 border border-white/5 rounded-2xl overflow-hidden shadow-2xl">
+            <div className="absolute inset-0 z-10 overflow-hidden p-6 animate-in slide-in-from-right-4 fade-in duration-300">
+              <div className="w-full h-full flex flex-col">
+                <div className="flex-1 min-h-0 bg-surface/50 border border-white/5 rounded-2xl overflow-hidden shadow-2xl backdrop-blur-md">
                   <RecentSales filterStatus="pending" />
                 </div>
               </div>

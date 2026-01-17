@@ -276,3 +276,22 @@
   - **Address Logic:** Updated parser to handle both Portuguese (`logradouro`)
     and English (`street`) keys from CEP API.
   - **Fiscal Footer:** Cleaned up visual clutter (asterisks) and ICMS warnings.
+
+### S. Sales UI Refinement & Standardization (Jan 17, 2026)
+
+- **Layout Unification:**
+  - **Full Width:** Removed all `container` constraints from History/Charges
+    tabs to match POS layout.
+  - **Standardized Backgrounds:** Removed solid black overlays to expose shared
+    `PremiumBackground`.
+  - **Header Cleanup:** Removed redundant page titles ("Histórico de Vendas")
+    for a streamlined dashboard feel.
+- **Recent Sales "Smart Row":**
+  - **Semantic Coloring:** Implemented Ember (Delivery) vs Emerald (Store) vs
+    Red (Cancel) color coding for instant recognition.
+  - **Delivery Visibility:** Added explicit Delivery Fee and Neighborhood
+    display in the row.
+  - **Glassmorphism:** Adjusted row transparency to `bg-zinc-900/40` for better
+    contrast.
+- **Documentation:** Created `docs/v_erp/07_SALES_UX_REFINEMENT.md` as the guide
+  for these changes.
