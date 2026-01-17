@@ -232,6 +232,14 @@ export const ReceiptPrint: React.FC<ReceiptPrintProps> = ({
           <span>Qtd. Total de Itens:</span>
           <span>{data.items.length}</span>
         </div>
+        
+        {data.delivery_fee && data.delivery_fee > 0 && (
+          <div className="receipt-row">
+            <span>Taxa de Entrega:</span>
+            <span>{formatCurrency(data.delivery_fee)}</span>
+          </div>
+        )}
+
         <div className="receipt-row font-bold text-md">
           <span>Valor Total:</span>
           <span>{formatCurrency(data.final_amount)}</span>

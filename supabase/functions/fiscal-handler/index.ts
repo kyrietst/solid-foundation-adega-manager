@@ -323,6 +323,10 @@ Deno.serve(async (req) => {
     // Cálculo simples de totais para evitar rejeição
     const totalVenda = items.reduce((acc: number, item: MappedItem) => acc + item.valor_bruto, 0)
     const totalVendaNumber = parseFloat(totalVenda.toFixed(2))
+    
+    // DELIVERY FEE LOGIC
+    const vFrete = sale.delivery_fee ? parseFloat(sale.delivery_fee) : 0.00;
+    const vNF = parseFloat((totalVendaNumber + vFrete).toFixed(2));
 
     // Calculate Tax Totals (MEI Logic - Simples Nacional)
     // MEI não destaca ICMS (vBC e vICMS = 0)
@@ -385,7 +389,8 @@ Deno.serve(async (req) => {
         // Tenta inferir enum do header se existir
         const legacyEnum = sale.payment_method_enum; 
         
-        paymentDetList.push(processPayment(legacyCode, totalVendaNumber, legacyEnum, sale.installments));
+        // Use vNF instead of totalVendaNumber to account for freight
+        paymentDetList.push(processPayment(legacyCode, vNF, legacyEnum, sale.installments));
     }
     
     // DEBUG: Log payments count
@@ -437,16 +442,19 @@ Deno.serve(async (req) => {
             const uf = targetAddress.uf || targetAddress.state;
             const cep = targetAddress.cep || targetAddress.zipCode;
             const codMun = targetAddress.codigo_municipio || targetAddress.ibge || "3548708"; 
+            
+            // Fix: Fallback for municipality code if string is empty
+            const finalCodMun = codMun || "3548708";
 
             if (logradouro) {
                 dest.enderDest = {
                     xLgr: logradouro.substring(0, 60),
                     nro: numero,
                     xCpl: targetAddress.complemento ? targetAddress.complemento.substring(0, 60) : (targetAddress.complement ? targetAddress.complement.substring(0, 60) : undefined),
-                    xBairro: bairro.substring(0, 60),
-                    cMun: codMun, 
-                    xMun: municipio.substring(0, 60),
-                    UF: uf,
+                    xBairro: bairro ? bairro.substring(0, 60) : 'CENTRO', // Fallback for neighborhood
+                    cMun: finalCodMun, 
+                    xMun: municipio ? municipio.substring(0, 60) : 'SAO BERNARDO DO CAMPO', // Fallback
+                    UF: uf || 'SP',
                     CEP: cep ? cep.replace(/\D/g, '') : undefined,
                     cPais: "1058",
                     xPais: "BRASIL"
@@ -545,7 +553,7 @@ Deno.serve(async (req) => {
                     vFCPST: 0.00,
                     vFCPSTRet: 0.00,
                     vProd: totalVendaNumber, // NUMBER
-                    vFrete: 0.00,
+                    vFrete: vFrete,
                     vSeg: 0.00,
                     vDesc: 0.00,
                     vII: 0.00,
@@ -554,7 +562,7 @@ Deno.serve(async (req) => {
                     vPIS: 0.00,
                     vCOFINS: 0.00,
                     vOutro: 0.00,
-                    vNF: totalVendaNumber, // NUMBER
+                    vNF: vNF, // NUMBER (Includes Shipping)
                     vTotTrib: 0.00
                 }
             },
