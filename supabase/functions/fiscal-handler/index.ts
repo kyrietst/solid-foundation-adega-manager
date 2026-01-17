@@ -768,19 +768,42 @@ Deno.serve(async (req) => {
             })
             
             if (xmlRes.ok) {
-                const xmlText = await xmlRes.text() // Raw XML string
+                const xmlText = await xmlRes.text() 
                 // console.log('[Fiscal Debug] XML Length:', xmlText.length)
                 
-                // Regex to find <qrCode>...</qrCode>
-                // It usually looks like: <qrCode><![CDATA[http://...]]></qrCode> OR <qrCode>http://...</qrCode>
-                const qrMatch = xmlText.match(/<qrCode>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?<\/qrCode>/)
+                // 1. Try Aggressive Regex (Namespace agnostic + whitespace tolerant)
+                // Matches <qrCode> or <nfe:qrCode> ... content ... </qrCode>
+                const qrMatch = xmlText.match(/<(\w+:)?qrCode[^>]*>([\s\S]*?)<\/(\w+:)?qrCode>/i);
                 
-                if (qrMatch && qrMatch[1]) {
-                    qrFromRescue = qrMatch[1]
-                    console.log('[Fiscal] XML Rescue SUCCESS: QR Found')
-                } else {
-                    console.warn('[Fiscal] XML Rescue FAILED: Tag not found')
+                if (qrMatch && qrMatch[2]) {
+                    qrFromRescue = qrMatch[2].trim()
+                    // Remove CDATA if present
+                    qrFromRescue = qrFromRescue.replace(/^<!\[CDATA\[|\]\]>$/g, '')
+                    console.log('[Fiscal] XML Rescue SUCCESS: QR Found via Regex')
+                } 
+                
+                // 2. Fallback: Try <infNFeSupl> tag content if needed (sometimes it's just raw text?)
+                // Usually <qrCode> is inside <infNFeSupl>. 
+                if (!qrFromRescue) {
+                     const infMatch = xmlText.match(/<(\w+:)?infNFeSupl[^>]*>([\s\S]*?)<\/(\w+:)?infNFeSupl>/i);
+                     if (infMatch && infMatch[2]) {
+                        // Try to find url inside this block strictly
+                        const subMatch = infMatch[2].match(/http[s]?:\/\/[^\s<"']+/);
+                        if (subMatch) {
+                            qrFromRescue = subMatch[0];
+                            console.log('[Fiscal] XML Rescue SUCCESS: QR Found via infNFeSupl fallback')
+                        }
+                     }
                 }
+
+                if (!qrFromRescue) {
+                    console.warn('[Fiscal] XML Rescue FAILED: Tag not found in XML')
+                } else {
+                    // CRITICAL: Update apiData so Frontend receives it immediately!
+                    apiData.qrcode_url = qrFromRescue
+                    apiData.url_consulta_qrcode = qrFromRescue
+                }
+
             } else {
                 console.warn(`[Fiscal] Failed to fetch XML: ${xmlRes.status}`)
             }
