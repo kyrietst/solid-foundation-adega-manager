@@ -287,6 +287,9 @@
   - **Header Cleanup:** Removed redundant page titles ("Histórico de Vendas")
     for a streamlined dashboard feel.
 - **Recent Sales "Smart Row":**
+  - **Fiado Alert:** Implemented high-priority **Rose/Red** styling for
+    'Pending' sales, ensuring debts are visually distinct from active
+    delivery/store operations.
   - **Semantic Coloring:** Implemented Ember (Delivery) vs Emerald (Store) vs
     Red (Cancel) color coding for instant recognition.
   - **Delivery Visibility:** Added explicit Delivery Fee and Neighborhood

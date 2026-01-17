@@ -41,7 +41,14 @@ table row with high data density.
 
 ### A. Semantic Styling
 
-- **Store/Pickup Sales:**
+- **Pending/Fiado Sales (Priority Alert):**
+  - **Color:** Rose/Red.
+  - **Icon:** `Store` or `Truck` with Rose Glow.
+  - **Badge:** "Pendente" with Rose background.
+  - **Logic:** Overrides Delivery/Store colors. If money hasn't entered
+    (`payment_status === 'pending'`), it shouts visually to prevent revenue
+    leakage.
+- **Store/Pickup Sales (Paid):**
   - **Color:** Emerald (Green).
   - **Icon:** `Store` with Emerald Glow.
   - **Logic:** Indicates "Money In / Done".
