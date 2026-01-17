@@ -27,6 +27,7 @@ export interface TransferStockParams {
     packages: number;
     unitsLoose: number;
     notes?: string;
+    userId: string;
 }
 
 // 1. Fetch Product Stock Details Hook
@@ -108,12 +109,12 @@ export function useStockTransfer() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async ({ productId, packages, unitsLoose, notes }: TransferStockParams) => {
+        mutationFn: async ({ productId, packages, unitsLoose, notes, userId }: TransferStockParams) => {
             const { data: result, error } = await supabase.rpc('transfer_to_store2_holding', {
                 p_product_id: productId,
                 p_quantity_packages: packages,
                 p_quantity_units: unitsLoose,
-                p_user_id: null,
+                p_user_id: userId,
                 p_notes: notes || null,
             });
 
@@ -131,9 +132,15 @@ export function useStockTransfer() {
             });
         },
         onError: (error: any) => {
-            let errorMessage = 'Erro ao transferir estoque. Tente novamente.';
-            if (error.message?.includes('Estoque insuficiente')) errorMessage = error.message;
-            else if (error.message?.includes('Produto não encontrado')) errorMessage = 'Produto não encontrado ou foi deletado.';
+            console.error('Transfer error:', error);
+            
+            let errorMessage = error.message || 'Erro ao transferir estoque.';
+            
+            if (errorMessage.includes('Estoque insuficiente')) {
+                // Mantém a mensagem original do banco que detalha quantidades
+            } else if (errorMessage.includes('Produto não encontrado')) {
+                errorMessage = 'Produto não encontrado ou foi deletado.';
+            }
 
             toast({ title: '❌ Erro na transferência', description: errorMessage, variant: 'destructive' });
         }

@@ -15,6 +15,7 @@ import { cn } from '@/core/config/utils';
 import { getGlassInputClasses } from '@/core/config/theme-utils';
 import type { Product } from '@/core/types/inventory.types';
 import { useStockTransfer } from '@/features/inventory/hooks/useStockOperations';
+import { useAuth } from '@/app/providers/AuthContext';
 
 // Schema de validação Zod
 const transferSchema = z.object({
@@ -42,6 +43,7 @@ export const TransferToHoldingModal: React.FC<TransferToHoldingModalProps> = ({
   onSuccess,
 }) => {
   const transferMutation = useStockTransfer();
+  const { user } = useAuth();
 
   const {
     register,
@@ -64,7 +66,8 @@ export const TransferToHoldingModal: React.FC<TransferToHoldingModalProps> = ({
       productId: product.id,
       packages: data.packages,
       unitsLoose: data.unitsLoose,
-      notes: data.notes
+      notes: data.notes,
+      userId: user.id
     }, {
       onSuccess: () => {
         onSuccess?.();
@@ -98,6 +101,7 @@ export const TransferToHoldingModal: React.FC<TransferToHoldingModalProps> = ({
       variant="premium"
       glassEffect={true}
       className="max-w-2xl"
+      disabled={!user?.id}
     >
       {/* Layout compacto em 2 colunas */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mt-4">
