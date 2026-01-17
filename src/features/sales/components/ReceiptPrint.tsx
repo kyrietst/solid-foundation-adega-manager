@@ -162,7 +162,6 @@ export const ReceiptPrint: React.FC<ReceiptPrintProps> = ({
                    {data.deliveryInstructions && (
                       <div>OBS: {data.deliveryInstructions}</div>
                    )}
-                   <div className="text-center">************************************</div>
                 </div>
               ) : (
                 <div className="text-[10px] font-bold">
