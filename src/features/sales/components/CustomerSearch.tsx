@@ -76,7 +76,7 @@ export function CustomerSearch({
     <Command className={cn("bg-transparent text-white", embedded ? "border-none" : "")}>
       <div className="relative border-b border-white/10 px-1">
         <CommandInput
-          placeholder="Buscar cliente (Nome, CPF ou Email)..."
+          placeholder="Buscar cliente (Nome, CPF, Email ou Telefone)..."
           value={searchTerm}
           onValueChange={setSearchTerm}
           name="customer_search_query"

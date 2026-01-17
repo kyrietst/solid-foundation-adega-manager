@@ -134,7 +134,7 @@ export const useCustomers = (params?: {
         // Aplicar filtro de busca se fornecido
         if (search && search.trim()) {
           const searchTerm = search.trim();
-          query = query.or(`name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%`);
+          query = query.or(`name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%,cpf_cnpj.ilike.%${searchTerm}%`);
         }
 
         // Aplicar limite se fornecido
