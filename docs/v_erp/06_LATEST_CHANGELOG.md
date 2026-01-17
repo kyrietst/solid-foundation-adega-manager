@@ -258,3 +258,21 @@
   - Login screen (`Auth.tsx`) confirmed clean of debug credentials.
   - No residual hardcoded phone numbers or generic addresses in user-facing code.
 ---
+
+### R. Customer Intelligence & Receipt Layout (Jan 16-17, 2026)
+
+- **Smart Link (Anti-Duplication):**
+  - **Problem:** "Quick Customer" allowed multiple customers with the same
+    phone, fragmenting history.
+  - **Solution:** `create_quick_customer` RPC updated with "Find or Create"
+    logic. Frontend `QuickCustomerCreateModal` detects existing phones on blur
+    and BLOCKS duplicates.
+  - **Result:** Zero duplicate phones allowed. Users are forced to link to the
+    existing profile.
+
+- **Status Report (Receipts):**
+  - **Delivery Layout:** Relocated Delivery Info to the **Header** (Fiscal) for
+    better courier visibility.
+  - **Address Logic:** Updated parser to handle both Portuguese (`logradouro`)
+    and English (`street`) keys from CEP API.
+  - **Fiscal Footer:** Cleaned up visual clutter (asterisks) and ICMS warnings.

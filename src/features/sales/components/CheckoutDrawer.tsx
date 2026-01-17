@@ -210,11 +210,10 @@ export function CheckoutDrawer({ isOpen, onClose, onSuccess }: CheckoutDrawerPro
         total,
         customerId,
         // ⚠️ CRITICAL BUSINESS LOGIC:
-        // 'pickup' in UI means "Fiado/Conta".
         // Backend expects 'presencial' channel for in-store sales.
         // We map UI 'pickup' -> 'presencial' (or 'delivery' if toggled) but with 'Fiado' payment method.
         saleType,
-        paymentMethodId,
+        paymentMethodId: saleType === 'pickup' ? (fiadoMethod?.id || '') : paymentMethodId,
         discount,
         allowDiscounts: true, // Configurable?
         deliveryAddress: addressForm.getValues(), // Get address from form, fallback inside hook
