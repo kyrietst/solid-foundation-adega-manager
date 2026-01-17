@@ -141,3 +141,10 @@ se necessário.
 
 **Verificar Logs:** Acesse o Dashboard Supabase > Edge Functions >
 fiscal-handler > Logs.
+
+### QR Code "Indisponível" ou em Branco
+
+**Causa:** A API da Nuvem Fiscal pode retornar um JSON "esquelético" sem a URL
+do QR Code. **Solução:** O sistema agora utiliza uma **"Estratégia Nuclear"**
+(XML Parsing). Se a URL não vier no JSON, ele busca o XML bruto e extrai via
+Regex. **Detalhes:** Veja `modules/07_FISCAL_QRCODE_STRATEGY.md`.

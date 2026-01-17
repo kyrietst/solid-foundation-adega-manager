@@ -38,9 +38,18 @@ export interface ReceiptData {
   seller_name?: string;
   items: ReceiptItem[];
   delivery_fee?: number;
-  address?: string;
+  address?: string; // Legacy/Fallback formatted string
+  deliveryAddressStructured?: { // New Structured Data
+    street: string;
+    number: string;
+    neighborhood: string;
+    complement?: string;
+    city?: string;
+    state?: string;
+    reference?: string;
+  };
   deliveryInstructions?: string;
-  customer_cpf_cnpj?: string; // Added for Fiscal
+  customer_cpf_cnpj?: string; 
   store_info?: StoreInfo;
 }
 
@@ -279,27 +288,60 @@ export const ReceiptPrint: React.FC<ReceiptPrintProps> = ({
         ) : (
           // --- MANAGERIAL FOOTER ---
           <>
-             {/* DADOS DO CLIENTE (Legacy Placement) */}
+             {/* DADOS DE ENTREGA / CLIENTE */}
              <div style={{ margin: '4px 0' }}>
-               <div className="text-md">{data.customer_name || 'Consumidor'}</div>
-               {data.customer_phone && <div>{data.customer_phone}</div>}
-               {data.delivery && data.address && (
-                 <div className="address-box" style={{
-                   wordWrap: 'break-word',
-                   whiteSpace: 'pre-wrap',
-                   marginTop: '4px',
-                   padding: '4px',
-                   border: '1px solid #000'
-                 }}>
-                   <div className="text-md" style={{ fontWeight: 'bold' }}>ENDEREÇO DE ENTREGA:</div>
-                   {data.address}
-                   {data.deliveryInstructions && (
-                     <div style={{ marginTop: '2px', fontStyle: 'italic' }}>
-                       Obs: {data.deliveryInstructions}
-                     </div>
-                   )}
+               
+               {data.delivery ? (
+                 // === LAYOUT DELIVERY (IFOOD STYLE) ===
+                 <div className="border border-black p-2 my-2 rounded-sm">
+                    <div className="text-lg font-bold text-center border-b border-black pb-1 mb-1 bg-black text-white">
+                      🛵 ENTREGA / DELIVERY
+                    </div>
+                    
+                    <div className="text-md font-bold uppercase mb-1 border-b border-dashed border-gray-400 pb-1">
+                       CLIENTE: {data.customer_name || 'NÃO IDENTIFICADO'}
+                       {data.customer_phone && <span className="block font-normal text-sm">Tel: {data.customer_phone}</span>}
+                    </div>
+
+                    {data.deliveryAddressStructured ? (
+                       <div className="text-sm flex flex-col gap-0.5 mt-1">
+                          <div className="font-bold text-md uppercase">{data.deliveryAddressStructured.street}, {data.deliveryAddressStructured.number}</div>
+                          {data.deliveryAddressStructured.neighborhood && (
+                             <div className="uppercase">Bairro: {data.deliveryAddressStructured.neighborhood}</div>
+                          )}
+                          {data.deliveryAddressStructured.complement && (
+                             <div className="uppercase">Compl: {data.deliveryAddressStructured.complement}</div>
+                          )}
+                          <div className="uppercase">
+                             {data.deliveryAddressStructured.city}
+                             {data.deliveryAddressStructured.state && ` - ${data.deliveryAddressStructured.state}`}
+                          </div>
+                          {data.deliveryAddressStructured.reference && (
+                             <div className="mt-1 font-bold bg-gray-200 px-1">REF: {data.deliveryAddressStructured.reference}</div>
+                          )}
+                       </div>
+                    ) : (
+                       // Fallback for legacy address string
+                       <div className="text-md whitespace-pre-wrap font-bold">
+                          {data.address || 'ENDEREÇO NÃO INFORMADO'}
+                       </div>
+                    )}
+                    
+                    {data.deliveryInstructions && (
+                       <div className="mt-2 text-sm border-t border-dashed border-black pt-1 font-bold">
+                         OBS: {data.deliveryInstructions}
+                       </div>
+                    )}
+                 </div>
+               ) : (
+                 // === LAYOUT BALCÃO / RETIRADA ===
+                 <div className="text-center my-4 py-2 border-y border-dashed border-black">
+                    <div className="text-lg font-bold">🏪 BALCÃO / RETIRADA</div>
+                    <div className="text-md uppercase">{data.customer_name || 'CONSUMIDOR FINAL'}</div>
+                    {data.customer_phone && <div className="text-sm">{data.customer_phone}</div>}
                  </div>
                )}
+
              </div>
 
              {/* Footer Standard */}

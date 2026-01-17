@@ -173,6 +173,15 @@ export const useReceiptData = (saleId: string | null) => {
         items,
         delivery_fee: saleData.delivery_fee ? Number(saleData.delivery_fee) : undefined,
         address: formattedAddress,
+        deliveryAddressStructured: saleData.delivery && saleData.delivery_address && typeof saleData.delivery_address === 'object' ? {
+            street: (saleData.delivery_address as any).street || (saleData.delivery_address as any).address || '', // Fallback for simple address
+            number: (saleData.delivery_address as any).number || 'S/N',
+            neighborhood: (saleData.delivery_address as any).neighborhood || '',
+            complement: (saleData.delivery_address as any).complement,
+            city: (saleData.delivery_address as any).city,
+            state: (saleData.delivery_address as any).state,
+            reference: (saleData.delivery_address as any).reference
+        } : undefined,
         deliveryInstructions: saleData.delivery_instructions || undefined,
         
         // Dynamic Store Info
