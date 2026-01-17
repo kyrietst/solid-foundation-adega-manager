@@ -58,7 +58,8 @@ Direct inserts are blocked.
 
 - **Parameters:**
   - `p_sale_id` (uuid)
-  - `p_reason` (text)
+  - `p_reason` (text | null): Obrigatório apenas para vendas fiscais. Opcional
+    para internas.
 - **Logic:**
   - Marks sale as `cancelled`.
   - Iterates items and calls `create_inventory_movement` (Type: 'return').

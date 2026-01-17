@@ -101,6 +101,22 @@ fiscal vs. estoque.
      5. **Erro:** Edge Function retorna 400/500. UI exibe erro e **NÃO** estorna
         estoque.
 
+### Garantia de Isolamento (Safety Lock)
+
+> [!TIP]
+> **Como garantir que a API Fiscal NÃO seja chamada em vendas simples
+> (Fiado/Balcão)?**
+>
+> O hook `useSalesMutations.ts` implementa um **Double-Check**:
+>
+> 1. Ele faz uma query na tabela `invoice_logs` buscando por
+>    `status = 'authorized'` para aquele `sale_id`.
+> 2. **Somente se retornar registro**, ele entra no bloco `if (isFiscal)`.
+> 3. Se não houver nota autorizada, o código **pula 100% da lógica de rede** e
+>    executa apenas o SQL `rpc/cancel_sale`.
+>
+> **Verificado em:** 17/01/2026.
+
 ---
 
 ## 4. Troubleshooting Comum
