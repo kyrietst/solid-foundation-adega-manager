@@ -751,34 +751,41 @@ Deno.serve(async (req) => {
     console.log('[Fiscal Debug] API Data Keys:', Object.keys(apiData))
     if (apiData.sefazUrlQrCode) console.log('[Fiscal Debug] Found sefazUrlQrCode')
 
-    // --- QR CODE RESCUE MISSION ---
+    // --- QR CODE RESCUE MISSION (NUCLEAR OPTION: XML PARSING) ---
+    // The JSON API is unreliable for the URL. We will fetch the XML and extract it.
     let qrFromRescue = null
-    // If we don't have the explicit QR Code, we MUST fetch the full details
     const hasDirectQr = apiData.url_consulta_qrcode || apiData.qrcode_url || apiData.url_qrcode || apiData.link_qrcode || apiData.sefazUrlQrCode
     
     if (!hasDirectQr && apiData.id) {
-        console.log('[Fiscal] QR Code missing in initial response. Fetching full details...')
+        console.log('[Fiscal] QR Code missing. Initiating XML Extraction Protocol...')
         try {
-            // Small delay to ensure propagation
+            // Small delay
             await new Promise(r => setTimeout(r, 500))
             
-            const detailRes = await fetch(`${BASE_API_URL}/nfce/${apiData.id}`, {
+            // Fetch XML content
+            const xmlRes = await fetch(`${BASE_API_URL}/nfce/${apiData.id}/xml`, {
                  headers: { 'Authorization': `Bearer ${access_token}` }
             })
-            if (detailRes.ok) {
-                const detailData = await detailRes.json()
-                console.log('[Fiscal Debug] Rescue Keys:', Object.keys(detailData))
-                // Try to find it in the detailed object
-                qrFromRescue = detailData.url_consulta_qrcode || detailData.qrcode_url || detailData.sefazUrlQrCode
+            
+            if (xmlRes.ok) {
+                const xmlText = await xmlRes.text() // Raw XML string
+                // console.log('[Fiscal Debug] XML Length:', xmlText.length)
                 
-                // Deep search in nested objects if needed (e.g. infNFeSupl)
-                if (!qrFromRescue && detailData.infNFeSupl) {
-                     qrFromRescue = detailData.infNFeSupl.qrCode
+                // Regex to find <qrCode>...</qrCode>
+                // It usually looks like: <qrCode><![CDATA[http://...]]></qrCode> OR <qrCode>http://...</qrCode>
+                const qrMatch = xmlText.match(/<qrCode>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?<\/qrCode>/)
+                
+                if (qrMatch && qrMatch[1]) {
+                    qrFromRescue = qrMatch[1]
+                    console.log('[Fiscal] XML Rescue SUCCESS: QR Found')
+                } else {
+                    console.warn('[Fiscal] XML Rescue FAILED: Tag not found')
                 }
-                console.log('[Fiscal] Rescue Result:', qrFromRescue ? 'FOUND' : 'FAILED')
+            } else {
+                console.warn(`[Fiscal] Failed to fetch XML: ${xmlRes.status}`)
             }
         } catch (rescueErr) {
-            console.error('[Fiscal] Rescue Failed:', rescueErr)
+            console.error('[Fiscal] XML Rescue Exception:', rescueErr)
         }
     }
         // --- PROXY PDF STORAGE (Nuvem Fiscal -> Supabase Storage) ---
