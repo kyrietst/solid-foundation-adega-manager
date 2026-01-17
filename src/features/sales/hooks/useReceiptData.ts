@@ -174,12 +174,13 @@ export const useReceiptData = (saleId: string | null) => {
         delivery_fee: saleData.delivery_fee ? Number(saleData.delivery_fee) : undefined,
         address: formattedAddress,
         deliveryAddressStructured: saleData.delivery && saleData.delivery_address && typeof saleData.delivery_address === 'object' ? {
-            street: (saleData.delivery_address as any).street || (saleData.delivery_address as any).address || '', // Fallback for simple address
-            number: (saleData.delivery_address as any).number || 'S/N',
-            neighborhood: (saleData.delivery_address as any).neighborhood || '',
-            complement: (saleData.delivery_address as any).complement,
-            city: (saleData.delivery_address as any).city,
-            state: (saleData.delivery_address as any).state,
+            // Updated to handle both English and Portuguese keys (from CEP API)
+            street: (saleData.delivery_address as any).street || (saleData.delivery_address as any).logradouro || (saleData.delivery_address as any).address || '', 
+            number: (saleData.delivery_address as any).number || (saleData.delivery_address as any).numero || 'S/N',
+            neighborhood: (saleData.delivery_address as any).neighborhood || (saleData.delivery_address as any).bairro || '',
+            complement: (saleData.delivery_address as any).complement || (saleData.delivery_address as any).complemento,
+            city: (saleData.delivery_address as any).city || (saleData.delivery_address as any).nome_municipio || (saleData.delivery_address as any).localidade,
+            state: (saleData.delivery_address as any).state || (saleData.delivery_address as any).uf,
             reference: (saleData.delivery_address as any).reference
         } : undefined,
         deliveryInstructions: saleData.delivery_instructions || undefined,
