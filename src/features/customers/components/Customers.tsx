@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/shared/ui/primitives/button';
 import { LoadingScreen } from '@/shared/ui/composite/loading-spinner';
 import { useCustomers } from '@/features/customers/hooks/use-crm';
+import { useDebounce } from '@/shared/hooks/useDebounce';
 import { PremiumBackground } from '@/shared/ui/composite/PremiumBackground';
 import { Download, Plus } from 'lucide-react';
 import CustomerDataTable from './CustomerDataTable';
@@ -19,14 +20,15 @@ const CustomersLite = () => {
   
   // State for Filters
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 500); // 500ms delay
+
   const [segmentFilter, setSegmentFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('');
   const [lastPurchaseFilter, setLastPurchaseFilter] = useState('');
   const [birthdayFilter, setBirthdayFilter] = useState('');
   
-  // Usar hook básico de customers
-  // Note: We might want to unify data fetching, but for now we keep existing pattern
-  const { data: customers = [], isLoading, error } = useCustomers({ search });
+  // Use debouncedSearch for fetching data to prevent lag
+  const { data: customers = [], isLoading, error } = useCustomers({ search: debouncedSearch });
 
   const uniqueSegments = useMemo(() => {
     if (!customers) return [];
@@ -68,8 +70,12 @@ const CustomersLite = () => {
   const totalRevenue = 0; 
   const averageTicket = 0;
 
-  if (isLoading) {
-    return <LoadingScreen text="Carregando clientes..." />;
+  // We are NOT blocking the UI with full page loading screen for search updates
+  // Only show full loading screen on initial mount if really needed, but usually Skeleton is better
+  // Keeping existing logic: if initial loading, show LoadingScreen. 
+  // Ideally this should be a skeletal loading state inside the table.
+  if (isLoading && !debouncedSearch && customers.length === 0) {
+     return <LoadingScreen text="Carregando clientes..." />;
   }
 
   if (error) {
@@ -151,7 +157,10 @@ const CustomersLite = () => {
             {/* Table */}
             <div className="flex-1 min-h-[500px]">
                  <CustomerDataTable 
-                    searchTerm={search}
+                    // If we are searching (debouncing), we might want to show a spinner inside the table
+                    // But for now, we pass the data we have. 
+                    // To show "live" search feeling, we could pass isLoading to the table if it supported it.
+                    searchTerm={search} // Pass the raw search term for highlighting if supported, or just for consistency
                     segmentFilter={segmentFilter}
                     statusFilter={statusFilter}
                     lastPurchaseFilter={lastPurchaseFilter}
