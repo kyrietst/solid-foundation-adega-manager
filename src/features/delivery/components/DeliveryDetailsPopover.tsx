@@ -56,6 +56,19 @@ export const DeliveryDetailsPopover: React.FC<DeliveryDetailsPopoverProps> = ({
     }
   };
 
+  /* Translations added for consistency */
+  const statusTranslations: Record<string, string> = {
+    'pending': 'Pendente',
+    'confirmed': 'Confirmado',
+    'preparing': 'Em Preparo',
+    'ready_for_pickup': 'Pronto para Envio',
+    'ready': 'Pronto para Envio',
+    'out_for_delivery': 'Saiu para Entrega',
+    'dispatched': 'Saiu para Entrega',
+    'delivered': 'Entregue',
+    'cancelled': 'Cancelado'
+  };
+
   const nextStatusMap: Record<string, { label: string, status: string, icon: React.ReactNode }> = {
     'pending': { label: 'Iniciar Preparo', status: 'preparing', icon: <Package size={14} /> },
     'preparing': { label: 'Sair p/ Entrega', status: 'out_for_delivery', icon: <Truck size={14} /> },
@@ -82,7 +95,7 @@ export const DeliveryDetailsPopover: React.FC<DeliveryDetailsPopoverProps> = ({
                 <div className="flex items-center gap-2">
                    <h4 className="text-sm font-semibold text-white">Pedido #{delivery.id.slice(0, 8)}</h4>
                    <Badge variant="outline" className={`text-[10px] px-1.5 h-5 ${getStatusColor(delivery.delivery_status)}`}>
-                      {delivery.delivery_status}
+                      {statusTranslations[delivery.delivery_status] || delivery.delivery_status}
                    </Badge>
                 </div>
                 <div className="flex items-center gap-2 text-xs text-zinc-400 mt-1">
@@ -130,20 +143,34 @@ export const DeliveryDetailsPopover: React.FC<DeliveryDetailsPopoverProps> = ({
 
                    <div className="flex items-start gap-2">
                       <MapPin size={14} className="text-zinc-500 mt-0.5" />
-                      <div className="flex-1">
-                         {delivery.delivery_address ? (
-                            <>
-                              <p className="text-xs text-zinc-300 font-medium">
-                                 {delivery.delivery_address.street}, {delivery.delivery_address.number}
-                              </p>
-                              <p className="text-[10px] text-zinc-500">
-                                 {delivery.delivery_address.neighborhood} • {delivery.delivery_address.city}
-                              </p>
-                            </>
-                         ) : (
-                            <p className="text-xs text-zinc-500 italic">Retirada na loja</p>
-                         )}
-                      </div>
+                        <div className="flex-1">
+                          {delivery.delivery_address ? (() => {
+                             const addr = delivery.delivery_address;
+                             const street = addr.street || addr.logradouro || addr.address || '';
+                             const number = addr.number || addr.numero || 'S/N';
+                             const neighborhood = addr.neighborhood || addr.bairro || '';
+                             const city = addr.city || addr.nome_municipio || addr.localidade || '';
+                             const complement = addr.complement || addr.complemento;
+
+                             return (
+                                <>
+                                  <p className="text-xs text-zinc-300 font-medium">
+                                    {street}, {number}
+                                  </p>
+                                  {complement && (
+                                    <p className="text-[10px] text-zinc-400">
+                                      {complement}
+                                    </p>
+                                  )}
+                                  <p className="text-[10px] text-zinc-500">
+                                    {neighborhood} • {city}
+                                  </p>
+                                </>
+                             );
+                          })() : (
+                            <p className="text-xs text-zinc-500 italic">Retirada na loja (Balcão)</p>
+                          )}
+                        </div>
                       {delivery.delivery_address && (
                           <Button 
                              size="icon" 
@@ -175,8 +202,17 @@ export const DeliveryDetailsPopover: React.FC<DeliveryDetailsPopoverProps> = ({
                          </div>
                       ))}
                    </div>
-                   <div className="flex justify-end pt-2 border-t border-white/5 gap-4 text-xs">
-                      <span className="text-zinc-500">Entrega: {formatCurrency(delivery.delivery_fee)}</span>
+                   <div className="flex justify-end pt-2 border-t border-white/5 gap-4 text-xs items-center">
+                      <div className="flex items-center gap-2">
+                         <span className="text-zinc-500">Entrega:</span>
+                         {delivery.delivery_fee > 0 ? (
+                            <span className="text-zinc-300">{formatCurrency(delivery.delivery_fee)}</span>
+                         ) : (
+                            <Badge variant="outline" className="text-[10px] rounded-sm px-1.5 h-5 bg-emerald-500/10 text-emerald-500 border-emerald-500/20">
+                               Grátis
+                            </Badge>
+                         )}
+                      </div>
                       {delivery.discount_amount > 0 && (
                          <span className="text-green-500">Desc: -{formatCurrency(delivery.discount_amount)}</span>
                       )}
@@ -191,7 +227,9 @@ export const DeliveryDetailsPopover: React.FC<DeliveryDetailsPopoverProps> = ({
                       {delivery.tracking?.slice(0, 3).map((track, i) => (
                          <div key={i} className="relative">
                             <div className={`absolute -left-[17px] top-1 w-2 h-2 rounded-full border border-zinc-950 ${i === 0 ? 'bg-primary' : 'bg-zinc-700'}`} />
-                            <p className={`text-xs ${i === 0 ? 'text-zinc-200' : 'text-zinc-500'}`}>{track.status}</p>
+                            <p className={`text-xs ${i === 0 ? 'text-zinc-200' : 'text-zinc-500'}`}>
+                               {statusTranslations[track.status] || track.status}
+                            </p>
                             <p className="text-[10px] text-zinc-600">{format(new Date(track.created_at), 'HH:mm')}</p>
                          </div>
                       ))}

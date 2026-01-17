@@ -69,9 +69,15 @@ export const DeliveryTimeline = ({ saleId, className }: DeliveryTimelineProps) =
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case 'pending': return 'Pedido Recebido';
-      case 'preparing': return 'Preparando Pedido';
-      case 'out_for_delivery': return 'Saiu para Entrega';
+      case 'pending': return 'Pendente';
+      case 'confirmed': return 'Confirmado';
+      case 'preparing': return 'Em Preparo';
+      case 'ready_for_pickup': 
+      case 'ready': 
+        return 'Pronto para Envio';
+      case 'out_for_delivery':
+      case 'dispatched': 
+        return 'Saiu para Entrega';
       case 'delivered': return 'Entregue';
       case 'cancelled': return 'Cancelado';
       default: return status;
