@@ -325,8 +325,16 @@ Deno.serve(async (req) => {
     const totalVendaNumber = parseFloat(totalVenda.toFixed(2))
     
     // DELIVERY FEE LOGIC
+    // DELIVERY FEE & DISCOUNT LOGIC
     const vFrete = sale.delivery_fee ? parseFloat(sale.delivery_fee) : 0.00;
-    const vNF = parseFloat((totalVendaNumber + vFrete).toFixed(2));
+    const vDesc = sale.discount_amount ? parseFloat(sale.discount_amount) : 0.00;
+    
+    // Total Note Value = Products + Freight - Discount
+    const vNF = parseFloat((totalVendaNumber + vFrete - vDesc).toFixed(2));
+    
+    // Transport Mode Logic
+    // 9 (Sem Ocorrência) is invalid if vFrete > 0.
+    const modFrete = vFrete > 0 ? 1 : 9;
 
     // Calculate Tax Totals (MEI Logic - Simples Nacional)
     // MEI não destaca ICMS (vBC e vICMS = 0)
@@ -555,7 +563,7 @@ Deno.serve(async (req) => {
                     vProd: totalVendaNumber, // NUMBER
                     vFrete: vFrete,
                     vSeg: 0.00,
-                    vDesc: 0.00,
+                    vDesc: vDesc,
                     vII: 0.00,
                     vIPI: 0.00,
                     vIPIDevol: 0.00,
@@ -566,7 +574,7 @@ Deno.serve(async (req) => {
                     vTotTrib: 0.00
                 }
             },
-            transp: { modFrete: 9 }, // NUMBER (Era "9")
+            transp: { modFrete: modFrete }, // 9=Sem Frete, 1=Destinatário
             pag: {
                 detPag: paymentDetList
             }
