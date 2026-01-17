@@ -150,7 +150,7 @@ export const ReceiptPrint: React.FC<ReceiptPrintProps> = ({
               {/* --- LÓGICA CONDICIONAL: SE DELIVERY, MOSTRA DADOS --- */}
               {data.delivery ? (
                 <div className="text-[10px] font-bold font-mono text-left my-1">
-                   <div className="text-center">******** ENTREGA / DELIVERY ********</div>
+                   <div className="text-center font-black text-xs border-b border-black pb-1 mb-1">ENTREGA / DELIVERY</div>
                    <div>CLIENTE: {data.customer_name || 'NÃO IDENTIFICADO'}</div>
                    <div>
                       END: {data.deliveryAddressStructured ? (
