@@ -34,12 +34,21 @@ const Delivery = () => {
   const queryClient = useQueryClient();
 
   // Hooks para dados reais
-  const { data: serverDeliveries = [], isLoading: isLoadingDeliveries, refetch } = useDeliveryOrders();
+  // Day View: Filtrar apenas pedidos criados hoje (00:00:00)
+  const startOfToday = useMemo(() => {
+    const date = new Date();
+    date.setHours(0, 0, 0, 0);
+    return date;
+  }, []);
+
+  const { data: serverDeliveries = [], isLoading: isLoadingDeliveries, refetch } = useDeliveryOrders({
+    createdAfter: startOfToday
+  });
   const updateDeliveryStatus = useUpdateDeliveryStatus();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [activeId, setActiveId] = useState<string | null>(null); // State for active drag item
-  
+
   // Local state for optimistic updates and smooth dragging
   const [deliveries, setDeliveries] = useState<DeliveryOrder[]>([]);
 
@@ -103,7 +112,7 @@ const Delivery = () => {
     return {
       pending: filteredDeliveries
         .filter(d => d.delivery_status === 'pending')
-        .sort(sortByDate), 
+        .sort(sortByDate),
 
       preparing: filteredDeliveries
         .filter(d => d.delivery_status === 'preparing')
@@ -173,7 +182,7 @@ const Delivery = () => {
     // If overId is an item ID, find that item's status.
     let overStatus = '';
     const validStatuses = ['pending', 'preparing', 'out_for_delivery', 'delivered'];
-    
+
     if (validStatuses.includes(overId as string)) {
       overStatus = overId as string;
     } else {
@@ -189,13 +198,13 @@ const Delivery = () => {
     if (activeItem.delivery_status !== overStatus) {
       setDeliveries((items) => {
         return items.map(item => {
-           if (item.id === activeId) {
-             return { 
-               ...item, 
-               delivery_status: overStatus as DeliveryOrder['delivery_status'] 
-             };
-           }
-           return item;
+          if (item.id === activeId) {
+            return {
+              ...item,
+              delivery_status: overStatus as DeliveryOrder['delivery_status']
+            };
+          }
+          return item;
         });
       });
     }
@@ -210,15 +219,15 @@ const Delivery = () => {
 
     const deliveryId = active.id as string;
     const activeItem = deliveries.find(d => d.id === deliveryId);
-    
+
     // Determine final status similarly
     let newStatus = '';
     const validStatuses = ['pending', 'preparing', 'out_for_delivery', 'delivered'];
     if (validStatuses.includes(over.id as string)) {
-        newStatus = over.id as string;
+      newStatus = over.id as string;
     } else {
-        const overItem = deliveries.find(d => d.id === over.id);
-        if (overItem) newStatus = overItem.delivery_status;
+      const overItem = deliveries.find(d => d.id === over.id);
+      if (overItem) newStatus = overItem.delivery_status;
     }
 
     // Call API if changed
@@ -227,36 +236,36 @@ const Delivery = () => {
     // However, since handleDragOver mutates 'deliveries', activeItem.delivery_status might be the *new* status.
     // We should rely on checking if the update is necessary based on the *intended* move vs server reality.
     // Simpler: Just convert standard drag end logic.
-    
+
     // Actually, since DragOver already updated the status visually, 
     // we assume the user intends this final state.
     // But we need to ensure the API call happens.
-    
+
     // Find the original status from Server Data to verify change
     const originalItem = serverDeliveries.find(d => d.id === deliveryId);
     if (originalItem && originalItem.delivery_status !== newStatus && newStatus) {
-         handleUpdateStatus(deliveryId, newStatus);
+      handleUpdateStatus(deliveryId, newStatus);
     } else {
-        // If no change, force sync local state back to server state to ensure order is correct
-        setDeliveries(serverDeliveries);
+      // If no change, force sync local state back to server state to ensure order is correct
+      setDeliveries(serverDeliveries);
     }
   };
 
   // Find active delivery for overlay
   const activeDelivery = useMemo(() => {
-     if (!activeId) return null;
-     return deliveries.find(d => d.id === activeId);
+    if (!activeId) return null;
+    return deliveries.find(d => d.id === activeId);
   }, [activeId, deliveries]);
 
   // Calculate metrics
   const metrics = useMemo(() => {
     if (!deliveries.length) return null;
-    
+
     // Logic to calculate metrics based on deliveries
     const totalOrders = deliveries.length;
     const delivered = deliveries.filter(d => d.delivery_status === 'delivered');
     const totalRevenue = delivered.reduce((acc, curr) => acc + (curr.final_amount || 0), 0);
-    
+
     return {
       totalOrders: deliveries.length,
       totalRevenue: totalRevenue,
@@ -264,7 +273,7 @@ const Delivery = () => {
       inTransitOrders: deliveries.filter(d => d.delivery_status === 'out_for_delivery').length,
       deliveredOrders: delivered.length,
       cancelledOrders: deliveries.filter(d => d.delivery_status === 'cancelled').length,
-      totalDeliveryFees: 0, 
+      totalDeliveryFees: 0,
       avgDeliveryTime: 0,
       onTimeRate: 0,
       avgOrderValue: 0,
@@ -331,101 +340,101 @@ const Delivery = () => {
       {/* ... header ... */}
       <PremiumBackground />
       <header className="flex-none px-8 py-6 pt-8 pb-6 z-10 w-full">
-          <div className="flex flex-wrap justify-between items-end gap-4 mb-12">
-             <div className="flex flex-col gap-1">
-               <p className="text-zinc-500 text-sm font-medium tracking-widest uppercase">Módulo de Logística</p>
-               <h2 className="text-white text-3xl md:text-4xl font-bold leading-tight tracking-tight">CONTROLE DE ENTREGAS</h2>
-             </div>
-             <div className="flex gap-3">
-               <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-900 border border-zinc-700/50 text-xs text-zinc-400">
-                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                 Sistema Online
-               </div>
-               <Button 
-                 onClick={() => {
-                   toast({ title: "Atualizando...", description: "Sincronizando dados.." });
-                   refetch(); 
-                 }}
-                 variant="outline" 
-                 size="icon"
-                 className="h-10 w-10 rounded-xl bg-zinc-900 border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500"
-               >
-                 <RefreshCw className="h-4 w-4" />
-               </Button>
-             </div>
+        <div className="flex flex-wrap justify-between items-end gap-4 mb-12">
+          <div className="flex flex-col gap-1">
+            <p className="text-zinc-500 text-sm font-medium tracking-widest uppercase">Módulo de Logística</p>
+            <h2 className="text-white text-3xl md:text-4xl font-bold leading-tight tracking-tight">CONTROLE DE ENTREGAS</h2>
           </div>
+          <div className="flex gap-3">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-900 border border-zinc-700/50 text-xs text-zinc-400">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              Sistema Online
+            </div>
+            <Button
+              onClick={() => {
+                toast({ title: "Atualizando...", description: "Sincronizando dados.." });
+                refetch();
+              }}
+              variant="outline"
+              size="icon"
+              className="h-10 w-10 rounded-xl bg-zinc-900 border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500"
+            >
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
 
-          <DeliveryStatsGrid metrics={metrics} />
+        <DeliveryStatsGrid metrics={metrics} />
       </header>
 
       <main className="flex-1 overflow-hidden px-8 pb-4">
-        <DndContext 
-          sensors={sensors} 
+        <DndContext
+          sensors={sensors}
           collisionDetection={closestCorners}
-          onDragStart={handleDragStart} 
+          onDragStart={handleDragStart}
           onDragOver={handleDragOver}
           onDragEnd={handleDragEnd}
         >
-           <div className="grid grid-cols-4 gap-4 h-[calc(100vh-16rem)] min-w-[1024px] overflow-x-auto snap-x snap-mandatory pb-2">
+          <div className="grid grid-cols-4 gap-4 h-[calc(100vh-16rem)] min-w-[1024px] overflow-x-auto snap-x snap-mandatory pb-2">
             {/* Columns... */}
-             {/* 1. Pending */}
-             <div className="snap-center h-full">
-               <KanbanColumn
-                 title="Pendente"
-                 status="pending"
-                 color="yellow"
-                 deliveries={kanbanColumns.pending}
-                 onUpdateStatus={handleUpdateStatus}
-                 onDelete={handleDeleteOrder}
-               />
-             </div>
- 
-             {/* 2. Preparing */}
-             <div className="snap-center h-full">
-               <KanbanColumn
-                 title="Preparando"
-                 status="preparing"
-                 color="orange"
-                 deliveries={kanbanColumns.preparing}
-                 onUpdateStatus={handleUpdateStatus}
-                 onDelete={handleDeleteOrder}
-               />
-             </div>
- 
-             {/* 3. Out For Delivery */}
-             <div className="snap-center h-full">
-               <KanbanColumn
-                 title="Em Rota"
-                 status="out_for_delivery"
-                 color="blue"
-                 deliveries={kanbanColumns.out_for_delivery}
-                 onUpdateStatus={handleUpdateStatus}
-                 onDelete={handleDeleteOrder}
-               />
-             </div>
- 
-             {/* 4. Delivered */}
-             <div className="snap-center h-full">
-               <KanbanColumn
-                 title="Entregue"
-                 status="delivered"
-                 color="green"
-                 deliveries={kanbanColumns.delivered_today}
-                 onUpdateStatus={handleUpdateStatus}
-                 onDelete={handleDeleteOrder}
-               />
-             </div>
-           </div>
+            {/* 1. Pending */}
+            <div className="snap-center h-full">
+              <KanbanColumn
+                title="Pendente"
+                status="pending"
+                color="yellow"
+                deliveries={kanbanColumns.pending}
+                onUpdateStatus={handleUpdateStatus}
+                onDelete={handleDeleteOrder}
+              />
+            </div>
 
-           <DragOverlay>
-             {activeDelivery ? (
-               <DeliveryOrderCard 
-                 delivery={activeDelivery} 
-                 isOverlay 
-                 // No handlers needed for overlay visual
-               />
-             ) : null}
-           </DragOverlay>
+            {/* 2. Preparing */}
+            <div className="snap-center h-full">
+              <KanbanColumn
+                title="Preparando"
+                status="preparing"
+                color="orange"
+                deliveries={kanbanColumns.preparing}
+                onUpdateStatus={handleUpdateStatus}
+                onDelete={handleDeleteOrder}
+              />
+            </div>
+
+            {/* 3. Out For Delivery */}
+            <div className="snap-center h-full">
+              <KanbanColumn
+                title="Em Rota"
+                status="out_for_delivery"
+                color="blue"
+                deliveries={kanbanColumns.out_for_delivery}
+                onUpdateStatus={handleUpdateStatus}
+                onDelete={handleDeleteOrder}
+              />
+            </div>
+
+            {/* 4. Delivered */}
+            <div className="snap-center h-full">
+              <KanbanColumn
+                title="Entregue"
+                status="delivered"
+                color="green"
+                deliveries={kanbanColumns.delivered_today}
+                onUpdateStatus={handleUpdateStatus}
+                onDelete={handleDeleteOrder}
+              />
+            </div>
+          </div>
+
+          <DragOverlay>
+            {activeDelivery ? (
+              <DeliveryOrderCard
+                delivery={activeDelivery}
+                isOverlay
+              // No handlers needed for overlay visual
+              />
+            ) : null}
+          </DragOverlay>
         </DndContext>
       </main>
     </div>

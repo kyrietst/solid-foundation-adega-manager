@@ -20,6 +20,7 @@ export const useDeliveryOrders = (params?: {
   date?: Date;
   limit?: number;
   deliveryPersonId?: string;
+  createdAfter?: Date;
 }) => {
   const queryClient = useQueryClient();
 
@@ -131,6 +132,10 @@ export const useDeliveryOrders = (params?: {
 
         if (params?.limit) {
           query = query.limit(params.limit);
+        }
+
+        if (params?.createdAfter) {
+          query = query.gte('created_at', params.createdAfter.toISOString());
         }
 
         const { data: salesData, error } = await query;
