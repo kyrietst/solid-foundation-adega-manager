@@ -2,11 +2,11 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { cn } from '@/core/config/utils';
 import { DeliveryOrder } from '@/features/delivery/types';
-import { 
-  Clock, 
-  MapPin, 
-  GripVertical, 
-  User, 
+import {
+  Clock,
+  MapPin,
+  GripVertical,
+  User,
   DollarSign,
   MessageCircle
 } from 'lucide-react';
@@ -40,11 +40,11 @@ export const DeliveryOrderCard: React.FC<DeliveryOrderCardProps> = ({
     transition,
     isDragging
   } = !isOverlay
-    ? useSortable({
+      ? useSortable({
         id: delivery.id,
         data: delivery,
       })
-    : {
+      : {
         attributes: {},
         listeners: {},
         setNodeRef: undefined,
@@ -59,7 +59,7 @@ export const DeliveryOrderCard: React.FC<DeliveryOrderCardProps> = ({
   };
 
   const handleUpdateStatusWrapper = (id: string, status: string) => {
-      onUpdateStatus?.(id, status);
+    onUpdateStatus?.(id, status);
   };
 
   const getStatusColorClass = (status: string) => {
@@ -75,7 +75,7 @@ export const DeliveryOrderCard: React.FC<DeliveryOrderCardProps> = ({
   const formatCurrency = (val: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
 
   const CardContentRender = (
-    <Card 
+    <Card
       onClick={!isOverlay ? onClick : undefined}
       className={cn(
         "bg-[#09090b] border-white/10 overflow-hidden shadow-lg",
@@ -86,7 +86,7 @@ export const DeliveryOrderCard: React.FC<DeliveryOrderCardProps> = ({
     >
       {/* Pipe Lateral de Status */}
       <div className={cn(
-        "absolute left-0 top-0 bottom-0 w-1 transition-colors bg-opacity-80", 
+        "absolute left-0 top-0 bottom-0 w-1 transition-colors bg-opacity-80",
         getStatusColorClass(delivery.delivery_status)
       )} />
 
@@ -94,16 +94,16 @@ export const DeliveryOrderCard: React.FC<DeliveryOrderCardProps> = ({
         {/* Header: Drag Handle + ID + Tempo */}
         <div className="flex justify-between items-start">
           <div className="flex items-center gap-1.5">
-             {/* Only show grip cursor if not overlay, but icon is fine */}
-             <div {...listeners} {...attributes} className={cn("text-muted-foreground p-0.5 -ml-1 rounded transition-colors", !isOverlay && "cursor-grab active:cursor-grabbing hover:text-foreground")}>
-                <GripVertical size={14} />
-             </div>
-             <span className="font-mono text-xs text-muted-foreground tracking-wider">
-               #{delivery.id.slice(0, 8)}
-             </span>
+            {/* Only show grip cursor if not overlay, but icon is fine */}
+            <div {...listeners} {...attributes} className={cn("text-muted-foreground p-0.5 -ml-1 rounded transition-colors", !isOverlay && "cursor-grab active:cursor-grabbing hover:text-foreground")}>
+              <GripVertical size={14} />
+            </div>
+            <span className="font-mono text-xs text-muted-foreground tracking-wider">
+              #{delivery.id.slice(0, 8)}
+            </span>
           </div>
           <span className="text-xs text-muted-foreground flex items-center gap-1 bg-muted/50 px-1.5 py-0.5 rounded">
-            <Clock size={10} /> 
+            <Clock size={10} />
             {format(new Date(delivery.created_at), 'HH:mm')}
           </span>
         </div>
@@ -111,77 +111,85 @@ export const DeliveryOrderCard: React.FC<DeliveryOrderCardProps> = ({
         {/* Cliente e Endereço */}
         <div>
           <div className="flex items-center gap-1.5 mb-1">
-             <User size={14} className="text-primary shrink-0" />
-             <h4 className="text-sm font-semibold text-foreground truncate leading-none">
-               {delivery.customer?.name || "Cliente Balcão"}
-             </h4>
+            <User size={14} className="text-primary shrink-0" />
+            <h4 className="text-sm font-semibold text-foreground truncate leading-none">
+              {delivery.customer?.name || "Cliente Balcão"}
+            </h4>
           </div>
-          
-          {delivery.delivery_address ? (
-            <div className="flex items-start gap-1.5 text-xs text-muted-foreground mt-1.5">
-              <MapPin size={12} className="shrink-0 mt-0.5" />
-              <span className="line-clamp-2 leading-tight">
-                {delivery.delivery_address.street}, {delivery.delivery_address.number}
-                {delivery.delivery_address.neighborhood && ` - ${delivery.delivery_address.neighborhood}`}
-              </span>
-            </div>
-          ) : (
+
+
+          {delivery.delivery_address ? (() => {
+            const addr = delivery.delivery_address;
+            const street = addr.street || addr.logradouro || addr.address || '';
+            const number = addr.number || addr.numero || 'S/N';
+            const neighborhood = addr.neighborhood || addr.bairro || '';
+
+            return (
+              <div className="flex items-start gap-1.5 text-xs text-muted-foreground mt-1.5">
+                <MapPin size={12} className="shrink-0 mt-0.5" />
+                <span className="line-clamp-2 leading-tight">
+                  {street}, {number}
+                  {neighborhood && ` - ${neighborhood}`}
+                </span>
+              </div>
+            );
+          })() : (
             <span className="text-xs text-muted-foreground italic ml-5">Retirada na Loja</span>
           )}
         </div>
 
         {/* Resumo de Itens */}
         <div className="pl-5 space-y-1">
-             {delivery.items.slice(0, 3).map((item, idx) => (
-               <div key={idx} className="flex items-center justify-between text-xs text-muted-foreground/80">
-                  <span className="truncate">{item.quantity}x {item.product_name}</span>
-               </div>
-             ))}
-             {delivery.items.length > 3 && (
-               <div className="text-[10px] text-muted-foreground italic">+ {delivery.items.length - 3} itens...</div>
-             )}
+          {delivery.items.slice(0, 3).map((item, idx) => (
+            <div key={idx} className="flex items-center justify-between text-xs text-muted-foreground/80">
+              <span className="truncate">{item.quantity}x {item.product_name}</span>
+            </div>
+          ))}
+          {delivery.items.length > 3 && (
+            <div className="text-[10px] text-muted-foreground italic">+ {delivery.items.length - 3} itens...</div>
+          )}
         </div>
 
         {/* Footer: Valor e Ações */}
         <div className="pt-2 mt-1 border-t border-border/50 flex items-center justify-between">
-           <div className="flex items-center gap-1 text-emerald-500 font-bold text-sm">
-              <DollarSign size={14} />
-              {formatCurrency(delivery.final_amount)}
-           </div>
+          <div className="flex items-center gap-1 text-emerald-500 font-bold text-sm">
+            <DollarSign size={14} />
+            {formatCurrency(delivery.final_amount)}
+          </div>
 
-           <div className="flex gap-1" onPointerDown={(e) => e.stopPropagation()}>
-              {delivery.customer?.phone && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 text-muted-foreground hover:text-green-500 hover:bg-green-500/10"
-                  onClick={(e) => {
-                      if (isOverlay) return;
-                      // e.stopPropagation() is already on parent div
-                      window.open(`https://wa.me/55${delivery.customer!.phone.replace(/\D/g, '')}`, '_blank')
-                  }}
-                >
-                  <MessageCircle size={16} />
-                </Button>
-              )}
-           </div>
+          <div className="flex gap-1" onPointerDown={(e) => e.stopPropagation()}>
+            {delivery.customer?.phone && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-muted-foreground hover:text-green-500 hover:bg-green-500/10"
+                onClick={(e) => {
+                  if (isOverlay) return;
+                  // e.stopPropagation() is already on parent div
+                  window.open(`https://wa.me/55${delivery.customer!.phone.replace(/\D/g, '')}`, '_blank')
+                }}
+              >
+                <MessageCircle size={16} />
+              </Button>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>
   );
 
   if (isOverlay) {
-      return (
-         <div className="relative cursor-grabbing z-50">
-             {CardContentRender}
-         </div>
-      );
+    return (
+      <div className="relative cursor-grabbing z-50">
+        {CardContentRender}
+      </div>
+    );
   }
 
   return (
     <div ref={setNodeRef} style={style} className={cn("group relative")}>
       <DeliveryDetailsPopover delivery={delivery} onUpdateStatus={handleUpdateStatusWrapper}>
-          {CardContentRender}
+        {CardContentRender}
       </DeliveryDetailsPopover>
     </div>
   );
