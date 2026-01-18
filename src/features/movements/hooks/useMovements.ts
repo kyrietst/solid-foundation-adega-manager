@@ -101,6 +101,7 @@ export const useMovements = (options: UseMovementsOptions = {}): UseMovementsRet
             id,
             created_at,
             delivery_type,
+            delivery,
             payment_method,
             payment_status,
             status,

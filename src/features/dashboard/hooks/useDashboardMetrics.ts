@@ -200,7 +200,7 @@ export function useDeliveryVsInstore() {
       // Current Sales
       const { data: currentSales, error: currentError } = await supabase
         .from('sales')
-        .select('delivery_type, final_amount')
+        .select('delivery_type, final_amount, delivery, delivery_fee')
         .eq('status', 'completed' as any)
         .gte('created_at', startDate.toISOString())
         .lte('created_at', endDate.toISOString())
@@ -211,15 +211,17 @@ export function useDeliveryVsInstore() {
       // Previous Sales
       const { data: prevSales } = await supabase
         .from('sales')
-        .select('delivery_type, final_amount')
+        .select('delivery_type, final_amount, delivery, delivery_fee')
         .eq('status', 'completed' as any)
         .gte('created_at', prevStartDate.toISOString())
         .lt('created_at', startDate.toISOString())
         .not('final_amount', 'is', null);
 
       // Calculations
-      const deliverySales = ((currentSales as unknown as any[]) || []).filter((s: any) => s.delivery_type === 'delivery');
-      const presencialSales = ((currentSales as unknown as any[]) || []).filter((s: any) => s.delivery_type === 'presencial');
+      const isDeliveryCheck = (s: any) => s.delivery === true || (s.delivery_fee || 0) > 0;
+
+      const deliverySales = ((currentSales as unknown as any[]) || []).filter((s: any) => isDeliveryCheck(s));
+      const presencialSales = ((currentSales as unknown as any[]) || []).filter((s: any) => !isDeliveryCheck(s));
 
       const deliveryOrders = deliverySales.length;
       const deliveryRevenue = deliverySales.reduce((sum: number, s: any) => sum + Number(s.final_amount || 0), 0);
@@ -230,10 +232,10 @@ export function useDeliveryVsInstore() {
       const instoreAvgTicket = instoreOrders > 0 ? instoreRevenue / instoreOrders : 0;
 
       const prevDeliveryRevenue = ((prevSales as unknown as any[]) || [])
-        .filter((s: any) => s.delivery_type === 'delivery')
+        .filter((s: any) => isDeliveryCheck(s))
         .reduce((sum: number, s: any) => sum + Number(s.final_amount || 0), 0);
       const prevInstoreRevenue = ((prevSales as unknown as any[]) || [])
-        .filter((s: any) => s.delivery_type === 'presencial')
+        .filter((s: any) => !isDeliveryCheck(s))
         .reduce((sum: number, s: any) => sum + Number(s.final_amount || 0), 0);
 
       const deliveryGrowthRate = prevDeliveryRevenue > 0 ?

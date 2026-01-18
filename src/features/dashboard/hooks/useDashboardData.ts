@@ -60,7 +60,7 @@ export const useDashboardData = (periodDays: number = 30) => {
           supabase
             .from('sales')
             .select('id', { count: 'exact', head: true })
-            .eq('delivery_type', 'delivery')
+            .eq('delivery', true) // FIX: Use boolean flag
             .eq('delivery_status', 'pending')
         ]);
 
@@ -102,7 +102,7 @@ export const useDashboardData = (periodDays: number = 30) => {
           .gte('created_at', startDate.toISOString())
           .lte('created_at', endDate.toISOString())
           .not('status', 'in', '("cancelled","returned")'),
-        
+
         // Query para "A Receber" (Fiado) - Todas as vendas não pagas, independente da data
         supabase
           .from('sales')
@@ -121,7 +121,7 @@ export const useDashboardData = (periodDays: number = 30) => {
       // Se final_amount existir, use-o (considerando descontos), senão total_amount
       const totalRevenue = (salesData || []).reduce((sum, sale) => sum + (sale.final_amount || sale.total_amount || 0), 0);
       const cogs = (salesData || []).reduce((sum, sale) => sum + (sale.total_cost || 0), 0);
-      
+
       // Lucro Bruto Real (Receita - Custo)
       // Se total_profit vier nulo (vendas antigas), tentar calcular
       const grossProfit = (salesData || []).reduce((sum, sale) => {
@@ -171,7 +171,7 @@ export const useDashboardData = (periodDays: number = 30) => {
       // ✅ FIX: Buscar TODAS as vendas do período (incluir delivery_type e delivery_status)
       const { data: allSales, error } = await supabase
         .from('sales')
-        .select('final_amount, created_at, status, delivery_type, delivery_status, delivery')
+        .select('final_amount, created_at, status, delivery_type, delivery_status, delivery, delivery_fee')
         .gte('created_at', startDate.toISOString())
         .lte('created_at', endDate.toISOString())
         .not('final_amount', 'is', null);
@@ -188,16 +188,17 @@ export const useDashboardData = (periodDays: number = 30) => {
           return false;
         }
 
+        // Detectar tipo real (Robust Check)
+        const isDeliveryType = sale.delivery === true || (sale.delivery_fee || 0) > 0;
+
         // Lógica Híbrida:
-        // - Presencial: status = 'completed' (venda paga)
+        // - Presencial: status = 'completed' (venda paga) E NÃO é delivery
         const isPresencialCompleted =
-          (sale.status === 'completed') &&
-          (sale.delivery_type === 'presencial' || sale.delivery === false);
+          (sale.status === 'completed') && !isDeliveryType;
 
         // - Delivery: delivery_status = 'delivered' (entrega concluída)
         const isDeliveryDelivered =
-          (sale.delivery_type === 'delivery') &&
-          (sale.delivery_status === 'delivered');
+          isDeliveryType && (sale.delivery_status === 'delivered');
 
         return isPresencialCompleted || isDeliveryDelivered;
       });

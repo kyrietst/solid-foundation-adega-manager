@@ -289,6 +289,7 @@ export interface InventoryMovement {
     id: string;
     created_at: string;
     delivery_type: string;
+    delivery?: boolean; // Added for robust delivery detection
     payment_method: string;
     payment_status: string;
     status: string;

@@ -173,15 +173,18 @@ export const MovementsTable: React.FC<MovementsTableProps> = ({
               // Preparar dados
               const sale = movement.sales;
               const isSale = !!sale;
-              const date = new Date(movement.created_at || movement.date);
+              // FIX: Lint error - Property 'date' does not exist (using created_at as standard)
+              const date = new Date(movement.created_at);
 
               const idDisplay = isSale ? `#${sale.id.slice(0, 8).toUpperCase()}` : `#${movement.id.slice(0, 8).toUpperCase()}`;
 
+              // Helper para detectar delivery robustamente
+              const isDeliveryType = isSale && (sale.delivery === true || (sale.delivery_fee || 0) > 0);
+
               // Cliente - Prioriza: Cliente do Movimento -> Cliente da Venda -> Fallback específico
-              // Se for Delivery e não tiver nome, mostra "Não informado" em vez de "Cliente Balcão"
               const customerName = movement.customer?.name
                 || sale?.customer?.name
-                || (isSale && sale?.delivery_type === 'delivery' ? 'Cliente (Delivery)' : (isSale ? 'Cliente Balcão' : 'Não informado'));
+                || (isDeliveryType ? 'Cliente (Delivery)' : (isSale ? 'Cliente Balcão' : 'Não informado'));
 
               // Vendedor
               const sellerName = usersMap[movement.user_id || ''] || movement.user?.name || 'Sistema';
@@ -207,7 +210,7 @@ export const MovementsTable: React.FC<MovementsTableProps> = ({
 
                     {/* Canal (Delivery/Presencial) */}
                     <td className="px-4 py-3 text-center">
-                      {isSale && sale.delivery_type === 'delivery' ? (
+                      {isDeliveryType ? (
                         <div className="flex justify-center" title="Delivery">
                           <div className="bg-amber-500/10 p-1.5 rounded-full border border-amber-500/30">
                             <Truck className="h-4 w-4 text-amber-400" />
@@ -374,10 +377,10 @@ export const MovementsTable: React.FC<MovementsTableProps> = ({
                             )}
 
                             {/* Observações / Detalhes de Entrega */}
-                            {(sale?.delivery_type || (!isSale && movement.reason)) && (
+                            {(isDeliveryType || (!isSale && movement.reason)) && (
                               <div className="mt-4 pt-4 border-t border-white/20">
                                 <div className="flex items-center gap-2 mb-2">
-                                  {sale?.delivery_type === 'delivery' ? (
+                                  {isDeliveryType ? (
                                     <>
                                       <Truck className="h-4 w-4 text-amber-400" />
                                       <h4 className={cn(text.h5, shadows.medium, "font-medium text-amber-400")}>
@@ -442,10 +445,10 @@ export const MovementsTable: React.FC<MovementsTableProps> = ({
                                   )}
 
                                   <div className="text-sm text-gray-300 space-y-1 pt-2 border-t border-white/5">
-                                    {sale?.delivery_type && (
+                                    {isDeliveryType && (
                                       <p className="flex items-center gap-2">
                                         <Truck className="h-3 w-3" />
-                                        <span className="capitalize text-gray-400">{sale.delivery_type === 'delivery' ? 'Entrega Delivery' : 'Retirada / Presencial'}</span>
+                                        <span className="capitalize text-gray-400">{isDeliveryType ? 'Entrega Delivery' : 'Retirada / Presencial'}</span>
                                       </p>
                                     )}
                                     {!isSale && movement.reason && (

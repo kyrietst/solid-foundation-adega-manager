@@ -33,11 +33,12 @@ export const useDeliveryOrders = (params?: {
           event: '*', // INSERT, UPDATE, DELETE
           schema: 'public',
           table: 'sales',
-          filter: 'delivery_type=eq.delivery' // Escuta apenas deliveries
+          // filter: 'delivery=eq.true' // Escuta apenas deliveries (Boolean Check)
+          filter: 'delivery=eq.true'
         },
         (payload) => {
           console.log('🔔 Alteração de Delivery detectada:', payload.eventType);
-          
+
           // Invalida cache para forçar recarregamento imediato
           queryClient.invalidateQueries({ queryKey: ['delivery-orders'] });
           queryClient.invalidateQueries({ queryKey: ['delivery-metrics'] });
@@ -104,7 +105,8 @@ export const useDeliveryOrders = (params?: {
               )
             )
           `)
-          .eq('delivery_type', 'delivery')
+          // .eq('delivery_type', 'delivery') // LEGACY: Removido em favor da flag booleana
+          .eq('delivery', true)
           .order('created_at', { ascending: false });
 
         // Aplicar filtros
@@ -196,7 +198,7 @@ export const useDeliveryOrders = (params?: {
       }
     },
     // Removendo polling agressivo em favor do Realtime, mantendo staleTime curto para navegação
-    staleTime: 1000 * 30, 
+    staleTime: 1000 * 30,
   });
 };
 
@@ -244,7 +246,8 @@ export const useDeliveryMetrics = (period: number = 7) => {
         const { data: statusCounts } = await supabase
           .from('sales')
           .select('delivery_status')
-          .eq('delivery_type', 'delivery')
+          // .eq('delivery_type', 'delivery')
+          .eq('delivery', true)
           .gte('created_at', startDate.toISOString())
           .lte('created_at', endDate.toISOString());
 
@@ -278,7 +281,7 @@ export const useDeliveryMetrics = (period: number = 7) => {
       }
     },
     // Metrics também atualizam via invalidação do Realtime acima
-    staleTime: 1000 * 60 * 5, 
+    staleTime: 1000 * 60 * 5,
   });
 };
 
@@ -390,9 +393,9 @@ export const useUpdateDeliveryStatus = () => {
 
       // Rollback em caso de erro
       if (context?.previousDeliveries) {
-         context.previousDeliveries.forEach(([queryKey, data]: [any, any]) => {
-            queryClient.setQueryData(queryKey, data);
-         });
+        context.previousDeliveries.forEach(([queryKey, data]: [any, any]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
       }
 
       toast({
