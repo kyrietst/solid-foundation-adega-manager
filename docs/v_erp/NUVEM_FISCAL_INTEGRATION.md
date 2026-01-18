@@ -72,6 +72,12 @@ automaticamente.
 }
 ```
 
+### Regras de Negócio e Validação
+
+Para detalhes sobre como lidamos com **Frete (vFrete vs vOutro)** e
+**Distribuição de Descontos**, consulte o documento técnico: 👉
+[Regras Lógicas SEFAZ-SP (SEFAZ_LOGIC_RULES.md)](./SEFAZ_LOGIC_RULES.md)
+
 ---
 
 ## 3. Fluxo Híbrido de Cancelamento (Hybrid Cancellation)

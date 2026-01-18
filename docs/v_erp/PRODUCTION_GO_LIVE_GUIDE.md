@@ -16,6 +16,8 @@ exige atuação em dois níveis de infraestrutura:
 
 1. **Credenciais de API (Secrets):** Autenticação com a Nuvem Fiscal.
 2. **Configuração de Loja (Database):** Flag lógica que define a URL da API.
+3. **Sincronia de Ambiente:** Garantir que Dev e Prod compartilhem RPCs/Edge
+   Functions.
 
 ---
 

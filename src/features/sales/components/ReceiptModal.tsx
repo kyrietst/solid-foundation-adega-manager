@@ -39,22 +39,52 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
   const [printMode, setPrintMode] = useState<'managerial' | 'fiscal'>('managerial');
   const hasPrinted = useRef(false);
 
+  // Track the last distinct fiscal ID we printed to prevent duplicates
+  const lastPrintedId = useRef<string | null>(null);
+
   // Sync initialFiscalData when it changes or modal opens
   useEffect(() => {
-    if (isOpen && initialFiscalData) {
-      console.log("ReceiptModal: Setting initial fiscal data", initialFiscalData);
-      setFiscalData(initialFiscalData);
-      if (initialFiscalData.status === 'authorized') {
-        setPrintMode('fiscal');
-      }
+    if (isOpen) {
+        if (initialFiscalData) {
+            console.log("ReceiptModal: Setting initial fiscal data", initialFiscalData);
+            setFiscalData(initialFiscalData);
+            if (initialFiscalData.status === 'authorized') {
+                setPrintMode('fiscal');
+            }
+        } else {
+            // Reset if opening without fiscal data (Managerial view)
+            setFiscalData(null);
+            setPrintMode('managerial');
+        }
     }
   }, [isOpen, initialFiscalData]);
 
-  // Auto-print logic ONLY when triggered via emission (initialFiscalData present)
+  // Auto-print logic
   useEffect(() => {
-    if (isOpen && receiptData && initialFiscalData && printMode === 'fiscal' && !hasPrinted.current) {
-       console.log("ReceiptModal: Auto-printing fiscal receipt");
+    if (!isOpen) {
+      // Reset blocking flags when closed, allowing re-print if opened again for different sale
+      // BUT keep lastPrintedId if you want to prevent re-print of same sale immediately? 
+      // User likely wants to Re-print if they intentionally open it again.
+      // So we reset 'hasPrinted' but we can be smart.
+      hasPrinted.current = false;
+      return;
+    }
+
+    // Only proceed if we have data, we are in fiscal mode, and we haven't printed this session
+    if (receiptData && initialFiscalData && printMode === 'fiscal' && !hasPrinted.current) {
+       // DOUBLE CHECK: Validate strictly against a persistent ID to prevent overrides
+       const currentId = initialFiscalData.external_id || initialFiscalData.chave || 'unknown';
+       
+       // CRITICAL FIX: If we already printed this specific ID, STOP immediately.
+       if (lastPrintedId.current === currentId) {
+         console.log("ReceiptModal: Duplicate print prevented for ID:", currentId);
+         hasPrinted.current = true; // Ensure flag is sync
+         return;
+       }
+       
+       console.log("ReceiptModal: Auto-printing trigger. Sale:", saleId);
        hasPrinted.current = true;
+       lastPrintedId.current = currentId;
        
        const timer = setTimeout(() => {
          try {
@@ -67,19 +97,11 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
          } catch (e) {
            console.error("Auto-print error:", e);
          }
-       }, 1000); // 1s delay to ensure rendering
+       }, 1000);
 
        return () => clearTimeout(timer);
     }
-
-    if (!isOpen) {
-      hasPrinted.current = false;
-      if (!initialFiscalData) {
-        setFiscalData(null); 
-        setPrintMode('managerial');
-      }
-    }
-  }, [isOpen, receiptData, initialFiscalData, printMode, toast]);
+  }, [isOpen, receiptData, initialFiscalData, printMode, toast, saleId]);
 
   const handlePrint = () => {
     try {

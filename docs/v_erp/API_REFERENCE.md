@@ -94,6 +94,9 @@ Hosted on Supabase Edge Network. Used for external integrations.
   - `cancel`: Cancels an authorized note.
 - **Auto-Recovery:** Detects SEFAZ timeouts (Error 539) and fetches the existing
   XML automatically.
+- **SEFAZ Logic:** Automatically maps Delivery Fee to `vOutro` (Expenses) since
+  SEFAZ-SP rejects `vFrete` in NFC-e. See
+  [SEFAZ_LOGIC_RULES](./SEFAZ_LOGIC_RULES.md).
 
 **Environment Variables (Secrets):**
 

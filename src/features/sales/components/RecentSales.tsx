@@ -170,20 +170,17 @@ export function RecentSales({ filterStatus }: RecentSalesProps) {
     return methods[method] || method;
   };
 
-  if (isLoading) {
-    return (
-      <div className="space-y-4">
-        {[...Array(5)].map((_, i) => (
-          <Skeleton key={i} className="h-24 w-full rounded-xl bg-zinc-900/50" />
-        ))}
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col h-full space-y-4 pr-2">
-       {/* Empty State */}
-       {sales?.length === 0 ? (
+       {/* Main Content Area */}
+       {isLoading ? (
+         <div className="space-y-4">
+           {[...Array(5)].map((_, i) => (
+             <Skeleton key={i} className="h-24 w-full rounded-xl bg-zinc-900/50" />
+           ))}
+         </div>
+       ) : sales?.length === 0 ? (
+          /* Empty State */
           <div className="flex flex-col items-center justify-center py-16 bg-zinc-900/40 border border-white/5 backdrop-blur-xl rounded-xl">
             <div className="bg-zinc-800/50 p-4 rounded-full mb-4">
                <ShoppingBag className="h-8 w-8 text-zinc-500" />
@@ -195,7 +192,8 @@ export function RecentSales({ filterStatus }: RecentSalesProps) {
               As transações recentes aparecerão aqui.
             </p>
           </div>
-        ) : (
+       ) : (
+          /* Sales List */
           <div className="flex-1 w-full space-y-4 overflow-y-auto pr-1 pb-20 scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent">
             {sales?.map((sale) => {
               const isExpanded = expandedSaleId === sale.id;
@@ -486,7 +484,7 @@ export function RecentSales({ filterStatus }: RecentSalesProps) {
               </Button>
             </div>
           </div>
-        )}
+       )}
 
        {/* Modais */}
        {settlementSale && (
