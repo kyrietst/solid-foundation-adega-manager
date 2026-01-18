@@ -5,6 +5,8 @@
 > Erros aqui podem gerar multas, travamento de CNPJ e prejuízo financeiro.
 > **ZERO TRUST:** Nunca confie que "vai funcionar". Trate cada requisição como
 > uma transação financeira crítica.
+>
+> 💡 **Precisa de contexto rápido?** Leia [`DEVELOPER_ONBOARDING_FISCAL.md`](./DEVELOPER_ONBOARDING_FISCAL.md).
 
 ---
 

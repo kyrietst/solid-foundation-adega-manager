@@ -4,6 +4,8 @@
 > Este documento serve como o **Mapa Central** para toda a comunicação de dados
 > no Adega Manager. **Regra de Ouro:** Não reinvente a roda. Verifique se a
 > função já existe antes de criar uma nova.
+>
+> 🚀 **Novo no projeto?** Comece por aqui: [`DEVELOPER_ONBOARDING_FISCAL.md`](./DEVELOPER_ONBOARDING_FISCAL.md)
 
 ---
 

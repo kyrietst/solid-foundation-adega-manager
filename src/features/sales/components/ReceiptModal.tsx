@@ -24,6 +24,9 @@ interface ReceiptModalProps {
   cpfNaNota?: string; // New Prop
 }
 
+// GLOBAL CACHE: Track printed IDs across component remounts
+const printedFiscalIds = new Set<string>();
+
 export const ReceiptModal: React.FC<ReceiptModalProps> = ({
   isOpen,
   onClose,
@@ -39,69 +42,73 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
   const [printMode, setPrintMode] = useState<'managerial' | 'fiscal'>('managerial');
   const hasPrinted = useRef(false);
 
-  // Track the last distinct fiscal ID we printed to prevent duplicates
-  const lastPrintedId = useRef<string | null>(null);
-
   // Sync initialFiscalData when it changes or modal opens
   useEffect(() => {
     if (isOpen) {
-        if (initialFiscalData) {
-            console.log("ReceiptModal: Setting initial fiscal data", initialFiscalData);
-            setFiscalData(initialFiscalData);
-            if (initialFiscalData.status === 'authorized') {
-                setPrintMode('fiscal');
-            }
-        } else {
-            // Reset if opening without fiscal data (Managerial view)
-            setFiscalData(null);
-            setPrintMode('managerial');
+      if (initialFiscalData) {
+        console.log("ReceiptModal: Setting initial fiscal data", initialFiscalData);
+        setFiscalData(initialFiscalData);
+        if (initialFiscalData.status === 'authorized') {
+          setPrintMode('fiscal');
         }
+      } else {
+        // Reset if opening without fiscal data (Managerial view)
+        setFiscalData(null);
+        setPrintMode('managerial');
+      }
     }
   }, [isOpen, initialFiscalData]);
 
   // Auto-print logic
   useEffect(() => {
     if (!isOpen) {
-      // Reset blocking flags when closed, allowing re-print if opened again for different sale
-      // BUT keep lastPrintedId if you want to prevent re-print of same sale immediately? 
-      // User likely wants to Re-print if they intentionally open it again.
-      // So we reset 'hasPrinted' but we can be smart.
+      // Reset local blocking flags when closed.
       hasPrinted.current = false;
       return;
     }
 
     // Only proceed if we have data, we are in fiscal mode, and we haven't printed this session
-    if (receiptData && initialFiscalData && printMode === 'fiscal' && !hasPrinted.current) {
-       // DOUBLE CHECK: Validate strictly against a persistent ID to prevent overrides
-       const currentId = initialFiscalData.external_id || initialFiscalData.chave || 'unknown';
-       
-       // CRITICAL FIX: If we already printed this specific ID, STOP immediately.
-       if (lastPrintedId.current === currentId) {
-         console.log("ReceiptModal: Duplicate print prevented for ID:", currentId);
-         hasPrinted.current = true; // Ensure flag is sync
-         return;
-       }
-       
-       console.log("ReceiptModal: Auto-printing trigger. Sale:", saleId);
-       hasPrinted.current = true;
-       lastPrintedId.current = currentId;
-       
-       const timer = setTimeout(() => {
-         try {
-           window.print();
-           toast({
-             title: "🖨️ Impressão iniciada",
-             description: "Cupom fiscal enviado para a impressora",
-             variant: "default",
-           });
-         } catch (e) {
-           console.error("Auto-print error:", e);
-         }
-       }, 1000);
+    // FIXED: Use local 'fiscalData' state instead of 'initialFiscalData' prop
+    if (receiptData && fiscalData && printMode === 'fiscal') {
+      // Prioritize External ID (Nuvem) -> Chave -> SaleID as fallback
+      const uniqueId = fiscalData.external_id || fiscalData.chave || saleId;
 
-       return () => clearTimeout(timer);
+      if (!uniqueId) return;
+
+      // CRITICAL FIX: Check GLOBAL CACHE instead of just local ref
+      // This prevents double print if component remounts
+      if (printedFiscalIds.has(uniqueId)) {
+        console.log("ReceiptModal: Duplicate print prevented for ID (Global Cache):", uniqueId);
+        hasPrinted.current = true; // Sync local ref
+        return;
+      }
+
+      if (hasPrinted.current) return; // Double check local ref
+
+      console.log("ReceiptModal: Auto-printing trigger. ID:", uniqueId);
+
+      // Mark as printed IMMEDIATELY in global cache
+      printedFiscalIds.add(uniqueId);
+      hasPrinted.current = true;
+
+      const timer = setTimeout(() => {
+        try {
+          window.print();
+          toast({
+            title: "🖨️ Impressão iniciada",
+            description: "Cupom fiscal enviado para a impressora",
+            variant: "default",
+          });
+        } catch (e) {
+          console.error("Auto-print error:", e);
+          // If print fails, maybe we shouldn't clear cache? 
+          // For now, safety first: don't retry automatically to avoid loops.
+        }
+      }, 500); // Reduced delay slightly for better UX
+
+      return () => clearTimeout(timer);
     }
-  }, [isOpen, receiptData, initialFiscalData, printMode, toast, saleId]);
+  }, [isOpen, receiptData, fiscalData, printMode, toast, saleId]);
 
   const handlePrint = () => {
     try {
@@ -131,27 +138,14 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
     if (!saleId) return;
     // Pass custom payload if CPF na Nota exists
     const extraPayload = cpfNaNota ? { cpfNaNota } : undefined;
-    
+
     await emitInvoice(saleId, (data) => {
       setFiscalData(data);
-      
+
       // Se autorizado, mudar para modo fiscal e imprimir
       if (data.status === 'authorized' || data.status === 'autorizado') {
         setPrintMode('fiscal');
-        
-        // Aguardar renderização e imprimir
-        setTimeout(() => {
-            try {
-                window.print();
-                toast({
-                    title: "🖨️ Imprimindo NFC-e",
-                    description: "Cupom fiscal enviado para impressora.",
-                    variant: "success",
-                });
-            } catch (e) {
-                console.error("Erro ao imprimir fiscal:", e);
-            }
-        }, 800);
+        // A impressão será acionada automaticamente pelo useEffect
       }
     });
   };
@@ -178,143 +172,143 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
       showHeader={false}
       className="bg-white text-black max-h-[90vh] flex flex-col !p-0 gap-0 overflow-hidden"
     >
-        {/* === HEADER (Fixed) === */}
-        <div className="p-4 border-b flex items-center justify-between shrink-0 bg-white z-10">
-           <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-2 text-lg font-bold">
-                <Receipt className="h-5 w-5 text-primary-yellow" />
-                <span>Cupom Fiscal - Adega Anita's</span>
-                {fiscalData && <FiscalStatusBadge status={fiscalData.status} />}
-              </div>
-              <div className="text-sm text-gray-500">
-                {saleId ? `Venda: #${saleId.slice(-8).toUpperCase()}` : 'Preparando cupom...'}
-              </div>
-           </div>
+      {/* === HEADER (Fixed) === */}
+      <div className="p-4 border-b flex items-center justify-between shrink-0 bg-white z-10">
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-2 text-lg font-bold">
+            <Receipt className="h-5 w-5 text-primary-yellow" />
+            <span>Cupom Fiscal - Adega Anita's</span>
+            {fiscalData && <FiscalStatusBadge status={fiscalData.status} />}
+          </div>
+          <div className="text-sm text-gray-500">
+            {saleId ? `Venda: #${saleId.slice(-8).toUpperCase()}` : 'Preparando cupom...'}
+          </div>
         </div>
+      </div>
 
-        {/* === BODY (Scrollable) === */}
-        <div className="flex-1 overflow-y-auto p-4 bg-gray-50/50">
-          {isLoading && (
-            <div className="flex items-center justify-center py-8">
-              <LoadingSpinner size="md" color="default" />
-              <span className="ml-3 text-gray-600">Carregando dados da venda...</span>
+      {/* === BODY (Scrollable) === */}
+      <div className="flex-1 overflow-y-auto p-4 bg-gray-50/50">
+        {isLoading && (
+          <div className="flex items-center justify-center py-8">
+            <LoadingSpinner size="md" color="default" />
+            <span className="ml-3 text-gray-600">Carregando dados da venda...</span>
+          </div>
+        )}
+
+        {error && (
+          <div className="text-center py-8">
+            <div className="text-red-600 mb-4">
+              ❌ Erro ao carregar dados da venda
             </div>
-          )}
+            <div className="text-sm text-gray-600 mb-4">
+              {error.message || 'Não foi possível buscar os dados'}
+            </div>
+            <Button onClick={onClose} variant="outline" className="border-gray-300">
+              Fechar
+            </Button>
+          </div>
+        )}
 
-          {error && (
-            <div className="text-center py-8">
-              <div className="text-red-600 mb-4">
-                ❌ Erro ao carregar dados da venda
+        {receiptData && (
+          <>
+            {/* Receipt Preview */}
+            <div className="shadow-sm border rounded-sm overflow-hidden bg-white mb-4">
+              <ReceiptPrint
+                data={receiptData}
+                mode={printMode}
+                fiscalData={fiscalData as FiscalPrintData}
+              />
+            </div>
+
+            {/* Status Info */}
+            <Alert className="mb-4 bg-green-50 border-green-200">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <AlertDescription className="text-green-800">
+                <strong>✅ Atomo MO-5812 - ZPrinter Paper (58x210mm)</strong><br />
+                <span className="text-sm">Modo: {printMode === 'fiscal' ? 'FISCAL (NFC-e)' : 'GERENCIAL (Recibo)'}</span>
+              </AlertDescription>
+            </Alert>
+
+            {/* Config Info */}
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-start gap-2">
+                <Settings className="h-4 w-4 text-blue-600 mt-0.5" />
+                <div className="text-xs text-blue-800">
+                  <p className="font-medium">🔧 Configuração Otimizada:</p>
+                  <ul className="mt-1 space-y-1">
+                    <li>• <strong>Driver:</strong> "Print as Image" para melhor legibilidade</li>
+                    <li>• <strong>Papel:</strong> ZPrinter Paper (58x210mm)</li>
+                    <li>• <strong>Feed:</strong> 3mm após impressão</li>
+                    <li>• <strong>Layout:</strong> Posição superior (Top-Left)</li>
+                  </ul>
+                </div>
               </div>
-              <div className="text-sm text-gray-600 mb-4">
-                {error.message || 'Não foi possível buscar os dados'}
-              </div>
-              <Button onClick={onClose} variant="outline" className="border-gray-300">
-                Fechar
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* === FOOTER (Fixed) === */}
+      {receiptData && (
+        <div className="p-4 border-t bg-white flex flex-col gap-3 shrink-0 z-10 shadow-[0_-5px_15px_rgba(0,0,0,0.05)]">
+          <Button
+            onClick={handlePrint}
+            size="lg"
+            autoFocus
+            className="w-full bg-primary-yellow hover:bg-yellow-500 text-black font-semibold shadow-lg transition-all"
+          >
+            <Printer className="h-5 w-5 mr-2" />
+            IMPRIMIR {printMode === 'fiscal' ? 'NFC-e' : 'RECIBO'}
+          </Button>
+
+          {!fiscalData || fiscalData.status !== 'authorized' ? (
+            <Button
+              onClick={handleEmitFiscal}
+              disabled={isFiscalLoading}
+              variant="outline"
+              className="w-full border-blue-500 text-blue-600 hover:bg-blue-50"
+            >
+              {isFiscalLoading ? (
+                <LoadingSpinner size="sm" color="default" />
+              ) : (
+                <>
+                  <QrCode className="h-5 w-5 mr-2" />
+                  EMITIR NFC-e (FISCAL)
+                </>
+              )}
+            </Button>
+          ) : (
+            <div className="flex gap-2">
+              {printMode !== 'fiscal' && (
+                <Button
+                  onClick={() => setPrintMode('fiscal')}
+                  variant="outline"
+                  className="flex-1 border-blue-500 text-blue-600"
+                >
+                  <QrCode className="h-4 w-4 mr-2" /> Ver NFC-e
+                </Button>
+              )}
+              {printMode === 'fiscal' && (
+                <Button
+                  onClick={() => setPrintMode('managerial')}
+                  variant="outline"
+                  className="flex-1 border-gray-500 text-gray-600"
+                >
+                  <FileText className="h-4 w-4 mr-2" /> Ver Recibo
+                </Button>
+              )}
+              <Button
+                onClick={handleOpenFiscalPDF}
+                variant="outline"
+                className="flex-1 border-green-500 text-green-600 hover:bg-green-50"
+              >
+                <FileText className="h-5 w-5 mr-2" />
+                PDF Oficial
               </Button>
             </div>
           )}
-
-          {receiptData && (
-            <>
-              {/* Receipt Preview */}
-              <div className="shadow-sm border rounded-sm overflow-hidden bg-white mb-4">
-                  <ReceiptPrint 
-                    data={receiptData}
-                    mode={printMode}
-                    fiscalData={fiscalData as FiscalPrintData}
-                  />
-              </div>
-
-              {/* Status Info */}
-              <Alert className="mb-4 bg-green-50 border-green-200">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                <AlertDescription className="text-green-800">
-                  <strong>✅ Atomo MO-5812 - ZPrinter Paper (58x210mm)</strong><br/>
-                  <span className="text-sm">Modo: {printMode === 'fiscal' ? 'FISCAL (NFC-e)' : 'GERENCIAL (Recibo)'}</span>
-                </AlertDescription>
-              </Alert>
-
-              {/* Config Info */}
-              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <div className="flex items-start gap-2">
-                  <Settings className="h-4 w-4 text-blue-600 mt-0.5" />
-                  <div className="text-xs text-blue-800">
-                    <p className="font-medium">🔧 Configuração Otimizada:</p>
-                    <ul className="mt-1 space-y-1">
-                      <li>• <strong>Driver:</strong> "Print as Image" para melhor legibilidade</li>
-                      <li>• <strong>Papel:</strong> ZPrinter Paper (58x210mm)</li>
-                      <li>• <strong>Feed:</strong> 3mm após impressão</li>
-                      <li>• <strong>Layout:</strong> Posição superior (Top-Left)</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
         </div>
-
-        {/* === FOOTER (Fixed) === */}
-        {receiptData && (
-             <div className="p-4 border-t bg-white flex flex-col gap-3 shrink-0 z-10 shadow-[0_-5px_15px_rgba(0,0,0,0.05)]">
-                <Button
-                  onClick={handlePrint}
-                  size="lg"
-                  autoFocus
-                  className="w-full bg-primary-yellow hover:bg-yellow-500 text-black font-semibold shadow-lg transition-all"
-                >
-                  <Printer className="h-5 w-5 mr-2" />
-                  IMPRIMIR {printMode === 'fiscal' ? 'NFC-e' : 'RECIBO'}
-                </Button>
-
-                {!fiscalData || fiscalData.status !== 'authorized' ? (
-                  <Button
-                    onClick={handleEmitFiscal}
-                    disabled={isFiscalLoading}
-                    variant="outline"
-                    className="w-full border-blue-500 text-blue-600 hover:bg-blue-50"
-                  >
-                    {isFiscalLoading ? (
-                      <LoadingSpinner size="sm" color="default" />
-                    ) : (
-                      <>
-                        <QrCode className="h-5 w-5 mr-2" />
-                        EMITIR NFC-e (FISCAL)
-                      </>
-                    )}
-                  </Button>
-                ) : (
-                   <div className="flex gap-2">
-                       {printMode !== 'fiscal' && (
-                           <Button
-                                onClick={() => setPrintMode('fiscal')}
-                                variant="outline"
-                                className="flex-1 border-blue-500 text-blue-600"
-                           >
-                               <QrCode className="h-4 w-4 mr-2"/> Ver NFC-e
-                           </Button>
-                       )}
-                       {printMode === 'fiscal' && (
-                           <Button
-                                onClick={() => setPrintMode('managerial')}
-                                variant="outline"
-                                className="flex-1 border-gray-500 text-gray-600"
-                           >
-                               <FileText className="h-4 w-4 mr-2"/> Ver Recibo
-                           </Button>
-                       )}
-                      <Button
-                        onClick={handleOpenFiscalPDF}
-                        variant="outline"
-                        className="flex-1 border-green-500 text-green-600 hover:bg-green-50"
-                      >
-                        <FileText className="h-5 w-5 mr-2" />
-                        PDF Oficial
-                      </Button>
-                   </div>
-                )}
-             </div>
-        )}
+      )}
     </BaseModal>
   );
 };
