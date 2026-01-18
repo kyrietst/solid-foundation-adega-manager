@@ -110,4 +110,5 @@ export type UpsertSaleInput = {
     delivery_address?: string | null;
     delivery_fee?: number;
     delivery_person_id?: string | null;
+    isDelivery?: boolean;
 };

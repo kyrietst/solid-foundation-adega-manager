@@ -30,7 +30,7 @@ export const useUpsertSale = () => {
             // Fetch payment method details ONLY if it's a valid UUID
             let paymentName = 'Outro';
             const isFiadoId = saleData.payment_method_id === 'fiado';
-            
+
             if (!isFiadoId && saleData.payment_method_id) {
                 const { data: paymentMethodDataVal } = await supabase
                     .from('payment_methods' as any)
@@ -49,7 +49,7 @@ export const useUpsertSale = () => {
             const finalAmount = totalAmount - discountAmount;
             const isDelivery = saleData.saleType === 'delivery' || !!saleData.deliveryData || !!saleData.delivery_address || (saleData as any).isDelivery === true;
             // FIADO Logic: 'pickup' mapped to 'pending' payment, OR if ID explicitly passed as 'fiado'
-            const isFiado = saleData.saleType === 'pickup' || isFiadoId; 
+            const isFiado = saleData.saleType === 'pickup' || isFiadoId;
             const paymentStatus = isFiado ? 'pending' : 'paid';
 
             // Prepare Common Data
@@ -105,11 +105,11 @@ export const useUpsertSale = () => {
             } else {
                 // CREATE SCENARIO -> USE RPC 'process_sale'
                 // This ensures stock is decremented correctly (Zero Trust / Integrity Rule)
-                
+
                 // ADAPTER: Backend requires JSONB array for payments (Split Payment)
                 // If payments array is not provided (Legacy call), construct it from single method
                 let finalPayments = saleData.payments || [];
-                
+
                 // Fallback for legacy calls (if any) or simplified flow
                 if (finalPayments.length === 0 && saleData.payment_method_id) {
                     finalPayments = [{
@@ -131,13 +131,17 @@ export const useUpsertSale = () => {
                 // This implies Fiado MUST have a corresponding payment record "Fiado" valid in DB?
                 // OR we can pass a dummy payment method for Fiado if exists.
                 if (isFiadoId) {
-                     // For now, let's assume there is a 'Fiado' method or similar, OR we trust the caller passed it in payments.
-                     // If caller didn't pass payments for Fiado, we might be in trouble with the generic check.
-                     // TEMPORARY BYPASS: If Fiado, we inject the 'fiado' id (if it was passed as string) as method?
-                     // No, UUID required.
-                     // User Instruction implied "Lógica de Adapter".
-                     // Let's assume for this step that if it is standard payment, it is in finalPayments.
+                    // For now, let's assume there is a 'Fiado' method or similar, OR we trust the caller passed it in payments.
+                    // If caller didn't pass payments for Fiado, we might be in trouble with the generic check.
+                    // TEMPORARY BYPASS: If Fiado, we inject the 'fiado' id (if it was passed as string) as method?
+                    // No, UUID required.
+                    // User Instruction implied "Lógica de Adapter".
+                    // Let's assume for this step that if it is standard payment, it is in finalPayments.
                 }
+
+
+                // Detect Delivery Logic (Enhanced for Fiado Delivery)
+                const forceDelivery = saleData.isDelivery || (saleData.delivery_fee || 0) > 0;
 
                 const rpcPayload = {
                     p_customer_id: saleData.customer_id || null,
@@ -146,23 +150,27 @@ export const useUpsertSale = () => {
                         product_id: item.product_id,
                         quantity: item.quantity,
                         unit_price: item.unit_price,
-                        sale_type: item.sale_type,
+                        sale_type: item.sale_type, // Assuming sale_type is directly available or derived elsewhere
                         units_sold: item.units_sold,
                         package_units: item.package_units
                     })),
                     p_total_amount: totalAmount,
                     p_final_amount: finalAmount,
-                    p_payments: finalPayments, // NEW JSONB ARRAY
+                    p_payments: finalPayments.map(p => ({
+                        method_id: p.method_id,
+                        amount: p.amount,
+                        installments: p.installments || 1
+                    })),
                     p_discount_amount: discountAmount,
-                    p_payment_status: paymentStatus,
+                    p_is_delivery: forceDelivery,
                     p_notes: saleData.notes || '',
-                    p_is_delivery: isDelivery,
                     p_delivery_fee: deliveryFee,
-                    p_delivery_address: typeof deliveryAddress === 'object' && deliveryAddress !== null 
-                        ? JSON.stringify(deliveryAddress) 
+                    p_delivery_address: typeof deliveryAddress === 'object' && deliveryAddress !== null
+                        ? JSON.stringify(deliveryAddress)
                         : (deliveryAddress as string || null),
                     p_delivery_person_id: saleData.delivery_person_id || null,
-                    p_delivery_instructions: deliveryInstructions
+                    p_delivery_instructions: deliveryInstructions,
+                    p_payment_status: paymentStatus
                 };
 
 
@@ -170,11 +178,11 @@ export const useUpsertSale = () => {
                 const { data: rpcData, error: rpcError } = await supabase.rpc('process_sale' as any, rpcPayload);
 
                 if (rpcError) throw rpcError;
-                
+
                 // RPC returns jsonb { sale_id: ... }
                 // We need to return the full Row object to satisfy type requirements or compatibility
                 const newSaleId = (rpcData as any)?.sale_id;
-                
+
                 if (!newSaleId) throw new Error('RPC executou mas não retornou ID da venda.');
 
                 // Fetch the created sale to return consistent data
@@ -231,7 +239,7 @@ export const useDeleteSale = () => {
             }
 
             // --- HYBRID CANCELLATION LOGIC (Fiscal vs Interno) ---
-            
+
             // 1. Check Fiscal Status via Invoice Logs
             // We need to know if there is an AUTHORIZED invoice for this sale.
             const { data: logObj } = await supabase
@@ -240,7 +248,7 @@ export const useDeleteSale = () => {
                 .eq('sale_id', saleId)
                 .eq('status', 'authorized')
                 .maybeSingle();
-            
+
             const isFiscal = !!logObj;
 
             if (isFiscal) {
@@ -257,7 +265,7 @@ export const useDeleteSale = () => {
                 // Dynamically find env to hit correct endpoint (Not strictly needed if we assume standard path, but good for safety)
                 // Use a direct fetch to the function URL
                 const functionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/fiscal-handler`;
-                
+
                 const response = await fetch(functionUrl, {
                     method: 'POST',
                     headers: {
@@ -274,23 +282,23 @@ export const useDeleteSale = () => {
                 if (!response.ok) {
                     const errorText = await response.text();
                     console.error('[Fiscal] Fetch failed:', response.status, errorText);
-                    
+
                     let errorMessage = 'Erro ao contactar SEFAZ.';
                     try {
                         const errorJson = JSON.parse(errorText);
                         errorMessage = errorJson.error?.message || errorJson.data?.error?.message || errorMessage;
                     } catch (e) {
-                         errorMessage = errorText;
+                        errorMessage = errorText;
                     }
-                    
+
                     // CRITICAL SECURITY: Ensure we throw to prevent DB cancellation
-                    throw new Error(errorMessage); 
+                    throw new Error(errorMessage);
                 }
 
                 // Double check business logic success even if 200 OK (some APIs return 200 with error info)
                 const responseData = await response.json();
                 if (responseData.error || (responseData.data && responseData.data.status === 'erro')) {
-                     throw new Error(responseData.error || 'Erro na resposta da SEFAZ.');
+                    throw new Error(responseData.error || 'Erro na resposta da SEFAZ.');
                 }
             }
 
@@ -328,38 +336,38 @@ export const useDeleteSale = () => {
 };
 
 export const useSettlePayment = () => {
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
+    const queryClient = useQueryClient();
+    const { toast } = useToast();
 
-  return useMutation({
-    mutationFn: async ({ saleId, paymentMethod }: { saleId: string; paymentMethod: string }) => {
-      const { data, error } = await supabase.rpc('settle_payment' as any, {
-        p_sale_id: saleId,
-        p_payment_method: paymentMethod
-      });
+    return useMutation({
+        mutationFn: async ({ saleId, paymentMethod }: { saleId: string; paymentMethod: string }) => {
+            const { data, error } = await supabase.rpc('settle_payment' as any, {
+                p_sale_id: saleId,
+                p_payment_method: paymentMethod
+            });
 
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['sales'] });
-      queryClient.invalidateQueries({ queryKey: ['financial-metrics'] });
-      // Invalidate specifically the receivables query if possible
-      
-      toast({
-        title: 'Dívida Quitada',
-        description: 'O pagamento foi registrado com sucesso.',
-        variant: 'default', // success equivalent in Shadcn usually default or specific custom
-        className: 'bg-green-600 border-green-700 text-white' 
-      });
-    },
-    onError: (error: Error) => {
-      console.error('Erro ao quitar dívida:', error);
-      toast({
-        title: 'Erro na baixa',
-        description: error.message || 'Falha ao registrar pagamento.',
-        variant: 'destructive'
-      });
-    }
-  });
+            if (error) throw error;
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['sales'] });
+            queryClient.invalidateQueries({ queryKey: ['financial-metrics'] });
+            // Invalidate specifically the receivables query if possible
+
+            toast({
+                title: 'Dívida Quitada',
+                description: 'O pagamento foi registrado com sucesso.',
+                variant: 'default', // success equivalent in Shadcn usually default or specific custom
+                className: 'bg-green-600 border-green-700 text-white'
+            });
+        },
+        onError: (error: Error) => {
+            console.error('Erro ao quitar dívida:', error);
+            toast({
+                title: 'Erro na baixa',
+                description: error.message || 'Falha ao registrar pagamento.',
+                variant: 'destructive'
+            });
+        }
+    });
 };

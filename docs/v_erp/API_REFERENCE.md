@@ -1,119 +1,76 @@
-# API Reference & RPC Protocols
+# API Reference & Architecture Map
 
 > [!NOTE]
-> **Architecture:** This system uses a **Backend-as-a-Service (BaaS)** model via
-> Supabase. Most business logic resides in **PostgreSQL RPCs** (Stored
-> Procedures) or **Edge Functions** (Deno). The Frontend should **NEVER** write
-> directly to tables like `sales` or `stock_movements`.
+> Este documento serve como o **Mapa Central** para toda a comunicação de dados
+> no Adega Manager. **Regra de Ouro:** Não reinvente a roda. Verifique se a
+> função já existe antes de criar uma nova.
 
 ---
 
-## 1. RPCs (Remote Procedure Calls)
+## 1. Camadas de API
 
-These functions are called via `supabase.rpc('function_name', { params })`.
+O sistema utiliza uma arquitetura híbrida de **RPCs (Banco de Dados)** e **Edge
+Functions (Serverless)**.
 
-### A. Customer Management
+### A. Database RPCs (Lógica de Negócio Core)
 
-#### `create_quick_customer`
+Para operações transacionais (Vendas, Estoque, Financeiro), utilizamos Stored
+Procedures no PostgreSQL chamadas via supabase-js.
 
-**Purpose:** Finds or creates a customer by phone number ("Smart Link").
-**Prevent Duplication:** If the phone exists, it returns the _existing_
-customer's ID instead of creating a new one.
+- **Arquivo de Referência:**
+  [`docs/v_erp/standards/02_RPC_REFERENCE.md`](./standards/02_RPC_REFERENCE.md)
+- **Principais Funções:**
+  - `process_sale(...)`: Venda atômica (Estoque + Financeiro).
+  - `create_inventory_movement(...)`: Movimentação auditada de estoque.
+  - `cancel_sale(...)`: Estorno seguro.
 
-- **Parameters:**
-  - `p_name` (text): Customer name.
-  - `p_phone` (text): Phone number (e.g., "11999999999").
-- **Returns:** `uuid` (Customer ID).
+### B. Edge Functions (Integrações Externas)
 
-```sql
--- Logic Summary
-IF EXISTS(phone) THEN RETURN existing_id;
-ELSE INSERT AND RETURN new_id;
-```
+Para comunicação com APIs de terceiros (SEFAZ, Nuvem Fiscal), utilizamos
+Supabase Edge Functions.
 
----
-
-### B. Sales Transactions
-
-#### `process_sale`
-
-**Purpose:** Atomic creation of a sale, including items, financial totals, and
-stock deduction. **Critical:** This is the ONLY allow way to create a sale.
-Direct inserts are blocked.
-
-- **Parameters:**
-  - `p_customer_id` (uuid | null)
-  - `p_user_id` (uuid)
-  - `p_items` (jsonb array): `[{ product_id, quantity, unit_price, sale_type }]`
-  - `p_payment_methods` (jsonb array): `[{ method: 'pix', amount: 50.00 }, ...]`
-  - `p_discount_amount`, `p_final_amount` (numeric)
-  - `p_is_delivery` (boolean)
-- **Side Effects:**
-  - Inserts into `sales`, `sale_items`, `sale_payments`.
-  - Triggers `create_inventory_movement` for each item (Type: 'sale').
-
-#### `cancel_sale`
-
-**Purpose:** Soft-deletes a sale and restores stock.
-
-- **Parameters:**
-  - `p_sale_id` (uuid)
-  - `p_reason` (text | null): Obrigatório apenas para vendas fiscais. Opcional
-    para internas.
-- **Logic:**
-  - Marks sale as `cancelled`.
-  - Iterates items and calls `create_inventory_movement` (Type: 'return').
+- **Arquivo de Referência:**
+  [`docs/v_erp/NUVEM_FISCAL_INTEGRATION.md`](./NUVEM_FISCAL_INTEGRATION.md)
+- **Endpoint Principal:** `fiscal-handler`
+  - Gerencia Emissão, Cancelamento e Consultas de NFC-e.
+  - **Segurança:** Utiliza Secrets do Supabase (não expostos no front).
 
 ---
 
-### C. Inventory Control
+## 2. Regras de Consumo (Frontend)
 
-#### `create_inventory_movement`
+### "The Hook Pattern"
 
-**Purpose:** Centralized ledger for stock changes.
+**NUNCA** faça chamadas diretas ao `supabase.from()` ou `supabase.rpc()` dentro
+de componentes `.tsx`.
 
-- **Parameters:**
-  - `p_product_id` (uuid)
-  - `p_quantity` (numeric): Positive or negative change.
-  - `p_type` (enum): 'sale', 'restock', 'breakage', 'return', 'adjustment'.
-  - `p_user_id` (uuid)
+- ✅ **Correto:** Componente chama `useSalesMutations.emitSale()`.
+- ❌ **Errado:** Componente chama `supabase.rpc('process_sale')`.
 
----
+### Isolamento de Ambiente
 
-## 2. Edge Functions (Serverless)
+O frontend desconhece se está em Produção ou Homologação.
 
-Hosted on Supabase Edge Network. Used for external integrations.
-
-### `fiscal-handler`
-
-**Purpose:** Gateway to Nuvem Fiscal API (NFC-e Emission). **Security:** Uses
-`store_settings` to switch between Sandbox/Production.
-
-- **Actions:**
-  - `emit`: Generates XML, signs, transmits to SEFAZ.
-  - `cancel`: Cancels an authorized note.
-- **Auto-Recovery:** Detects SEFAZ timeouts (Error 539) and fetches the existing
-  XML automatically.
-- **SEFAZ Logic:** Automatically maps Delivery Fee to `vOutro` (Expenses) since
-  SEFAZ-SP rejects `vFrete` in NFC-e. See
-  [SEFAZ_LOGIC_RULES](./SEFAZ_LOGIC_RULES.md).
-
-**Environment Variables (Secrets):**
-
-- `NUVEM_FISCAL_CLIENT_ID`
-- `NUVEM_FISCAL_CLIENT_SECRET`
+- Quem decide o ambiente fiscal é a tabela `store_settings` no banco.
+- Quem decide a URL da API Fiscal é a Edge Function `fiscal-handler`.
 
 ---
 
-## 3. Database Triggers (Automations)
+## 3. Glossário de Entidades
 
-- **`trg_update_customer_metrics`**:
-  - **On:** `sales` (Insert/Update/Delete).
-  - **Action:** Recalculates `lifetime_value` and `last_purchase_date` for the
-    customer.
-  - **Goal:** Real-time CRM stats without expensive aggregation queries.
+| Entidade      | Responsabilidade                       | Fonte da Verdade      |
+| :------------ | :------------------------------------- | :-------------------- |
+| **Sales**     | Histórico de Vendas e Pedidos          | Tabela `sales`        |
+| **Products**  | Catálogo e Inventário Físico           | Tabela `products`     |
+| **Invoices**  | Metadados da Nota Fiscal (Status, URL) | Tabela `invoice_logs` |
+| **Customers** | CRM e Crédito (Fiado)                  | Tabela `customers`    |
 
-- **`trg_validate_stock_update`**:
-  - **On:** `products` (Update).
-  - **Action:** BLOCKS direct updates to `stock_quantity`.
-  - **Goal:** Forces usage of `create_inventory_movement` for auditability.
+---
+
+## 4. Dúvidas Comuns
+
+- **Como adicionar uma nova feature?** Crie o RPC no banco primeiro, depois o
+  Hook.
+- **A nota fiscal duplicou?** Verifique `ReceiptModal.tsx` e suas travas de
+  segurança (Ver
+  [`NUVEM_FISCAL_INTEGRATION.md`](./NUVEM_FISCAL_INTEGRATION.md)).

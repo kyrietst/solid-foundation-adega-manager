@@ -149,6 +149,32 @@ Supabase.
 
 ---
 
+## 5. Salvaguardas de Frontend (Anti-Duplicação)
+
+### Prevenção de Impressão Dupla (Idempotência Visual)
+
+O processo de emissão fiscal envolve redes rápidas e atualizações de UI que
+podem gerar **Condições de Corrida**.
+
+> [!CRITICAL]
+> **Nunca remova as travas de segurança do `ReceiptModal.tsx`.**
+
+1. **Estabilidade de Montagem:** O Modal de Impressão deve residir **fora** de
+   blocos condicionais de Loading da lista de vendas. Se a lista atualizar
+   (`invalidateQueries`), o modal deve permanecer montado.
+2. **Guarda de ID Único:** O `useEffect` de auto-print implementa uma
+   verificação rígida:
+   ```typescript
+   if (lastPrintedId.current === currentId) return;
+   lastPrintedId.current = currentId;
+   window.print();
+   ```
+   Isso impede que o "Strict Mode" ou re-renderizações disparem múltiplos
+   comandos de impressão para a mesma nota, o que é crítico no **Modo Kiosk**
+   (impressão silenciosa).
+
+---
+
 ## 5. Comandos Úteis
 
 **Deploy da Função (Produção):**
