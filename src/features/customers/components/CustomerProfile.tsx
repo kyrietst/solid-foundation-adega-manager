@@ -1,20 +1,13 @@
 /**
- * CustomerProfile.tsx - Página de perfil do cliente SSoT v3.1.0
- *
+ * CustomerProfile.tsx - Refactor Visual Stitch "Dark Glass"
+ * 
  * @description
- * Implementação SSoT v3.1.0 com arquitetura completamente server-side.
- * CustomerProfileHeader e CustomerActionsTab agora são 100% autossuficientes.
- *
- * @features
- * - 5 tabs otimizadas com SSoT v3.1.0 compliance
- * - CustomerProfileHeader autossuficiente (customerId only)
- * - CustomerActionsTab com Revenue Intelligence Center
- * - Business logic centralizada em hooks SSoT server-side
- * - Eliminação de props dependencies
- * - Performance otimizada com cache inteligente
- *
- * @author Adega Manager Team
- * @version 3.1.0 - SSoT Server-Side Implementation
+ * Full layout refactor implementing the Referência Visual v3 (Dark Glass).
+ * - Layout: Grid 12 cols (3 cols Sidebar / 9 cols Main)
+ * - Background: bg-zinc-950 global
+ * - Navigation: Pills Tabs
+ * 
+ * @version 4.0.0 Refactor
  */
 
 import React, { useState, useEffect } from 'react';
@@ -22,24 +15,23 @@ import { useParams, Navigate, useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/primitives/tabs';
 import { LoadingScreen } from '@/shared/ui/composite/loading-spinner';
 import { Button } from '@/shared/ui/primitives/button';
-import {
-  User,
-  ShoppingBag,
-  ArrowLeft
-} from 'lucide-react';
+import { ArrowLeft, User, ShoppingBag } from 'lucide-react';
 
-// Importar componentes SSoT v3.0.0
-// Importar componentes SSoT v3.0.0
+// SSoT Hooks
+import { useCustomer } from '@/features/customers/hooks/use-crm';
+import { useCustomerProfileHeaderSSoT } from '@/shared/hooks/business/useCustomerProfileHeaderSSoT';
+import { useAuth } from '@/app/providers/AuthContext';
+
+// Components
 import { CustomerProfileHeader } from './CustomerProfileHeader';
 import { CustomerOverviewTab } from './CustomerOverviewTab';
 import { CustomerPurchaseHistoryTab } from './CustomerPurchaseHistoryTab';
 import { EditCustomerModal } from './EditCustomerModal';
 import { DeleteCustomerModal } from './DeleteCustomerModal';
+import { CustomerStats } from './CustomerStats';
+import { CustomerMainMetrics } from './CustomerMainMetrics';
+import { CustomerAdvancedMetrics } from './CustomerAdvancedMetrics';
 
-// Hooks e dados
-// Hooks e dados
-import { useCustomer } from '@/features/customers/hooks/use-crm';
-import { useAuth } from '@/app/providers/AuthContext';
 
 // ============================================================================
 // TYPES
@@ -60,22 +52,24 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
 
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { userRole } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
-  // Check if user is admin
-  const isAdmin = userRole === 'admin';
+  // SSoT Hook for shared data (Metrics & Actions)
+  const {
+    realMetrics,
+    handleNewSale,
+    handleWhatsApp,
+    hasPhoneNumber,
+    customer: headerCustomer,
+    isLoading: headerLoading
+  } = useCustomerProfileHeaderSSoT(id || '');
 
-  // ============================================================================
-  // DATA FETCHING - Mínimo necessário para validação
-  // ============================================================================
-
-  // Buscar dados básicos do cliente apenas para validação
+  // Fetch basic customer data for validation (legacy)
   const {
     data: customer,
-    isLoading,
+    isLoading: isCustomerLoading,
     error
   } = useCustomer(id || '');
 
@@ -83,15 +77,9 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
   // CUSTOM EVENT LISTENER - SSoT v3.1.0 Integration Fix
   // ============================================================================
 
-  // Escutar eventos personalizados disparados pelo CustomerProfileHeader
   useEffect(() => {
-    const handleOpenEditModal = () => {
-      setIsEditModalOpen(true);
-    };
-
-    const handleOpenDeleteModal = () => {
-      setIsDeleteModalOpen(true);
-    };
+    const handleOpenEditModal = () => { setIsEditModalOpen(true); };
+    const handleOpenDeleteModal = () => { setIsDeleteModalOpen(true); };
 
     window.addEventListener('openCustomerEditModal', handleOpenEditModal as EventListener);
     window.addEventListener('openCustomerDeleteModal', handleOpenDeleteModal as EventListener);
@@ -102,21 +90,7 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
     };
   }, []);
 
-  // ============================================================================
-  // HANDLERS
-  // ============================================================================
-
-  const handleEdit = () => {
-    setIsEditModalOpen(true);
-  };
-
-  const handleNewSale = () => {
-    const salesUrl = `/sales?customer_id=${id}&customer_name=${encodeURIComponent(customer?.name || '')}`;
-    window.open(salesUrl, '_blank');
-  };
-
   const handleDeleteSuccess = () => {
-    // Redirecionar para lista de clientes após exclusão bem-sucedida
     navigate('/customers');
   };
 
@@ -124,90 +98,109 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
   // GUARDS E VALIDAÇÕES
   // ============================================================================
 
-  // Se não tem ID, redirecionar
-  if (!id) {
-    return <Navigate to="/customers" replace />;
-  }
+  if (!id) return <Navigate to="/customers" replace />;
+  if (isCustomerLoading || headerLoading) return <LoadingScreen text="Carregando perfil..." />;
 
-  // Loading state - Simplified (Header handles its own loading)
-  if (isLoading) {
-    return <LoadingScreen text="Carregando perfil do cliente..." />;
-  }
-
-  // Error state
   if (error || !customer) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
         <div className="text-red-400 text-lg">❌ Cliente não encontrado</div>
-        <Button
-          variant="outline"
-          onClick={() => window.history.back()}
-          className="flex items-center gap-2"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Voltar
+        <Button variant="outline" onClick={() => window.history.back()} className="flex items-center gap-2">
+          <ArrowLeft className="h-4 w-4" /> Voltar
         </Button>
       </div>
     );
   }
 
   // ============================================================================
-  // RENDER
+  // RENDER - LAYOUT DARK GLASS
   // ============================================================================
 
   return (
-    <div className={`w-full px-4 sm:px-6 lg:px-8 space-y-6 ${className || ''}`}>
-      {/* Header Unificado - Componente SSoT v3.1.0 */}
-      <CustomerProfileHeader
-        customerId={id || ''}
-      />
+    <div className={`flex flex-col w-full min-h-screen bg-zinc-950 text-zinc-100 animate-in fade-in duration-500 ${className || ''}`}>
 
-      {/* Sistema de Tabs - Simplificado para MVP (Overview + Histórico) */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-2 bg-gray-800/50">
-          {/* Tab 1: Visão Geral (Dashboard + Timeline) */}
-          <TabsTrigger value="overview" className="data-[state=active]:bg-blue-500 data-[state=active]:text-white">
-            <div className="flex items-center gap-1">
-              <User className="h-4 w-4" />
-              <span className="hidden sm:inline">Visão Geral</span>
-            </div>
-          </TabsTrigger>
+      {/* Ambient Glows */}
+      <div className="fixed top-[-20%] left-[-10%] w-[600px] h-[600px] bg-primary/10 rounded-full blur-[120px] pointer-events-none z-0" />
+      <div className="fixed bottom-[-10%] right-[-5%] w-[500px] h-[500px] bg-emerald-500/5 rounded-full blur-[100px] pointer-events-none z-0" />
 
-          {/* Tab 2: Histórico de Compras (Compras + Financeiro) */}
-          <TabsTrigger value="purchases" className="data-[state=active]:bg-blue-500 data-[state=active]:text-white">
-            <div className="flex items-center gap-1">
-              <ShoppingBag className="h-4 w-4" />
-              <span className="hidden sm:inline">Histórico de Compras</span>
-            </div>
-          </TabsTrigger>
-        </TabsList>
+      {/* Main Grid Layout - FULL WIDTH */}
+      <main className="grid grid-cols-1 lg:grid-cols-12 gap-6 p-6 lg:p-8 items-start relative z-10 w-full">
 
-        {/* Conteúdo das Tabs - Componentes SSoT */}
-        <div className="mt-6">
-          {/* Tab 1: Visão Geral - Dashboard + Timeline integrada */}
-          <TabsContent value="overview">
-            <CustomerOverviewTab
-              customerId={id || ''}
-            />
-          </TabsContent>
+        {/* COLUNA ESQUERDA - SIDEBAR (3 cols) */}
+        <aside className="lg:col-span-3 flex flex-col gap-6 sticky top-6">
+          <CustomerProfileHeader customerId={id} />
+        </aside>
 
-          {/* Tab 2: Histórico de Compras - SSoT v3.1.0 Server-Side */}
-          <TabsContent value="purchases">
-            <CustomerPurchaseHistoryTab
-              customerId={id || ''}
-            />
-          </TabsContent>
-        </div>
-      </Tabs>
+        {/* COLUNA DIREITA - CONTEÚDO (9 cols) */}
+        <section className="lg:col-span-9 flex flex-col gap-8">
 
-      {/* Modal de Edição - Mantido para compatibilidade */}
+          {/* 1. New KPI Stats Strip */}
+          <CustomerStats
+            metrics={realMetrics}
+            customerStatus={headerCustomer.segment || 'Regular'}
+            isLoading={headerLoading}
+          />
+
+          {/* 1.2. Main Metrics Cards */}
+          <CustomerMainMetrics
+            metrics={realMetrics}
+            customer={headerCustomer} // Using SSoT customer
+            customerStatus={headerCustomer.segment || 'Regular'}
+            profileCompleteness='100' // Placeholder/SSoT TODO
+            onSendWhatsApp={handleWhatsApp}
+            onSendEmail={() => { }} // Placeholder TODO
+          />
+
+          {/* 1.5. Advanced Metrics */}
+          <CustomerAdvancedMetrics metrics={realMetrics} />
+
+          {/* 2. Tabs Section */}
+          <div className="flex flex-col gap-6 w-full">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+
+              {/* Tab List: Pills Design */}
+              <div className="flex items-center border-b border-white/5 pb-1 mb-6 overflow-x-auto scrollbar-hide w-full">
+                <TabsList className="h-auto w-auto bg-transparent p-0 gap-6">
+                  <TabsTrigger
+                    value="overview"
+                    className="bg-transparent border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-white text-zinc-500 hover:text-zinc-300 rounded-none px-4 py-2 font-bold text-sm transition-all shadow-none"
+                  >
+                    Timeline
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="purchases"
+                    className="bg-transparent border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-white text-zinc-500 hover:text-zinc-300 rounded-none px-4 py-2 font-bold text-sm transition-all shadow-none"
+                  >
+                    Histórico de Compras
+                  </TabsTrigger>
+                </TabsList>
+              </div>
+
+              {/* Tab Content 1: Overview (Timeline) */}
+              <TabsContent value="overview" className="mt-0 focus-visible:outline-none w-full">
+                <CustomerOverviewTab customerId={id} className="glass-panel w-full" />
+              </TabsContent>
+
+              {/* Tab Content 2: Purchases */}
+              <TabsContent value="purchases" className="mt-0 focus-visible:outline-none w-full">
+                <CustomerPurchaseHistoryTab customerId={id} />
+              </TabsContent>
+
+            </Tabs>
+          </div>
+        </section>
+
+      </main>
+
+
+
+      {/* Modais Legados (Mantidos para funcionalidade) */}
       <EditCustomerModal
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
         customer={customer}
       />
 
-      {/* Modal de Exclusão - Sistema de Hard Delete (v3.3.0) */}
       <DeleteCustomerModal
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
@@ -215,6 +208,7 @@ export const CustomerProfile = ({ className }: CustomerProfileProps) => {
         customerName={customer?.name || ''}
         onSuccess={handleDeleteSuccess}
       />
+
     </div>
   );
 };

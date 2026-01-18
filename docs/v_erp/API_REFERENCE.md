@@ -24,6 +24,7 @@ Procedures no PostgreSQL chamadas via supabase-js.
 - **Principais Funções:**
   - `process_sale(...)`: Venda atômica (Estoque + Financeiro + Delivery Bool).
   - `create_inventory_movement(...)`: Movimentação auditada de estoque.
+  - `create_quick_customer(...)`: "Find or Create" por telefone (Anti-duplicidade).
   - `cancel_sale(...)`: Estorno seguro.
 
 ### B. Edge Functions (Integrações Externas)

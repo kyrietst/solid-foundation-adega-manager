@@ -271,6 +271,7 @@ export const useUpsertCustomer = () => {
       // Invalida a query do cliente específico, se ele já existia
       if (variables.id) {
         queryClient.invalidateQueries({ queryKey: ['customer', variables.id] });
+        queryClient.invalidateQueries({ queryKey: ['customer-profile-header-data', variables.id] });
       }
 
       toast({

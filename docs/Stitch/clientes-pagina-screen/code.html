@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Customer Profile 360 - Variant 3</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Theme Config -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#9513ec",
+                        "emerald": "#10b981",
+                        "background-light": "#f7f6f8",
+                        "background-dark": "#09090b", /* Zinc-950 */
+                        "glass": "rgba(255, 255, 255, 0.03)",
+                        "glass-border": "rgba(255, 255, 255, 0.08)",
+                    },
+                    fontFamily: {
+                        "display": ["Manrope", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "1rem",
+                        "lg": "1.5rem",
+                        "xl": "2rem",
+                        "2xl": "3rem",
+                        "full": "9999px"
+                    },
+                    boxShadow: {
+                        "glow": "0 0 20px rgba(149, 19, 236, 0.25)",
+                        "glow-sm": "0 0 10px rgba(149, 19, 236, 0.2)",
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom scrollbar for ultra-sleek look */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #09090b; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #27272a; 
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3f3f46; 
+        }
+        
+        .glass-panel {
+            background: linear-gradient(145deg, rgba(24, 24, 27, 0.6) 0%, rgba(9, 9, 11, 0.8) 100%);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        
+        .text-glow {
+            text-shadow: 0 0 20px rgba(149, 19, 236, 0.4);
+        }
+    </style>
+</head>
+<body class="bg-background-dark text-white font-display antialiased min-h-screen selection:bg-primary/30">
+<div class="relative flex min-h-screen w-full flex-col overflow-x-hidden">
+<!-- Ambient Background Glows -->
+<div class="fixed top-[-20%] left-[-10%] w-[600px] h-[600px] bg-primary/10 rounded-full blur-[120px] pointer-events-none z-0"></div>
+<div class="fixed bottom-[-10%] right-[-5%] w-[500px] h-[500px] bg-emerald-500/5 rounded-full blur-[100px] pointer-events-none z-0"></div>
+<!-- Layout Container -->
+<div class="relative z-10 flex h-full grow flex-col max-w-[1440px] mx-auto w-full p-4 lg:p-8 gap-6">
+<!-- Top Navigation (Minimalist) -->
+<header class="flex items-center justify-between px-2 py-2">
+<div class="flex items-center gap-4">
+<div class="size-8 text-primary animate-pulse">
+<svg fill="none" viewbox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<path d="M24 4L44 24L24 44L4 24L24 4Z" stroke="currentColor" stroke-linejoin="round" stroke-width="4"></path>
+</svg>
+</div>
+<span class="text-xl font-bold tracking-tight text-white/90">ERP<span class="text-primary">360</span></span>
+</div>
+<div class="hidden md:flex items-center bg-zinc-900/50 rounded-full border border-white/5 px-2 py-1.5 backdrop-blur-sm">
+<button class="px-4 py-1.5 text-sm font-medium text-white bg-primary rounded-full shadow-glow transition-all">Profile</button>
+<button class="px-4 py-1.5 text-sm font-medium text-zinc-400 hover:text-white transition-colors">Orders</button>
+<button class="px-4 py-1.5 text-sm font-medium text-zinc-400 hover:text-white transition-colors">Analytics</button>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-zinc-400 hover:text-white transition-colors">
+<span class="material-symbols-outlined">search</span>
+</button>
+<div class="size-10 rounded-full bg-cover bg-center border border-white/10" data-alt="User profile avatar" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCEkGuRtUWXjaO2co8EJS6tqckLVycFPg5l4c28SoBV5CDDW2MA0YI_AfMOhwwyI53oKmfVBIzpnRmSNFSOK8SeQDW4eQ_mDeLfSsqKjtuN0_C6HDEY96gpRdNdD17zLUrZjzVVrrwkHvStAjPP9_t-dDD2gs72s9_3qbdzgVeWmzp_zNByN5XONNlHTuity3Rkeiz7T_6D9V3FtdUE6CrfPz2eEDcq-vZ2LajDLmE1gCh8277nwVwFYWRskl51PyQBfWVBhknAbtxj')"></div>
+</div>
+</header>
+<!-- Breadcrumbs -->
+<div class="flex items-center gap-2 text-sm text-zinc-500 px-2">
+<a class="hover:text-primary transition-colors" href="#">Dashboard</a>
+<span class="material-symbols-outlined text-[12px]">chevron_right</span>
+<a class="hover:text-primary transition-colors" href="#">Customers</a>
+<span class="material-symbols-outlined text-[12px]">chevron_right</span>
+<span class="text-zinc-200">Isabella Vane</span>
+</div>
+<!-- Main Grid -->
+<main class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start mt-4">
+<!-- Left Column: Identity & Sidebar Info (lg:col-span-3) -->
+<div class="lg:col-span-3 flex flex-col gap-6 sticky top-8">
+<!-- Profile Card -->
+<div class="glass-panel rounded-2xl p-6 flex flex-col items-center text-center relative overflow-hidden group">
+<div class="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+<div class="relative mb-4">
+<div class="w-32 h-32 rounded-full p-1 bg-gradient-to-tr from-zinc-800 to-zinc-900 border border-white/10 shadow-xl">
+<div class="w-full h-full rounded-full bg-cover bg-center" data-alt="Isabella Vane profile picture" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuC4YHH2zqgO5Srq5j82d8g4BNsSeHMBz-nx_7dtMWzLfl2tEOFbRxrcI4Ct5o7sD2glg4eNkHiUrklNql860JGte8XiZ8vHSVOURG3PX5lhUBLZWTo715HcJ07oKPgcAvesaIOab9asNZ4Muc4k8d-_EmcKn8zOMrFUBMPGalOVY5YXQT3n3NumqWUmVGsEQk7NOrWYBmOE944b2EpqA5l3DloDqi3XRE7XrnXB74DR_KJXRYzhWdQhtinqdDKeX14K6VF2sSJdS5GG')"></div>
+</div>
+<div class="absolute bottom-1 right-1 bg-zinc-950 rounded-full p-1.5 border border-zinc-800">
+<div class="size-3 bg-emerald-500 rounded-full animate-pulse"></div>
+</div>
+</div>
+<h1 class="text-2xl font-bold text-white mb-1">Isabella Vane</h1>
+<p class="text-sm text-zinc-400 mb-6">VIP Customer • Tech Solutions Inc.</p>
+<div class="flex w-full gap-3">
+<button class="flex-1 h-10 rounded-full border border-white/10 hover:bg-white/5 text-sm font-medium transition-all flex items-center justify-center gap-2 group/btn">
+<span class="material-symbols-outlined text-[18px] text-zinc-400 group-hover/btn:text-white">mail</span>
+                                Message
+                            </button>
+<button class="size-10 rounded-full border border-white/10 hover:bg-white/5 flex items-center justify-center transition-all group/btn">
+<span class="material-symbols-outlined text-[18px] text-zinc-400 group-hover/btn:text-white">more_horiz</span>
+</button>
+</div>
+</div>
+<!-- Contact Info Sidebar -->
+<div class="glass-panel rounded-2xl p-6 flex flex-col gap-6">
+<h3 class="text-xs font-bold uppercase tracking-wider text-zinc-500">Contact Details</h3>
+<div class="flex items-start gap-4 group cursor-pointer">
+<div class="size-10 rounded-full bg-zinc-800/50 flex items-center justify-center text-zinc-400 group-hover:text-primary group-hover:bg-primary/10 transition-all">
+<span class="material-symbols-outlined text-[20px]">call</span>
+</div>
+<div class="flex flex-col">
+<span class="text-sm text-zinc-400">Phone</span>
+<span class="text-base text-white font-medium">+1 (555) 123-4567</span>
+</div>
+</div>
+<div class="flex items-start gap-4 group cursor-pointer">
+<div class="size-10 rounded-full bg-zinc-800/50 flex items-center justify-center text-zinc-400 group-hover:text-primary group-hover:bg-primary/10 transition-all">
+<span class="material-symbols-outlined text-[20px]">alternate_email</span>
+</div>
+<div class="flex flex-col">
+<span class="text-sm text-zinc-400">Email</span>
+<span class="text-base text-white font-medium truncate w-40">isabella@techsol.com</span>
+</div>
+</div>
+<div class="flex items-start gap-4 group cursor-pointer">
+<div class="size-10 rounded-full bg-zinc-800/50 flex items-center justify-center text-zinc-400 group-hover:text-primary group-hover:bg-primary/10 transition-all">
+<span class="material-symbols-outlined text-[20px]">location_on</span>
+</div>
+<div class="flex flex-col">
+<span class="text-sm text-zinc-400">HQ Location</span>
+<span class="text-base text-white font-medium">San Francisco, CA</span>
+</div>
+</div>
+<!-- Mini Map -->
+<div class="mt-2 w-full h-32 rounded-xl bg-zinc-800/50 overflow-hidden relative border border-white/5">
+<div class="absolute inset-0 bg-cover bg-center opacity-60 grayscale hover:grayscale-0 transition-all duration-500" data-alt="Map of San Francisco showing location" data-location="San Francisco Map" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCR4DM7RkhzEtpCPOAOVSKRQMW9F1QfVwMFsft0hzo_XmH_YsbM959QhbtTk0zoUIjTH9nHPNyGr8sHgDiICbtETmqpolf6ohO3B_ymhUuVYTHO_XjlW-pqGpEqgTThxz54iF26vaQl0PiacPu7G8Lia7udcaHn-hD-33tqlb1d85Eubjs63bbfBJhTUnvDri8t-g-m0ZcvDUz2wd5993f3P6Dmy_EyIgRDvmpxFyhRf21BwAtrL8m47rRt1tGr68-N50l80yY-ZXh0')"></div>
+<div class="absolute inset-0 flex items-center justify-center">
+<div class="size-8 rounded-full bg-primary/20 backdrop-blur-sm flex items-center justify-center animate-bounce">
+<span class="material-symbols-outlined text-primary drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">location_on</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Center/Right Column: KPIs & Timeline (lg:col-span-9) -->
+<div class="lg:col-span-9 flex flex-col gap-8">
+<!-- KPI Strip (Borderless, Horizontal) -->
+<section class="w-full">
+<div class="flex flex-wrap items-center justify-between gap-6 px-4 py-2">
+<!-- Metric 1 -->
+<div class="flex flex-col gap-1 min-w-[140px]">
+<span class="text-sm font-medium text-zinc-500">Lifetime Value</span>
+<div class="flex items-baseline gap-2">
+<span class="text-3xl font-bold text-white tracking-tight">$12,450</span>
+<span class="flex items-center text-xs font-bold text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded-md">
+                                        +12% <span class="material-symbols-outlined text-[10px] ml-0.5">trending_up</span>
+</span>
+</div>
+</div>
+<!-- Divider -->
+<div class="hidden md:block w-px h-12 bg-zinc-800"></div>
+<!-- Metric 2 -->
+<div class="flex flex-col gap-1 min-w-[140px]">
+<span class="text-sm font-medium text-zinc-500">Total Orders</span>
+<div class="flex items-baseline gap-2">
+<span class="text-3xl font-bold text-white tracking-tight">24</span>
+<span class="text-sm text-zinc-600">orders</span>
+</div>
+</div>
+<!-- Divider -->
+<div class="hidden md:block w-px h-12 bg-zinc-800"></div>
+<!-- Metric 3 -->
+<div class="flex flex-col gap-1 min-w-[140px]">
+<span class="text-sm font-medium text-zinc-500">NPS Score</span>
+<div class="flex items-baseline gap-2">
+<span class="text-3xl font-bold text-emerald-400 tracking-tight">78</span>
+<span class="text-sm text-emerald-500/60">Promoter</span>
+</div>
+</div>
+<!-- Divider -->
+<div class="hidden md:block w-px h-12 bg-zinc-800"></div>
+<!-- Metric 4 -->
+<div class="flex flex-col gap-1 min-w-[140px]">
+<span class="text-sm font-medium text-zinc-500">Risk Score</span>
+<div class="flex items-center gap-2">
+<span class="text-3xl font-bold text-white tracking-tight">Low</span>
+<div class="h-2 w-16 bg-zinc-800 rounded-full overflow-hidden">
+<div class="h-full w-[20%] bg-emerald-500 rounded-full"></div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Main Content Area: Tabs + Timeline -->
+<div class="flex flex-col gap-6">
+<!-- Tabs -->
+<div class="flex items-center gap-2 border-b border-white/5 pb-1">
+<button class="px-4 py-2 text-sm font-bold text-white border-b-2 border-primary">Timeline</button>
+<button class="px-4 py-2 text-sm font-medium text-zinc-500 hover:text-zinc-300 transition-colors">Purchases</button>
+<button class="px-4 py-2 text-sm font-medium text-zinc-500 hover:text-zinc-300 transition-colors">Tickets</button>
+<button class="px-4 py-2 text-sm font-medium text-zinc-500 hover:text-zinc-300 transition-colors">Documents</button>
+</div>
+<!-- Timeline Container -->
+<div class="glass-panel rounded-3xl p-8 relative min-h-[500px]">
+<h3 class="text-lg font-bold text-white mb-8 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">history</span>
+                                Activity History
+                            </h3>
+<div class="relative pl-4">
+<!-- Vertical Line -->
+<div class="absolute left-[27px] top-2 bottom-0 w-px bg-gradient-to-b from-primary via-zinc-800 to-transparent"></div>
+<!-- Item 1 (Highlighted) -->
+<div class="relative flex gap-6 pb-12 group">
+<div class="relative z-10 flex flex-col items-center">
+<div class="size-6 rounded-full bg-primary shadow-glow flex items-center justify-center border-2 border-zinc-950">
+<div class="size-2 bg-white rounded-full"></div>
+</div>
+</div>
+<div class="flex-1 -mt-1 p-4 rounded-xl bg-white/5 border border-white/5 group-hover:border-primary/30 transition-all cursor-pointer">
+<div class="flex justify-between items-start mb-2">
+<span class="text-primary text-xs font-bold uppercase tracking-wider">Subscription</span>
+<span class="text-zinc-400 text-xs">Today, 10:00 AM</span>
+</div>
+<h4 class="text-white font-bold text-lg mb-1">Renewed Enterprise Plan</h4>
+<p class="text-zinc-400 text-sm mb-3">Successfully renewed annual enterprise subscription with 5 additional seats.</p>
+<div class="flex items-center gap-2">
+<span class="inline-flex items-center px-2 py-1 rounded-md bg-zinc-800 border border-zinc-700 text-xs text-zinc-300 font-mono">$12,450.00</span>
+<span class="inline-flex items-center px-2 py-1 rounded-md bg-zinc-800 border border-zinc-700 text-xs text-zinc-300">#INV-2024-001</span>
+</div>
+</div>
+</div>
+<!-- Item 2 -->
+<div class="relative flex gap-6 pb-12 group">
+<div class="relative z-10 flex flex-col items-center">
+<div class="size-6 rounded-full bg-zinc-900 border border-zinc-700 flex items-center justify-center group-hover:border-primary group-hover:bg-primary/20 transition-colors">
+<span class="material-symbols-outlined text-[14px] text-zinc-500 group-hover:text-primary">confirmation_number</span>
+</div>
+</div>
+<div class="flex-1 -mt-1 p-4 rounded-xl hover:bg-white/5 border border-transparent hover:border-white/5 transition-all">
+<div class="flex justify-between items-start mb-1">
+<span class="text-emerald-500 text-xs font-bold uppercase tracking-wider">Support</span>
+<span class="text-zinc-500 text-xs">Yesterday, 2:30 PM</span>
+</div>
+<h4 class="text-zinc-200 font-semibold text-base">Ticket #4592 Resolved</h4>
+<p class="text-zinc-500 text-sm">Issue with API integration has been fixed by the technical team.</p>
+</div>
+</div>
+<!-- Item 3 -->
+<div class="relative flex gap-6 pb-12 group">
+<div class="relative z-10 flex flex-col items-center">
+<div class="size-6 rounded-full bg-zinc-900 border border-zinc-700 flex items-center justify-center group-hover:border-primary group-hover:bg-primary/20 transition-colors">
+<span class="material-symbols-outlined text-[14px] text-zinc-500 group-hover:text-primary">groups</span>
+</div>
+</div>
+<div class="flex-1 -mt-1 p-4 rounded-xl hover:bg-white/5 border border-transparent hover:border-white/5 transition-all">
+<div class="flex justify-between items-start mb-1">
+<span class="text-indigo-400 text-xs font-bold uppercase tracking-wider">Meeting</span>
+<span class="text-zinc-500 text-xs">Oct 15, 2023</span>
+</div>
+<h4 class="text-zinc-200 font-semibold text-base">Quarterly Business Review</h4>
+<p class="text-zinc-500 text-sm">Review of Q3 performance and roadmap planning for Q4.</p>
+<div class="flex -space-x-2 mt-2">
+<div class="w-6 h-6 rounded-full bg-zinc-700 border border-zinc-900" data-alt="Attendee avatar 1" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBsO_A3sFiOfuyFMCkB3IPF57Azm-2TgGAquxad4bX99n0e9V6Lzze55u0fTrnitq0SiH8Ao-EWVd7BLUl0QEA2KSgYjJOYqp2y3MThR6XZoSVDeK3cAh58Kp-TR7XTIXQWpqXAL2VNNh_nLj5AgSF9mrHQCExOE9Eq4gMze_f1wgVdq3QC7EBZ3E111udgn0s4h0IujHYdLAqUjsvsu8Q8EqpHEm3TOpEtU-984F4x7fSSyPLof1rJb9gyw86yPTo6D9gxhDlGRZpk')"></div>
+<div class="w-6 h-6 rounded-full bg-zinc-600 border border-zinc-900" data-alt="Attendee avatar 2" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAFdx81_fWZR7lqfwrrjk0Xe1y0RS0x0hK_Epe_CLzFX2seY-Cx2N7DIfpRcI_ZqKEo8eKPL_SVkZbfTlpSYeubA6l8WJxA_qhg0n5ekv_RRNZZLuBld8gXxg3W4P9cbNYJ5FRRahfOybzVfEPynGas2-V_iyHUNdgbt3lBWEpL4dtWZ-ACPYSDi4MA4sNynfdK2ompFlurNcQgTcwEfwj7KjgguFE8NKZzrerFH1YRfsjnP-LvnTz6UnfWktvLph-beEJUuOZsleHy')"></div>
+</div>
+</div>
+</div>
+<!-- Item 4 -->
+<div class="relative flex gap-6 pb-4 group">
+<div class="relative z-10 flex flex-col items-center">
+<div class="size-6 rounded-full bg-zinc-900 border border-zinc-700 flex items-center justify-center group-hover:border-primary group-hover:bg-primary/20 transition-colors">
+<span class="material-symbols-outlined text-[14px] text-zinc-500 group-hover:text-primary">shopping_cart</span>
+</div>
+</div>
+<div class="flex-1 -mt-1 p-4 rounded-xl hover:bg-white/5 border border-transparent hover:border-white/5 transition-all">
+<div class="flex justify-between items-start mb-1">
+<span class="text-zinc-500 text-xs font-bold uppercase tracking-wider">Purchase</span>
+<span class="text-zinc-500 text-xs">Sep 28, 2023</span>
+</div>
+<h4 class="text-zinc-200 font-semibold text-base">Purchased Add-on Module</h4>
+<p class="text-zinc-500 text-sm">Advanced Analytics module added to the account.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+<!-- Floating Action Bar (Bottom Right) -->
+<div class="fixed bottom-8 right-8 z-50">
+<div class="flex items-center gap-2 p-1.5 bg-zinc-800/80 backdrop-blur-xl border border-white/10 rounded-full shadow-2xl shadow-black/50">
+<button class="h-10 px-5 rounded-full bg-primary hover:bg-primary/90 text-white font-bold text-sm flex items-center gap-2 shadow-glow transition-all">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                    New Order
+                </button>
+<button class="size-10 rounded-full bg-transparent hover:bg-white/10 text-zinc-300 hover:text-white flex items-center justify-center transition-colors">
+<span class="material-symbols-outlined text-[20px]">call</span>
+</button>
+<button class="size-10 rounded-full bg-transparent hover:bg-white/10 text-zinc-300 hover:text-white flex items-center justify-center transition-colors">
+<span class="material-symbols-outlined text-[20px]">schedule</span>
+</button>
+</div>
+</div>
+</div>
+</body></html>

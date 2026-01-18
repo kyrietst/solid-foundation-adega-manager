@@ -173,9 +173,7 @@ const Index = () => {
         // Handle /customer/:id route
         return hasPermission(['admin', 'employee']) ? (
           <Suspense fallback={<LoadingScreen text="Carregando perfil do cliente..." />}>
-            <WhitePageShell>
-              <CustomerProfile />
-            </WhitePageShell>
+            <CustomerProfile />
           </Suspense>
         ) : <AccessDenied />;
       case 'reports':
@@ -219,7 +217,7 @@ const Index = () => {
       {/* Main content area */}
       <div className="flex-1 flex flex-col overflow-hidden">
         <main className={cn("flex-1 overflow-x-hidden", (activeTab === 'inventory' || activeTab === 'sales') ? "overflow-y-hidden" : "overflow-y-auto")}>
-          <div className={cn("h-full w-full", (activeTab !== 'dashboard' && activeTab !== 'inventory' && activeTab !== 'sales') && "p-2 lg:p-4")}>
+          <div className={cn("h-full w-full", (activeTab !== 'dashboard' && activeTab !== 'inventory' && activeTab !== 'sales' && activeTab !== 'customer') && "p-2 lg:p-4")}>
             <div className="w-full h-full min-w-0 overflow-x-hidden">
               {renderContent()}
             </div>

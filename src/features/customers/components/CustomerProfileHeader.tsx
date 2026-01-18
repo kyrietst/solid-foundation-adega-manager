@@ -1,45 +1,22 @@
 /**
- * CustomerProfileHeader.tsx - Cabeçalho reutilizável do perfil do cliente SSoT v3.1.0
- *
- * @description
- * Componente SSoT v3.1.0 completamente autossuficiente que centraliza o cabeçalho do perfil do cliente
- * com navegação, ações rápidas e métricas principais usando server-side data fetching.
- *
- * @features
- * - Interface SSoT v3.1.0: apenas {customerId: string}
- * - Server-side data fetching consolidado
- * - Navegação breadcrumb responsiva
- * - Botões de ação contextual (Edit, WhatsApp, Email, Nova Venda)
- * - Card principal com avatar, informações básicas e métricas
- * - Profile completeness calculation automático
- * - Handlers centralizados via hook SSoT
- * - Glassmorphism effects reutilizáveis
- * - Loading states apropriados
- *
- * @author Adega Manager Team
- * @version 3.1.0 - SSoT Server-Side Implementation
+ * CustomerProfileHeader.tsx - Sidebar Identity Panel Refactored (Visual v3.0 - Dark Glass)
  */
 
 import React from 'react';
-import { Card, CardContent } from '@/shared/ui/primitives/card';
 import { Button } from '@/shared/ui/primitives/button';
 import { Badge } from '@/shared/ui/primitives/badge';
-import { StatCard } from '@/shared/ui/composite/stat-card';
-import { LoadingSpinner } from '@/shared/ui/composite/loading-spinner';
+import { Card, CardContent } from '@/shared/ui/primitives/card';
 import {
   ArrowLeft,
-  Edit,
-  MessageSquare,
   Mail,
-  Plus,
   Phone,
   MapPin,
-  DollarSign,
-  ShoppingBag,
-  Calendar,
+  MoreHorizontal,
+  MessageSquare,
   AlertTriangle,
   Info,
-  Trash2
+  Plus,
+  Pencil
 } from 'lucide-react';
 import { useCustomerProfileHeaderSSoT } from '@/shared/hooks/business/useCustomerProfileHeaderSSoT';
 import {
@@ -60,67 +37,8 @@ export interface CustomerProfileHeaderProps {
   className?: string;
 }
 
-interface MissingFieldAlertProps {
-  field: {
-    key: string;
-    label: string;
-    icon: React.ComponentType<any>;
-    impact: string;
-    required: boolean;
-  };
-  variant?: 'critical' | 'warning';
-}
-
 // ============================================================================
-// COMPONENTE DE ALERTA PARA CAMPOS EM FALTA
-// ============================================================================
-
-const MissingFieldAlert: React.FC<MissingFieldAlertProps> = ({
-  field,
-  variant = 'critical'
-}) => {
-  const IconComponent = field.icon || Info;
-
-  return (
-    <TooltipProvider delayDuration={100}>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <div className="inline-flex items-center">
-            {variant === 'critical' ? (
-              <AlertTriangle className="h-4 w-4 text-red-400 animate-pulse cursor-help" />
-            ) : (
-              <Info className="h-4 w-4 text-yellow-400 cursor-help" />
-            )}
-          </div>
-        </TooltipTrigger>
-        <TooltipPortal>
-          <TooltipContent
-            side="top"
-            className="max-w-sm z-[50000] bg-black/95 backdrop-blur-xl border border-red-400/30 shadow-2xl shadow-red-400/10"
-            sideOffset={8}
-            avoidCollisions={true}
-            collisionPadding={10}
-          >
-            <div className="space-y-2 p-1">
-              <div className="flex items-center gap-2 border-b border-white/10 pb-2">
-                <IconComponent className="h-4 w-4 text-red-400" />
-                <span className="font-semibold text-red-400">{field.label} em Falta</span>
-              </div>
-              <p className="text-xs text-gray-300">{field.impact}</p>
-              <div className="flex items-center gap-1 pt-1 border-t border-white/10">
-                <AlertTriangle className="h-3 w-3 text-red-400" />
-                <span className="text-xs text-red-400 font-medium">Impacta relatórios</span>
-              </div>
-            </div>
-          </TooltipContent>
-        </TooltipPortal>
-      </Tooltip>
-    </TooltipProvider>
-  );
-};
-
-// ============================================================================
-// COMPONENTE PRINCIPAL SSoT v3.1.0
+// COMPONENTE PRINCIPAL (SIDEBAR VERTICAL)
 // ============================================================================
 
 export const CustomerProfileHeader: React.FC<CustomerProfileHeaderProps> = ({
@@ -128,30 +46,22 @@ export const CustomerProfileHeader: React.FC<CustomerProfileHeaderProps> = ({
   className = ''
 }) => {
   // ============================================================================
-  // SSoT HOOK - SERVER-SIDE DATA FETCHING
+  // SSoT HOOK
   // ============================================================================
 
   const {
     customer,
-    realMetrics,
     profileCompleteness,
     isLoading,
     error,
     handleEdit,
-    handleDelete,
-    handleNewSale,
-    handleWhatsApp,
     handleEmail,
     handleBack,
-    formatCurrency,
-    formatDate,
-    getSegmentColor,
+    handleNewSale,
+    handleWhatsApp,
     getSegmentLabel,
     hasPhoneNumber,
     hasEmailAddress,
-    isHighValue,
-    isAtRisk,
-    customerSince,
     hasData
   } = useCustomerProfileHeaderSSoT(customerId);
 
@@ -161,331 +71,247 @@ export const CustomerProfileHeader: React.FC<CustomerProfileHeaderProps> = ({
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <div className="h-12 bg-gray-800/50 rounded-lg animate-pulse" />
-        <div className="h-48 bg-gray-800/50 rounded-lg animate-pulse" />
+      <div className="flex flex-col gap-6 sticky top-8 animate-pulse">
+        <div className="h-[400px] w-full bg-gray-800/50 rounded-2xl" />
+        <div className="h-[200px] w-full bg-gray-800/50 rounded-2xl" />
       </div>
     );
   }
 
   if (error || !hasData) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleBack}
-            className="flex items-center gap-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Voltar
+      <div className="flex flex-col gap-6 sticky top-8">
+        <div className="p-6 rounded-2xl bg-red-900/10 border border-red-500/20 text-center">
+          <AlertTriangle className="h-10 w-10 text-red-500 mx-auto mb-2" />
+          <h3 className="text-red-400 font-bold">Cliente não encontrado</h3>
+          <Button variant="outline" onClick={handleBack} className="mt-4 border-red-500/30 text-red-300 hover:bg-red-900/20">
+            <ArrowLeft className="h-4 w-4 mr-2" /> Voltar
           </Button>
         </div>
-        <Card className="bg-red-900/20 border-red-700/30">
-          <CardContent className="p-6 text-center">
-            <AlertTriangle className="h-12 w-12 text-red-400 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-red-400 mb-2">Cliente não encontrado</h2>
-            <p className="text-gray-300">Não foi possível carregar os dados do cliente.</p>
-          </CardContent>
-        </Card>
       </div>
     );
   }
-
-  // ============================================================================
-  // PROFILE COMPLETENESS LOGIC
-  // ============================================================================
-
-  // Campos que impactam relatórios
-  const reportFields = [
-    {
-      key: 'email',
-      label: 'Email',
-      value: customer?.email,
-      required: true,
-      icon: Mail,
-      impact: 'Necessário para campanhas de email marketing e relatórios de comunicação.'
-    },
-    {
-      key: 'phone',
-      label: 'Telefone',
-      value: customer?.phone,
-      required: true,
-      icon: Phone,
-      impact: 'Essencial para relatórios de WhatsApp e análises de contato.'
-    },
-    {
-      key: 'address',
-      label: 'Endereço',
-      value: customer?.address,
-      required: false,
-      icon: MapPin,
-      impact: 'Importante para análises geográficas e relatórios de entrega.'
-    }
-  ];
-
-  const missingReportFields = reportFields.filter(
-    field => !field.value || field.value === 'N/A' || field.value === 'Não definida'
-  );
-  const criticalMissingFields = missingReportFields.filter(field => field.required);
-  const importantMissingFields = missingReportFields.filter(field => !field.required);
 
   // ============================================================================
   // RENDER
   // ============================================================================
 
   return (
-    <div className={`space-y-6 ${className}`}>
-      {/* Navigation Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleBack}
-            className="flex items-center gap-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Voltar
-          </Button>
-          <div className="text-sm text-gray-400">
-            <span>Clientes</span>
-            <span className="mx-2">/</span>
-            <span className="text-white">{customer.name}</span>
+    <div className={`flex flex-col gap-6 sticky top-8 ${className}`}>
+
+      {/* 1. Profile Identity Card */}
+      <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/40 backdrop-blur-xl p-6 flex flex-col items-center text-center group transition-all hover:border-white/20 hover:bg-black/50 hover:shadow-2xl hover:shadow-primary/5">
+
+        {/* Glow Effect on Hover */}
+        <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+
+        {/* Back Button (Absolute Top Left) */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleBack}
+          className="absolute top-4 left-4 text-zinc-500 hover:text-white p-2 h-auto"
+          title="Voltar"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+
+        {/* Avatar Section */}
+        <div className="relative mb-4 mt-2">
+          <div className="w-32 h-32 rounded-full p-1 bg-gradient-to-tr from-zinc-800 to-zinc-900 border border-white/10 shadow-xl flex items-center justify-center">
+            {/* Avatar Fallback / Content */}
+            <div className="w-full h-full rounded-full bg-gradient-to-br from-primary/80 to-purple-900/80 flex items-center justify-center">
+              <span className="text-4xl font-bold text-white drop-shadow-md">
+                {customer.name?.charAt(0)?.toUpperCase()}
+              </span>
+            </div>
+          </div>
+
+          {/* Status Indicator Dot */}
+          <div className="absolute bottom-1 right-1 bg-zinc-950 rounded-full p-1.5 border border-zinc-800">
+            <div className={`size-3 rounded-full animate-pulse ${customer.segment === 'at_risk' ? 'bg-red-500' :
+              customer.segment === 'VIP' ? 'bg-amber-400' :
+                'bg-emerald-500'
+              }`} />
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex items-center gap-2">
+        {/* Name & Segment */}
+        <h1 className="text-2xl font-bold text-white mb-1 line-clamp-2">{customer.name}</h1>
+        <p className="text-sm text-zinc-400 mb-6 flex items-center justify-center gap-2">
+          <Badge variant="outline" className={`border-zinc-700 bg-zinc-900/50 ${customer.segment === 'high_value' ? 'text-amber-400 border-amber-500/30' : 'text-zinc-400'
+            }`}>
+            {getSegmentLabel(customer.segment)}
+          </Badge>
+          {/* Completeness Badge */}
+          {!profileCompleteness.isComplete && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="flex items-center text-xs text-amber-500 cursor-help">
+                    <Info className="h-3 w-3 mr-1" />
+                    {profileCompleteness.score}%
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="dark bg-zinc-900 border-zinc-800">
+                  <p>Perfil incompleto. Preencha os dados restantes.</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+        </p>
+
+        {/* Primary Actions (Horizontal) */}
+        {/* Primary Actions (Vertical Group) */}
+        <div className="flex flex-col gap-3 w-full">
+
+          {/* Main CTA: Nova Venda */}
           <Button
-            variant="outline"
-            size="sm"
-            className="flex items-center gap-2"
-            onClick={handleEdit}
-          >
-            <Edit className="h-4 w-4" />
-            Editar
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex items-center gap-2"
-            onClick={handleWhatsApp}
-            disabled={!hasPhoneNumber}
-            title={!hasPhoneNumber ? 'Cliente não possui telefone' : 'Enviar mensagem via WhatsApp'}
-          >
-            <MessageSquare className="h-4 w-4" />
-            WhatsApp
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex items-center gap-2"
-            onClick={handleEmail}
-            disabled={!hasEmailAddress}
-            title={!hasEmailAddress ? 'Cliente não possui email' : 'Enviar email'}
-          >
-            <Mail className="h-4 w-4" />
-            Email
-          </Button>
-          <Button
-            variant="default"
-            size="sm"
-            className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
             onClick={handleNewSale}
+            className="w-full h-12 rounded-full bg-amber-500 hover:bg-amber-600 text-black font-bold text-base shadow-[0_0_20px_rgba(245,158,11,0.3)] transition-all hover:scale-[1.02] flex items-center justify-center gap-2"
           >
-            <Plus className="h-4 w-4" />
+            <Plus className="h-5 w-5" />
             Nova Venda
           </Button>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center gap-2 border-red-600/50 text-red-400 hover:bg-red-900/20 hover:border-red-500"
-                  onClick={handleDelete}
-                >
-                  <Trash2 className="h-4 w-4" />
-                  <span className="hidden sm:inline">Excluir</span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipPortal>
-                <TooltipContent className="z-[50000] bg-black/95 backdrop-blur-xl border border-red-400/30">
-                  <p className="text-xs text-red-200">Excluir cliente (reversível)</p>
+
+          {/* Secondary Actions Row */}
+          <div className="flex w-full gap-3">
+
+            {/* WhatsApp */}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="flex-1 h-10 rounded-full border-white/10 bg-white/5 hover:bg-white/10 hover:text-green-400 text-zinc-300 transition-all"
+                    onClick={handleWhatsApp}
+                    disabled={!hasPhoneNumber}
+                  >
+                    <MessageSquare className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="dark bg-zinc-900 border-zinc-800">
+                  <p>WhatsApp</p>
                 </TooltipContent>
-              </TooltipPortal>
-            </Tooltip>
-          </TooltipProvider>
+              </Tooltip>
+            </TooltipProvider>
+
+            {/* Email */}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="flex-1 h-10 rounded-full border-white/10 bg-white/5 hover:bg-white/10 hover:text-blue-400 text-zinc-300 transition-all"
+                    onClick={handleEmail}
+                    disabled={!hasEmailAddress}
+                  >
+                    <Mail className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="dark bg-zinc-900 border-zinc-800">
+                  <p>Enviar Email</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            {/* Edit Action */}
+            <Button
+              variant="outline"
+              size="icon"
+              className="size-10 rounded-full border-white/10 bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white transition-all flex items-center justify-center shrink-0"
+              onClick={handleEdit}
+              title="Editar Cliente"
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
 
-      {/* Customer Header Card - Redesign UX/UI v3.2.0 */}
-      <Card className="bg-black/70 backdrop-blur-xl border-white/20 hover:border-white/40 hover:shadow-2xl transition-all duration-300">
-        <CardContent className="p-6">
-          <div className="flex items-start justify-between">
-            {/* Customer Info */}
-            <div className="flex items-start gap-6">
-              {/* Avatar - Gradient Adega */}
-              <div className="w-24 h-24 bg-gradient-to-br from-accent-gold-100 via-primary-yellow to-accent-gold-70 rounded-full flex items-center justify-center shadow-lg ring-4 ring-white/10">
-                <span className="text-primary-black font-bold text-3xl drop-shadow-lg">
-                  {customer.name?.charAt(0)?.toUpperCase() || 'C'}
-                </span>
-              </div>
+      {/* 2. Contact Details Card */}
+      <div className="rounded-2xl border border-white/10 bg-black/40 backdrop-blur-xl p-6 flex flex-col gap-6 hover:border-white/20 transition-all">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-500">Detalhes de Contato</h3>
 
-              {/* Basic Info */}
-              <div className="space-y-3">
-                <div>
-                  <h1 className="text-3xl font-bold text-white mb-2">{customer.name}</h1>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Badge
-                      variant="outline"
-                      className={`border-2 font-semibold text-sm ${
-                        customer.segment === 'high_value' ? 'bg-accent-gold-100/30 text-accent-gold-100 border-accent-gold-100/60' :
-                        customer.segment === 'regular' ? 'bg-accent-blue/30 text-accent-blue border-accent-blue/60' :
-                        customer.segment === 'new' ? 'bg-accent-green/30 text-accent-green border-accent-green/60' :
-                        customer.segment === 'at_risk' ? 'bg-accent-red/30 text-accent-red border-accent-red/60' :
-                        'bg-gray-500/30 text-gray-200 border-gray-500/60'
-                      }`}
-                    >
-                      {getSegmentLabel(customer.segment)}
-                    </Badge>
-                    <span className="text-gray-200 text-sm font-medium">
-                      Cliente desde {customerSince}
-                    </span>
+        {/* Phone */}
+        <div className="flex items-start gap-4 group cursor-pointer transition-all">
+          <div className="size-10 rounded-full bg-zinc-800/50 flex items-center justify-center text-zinc-400 group-hover:text-primary group-hover:bg-primary/10 transition-all">
+            <Phone className="h-5 w-5" />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-sm text-zinc-400">Telefone</span>
+            <span className="text-base text-white font-medium">
+              {customer.phone || 'Não informado'}
+            </span>
+          </div>
+        </div>
 
-                    {/* Profile Completeness Indicator */}
-                    {!profileCompleteness.isComplete && (
-                      <TooltipProvider delayDuration={200}>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Badge
-                              variant="outline"
-                              className={`border-2 font-semibold ${
-                                criticalMissingFields.length > 0
-                                  ? 'border-accent-red/60 text-accent-red bg-accent-red/20'
-                                  : 'border-yellow-400/60 text-yellow-400 bg-yellow-400/20'
-                              } cursor-help`}
-                            >
-                              {criticalMissingFields.length > 0 ? (
-                                <>
-                                  <AlertTriangle className="h-3 w-3 mr-1" />
-                                  Perfil Incompleto ({profileCompleteness.score}%)
-                                </>
-                              ) : (
-                                <>
-                                  <Info className="h-3 w-3 mr-1" />
-                                  Perfil Básico ({profileCompleteness.score}%)
-                                </>
-                              )}
-                            </Badge>
-                          </TooltipTrigger>
-                          <TooltipPortal>
-                            <TooltipContent
-                              side="bottom"
-                              className="max-w-sm z-[50000] bg-black/95 backdrop-blur-xl border border-red-400/30 shadow-2xl"
-                              sideOffset={8}
-                            >
-                              <div className="space-y-2 p-1">
-                                <div className="border-b border-white/10 pb-2">
-                                  <span className="font-semibold text-red-400">Status do Perfil ({profileCompleteness.score}%)</span>
-                                </div>
-                                {profileCompleteness.missingFields.length > 0 && (
-                                  <div>
-                                    <p className="text-xs text-red-400 font-medium">
-                                      ⚠️ Campos em falta:
-                                    </p>
-                                    <p className="text-xs text-gray-300">
-                                      {profileCompleteness.missingFields.join(', ')}
-                                    </p>
-                                  </div>
-                                )}
-                                {profileCompleteness.recommendations.length > 0 && (
-                                  <div>
-                                    <p className="text-xs text-yellow-400 font-medium">
-                                      💡 Recomendações:
-                                    </p>
-                                    {profileCompleteness.recommendations.map((rec, idx) => (
-                                      <p key={idx} className="text-xs text-gray-300">• {rec}</p>
-                                    ))}
-                                  </div>
-                                )}
-                                <div className="pt-1 border-t border-white/10">
-                                  <p className="text-xs text-gray-400">
-                                    Campos em falta afetam a precisão dos relatórios
-                                  </p>
-                                </div>
-                              </div>
-                            </TooltipContent>
-                          </TooltipPortal>
-                        </Tooltip>
-                      </TooltipProvider>
-                    )}
+        {/* Email */}
+        <div className="flex items-start gap-4 group cursor-pointer transition-all">
+          <div className="size-10 rounded-full bg-zinc-800/50 flex items-center justify-center text-zinc-400 group-hover:text-primary group-hover:bg-primary/10 transition-all">
+            <Mail className="h-5 w-5" />
+          </div>
+          <div className="flex flex-col overflow-hidden">
+            <span className="text-sm text-zinc-400">Email</span>
+            <span className="text-base text-white font-medium truncate" title={customer.email || ''}>
+              {customer.email || 'Não informado'}
+            </span>
+          </div>
+        </div>
+
+        {/* Address */}
+        <div className="flex items-start gap-4 group cursor-pointer transition-all">
+          <div className="size-10 rounded-full bg-zinc-800/50 flex items-center justify-center text-zinc-400 group-hover:text-primary group-hover:bg-primary/10 transition-all">
+            <MapPin className="h-5 w-5" />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-sm text-zinc-400">Endereço Principal</span>
+            <span className="text-base text-white font-medium line-clamp-2">
+              {formatAddress(customer.address) || 'Endereço não cadastrado'}
+            </span>
+          </div>
+        </div>
+
+      </div>
+
+      {/* 3. Critical Fields Alert */}
+      {(() => {
+        const REPORT_FIELDS = [
+          { key: 'email', label: 'Email', required: true },
+          { key: 'phone', label: 'Telefone', required: true },
+        ];
+
+        const criticalMissingFields = REPORT_FIELDS.filter(field => {
+          const value = customer[field.key as keyof typeof customer];
+          return !value || value === '' || value === 'N/A';
+        });
+
+        if (criticalMissingFields.length === 0) return null;
+
+        return (
+          <Card className="bg-gradient-to-r from-red-900/30 to-red-800/20 border-red-500/40">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="h-5 w-5 text-red-400 mt-0.5 animate-pulse" />
+                <div className="flex-1">
+                  <h4 className="text-red-400 font-medium mb-1">Atenção Necessária</h4>
+                  <p className="text-gray-300 text-sm mb-2">
+                    {criticalMissingFields.length} dados de contato pendentes:
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {criticalMissingFields.map((field, index) => (
+                      <Badge key={index} variant="outline" className="border-red-400/50 text-red-400 bg-red-900/20">
+                        {field.label}
+                      </Badge>
+                    ))}
                   </div>
                 </div>
-
-                {/* Contact Info - Melhor contraste e alinhamento */}
-                <div className="flex flex-wrap items-center gap-4 text-sm">
-                  {customer.phone && (
-                    <div className="flex items-center gap-2 text-gray-200 font-medium">
-                      <Phone className="h-4 w-4 text-accent-green" />
-                      <span>{customer.phone}</span>
-                    </div>
-                  )}
-                  {customer.email && (
-                    <div className="flex items-center gap-2 text-gray-200 font-medium">
-                      <Mail className="h-4 w-4 text-accent-blue" />
-                      <span>{customer.email}</span>
-                    </div>
-                  )}
-                  {customer.address && (
-                    <div className="flex items-center gap-2 text-gray-200 font-medium">
-                      <MapPin className="h-4 w-4 text-accent-purple" />
-                      <span>{formatAddress(customer.address)}</span>
-                    </div>
-                  )}
-                </div>
               </div>
-            </div>
+            </CardContent>
+          </Card>
+        );
+      })()}
 
-            {/* Key Metrics - SSoT StatCard com melhor spacing */}
-            <div className="grid grid-cols-3 gap-4 min-w-[500px]">
-              <StatCard
-                layout="crm"
-                variant={isHighValue ? "success" : "default"}
-                title="Valor Total"
-                value={formatCurrency(realMetrics?.lifetime_value_calculated || 0)}
-                description={`💰 LTV ${realMetrics?.data_sync_status.ltv_synced ? '✅' : '⚠️'}`}
-                icon={DollarSign}
-                className="h-28"
-                formatType="none"
-              />
-
-              <StatCard
-                layout="crm"
-                variant="purple"
-                title="Compras"
-                value={realMetrics?.total_purchases || 0}
-                description="🛒 Total Real"
-                icon={ShoppingBag}
-                className="h-28"
-              />
-
-              <StatCard
-                layout="crm"
-                variant={isAtRisk ? "error" : "warning"}
-                title="Dias Atrás"
-                value={realMetrics?.days_since_last_purchase !== undefined ? realMetrics.days_since_last_purchase : '-'}
-                description="⏱️ Última compra"
-                icon={Calendar}
-                className="h-28"
-                formatType="none"
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 };

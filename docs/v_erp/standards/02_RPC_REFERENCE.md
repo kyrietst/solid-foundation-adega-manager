@@ -28,7 +28,7 @@ FUNCTION process_sale(
 **Triggers:**
 
 - Lowers Stock (via `create_inventory_movement`).
-- Creates `sale_header` with correct `delivery_type` and `payment_status`.
+- Creates `sale_header` with correct `delivery` (boolean) and `payment_status`.
 - Creates `sale_items` (Snapshot of price).
 
 ### `settle_payment`
@@ -44,6 +44,28 @@ FUNCTION settle_payment(
 
 - Logic: Updates `payment_status` -> `paid`, `paid_at` -> `NOW()`,
   `payment_method` -> `p_payment_method`.
+
+- Logic: Updates `payment_status` -> `paid`, `paid_at` -> `NOW()`,
+  `payment_method` -> `p_payment_method`.
+
+## Core: Customers
+
+### `create_quick_customer`
+
+"Find or Create" logic for fast checkout.
+
+```sql
+FUNCTION create_quick_customer(
+    p_name text,
+    p_phone text DEFAULT NULL
+) RETURNS uuid
+```
+
+- **Logic:**
+  1.  Searches for existing customer by `phone` (if provided).
+  2.  If found -> Returns existing `id`.
+  3.  If not found -> Creates new record and returns new `id`.
+  4.  Prevents duplication errors in frontend.
 
 ## Core: Inventory
 

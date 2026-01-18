@@ -1,102 +1,107 @@
 import React from 'react';
-import { Users, UserPlus, Diamond, Wallet, TrendingUp, TrendingDown, Activity, PieChart } from 'lucide-react';
-import { cn, formatCurrency } from '@/core/config/utils';
-import { CustomerStatsProps } from '@/features/customers/types';
+import { Card, CardContent } from '@/shared/ui/primitives/card';
+import { TrendingUp, DollarSign, ShoppingBag, AlertTriangle, Activity } from 'lucide-react';
+import { formatCurrency } from '@/core/config/utils';
 
-interface StatCardProps {
-  title: string;
-  value: string | number;
-  icon: React.ElementType;
-  trend?: {
-    value: string;
-    isPositive: boolean;
-    label: string;
-  };
-  delay?: number;
+interface CustomerStatsProps {
+  metrics: {
+    lifetime_value_calculated: number;
+    total_purchases: number;
+    days_since_last_purchase?: number;
+    // Add other metrics as needed from the hook
+    avg_ticket?: number;
+  } | undefined;
+  customerStatus: string; // e.g., 'active', 'inactive', 'risk'
+  isLoading: boolean;
 }
 
-const StatCard = ({ title, value, icon: Icon, trend, delay = 0 }: StatCardProps) => (
-  <div 
-    className={cn(
-      "glass-panel border border-white/5 rounded-xl p-5",
-      "hover:border-[#f9cb15]/30 transition-all duration-300 group"
-    )}
-  >
-    <div className="flex justify-between items-start mb-2">
-      <span className="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold">
-        {title}
-      </span>
-      <Icon className="w-5 h-5 text-[#f9cb15] opacity-70 group-hover:opacity-100 transition-opacity" />
-    </div>
-    <div className="text-2xl font-bold text-white tracking-tight">
-      {value}
-    </div>
-    {trend && (
-      <div className={cn(
-        "flex items-center gap-1 mt-2 text-xs font-medium",
-        trend.isPositive ? "text-[#4ade80]" : "text-[#f87171]"
-      )}>
-        {trend.isPositive ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
-        <span>{trend.value}</span>
-        <span className="text-zinc-600 ml-1 font-normal">{trend.label}</span>
-      </div>
-    )}
-  </div>
-);
-
 export const CustomerStats: React.FC<CustomerStatsProps> = ({
-  totalCustomers,
-  vipCustomers,
-  newCustomersCount,
-  retentionRate,
-  totalRevenue,
-  averageTicket,
-  activeCustomers,
+  metrics,
+  customerStatus,
+  isLoading
 }) => {
-  // Placeholder trends since we don't have real historical data yet
-  // In a real scenario, these would come from the API/Hook
-  
+  if (isLoading) {
+    return (
+      <div className="w-full h-24 bg-gray-800/50 rounded-xl animate-pulse" />
+    );
+  }
+
+  // Fallback values
+  const ltv = metrics?.lifetime_value_calculated || 0;
+  const purchases = metrics?.total_purchases || 0;
+  const daysSince = metrics?.days_since_last_purchase || 0;
+
+  // Risk Score Logic (Simplified for UI visualization)
+  const getRiskScore = () => {
+    if (daysSince > 90) return { label: 'High', color: 'text-red-500', barColor: 'bg-red-500', width: 'w-[80%]' };
+    if (daysSince > 30) return { label: 'Medium', color: 'text-yellow-500', barColor: 'bg-yellow-500', width: 'w-[50%]' };
+    return { label: 'Low', color: 'text-emerald-500', barColor: 'bg-emerald-500', width: 'w-[20%]' };
+  };
+
+  const risk = getRiskScore();
+
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-      <StatCard
-        title="Total Clientes"
-        value={totalCustomers}
-        icon={Users}
-        trend={{ value: "+12%", isPositive: true, label: "vs mês anterior" }}
-        delay={0}
-      />
-      
-      <StatCard
-        title="Novos (Mês)"
-        value={newCustomersCount}
-        icon={UserPlus}
-        trend={{ value: "+5%", isPositive: true, label: "vs mês anterior" }}
-        delay={100}
-      />
-      
-      <StatCard
-        title="Clientes VIP"
-        value={vipCustomers}
-        icon={Diamond}
-        trend={{ value: "-2%", isPositive: false, label: "vs mês anterior" }}
-        delay={200}
-      />
-      
-      <StatCard
-        title="Receita Média"
-        value={formatCurrency(averageTicket)}
-        icon={Wallet}
-        trend={{ value: "+8%", isPositive: true, label: "vs mês anterior" }}
-        delay={300}
-      />
-      
-      <StatCard
-        title="Retenção"
-        value={`${retentionRate.toFixed(1)}%`}
-        icon={PieChart}
-        trend={{ value: "+1%", isPositive: true, label: "vs mês anterior" }}
-        delay={400}
-      />
-    </div>
+    <section className="w-full">
+      <div className="flex flex-wrap items-center justify-between gap-6 px-4 py-2">
+
+        {/* Metric 1: LTV */}
+        <div className="flex flex-col gap-1 min-w-[140px]">
+          <span className="text-sm font-medium text-zinc-500">Lifetime Value</span>
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl font-bold text-white tracking-tight">
+              {formatCurrency(ltv)}
+            </span>
+            <span className="flex items-center text-xs font-bold text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded-md">
+              +12% <TrendingUp className="h-3 w-3 ml-0.5" />
+            </span>
+          </div>
+        </div>
+
+        {/* Divider */}
+        <div className="hidden md:block w-px h-12 bg-zinc-800"></div>
+
+        {/* Metric 2: Total Orders */}
+        <div className="flex flex-col gap-1 min-w-[140px]">
+          <span className="text-sm font-medium text-zinc-500">Total Orders</span>
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl font-bold text-white tracking-tight">
+              {purchases}
+            </span>
+            <span className="text-sm text-zinc-600">orders</span>
+          </div>
+        </div>
+
+        {/* Divider */}
+        <div className="hidden md:block w-px h-12 bg-zinc-800"></div>
+
+        {/* Metric 3: Recency replaces NPS (Business Rule) */}
+        <div className="flex flex-col gap-1 min-w-[140px]">
+          <span className="text-sm font-medium text-zinc-500">Última Compra</span>
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl font-bold text-emerald-400 tracking-tight">
+              {daysSince}
+            </span>
+            <span className="text-sm text-emerald-500/60">dias atrás</span>
+          </div>
+        </div>
+
+        {/* Divider */}
+        <div className="hidden md:block w-px h-12 bg-zinc-800"></div>
+
+        {/* Metric 4: Risk Score */}
+        <div className="flex flex-col gap-1 min-w-[140px]">
+          <span className="text-sm font-medium text-zinc-500">Risk Score</span>
+          <div className="flex items-center gap-2">
+            <span className="text-3xl font-bold text-white tracking-tight">
+              {risk.label}
+            </span>
+            <div className="h-2 w-16 bg-zinc-800 rounded-full overflow-hidden">
+              <div className={`h-full rounded-full ${risk.barColor} ${risk.width}`}></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
   );
 };
