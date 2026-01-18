@@ -13,6 +13,9 @@
 O sistema opera em dois modos distintos, definidos pela tabela `store_settings`
 no banco de dados.
 
+> [!TIP]
+> **Vai para Produção?** Siga o [Protocolo de Go-Live (`PRODUCTION_GO_LIVE_GUIDE.md`)](./PRODUCTION_GO_LIVE_GUIDE.md) passo-a-passo.
+
 ### A. Tabela `store_settings` (Source of Truth)
 
 | Coluna        | Tipo     | Descrição                                                 |

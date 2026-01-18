@@ -19,8 +19,10 @@ Procedures no PostgreSQL chamadas via supabase-js.
 
 - **Arquivo de Referência:**
   [`docs/v_erp/standards/02_RPC_REFERENCE.md`](./standards/02_RPC_REFERENCE.md)
+- **Protocolos de Integridade:**
+  [`docs/v_erp/ZERO_TRUST_INTEGRITY_RULES.md`](./ZERO_TRUST_INTEGRITY_RULES.md)
 - **Principais Funções:**
-  - `process_sale(...)`: Venda atômica (Estoque + Financeiro).
+  - `process_sale(...)`: Venda atômica (Estoque + Financeiro + Delivery Bool).
   - `create_inventory_movement(...)`: Movimentação auditada de estoque.
   - `cancel_sale(...)`: Estorno seguro.
 
