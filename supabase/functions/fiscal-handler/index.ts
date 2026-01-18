@@ -63,6 +63,7 @@ interface MappedItem {
             csosn?: string;
         };
     };
+    valor_frete?: number;
 }
 
 interface PaymentMethod {
@@ -285,6 +286,10 @@ Deno.serve(async (req) => {
     // 9. The Great Mapping (JSON Factory)
     
     // Items Mapping
+    const rawDeliveryFee = sale.delivery_fee ? parseFloat(sale.delivery_fee) : 0.00;
+    const totalItemsCount = sale.sale_items.length;
+    let remainingFreight = rawDeliveryFee;
+
     const items: MappedItem[] = sale.sale_items.map((item: SaleItem, index: number) => {
         const product = item.products
         const snapshot = item.fiscal_snapshot || {}
@@ -299,6 +304,18 @@ Deno.serve(async (req) => {
         const cest = snapshot.cest || product.cest
         const valorUnitario = parseFloat(item.unit_price.toString()) // Ensure float
 
+        // Calculate Item Freight (Valid Distribution)
+        let itemFreight = 0.00;
+        if (rawDeliveryFee > 0) {
+            if (index === totalItemsCount - 1) {
+                // Last item gets the rest to ensure exact sum (Fix Rounding)
+                itemFreight = parseFloat(remainingFreight.toFixed(2));
+            } else {
+                itemFreight = parseFloat((rawDeliveryFee / totalItemsCount).toFixed(2));
+                remainingFreight -= itemFreight;
+            }
+        }
+
         return {
             numero_item: index + 1,
             codigo_produto: product.barcode || 'SEM_EQ',
@@ -311,6 +328,7 @@ Deno.serve(async (req) => {
             unidade_tributavel: uCom,
             quantidade_tributavel: item.quantity, // Number
             valor_unitario_tributavel: valorUnitario, // Number
+            valor_frete: itemFreight,
             ncm: ncm,
             cest: cest || undefined,
             impostos: {
@@ -528,6 +546,7 @@ Deno.serve(async (req) => {
                     qCom: item.quantidade_comercial, // NUMBER
                     vUnCom: parseFloat(item.valor_unitario_comercial.toFixed(2)), // NUMBER (Double)
                     vProd: parseFloat(item.valor_bruto.toFixed(2)), // NUMBER (Double)
+                    vFrete: item.valor_frete ? parseFloat(item.valor_frete.toFixed(2)) : undefined, // Distributed Freight
                     cEANTrib: "SEM GTIN",
                     uTrib: "UN",
                     qTrib: item.quantidade_tributavel, // NUMBER
