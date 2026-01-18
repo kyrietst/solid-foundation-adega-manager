@@ -304,14 +304,16 @@ Deno.serve(async (req) => {
         const cest = snapshot.cest || product.cest
         const valorUnitario = parseFloat(item.unit_price.toString()) // Ensure float
 
-        // Calculate Item Freight (Valid Distribution)
+        // Calculate Item Freight (Valid Distribution - Strict Rounding)
         let itemFreight = 0.00;
         if (rawDeliveryFee > 0) {
             if (index === totalItemsCount - 1) {
-                // Last item gets the rest to ensure exact sum (Fix Rounding)
-                itemFreight = parseFloat(remainingFreight.toFixed(2));
+                // Last item gets the rest EXACTLY
+                itemFreight = Number(remainingFreight.toFixed(2));
             } else {
-                itemFreight = parseFloat((rawDeliveryFee / totalItemsCount).toFixed(2));
+                // Current item share rounded properly
+                itemFreight = Number((rawDeliveryFee / totalItemsCount).toFixed(2));
+                // Subtract rounded value from remaining
                 remainingFreight -= itemFreight;
             }
         }
