@@ -63,7 +63,7 @@ interface MappedItem {
             csosn?: string;
         };
     };
-    valor_frete?: number;
+    valor_outro?: number;
 }
 
 interface PaymentMethod {
@@ -288,7 +288,13 @@ Deno.serve(async (req) => {
     // Items Mapping
     const rawDeliveryFee = sale.delivery_fee ? parseFloat(sale.delivery_fee) : 0.00;
     const totalItemsCount = sale.sale_items.length;
-    let remainingFreight = rawDeliveryFee;
+    
+    // Pre-calculate Total Products Value for Weighted Distribution
+    const totalProductsValue = sale.sale_items.reduce((acc: number, item: SaleItem) => {
+        return acc + (item.quantity * parseFloat(item.unit_price.toString()));
+    }, 0);
+
+    let accumulatedFreight = 0.00; // Track accumulated for precision check
 
     const items: MappedItem[] = sale.sale_items.map((item: SaleItem, index: number) => {
         const product = item.products
@@ -304,17 +310,24 @@ Deno.serve(async (req) => {
         const cest = snapshot.cest || product.cest
         const valorUnitario = parseFloat(item.unit_price.toString()) // Ensure float
 
-        // Calculate Item Freight (Valid Distribution - Strict Rounding)
-        let itemFreight = 0.00;
-        if (rawDeliveryFee > 0) {
+        // Calculate Item Expenses (vOutro Distribution - Weighted & Strict Rounding)
+        // SEFAZ SP rejects vFrete in NFC-e, so we must use vOutro for Delivery Fee
+        let itemOutro = 0.00;
+        
+        if (rawDeliveryFee > 0 && totalProductsValue > 0) {
             if (index === totalItemsCount - 1) {
-                // Last item gets the rest EXACTLY
-                itemFreight = Number(remainingFreight.toFixed(2));
+                // Last item gets the difference to ensure exact match
+                itemOutro = Number((rawDeliveryFee - accumulatedFreight).toFixed(2));
             } else {
-                // Current item share rounded properly
-                itemFreight = Number((rawDeliveryFee / totalItemsCount).toFixed(2));
-                // Subtract rounded value from remaining
-                remainingFreight -= itemFreight;
+                // Weighted Ratio: (Item Value / Total Value) * Total Fee
+                const itemTotalValue = item.quantity * valorUnitario;
+                const ratio = itemTotalValue / totalProductsValue;
+                
+                // Calculate and Round
+                itemOutro = Number((rawDeliveryFee * ratio).toFixed(2));
+                
+                // Track accumulation
+                accumulatedFreight += itemOutro;
             }
         }
 
@@ -330,7 +343,7 @@ Deno.serve(async (req) => {
             unidade_tributavel: uCom,
             quantidade_tributavel: item.quantity, // Number
             valor_unitario_tributavel: valorUnitario, // Number
-            valor_frete: itemFreight,
+            valor_outro: itemOutro, // Mapped to vOutro
             ncm: ncm,
             cest: cest || undefined,
             impostos: {
@@ -345,16 +358,17 @@ Deno.serve(async (req) => {
     const totalVendaNumber = parseFloat(totalVenda.toFixed(2))
     
     // DELIVERY FEE LOGIC
-    // DELIVERY FEE & DISCOUNT LOGIC
-    const vFrete = sale.delivery_fee ? parseFloat(sale.delivery_fee) : 0.00;
+    // DELIVERY FEE mapped to vOutro (Expenses)
+    // NFC-e does not allow vFrete in SP.
+    const vOutro = sale.delivery_fee ? parseFloat(sale.delivery_fee) : 0.00;
+    // vFrete removed; hardcoded to 0.00 in payload
     const vDesc = sale.discount_amount ? parseFloat(sale.discount_amount) : 0.00;
     
-    // Total Note Value = Products + Freight - Discount
-    const vNF = parseFloat((totalVendaNumber + vFrete - vDesc).toFixed(2));
+    // Total Note Value = Products + Outro - Discount
+    const vNF = parseFloat((totalVendaNumber + vOutro - vDesc).toFixed(2));
     
     // Transport Mode Logic
-    // 9 (Sem Ocorrência) is invalid if vFrete > 0.
-    const modFrete = vFrete > 0 ? 1 : 9;
+    // Always 9 (Sem Transporte) for NFC-e locally; hardcoded in payload
 
     // Calculate Tax Totals (MEI Logic - Simples Nacional)
     // MEI não destaca ICMS (vBC e vICMS = 0)
@@ -548,7 +562,7 @@ Deno.serve(async (req) => {
                     qCom: item.quantidade_comercial, // NUMBER
                     vUnCom: parseFloat(item.valor_unitario_comercial.toFixed(2)), // NUMBER (Double)
                     vProd: parseFloat(item.valor_bruto.toFixed(2)), // NUMBER (Double)
-                    vFrete: item.valor_frete ? parseFloat(item.valor_frete.toFixed(2)) : undefined, // Distributed Freight
+                    vOutro: item.valor_outro ? parseFloat(item.valor_outro.toFixed(2)) : undefined, // Distributed Expenses
                     cEANTrib: "SEM GTIN",
                     uTrib: "UN",
                     qTrib: item.quantidade_tributavel, // NUMBER
@@ -582,7 +596,7 @@ Deno.serve(async (req) => {
                     vFCPST: 0.00,
                     vFCPSTRet: 0.00,
                     vProd: totalVendaNumber, // NUMBER
-                    vFrete: vFrete,
+                    vFrete: 0.00,
                     vSeg: 0.00,
                     vDesc: vDesc,
                     vII: 0.00,
@@ -590,12 +604,12 @@ Deno.serve(async (req) => {
                     vIPIDevol: 0.00,
                     vPIS: 0.00,
                     vCOFINS: 0.00,
-                    vOutro: 0.00,
+                    vOutro: vOutro, // Main Header Value
                     vNF: vNF, // NUMBER (Includes Shipping)
                     vTotTrib: 0.00
                 }
             },
-            transp: { modFrete: modFrete }, // 9=Sem Frete, 1=Destinatário
+            transp: { modFrete: 9 }, // Always 9
             pag: {
                 detPag: paymentDetList
             }
