@@ -64,6 +64,7 @@ interface MappedItem {
         };
     };
     valor_outro?: number;
+    valor_desconto?: number;
 }
 
 interface PaymentMethod {
@@ -294,7 +295,12 @@ Deno.serve(async (req) => {
         return acc + (item.quantity * parseFloat(item.unit_price.toString()));
     }, 0);
 
+
     let accumulatedFreight = 0.00; // Track accumulated for precision check
+    
+    // Discount Logic Preparation
+    const rawDiscount = sale.discount_amount ? parseFloat(sale.discount_amount) : 0.00;
+    let accumulatedDiscount = 0.00;
 
     const items: MappedItem[] = sale.sale_items.map((item: SaleItem, index: number) => {
         const product = item.products
@@ -329,8 +335,29 @@ Deno.serve(async (req) => {
                 // Track accumulation
                 accumulatedFreight += itemOutro;
             }
+
         }
 
+        // Calculate Item Discount (Weighted Distribution - Strict Rounding)
+        let itemDesc = 0.00;
+        
+        if (rawDiscount > 0 && totalProductsValue > 0) {
+            if (index === totalItemsCount - 1) {
+                // Last item gets the difference to ensure exact match
+                itemDesc = Number((rawDiscount - accumulatedDiscount).toFixed(2));
+            } else {
+                // Weighted Ratio: (Item Value / Total Value) * Total Discount
+                const itemTotalValue = item.quantity * valorUnitario;
+                const ratio = itemTotalValue / totalProductsValue;
+                
+                // Calculate and Round
+                itemDesc = Number((rawDiscount * ratio).toFixed(2));
+                
+                // Track accumulation
+                accumulatedDiscount += itemDesc;
+            }
+        }
+        
         return {
             numero_item: index + 1,
             codigo_produto: product.barcode || 'SEM_EQ',
@@ -344,6 +371,7 @@ Deno.serve(async (req) => {
             quantidade_tributavel: item.quantity, // Number
             valor_unitario_tributavel: valorUnitario, // Number
             valor_outro: itemOutro, // Mapped to vOutro
+            valor_desconto: itemDesc, 
             ncm: ncm,
             cest: cest || undefined,
             impostos: {
@@ -562,6 +590,7 @@ Deno.serve(async (req) => {
                     qCom: item.quantidade_comercial, // NUMBER
                     vUnCom: parseFloat(item.valor_unitario_comercial.toFixed(2)), // NUMBER (Double)
                     vProd: parseFloat(item.valor_bruto.toFixed(2)), // NUMBER (Double)
+                    vDesc: item.valor_desconto ? parseFloat(item.valor_desconto.toFixed(2)) : undefined, // Distributed Discount
                     vOutro: item.valor_outro ? parseFloat(item.valor_outro.toFixed(2)) : undefined, // Distributed Expenses
                     cEANTrib: "SEM GTIN",
                     uTrib: "UN",
