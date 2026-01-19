@@ -167,16 +167,20 @@ podem gerar **Condições de Corrida**.
 1. **Estabilidade de Montagem:** O Modal de Impressão deve residir **fora** de
    blocos condicionais de Loading da lista de vendas. Se a lista atualizar
    (`invalidateQueries`), o modal deve permanecer montado.
-2. **Guarda de ID Único:** O `useEffect` de auto-print implementa uma
-   verificação rígida:
+2. **Guarda de ID Único (Global Cache):** O `useEffect` de auto-print utiliza um
+   **Singleton Set** (`printedFiscalIds`) definido no nível do módulo (fora do componente) para garantir persistência mesmo se o modal for desmontado/remontado.
+
    ```typescript
-   if (lastPrintedId.current === currentId) return;
-   lastPrintedId.current = currentId;
+   // FORA do componente
+   const printedFiscalIds = new Set<string>();
+
+   // DENTRO do componente
+   if (printedFiscalIds.has(uniqueId)) return; // Já imprimiu nesta sessão?
+   printedFiscalIds.add(uniqueId); // Marca como impresso
    window.print();
    ```
-   Isso impede que o "Strict Mode" ou re-renderizações disparem múltiplos
-   comandos de impressão para a mesma nota, o que é crítico no **Modo Kiosk**
-   (impressão silenciosa).
+
+   Isso impede que recarregamentos da UI (comuns após a emissão) disparem uma segunda impressão. Tempo é dinheiro (e papel também).
 
 ---
 

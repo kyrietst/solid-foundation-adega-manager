@@ -27,37 +27,38 @@ de dois cupons físicos.
    resetava.
 4. **Strict Mode:** Em desenvolvimento, efeitos rodam duas vezes.
 
-### Solução Definitiva (Não Alterar!)
+### Solução Definitiva (Global Cache Pattern)
 
-Foram aplicadas duas camadas de proteção. **Se refatorar, mantenha estas
-lógicas:**
+A solução anterior (Ref local) falhou pois o React pode desmontar/remontar o modal durante atualizações de lista (`invalidateQueries`), resetando o `useRef`.
 
-#### A. Camada de Arquitetura (RecentSales.tsx)
+**Nova Estratégia: Cache Singleton**
 
-O Modal de Impressão foi movido para fora do bloco condicional de loading.
-
-```tsx
-// ✅ Correto
-return (
-  <>
-    {isLoading ? <Skeleton /> : <List />}
-    <ReceiptModal /> {/* Sempre montado */}
-  </>
-);
-```
-
-#### B. Camada de Lógica (ReceiptModal.tsx)
-
-Implementada verificação de **Idempotência por ID**.
+Implementamos um `Set` global no nível do módulo (fora do componente) para rastrear IDs impressos durante toda a sessão do navegador.
 
 ```typescript
-// ✅ Correto
-const currentId = data.external_id;
-// Se este ID já foi impresso nesta sessão do modal, aborta.
-if (lastPrintedId.current === currentId) return;
+// ✅ Padrão Correto em ReceiptModal.tsx
 
-lastPrintedId.current = currentId;
-window.print();
+// 1. Definido FORA do componente (Singleton)
+const printedFiscalIds = new Set<string>();
+
+export const ReceiptModal = (...) => {
+  // ...
+  useEffect(() => {
+    // 2. Verificação Robusta
+    // Prioriza ID Externo > Chave > Sale ID
+    const uniqueId = fiscalData.external_id || ...;
+
+    // 3. Check no Cache Global
+    if (printedFiscalIds.has(uniqueId)) return;
+
+    // 4. Marca como impresso ANTES de chamar window.print
+    printedFiscalIds.add(uniqueId);
+    
+    window.print();
+  }, [...]);
+}
 ```
+
+> **Nota:** O botão "Imprimir Manual" ignora este cache deliberadamente para permitir reimpressões.
 
 ---

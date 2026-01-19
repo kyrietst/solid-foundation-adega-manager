@@ -49,7 +49,16 @@ Não reinvente a roda. Leia estes documentos antes de codar:
 
 ---
 
-## 4. Glossário Rápido
+## 4. Padrões de Frontend Críticos (Não Quebre!)
+
+### A. ReceiptModal & Impressão (Global Cache)
+O modal de impressão fiscal usa um padrão de **Cache Global Singleton** (`printedFiscalIds` defined at module level) para controlar a auto-impressão.
+*   **Por quê?** React remonta componentes frequentemente (invalidateQueries). UseRef local reseta e causa impressão dupla.
+*   **Regra:** NUNCA mova a lógica de controle de impressão para dentro de `useState` ou `useRef` local do componente se for resetável. O ID impresso deve persistir pela sessão.
+
+---
+
+## 5. Glossário Rápido
 
 *   **RPC**: Remote Procedure Call (Função do Postgres).
 *   **Edge Function**: Código TypeScript rodando no Deno (Supabase Functions) que fala com o mundo externo (Nuvem Fiscal).
