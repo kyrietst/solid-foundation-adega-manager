@@ -1,29 +1,29 @@
 /**
  * Componente principal de gerenciamento de fornecedores
- * Segue padrão visual v2.0.0 do sistema com header padronizado e animações
+ * Segue padrão visual "Stock Page" (InventoryManagement)
+ * Refatorado para usar PremiumBackground, Layout Transparente e Paginação Flutuante
  */
 
 import React, { useState } from 'react';
-import { Plus, Building2, Search, Filter, Download, TrendingUp, Package } from 'lucide-react';
+import { Plus, Search, Filter, Download, Loader2, Building2 } from 'lucide-react';
 import { Button } from '@/shared/ui/primitives/button';
 import { Input } from '@/shared/ui/primitives/input';
 import { Badge } from '@/shared/ui/primitives/badge';
-import { StatCard } from '@/shared/ui/composite/stat-card';
 import { LoadingSpinner } from '@/shared/ui/composite/loading-spinner';
-import { EmptyState } from '@/shared/ui/composite/empty-state';
 import { PaginationControls } from '@/shared/ui/composite/pagination-controls';
 import { FilterToggle } from '@/shared/ui/composite/filter-toggle';
 import { usePagination } from '@/shared/hooks/common/use-pagination';
 import { useDebounce } from '@/shared/hooks/common/use-debounce';
 import { useAuth } from '@/app/providers/AuthContext';
 import { cn } from '@/core/config/utils';
-import { getSFProTextClasses, getGlassButtonClasses, getHoverTransformClasses } from '@/core/config/theme-utils';
-import { PageHeader } from '@/shared/ui/composite/PageHeader';
+import { getHoverTransformClasses } from '@/core/config/theme-utils';
 import { useSuppliers, useSuppliersStats } from '../hooks/useSuppliers';
 import { SupplierCard } from './SupplierCard';
 import { SupplierForm } from './SupplierForm';
 import { SupplierFilters } from './SupplierFilters';
 import type { SupplierFilters as ISupplierFilters } from '../types';
+import { PremiumBackground } from '@/shared/ui/composite/PremiumBackground';
+import { SupplierStats } from './SupplierStats';
 
 interface SuppliersManagementProps {
   className?: string;
@@ -57,9 +57,10 @@ export const SuppliersManagement: React.FC<SuppliersManagementProps> = ({ classN
     paginatedItems: currentSuppliers,
     goToPage,
     setItemsPerPage,
+    totalItems
   } = usePagination(suppliers, {
     initialItemsPerPage: 12,
-    resetOnItemsChange: true,
+    resetPageOnDataChange: true,
   });
   
   const handleClearFilters = () => {
@@ -67,193 +68,152 @@ export const SuppliersManagement: React.FC<SuppliersManagementProps> = ({ classN
     setFilters({});
   };
   
-  const hasActiveFilters = !!(debouncedSearch || Object.keys(filters).length > 0);
+  const activeFiltersCount = (searchTerm ? 1 : 0) + Object.keys(filters).length;
+  const hasActiveFilters = activeFiltersCount > 0;
   
   if (isLoading) {
     return (
-      <div className="w-full h-full flex items-center justify-center">
-        <LoadingSpinner size="lg" variant="gold" />
-      </div>
+       <div className="w-full h-screen flex flex-col items-center justify-center space-y-4">
+         <PremiumBackground />
+         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-adega-gold z-10"></div>
+         <p className="text-adega-platinum/60 text-sm animate-pulse z-10">Carregando fornecedores...</p>
+       </div>
     );
   }
   
   return (
-    <div className="w-full h-full flex flex-col">
-      {/* Header - altura fixa */}
-      <PageHeader
-        title="GESTÃO DE FORNECEDORES"
-        count={suppliers.length}
-        countLabel="fornecedores"
-      />
+    <div className={cn("w-full h-[100dvh] flex flex-col relative z-10 overflow-hidden", className)}>
+      <PremiumBackground />
+      
+      {/* Header Section */}
+      <header className="flex-none px-8 py-6 pt-8 pb-6 z-10">
+          <div className="flex flex-wrap justify-between items-end gap-4 mb-8">
+             <div className="flex flex-col gap-1">
+               <p className="text-zinc-500 text-sm font-medium tracking-widest uppercase">Módulo de Compras</p>
+               <h2 className="text-white text-3xl md:text-4xl font-bold leading-tight tracking-tight">GESTÃO DE FORNECEDORES</h2>
+             </div>
+             <div className="flex gap-3">
+               <Button 
+                variant="outline"
+                className="flex items-center justify-center gap-2 h-10 px-4 rounded-xl bg-zinc-900 border border-zinc-700 text-white text-sm font-semibold hover:border-[#f9cb15] hover:text-[#f9cb15] transition-colors"
+               >
+                 <Download className="w-[18px] h-[18px]" />
+                 <span>Exportar</span>
+               </Button>
+               {userRole === 'admin' && (
+                 <Button
+                   onClick={() => setIsAddModalOpen(true)}
+                   className="flex items-center justify-center gap-2 h-10 px-6 rounded-xl bg-white text-black text-sm font-bold shadow-lg hover:bg-zinc-200 transition-colors"
+                 >
+                   <Plus className="w-[18px] h-[18px]" />
+                   <span>Novo Fornecedor</span>
+                 </Button>
+               )}
+             </div>
+          </div>
 
-      {/* Container principal com glassmorphism - ocupa altura restante */}
-      <div className="flex-1 min-h-0 bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-4 flex flex-col hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300">
 
-        {/* Header com controles dentro do box */}
-        <div className="flex-shrink-0 mb-4">
-          <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
-            <div className="flex items-center space-x-4">
-              <h2 className="text-lg font-semibold text-adega-platinum">Lista de Fornecedores</h2>
-              <Badge variant="secondary" className="bg-gray-700/50 text-gray-100 border-gray-600/50">
-                {suppliers.length} fornecedores
-              </Badge>
-            </div>
 
-            <div className="flex items-center space-x-2">
-              {/* Botões de ação */}
-              <Button
-                className={`${getGlassButtonClasses('outline', 'md')} ${getHoverTransformClasses('lift')}`}
-                onClick={() => { /* TODO: export */ }}
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Exportar
-              </Button>
-              {userRole === 'admin' && (
-                <Button
-                  onClick={() => setIsAddModalOpen(true)}
-                  className="bg-gradient-to-r from-primary-yellow to-yellow-500 text-black hover:from-yellow-300 hover:to-yellow-400 font-semibold shadow-lg hover:shadow-yellow-400/30 transition-all duration-200 hover:scale-105"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  NOVO FORNECEDOR
-                </Button>
-              )}
+          {/* KPI Stats Strip */}
+          {stats && (
+            <div className="shrink-0 mb-8">
+              <SupplierStats stats={stats} />
             </div>
+          )}
+
+          {/* Filters Bar */}
+          <div className="flex flex-col sm:flex-row gap-4 items-center bg-black/40 p-1 rounded-xl border border-white/5 backdrop-blur-sm">
+             <div className="flex-1 relative w-full">
+               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+               <Input
+                 placeholder="Buscar fornecedores por nome, CNPJ ou contato..."
+                 value={searchTerm}
+                 onChange={(e) => setSearchTerm(e.target.value)}
+                 className="pl-10 h-10 bg-transparent border-none text-white placeholder:text-gray-500 focus-visible:ring-0 focus-visible:ring-offset-0"
+               />
+             </div>
+             <FilterToggle
+                isOpen={isFiltersOpen}
+                onToggle={() => setIsFiltersOpen(!isFiltersOpen)}
+                activeCount={activeFiltersCount}
+                className="mr-1"
+             />
           </div>
-        </div>
-        {/* Cards de estatísticas com cores padronizadas */}
-        {stats && (
-          <div className="flex-shrink-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard
-              title="Total de Fornecedores"
-              value={stats.total_suppliers.toString()}
-              icon={Building2}
-              variant="default"
-              onClick={() => {}}
-            />
-            <StatCard
-              title="Fornecedores Ativos"
-              value={stats.active_suppliers.toString()}
-              icon={Building2}
-              variant="success"
-              onClick={() => {}}
-            />
-            <StatCard
-              title="Categorias de Produtos"
-              value={stats.total_product_categories.toString()}
-              icon={Package}
-              variant="purple"
-              onClick={() => {}}
-            />
-            <StatCard
-              title="Taxa de Atividade"
-              value={`${stats.total_suppliers > 0 ? Math.round((stats.active_suppliers / stats.total_suppliers) * 100) : 0}%`}
-              icon={TrendingUp}
-              variant="warning"
-              onClick={() => {}}
-            />
-          </div>
-        )}
-        
-        {/* Controles de busca e filtros com estilo padronizado */}
-        <div className="flex-shrink-0 flex flex-col sm:flex-row gap-4">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Buscar fornecedores..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 bg-black/50 border-white/20 text-white placeholder:text-gray-400"
-            />
-          </div>
-          
-          <FilterToggle
-            isOpen={isFiltersOpen}
-            onToggle={() => setIsFiltersOpen(!isFiltersOpen)}
-            hasActiveFilters={hasActiveFilters}
-            onClear={handleClearFilters}
-          />
-        </div>
-        
-        {/* Panel de filtros */}
-        {isFiltersOpen && (
-          <SupplierFilters
-            filters={filters}
-            onFiltersChange={setFilters}
-            className="bg-black/70 backdrop-blur-sm border border-white/10 rounded-lg p-4"
-          />
-        )}
-        
-        {/* Lista de fornecedores com glass cards */}
-        <div className="flex-1 min-h-0 overflow-y-auto pt-2">
-        {currentSuppliers.length === 0 ? (
-          <div className="flex flex-col items-center justify-center min-h-[500px] py-16 px-8">
-            <div className="max-w-md w-full text-center space-y-8">
-              {/* Ícone principal */}
-              <div className="mx-auto w-24 h-24 bg-gray-800/50 rounded-full flex items-center justify-center border-2 border-gray-600/30 backdrop-blur-sm">
-                <Building2 className="h-12 w-12 text-gray-400" />
-              </div>
-              
-              {/* Título */}
-              <div className="space-y-3">
-                <h3 className="text-2xl font-bold text-white">
-                  {hasActiveFilters ? "Nenhum fornecedor encontrado" : "Nenhum fornecedor cadastrado"}
-                </h3>
-                <p className="text-gray-400 text-lg leading-relaxed">
-                  {hasActiveFilters
-                    ? "Tente ajustar os filtros de busca para encontrar o que procura"
-                    : "Comece adicionando seu primeiro fornecedor para gerenciar sua rede de parceiros"}
-                </p>
-              </div>
-              
-              {/* Botão de ação */}
-              {userRole === 'admin' && !hasActiveFilters && (
-                <div className="pt-4">
-                  <Button
-                    onClick={() => setIsAddModalOpen(true)}
-                    size="lg"
-                    className="bg-gradient-to-r from-primary-yellow to-yellow-500 text-black hover:from-yellow-300 hover:to-yellow-400 font-semibold shadow-lg hover:shadow-yellow-400/30 transition-all duration-200 hover:scale-105 px-8 py-3"
-                  >
-                    <Plus className="h-5 w-5 mr-3" />
-                    ADICIONAR PRIMEIRO FORNECEDOR
-                  </Button>
-                </div>
-              )}
-            </div>
-          </div>
-        ) : (
-          <>
-            {/* Grid de fornecedores com hover effects */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {currentSuppliers.map((supplier) => (
-                <div key={supplier.id} className={getHoverTransformClasses('lift')}>
-                  <SupplierCard
-                    supplier={supplier}
-                    className="bg-black/70 backdrop-blur-xl border border-purple-500/30 hover:border-purple-400/60 transition-all duration-300 shadow-xl hover:shadow-purple-500/20"
-                  />
-                </div>
-              ))}
-            </div>
-            
-            {/* Paginação com estilo glass */}
-            {totalPages > 1 && (
-              <div className="mt-8 flex justify-center">
-                <PaginationControls
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  onPageChange={goToPage}
-                  itemsPerPage={itemsPerPage}
-                  onItemsPerPageChange={setItemsPerPage}
-                  itemsPerPageOptions={[6, 12, 24, 48]}
-                  className="bg-black/70 backdrop-blur-xl border border-purple-500/30 rounded-lg p-4"
+
+             {/* Panel de filtros expandido */}
+            {isFiltersOpen && (
+              <div className="mt-4 animate-in slide-in-from-top-2">
+                <SupplierFilters
+                  filters={filters}
+                  onFiltersChange={setFilters}
+                  className="bg-black/60 backdrop-blur-xl border border-white/10 rounded-xl p-6 shadow-2xl"
                 />
               </div>
             )}
-          </>
-        )}
-        </div>
-      </div>
+      </header>
 
-      {/* Modal de criação/edição com backdrop blur */}
+      {/* Main Content (Scrollable) */}
+      <main className="flex-1 overflow-y-auto px-6 md:px-10 pb-40 scroll-smooth custom-scrollbar">
+          {currentSuppliers.length === 0 ? (
+              <div className="flex flex-col items-center justify-center min-h-[400px] py-16 px-8">
+                  <div className="bg-white/5 p-6 rounded-full mb-6 border border-white/5">
+                    <Building2 className="h-12 w-12 text-zinc-500" />
+                  </div>
+                  <h3 className="text-xl font-bold text-zinc-300 mb-2">
+                    {hasActiveFilters ? "Nenhum fornecedor encontrado" : "Nenhum fornecedor cadastrado"}
+                  </h3>
+                  <p className="text-zinc-500 text-center max-w-md">
+                     {hasActiveFilters 
+                        ? "Tente ajustar os termos de busca ou filtros." 
+                        : "Adicione fornecedores para começar a gerenciar suas compras."}
+                  </p>
+                  {userRole === 'admin' && !hasActiveFilters && (
+                    <Button
+                      onClick={() => setIsAddModalOpen(true)}
+                      className="mt-6 bg-white text-black hover:bg-zinc-200 font-bold"
+                    >
+                      Criar Fornecedor
+                    </Button>
+                  )}
+              </div>
+          ) : (
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {currentSuppliers.map((supplier) => (
+                  <div key={supplier.id} className={getHoverTransformClasses('lift')}>
+                    <SupplierCard
+                      supplier={supplier}
+                      className="bg-adega-charcoal/40 backdrop-blur-md border border-white/5 hover:border-adega-gold/30 transition-all duration-300 shadow-lg hover:shadow-2xl h-full"
+                    />
+                  </div>
+                ))}
+             </div>
+          )}
+      </main>
+
+        {totalPages > 1 && (
+        <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-[#050505] via-[#050505]/95 to-transparent z-50 flex justify-center pb-8 pt-12 pointer-events-none">
+            {/* O container interno agora é transparente porque os estilos estão dentro do componente PaginationControls */}
+            <div className="pointer-events-auto">
+                <PaginationControls
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  totalItems={totalItems}
+                  itemsPerPage={itemsPerPage}
+                  onPageChange={goToPage}
+                  onItemsPerPageChange={setItemsPerPage}
+                  itemsPerPageOptions={[12, 24, 48]}
+                  showItemsPerPage={false} // Minimalist dock style
+                  showItemsCount={true}
+                  itemLabel="fornecedor"
+                  itemsLabel="fornecedores"
+                  variant="premium" // Ativa o modo flutuante split
+                  glassEffect={false} 
+                />
+            </div>
+        </div>
+      )}
+
+      {/* Modal de criação/edição */}
       <SupplierForm
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}

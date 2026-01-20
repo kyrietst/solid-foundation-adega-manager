@@ -90,6 +90,89 @@ export const PaginationControls = ({
 
   const paginationStyles = getPaginationClasses();
   
+  // Estilos baseados na variante
+  const isSplit = variant === 'premium'; // Usar 'premium' como split agora, ou criar novo
+
+  if (variant === 'premium') {
+    return (
+      <div className={cn("flex items-center gap-4 pointer-events-auto", className)}>
+        {/* Container 1: Informações */}
+        <div className="flex items-center h-10 px-6 bg-black/60 backdrop-blur-xl border border-white/10 rounded-full shadow-2xl">
+          <div className="flex items-center space-x-2 text-xs font-medium text-zinc-400">
+            {showItemsCount && (
+              <span>
+                Mostrando <span className="text-white">{startItem}</span> - <span className="text-white">{endItem}</span> de <span className="text-white">{totalItems}</span> {totalItems === 1 ? itemLabel : itemsLabel}
+              </span>
+            )}
+            
+            {showItemsPerPage && onItemsPerPageChange && (
+              <div className="flex items-center space-x-2 ml-4 pl-4 border-l border-white/10">
+                <span>Por pág:</span>
+                <Select 
+                  value={itemsPerPage.toString()} 
+                  onValueChange={handleItemsPerPageChange}
+                >
+                  <SelectTrigger className="w-auto min-w-[60px] h-7 bg-white/5 border-white/10 text-white text-xs rounded-lg hover:bg-white/10 transition-colors focus:ring-0">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-zinc-900 border-white/10 text-white">
+                    {itemsPerPageOptions.map((option) => (
+                      <SelectItem key={option} value={option.toString()} className="focus:bg-white/10 cursor-pointer text-xs">
+                        {option}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Container 2: Navegação */}
+        <div className="flex items-center h-10 px-2 bg-black/60 backdrop-blur-xl border border-white/10 rounded-full shadow-2xl">
+           <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onPageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="h-8 w-8 rounded-full text-zinc-400 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-transparent"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            
+            {visiblePages.map((page) => (
+              <Button
+                key={page}
+                variant="ghost"
+                size="sm"
+                onClick={() => onPageChange(page)}
+                className={cn(
+                  "h-8 min-w-[32px] rounded-full text-xs font-medium transition-all",
+                  currentPage === page 
+                    ? "bg-white text-black hover:bg-white/90 shadow-sm" 
+                    : "text-zinc-400 hover:text-white hover:bg-white/10"
+                )}
+              >
+                {page}
+              </Button>
+            ))}
+            
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onPageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="h-8 w-8 rounded-full text-zinc-400 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-transparent"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+           </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={cn(paginationStyles.container, className)}>
       {/* Informações e seletor de itens por página */}

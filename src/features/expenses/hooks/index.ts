@@ -9,7 +9,8 @@ export {
   useCreateExpense,
   useUpdateExpense,
   useDeleteExpense,
-  useToggleExpenseStatus
+  useToggleExpenseStatus,
+  useGenerateMonthlyExpenses
 } from './useExpenses';
 
 // Category Management

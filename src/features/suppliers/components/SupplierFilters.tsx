@@ -70,14 +70,14 @@ export const SupplierFilters: React.FC<SupplierFiltersProps> = ({
         <div className="space-y-2">
           <Label className="text-gray-300">Forma de Pagamento</Label>
           <Select
-            value={filters.payment_method || ''}
-            onValueChange={(value) => updateFilter('payment_method', value || undefined)}
+            value={filters.payment_method || 'all'}
+            onValueChange={(value) => updateFilter('payment_method', value === 'all' ? undefined : value)}
           >
             <SelectTrigger className="bg-black/50 border-white/30 text-white">
               <SelectValue placeholder="Selecione..." />
             </SelectTrigger>
             <SelectContent className="bg-gray-900/95 border-white/20 backdrop-blur-xl">
-              <SelectItem value="" className="text-white hover:bg-white/10">
+              <SelectItem value="all" className="text-white hover:bg-white/10">
                 Todos
               </SelectItem>
               {PAYMENT_METHODS_OPTIONS.map((option) => (
