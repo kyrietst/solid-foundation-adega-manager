@@ -1,19 +1,14 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/primitives/card';
-// Table primitives removed as we use raw HTML based on MovementsTable
-// import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/primitives/table';
 import { Badge } from '@/shared/ui/primitives/badge';
-import { PageHeader } from '@/shared/ui/composite/PageHeader';
 import { Button } from '@/shared/ui/primitives/button';
 import { SearchBar21st } from '@/shared/ui/thirdparty/search-bar-21st';
 import { LoadingSpinner } from '@/shared/ui/composite/loading-spinner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/shared/ui/primitives/dialog';
-import { Clock, User, Shield, Activity, Database, FileText, ArrowUpDown, ArrowUp, ArrowDown, Eye, X, Copy, Check } from 'lucide-react';
-// import { useQuery } from '@tanstack/react-query'; // Removed
-// import { supabase } from '@/core/api/supabase/client'; // Removed
+import { Clock, User, Shield, Activity, Database, FileText, ArrowUpDown, ArrowUp, ArrowDown, Eye, X, Copy, Check, Download, Filter } from 'lucide-react';
 import { cn } from '@/core/config/utils';
-import { useActivityLogs, ActivityLogRow } from '@/shared/hooks/audit/useActivityLogs'; // Imported
-
+import { useActivityLogs, ActivityLogRow } from '@/shared/hooks/audit/useActivityLogs';
+import { PremiumBackground } from '@/shared/ui/composite/PremiumBackground';
 
 // Badge para perfil do usuário
 const RoleBadge = ({ role }: { role: string | null }) => {
@@ -94,8 +89,6 @@ const EntityBadge = ({ entity, entityId }: { entity: string | null; entityId: st
 type SortField = 'created_at' | 'actor' | 'role' | 'action' | 'entity' | null;
 type SortDirection = 'asc' | 'desc';
 
-
-
 export default function ActivityLogsPage() {
   const [search, setSearch] = useState('');
   const [role, setRole] = useState<string | 'all'>('all');
@@ -132,7 +125,6 @@ export default function ActivityLogsPage() {
   });
 
   const rows = data || [];
-
   const uniqueEntities = ['all', ...new Set(rows.map(r => r.entity).filter(Boolean))];
 
   const handleSort = (field: SortField) => {
@@ -149,325 +141,330 @@ export default function ActivityLogsPage() {
     return sortDirection === 'asc' ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />;
   };
 
-  // Mouse tracking for glow effect
-  const handleMouseMove = (e: React.MouseEvent<HTMLElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
-    e.currentTarget.style.setProperty("--x", `${x}% `);
-    e.currentTarget.style.setProperty("--y", `${y}% `);
-  };
-
   return (
-    <div className="w-full h-full flex flex-col p-4 min-h-0">
-      <PageHeader
-        title="LOGS DO SISTEMA"
-        count={rows.length}
-        countLabel="atividades"
-      >
-        <div className="flex items-center gap-2">
-          {/* Adicionar exportação ou outros botões aqui se necessário */}
-        </div>
-      </PageHeader>
+    <>
+      {/* Background Fixed Layer */}
+      <PremiumBackground className="fixed inset-0 z-0 pointer-events-none" />
 
-      {/* Container principal com altura controlada e scroll - GLOW EFFECT & GLASS */}
-      <section
-        className="flex-1 min-h-0 flex flex-col bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 relative overflow-hidden group"
-        onMouseMove={handleMouseMove}
-      >
-        {/* Glow effect removed */}
-
-        {/* Filtros em uma barra superior dentro do card */}
-        <div className="p-4 border-b border-white/10 flex flex-wrap gap-4 items-center justify-between relative z-10 bg-black/20">
-          <div className="flex gap-2 flex-wrap items-center flex-1">
-            <div className="w-64 md:w-80">
-              <SearchBar21st
-                placeholder="Buscar atividades..."
-                value={search}
-                onChange={(val) => setSearch(val)}
-                debounceMs={150}
-                disableResizeAnimation
-                className="bg-black/50 border-white/10 text-white placeholder:text-gray-500 focus:border-purple-500/50 focus:ring-purple-500/20"
-              />
-            </div>
-            <select
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-              className="px-3 py-2 border border-white/10 rounded-md bg-black/50 text-gray-200 text-sm focus:outline-none focus:border-purple-500/50 hover:bg-white/5 transition-colors"
-              style={{ colorScheme: 'dark' }}
-            >
-              <option value="all">Todos os perfis</option>
-              <option value="admin">Admin</option>
-              <option value="employee">Vendedor</option>
-              <option value="delivery">Delivery</option>
-              <option value="system">Sistema</option>
-            </select>
-            <select
-              value={entity}
-              onChange={(e) => setEntity(e.target.value)}
-              className="px-3 py-2 border border-white/10 rounded-md bg-black/50 text-gray-200 text-sm focus:outline-none focus:border-purple-500/50 hover:bg-white/5 transition-colors"
-              style={{ colorScheme: 'dark' }}
-            >
-              <option value="all">Todas as entidades</option>
-              {uniqueEntities.slice(1).map((ent) => (
-                <option key={ent} value={ent}>
-                  {ent}
-                </option>
-              ))}
-            </select>
-            <select
-              value={limit}
-              onChange={(e) => setLimit(Number(e.target.value))}
-              className="px-3 py-2 border border-white/10 rounded-md bg-black/50 text-gray-200 text-sm focus:outline-none focus:border-purple-500/50 hover:bg-white/5 transition-colors"
-              style={{ colorScheme: 'dark' }}
-            >
-              <option value={25}>25 linhas</option>
-              <option value={50}>50 linhas</option>
-              <option value={100}>100 linhas</option>
-              <option value={200}>200 linhas</option>
-            </select>
+      {/* Main Content Layer */}
+      <div className="relative z-10 flex flex-col h-screen overflow-hidden bg-transparent">
+        
+        {/* Tactical Stitch Header */}
+        <header className="flex-none px-8 py-6 pt-8 pb-6 z-10 w-full">
+          <div className="flex flex-wrap justify-between items-end gap-4 mb-6">
+             <div className="flex flex-col gap-1">
+               <p className="text-zinc-500 text-sm font-medium tracking-widest uppercase">Segurança e Auditoria</p>
+               <h2 className="text-white text-3xl md:text-4xl font-bold leading-tight tracking-tight">LOGS DO SISTEMA</h2>
+             </div>
+             <div className="flex gap-3">
+               <Button 
+                variant="outline"
+                className="flex items-center justify-center gap-2 h-10 px-4 rounded-xl bg-zinc-900/50 backdrop-blur-md border border-zinc-700 text-white text-sm font-semibold hover:border-primary hover:text-primary transition-colors"
+               >
+                <Download className="w-[18px] h-[18px]" />
+                <span className="hidden sm:inline">Exportar Logs</span>
+               </Button>
+               
+               <div className="px-4 py-2 bg-zinc-900/50 backdrop-blur-md border border-zinc-700 rounded-xl text-xs font-mono text-zinc-400 flex items-center gap-2">
+                 <Shield className="w-3 h-3 text-emerald-500" />
+                 Auditoria Ativa
+               </div>
+             </div>
           </div>
-        </div>
+        </header>
 
-        {/* Container da Tabela com Scroll - Estilo MovementsTable */}
-        <div className="relative z-10 flex-1 min-h-0 overflow-auto p-4">
-          {isLoading ? (
-            <div className="h-full flex items-center justify-center">
-              <LoadingSpinner text="Carregando logs..." />
-            </div>
-          ) : error ? (
-            <div className="h-full flex flex-col items-center justify-center text-red-400 gap-2">
-              <Activity className="w-10 h-10 opacity-50" />
-              <p>Erro ao carregar dados</p>
-              <span className="text-xs opacity-70">{error.message}</span>
-            </div>
-          ) : (
-            <div className="w-full overflow-hidden rounded-lg border border-white/10 bg-black/40 backdrop-blur-md">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm text-left">
-                  <thead className="text-xs uppercase bg-black/60 text-gray-400 border-b border-white/10 sticky top-0 z-10">
-                    <tr>
-                      <th
-                        className="px-4 py-3 font-semibold cursor-pointer hover:text-primary-yellow transition-colors group"
-                        onClick={() => handleSort('created_at')}
-                      >
-                        <div className="flex items-center gap-1">
-                          DATA/HORA
-                          {getSortIcon('created_at')}
-                        </div>
-                      </th>
-                      <th
-                        className="px-4 py-3 font-semibold cursor-pointer hover:text-primary-yellow transition-colors group"
-                        onClick={() => handleSort('actor')}
-                      >
-                        <div className="flex items-center gap-1">
-                          USUÁRIO
-                          {getSortIcon('actor')}
-                        </div>
-                      </th>
-                      <th
-                        className="px-4 py-3 font-semibold cursor-pointer hover:text-primary-yellow transition-colors group"
-                        onClick={() => handleSort('role')}
-                      >
-                        <div className="flex items-center gap-1">
-                          PERFIL
-                          {getSortIcon('role')}
-                        </div>
-                      </th>
-                      <th
-                        className="px-4 py-3 font-semibold cursor-pointer hover:text-primary-yellow transition-colors group"
-                        onClick={() => handleSort('action')}
-                      >
-                        <div className="flex items-center gap-1">
-                          AÇÃO
-                          {getSortIcon('action')}
-                        </div>
-                      </th>
-                      <th
-                        className="px-4 py-3 font-semibold cursor-pointer hover:text-primary-yellow transition-colors group"
-                        onClick={() => handleSort('entity')}
-                      >
-                        <div className="flex items-center gap-1">
-                          ENTIDADE
-                          {getSortIcon('entity')}
-                        </div>
-                      </th>
-                      <th className="px-4 py-3 font-semibold text-gray-400">
-                        DETALHES
-                      </th>
-                      <th className="px-4 py-3 font-semibold text-center">Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-white/5">
-                    {rows.length ? (
-                      rows.map((row) => (
-                        <tr
-                          key={row.id}
-                          className="hover:bg-white/5 transition-colors duration-200 group"
-                        >
-                          <td className="px-4 py-3 font-mono text-xs whitespace-nowrap text-gray-400 group-hover:text-primary-yellow transition-colors">
-                            {new Date(row.created_at).toLocaleString('pt-BR', {
-                              day: '2-digit',
-                              month: '2-digit',
-                              year: '2-digit',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
-                          </td>
-                          <td className="px-4 py-3 text-gray-300">
-                            <div className="flex items-center gap-3">
-                              <div className="w-7 h-7 bg-white/5 rounded-full flex items-center justify-center border border-white/10 group-hover:border-white/20">
-                                <span className="text-xs font-bold text-gray-300">
-                                  {(row.actor || 'S').charAt(0).toUpperCase()}
-                                </span>
-                              </div>
-                              <span className="text-sm text-gray-300 font-medium group-hover:text-white transition-colors">
-                                {row.actor || 'Sistema'}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3">
-                            <RoleBadge role={row.role} />
-                          </td>
-                          <td className="px-4 py-3">
-                            <ActionBadge action={row.action} />
-                          </td>
-                          <td className="px-4 py-3">
-                            <EntityBadge entity={row.entity} entityId={row.entity_id} />
-                          </td>
-                          <td className="px-4 py-3 text-gray-400 text-sm max-w-[300px]">
-                            <div className="truncate group-hover:text-gray-200 transition-colors" title={row.details || ''}>
-                              {row.details || '—'}
-                            </div>
-                          </td>
-                          <td className="px-4 py-3 text-center">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleViewDetails(row)}
-                              className="h-8 w-8 hover:bg-primary-yellow/20 hover:text-primary-yellow transition-all rounded-full"
-                              title="Ver detalhes completos"
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan={7} className="text-center py-12">
-                          <div className="flex flex-col items-center gap-3">
-                            <div className="p-4 bg-white/5 rounded-full">
-                              <Activity className="w-8 h-8 text-gray-500" />
-                            </div>
-                            <p className="text-gray-400 font-medium">Nenhuma atividade encontrada</p>
-                            {(search || role !== 'all' || entity !== 'all') && (
-                              <p className="text-sm text-gray-500">
-                                Tente limpar ou ajustar os filtros de busca
-                              </p>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
+        {/* Scrollable Content */}
+        <main className="flex-1 overflow-y-auto px-8 pb-8 custom-scrollbar flex flex-col gap-6">
+            
+            {/* Filters Bar - Tactical Glass Style */}
+            <div className="shrink-0 p-4 border border-white/10 rounded-xl bg-black/40 backdrop-blur-xl flex flex-wrap gap-4 items-center justify-between">
+              <div className="flex gap-3 flex-wrap items-center flex-1">
+                <div className="w-full md:w-80">
+                  <SearchBar21st
+                    placeholder="Buscar por usuário, ação ou detalhes..."
+                    value={search}
+                    onChange={(val) => setSearch(val)}
+                    debounceMs={300}
+                    disableResizeAnimation
+                    className="bg-black/50 border-white/10 text-white placeholder:text-zinc-600 focus:border-primary/50 focus:ring-primary/20 h-10 rounded-lg"
+                  />
+                </div>
+                
+                <div className="h-8 w-px bg-white/10 mx-2 hidden md:block" />
+                
+                <div className="flex items-center gap-2">
+                    <Filter className="w-4 h-4 text-zinc-500" />
+                    <select
+                      value={role}
+                      onChange={(e) => setRole(e.target.value)}
+                      className="h-10 px-3 border border-white/10 rounded-lg bg-black/50 text-zinc-300 text-sm focus:outline-none focus:border-primary/50 hover:bg-white/5 transition-colors cursor-pointer"
+                    >
+                      <option value="all">Todos os perfis</option>
+                      <option value="admin">Admin</option>
+                      <option value="employee">Vendedor</option>
+                      <option value="delivery">Delivery</option>
+                      <option value="system">Sistema</option>
+                    </select>
+                </div>
+
+                <div className="flex items-center gap-2">
+                    <select
+                      value={entity}
+                      onChange={(e) => setEntity(e.target.value)}
+                      className="h-10 px-3 border border-white/10 rounded-lg bg-black/50 text-zinc-300 text-sm focus:outline-none focus:border-primary/50 hover:bg-white/5 transition-colors cursor-pointer"
+                    >
+                      <option value="all">Todas as entidades</option>
+                      {uniqueEntities.slice(1).map((ent) => (
+                        <option key={ent} value={ent}>
+                          {ent}
+                        </option>
+                      ))}
+                    </select>
+                </div>
+
+                <div className="ml-auto">
+                    <select
+                      value={limit}
+                      onChange={(e) => setLimit(Number(e.target.value))}
+                      className="h-10 px-3 border border-white/10 rounded-lg bg-black/50 text-zinc-400 text-xs focus:outline-none focus:border-primary/50 hover:bg-white/5 transition-colors cursor-pointer"
+                    >
+                      <option value={25}>25 reg.</option>
+                      <option value={50}>50 reg.</option>
+                      <option value={100}>100 reg.</option>
+                      <option value={200}>200 reg.</option>
+                    </select>
+                </div>
               </div>
             </div>
-          )}
-        </div>
-      </section>
 
-      {/* Modal de Detalhes do Log */}
+            {/* Table Container - Tactical Glass Style */}
+            <div className="flex-1 min-h-[400px] relative flex flex-col">
+              {isLoading ? (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-sm rounded-xl border border-white/5">
+                  <LoadingSpinner text="Carregando logs de atividade..." />
+                </div>
+              ) : error ? (
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-rose-400 gap-2 bg-rose-950/10 rounded-xl border border-rose-900/30">
+                  <Activity className="w-10 h-10 opacity-50" />
+                  <p className="font-medium">Falha na conexão com log server</p>
+                  <span className="text-xs opacity-70 bg-rose-950/30 px-3 py-1 rounded-full">{error.message}</span>
+                </div>
+              ) : (
+                <div className="w-full flex-1 overflow-hidden rounded-xl border border-white/10 bg-black/40 backdrop-blur-xl shadow-xl flex flex-col">
+                  <div className="flex-1 overflow-auto custom-scrollbar">
+                    <table className="w-full text-sm text-left">
+                      <thead className="text-xs uppercase bg-black/80 text-zinc-500 font-bold border-b border-white/10 sticky top-0 z-10 backdrop-blur-md">
+                        <tr>
+                          <th className="px-6 py-4 cursor-pointer hover:text-primary transition-colors group select-none" onClick={() => handleSort('created_at')}>
+                            <div className="flex items-center gap-2">
+                              DATA/HORA {getSortIcon('created_at')}
+                            </div>
+                          </th>
+                          <th className="px-6 py-4 cursor-pointer hover:text-primary transition-colors group select-none" onClick={() => handleSort('actor')}>
+                            <div className="flex items-center gap-2">
+                              USUÁRIO {getSortIcon('actor')}
+                            </div>
+                          </th>
+                          <th className="px-6 py-4 cursor-pointer hover:text-primary transition-colors group select-none" onClick={() => handleSort('role')}>
+                            <div className="flex items-center gap-2">
+                              PERFIL {getSortIcon('role')}
+                            </div>
+                          </th>
+                          <th className="px-6 py-4 cursor-pointer hover:text-primary transition-colors group select-none" onClick={() => handleSort('action')}>
+                            <div className="flex items-center gap-2">
+                              AÇÃO {getSortIcon('action')}
+                            </div>
+                          </th>
+                          <th className="px-6 py-4 cursor-pointer hover:text-primary transition-colors group select-none" onClick={() => handleSort('entity')}>
+                            <div className="flex items-center gap-2">
+                              ALVO {getSortIcon('entity')}
+                            </div>
+                          </th>
+                          <th className="px-6 py-4 text-zinc-500">
+                            RESUMO
+                          </th>
+                          <th className="px-6 py-4 text-center"></th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/5">
+                        {rows.length ? (
+                          rows.map((row) => (
+                            <tr
+                              key={row.id}
+                              className="hover:bg-white/5 transition-colors duration-200 group"
+                            >
+                              <td className="px-6 py-4 font-mono text-xs whitespace-nowrap text-zinc-400 group-hover:text-primary transition-colors">
+                                {new Date(row.created_at).toLocaleString('pt-BR', {
+                                  day: '2-digit', month: '2-digit', year: '2-digit',
+                                  hour: '2-digit', minute: '2-digit'
+                                })}
+                              </td>
+                              <td className="px-6 py-4">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-8 h-8 bg-zinc-800 rounded-full flex items-center justify-center border border-white/5 shadow-inner">
+                                    <span className="text-xs font-bold text-zinc-300">
+                                      {(row.actor || 'S').charAt(0).toUpperCase()}
+                                    </span>
+                                  </div>
+                                  <div className="flex flex-col">
+                                     <span className="text-sm text-zinc-200 font-medium">{row.actor || 'Sistema'}</span>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-6 py-4">
+                                <RoleBadge role={row.role} />
+                              </td>
+                              <td className="px-6 py-4">
+                                <ActionBadge action={row.action} />
+                              </td>
+                              <td className="px-6 py-4">
+                                <EntityBadge entity={row.entity} entityId={row.entity_id} />
+                              </td>
+                              <td className="px-6 py-4 text-zinc-400 text-sm max-w-[300px]">
+                                <div className="truncate group-hover:text-zinc-300 transition-colors" title={row.details || ''}>
+                                  {row.details || '—'}
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 text-center">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleViewDetails(row)}
+                                  className="h-8 w-8 hover:bg-primary/20 hover:text-primary transition-all rounded-full opacity-0 group-hover:opacity-100"
+                                  title="Ver Auditoria"
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan={7} className="text-center py-20">
+                              <div className="flex flex-col items-center gap-4 opacity-50">
+                                <Activity className="w-12 h-12 text-zinc-600" />
+                                <div className="text-center">
+                                    <p className="text-zinc-400 font-medium text-lg">Nenhum registro encontrado</p>
+                                    <p className="text-zinc-600 text-sm">Ajuste os filtros para ver mais resultados</p>
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                  {/* Footer Stats / Info */}
+                  <div className="px-6 py-3 border-t border-white/5 bg-black/40 flex justify-between items-center text-xs text-zinc-500">
+                     <span>Mostrando {rows.length} registros (limite: {limit})</span>
+                     <div className="flex items-center gap-2">
+                       <Clock className="w-3 h-3" />
+                       Atualizado em tempo real
+                     </div>
+                  </div>
+                </div>
+              )}
+            </div>
+        </main>
+      </div>
+
+      {/* Modal de Detalhes do Log - Premium Style */}
       <Dialog open={isDetailModalOpen} onOpenChange={setIsDetailModalOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden bg-zinc-950/95 backdrop-blur-xl border-purple-500/20 shadow-2xl p-0 gap-0">
-          <DialogHeader className="p-6 border-b border-white/10 bg-white/5">
-            <DialogTitle className="flex items-center gap-3 text-xl font-bold text-white">
-              <div className="p-2 bg-purple-500/20 rounded-lg">
-                <FileText className="h-5 w-5 text-purple-400" />
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden bg-zinc-950 border border-white/10 shadow-[0_0_100px_rgba(0,0,0,0.8)] p-0 gap-0">
+          <DialogHeader className="p-8 border-b border-white/5 bg-zinc-900/50 backdrop-blur-xl sticky top-0 md:rounded-t-xl">
+            <DialogTitle className="flex items-center gap-4 text-2xl font-bold text-white">
+              <div className="p-3 bg-primary/10 rounded-xl border border-primary/20 shadow-[0_0_15px_rgba(244,202,37,0.1)]">
+                <FileText className="h-6 w-6 text-primary" />
               </div>
               Detalhes da Atividade
             </DialogTitle>
-            <DialogDescription className="text-gray-400 ml-12">
-              Auditoria completa da ação realizada no sistema
+            <DialogDescription className="text-zinc-500 ml-[calc(3rem+1rem)] text-base">
+              Rastreamento completo do evento #{selectedLog?.id.slice(0,8)}
             </DialogDescription>
           </DialogHeader>
 
           {selectedLog && (
-            <div className="p-6 space-y-6 overflow-y-auto max-h-[calc(80vh-100px)]">
-              {/* Informações resumidas */}
+            <div className="p-8 space-y-8 overflow-y-auto custom-scrollbar flex-1 bg-black/40">
+              
+              {/* Contexto Principal */}
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 bg-white/5 rounded-xl border border-white/5 space-y-1">
-                  <span className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Usuário</span>
-                  <div className="flex items-center gap-2 pt-1">
-                    <User className="w-4 h-4 text-gray-400" />
-                    <p className="text-white font-medium">{selectedLog.actor || 'Sistema'}</p>
+                <div className="p-4 bg-zinc-900/50 rounded-xl border border-white/5 space-y-2 group hover:border-white/10 transition-colors">
+                  <div className="flex items-center gap-2 text-zinc-500 mb-1">
+                      <User className="h-4 w-4" />
+                      <span className="text-xs uppercase tracking-wider font-bold">Agente</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                     <p className="text-white font-medium text-lg">{selectedLog.actor || 'Sistema'}</p>
+                     <RoleBadge role={selectedLog.role} />
                   </div>
                 </div>
-                <div className="p-4 bg-white/5 rounded-xl border border-white/5 space-y-1">
-                  <span className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Perfil</span>
-                  <div className="pt-1"><RoleBadge role={selectedLog.role} /></div>
+
+                <div className="p-4 bg-zinc-900/50 rounded-xl border border-white/5 space-y-2 group hover:border-white/10 transition-colors">
+                  <div className="flex items-center gap-2 text-zinc-500 mb-1">
+                      <Activity className="h-4 w-4" />
+                      <span className="text-xs uppercase tracking-wider font-bold">Ação</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                     <p className="text-white font-medium text-lg capitalize">{selectedLog.action}</p>
+                     <ActionBadge action={selectedLog.action} />
+                  </div>
                 </div>
-                <div className="p-4 bg-white/5 rounded-xl border border-white/5 space-y-1">
-                  <span className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Ação</span>
-                  <div className="pt-1"><ActionBadge action={selectedLog.action} /></div>
-                </div>
-                <div className="p-4 bg-white/5 rounded-xl border border-white/5 space-y-1">
-                  <span className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Entidade</span>
-                  <div className="pt-1"><EntityBadge entity={selectedLog.entity} entityId={selectedLog.entity_id} /></div>
+
+                <div className="col-span-2 p-4 bg-zinc-900/50 rounded-xl border border-white/5 space-y-2 group hover:border-white/10 transition-colors">
+                  <div className="flex items-center gap-2 text-zinc-500 mb-1">
+                      <Clock className="h-4 w-4" />
+                      <span className="text-xs uppercase tracking-wider font-bold">Timestamp</span>
+                  </div>
+                  <p className="text-zinc-300 font-mono text-sm pt-1">
+                    {new Date(selectedLog.created_at).toLocaleString('pt-BR', {
+                      weekday: 'long',
+                      day: '2-digit', month: 'long', year: 'numeric',
+                      hour: '2-digit', minute: '2-digit', second: '2-digit',
+                      timeZoneName: 'short'
+                    })}
+                  </p>
                 </div>
               </div>
 
-              <div className="p-4 bg-white/5 rounded-xl border border-white/5 space-y-1">
-                <span className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Timestamp</span>
-                <p className="text-white font-mono text-sm pt-1 flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-gray-400" />
-                  {new Date(selectedLog.created_at).toLocaleString('pt-BR', {
-                    weekday: 'long',
-                    day: '2-digit',
-                    month: 'long',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit'
-                  })}
-                </p>
-              </div>
-
-              {/* JSON completo */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between px-1">
-                  <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Payload JSON</span>
+              {/* Payload Técnico */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
+                     <Database className="h-3 w-3" /> Payload JSON
+                  </span>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={handleCopyJson}
-                    className="h-7 text-xs text-purple-400 hover:text-purple-300 hover:bg-purple-500/10"
+                    className="h-8 text-xs text-primary hover:text-primary/80 hover:bg-primary/10 rounded-lg gap-2"
                   >
                     {copied ? (
-                      <>
-                        <Check className="h-3 w-3 mr-1.5" />
-                        Copiado
-                      </>
+                      <> <Check className="h-3 w-3" /> Copiado </>
                     ) : (
-                      <>
-                        <Copy className="h-3 w-3 mr-1.5" />
-                        Copiar Dados
-                      </>
+                      <> <Copy className="h-3 w-3" /> Copiar </>
                     )}
                   </Button>
                 </div>
-                <div className="relative group">
-                  <pre className="p-4 bg-zinc-950 rounded-xl border border-white/10 text-xs text-blue-300 overflow-auto max-h-[200px] font-mono shadow-inner custom-scrollbar">
-                    {JSON.stringify(selectedLog, null, 2)}
-                  </pre>
+                
+                <div className="relative group rounded-xl overflow-hidden border border-white/10 bg-black shadow-inner">
+                   <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary/50 to-transparent opacity-50" />
+                   <pre className="p-6 text-xs text-blue-300 overflow-auto max-h-[300px] font-mono custom-scrollbar leading-relaxed">
+                     {JSON.stringify(selectedLog, null, 2)}
+                   </pre>
                 </div>
               </div>
+
             </div>
           )}
+          
+          <div className="p-6 border-t border-white/5 bg-zinc-900/80 backdrop-blur-xl flex justify-end">
+              <Button onClick={() => setIsDetailModalOpen(false)} className="bg-white text-black hover:bg-zinc-200 font-bold rounded-lg px-8">
+                  Fechar
+              </Button>
+          </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 }
 
