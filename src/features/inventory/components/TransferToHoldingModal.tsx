@@ -127,45 +127,31 @@ export const TransferToHoldingModal: React.FC<TransferToHoldingModalProps> = ({
             "max-h-[90vh] flex flex-col"
           )}
         >
-          {/* Background Ambience */}
-          <div className="absolute inset-0 overflow-hidden pointer-events-none -z-10">
-              <div 
-                className="absolute inset-0 opacity-[0.03] mix-blend-overlay" 
-                style={{ 
-                  backgroundImage: `linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px)`,
-                  backgroundSize: '20px 20px'
-                }}
-              />
-              <div className="absolute top-[-20%] left-[20%] w-[600px] h-[600px] bg-cyan-500/10 rounded-full blur-[120px]" />
-              <div className="absolute bottom-[-20%] right-[20%] w-[600px] h-[600px] bg-violet-500/10 rounded-full blur-[120px]" />
-          </div>
-
           <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col h-full">
-
-            {/* HEADER */}
-            <div className="flex items-center justify-between px-8 py-6 border-b border-white/5 bg-zinc-900/30 backdrop-blur-md sticky top-0 z-50">
-              <div className="flex flex-col">
-                <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-                  <Truck className="h-6 w-6 text-cyan-400" />
-                  TRANSFERÊNCIA DE ESTOQUE
-                </h1>
-                <div className="flex items-center gap-3 mt-1 ml-9">
-                   <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest">
-                      LOGISTIC BRIDGE
-                   </span>
-                   <span className="w-1 h-1 rounded-full bg-zinc-700" />
-                   <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest">
-                      {product.name}
-                   </span>
-                </div>
-              </div>
-              <button 
-                type="button"
-                onClick={handleClose}
-                className="group p-2 rounded-full hover:bg-white/10 transition-colors focus:outline-none"
-              >
-                <X className="h-6 w-6 text-zinc-500 group-hover:text-white transition-colors" />
-              </button>
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-8 py-5 border-b border-white/5 bg-zinc-900/50 sticky top-0 z-50">
+               <div>
+                  <h1 className="text-xl font-semibold tracking-tight text-white flex items-center gap-2 uppercase">
+                     <Truck className="h-5 w-5 text-cyan-400" />
+                     ESTAÇÃO DE TRANSFERÊNCIA
+                  </h1>
+                  <p className="text-zinc-400 text-sm mt-1 font-medium">
+                     Logística e distribuição para: <span className="text-zinc-200">{product?.name}</span>
+                  </p>
+               </div>
+               <div className="flex items-center gap-3">
+                  <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 mr-2">
+                     <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                     <span className="text-xs font-semibold text-emerald-500">SISTEMA ONLINE</span>
+                  </div>
+                  <button 
+                     type="button"
+                     onClick={handleClose}
+                     className="group p-2 rounded-full hover:bg-white/10 transition-colors focus:outline-none"
+                  >
+                     <X className="h-6 w-6 text-zinc-500 group-hover:text-white transition-colors" />
+                  </button>
+               </div>
             </div>
 
             {/* MAIN CONTENT - THE BRIDGE */}
@@ -174,30 +160,29 @@ export const TransferToHoldingModal: React.FC<TransferToHoldingModalProps> = ({
                 
                 {/* SETOR ESQUERDO: ORIGEM (LOJA 1) */}
                 <div className="lg:col-span-3 flex flex-col gap-4">
-                  <div className="flex-1 bg-zinc-900/60 backdrop-blur-xl border border-white/10 rounded-xl p-6 border-l-4 border-l-cyan-500 relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/5 rounded-full blur-2xl -mr-10 -mt-10 transition-opacity group-hover:opacity-100 opacity-50 pointer-events-none" />
+                  <div className="flex-1 bg-zinc-900/60 backdrop-blur-xl border border-white/10 rounded-xl p-6 relative overflow-hidden group">
                     
                     <div className="relative z-10 flex flex-col h-full justify-between">
                       <div className="flex flex-col gap-4">
                         <div className="flex items-center gap-2 text-cyan-500">
                           <Store className="h-5 w-5" />
-                          <span className="text-xs font-bold tracking-wider uppercase">Origem</span>
+                          <span className="text-sm font-medium">Origem</span>
                         </div>
                         <div>
-                          <h2 className="text-lg font-bold text-white leading-tight">LOJA 1 (VENDAS)</h2>
-                          <p className="text-zinc-500 text-xs mt-1">Status: Ativo</p>
+                          <h2 className="text-lg font-semibold text-white leading-tight">LOJA 1 (VENDAS)</h2>
+                          <p className="text-zinc-500 text-sm mt-1">Status: Ativo</p>
                         </div>
                       </div>
 
-                      <div className="my-8">
-                        <p className="text-zinc-400 text-xs font-medium uppercase tracking-widest mb-2">Estoque Disponível</p>
+                        <div className="my-8">
+                        <p className="text-zinc-400 text-sm font-medium mb-2">Estoque Disponível</p>
                         <div className="flex items-baseline gap-2">
-                          <span className="text-5xl font-bold text-white tracking-tighter">{originStockPackages}</span>
-                          <span className="text-lg text-zinc-500 font-medium">pks.</span>
+                          <span className="text-4xl font-semibold text-white tracking-tight">{originStockPackages}</span>
+                          <span className="text-lg text-zinc-500">pcts.</span>
                         </div>
                         <div className="flex items-baseline gap-2 mt-1">
-                          <span className="text-xl font-bold text-zinc-400 tracking-tighter">{originStockUnits}</span>
-                          <span className="text-xs text-zinc-600 font-medium">un. soltas</span>
+                          <span className="text-lg text-zinc-400 font-medium">{originStockUnits}</span>
+                          <span className="text-sm text-zinc-600">un. soltas</span>
                         </div>
                       </div>
 
@@ -207,7 +192,7 @@ export const TransferToHoldingModal: React.FC<TransferToHoldingModalProps> = ({
                             <span>{capacityPercent}%</span>
                          </div>
                          <div className="h-2 w-full bg-zinc-800 rounded-full overflow-hidden">
-                            <div className="h-full bg-cyan-500 shadow-[0_0_10px_rgba(6,182,212,0.5)]" style={{ width: `${capacityPercent}%` }} />
+                            <div className="h-full bg-cyan-500" style={{ width: `${capacityPercent}%` }} />
                          </div>
                       </div>
                     </div>
@@ -232,13 +217,7 @@ export const TransferToHoldingModal: React.FC<TransferToHoldingModalProps> = ({
                       
                       {/* MODULE 1: PACKAGES (CYAN) */}
                       <div className="bg-zinc-900/60 backdrop-blur-xl border border-white/10 rounded-xl p-6 flex flex-col items-center justify-center gap-6 relative overflow-hidden group hover:border-cyan-500/30 transition-colors">
-                         {/* Tactical Corners */}
-                         <div className="absolute top-0 left-0 w-2 h-2 border-l-2 border-t-2 border-cyan-500/30" />
-                         <div className="absolute top-0 right-0 w-2 h-2 border-r-2 border-t-2 border-cyan-500/30" />
-                         <div className="absolute bottom-0 left-0 w-2 h-2 border-l-2 border-b-2 border-cyan-500/30" />
-                         <div className="absolute bottom-0 right-0 w-2 h-2 border-r-2 border-b-2 border-cyan-500/30" />
-
-                         <label className="text-xs font-bold text-cyan-500 uppercase tracking-widest flex items-center gap-2">
+                         <label className="text-sm font-medium text-cyan-500 flex items-center gap-2">
                             <Package className="h-4 w-4" /> PACOTES
                          </label>
                          
@@ -256,11 +235,11 @@ export const TransferToHoldingModal: React.FC<TransferToHoldingModalProps> = ({
                                   type="number"
                                   min="0"
                                   max={originStockPackages}
-                                  className="w-full bg-transparent text-center text-6xl font-bold text-white border-none focus:ring-0 p-0 appearance-none placeholder-zinc-700 font-mono"
+                                  className="w-full bg-transparent text-center text-5xl font-semibold text-white border-none focus:ring-0 p-0 appearance-none placeholder-zinc-700"
                                   placeholder="00"
                                   {...register('packages', { valueAsNumber: true })} 
                                />
-                               <div className="absolute -bottom-4 left-0 right-0 text-center text-[10px] text-zinc-500 font-mono">PKS</div>
+                               <div className="absolute -bottom-4 left-0 right-0 text-center text-sm text-zinc-500">PCTS</div>
                             </div>
                             
                             <button 
@@ -275,13 +254,7 @@ export const TransferToHoldingModal: React.FC<TransferToHoldingModalProps> = ({
 
                       {/* MODULE 2: UNITS LOOSE (EMERALD) */}
                       <div className="bg-zinc-900/60 backdrop-blur-xl border border-white/10 rounded-xl p-6 flex flex-col items-center justify-center gap-6 relative overflow-hidden group hover:border-emerald-500/30 transition-colors">
-                         {/* Tactical Corners */}
-                         <div className="absolute top-0 left-0 w-2 h-2 border-l-2 border-t-2 border-emerald-500/30" />
-                         <div className="absolute top-0 right-0 w-2 h-2 border-r-2 border-t-2 border-emerald-500/30" />
-                         <div className="absolute bottom-0 left-0 w-2 h-2 border-l-2 border-b-2 border-emerald-500/30" />
-                         <div className="absolute bottom-0 right-0 w-2 h-2 border-r-2 border-b-2 border-emerald-500/30" />
-
-                         <label className="text-xs font-bold text-emerald-500 uppercase tracking-widest flex items-center gap-2">
+                         <label className="text-sm font-medium text-emerald-500 flex items-center gap-2">
                             <Box className="h-4 w-4" /> UNIDADES SOLTAS
                          </label>
                          
@@ -299,11 +272,11 @@ export const TransferToHoldingModal: React.FC<TransferToHoldingModalProps> = ({
                                   type="number"
                                   min="0"
                                   max={originStockUnits}
-                                  className="w-full bg-transparent text-center text-6xl font-bold text-white border-none focus:ring-0 p-0 appearance-none placeholder-zinc-700 font-mono"
+                                  className="w-full bg-transparent text-center text-5xl font-semibold text-white border-none focus:ring-0 p-0 appearance-none placeholder-zinc-700"
                                   placeholder="00"
                                   {...register('unitsLoose', { valueAsNumber: true })} 
                                />
-                               <div className="absolute -bottom-4 left-0 right-0 text-center text-[10px] text-zinc-500 font-mono">UN</div>
+                               <div className="absolute -bottom-4 left-0 right-0 text-center text-sm text-zinc-500">UN</div>
                             </div>
                             
                             <button 
@@ -321,25 +294,24 @@ export const TransferToHoldingModal: React.FC<TransferToHoldingModalProps> = ({
 
                 {/* SETOR DIREITO: DESTINO (LOJA 2) */}
                 <div className="lg:col-span-3 flex flex-col gap-4">
-                  <div className="flex-1 bg-zinc-900/60 backdrop-blur-xl border border-white/10 rounded-xl p-6 border-r-4 border-r-violet-500 relative overflow-hidden group">
-                     <div className="absolute bottom-0 left-0 w-32 h-32 bg-violet-500/5 rounded-full blur-2xl -ml-10 -mb-10 transition-opacity group-hover:opacity-100 opacity-50 pointer-events-none" />
+                  <div className="flex-1 bg-zinc-900/60 backdrop-blur-xl border border-white/10 rounded-xl p-6 relative overflow-hidden group">
                      
                      <div className="relative z-10 flex flex-col h-full justify-between">
                         <div className="flex flex-col gap-4">
                            <div className="flex items-center justify-end gap-2 text-violet-500">
-                              <span className="text-xs font-bold tracking-wider uppercase">Destino</span>
+                              <span className="text-sm font-medium">Destino</span>
                               <Warehouse className="h-5 w-5" />
                            </div>
                            <div className="text-right">
-                              <h2 className="text-lg font-bold text-white leading-tight">LOJA 2 (DEPÓSITO)</h2>
-                              <p className="text-zinc-500 text-xs mt-1">Status: Recebimento Auto</p>
+                              <h2 className="text-lg font-semibold text-white leading-tight">LOJA 2 (DEPÓSITO)</h2>
+                              <p className="text-zinc-500 text-sm mt-1">Status: Recebimento Auto</p>
                            </div>
                         </div>
 
                         <div className="my-8 text-right">
-                           <p className="text-zinc-400 text-xs font-medium uppercase tracking-widest mb-2">Estoque Futuro</p>
+                           <p className="text-zinc-400 text-sm font-medium mb-2">Estoque Futuro</p>
                            <div className="flex flex-col items-end gap-1">
-                              <div className="flex items-center gap-2 text-zinc-500 text-sm font-mono">
+                              <div className="flex items-center gap-2 text-zinc-500 text-sm">
                                  <span>Atual: {destStockPackages}</span>
                                  <span className={cn("text-violet-500 transition-opacity", packagesToTransfer > 0 ? "opacity-100" : "opacity-0")}>
                                     + {packagesToTransfer}
@@ -347,10 +319,10 @@ export const TransferToHoldingModal: React.FC<TransferToHoldingModalProps> = ({
                               </div>
                               <div className="h-[1px] w-24 bg-zinc-700 my-1" />
                               <div className="flex items-baseline gap-2">
-                                 <span className="text-5xl font-bold text-white tracking-tighter transition-all">
+                                 <span className="text-4xl font-semibold text-white tracking-tight transition-all">
                                     {futureDestPackages}
                                  </span>
-                                 <span className="text-lg text-zinc-500 font-medium">pks.</span>
+                                 <span className="text-lg text-zinc-500">pcts.</span>
                               </div>
                            </div>
                         </div>
@@ -360,7 +332,7 @@ export const TransferToHoldingModal: React.FC<TransferToHoldingModalProps> = ({
                               <Info className="h-4 w-4 text-violet-400 mt-0.5" />
                               <div>
                                  <p className="text-xs text-white font-medium">Fluxo Direto</p>
-                                 <p className="text-[10px] text-zinc-400 mt-0.5 leading-tight">O estoque será debitado da Loja 1 e creditado na Loja 2 imediatamente.</p>
+                                 <p className="text-xs text-zinc-400 mt-0.5 leading-tight">O estoque será debitado da Loja 1 e creditado na Loja 2 imediatamente.</p>
                               </div>
                            </div>
                         </div>
@@ -400,19 +372,22 @@ export const TransferToHoldingModal: React.FC<TransferToHoldingModalProps> = ({
                   <Button 
                      type="submit"
                      disabled={isSubmitting || (packagesToTransfer === 0 && unitsToTransfer === 0)}
-                     className="rounded-full px-8 py-6 bg-gradient-to-r from-cyan-600 to-violet-600 text-white font-bold tracking-wide hover:opacity-90 transition-all shadow-[0_0_20px_rgba(6,182,212,0.3)] flex items-center justify-center gap-2 group relative overflow-hidden h-auto"
+                     className="rounded-full px-8 py-6 bg-emerald-600 hover:bg-emerald-700 text-white font-bold tracking-wide transition-all shadow-lg flex items-center justify-center gap-2 group relative overflow-hidden h-auto"
                   >
-                     {isSubmitting ? (
-                        <>Iniciando...</>
-                     ) : (
-                        <>
-                           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
-                           <Store className="h-4 w-4" />
-                           <ArrowRight className="h-4 w-4" />
-                           <Warehouse className="h-4 w-4" />
-                           <span className="relative z-10">PROCESSAR</span>
-                        </>
-                     )}
+                      {isSubmitting ? (
+                         <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
+                            PROCESSANDO...
+                         </>
+                      ) : (
+                         <>
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
+                            <Store className="h-4 w-4 z-10" />
+                            <ArrowRight className="h-4 w-4 z-10" />
+                            <Warehouse className="h-4 w-4 z-10" />
+                            <span className="relative z-10 font-bold">REALIZAR TRANSFERÊNCIA</span>
+                         </>
+                      )}
                   </Button>
                </div>
             </div>

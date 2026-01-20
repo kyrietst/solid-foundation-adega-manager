@@ -74,68 +74,68 @@ export const ProductIntelligenceCard: React.FC<ProductIntelligenceCardProps> = (
                ></circle>
             </svg>
             
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center flex flex-col items-center">
-               <span className="text-4xl font-mono font-bold text-white block tracking-tighter">
-                 {marginPercent.toFixed(1)}<span className="text-lg text-zinc-500">%</span>
-               </span>
-               <span className="text-[10px] text-emerald-500 uppercase font-bold tracking-wider mt-1">
-                 {marginPercent > 30 ? 'Saudável' : 'Atenção'}
-               </span>
-            </div>
-         </div>
-
-         <div className="w-full grid grid-cols-2 gap-4 mt-2 divide-x divide-white/5">
-            <div className="text-center pr-2">
-               <span className="text-[10px] text-zinc-500 uppercase block font-bold">Média Mensal</span>
-               <span className="text-lg font-mono font-medium text-zinc-200">
-                 {analytics?.avgSales ? analytics.avgSales.toFixed(1) : '--'} un
-               </span>
-            </div>
-            <div className="text-center pl-2">
-                <span className="text-[10px] text-zinc-500 uppercase block font-bold">Cobertura</span>
-                <span className="text-lg font-mono font-medium text-emerald-500">
-                  {analytics?.daysOfStock ? `${analytics.daysOfStock} dias` : '--'}
+             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center flex flex-col items-center">
+                <span className="text-4xl font-bold text-white block tracking-tighter">
+                  {marginPercent.toFixed(1)}<span className="text-lg text-zinc-500">%</span>
                 </span>
-            </div>
-         </div>
-      </div>
+                <span className="text-[10px] text-emerald-500 uppercase font-bold tracking-wider mt-1">
+                  {marginPercent > 30 ? 'Saudável' : 'Atenção'}
+                </span>
+             </div>
+          </div>
 
-      {/* Wholesale Conditional Card */}
-      {product.has_package_tracking && (
-        <div className="bg-black/20 border border-white/5 rounded-lg overflow-hidden group hover:border-indigo-500/30 transition-colors">
-           <div className="bg-indigo-950/30 border-b border-indigo-500/20 px-4 py-3 flex items-center justify-between">
-              <span className="text-xs font-bold text-indigo-300 uppercase tracking-wider flex items-center gap-2">
-                 <Tag className="h-4 w-4" /> Venda em Fardo
-              </span>
-              <span className="w-2 h-2 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.6)] animate-pulse"></span>
-           </div>
-           <div className="p-4">
-              <p className="text-xs text-zinc-400 mb-3">Preço especial para atacado ativo.</p>
-               <div className="flex items-center gap-3 bg-black/40 p-3 rounded border border-indigo-500/10">
-                 <span className="text-2xl font-bold text-indigo-400 font-mono tracking-tighter">
-                   {formatCurrency(product.package_price || 0)}
+          <div className="w-full grid grid-cols-2 gap-4 mt-2 divide-x divide-white/5">
+             <div className="text-center pr-2">
+                <span className="text-xs text-zinc-500 block font-medium">Média Mensal</span>
+                <span className="text-lg font-semibold text-zinc-200">
+                  {analytics?.avgSales ? analytics.avgSales.toFixed(1) : '--'} un
+                </span>
+             </div>
+             <div className="text-center pl-2">
+                 <span className="text-xs text-zinc-500 block font-medium">Cobertura</span>
+                 <span className="text-lg font-semibold text-emerald-500">
+                   {analytics?.daysOfStock ? `${analytics.daysOfStock} dias` : '--'}
                  </span>
-                 <div className="h-8 w-px bg-white/10"></div>
-                 <div className="text-xs text-zinc-500 leading-tight">
-                    Pack com <span className="text-white font-mono font-bold text-sm">{product.package_units}</span> unidades
-                 </div>
-              </div>
-           </div>
-        </div>
-      )}
+             </div>
+          </div>
+       </div>
 
-      {/* Suppliers Mini List */}
-      <div className="bg-black/20 border border-white/5 rounded-lg p-4 flex flex-col gap-3">
-         <span className="text-[10px] text-zinc-500 uppercase font-bold tracking-wider">Fornecedor Principal</span>
-         <div className="flex items-center gap-3">
-             <div className="size-10 rounded-lg bg-black/40 flex items-center justify-center text-zinc-500 border border-white/5">
-               <Factory className="h-5 w-5" />
+       {/* Wholesale Conditional Card */}
+       {product.has_package_tracking && (
+         <div className="bg-black/20 border border-white/5 rounded-lg overflow-hidden group hover:border-indigo-500/30 transition-colors">
+            <div className="bg-indigo-950/30 border-b border-indigo-500/20 px-4 py-3 flex items-center justify-between">
+               <span className="text-xs font-bold text-indigo-300 uppercase tracking-wider flex items-center gap-2">
+                  <Tag className="h-4 w-4" /> Venda em Fardo
+               </span>
+               <span className="w-2 h-2 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.6)] animate-pulse"></span>
             </div>
-            <div>
-               <div className="text-sm text-zinc-200 font-bold">{product.supplier || 'Não informado'}</div>
+            <div className="p-4">
+               <p className="text-xs text-zinc-400 mb-3">Preço especial para atacado ativo.</p>
+                <div className="flex items-center gap-3 bg-black/40 p-3 rounded border border-indigo-500/10">
+                  <span className="text-2xl font-bold text-indigo-400 tracking-tighter">
+                    {formatCurrency(product.package_price || 0)}
+                  </span>
+                  <div className="h-8 w-px bg-white/10"></div>
+                  <div className="text-xs text-zinc-500 leading-tight">
+                     Fardo com <span className="text-white font-bold text-sm">{product.package_units}</span> un.
+                  </div>
+               </div>
             </div>
          </div>
-      </div>
+       )}
+
+       {/* Suppliers Mini List */}
+       <div className="bg-black/20 border border-white/5 rounded-lg p-4 flex flex-col gap-3">
+          <span className="text-xs text-zinc-500 font-medium">Fornecedor Principal</span>
+          <div className="flex items-center gap-3">
+              <div className="size-10 rounded-lg bg-black/40 flex items-center justify-center text-zinc-500 border border-white/5">
+                <Factory className="h-5 w-5" />
+             </div>
+             <div>
+                <div className="text-sm text-zinc-200 font-bold">{product.supplier || 'Não informado'}</div>
+             </div>
+          </div>
+       </div>
 
     </div>
   );

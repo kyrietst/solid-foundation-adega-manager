@@ -60,9 +60,9 @@ export const ProductIdentityCard: React.FC<ProductIdentityCardProps> = ({
         </div>
         
         <div className="absolute bottom-4 left-4 right-4">
-          <div className="flex items-center gap-2 text-zinc-400 text-xs font-mono bg-black/60 backdrop-blur-md px-2 py-1 rounded w-fit border border-white/5">
+          <div className="flex items-center gap-2 text-zinc-400 text-xs font-medium bg-black/60 backdrop-blur-md px-2 py-1 rounded w-fit border border-white/5">
             <span className="text-emerald-500">●</span>
-            Verified just now
+            Verificado agora
           </div>
         </div>
       </div>
@@ -70,11 +70,11 @@ export const ProductIdentityCard: React.FC<ProductIdentityCardProps> = ({
       {/* Stock Big Number */}
       <div className="bg-black/20 border border-white/5 p-5 rounded-lg flex flex-col items-center justify-center gap-1 shadow-md relative overflow-hidden backdrop-blur-sm">
         <div className="absolute top-0 right-0 w-16 h-16 bg-emerald-500/5 rounded-bl-full -mr-8 -mt-8"></div>
-        <span className="text-zinc-400 text-[10px] font-medium uppercase tracking-widest">Estoque Físico</span>
-        <span className="text-6xl font-mono font-bold text-emerald-500 drop-shadow-[0_0_15px_rgba(16,185,129,0.2)] tracking-tighter">
+        <span className="text-zinc-400 text-xs font-medium">Estoque Físico</span>
+        <span className="text-6xl font-black text-emerald-500 drop-shadow-[0_0_15px_rgba(16,185,129,0.2)] tracking-tighter">
           {product.stock_quantity}
         </span>
-        <span className="text-xs text-zinc-500 font-mono">UNIDADES DISPONÍVEIS</span>
+        <span className="text-xs text-zinc-500 font-medium">unidades disponíveis</span>
       </div>
 
       {/* Actions */}

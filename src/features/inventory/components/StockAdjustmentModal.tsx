@@ -139,32 +139,29 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
             "data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]"
           )}
         >
-          {/* Top Decorative Line */}
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-zinc-800 via-emerald-500 to-zinc-800 opacity-50"></div>
-
           {/* Modal Header */}
-          <div className="flex items-center justify-between px-8 py-6 border-b border-white/5 bg-zinc-900/30 backdrop-blur-md">
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-3">
-                <Settings2 className="text-emerald-500 w-6 h-6" />
-                <DialogTitle className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-                  STOCK CALIBRATION
+          <div className="flex items-center justify-between px-8 py-5 border-b border-white/5 bg-zinc-900/50">
+             <div>
+                <DialogTitle className="text-xl font-semibold tracking-tight text-white flex items-center gap-2">
+                   <Settings2 className="h-5 w-5 text-emerald-500" />
+                   ESTAÇÃO DE AJUSTE DE ESTOQUE
                 </DialogTitle>
-              </div>
-              <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest ml-9">
-                 Tactical Adjustment Station
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span className="text-xs text-emerald-500 font-mono tracking-widest uppercase">System Online</span>
-            </div>
+                <p className="text-zinc-400 text-sm mt-1 font-medium">
+                   Gerenciamento tático de inventário para: <span className="text-zinc-200">{product?.name}</span>
+                </p>
+             </div>
+             <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                   <span className="text-xs font-semibold text-emerald-500">SISTEMA ONLINE</span>
+                </div>
+             </div>
           </div>
 
           {(isLoadingProduct || !product) ? (
             <div className="h-96 flex flex-col items-center justify-center gap-4 text-zinc-500">
               <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
-              <p>Initializing Calibration Module...</p>
+              <p>Inicializando Módulo de Calibração...</p>
             </div>
           ) : (
             <div className="flex flex-col lg:flex-row divide-y lg:divide-y-0 lg:divide-x divide-white/5 h-full">
@@ -214,10 +211,10 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
               onClick={handleSubmit(onSubmit)}
               disabled={!isDirty || adjustStockMutation.isPending}
               className={cn(
-                "w-full md:w-auto px-10 py-6 rounded-full font-bold uppercase tracking-wider text-sm transition-all active:scale-[0.98] flex items-center justify-center gap-3 relative overflow-hidden group shadow-[0_0_20px_rgba(16,185,129,0.3)]",
+                "w-full md:w-auto px-10 py-6 rounded-full font-bold tracking-wide text-sm transition-all flex items-center justify-center gap-3 relative overflow-hidden group shadow-[0_0_20px_rgba(16,185,129,0.3)]",
                 !isDirty || adjustStockMutation.isPending
                   ? "bg-zinc-800 text-zinc-500 cursor-not-allowed shadow-none"
-                  : "bg-emerald-500 hover:bg-emerald-400 text-zinc-950 hover:shadow-[0_0_35px_rgba(16,185,129,0.5)] hover:scale-[1.02]"
+                  : "bg-emerald-600 hover:bg-emerald-500 text-white hover:shadow-[0_0_35px_rgba(16,185,129,0.5)] hover:scale-[1.02]"
               )}
             >
               {adjustStockMutation.isPending ? (
@@ -229,9 +226,9 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
                 <>
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
                   <CheckCircle className="w-5 h-5 z-10" />
-                  <span className="z-10">Confirmar Calibração</span>
+                  <span className="z-10 uppercase">Confirmar Ajuste</span>
                   {isDirty && (
-                    <span className="z-10 bg-black/20 px-2 py-1 rounded text-[10px] font-mono ml-2 border border-black/10">
+                    <span className="z-10 bg-black/20 px-2 py-1 rounded text-[10px] font-bold ml-2 border border-black/10">
                       DELTA: {totalDelta > 0 ? '+' : ''}{totalDelta}
                     </span>
                   )}

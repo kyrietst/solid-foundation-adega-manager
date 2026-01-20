@@ -48,7 +48,7 @@ export const StockCalibrationAnalysis: React.FC<StockCalibrationAnalysisProps> =
 
   return (
     <div className="w-full lg:w-[420px] bg-zinc-900/30 p-8 flex flex-col gap-6">
-      <h2 className="text-[10px] font-bold text-zinc-500 tracking-widest uppercase flex items-center gap-2 mb-2">
+      <h2 className="text-sm font-semibold text-zinc-300 flex items-center gap-2 mb-2">
         <ClipboardList className="text-emerald-500 w-4 h-4" />
         Análise de Divergência
       </h2>
@@ -57,8 +57,8 @@ export const StockCalibrationAnalysis: React.FC<StockCalibrationAnalysisProps> =
       {calculations?.hasChanges ? (
         <div className={cn(
           "p-4 rounded-lg flex flex-col gap-1 relative overflow-hidden transition-colors border",
-          isGain ? "bg-emerald-500/10 border-emerald-500/20 hover:border-emerald-500/40" :
-          isLoss ? "bg-rose-500/10 border-rose-500/20 hover:border-rose-500/40" :
+          isGain ? "bg-emerald-500/10 border-emerald-500/20" :
+          isLoss ? "bg-rose-500/10 border-rose-500/20" :
           "bg-zinc-800/30 border-zinc-700/50"
         )}>
           <div className="absolute right-0 top-0 p-3 opacity-20">
@@ -68,14 +68,14 @@ export const StockCalibrationAnalysis: React.FC<StockCalibrationAnalysisProps> =
           </div>
           
           <span className={cn(
-            "text-xs font-mono uppercase tracking-wider font-bold",
+            "text-sm font-medium",
             isGain ? "text-emerald-400" : isLoss ? "text-rose-400" : "text-zinc-400"
           )}>
             Diferença Física
           </span>
           
           <div className="flex items-baseline gap-2 z-10">
-            <span className="text-white text-3xl font-mono font-bold">
+            <span className="text-white text-3xl font-bold">
               {totalUnitsDiff > 0 ? '+' : ''}{totalUnitsDiff}
             </span>
             <span className={cn(
@@ -98,16 +98,16 @@ export const StockCalibrationAnalysis: React.FC<StockCalibrationAnalysisProps> =
       ) : (
         <div className="p-4 rounded-lg bg-zinc-800/30 border border-zinc-700/50 flex flex-col items-center justify-center gap-2 py-8 text-zinc-500">
           <Minus className="w-8 h-8 opacity-20" />
-          <span className="text-xs uppercase tracking-wide">Aguardando Input</span>
+          <span className="text-sm">Aguardando Input</span>
         </div>
       )}
 
       {/* Delta Card: Financial Impact */}
       <div className="p-4 rounded-lg bg-zinc-800/50 border border-white/5 flex flex-col gap-1 relative overflow-hidden">
-        <span className="text-zinc-400 text-xs font-mono uppercase tracking-wider font-bold">Impacto Financeiro</span>
+        <span className="text-zinc-400 text-sm font-medium">Impacto Financeiro</span>
         <div className="flex items-baseline gap-2">
           <span className={cn(
-            "text-3xl font-mono font-bold tracking-tight",
+            "text-3xl font-semibold tracking-tight",
             isGain ? "text-emerald-400" : isLoss ? "text-rose-400" : "text-white"
           )}>
             {formatCurrency(Math.abs(estimatedImpact))}
@@ -120,7 +120,7 @@ export const StockCalibrationAnalysis: React.FC<StockCalibrationAnalysisProps> =
 
       {/* Reason Select */}
       <div className="flex flex-col gap-3">
-        <label className="text-[10px] font-bold text-zinc-500 tracking-widest uppercase flex items-center gap-2">
+        <label className="text-sm font-medium text-zinc-300 flex items-center gap-2">
           <Info className="text-zinc-500 w-4 h-4" />
           Motivo da Operação
         </label>

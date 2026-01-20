@@ -23,12 +23,12 @@ export const ProductSpecsCard: React.FC<ProductSpecsCardProps> = ({ product }) =
   return (
     <div className="lg:col-span-5 h-full w-full rounded-xl bg-white/[0.02] border border-white/5 flex flex-col gap-4 p-5">
       <div className="flex items-center justify-between pb-2 border-b border-white/10 mb-2">
-        <h3 className="text-zinc-500 font-bold text-sm uppercase tracking-wider flex items-center gap-2">
+        <h3 className="text-zinc-500 font-bold text-sm flex items-center gap-2">
           <Settings className="h-4 w-4" />
           Especificações
         </h3>
-        <button className="text-emerald-500 text-xs hover:text-white transition-colors hover:underline font-mono">
-           Export_XML
+        <button className="text-emerald-500 text-xs hover:text-white transition-colors hover:underline font-medium">
+           Exportar XML
         </button>
       </div>
 
@@ -36,8 +36,8 @@ export const ProductSpecsCard: React.FC<ProductSpecsCardProps> = ({ product }) =
       <div className="bg-black/20 border border-white/5 rounded-lg p-4 flex items-center justify-between relative overflow-hidden group hover:border-white/10 transition-colors">
         <div className="absolute left-0 top-0 bottom-0 w-1 bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
         <div className="flex flex-col gap-1 pl-2">
-           <span className="text-[10px] text-zinc-500 uppercase font-mono tracking-widest">Primary EAN-13</span>
-           <span className="font-mono text-lg lg:text-xl tracking-[0.2em] text-zinc-200 group-hover:text-white transition-colors">
+           <span className="text-xs text-zinc-500 font-medium">EAN-13 (Primário)</span>
+           <span className="font-mono text-lg lg:text-xl tracking-widest text-zinc-200 group-hover:text-white transition-colors">
              {product.barcode || 'N/A'}
            </span>
         </div>
@@ -48,19 +48,19 @@ export const ProductSpecsCard: React.FC<ProductSpecsCardProps> = ({ product }) =
       <div className="bg-black/20 border border-white/5 rounded-lg p-5 flex flex-col gap-4 shadow-sm hover:bg-white/[0.04] transition-colors">
          <div className="flex justify-between items-end">
             <div className="flex flex-col gap-1">
-               <span className="text-xs text-rose-400 font-medium flex items-center gap-2 uppercase tracking-wider">
-                  <span className="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]"></span> Cost
+               <span className="text-xs text-rose-400 font-medium flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]"></span> Custo
                </span>
-               <span className="text-2xl font-mono font-bold text-zinc-500">
+               <span className="text-2xl font-semibold text-zinc-500">
                  {formatCurrency(cost)}
                </span>
             </div>
             <div className="h-10 w-px bg-zinc-800"></div>
             <div className="flex flex-col gap-1 items-end">
-               <span className="text-xs text-emerald-500 font-medium flex items-center gap-2 uppercase tracking-wider">
-                  Sale <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
+               <span className="text-xs text-emerald-500 font-medium flex items-center gap-2">
+                  Venda <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
                </span>
-               <span className="text-3xl font-mono font-bold text-white">
+               <span className="text-3xl font-bold text-white tracking-tight">
                  {formatCurrency(price)}
                </span>
             </div>
@@ -123,21 +123,21 @@ export const ProductSpecsCard: React.FC<ProductSpecsCardProps> = ({ product }) =
       </div>
 
       {/* Fiscal Code Block */}
-      <div className="bg-black/40 border border-white/5 rounded p-4 font-mono text-xs relative group shadow-inner">
+      <div className="bg-black/40 border border-white/5 rounded p-4 text-xs relative group shadow-inner">
          <div className="absolute top-2 right-2 text-violet-500 opacity-30">
             <Code className="h-4 w-4" />
          </div>
-         <div className="text-violet-400 mb-3 opacity-80">// Fiscal Rules</div>
+         <div className="text-violet-400 mb-3 opacity-80 font-medium">// Regras Fiscais</div>
          <div className="grid grid-cols-2 gap-y-4 gap-x-2">
             <div>
-               <span className="text-zinc-600 block mb-1">CFOP_STD</span>
-               <span className="text-violet-200 bg-violet-500/10 px-2 py-1 rounded border border-violet-500/20">
+               <span className="text-zinc-600 block mb-1 font-medium">CFOP Padrão</span>
+               <span className="text-violet-200 bg-violet-500/10 px-2 py-1 rounded border border-violet-500/20 font-mono">
                   {product.cfop || '5102'}
                </span>
             </div>
             <div>
-               <span className="text-zinc-600 block mb-1">TAX_GROUP</span>
-               <span className="text-violet-200 bg-violet-500/10 px-2 py-1 rounded border border-violet-500/20">
+               <span className="text-zinc-600 block mb-1 font-medium">Grupo Tributário</span>
+               <span className="text-violet-200 bg-violet-500/10 px-2 py-1 rounded border border-violet-500/20 font-mono">
                   A - Simples Nacional
                </span>
             </div>
