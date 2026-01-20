@@ -7,10 +7,11 @@
 
 import React, { useMemo } from 'react';
 import { DateRange } from "react-day-picker";
-import { PageHeader } from '@/shared/ui/composite/PageHeader';
+
 import { PaginationControls } from '@/shared/ui/composite/pagination-controls';
 import { DatePickerWithRange } from '@/shared/ui/composite/date-range-picker';
 import { MovementsTable } from './MovementsTable';
+import { PremiumBackground } from '@/shared/ui/composite/PremiumBackground';
 import { InventoryMovement } from '@/core/types/inventory.types';
 import { Product, Customer, Sale } from '@/features/movements/hooks/useMovements';
 
@@ -71,79 +72,69 @@ export const MovementsPresentation: React.FC<MovementsPresentationProps> = ({
   }, [salesList]);
 
   return (
-    <div className="flex flex-col h-full bg-[#09090b] text-white overflow-hidden">
-      {/* Header Fixo */}
-      <div className="flex-none p-6 border-b border-white/10 bg-[#09090b]/95 backdrop-blur z-20">
-        <div className="flex flex-col lg:flex-row gap-6 items-start lg:items-center justify-between">
-          <PageHeader
-            title="Movimentações de Estoque"
-            description="Histórico completo de auditoria de estoque."
-            className="flex-1"
-          />
+    <>
+      {/* Background Fixed Layer */}
+      <PremiumBackground className="fixed inset-0 z-0 pointer-events-none" />
 
-          {/* Filtros */}
-          <div className="flex items-center gap-3">
-            <DatePickerWithRange
-              date={dateRange}
-              setDate={setDateRange}
-              className="w-full sm:w-[300px]"
-            />
+      {/* Main Content Layer */}
+      <div className="relative z-10 flex flex-col h-screen overflow-hidden bg-transparent">
+        
+        {/* Header Section */}
+        <header className="flex-none px-8 py-6 pt-8 pb-6 z-10 w-full">
+          <div className="flex flex-wrap justify-between items-end gap-4 mb-6">
+             <div className="flex flex-col gap-1">
+               <p className="text-zinc-500 text-sm font-medium tracking-widest uppercase">Módulo de Auditoria</p>
+               <h2 className="text-white text-3xl md:text-4xl font-bold leading-tight tracking-tight">MOVIMENTAÇÕES DE ESTOQUE</h2>
+             </div>
+             
+             {/* Filtros no Header (Date Range) */}
+             <div className="flex gap-3">
+               <DatePickerWithRange
+                  date={dateRange}
+                  setDate={setDateRange}
+                  className="w-full sm:w-[300px]"
+                />
+             </div>
           </div>
-        </div>
+        </header>
+
+        {/* Scrollable Content */}
+        <main className="flex-1 overflow-y-auto px-8 pb-8 custom-scrollbar flex flex-col gap-8">
+            
+            {/* Table Container in Flex-1 */}
+            <div className="flex-1 min-h-[500px] flex flex-col gap-4">
+                 <MovementsTable
+                    movements={movements}
+                    productsMap={productsMap}
+                    usersMap={usersMap}
+                    typeInfo={typeInfo}
+                    customers={customers}
+                    salesMap={salesMap}
+                    maxRows={pageSize}
+                    isLoading={isLoading}
+                 />
+
+                 {/* Controles de Paginação */}
+                 <div className="rounded-xl border border-white/10 p-4 bg-black/40 backdrop-blur-sm">
+                    <PaginationControls
+                      currentPage={page}
+                      totalPages={totalPages}
+                      totalItems={totalCount}
+                      itemsPerPage={pageSize}
+                      onPageChange={onPageChange}
+                      onItemsPerPageChange={onPageSizeChange}
+                      itemsPerPageOptions={[25, 50, 100]}
+                      showItemsPerPage={true}
+                      showItemsCount={true}
+                      itemLabel="movimentação"
+                      itemsLabel="movimentações"
+                      variant="premium"
+                      glassEffect={false} // Container already has glass
+                    />
+                 </div>
+            </div>
+        </main>
       </div>
-
-      {/* Conteúdo com Scroll */}
-      <section
-        className="flex-1 flex flex-col min-h-0 m-6 rounded-2xl border border-white/10 bg-black/40 backdrop-blur-sm transition-all duration-300 relative overflow-hidden group"
-        onMouseMove={(e) => {
-          const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-          const x = ((e.clientX - rect.left) / rect.width) * 100;
-          const y = ((e.clientY - rect.top) / rect.height) * 100;
-          (e.currentTarget as HTMLElement).style.setProperty("--x", `${x}%`);
-          (e.currentTarget as HTMLElement).style.setProperty("--y", `${y}%`);
-        }}
-      >
-        {/* Purple glow effect */}
-        <div
-          className="absolute inset-0 rounded-xl bg-gradient-to-br from-purple-500/20 via-transparent to-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-          style={{
-            background: `radial-gradient(800px circle at var(--x, 50%) var(--y, 50%), rgba(147, 51, 234, 0.15), transparent 40%)`
-          }}
-        />
-
-        {/* Tabela com scroll interno */}
-        <div className="relative z-10 flex-1 min-h-0 overflow-auto p-4">
-          <MovementsTable
-            movements={movements}
-            productsMap={productsMap}
-            usersMap={usersMap}
-            typeInfo={typeInfo}
-            customers={customers}
-            salesMap={salesMap}
-            maxRows={pageSize}
-            isLoading={isLoading}
-          />
-        </div>
-
-        {/* Controles de Paginação */}
-        <div className="relative z-10 border-t border-white/10 p-4 bg-black/40">
-          <PaginationControls
-            currentPage={page}
-            totalPages={totalPages}
-            totalItems={totalCount}
-            itemsPerPage={pageSize}
-            onPageChange={onPageChange}
-            onItemsPerPageChange={onPageSizeChange}
-            itemsPerPageOptions={[25, 50, 100]}
-            showItemsPerPage={true}
-            showItemsCount={true}
-            itemLabel="movimentação"
-            itemsLabel="movimentações"
-            variant="premium"
-            glassEffect={true}
-          />
-        </div>
-      </section>
-    </div>
+    </>
   );
 };

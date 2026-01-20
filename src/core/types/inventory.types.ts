@@ -244,7 +244,7 @@ export interface BarcodeComponentProps {
 // Interface para movimentações de estoque
 export interface InventoryMovement {
   id: string;
-  type: 'in' | 'out' | 'fiado' | 'devolucao';
+  type: 'in' | 'out' | 'fiado' | 'devolucao' | 'inventory_adjustment' | 'stock_transfer_in' | 'stock_transfer_out' | 'manual_entry' | 'manual_exit' | 'sale' | 'purchase' | 'loss' | 'gift';
   product_id: string;
   quantity: StockQuantity;
   reason: string | null;
@@ -287,18 +287,22 @@ export interface InventoryMovement {
   };
   sales?: {
     id: string;
+    order_number: number; // Added
     created_at: string;
     delivery_type: string;
     delivery?: boolean; // Added for robust delivery detection
     payment_method: string;
     payment_status: string;
     status: string;
+    total_amount: number; // Added
     final_amount: number;
+    notes?: string; // Added
     sale_items?: Array<{
       id: string;
       product_id: string;
       quantity: number;
       unit_price: number;
+      subtotal: number; // Added as it was used in the table
       products?: {
         name: string;
         barcode?: string;

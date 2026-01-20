@@ -1,6 +1,7 @@
 /**
- * Tabela de movimentações - Refatorada para Layout Legacy/Expandable
- * Restaura o design antigo com colunas específicas e expansão de detalhes
+ * Tabela de movimentações com Composite UI
+ * Estrutura visual baseada em CustomerTable (Master)
+ * Detalhes baseados em RecentSales (Detail)
  */
 
 import React, { useState } from 'react';
@@ -9,19 +10,19 @@ import { Customer } from '@/features/movements/hooks/useMovements';
 import { Badge } from '@/shared/ui/primitives/badge';
 import { Button } from '@/shared/ui/primitives/button';
 import {
-  Eye,
   ChevronDown,
   ChevronUp,
   CreditCard,
-  CalendarDays,
   User,
   Store,
   Truck,
   Package,
-  FileText
+  FileText,
+  ArrowUpRight,
+  ArrowDownLeft,
+  RefreshCw
 } from 'lucide-react';
 import { cn } from '@/core/config/utils';
-import { shadows, text } from '@/core/config/theme';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -47,7 +48,6 @@ export const MovementsTable: React.FC<MovementsTableProps> = ({
     setExpandedId(expandedId === id ? null : id);
   };
 
-  // Helpers de formatação
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -55,426 +55,331 @@ export const MovementsTable: React.FC<MovementsTableProps> = ({
     }).format(value);
   };
 
-  const getPaymentBadge = (method?: string, status?: string) => {
-    if (!method) return <span className="text-gray-500">-</span>;
-
-    const methodLabel = {
-      'credit_card': 'Crédito',
-      'debit_card': 'Débito',
-      'pix': 'PIX',
-      'cash': 'Dinheiro',
-      'bank_transfer': 'Transf.',
-      'other': 'Outro'
-    }[method] || method;
-
-    const statusColor = status === 'paid' ? 'bg-emerald-500/20 text-emerald-400' :
-      status === 'pending' ? 'bg-amber-500/20 text-amber-400' :
-        'bg-red-500/20 text-red-400';
-
-    const statusLabel = status === 'paid' ? 'Pago' :
-      status === 'pending' ? 'Pendente' :
-        'Cancelado';
-
-    return (
-      <div className="flex flex-col gap-1 items-start">
-        <div className="flex items-center gap-1.5 text-xs font-medium text-gray-300">
-          <CreditCard className="h-3 w-3" />
-          {methodLabel}
-        </div>
-        <span className={cn("text-[10px] px-1.5 py-0.5 rounded uppercase tracking-wider font-bold", statusColor)}>
-          {statusLabel}
-        </span>
-      </div>
-    );
-  };
-
-  const getStatusBadge = (status?: string, type?: string) => {
-    // Se não tiver status de venda, usa o tipo de movimentação
-    // Se não tiver status de venda, usa o tipo de movimentação
-    if (!status) {
-      const typeTranslations: Record<string, string> = {
-        'inventory_adjustment': 'Ajuste de Estoque',
-        'stock_transfer_out': 'Transferência (Saída)',
-        'stock_transfer_in': 'Transferência (Entrada)',
-        'sale': 'Venda',
-        'purchase': 'Compra',
-        'return': 'Devolução',
-        'loss': 'Perda',
-        'gift': 'Brinde/Bonificação',
-        'manual_entry': 'Entrada Manual',
-        'manual_exit': 'Saída Manual'
-      };
-
-      return (
-        <Badge variant="outline" className="bg-gray-500/10 text-gray-400 border-gray-500/30">
-          {typeTranslations[type || ''] || type || 'N/A'}
-        </Badge>
-      );
-    }
-
-    const styles = {
-      'completed': 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
-      'pending': 'bg-amber-500/10 text-amber-400 border-amber-500/30',
-      'cancelled': 'bg-red-500/10 text-red-400 border-red-500/30',
-      'returned': 'bg-purple-500/10 text-purple-400 border-purple-500/30'
-    }[status.toLowerCase()] || 'bg-gray-500/10 text-gray-400 border-gray-500/30';
-
-    const label = {
-      'completed': 'Concluído',
-      'pending': 'Pendente',
-      'cancelled': 'Cancelado',
-      'returned': 'Devolvido'
-    }[status.toLowerCase()] || status;
-
-    return (
-      <Badge variant="outline" className={cn("backdrop-blur-sm", styles)}>
-        {label}
-      </Badge>
-    );
-  };
-
   if (isLoading) {
     return (
-      <div className="w-full h-40 flex items-center justify-center text-gray-400">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-yellow mr-2"></div>
-        Carregando movimentações...
+      <div className="w-full h-64 flex flex-col items-center justify-center space-y-4">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-adega-gold"></div>
+        <p className="text-adega-platinum/60 text-sm animate-pulse">Carregando movimentações...</p>
       </div>
     );
   }
 
   if (movements.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 text-gray-400">
-        <FileText className="h-12 w-12 mb-4 opacity-50" />
-        <p>Nenhuma movimentação encontrada</p>
+      <div className="flex flex-col items-center justify-center py-20 bg-adega-charcoal/20 border border-white/5 rounded-2xl">
+        <div className="bg-white/5 p-4 rounded-full mb-4">
+          <Package className="h-8 w-8 text-zinc-500" />
+        </div>
+        <h3 className="text-lg font-bold text-zinc-300">Nenhuma movimentação</h3>
+        <p className="text-sm text-center max-w-md mt-1 text-zinc-500">
+          O histórico de movimentações aparecerá aqui.
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="w-full overflow-hidden rounded-lg border border-white/10 bg-black/40 backdrop-blur-md">
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm text-left">
-          <thead className="text-xs uppercase bg-black/60 text-gray-400 border-b border-white/10 sticky top-0 z-10">
-            <tr>
-              <th className="px-4 py-3 font-semibold">ID</th>
-              <th className="px-4 py-3 font-semibold text-center">Canal</th>
-              <th className="px-4 py-3 font-semibold">Data</th>
-              <th className="px-4 py-3 font-semibold">Cliente</th>
-              <th className="px-4 py-3 font-semibold">Vendedor</th>
-              <th className="px-4 py-3 font-semibold">Pagamento</th>
-              <th className="px-4 py-3 font-semibold text-center">Status</th>
-              <th className="px-4 py-3 font-semibold text-right">Valor</th>
-              <th className="px-4 py-3 font-semibold text-center">Ações</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-white/5">
-            {movements.map((movement) => {
-              // Preparar dados
-              const sale = movement.sales;
-              const isSale = !!sale;
-              // FIX: Lint error - Property 'date' does not exist (using created_at as standard)
-              const date = new Date(movement.created_at);
+    <div className="w-full space-y-4">
+      {/* Table Container - Style matched to CustomerTable */}
+      <div className="bg-adega-charcoal/20 border border-white/5 rounded-2xl overflow-hidden shadow-2xl backdrop-blur-sm">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-white/[0.02] border-b border-white/5">
+                <th className="px-6 py-4 text-xs font-semibold text-zinc-500 uppercase tracking-wider font-display">Tipo / ID</th>
+                <th className="px-6 py-4 text-xs font-semibold text-zinc-500 uppercase tracking-wider font-display">Data</th>
+                <th className="px-6 py-4 text-xs font-semibold text-zinc-500 uppercase tracking-wider font-display">Produto / Descrição</th>
+                <th className="px-6 py-4 text-xs font-semibold text-zinc-500 uppercase tracking-wider font-display">Responsável</th>
+                <th className="px-6 py-4 text-xs font-semibold text-zinc-500 uppercase tracking-wider font-display text-center">Qtd.</th>
+                <th className="px-6 py-4 text-xs font-semibold text-zinc-500 uppercase tracking-wider font-display text-right w-20">Detalhes</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/[0.02]">
+              {movements.map((movement) => {
+                const sale = movement.sales;
+                const isSale = !!sale;
+                const isExpanded = expandedId === movement.id;
+                const date = new Date(movement.created_at);
+                
+                // Tipos de Movimento (Badges)
+                const isEntry = ['purchase', 'stock_transfer_in', 'manual_entry', 'return'].includes(movement.type);
+                const isExit = ['sale', 'stock_transfer_out', 'manual_exit', 'loss', 'gift'].includes(movement.type);
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                const isAdjustment = movement.type === 'inventory_adjustment';
 
-              const idDisplay = isSale ? `#${sale.id.slice(0, 8).toUpperCase()}` : `#${movement.id.slice(0, 8).toUpperCase()}`;
+                const typeLabel = {
+                  'sale': 'Venda',
+                  'purchase': 'Compra',
+                  'inventory_adjustment': 'Ajuste',
+                  'stock_transfer_in': 'Transf. (Entrada)',
+                  'stock_transfer_out': 'Transf. (Saída)',
+                  'manual_entry': 'Entrada Manual',
+                  'manual_exit': 'Saída Manual',
+                  'return': 'Devolução',
+                  'loss': 'Perda',
+                  'gift': 'Brinde'
+                }[movement.type] || movement.type;
 
-              // Helper para detectar delivery robustamente
-              const isDeliveryType = isSale && (sale.delivery === true || (sale.delivery_fee || 0) > 0);
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                const amount = isSale ? sale.final_amount : 0;
 
-              // Cliente - Prioriza: Cliente do Movimento -> Cliente da Venda -> Fallback específico
-              const customerName = movement.customer?.name
-                || sale?.customer?.name
-                || (isDeliveryType ? 'Cliente (Delivery)' : (isSale ? 'Cliente Balcão' : 'Não informado'));
-
-              // Vendedor
-              const sellerName = usersMap[movement.user_id || ''] || movement.user?.name || 'Sistema';
-
-              // Valor
-              const amount = isSale ? sale.final_amount : movement.amount;
-              const itemsCount = sale?.sale_items?.length || (movement.quantity ? 1 : 0);
-
-              const isExpanded = expandedId === movement.id;
-
-              return (
-                <React.Fragment key={movement.id}>
-                  <tr
-                    className={cn(
-                      "hover:bg-white/5 transition-colors duration-200 group",
-                      isExpanded && "bg-white/5"
-                    )}
-                  >
-                    {/* ID */}
-                    <td className="px-4 py-3 font-mono text-gray-400 group-hover:text-primary-yellow transition-colors">
-                      {idDisplay}
-                    </td>
-
-                    {/* Canal (Delivery/Presencial) */}
-                    <td className="px-4 py-3 text-center">
-                      {isDeliveryType ? (
-                        <div className="flex justify-center" title="Delivery">
-                          <div className="bg-amber-500/10 p-1.5 rounded-full border border-amber-500/30">
-                            <Truck className="h-4 w-4 text-amber-400" />
-                          </div>
-                        </div>
-                      ) : isSale ? (
-                        <div className="flex justify-center" title="Presencial / Retirada">
-                          <div className="bg-blue-500/10 p-1.5 rounded-full border border-blue-500/30">
-                            <Store className="h-4 w-4 text-blue-400" />
-                          </div>
-                        </div>
-                      ) : (
-                        <span className="text-gray-600">-</span>
+                return (
+                  <React.Fragment key={movement.id}>
+                    <tr 
+                      className={cn(
+                        "group transition-colors duration-200 border-b border-white/[0.02] last:border-0",
+                        isExpanded ? "bg-white/[0.04]" : "hover:bg-white/[0.03]"
                       )}
-                    </td>
-
-                    {/* Data */}
-                    <td className="px-4 py-3 text-gray-300">
-                      <div className="flex flex-col">
-                        <span className="font-medium">{format(date, 'dd/MM/yyyy')}</span>
-                        <span className="text-xs text-gray-500">{format(date, 'HH:mm')}</span>
-                      </div>
-                    </td>
-
-                    {/* Cliente */}
-                    <td className="px-4 py-3 text-gray-300">
-                      <div className="flex items-center gap-2">
-                        <User className="h-3 w-3 text-gray-500" />
-                        <span className="truncate max-w-[150px]" title={customerName}>
-                          {customerName}
-                        </span>
-                      </div>
-                    </td>
-
-                    {/* Vendedor */}
-                    <td className="px-4 py-3 text-gray-300">
-                      <div className="flex items-center gap-2">
-                        <span className="truncate max-w-[150px]" title={sellerName}>
-                          {sellerName}
-                        </span>
-                      </div>
-                    </td>
-
-                    {/* Pagamento */}
-                    <td className="px-4 py-3">
-                      {isSale ? getPaymentBadge(sale.payment_method, sale.payment_status) : <span className="text-gray-600">-</span>}
-                    </td>
-
-                    {/* Status */}
-                    <td className="px-4 py-3 text-center">
-                      {getStatusBadge(sale?.status, movement.type)}
-                    </td>
-
-                    {/* Valor */}
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex flex-col items-end">
-                        <span className={cn("font-bold text-emerald-400", !amount && !movement.quantity && "text-gray-500")}>
-                          {isSale
-                            ? (amount ? formatCurrency(typeof amount === 'number' ? amount : 0) : 'R$ 0,00')
-                            : (
-                              <span>{Math.abs(Number(movement.quantity) || 0)} <span className="text-xs font-normal text-gray-400">{movement.products?.unit_type || 'un'}</span></span>
-                            )
-                          }
-                        </span>
-                        {itemsCount > 0 && (
-                          <span className="text-[10px] text-gray-500">
-                            {itemsCount} {itemsCount === 1 ? 'item' : 'itens'}
+                    >
+                      {/* Tipo / ID */}
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex flex-col gap-1.5">
+                          <span className={cn(
+                            "inline-flex items-center w-fit px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide border",
+                            isEntry ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" :
+                            isExit ? "bg-rose-500/10 text-rose-400 border-rose-500/20" :
+                            "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                          )}>
+                             {isEntry ? <ArrowDownLeft className="w-3 h-3 mr-1" /> : 
+                              isExit ? <ArrowUpRight className="w-3 h-3 mr-1" /> : 
+                              <RefreshCw className="w-3 h-3 mr-1" />}
+                            {typeLabel}
                           </span>
-                        )}
-                      </div>
-                    </td>
+                          <span className="text-[10px] font-mono text-zinc-600 group-hover:text-zinc-500 transition-colors">
+                            #{movement.id.slice(0, 8)}
+                          </span>
+                        </div>
+                      </td>
 
-                    {/* Ações */}
-                    <td className="px-4 py-3 text-center">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className={cn(
-                          "h-8 w-8 hover:bg-primary-yellow/20 hover:text-primary-yellow transition-all",
-                          isExpanded && "text-primary-yellow bg-primary-yellow/10"
-                        )}
-                        onClick={() => toggleExpand(movement.id)}
-                        disabled={!isSale && !movement.reason}
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </td>
-                  </tr>
+                      {/* Data */}
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex flex-col">
+                          <span className="text-sm text-zinc-300 font-medium">
+                            {format(date, 'dd/MM/yyyy', { locale: ptBR })}
+                          </span>
+                          <span className="text-xs text-zinc-600">
+                            {format(date, 'HH:mm')}
+                          </span>
+                        </div>
+                      </td>
 
-                  {/* Detalhes Expandidos */}
-                  {isExpanded && (() => {
-                    return (
-                      <tr className="bg-transparent">
-                        <td colSpan={8} className="p-0 border-none">
-                          <div className="mt-2 mx-4 mb-4 border-t border-white/20 bg-white/5 backdrop-blur-sm rounded-lg p-4 animate-in slide-in-from-top-2 duration-300">
-
-                            {/* Cabeçalho dos detalhes */}
-                            <div className="flex items-center gap-2 mb-3">
-                              <Package className="h-4 w-4 text-emerald-400" />
-                              <h4 className={cn(text.h4, shadows.medium, "font-medium text-emerald-400")}>
-                                Itens da venda ({sale?.sale_items?.length || 0})
-                              </h4>
+                      {/* Produto / Descrição */}
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          {movement.products ? (
+                            <>
+                              <div className="h-8 w-8 rounded bg-zinc-800/50 flex items-center justify-center border border-white/5 shrink-0">
+                                <Package className="h-4 w-4 text-zinc-400" />
+                              </div>
+                              <div className="flex flex-col min-w-0">
+                                <span className="text-sm font-medium text-zinc-200 truncate max-w-[200px]" title={movement.products.name}>
+                                  {movement.products.name}
+                                </span>
+                                {isSale && sale && (
+                                  <span className="text-xs text-zinc-500 flex items-center gap-1">
+                                    {sale.delivery ? <Truck className="w-3 h-3" /> : <Store className="w-3 h-3" />}
+                                    {sale.customer?.name || 'Consumidor Final'}
+                                  </span>
+                                )}
+                              </div>
+                            </>
+                          ) : (
+                            <div className="flex flex-col">
+                              <span className="text-sm text-zinc-400 italic">
+                                {isSale ? 'Venda (Múltiplos Itens)' : 'Movimentação sem produto'}
+                              </span>
+                              {movement.reason && (
+                                <span className="text-xs text-zinc-600 truncate max-w-[200px]">
+                                  "{movement.reason}"
+                                </span>
+                              )}
                             </div>
+                          )}
+                        </div>
+                      </td>
 
-                            {/* Lista de Itens */}
-                            {(sale?.sale_items && sale.sale_items.length > 0) || (!isSale && movement.products) ? (
-                              <div className="space-y-3">
-                                {isSale && sale?.sale_items ? (
-                                  sale.sale_items.map((item, idx) => (
-                                    <div key={idx} className="flex justify-between items-center text-sm bg-black/30 rounded-lg p-3 border border-white/10">
-                                      <div className="flex items-center gap-3">
-                                        <div className="bg-blue-500/20 text-blue-400 rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold">
-                                          {item.quantity}
-                                        </div>
-                                        <div>
-                                          <span className={cn(text.h5, shadows.light, "font-medium text-white")}>
-                                            {item.products?.name || item.product_id}
-                                          </span>
-                                          <div className="text-xs text-gray-400">
-                                            {formatCurrency(item.unit_price)} por unidade
-                                          </div>
-                                        </div>
-                                      </div>
-                                      <div className={cn(text.h4, shadows.light, "font-bold text-emerald-400")}>
-                                        {formatCurrency(item.unit_price * item.quantity)}
-                                      </div>
-                                    </div>
-                                  ))
-                                ) : (
-                                  // Caso não seja venda (Movimentação Manual)
-                                  <div className="flex justify-between items-center text-sm bg-black/30 rounded-lg p-3 border border-white/10">
-                                    <div className="flex items-center gap-3">
-                                      <div className="bg-amber-500/20 text-amber-400 rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold">
-                                        {movement.quantity}
-                                      </div>
-                                      <div>
-                                        <span className={cn(text.h5, shadows.light, "font-medium text-white")}>
-                                          {movement.products?.name || 'Produto sem nome'}
-                                        </span>
-                                        <div className="text-xs text-gray-400">
-                                          Movimentação Manual ({movement.type === 'in' ? 'Entrada' : 'Saída'})
-                                        </div>
-                                      </div>
-                                    </div>
-                                    <div className={cn(text.h4, shadows.light, "font-bold text-emerald-400")}>
-                                      {Math.abs(Number(movement.quantity) || 0)} {movement.products?.unit_type || 'un'}
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
+                      {/* Responsável */}
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                          <div className="h-6 w-6 rounded-full bg-zinc-800 flex items-center justify-center text-[10px] font-bold text-zinc-500">
+                             {(usersMap[movement.user_id || ''] || movement.user?.name || 'S').charAt(0).toUpperCase()}
+                          </div>
+                          <span className="text-sm text-zinc-400">
+                            {usersMap[movement.user_id || ''] || movement.user?.name || 'Sistema'}
+                          </span>
+                        </div>
+                      </td>
 
-                            ) : (
-                              <div className="text-center py-6 bg-amber-500/10 rounded-lg border border-amber-400/30">
-                                <Package className="h-8 w-8 text-amber-400 mx-auto mb-2" />
-                                <p className={cn(text.h6, shadows.subtle, "text-sm text-amber-300 font-medium")}>
-                                  {isSale ? 'Venda sem itens registrados' : 'Movimentação sem detalhes'}
-                                </p>
-                                {movement.reason && (
-                                  <p className={cn(text.h6, shadows.subtle, "text-xs text-amber-400/70 mt-1")}>
-                                    {movement.reason}
-                                  </p>
-                                )}
-                              </div>
+                      {/* Quantidade */}
+                      <td className="px-6 py-4 whitespace-nowrap text-center">
+                        <span className={cn(
+                          "text-sm font-bold font-mono",
+                          isEntry ? "text-emerald-400" : 
+                          isExit ? "text-rose-400" : 
+                          "text-amber-400"
+                        )}>
+                          {Number(movement.quantity) > 0 ? '+' : ''}{Number(movement.quantity)}
+                        </span>
+                      </td>
+
+                      {/* Detalhes Toggle */}
+                      <td className="px-6 py-4 whitespace-nowrap text-right">
+                        {(isSale || movement.reason) && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => toggleExpand(movement.id)}
+                            className={cn(
+                              "h-8 w-8 rounded-lg transition-all",
+                              isExpanded 
+                                ? "bg-adega-gold/10 text-adega-gold" 
+                                : "text-zinc-500 hover:text-zinc-300 hover:bg-white/5"
                             )}
+                          >
+                            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                          </Button>
+                        )}
+                      </td>
+                    </tr>
 
-                            {/* Observações / Detalhes de Entrega */}
-                            {(isDeliveryType || (!isSale && movement.reason)) && (
-                              <div className="mt-4 pt-4 border-t border-white/20">
-                                <div className="flex items-center gap-2 mb-2">
-                                  {isDeliveryType ? (
-                                    <>
-                                      <Truck className="h-4 w-4 text-amber-400" />
-                                      <h4 className={cn(text.h5, shadows.medium, "font-medium text-amber-400")}>
-                                        Detalhes de Entrega
-                                      </h4>
-                                    </>
+                    {/* EXPANDED ROW - COMPOSITE UI DETAIL */}
+                    {isExpanded && (
+                      <tr className="bg-transparent">
+                        <td colSpan={6} className="p-0 border-none">
+                          <div className="transform origin-top animate-in slide-in-from-top-2 duration-300">
+                            
+                            {/* Inner Container matched to RecentSales/Cart Item style */}
+                            <div className="bg-black/40 border-y border-white/5 shadow-inner">
+                              <div className="px-6 py-4 max-w-4xl mx-auto space-y-4">
+                                
+                                {/* Header Expansão */}
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2 text-adega-gold text-xs font-bold uppercase tracking-wider">
+                                    <FileText className="h-3 w-3" />
+                                    Detalhes da Operação
+                                  </div>
+                                  {isSale && sale && (
+                                    <Badge variant="outline" className="text-[10px] border-white/10 text-zinc-400 bg-white/5">
+                                      Pedido #{sale.order_number}
+                                    </Badge>
+                                  )}
+                                </div>
+
+                                {/* CONTEÚDO PRINCIPAL (Cart Style) */}
+                                <div className="space-y-2">
+                                  {/* Listagem de Itens (Se for Venda) */}
+                                  {isSale && sale?.sale_items ? (
+                                    sale.sale_items.map((item, idx) => (
+                                      <div key={idx} className="flex items-center gap-4 bg-white/[0.02] p-3 rounded-xl border border-white/5 hover:border-white/10 transition-colors">
+                                        {/* Thumbnail / Icon */}
+                                        <div className="h-10 w-10 rounded-lg bg-zinc-900 border border-white/5 flex items-center justify-center shrink-0">
+                                          <Package className="h-5 w-5 text-zinc-500" />
+                                        </div>
+
+                                        {/* Info */}
+                                        <div className="flex-1 min-w-0">
+                                          <p className="text-sm font-medium text-white truncate">{item.products?.name || item.product_id}</p>
+                                          <p className="text-xs text-zinc-500">{formatCurrency(item.unit_price)} un</p>
+                                        </div>
+
+                                        {/* Qtd Badge */}
+                                        <div className="bg-zinc-900 rounded-md px-2 py-1 border border-white/5 text-xs text-zinc-300 font-mono">
+                                          {item.quantity}x
+                                        </div>
+
+                                        {/* Total Item */}
+                                        <div className="text-sm font-bold text-white w-24 text-right">
+                                          {formatCurrency(item.unit_price * item.quantity)}
+                                        </div>
+                                      </div>
+                                    ))
                                   ) : (
-                                    <>
-                                      <FileText className="h-4 w-4 text-amber-400" />
-                                      <h4 className={cn(text.h5, shadows.medium, "font-medium text-amber-400")}>
-                                        Observações
-                                      </h4>
-                                    </>
-                                  )}
-                                </div>
-                                <div className="bg-black/30 rounded-lg p-4 border border-white/10 space-y-3">
-                                  {/* Endereço de Entrega */}
-                                  {sale?.delivery_address && (
-                                    <div className="text-sm text-gray-300">
-                                      <p className="font-medium text-white mb-1">Endereço:</p>
-                                      {/* Suporte para formato estruturado ou simplificado */}
-                                      {sale.delivery_address.street ? (
-                                        <>
-                                          <p>{sale.delivery_address.street}, {sale.delivery_address.number}</p>
-                                          <p>{sale.delivery_address.neighborhood} - {sale.delivery_address.city}</p>
-                                          {sale.delivery_address.complement && <p className="text-gray-400 text-xs mt-0.5">Complemento: {sale.delivery_address.complement}</p>}
-                                        </>
-                                      ) : (
-                                        <p>{sale.delivery_address.address || 'Endereço sem detalhes'}</p>
-                                      )}
-                                    </div>
-                                  )}
-
-                                  {/* Entregador */}
-                                  {sale?.delivery_person && (
-                                    <div className="text-sm text-gray-300">
-                                      <p className="font-medium text-white mb-1">Entregador:</p>
-                                      <p>{sale.delivery_person.full_name}</p>
-                                    </div>
-                                  )}
-
-                                  {/* Resumo Financeiro da Entrega */}
-                                  {sale && (
-                                    <div className="flex flex-col gap-1 text-sm pt-2 mt-2 border-t border-white/5">
-                                      {sale.delivery_fee > 0 && (
-                                        <div className="flex justify-between text-gray-300">
-                                          <span>Taxa de Entrega:</span>
-                                          <span className="text-red-400">+ {formatCurrency(sale.delivery_fee)}</span>
-                                        </div>
-                                      )}
-                                      {sale.discount_amount > 0 && (
-                                        <div className="flex justify-between text-gray-300">
-                                          <span>Desconto:</span>
-                                          <span className="text-emerald-400">- {formatCurrency(sale.discount_amount)}</span>
-                                        </div>
-                                      )}
-                                      <div className="flex justify-between font-bold text-white mt-1 pt-1 border-t border-white/10">
-                                        <span>Total Final:</span>
-                                        <span className="text-emerald-400">{formatCurrency(sale.final_amount)}</span>
+                                    /* Single Product Movement Detail */
+                                    <div className="flex items-center gap-4 bg-white/[0.02] p-3 rounded-xl border border-white/5">
+                                      <div className="h-10 w-10 rounded-lg bg-zinc-900 border border-white/5 flex items-center justify-center shrink-0">
+                                        {movement.type === 'inventory_adjustment' ? <RefreshCw className="h-5 w-5 text-amber-500" /> : <Package className="h-5 w-5 text-zinc-500" />}
+                                      </div>
+                                      <div className="flex-1">
+                                        <p className="text-sm font-medium text-white">{movement.products?.name || 'Produto'}</p>
+                                        <p className="text-xs text-zinc-500">Movimentação Individual</p>
+                                      </div>
+                                      <div className={cn(
+                                        "bg-zinc-900 rounded-md px-2 py-1 border border-white/5 text-xs font-mono",
+                                        Number(movement.quantity) > 0 ? "text-emerald-400" : "text-rose-400"
+                                      )}>
+                                        {Number(movement.quantity) > 0 ? '+' : ''}{Number(movement.quantity)}
                                       </div>
                                     </div>
                                   )}
+                                </div>
 
-                                  <div className="text-sm text-gray-300 space-y-1 pt-2 border-t border-white/5">
-                                    {isDeliveryType && (
-                                      <p className="flex items-center gap-2">
-                                        <Truck className="h-3 w-3" />
-                                        <span className="capitalize text-gray-400">{isDeliveryType ? 'Entrega Delivery' : 'Retirada / Presencial'}</span>
-                                      </p>
-                                    )}
-                                    {!isSale && movement.reason && (
-                                      <p className="italic text-gray-400">"{movement.reason}"</p>
+                                {/* FOOTER: Totals & Info (RecentSales Style) */}
+                                <div className="flex flex-col md:flex-row gap-4 pt-2">
+                                  
+                                  {/* Left: Notes */}
+                                  <div className="flex-1">
+                                    {(movement.reason || (isSale && sale?.notes)) && (
+                                      <div className="bg-zinc-900/50 rounded-lg p-3 border border-white/5 h-full">
+                                        <p className="text-[10px] text-zinc-500 uppercase font-bold mb-1">Observações</p>
+                                        <p className="text-sm text-zinc-300 italic">
+                                          "{movement.reason || sale?.notes}"
+                                        </p>
+                                      </div>
                                     )}
                                   </div>
+
+                                  {/* Right: Financial Summary */}
+                                  {isSale && sale && (
+                                    <div className="min-w-[240px] bg-zinc-900/80 border border-white/10 rounded-xl p-4 backdrop-blur-xl">
+                                      <div className="space-y-2 text-sm">
+                                        <div className="flex justify-between text-zinc-400">
+                                          <span>Subtotal</span>
+                                          <span>{formatCurrency(sale.total_amount)}</span>
+                                        </div>
+                                        {sale.discount_amount > 0 && (
+                                          <div className="flex justify-between text-rose-400">
+                                            <span>Desconto</span>
+                                            <span>- {formatCurrency(sale.discount_amount)}</span>
+                                          </div>
+                                        )}
+                                        {sale.delivery_fee > 0 && (
+                                          <div className="flex justify-between text-amber-400">
+                                            <span>Entrega</span>
+                                            <span>+ {formatCurrency(sale.delivery_fee)}</span>
+                                          </div>
+                                        )}
+                                        <div className="border-t border-white/10 pt-2 mt-2 flex justify-between items-center">
+                                          <span className="text-white font-medium">Total</span>
+                                          <span className="text-lg font-bold text-adega-gold">{formatCurrency(sale.final_amount)}</span>
+                                        </div>
+                                        <div className="pt-2 flex items-center justify-between text-xs text-zinc-500">
+                                          <div className="flex items-center gap-1">
+                                            <CreditCard className="h-3 w-3" />
+                                            <span className="capitalize">{sale.payment_method}</span>
+                                          </div>
+                                          <span className={cn(
+                                            "px-1.5 py-0.5 rounded capitalize",
+                                            sale.payment_status === 'paid' ? "bg-emerald-500/10 text-emerald-400" : "bg-amber-500/10 text-amber-400"
+                                          )}>
+                                            {sale.payment_status === 'paid' ? 'Pago' : 'Pendente'}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
+                              
                               </div>
-                            )}
+                            </div>
                           </div>
                         </td>
                       </tr>
-                    );
-                  })()}
-                </React.Fragment>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Footer da tabela */}
-      <div className="bg-black/60 px-4 py-3 border-t border-white/10 flex justify-between items-center text-xs text-gray-500">
-        <span>Mostrando {movements.length} registros</span>
-        <div className="flex gap-4">
-          {/* Sumários rápidos poderiam vir aqui */}
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
