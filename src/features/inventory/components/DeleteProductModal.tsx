@@ -1,42 +1,30 @@
 /**
  * DeleteProductModal Component
- *
- * Modal de confirmação para exclusão (soft delete) de produtos
- * Segue o padrão estabelecido em DeleteCustomerModal
- *
- * @author Adega Manager Team
- * @version 1.0.0
+ * Design: Tactical Stitch (Standardized)
  */
 
 import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from '@/shared/ui/primitives/dialog';
 import { Button } from '@/shared/ui/primitives/button';
 import { Input } from '@/shared/ui/primitives/input';
 import { Alert, AlertDescription } from '@/shared/ui/primitives/alert';
-import { Badge } from '@/shared/ui/primitives/badge';
 import {
   AlertTriangle,
   Trash2,
   Package,
-  Box,
-  ShoppingCart,
-  TrendingUp,
-  Barcode,
-  DollarSign,
-  Loader2,
   Copy,
-  Check
+  Check,
+  Loader2,
+  X
 } from 'lucide-react';
 import { cn } from '@/core/config/utils';
-import { formatCurrency } from '@/core/config/utils';
-import useProductDelete, { ProductDeleteInfo } from '../hooks/useProductDelete';
+import useProductDelete from '../hooks/useProductDelete';
 
 interface DeleteProductModalProps {
   isOpen: boolean;
@@ -58,7 +46,6 @@ export const DeleteProductModal: React.FC<DeleteProductModalProps> = ({
 
   const { softDelete, isDeleting } = useProductDelete();
 
-  // Reset ao fechar
   useEffect(() => {
     if (!isOpen) {
       setConfirmationText('');
@@ -69,10 +56,7 @@ export const DeleteProductModal: React.FC<DeleteProductModalProps> = ({
     if (!productId || !productName) return;
 
     try {
-      // ✅ Fechar modal ANTES de deletar
       onClose();
-
-      // ✅ Passar productName como argumento (NUNCA fazer fetch após delete!)
       await softDelete({ productId, productName });
       onSuccess?.();
     } catch (error) {
@@ -86,99 +70,105 @@ export const DeleteProductModal: React.FC<DeleteProductModalProps> = ({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Validação do botão de confirmar - COMPARAÇÃO FLEXÍVEL (Trim)
   const canConfirm = () => {
     return confirmationText.trim() === (productName || '').trim();
   };
 
-  // ❌ REMOVIDO: hasHistory (não fazemos mais fetch de productInfo)
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl bg-gray-900 border-gray-700">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-3 text-2xl">
-            <Trash2 className="h-6 w-6 text-red-500" />
-            🗑️ Excluir Produto
-          </DialogTitle>
-          <DialogDescription className="text-gray-300 text-base mt-2">
-            O produto será excluído, mas seus dados e histórico serão preservados. Você poderá restaurar este produto mais tarde se necessário.
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="max-w-2xl bg-zinc-950 border border-white/5 p-0 overflow-hidden shadow-2xl">
+        
+        {/* HEADER */}
+        <div className="flex items-center justify-between px-8 py-6 border-b border-white/5 bg-zinc-900/30 backdrop-blur-md">
+           <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-3">
+                 <Trash2 className="h-6 w-6 text-rose-500" />
+                 <DialogTitle className="text-2xl font-bold tracking-tight text-white">
+                    EXCLUIR PRODUTO
+                 </DialogTitle>
+              </div>
+              <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest ml-9">
+                 Danger Zone Operation
+              </span>
+           </div>
+           
+           <button 
+              onClick={onClose} 
+              className="group p-2 rounded-full hover:bg-white/10 transition-colors focus:outline-none"
+           >
+              <X className="h-6 w-6 text-zinc-500 group-hover:text-white transition-colors" />
+           </button>
+        </div>
 
-        <div className="space-y-4 py-4">
-          {/* ✅ SIMPLIFICADO: Apenas mostrar o nome do produto */}
-          <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
-            <div className="flex items-center gap-2">
-              <Package className="h-5 w-5 text-primary-yellow" />
-              <span className="font-semibold text-lg text-white">{productName}</span>
-            </div>
+        <div className="p-8 space-y-6 bg-zinc-900/10">
+          {/* Target Product */}
+          <div className="bg-zinc-900 border border-white/5 rounded-xl p-4 flex items-center gap-4">
+             <div className="h-12 w-12 rounded-lg bg-amber-500/10 flex items-center justify-center border border-amber-500/20">
+               <Package className="h-6 w-6 text-amber-500" />
+             </div>
+             <div>
+               <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Produto Alvo</p>
+               <h3 className="text-lg font-bold text-white">{productName}</h3>
+             </div>
           </div>
 
-          {/* Info sobre soft delete */}
-          <Alert className="bg-blue-900/20 border-blue-500/50">
-            <AlertDescription className="text-blue-200">
-              <strong>Exclusão Segura:</strong> O produto será marcado como inativo mas não será removido do banco de dados.
-              Todas as vendas e relatórios anteriores continuarão funcionando normalmente.
+          {/* Warning */}
+          <Alert className="bg-blue-500/10 border-blue-500/20">
+            <AlertDescription className="text-blue-200/80 text-sm">
+              <strong>Soft Delete:</strong> O produto será marcado como inativo. O histórico financeiro será preservado.
             </AlertDescription>
           </Alert>
 
-          {/* Campo de Confirmação */}
-          <div className="space-y-3">
-            <p className="text-sm font-medium text-gray-300">
-              Para confirmar, digite o nome EXATAMENTE como aparece abaixo:
-            </p>
-
-            {/* Caixa destacada mostrando o nome exato */}
-            <div className="bg-gray-700/50 border-2 border-yellow-500/50 rounded-lg p-3 relative group">
-              <p className="text-xs text-gray-400 mb-1">Nome a ser digitado:</p>
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-lg font-bold text-white font-mono select-all break-all">
-                  {productName}
-                </p>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={handleCopyName}
-                  className="h-8 w-8 p-0 text-gray-400 hover:text-white hover:bg-gray-600"
-                  title="Copiar nome"
-                >
-                  {copied ? <Check className="h-4 w-4 text-green-400" /> : <Copy className="h-4 w-4" />}
-                </Button>
-              </div>
-              <p className="text-xs text-yellow-400 mt-1">
-                ⚠️ Copie ou digite exatamente como mostrado acima
-              </p>
+          {/* Confirmation Input */}
+          <div className="space-y-4">
+            <div className="bg-black/30 border border-white/10 rounded-lg p-4 relative group">
+               <div className="flex items-center justify-between mb-2">
+                  <span className="text-[10px] text-zinc-500 font-bold uppercase">Nome para confirmação</span>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={handleCopyName}
+                    className="h-6 w-6 p-0 text-zinc-500 hover:text-white hover:bg-white/10"
+                    title="Copiar nome"
+                  >
+                    {copied ? <Check className="h-3 w-3 text-emerald-500" /> : <Copy className="h-3 w-3" />}
+                  </Button>
+               </div>
+               <p className="text-lg font-bold text-white font-mono select-all break-all tracking-tight">
+                 {productName}
+               </p>
             </div>
 
-            <Input
-              type="text"
-              value={confirmationText}
-              onChange={(e) => setConfirmationText(e.target.value)}
-              placeholder="Cole o nome do produto aqui..."
-              className={cn(
-                "bg-gray-800 border-gray-600 text-white transition-colors",
-                confirmationText && confirmationText.trim() !== (productName || '').trim() && "border-red-500 focus:ring-red-500",
-                confirmationText.trim() === (productName || '').trim() && "border-green-500 focus:ring-green-500"
-              )}
-              disabled={isDeleting}
-              autoComplete="off"
-            />
-            {confirmationText && !canConfirm() && (
-              <p className="text-xs text-red-400 flex items-center gap-1">
-                <AlertTriangle className="h-3 w-3" />
-                Texto de confirmação incorreto
-              </p>
-            )}
+            <div className="relative">
+               <Input
+                 type="text"
+                 value={confirmationText}
+                 onChange={(e) => setConfirmationText(e.target.value)}
+                 placeholder="Digite o nome do produto para confirmar..."
+                 className={cn(
+                   "bg-zinc-950 border-white/10 text-white h-12 transition-all font-mono text-sm placeholder:text-zinc-700 focus:ring-0",
+                   confirmationText && !canConfirm() && "border-rose-500/50 focus:border-rose-500",
+                   canConfirm() && "border-emerald-500/50 focus:border-emerald-500"
+                 )}
+                 disabled={isDeleting}
+                 autoComplete="off"
+               />
+               {confirmationText && !canConfirm() && (
+                 <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2 text-rose-500 pointer-events-none">
+                    <span className="text-[10px] font-bold uppercase">Incorreto</span>
+                    <AlertTriangle className="h-4 w-4" />
+                 </div>
+               )}
+            </div>
           </div>
         </div>
 
-        <DialogFooter className="gap-2">
+        <DialogFooter className="px-8 py-6 border-t border-white/5 bg-zinc-900/50 flex items-center justify-between gap-4">
           <Button
-            variant="outline"
+            variant="ghost"
             onClick={onClose}
             disabled={isDeleting}
-            className="border-gray-600 text-gray-300 hover:bg-gray-800"
+            className="rounded-full px-6 text-zinc-400 hover:text-white hover:bg-white/5"
           >
             Cancelar
           </Button>
@@ -187,7 +177,10 @@ export const DeleteProductModal: React.FC<DeleteProductModalProps> = ({
             onClick={handleConfirm}
             disabled={!canConfirm() || isDeleting}
             className={cn(
-              'font-semibold bg-red-600 hover:bg-red-700'
+              "rounded-full px-8 py-6 font-bold tracking-wide shadow-lg transition-all",
+              canConfirm() 
+                ? "bg-rose-600 hover:bg-rose-500 text-white shadow-[0_0_20px_rgba(225,29,72,0.3)]" 
+                : "bg-zinc-800 text-zinc-500 cursor-not-allowed"
             )}
           >
             {isDeleting ? (
@@ -198,7 +191,7 @@ export const DeleteProductModal: React.FC<DeleteProductModalProps> = ({
             ) : (
               <>
                 <Trash2 className="h-4 w-4 mr-2" />
-                Excluir Produto
+                CONFIRMAR EXCLUSÃO
               </>
             )}
           </Button>

@@ -1,29 +1,56 @@
 /**
  * Modal para criação de novos lotes
  * Interface para recebimento de mercadorias com controle de validade
+ * Design: Tactical Stitch (Standardized)
  */
 
 import React, { useState, useEffect } from 'react';
-import { X, Package, Calendar, AlertTriangle, Calculator, CheckCircle2 } from 'lucide-react';
-import { BaseModal } from '@/shared/ui/composite/BaseModal';
+import {
+  X,
+  Package,
+  Calendar,
+  AlertTriangle,
+  Calculator,
+  CheckCircle2,
+  Factory,
+  DollarSign,
+  TrendingUp,
+  Info
+} from 'lucide-react';
 import { Input } from '@/shared/ui/primitives/input';
 import { Label } from '@/shared/ui/primitives/label';
 import { Button } from '@/shared/ui/primitives/button';
 import { Textarea } from '@/shared/ui/primitives/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/primitives/select';
 import { SwitchAnimated } from '@/shared/ui/primitives/switch-animated';
-import { Alert, AlertDescription } from '@/shared/ui/primitives/alert';
-import { Badge } from '@/shared/ui/primitives/badge';
 import { LoadingSpinner } from '@/shared/ui/composite/loading-spinner';
 import { useCreateBatch } from '@/features/inventory/hooks/useBatches';
-import type { Product, BatchFormData } from '@/core/types/inventory.types';
+import type { Product } from '@/core/types/inventory.types';
 import { cn } from '@/core/config/utils';
 import { getValueClasses } from '@/core/config/theme-utils';
+import { Dialog, DialogPortal, DialogOverlay } from '@/shared/ui/primitives/dialog';
+import * as DialogPrimitive from "@radix-ui/react-dialog";
+import { toast } from "sonner"; // New import
 
 interface CreateBatchModalProps {
   isOpen: boolean;
   onClose: () => void;
   product: Product;
+}
+
+interface BatchFormData {
+  product_id: string;
+  batch_code: string;
+  supplier_batch_code: string;
+  manufacturing_date: string;
+  expiry_date: string;
+  total_packages: number;
+  total_units: number;
+  supplier_name: string;
+  quality_grade: 'A' | 'B' | 'C';
+  cost_per_unit: number;
+  notes: string;
+  create_units: boolean;
 }
 
 export const CreateBatchModal: React.FC<CreateBatchModalProps> = ({
@@ -33,7 +60,6 @@ export const CreateBatchModal: React.FC<CreateBatchModalProps> = ({
 }) => {
   const createBatchMutation = useCreateBatch();
 
-  // Estado do formulário
   const [formData, setFormData] = useState<BatchFormData>({
     product_id: product.id,
     batch_code: '',
@@ -49,7 +75,6 @@ export const CreateBatchModal: React.FC<CreateBatchModalProps> = ({
     create_units: product.has_unit_tracking || false
   });
 
-  // Cálculos automáticos
   const [calculations, setCalculations] = useState({
     total_cost: 0,
     days_until_expiry: 0,
@@ -58,7 +83,6 @@ export const CreateBatchModal: React.FC<CreateBatchModalProps> = ({
     is_valid_dates: false
   });
 
-  // Atualizar cálculos quando formData muda
   useEffect(() => {
     const totalCost = formData.total_units * (formData.cost_per_unit || 0);
 
@@ -85,31 +109,33 @@ export const CreateBatchModal: React.FC<CreateBatchModalProps> = ({
     });
   }, [formData, product.package_units]);
 
-  // Handler para mudanças nos campos
   const handleFieldChange = (field: keyof BatchFormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  // Handler para mudança de pacotes (calcular unidades automaticamente)
   const handlePackagesChange = (packages: number) => {
     const unitsPerPackage = product.package_units || 1;
     handleFieldChange('total_packages', packages);
     handleFieldChange('total_units', packages * unitsPerPackage);
   };
 
-  // Handler para submissão
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!calculations.is_valid_dates) {
+      toast.error("Erro de Validação", {
+        description: "As datas de fabricação e vencimento são inválidas. Verifique se a data de vencimento é posterior à de fabricação e está no futuro.",
+      });
       return;
     }
 
     try {
       await createBatchMutation.mutateAsync(formData);
+      toast.success("Lote Criado", {
+        description: `O lote ${formData.batch_code} para ${product.name} foi recebido com sucesso.`,
+      });
       onClose();
 
-      // Resetar formulário
       setFormData({
         product_id: product.id,
         batch_code: '',
@@ -126,294 +152,318 @@ export const CreateBatchModal: React.FC<CreateBatchModalProps> = ({
       });
     } catch (error) {
       console.error('Erro ao criar lote:', error);
+      toast.error("Erro ao Criar Lote", {
+        description: "Não foi possível registrar o recebimento do lote. Tente novamente.",
+      });
     }
   };
 
   const valueClasses = getValueClasses('md', 'gold');
 
+  // Using primitive Dialog for full control to match standard
   return (
-    <BaseModal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={
-        <>
-          <Package className="h-5 w-5 text-primary-yellow" />
-          Criar Novo Lote - {product.name}
-        </>
-      }
-      size="4xl"
-      className="max-h-[90vh] overflow-y-auto bg-gray-900 border-primary-yellow/30"
-    >
-
-      <form onSubmit={handleSubmit} className="space-y-6">
-
-        {/* Informações do Produto */}
-        <div className="p-4 bg-gray-800/30 rounded-lg border border-primary-yellow/20">
-          <h3 className="text-gray-200 font-medium mb-3">Produto Selecionado</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-            <div>
-              <p className="text-gray-400">Categoria</p>
-              <p className="text-gray-200">{product.category}</p>
-            </div>
-            <div>
-              <p className="text-gray-400">Estoque Atual</p>
-              <p className={cn(valueClasses)}>{product.stock_quantity} {product.unit_type}</p>
-            </div>
-            <div>
-              <p className="text-gray-400">Unidades/Fardo</p>
-              <p className={cn(valueClasses)}>{product.package_units || 1}</p>
-            </div>
-            <div>
-              <p className="text-gray-400">Custo Padrão</p>
-              <p className={cn(valueClasses)}>R$ {product.cost_price?.toFixed(2) || '0.00'}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Identificação do Lote */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="batch_code" className="text-gray-200">Código do Lote *</Label>
-            <Input
-              id="batch_code"
-              value={formData.batch_code}
-              onChange={(e) => handleFieldChange('batch_code', e.target.value)}
-              placeholder="Ex: LOTE2024001"
-              required
-              className="bg-gray-800/50 border-primary-yellow/30 text-gray-200 focus:border-primary-yellow"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="supplier_batch_code" className="text-gray-200">Código do Fornecedor</Label>
-            <Input
-              id="supplier_batch_code"
-              value={formData.supplier_batch_code}
-              onChange={(e) => handleFieldChange('supplier_batch_code', e.target.value)}
-              placeholder="Código do fornecedor (opcional)"
-              className="bg-gray-800/50 border-primary-yellow/30 text-gray-200 focus:border-primary-yellow"
-            />
-          </div>
-        </div>
-
-        {/* Datas */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="manufacturing_date" className="text-gray-200">Data de Fabricação *</Label>
-            <Input
-              id="manufacturing_date"
-              type="date"
-              value={formData.manufacturing_date}
-              onChange={(e) => handleFieldChange('manufacturing_date', e.target.value)}
-              required
-              className="bg-gray-800/50 border-primary-yellow/30 text-gray-200 focus:border-primary-yellow"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="expiry_date" className="text-gray-200">Data de Validade *</Label>
-            <Input
-              id="expiry_date"
-              type="date"
-              value={formData.expiry_date}
-              onChange={(e) => handleFieldChange('expiry_date', e.target.value)}
-              required
-              className="bg-gray-800/50 border-primary-yellow/30 text-gray-200 focus:border-primary-yellow"
-            />
-          </div>
-        </div>
-
-        {/* Alertas de Data */}
-        {formData.manufacturing_date && formData.expiry_date && (
-          <Alert className={cn(
-            "border",
-            calculations.is_valid_dates
-              ? "border-accent-green/50 bg-accent-green/10"
-              : "border-accent-red/50 bg-accent-red/10"
-          )}>
-            <div className="flex items-center gap-2">
-              {calculations.is_valid_dates ? (
-                <CheckCircle2 className="h-4 w-4 text-accent-green" />
-              ) : (
-                <AlertTriangle className="h-4 w-4 text-accent-red" />
-              )}
-              <AlertDescription className={cn(
-                calculations.is_valid_dates ? "text-accent-green" : "text-accent-red"
-              )}>
-                {calculations.is_valid_dates ? (
-                  `Validade: ${calculations.shelf_life_days} dias. Vence em ${calculations.days_until_expiry} dias.`
-                ) : (
-                  "Datas inválidas. A validade deve ser posterior à fabricação e futura."
-                )}
-              </AlertDescription>
-            </div>
-          </Alert>
-        )}
-
-        {/* Quantidades */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <Label htmlFor="total_packages" className="text-gray-200">Número de Fardos *</Label>
-            <Input
-              id="total_packages"
-              type="number"
-              min="1"
-              value={formData.total_packages}
-              onChange={(e) => handlePackagesChange(parseInt(e.target.value) || 1)}
-              required
-              className="bg-gray-800/50 border-primary-yellow/30 text-gray-200 focus:border-primary-yellow"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="total_units" className="text-gray-200">Total de Unidades *</Label>
-            <Input
-              id="total_units"
-              type="number"
-              min="1"
-              value={formData.total_units}
-              onChange={(e) => handleFieldChange('total_units', parseInt(e.target.value) || 1)}
-              required
-              className="bg-gray-800/50 border-primary-yellow/30 text-gray-200 focus:border-primary-yellow"
-            />
-            <p className="text-xs text-gray-400 mt-1">
-              Calculado: {formData.total_packages} × {calculations.units_per_package} = {formData.total_packages * calculations.units_per_package}
-            </p>
-          </div>
-
-          <div>
-            <Label htmlFor="cost_per_unit" className="text-gray-200">Custo por Unidade</Label>
-            <Input
-              id="cost_per_unit"
-              type="number"
-              step="0.01"
-              min="0"
-              value={formData.cost_per_unit === 0 ? '' : formData.cost_per_unit}
-              onChange={(e) => handleFieldChange('cost_per_unit', e.target.value === '' ? 0 : parseFloat(e.target.value))}
-              placeholder="0.00"
-              className="bg-gray-800/50 border-primary-yellow/30 text-gray-200 focus:border-primary-yellow"
-            />
-          </div>
-        </div>
-
-        {/* Resumo de Custos */}
-        <div className="p-4 bg-gray-800/20 rounded-lg border border-primary-yellow/20">
-          <div className="flex items-center gap-2 mb-3">
-            <Calculator className="h-4 w-4 text-primary-yellow" />
-            <h3 className="text-gray-200 font-medium">Resumo Financeiro</h3>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-            <div>
-              <p className={cn(valueClasses, "text-lg font-bold")}>R$ {calculations.total_cost.toFixed(2)}</p>
-              <p className="text-xs text-gray-400">Custo Total</p>
-            </div>
-            <div>
-              <p className={cn(valueClasses, "text-lg font-bold")}>R$ {(formData.cost_per_unit || 0).toFixed(2)}</p>
-              <p className="text-xs text-gray-400">Por Unidade</p>
-            </div>
-            <div>
-              <p className={cn(valueClasses, "text-lg font-bold")}>
-                R$ {((formData.cost_per_unit || 0) * calculations.units_per_package).toFixed(2)}
-              </p>
-              <p className="text-xs text-gray-400">Por Fardo</p>
-            </div>
-            <div>
-              <p className={cn(valueClasses, "text-lg font-bold")}>{formData.total_units}</p>
-              <p className="text-xs text-gray-400">Unidades</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Informações Adicionais */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="supplier_name" className="text-gray-200">Fornecedor</Label>
-            <Input
-              id="supplier_name"
-              value={formData.supplier_name}
-              onChange={(e) => handleFieldChange('supplier_name', e.target.value)}
-              placeholder="Nome do fornecedor"
-              className="bg-gray-800/50 border-primary-yellow/30 text-gray-200 focus:border-primary-yellow"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="quality_grade" className="text-gray-200">Qualidade</Label>
-            <Select
-              value={formData.quality_grade}
-              onValueChange={(value) => handleFieldChange('quality_grade', value)}
-            >
-              <SelectTrigger className="bg-gray-800/50 border-primary-yellow/30 text-gray-200">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-gray-800 border-primary-yellow/30">
-                <SelectItem value="A" className="text-gray-200">A - Primeira (Sai primeiro)</SelectItem>
-                <SelectItem value="B" className="text-gray-200">B - Segunda</SelectItem>
-                <SelectItem value="C" className="text-gray-200">C - Terceira</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        {/* Rastreamento de Unidades */}
-        {(product.has_unit_tracking || product.has_package_tracking) && (
-          <div className="flex items-center justify-between p-4 bg-gray-800/20 rounded-lg border border-primary-yellow/20">
-            <div>
-              <Label htmlFor="create_units" className="text-gray-200 font-medium">
-                Criar Unidades Rastreáveis
-              </Label>
-              <p className="text-sm text-gray-400">
-                Gerar códigos individuais para rastreamento FEFO granular
-              </p>
-            </div>
-            <SwitchAnimated
-              checked={formData.create_units}
-              onCheckedChange={(checked) => handleFieldChange('create_units', checked)}
-              variant="yellow"
-              size="md"
-            />
-          </div>
-        )}
-
-        {/* Observações */}
-        <div>
-          <Label htmlFor="notes" className="text-gray-200">Observações</Label>
-          <Textarea
-            id="notes"
-            value={formData.notes}
-            onChange={(e) => handleFieldChange('notes', e.target.value)}
-            placeholder="Observações sobre o lote, condições de transporte, etc."
-            rows={3}
-            className="bg-gray-800/50 border-primary-yellow/30 text-gray-200 focus:border-primary-yellow"
-          />
-        </div>
-
-        {/* Ações */}
-        <div className="flex justify-end gap-3 pt-4 border-t border-gray-700">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onClose}
-            className="border-gray-600 text-gray-400 hover:bg-gray-800"
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+       <DialogPortal>
+          <DialogOverlay className="bg-black/80 backdrop-blur-sm" />
+          <DialogPrimitive.Content
+             className={cn(
+               "fixed left-[50%] top-[50%] z-50 flex flex-col w-full max-w-4xl translate-x-[-50%] translate-y-[-50%]",
+               "bg-zinc-950 border border-white/5 shadow-2xl rounded-xl overflow-hidden duration-200",
+               "data-[state=open]:animate-in data-[state=closed]:animate-out",
+               "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+               "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
+               "data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%]",
+               "data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]"
+             )}
           >
-            Cancelar
-          </Button>
-          <Button
-            type="submit"
-            disabled={!calculations.is_valid_dates || createBatchMutation.isPending}
-            className="bg-primary-yellow text-gray-900 hover:bg-primary-yellow/90 disabled:opacity-50"
-          >
-            {createBatchMutation.isPending ? (
-              <>
-                <LoadingSpinner size="sm" variant="dark" className="mr-2" />
-                Criando Lote...
-              </>
-            ) : (
-              'Criar Lote'
-            )}
-          </Button>
-        </div>
-      </form>
-    </BaseModal>
+             {/* HEADER */}
+             <div className="flex items-center justify-between px-8 py-6 border-b border-white/5 bg-zinc-900/30 backdrop-blur-md">
+                <div className="flex flex-col gap-1">
+                   <div className="flex items-center gap-3">
+                      <Factory className="h-6 w-6 text-amber-500" />
+                      <DialogPrimitive.Title className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+                         NOVO LOTE RECEBIDO
+                      </DialogPrimitive.Title>
+                   </div>
+                   <div className="flex items-center gap-2 ml-9">
+                      <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest">
+                         Inbound Processing
+                      </span>
+                      <span className="h-1 w-1 rounded-full bg-zinc-700" />
+                      <span className="text-xs font-bold text-white uppercase tracking-widest">
+                         {product.name}
+                      </span>
+                   </div>
+                </div>
+                <button
+                   onClick={onClose}
+                   className="group p-2 rounded-full hover:bg-white/10 transition-colors focus:outline-none"
+                >
+                   <X className="h-6 w-6 text-zinc-500 group-hover:text-white transition-colors" />
+                </button>
+             </div>
+
+             {/* CONTENT - SCROLLABLE */}
+             <div className="flex-1 overflow-y-auto p-8 custom-scrollbar bg-black/20 max-h-[70vh]">
+               <form id="create-batch-form" onSubmit={handleSubmit} className="space-y-8">
+
+                 {/* Product Info Card */}
+                 <div className="p-5 bg-zinc-900/50 rounded-xl border border-white/5 flex flex-col gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+                       <div className="flex flex-col gap-1">
+                          <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Categoria</span>
+                          <span className="text-sm font-medium text-white">{product.category}</span>
+                       </div>
+                       <div className="flex flex-col gap-1">
+                          <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Estoque Atual</span>
+                          <span className={cn(valueClasses, "text-sm")}>{product.stock_quantity} {product.unit_type}</span>
+                       </div>
+                       <div className="flex flex-col gap-1">
+                          <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Config. Fardo</span>
+                          <span className={cn(valueClasses, "text-sm")}>{product.package_units || 1} un/pct</span>
+                       </div>
+                       <div className="flex flex-col gap-1">
+                          <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Custo Ref.</span>
+                          <span className={cn(valueClasses, "text-sm")}>R$ {product.cost_price?.toFixed(2) || '0.00'}</span>
+                       </div>
+                    </div>
+                 </div>
+
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    {/* LEFT COLUMN */}
+                    <div className="space-y-6">
+
+                       {/* Identificação */}
+                       <div className="space-y-4">
+                          <h3 className="text-xs font-bold text-white uppercase tracking-widest flex items-center gap-2">
+                             <Package className="h-3 w-3 text-amber-500" /> Identificação
+                          </h3>
+                          <div className="grid grid-cols-2 gap-4">
+                             <div className="space-y-2">
+                                <Label className="text-zinc-400 text-xs uppercase tracking-wider font-bold">Código Lote</Label>
+                                <Input
+                                  value={formData.batch_code}
+                                  onChange={(e) => handleFieldChange('batch_code', e.target.value)}
+                                  placeholder="LOTE..."
+                                  className="bg-zinc-950 border-white/10 text-white focus:border-amber-500/50 focus:ring-amber-500/20 h-10"
+                                  required
+                                />
+                             </div>
+                             <div className="space-y-2">
+                                <Label className="text-zinc-400 text-xs uppercase tracking-wider font-bold">Ref. Fornecedor</Label>
+                                <Input
+                                  value={formData.supplier_batch_code}
+                                  onChange={(e) => handleFieldChange('supplier_batch_code', e.target.value)}
+                                  placeholder="Opcional"
+                                  className="bg-zinc-950 border-white/10 text-white focus:border-amber-500/50 focus:ring-amber-500/20 h-10"
+                                />
+                             </div>
+                          </div>
+                       </div>
+
+                       {/* Datas */}
+                       <div className="space-y-4">
+                          <h3 className="text-xs font-bold text-white uppercase tracking-widest flex items-center gap-2">
+                             <Calendar className="h-3 w-3 text-amber-500" /> Validade & Prazos
+                          </h3>
+                          <div className="grid grid-cols-2 gap-4">
+                             <div className="space-y-2">
+                                <Label className="text-zinc-400 text-xs uppercase tracking-wider font-bold">Fabricação</Label>
+                                <Input
+                                  type="date"
+                                  value={formData.manufacturing_date}
+                                  onChange={(e) => handleFieldChange('manufacturing_date', e.target.value)}
+                                  className="bg-zinc-950 border-white/10 text-white focus:border-amber-500/50 focus:ring-amber-500/20 h-10"
+                                  required
+                                />
+                             </div>
+                             <div className="space-y-2">
+                                <Label className="text-zinc-400 text-xs uppercase tracking-wider font-bold">Vencimento</Label>
+                                <Input
+                                  type="date"
+                                  value={formData.expiry_date}
+                                  onChange={(e) => handleFieldChange('expiry_date', e.target.value)}
+                                  className="bg-zinc-950 border-white/10 text-white focus:border-amber-500/50 focus:ring-amber-500/20 h-10"
+                                  required
+                                />
+                             </div>
+                          </div>
+
+                          {/* Data Validation Feedback */}
+                          {formData.manufacturing_date && formData.expiry_date && (
+                            <div className={cn(
+                               "rounded-lg p-3 border",
+                               calculations.is_valid_dates
+                                  ? "bg-emerald-500/10 border-emerald-500/20"
+                                  : "bg-rose-500/10 border-rose-500/20"
+                            )}>
+                               <div className="flex items-center gap-2 mb-1">
+                                  {calculations.is_valid_dates ? (
+                                    <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                                  ) : (
+                                    <AlertTriangle className="h-4 w-4 text-rose-500" />
+                                  )}
+                                  <span className={cn(
+                                     "text-xs font-bold uppercase tracking-wide",
+                                     calculations.is_valid_dates ? "text-emerald-500" : "text-rose-500"
+                                  )}>
+                                     {calculations.is_valid_dates ? "Datas Válidas" : "Datas Inválidas"}
+                                  </span>
+                               </div>
+                               {calculations.is_valid_dates && (
+                                  <p className="text-xs text-zinc-400 ml-6">
+                                     Shelf Life: <span className="text-white font-mono">{calculations.shelf_life_days}d</span> •
+                                     Expira em: <span className="text-white font-mono">{calculations.days_until_expiry}d</span>
+                                  </p>
+                               )}
+                            </div>
+                          )}
+                       </div>
+
+                    </div>
+
+                    {/* RIGHT COLUMN */}
+                    <div className="space-y-6">
+
+                       {/* Quantidades */}
+                       <div className="space-y-4">
+                          <h3 className="text-xs font-bold text-white uppercase tracking-widest flex items-center gap-2">
+                             <Calculator className="h-3 w-3 text-amber-500" /> Volume
+                          </h3>
+                          <div className="grid grid-cols-2 gap-4">
+                             <div className="space-y-2">
+                                <Label className="text-zinc-400 text-xs uppercase tracking-wider font-bold">Qtd. Fardos</Label>
+                                <Input
+                                  type="number"
+                                  min="1"
+                                  value={formData.total_packages}
+                                  onChange={(e) => handlePackagesChange(parseInt(e.target.value) || 1)}
+                                  className="bg-zinc-950 border-white/10 text-white focus:border-amber-500/50 focus:ring-amber-500/20 h-10 font-mono"
+                                  required
+                                />
+                             </div>
+                             <div className="space-y-2">
+                                <Label className="text-zinc-400 text-xs uppercase tracking-wider font-bold">Total Unidades</Label>
+                                <Input
+                                  type="number"
+                                  min="1"
+                                  value={formData.total_units}
+                                  onChange={(e) => handleFieldChange('total_units', parseInt(e.target.value) || 1)}
+                                  className="bg-zinc-950 border-white/10 text-white focus:border-amber-500/50 focus:ring-amber-500/20 h-10 font-mono"
+                                  required
+                                />
+                             </div>
+                          </div>
+
+                          <div className="space-y-2">
+                             <Label className="text-zinc-400 text-xs uppercase tracking-wider font-bold">Custo Unitário (R$)</Label>
+                             <Input
+                               type="number"
+                               step="0.01"
+                               value={formData.cost_per_unit === 0 ? '' : formData.cost_per_unit}
+                               onChange={(e) => handleFieldChange('cost_per_unit', e.target.value === '' ? 0 : parseFloat(e.target.value))}
+                               className="bg-zinc-950 border-white/10 text-white focus:border-amber-500/50 focus:ring-amber-500/20 h-10 font-mono"
+                               placeholder="0.00"
+                             />
+                          </div>
+
+                          {/* Cost Summary Stub */}
+                          <div className="bg-zinc-900 border border-white/5 rounded-lg p-3 flex justify-between items-center px-4">
+                             <span className="text-xs text-zinc-500 uppercase tracking-widest font-bold">Custo Total Previsto</span>
+                             <span className="text-amber-500 font-mono font-bold">R$ {calculations.total_cost.toFixed(2)}</span>
+                          </div>
+                       </div>
+
+                       {/* Extra Info */}
+                       <div className="space-y-4">
+                          <h3 className="text-xs font-bold text-white uppercase tracking-widest flex items-center gap-2">
+                             <Package className="h-3 w-3 text-amber-500" /> Atributos
+                          </h3>
+
+                          <div className="grid grid-cols-2 gap-4">
+                             <div className="space-y-2">
+                                <Label className="text-zinc-400 text-xs uppercase tracking-wider font-bold">Fornecedor</Label>
+                                <Input
+                                  value={formData.supplier_name}
+                                  onChange={(e) => handleFieldChange('supplier_name', e.target.value)}
+                                  className="bg-zinc-950 border-white/10 text-white focus:border-amber-500/50 focus:ring-amber-500/20 h-10"
+                                />
+                             </div>
+                             <div className="space-y-2">
+                                <Label className="text-zinc-400 text-xs uppercase tracking-wider font-bold">Qualidade</Label>
+                                <Select
+                                  value={formData.quality_grade}
+                                  onValueChange={(value) => handleFieldChange('quality_grade', value)}
+                                >
+                                  <SelectTrigger className="bg-zinc-950 border-white/10 text-white h-10">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent className="bg-zinc-900 border-zinc-700">
+                                    <SelectItem value="A">Grade A (Premium)</SelectItem>
+                                    <SelectItem value="B">Grade B (Standard)</SelectItem>
+                                    <SelectItem value="C">Grade C (Economy)</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                             </div>
+                          </div>
+
+                          {(product.has_unit_tracking || product.has_package_tracking) && (
+                             <div className="flex items-center justify-between p-3 bg-zinc-900/50 border border-white/5 rounded-lg">
+                                <Label className="text-zinc-400 text-xs uppercase tracking-wider font-bold">Gerar Rastreio Unitário</Label>
+                                <SwitchAnimated
+                                  checked={formData.create_units}
+                                  onCheckedChange={(checked) => handleFieldChange('create_units', checked)}
+                                  variant="yellow"
+                                  size="sm"
+                                />
+                             </div>
+                          )}
+                       </div>
+
+                    </div>
+                 </div>
+
+                 <div className="pt-2">
+                    <Label className="text-zinc-400 text-xs uppercase tracking-wider font-bold mb-2 block">Observações de Recebimento</Label>
+                    <Textarea
+                       value={formData.notes}
+                       onChange={(e) => handleFieldChange('notes', e.target.value)}
+                       className="bg-zinc-950 border-white/10 text-white min-h-[80px]"
+                       placeholder="Condições de transporte, avarias, etc..."
+                    />
+                 </div>
+               </form>
+             </div>
+
+             {/* FOOTER */}
+             <div className="border-t border-white/5 bg-zinc-900/80 backdrop-blur-xl px-8 py-6 flex justify-end gap-3 sticky bottom-0 z-50">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={onClose}
+                  className="rounded-full px-6 text-zinc-400 hover:text-white hover:bg-white/5"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                   type="submit"
+                   form="create-batch-form"
+                   disabled={!calculations.is_valid_dates || createBatchMutation.isPending}
+                   className="rounded-full px-8 bg-amber-500 hover:bg-amber-400 text-zinc-900 font-bold tracking-wide shadow-[0_0_20px_rgba(245,158,11,0.3)] hover:shadow-[0_0_35px_rgba(245,158,11,0.5)] transition-all"
+                >
+                   {createBatchMutation.isPending ? (
+                      <>
+                        <LoadingSpinner size="sm" className="mr-2" />
+                        Processando...
+                      </>
+                   ) : (
+                      'CONFIRMAR RECEBIMENTO'
+                   )}
+                </Button>
+             </div>
+
+          </DialogPrimitive.Content>
+       </DialogPortal>
+    </Dialog>
   );
 };
