@@ -1,22 +1,19 @@
 /**
- * Container principal para gerenciamento de usuários
- * Refatorado para usar componentes separados e hooks customizados
- * Reduzido de 410 para ~100 linhas seguindo SRP
+ * Container principal para gerenciamento de usuários e categorias
+ * Refatorado para seguir o padrão visual "Premium ERP"
  */
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Button } from '@/shared/ui/primitives/button';
-import { Badge } from '@/shared/ui/primitives/badge';
-import { Plus, Users, FolderTree, Settings } from 'lucide-react';
-import { PageHeader } from '@/shared/ui/composite/PageHeader';
+import { Plus, Users, FolderTree } from 'lucide-react';
 import { cn } from '@/core/config/utils';
-import { getSFProTextClasses } from '@/core/config/theme-utils';
+import { PremiumBackground } from '@/shared/ui/composite/PremiumBackground';
 
 // Componentes refatorados
 import { FirstAdminSetup } from './FirstAdminSetup';
 import { UserList } from './UserList';
 import { UserCreateDialog } from './UserCreateDialog';
-import { CategoryManagement } from '@/features/admin/components/CategoryManagement';
+import { CategoryManagement, CategoryManagementRef } from '@/features/admin/components/CategoryManagement';
 
 // Hooks customizados
 import { useFirstAdminSetup } from '@/features/users/hooks/useFirstAdminSetup';
@@ -27,32 +24,33 @@ import { useUserPermissions } from '@/features/users/hooks/useUserPermissions';
 type ActiveTab = 'users' | 'categories';
 
 const UserManagement = () => {
-  // Estados locais para dialogs e abas
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<ActiveTab>('users');
+  const categoryRef = useRef<CategoryManagementRef>(null);
 
   // Hooks customizados
   const { showFirstAdminSetup, isSettingUp } = useFirstAdminSetup();
   const { users, isLoading, refreshUsers } = useUserManagement();
-  const { createUser, createFirstAdmin, isCreating } = useUserCreation();
+  const { createFirstAdmin, isCreating } = useUserCreation();
   const { canCreateUsers, canViewUsers } = useUserPermissions();
 
   // Handlers
   const handleFirstAdminSetup = async () => {
     await createFirstAdmin();
-    // Refresh users list after creating first admin
     await refreshUsers();
   };
 
   const handleCreateUser = async () => {
-    // The actual user creation logic is handled by UserCreateDialog + UserForm
-    // This just closes the dialog and refreshes the list
     setIsCreateDialogOpen(false);
     await refreshUsers();
   };
 
   const handleRefreshUsers = async () => {
     await refreshUsers();
+  };
+
+  const handleAddCategory = () => {
+    categoryRef.current?.openDialog();
   };
 
   // Show first admin setup if no users exist
@@ -68,12 +66,13 @@ const UserManagement = () => {
   // Show access denied if user doesn't have permission
   if (!canViewUsers) {
     return (
-      <div className="flex items-center justify-center min-h-content-md">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-adega-platinum mb-4">
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center opacity-40">
+          <Users className="h-16 w-16 text-zinc-600 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-zinc-300 mb-2">
             Acesso Negado
           </h2>
-          <p className="text-adega-platinum/60">
+          <p className="text-zinc-500">
             Você não tem permissão para visualizar esta página.
           </p>
         </div>
@@ -82,71 +81,97 @@ const UserManagement = () => {
   }
 
   return (
-    <div className="w-full h-full flex flex-col">
-      {/* Header - altura fixa */}
-      <PageHeader
-        title="ADMINISTRAÇÃO DO SISTEMA"
-        count={users.length}
-        countLabel="usuários"
-      />
+    <PremiumBackground>
+      <div className="w-full h-full flex flex-col relative overflow-hidden">
+        {/* Header - Refactored to match premium ERP pattern */}
+        <header className="px-8 py-6 pt-8 pb-3">
+            <div className="flex flex-wrap justify-between items-end gap-4 mb-4">
+              <div className="flex flex-col gap-1.5">
+                <p className="text-[#f9cb15] text-[10px] font-bold tracking-[0.2em] uppercase opacity-70">Painel Administrativo</p>
+                <div className="flex items-center gap-3">
+                      <Users className="w-8 h-8 text-[#f9cb15]" />
+                      <h1 className="text-white text-3xl md:text-4xl font-bold leading-tight tracking-tight uppercase drop-shadow-sm font-display">
+                        GERENCIAR USUÁRIOS
+                      </h1>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-4">
+                 {/* Tab Switcher - Premium Pattern */}
+                 <div className="flex items-center gap-3 bg-white/[0.03] p-1 rounded-2xl border border-white/5">
+                    <button
+                      onClick={() => setActiveTab('users')}
+                      className={cn(
+                        "px-6 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2",
+                        activeTab === 'users' ? "bg-[#f9cb15] text-black shadow-lg" : "text-zinc-500 hover:text-white"
+                      )}
+                    >
+                      <Users className="h-3.5 w-3.5" />
+                      USUÁRIOS
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('categories')}
+                      className={cn(
+                        "px-6 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2",
+                        activeTab === 'categories' ? "bg-[#f9cb15] text-black shadow-lg" : "text-zinc-500 hover:text-white"
+                      )}
+                    >
+                      <FolderTree className="h-3.5 w-3.5" />
+                      CATEGORIAS
+                    </button>
+                 </div>
 
-      {/* Container principal com glassmorphism - ocupa altura restante */}
-      <div className="flex-1 min-h-0 bg-black/80 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg p-4 flex flex-col hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-400/30 transition-all duration-300">
+                 {/* Action Buttons */}
+                 {canCreateUsers && activeTab === 'users' && (
+                  <Button
+                    onClick={() => setIsCreateDialogOpen(true)}
+                    className="flex items-center justify-center gap-2 h-10 px-6 rounded-xl bg-white text-black text-sm font-bold shadow-lg hover:bg-zinc-200 transition-colors"
+                  >
+                    <Plus className="w-[18px] h-[18px]" />
+                    <span>Novo Colaborador</span>
+                  </Button>
+                )}
 
-        {/* Header com controles dentro do box */}
-        <div className="flex-shrink-0 mb-4">
-          <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
-            <div className="flex items-center space-x-4">
-              <h2 className="text-lg font-semibold text-adega-platinum">Gerenciar Usuários</h2>
-              <Badge variant="secondary" className="bg-gray-700/50 text-gray-100 border-gray-600/50">
-                {users.length} usuários
-              </Badge>
+                {activeTab === 'categories' && (
+                  <Button
+                    onClick={handleAddCategory}
+                    className="flex items-center justify-center gap-2 h-10 px-6 rounded-xl bg-white text-black text-sm font-bold shadow-lg hover:bg-zinc-200 transition-colors"
+                  >
+                    <Plus className="w-[18px] h-[18px]" />
+                    <span>Nova Categoria</span>
+                  </Button>
+                )}
+              </div>
             </div>
+        </header>
 
-            <div className="flex items-center space-x-2">
-              {/* Botão Novo Usuário */}
-              {canCreateUsers && activeTab === 'users' && (
-                <Button
-                  onClick={() => setIsCreateDialogOpen(true)}
-                  className="bg-gradient-to-r from-primary-yellow to-yellow-500 text-black hover:from-yellow-300 hover:to-yellow-400 font-semibold shadow-lg hover:shadow-yellow-400/30 transition-all duration-200 hover:scale-105"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  NOVO COLABORADOR
-                </Button>
+        {/* Content Area */}
+        <div className="flex-1 px-8 pb-8 overflow-hidden flex flex-col">
+           {/* Container principal sem padding/bordas extras, delegando estilo para os componentes internos */}
+           <div className="flex-1 min-h-0 bg-transparent flex flex-col overflow-hidden">
+              {activeTab === 'users' ? (
+                <UserList
+                  users={users}
+                  onRefresh={handleRefreshUsers}
+                  canManageUsers={canCreateUsers}
+                  isLoading={isLoading}
+                  activeTab={activeTab}
+                  onTabChange={setActiveTab}
+                />
+              ) : (
+                <CategoryManagement ref={categoryRef} />
               )}
-            </div>
-          </div>
+           </div>
         </div>
 
-        {/* Conteúdo baseado na aba ativa */}
-        {activeTab === 'users' ? (
-          <>
-            {/* Lista de usuários */}
-            <UserList
-              users={users}
-              onRefresh={handleRefreshUsers}
-              canManageUsers={canCreateUsers}
-              isLoading={isLoading}
-              activeTab={activeTab}
-              onTabChange={setActiveTab}
-            />
-
-            {/* Dialog de criação de usuário */}
-            <UserCreateDialog
-              isOpen={isCreateDialogOpen}
-              onClose={() => setIsCreateDialogOpen(false)}
-              onUserCreated={handleCreateUser}
-              isSubmitting={isCreating}
-            />
-          </>
-        ) : (
-          /* Gerenciamento de categorias */
-          <div className="flex-1 overflow-auto">
-            <CategoryManagement />
-          </div>
-        )}
+        {/* Dialogs */}
+        <UserCreateDialog
+          isOpen={isCreateDialogOpen}
+          onClose={() => setIsCreateDialogOpen(false)}
+          onUserCreated={handleCreateUser}
+        />
       </div>
-    </div>
+    </PremiumBackground>
   );
 };
 

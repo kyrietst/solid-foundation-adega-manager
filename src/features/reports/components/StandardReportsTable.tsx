@@ -4,8 +4,8 @@
  */
 
 import React, { useMemo } from 'react';
-import { DataTable } from '@/shared/ui/composite/DataTable';
-import { DataTableColumn } from '@/shared/hooks/common/useDataTable';
+import { DataTable } from '@/shared/ui/layout/DataTable';
+import { DataTableColumn } from '@/shared/ui/layout/datatable/types';
 import { FileSpreadsheet } from 'lucide-react';
 
 // Legacy interface for backward compatibility
@@ -28,6 +28,9 @@ interface StandardReportsTableProps<T = Record<string, unknown>> {
   maxRows?: number;
   showControls?: boolean;
   loading?: boolean;
+  variant?: 'default' | 'premium' | 'yellow' | 'subtle' | 'strong';
+  glassEffect?: boolean;
+  compact?: boolean;
 }
 
 export const StandardReportsTable = <T extends Record<string, unknown>>({
@@ -41,6 +44,9 @@ export const StandardReportsTable = <T extends Record<string, unknown>>({
   maxRows = 100,
   showControls = false,
   loading = false,
+  variant = 'premium',
+  glassEffect = true,
+  compact = false,
 }: StandardReportsTableProps<T>) => {
   // Convert legacy TableColumn to DataTableColumn format
   const dataTableColumns: DataTableColumn<T>[] = useMemo(() => {
@@ -71,6 +77,9 @@ export const StandardReportsTable = <T extends Record<string, unknown>>({
       }}
       caption={title ? `Tabela de ${title.toLowerCase()}` : 'Tabela de relatórios'}
       className={height}
+      variant={variant}
+      glassEffect={glassEffect}
+      compact={compact}
     />
   );
 };

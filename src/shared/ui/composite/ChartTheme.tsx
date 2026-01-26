@@ -10,15 +10,16 @@
  * Usa os tokens HSL definidos no tailwind.config.ts
  */
 export const chartColors = {
-  primary: 'hsl(var(--accent-blue))', // #3b82f6 - Azul principal
+  primary: 'hsl(var(--brand))', // #FFD700 - Amarelo (Brand Principal)
   success: 'hsl(var(--accent-green))', // #10b981 - Verde
   warning: 'hsl(var(--accent-orange))', // #f97316 - Laranja
   danger: 'hsl(var(--accent-red))', // #ef4444 - Vermelho
-  info: 'hsl(var(--accent-purple))', // #8b5cf6 - Roxo
-  secondary: 'hsl(var(--primary-yellow))', // #FFD700 - Amarelo principal
+  info: 'hsl(var(--accent-purple))', // #8b5cf6 - Roxo (Premium)
+  secondary: '#06b6d4', // Ciano (Secundário)
+  cyan: '#06b6d4', // Alias for dashboards
 
   // Cores complementares para diversidade visual
-  cyan: '#06b6d4',
+  blue: '#3b82f6', // Mantido apenas para fallback se necessário, mas evitado nas paletas principais
   amber: '#f59e0b',
   lime: '#84cc16',
   indigo: '#6366f1',
@@ -32,17 +33,17 @@ export const chartColors = {
 export const chartTheme = {
   /**
    * Paleta padrão para gráficos gerais
-   * Ordem otimizada para máximo contraste visual
+   * Prioridade: Visual Hierarchy (Amarelo -> Roxo -> Cores de Estado)
    */
   default: [
-    chartColors.primary,   // Azul
+    chartColors.primary,   // Amarelo (Brand)
+    chartColors.info,      // Roxo
+    chartColors.secondary, // Ciano
     chartColors.success,   // Verde
     chartColors.warning,   // Laranja
-    chartColors.info,      // Roxo
     chartColors.danger,    // Vermelho
-    chartColors.cyan,      // Ciano
-    chartColors.amber,     // Âmbar
-    chartColors.lime,      // Lima
+    chartColors.pink,
+    chartColors.lime,
   ],
 
   /**
@@ -51,9 +52,9 @@ export const chartTheme = {
    */
   financial: [
     chartColors.success,   // Verde - Positivo/Receita
-    chartColors.warning,   // Laranja - Atenção/Despesas
     chartColors.danger,    // Vermelho - Negativo/Perdas
-    chartColors.primary,   // Azul - Neutro/Informativo
+    chartColors.warning,   // Laranja - Atenção/Despesas
+    chartColors.primary,   // Amarelo - Neutro/Informativo (Brand)
     chartColors.info,      // Roxo - Especial
   ],
 
@@ -62,13 +63,13 @@ export const chartTheme = {
    * Cores vibrantes para destacar performance
    */
   sales: [
-    chartColors.amber,     // Âmbar - Bebida Mista
-    chartColors.primary,   // Azul - Cerveja
-    chartColors.success,   // Verde - Bebidas Quentes
-    chartColors.info,      // Roxo - Refrigerante
-    chartColors.warning,   // Laranja - Whisky
-    chartColors.danger,    // Vermelho - Vinho
-    chartColors.cyan,      // Ciano - Outras categorias
+    chartColors.primary,   // Amarelo - Destaque (ex: Cerveja/Top)
+    chartColors.info,      // Roxo
+    chartColors.secondary, // Ciano
+    chartColors.success,   // Verde
+    chartColors.warning,   // Laranja
+    chartColors.danger,    // Vermelho
+    chartColors.pink,      // Outras
   ],
 
   /**
@@ -76,10 +77,10 @@ export const chartTheme = {
    * Cores que diferenciam tipos de clientes
    */
   crm: [
-    chartColors.amber,     // Dourado - Clientes Premium
+    chartColors.primary,   // Amarelo - Clientes Premium
     chartColors.success,   // Verde - Clientes Ativos
-    chartColors.primary,   // Azul - Clientes Regulares
-    chartColors.info,      // Roxo - Novos Clientes
+    chartColors.info,      // Roxo - Clientes Regulares
+    chartColors.secondary, // Ciano - Novos Clientes
     chartColors.warning,   // Laranja - Clientes em Risco
     chartColors.danger,    // Vermelho - Clientes Inativos
   ],
@@ -89,12 +90,12 @@ export const chartTheme = {
    * Cores que representam status e zonas
    */
   delivery: [
-    chartColors.primary,   // Azul - Em transporte
+    chartColors.primary,   // Amarelo - Em transporte (Destaque)
     chartColors.success,   // Verde - Entregue
     chartColors.warning,   // Laranja - Pendente
     chartColors.danger,    // Vermelho - Problema
     chartColors.info,      // Roxo - Agendado
-    chartColors.cyan,      // Ciano - Zonas especiais
+    chartColors.secondary, // Ciano - Zonas especiais
   ],
 
   /**
@@ -103,11 +104,11 @@ export const chartTheme = {
    */
   expenses: [
     chartColors.danger,    // Vermelho - Alto impacto
-    chartColors.primary,   // Azul - Médio impacto
+    chartColors.warning,   // Laranja - Médio impacto
     chartColors.success,   // Verde - Baixo impacto
+    chartColors.primary,   // Amarelo - Destaque
     chartColors.info,      // Roxo - Categorias especiais
-    chartColors.warning,   // Laranja - Atenção
-    chartColors.cyan,      // Ciano - Outros
+    chartColors.secondary, // Ciano - Outros
   ],
 } as const;
 

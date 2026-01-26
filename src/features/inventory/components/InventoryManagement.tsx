@@ -7,7 +7,7 @@
 import React, { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { PageHeader } from '@/shared/ui/composite/PageHeader';
+// import { StandardPageHeader } from '@/shared/ui/composite/StandardPageHeader';
 import { AddProductButton } from './ProductsHeader';
 import { Button } from '@/shared/ui/primitives/button';
 import { Loader2 } from 'lucide-react';
@@ -138,27 +138,33 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({ className }) 
     <div className={cn("w-full h-[100dvh] flex flex-col relative z-10 overflow-hidden", className)}>
       <PremiumBackground />
       {/* Header Section */}
-      <header className="flex-none px-8 py-6 pt-8 pb-6 z-10">
-          <div className="flex flex-wrap justify-between items-end gap-4 mb-12">
+      <div className="flex-none px-8 py-6 pt-8 pb-6 z-10">
+          <div className="flex flex-wrap justify-between items-end gap-4 mb-4">
              <div className="flex flex-col gap-1">
                <p className="text-zinc-500 text-sm font-medium tracking-widest uppercase">Módulo de Logística</p>
                <h2 className="text-white text-3xl md:text-4xl font-bold leading-tight tracking-tight">GESTÃO DE ESTOQUE</h2>
              </div>
              <div className="flex gap-3">
-               <Button className="flex items-center justify-center gap-2 h-10 px-4 rounded-xl bg-zinc-900 border border-zinc-700 text-white text-sm font-semibold hover:border-[#f9cb15] hover:text-[#f9cb15] transition-colors">
+               <Button 
+                variant="outline"
+                className="flex items-center justify-center gap-2 h-10 px-4 rounded-xl bg-zinc-900 border border-zinc-700 text-white text-sm font-semibold hover:border-[#f9cb15] hover:text-[#f9cb15] transition-colors"
+               >
                  <span className="material-symbols-outlined text-[20px]">cloud_download</span>
                  <span>Exportar</span>
                </Button>
                {viewMode === 'active' && (
-                 <AddProductButton 
-                   onAddProduct={() => setIsAddProductOpen(true)} 
+                 <Button
+                   onClick={() => setIsAddProductOpen(true)}
                    className="flex items-center justify-center gap-2 h-10 px-6 rounded-xl bg-white text-black text-sm font-bold shadow-lg hover:bg-zinc-200 transition-colors"
-                 />
+                 >
+                   {/* Using standard Plus icon if available or just text, based on other examples */}
+                   <span>Novo Produto</span>
+                 </Button>
                )}
              </div>
           </div>
-              
-          <div className="flex flex-col gap-4">
+
+          <div className="flex flex-col gap-4 mt-6">
              {isAdmin && (
                 <InventoryTabs
                   viewMode={viewMode}
@@ -184,7 +190,7 @@ const InventoryManagement: React.FC<InventoryManagementProps> = ({ className }) 
                />
              )}
           </div>
-        </header>
+      </div>
 
         {/* Scrollable Grid Content */}
         <div className="flex-1 overflow-y-auto px-6 md:px-10 pb-40 scroll-smooth">

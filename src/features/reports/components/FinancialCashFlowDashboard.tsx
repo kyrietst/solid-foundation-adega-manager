@@ -158,47 +158,87 @@ export const FinancialCashFlowDashboard: React.FC<FinancialCashFlowDashboardProp
                 </div>
             </div>
 
-            {/* 2. KPIs Principais */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <StatCard
-                    title="Entradas de Caixa"
-                    value={kpis.revenue}
-                    description="Recebimentos confirmados"
-                    icon={DollarSign}
-                    variant="success"
-                    formatType="currency"
-                />
+            {/* 2. KPIs Principais - Standardized Metrics Strip */}
+            <section className="w-full mb-8">
+                <div className="flex flex-wrap items-center justify-between gap-6 px-4 py-2 border-b border-white/5 pb-8">
+                    
+                    {/* Entradas */}
+                    <div className="flex flex-col gap-1 min-w-[140px]">
+                        <span className="text-sm font-medium text-zinc-500">Entradas de Caixa</span>
+                        <div className="flex items-baseline gap-2">
+                            <span className="text-3xl font-bold text-white tracking-tight">
+                                {formatCurrency(kpis.revenue)}
+                            </span>
+                             <span className="flex items-center text-xs font-bold text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded-md">
+                                <TrendingUp className="h-3 w-3 mr-1" />
+                                Recebido
+                            </span>
+                        </div>
+                    </div>
 
-                <StatCard
-                    title="Saídas de Caixa"
-                    value={kpis.expenses}
-                    description="Pagamentos realizados"
-                    icon={Wallet}
-                    variant="warning"
-                    formatType="currency"
-                />
+                    {/* Divider */}
+                    <div className="hidden md:block w-px h-12 bg-zinc-800"></div>
 
-                <StatCard
-                    title="Saldo Líquido"
-                    value={kpis.profit}
-                    description={kpis.profit >= 0 ? "Superávit no período" : "Déficit no período"}
-                    icon={kpis.profit >= 0 ? TrendingUp : TrendingDown}
-                    variant={kpis.profit >= 0 ? "success" : "error"}
-                    formatType="currency"
-                />
+                    {/* Saídas */}
+                    <div className="flex flex-col gap-1 min-w-[140px]">
+                        <span className="text-sm font-medium text-zinc-500">Saídas de Caixa</span>
+                        <div className="flex items-baseline gap-2">
+                            <span className="text-3xl font-bold text-white tracking-tight">
+                                {formatCurrency(kpis.expenses)}
+                            </span>
+                             <span className="flex items-center text-xs font-bold text-red-500 bg-red-500/10 px-1.5 py-0.5 rounded-md">
+                                <Wallet className="h-3 w-3 mr-1" />
+                                Pago
+                            </span>
+                        </div>
+                    </div>
 
-                <StatCard
-                    title="A Receber (Fiado)"
-                    value={kpis.receivables}
-                    description="Vendas pendentes (Futuro)"
-                    icon={Users}
-                    variant="premium"
-                    formatType="currency"
-                />
-            </div>
+                    {/* Divider */}
+                    <div className="hidden md:block w-px h-12 bg-zinc-800"></div>
+
+                    {/* Saldo Líquido */}
+                    <div className="flex flex-col gap-1 min-w-[140px]">
+                        <span className="text-sm font-medium text-zinc-500">Saldo Líquido</span>
+                        <div className="flex items-baseline gap-2">
+                            <span className={cn("text-3xl font-bold tracking-tight", kpis.profit >= 0 ? "text-emerald-400" : "text-red-400")}>
+                                {formatCurrency(kpis.profit)}
+                            </span>
+                            {kpis.profit >= 0 ? (
+                                <span className="flex items-center text-xs font-bold text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded-md">
+                                    <TrendingUp className="h-3 w-3 mr-1" />
+                                    Lucro
+                                </span>
+                            ) : (
+                                <span className="flex items-center text-xs font-bold text-red-500 bg-red-500/10 px-1.5 py-0.5 rounded-md">
+                                    <TrendingDown className="h-3 w-3 mr-1" />
+                                    Déficit
+                                </span>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Divider */}
+                    <div className="hidden md:block w-px h-12 bg-zinc-800"></div>
+
+                     {/* A Receber */}
+                    <div className="flex flex-col gap-1 min-w-[140px]">
+                        <span className="text-sm font-medium text-zinc-500">A Receber (Fiado)</span>
+                        <div className="flex items-baseline gap-2">
+                            <span className="text-3xl font-bold text-white tracking-tight">
+                                {formatCurrency(kpis.receivables)}
+                            </span>
+                             <span className="flex items-center text-xs font-bold text-blue-500 bg-blue-500/10 px-1.5 py-0.5 rounded-md">
+                                <Users className="h-3 w-3 mr-1" />
+                                Pendente
+                            </span>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
 
             {/* 3. Fluxo do Mês (Gráfico) */}
-            <div className="bg-gray-800/30 border border-gray-700/40 backdrop-blur-sm shadow-lg rounded-xl p-6">
+            <GlassCard className="p-6 border-white/5 bg-white/[0.02]">
                 <div className="flex items-center justify-between mb-6">
                     <h3 className="text-lg font-semibold text-white flex items-center gap-2">
                         <TrendingUp className="w-5 h-5 text-blue-400" />
@@ -209,14 +249,15 @@ export const FinancialCashFlowDashboard: React.FC<FinancialCashFlowDashboardProp
                 <div className="h-[300px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={cashFlowData}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} />
+                            <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} strokeOpacity={0.3} />
                             <XAxis
-                                dataKey="day" // Updated to use 'day' from RPC
+                                dataKey="day"
                                 stroke="#9CA3AF"
                                 fontSize={12}
                                 tickLine={false}
                                 axisLine={false}
                                 tickFormatter={safeFormatDate}
+                                dy={10}
                             />
                             <YAxis
                                 stroke="#9CA3AF"
@@ -224,53 +265,67 @@ export const FinancialCashFlowDashboard: React.FC<FinancialCashFlowDashboardProp
                                 tickLine={false}
                                 axisLine={false}
                                 tickFormatter={(val) => `R$ ${val}`}
+                                dx={-10}
                             />
-                            <Tooltip
-                                contentStyle={{ backgroundColor: '#1F2937', borderColor: '#374151', color: '#F3F4F6' }}
-                                itemStyle={{ color: '#F3F4F6' }}
+                             <Tooltip
+                                cursor={{ fill: 'white', opacity: 0.05 }}
+                                contentStyle={{ 
+                                    backgroundColor: '#09090b', 
+                                    borderColor: 'rgba(255,255,255,0.1)', 
+                                    borderRadius: '12px',
+                                    boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+                                    padding: '12px'
+                                }}
+                                itemStyle={{ padding: '2px 0' }}
+                                labelStyle={{ color: '#A1A1AA', marginBottom: '8px', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}
                                 formatter={(val: number, name: string) => [
-                                    formatCurrency(val), 
+                                    <span key="val" className="font-bold text-white">{formatCurrency(val)}</span>,
                                     name === 'income' ? 'Entradas' : name === 'outcome' ? 'Saídas' : name
                                 ]}
                                 labelFormatter={safeFormatFullDate}
                             />
-                            <Bar dataKey="income" name="income" fill="#10B981" radius={[4, 4, 0, 0]} maxBarSize={50} />
-                            <Bar dataKey="outcome" name="outcome" fill="#EF4444" radius={[4, 4, 0, 0]} maxBarSize={50} />
+                            <Bar dataKey="income" name="income" fill="#10B981" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                            <Bar dataKey="outcome" name="outcome" fill="#EF4444" radius={[4, 4, 0, 0]} maxBarSize={40} />
                         </BarChart>
                     </ResponsiveContainer>
                 </div>
-            </div>
+            </GlassCard>
 
             {/* 4. Grid de Detalhes (Devedores vs Despesas) */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Top Devedores */}
-                <GlassCard className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                <GlassCard className="p-0 overflow-hidden border-white/5 bg-white/[0.02]">
+                    <div className="p-5 border-b border-white/5 flex items-center justify-between">
+                         <h3 className="text-lg font-semibold text-white flex items-center gap-2">
                             <AlertCircle className="w-5 h-5 text-amber-500" />
                             Top Devedores
                         </h3>
-                        <Button variant="ghost" size="sm" className="text-xs text-gray-400">Ver Todos</Button>
+                         <Button variant="ghost" size="sm" className="text-xs text-zinc-500 hover:text-white h-auto p-0 hover:bg-transparent">Ver Todos</Button>
                     </div>
 
-                    <div className="space-y-4">
+                    <div className="p-2 space-y-1">
                         {debtorsList.length === 0 ? (
-                            <div className="text-center py-8 text-gray-500 text-sm">Nenhum débito em atraso</div>
+                            <div className="text-center py-8 text-zinc-500 text-sm">Nenhum débito em atraso</div>
                         ) : (
                             debtorsList.map((debtor: any, i: number) => (
-                                <div key={i} className="flex items-center justify-between p-3 bg-gray-900/40 rounded-lg border border-gray-800 hover:border-gray-700 transition-colors">
+                                <div key={i} className="flex items-center justify-between p-3 rounded-lg hover:bg-white/[0.04] transition-colors group">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-500 font-bold text-xs">
+                                        <div className="w-8 h-8 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-500 font-bold text-xs border border-amber-500/20">
                                             {debtor.customer_name?.substring(0, 2).toUpperCase() || 'CL'}
                                         </div>
                                         <div>
-                                            <p className="text-sm font-medium text-white">{debtor.customer_name || 'Desconhecido'}</p>
-                                            <p className="text-xs text-amber-400">Venceu há {debtor.days_overdue} dias</p>
+                                            <p className="text-sm font-medium text-zinc-200 group-hover:text-white transition-colors">{debtor.customer_name || 'Desconhecido'}</p>
+                                            <p className="text-xs text-amber-500/80">Venceu há {debtor.days_overdue} dias</p>
                                         </div>
                                     </div>
                                     <div className="text-right">
                                         <p className="text-sm font-bold text-white">{formatCurrency(debtor.amount)}</p>
-                                        <Button variant="link" className="h-auto p-0 text-xs text-blue-400">Cobrar</Button>
+                                        <Button 
+                                            variant="ghost" 
+                                            className="h-auto p-0 text-[10px] text-blue-400 hover:text-blue-300 hover:bg-transparent"
+                                        >
+                                            Cobrar
+                                        </Button>
                                     </div>
                                 </div>
                             ))
@@ -279,30 +334,33 @@ export const FinancialCashFlowDashboard: React.FC<FinancialCashFlowDashboardProp
                 </GlassCard>
 
                 {/* Top Despesas */}
-                <GlassCard className="p-6">
-                    <div className="flex items-center justify-between mb-4">
+                <GlassCard className="p-0 overflow-hidden border-white/5 bg-white/[0.02]">
+                    <div className="p-5 border-b border-white/5 flex items-center justify-between">
                         <h3 className="text-lg font-semibold text-white flex items-center gap-2">
                             <ArrowDownRight className="w-5 h-5 text-red-500" />
                             Principais Despesas
                         </h3>
                     </div>
 
-                    <div className="space-y-4">
-                        {/* Mock data visualization as we don't have full expenses yet */}
-                        {topExpensesList.map((expense: any, i: number) => (
-                            <div key={i} className="space-y-2">
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-gray-300">{expense.category?.name}</span>
-                                    <span className="text-white font-medium">{formatCurrency(expense.amount)}</span>
+                    <div className="p-5 space-y-5">
+                        {topExpensesList.length === 0 ? (
+                             <div className="text-center py-8 text-zinc-500 text-sm">Nenhuma despesa registrada</div>
+                        ) : (
+                            topExpensesList.map((expense: any, i: number) => (
+                                <div key={i} className="space-y-1.5">
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-zinc-400">{expense.category?.name || 'Geral'}</span>
+                                        <span className="text-white font-medium">{formatCurrency(expense.amount)}</span>
+                                    </div>
+                                    <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                                        <div
+                                            className="h-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.3)] rounded-full"
+                                            style={{ width: `${Math.min(100, (expense.amount / totalExpenses) * 100)}%` }}
+                                        />
+                                    </div>
                                 </div>
-                                <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
-                                    <div
-                                        className="h-full bg-red-500/80 rounded-full"
-                                        style={{ width: `${(expense.amount / totalExpenses) * 100}%` }}
-                                    />
-                                </div>
-                            </div>
-                        ))}
+                            ))
+                        )}
                     </div>
                 </GlassCard>
             </div>

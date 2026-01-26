@@ -34,9 +34,10 @@ type CreateUserFormData = z.infer<typeof createUserSchema>;
 interface UserCreateDialogProps {
   isOpen: boolean;
   onClose: () => void;
+  onUserCreated?: () => void;
 }
 
-export const UserCreateDialog: React.FC<UserCreateDialogProps> = ({ isOpen, onClose }) => {
+export const UserCreateDialog: React.FC<UserCreateDialogProps> = ({ isOpen, onClose, onUserCreated }) => {
   const [availablePermissions, setAvailablePermissions] = useState<any[]>([]);
   const { createUser, isCreating } = useUserCreation();
 
@@ -86,6 +87,7 @@ export const UserCreateDialog: React.FC<UserCreateDialogProps> = ({ isOpen, onCl
       });
       
       reset();
+      if (onUserCreated) onUserCreated();
       onClose();
     } catch (error) {
       console.error('Erro ao criar usuário:', error);
@@ -116,56 +118,56 @@ export const UserCreateDialog: React.FC<UserCreateDialogProps> = ({ isOpen, onCl
       <SheetContent side="right" className="w-full sm:max-w-[500px] overflow-y-auto bg-black/95 backdrop-blur-md border-l border-white/10 p-0">
         <div className="h-full flex flex-col">
           {/* Header Fixo */}
-          <SheetHeader className="px-6 py-4 border-b border-white/10 bg-black/50 sticky top-0 z-50 backdrop-blur-sm">
-            <SheetTitle className="text-2xl font-bold text-primary-yellow flex items-center gap-2">
-              <User className="h-6 w-6" /> CRIAR USUÁRIO
+          <SheetHeader className="px-6 py-4 border-b border-white/10 bg-black/50 sticky top-0 z-50 backdrop-blur-md">
+            <SheetTitle className="text-2xl font-bold text-accent-gold-100 flex items-center gap-2 uppercase tracking-wide">
+              <User className="h-6 w-6" /> Novo Colaborador
             </SheetTitle>
-            <div className="text-gray-400 text-sm">Cadastre um novo usuário no sistema</div>
+            <div className="text-zinc-400 text-sm">Cadastre um novo usuário para acesso ao sistema</div>
           </SheetHeader>
 
           {/* Form Scrollable */}
-          <div className="flex-1 overflow-y-auto px-6 py-6">
+          <div className="flex-1 overflow-y-auto px-6 py-6 custom-scrollbar">
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
 
               {/* ========================================== */}
               {/* SEÇÃO 1 - Credenciais */}
               {/* ========================================== */}
               <div className="space-y-4">
-                <h3 className="text-base font-semibold text-white flex items-center gap-2 border-b border-gray-800 pb-2">
-                  <User className="h-4 w-4 text-primary-yellow" />
+                <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2 border-b border-white/10 pb-2">
+                  <User className="h-4 w-4 text-accent-gold-100" />
                   Dados de Acesso
                 </h3>
 
                 <div>
-                  <label className="block text-xs font-medium mb-1.5 text-gray-400">👤 Nome Completo *</label>
+                  <label className="block text-xs font-semibold uppercase text-zinc-500 mb-1.5 ml-1">Nome Completo</label>
                   <Input
                     {...register('full_name')}
                     placeholder="Ex: João da Silva"
                     className={inputClasses}
                   />
-                  {errors.full_name && <p className="text-red-400 text-xs mt-1">{errors.full_name.message}</p>}
+                  {errors.full_name && <p className="text-rose-500 text-xs mt-1 ml-1">{errors.full_name.message}</p>}
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium mb-1.5 text-gray-400">📧 Email *</label>
+                  <label className="block text-xs font-semibold uppercase text-zinc-500 mb-1.5 ml-1">Email Corporativo</label>
                   <Input
                     type="email"
                     {...register('email')}
                     placeholder="joao@adega.com"
                     className={inputClasses}
                   />
-                  {errors.email && <p className="text-red-400 text-xs mt-1">{errors.email.message}</p>}
+                  {errors.email && <p className="text-rose-500 text-xs mt-1 ml-1">{errors.email.message}</p>}
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium mb-1.5 text-gray-400">🔒 Senha Inicial *</label>
+                  <label className="block text-xs font-semibold uppercase text-zinc-500 mb-1.5 ml-1">Senha Inicial</label>
                   <Input
                     type="password"
                     {...register('password')}
                     placeholder="******"
                     className={inputClasses}
                   />
-                  {errors.password && <p className="text-red-400 text-xs mt-1">{errors.password.message}</p>}
+                  {errors.password && <p className="text-rose-500 text-xs mt-1 ml-1">{errors.password.message}</p>}
                 </div>
               </div>
 
@@ -173,42 +175,42 @@ export const UserCreateDialog: React.FC<UserCreateDialogProps> = ({ isOpen, onCl
               {/* SEÇÃO 2 - Função e Permissões */}
               {/* ========================================== */}
               <div className="space-y-4">
-                <h3 className="text-base font-semibold text-white flex items-center gap-2 border-b border-gray-800 pb-2">
-                  <Shield className="h-4 w-4 text-primary-yellow" />
+                <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2 border-b border-white/10 pb-2">
+                  <Shield className="h-4 w-4 text-accent-gold-100" />
                   Função e Permissões
                 </h3>
 
                 <div>
-                  <label className="block text-xs font-medium mb-1.5 text-gray-400">🏷️ Cargo / Função *</label>
+                  <label className="block text-xs font-semibold uppercase text-zinc-500 mb-1.5 ml-1">Cargo / Função</label>
                   <Select onValueChange={(val: any) => setValue('role', val)} defaultValue="seller">
                     <SelectTrigger className={inputClasses}>
                       <SelectValue placeholder="Selecione..." />
                     </SelectTrigger>
-                    <SelectContent className="bg-gray-900/95 border-white/20">
-                      <SelectItem value="admin" className="text-white hover:bg-white/10">Administrador</SelectItem>
-                      <SelectItem value="manager" className="text-white hover:bg-white/10">Gerente</SelectItem>
-                      <SelectItem value="stock_manager" className="text-white hover:bg-white/10">Gerente de Estoque</SelectItem>
-                      <SelectItem value="seller" className="text-white hover:bg-white/10">Vendedor</SelectItem>
-                      <SelectItem value="employee" className="text-white hover:bg-white/10">Colaborador</SelectItem>
+                    <SelectContent className="bg-zinc-900/95 border-white/20 backdrop-blur-xl">
+                      <SelectItem value="admin" className="text-white focus:bg-white/10 focus:text-accent-gold-100 cursor-pointer">Administrador</SelectItem>
+                      <SelectItem value="manager" className="text-white focus:bg-white/10 focus:text-accent-gold-100 cursor-pointer">Gerente</SelectItem>
+                      <SelectItem value="stock_manager" className="text-white focus:bg-white/10 focus:text-accent-gold-100 cursor-pointer">Gerente de Estoque</SelectItem>
+                      <SelectItem value="seller" className="text-white focus:bg-white/10 focus:text-accent-gold-100 cursor-pointer">Vendedor</SelectItem>
+                      <SelectItem value="employee" className="text-white focus:bg-white/10 focus:text-accent-gold-100 cursor-pointer">Colaborador</SelectItem>
                     </SelectContent>
                   </Select>
-                  {errors.role && <p className="text-red-400 text-xs mt-1">{errors.role.message}</p>}
+                  {errors.role && <p className="text-rose-500 text-xs mt-1 ml-1">{errors.role.message}</p>}
                 </div>
 
                 <div className="pt-2">
-                  <label className="block text-xs font-medium mb-2 text-gray-400">✅ Permissões Específicas</label>
-                  <div className="grid grid-cols-1 gap-2 bg-gray-900/40 p-3 rounded-lg border border-white/5">
+                  <label className="block text-xs font-semibold uppercase text-zinc-500 mb-2 ml-1">Permissões Específicas</label>
+                  <div className="grid grid-cols-1 gap-2 bg-zinc-900/40 p-3 rounded-lg border border-white/5">
                     {availablePermissions.map((permission) => (
-                      <div key={permission.id} className="flex items-center space-x-3 p-2 rounded hover:bg-white/5 transition-colors cursor-pointer" onClick={() => handlePermissionToggle(permission.id, !selectedPermissions.includes(permission.id))}>
+                      <div key={permission.id} className="flex items-center space-x-3 p-2 rounded hover:bg-white/5 transition-colors cursor-pointer group" onClick={() => handlePermissionToggle(permission.id, !selectedPermissions.includes(permission.id))}>
                         <Checkbox
                           id={permission.id}
                           checked={selectedPermissions.includes(permission.id)}
                           onCheckedChange={(checked) => handlePermissionToggle(permission.id, checked as boolean)}
-                          className="border-white/20 data-[state=checked]:bg-primary-yellow data-[state=checked]:border-primary-yellow"
+                          className="border-white/20 data-[state=checked]:bg-accent-gold-100 data-[state=checked]:border-accent-gold-100 data-[state=checked]:text-black"
                         />
                         <div className="flex flex-col cursor-pointer select-none">
-                          <span className="text-sm text-gray-200">{permission.name}</span>
-                          <span className="text-[10px] text-gray-500">{permission.id}</span>
+                          <span className="text-sm text-zinc-300 group-hover:text-white transition-colors">{permission.name}</span>
+                          <span className="text-[10px] text-zinc-600 font-mono group-hover:text-zinc-500">{permission.id}</span>
                         </div>
                       </div>
                     ))}
@@ -220,28 +222,28 @@ export const UserCreateDialog: React.FC<UserCreateDialogProps> = ({ isOpen, onCl
           </div>
 
           {/* Footer Actions */}
-          <div className="p-6 border-t border-white/10 bg-black/50 backdrop-blur-sm sticky bottom-0 z-50 flex justify-end gap-3">
+          <div className="p-6 border-t border-white/10 bg-black/50 backdrop-blur-md sticky bottom-0 z-50 flex justify-end gap-3">
             <Button
               type="button"
-              variant="outline"
+              variant="ghost"
               onClick={handleClose}
               disabled={isCreating}
-              className="border-white/10 text-gray-300 hover:bg-white/10 hover:text-white"
+              className="hover:bg-white/5 text-zinc-400 hover:text-white"
             >
               Cancelar
             </Button>
             <Button
               onClick={handleSubmit(onSubmit)}
               disabled={isCreating}
-              className="bg-primary-yellow text-primary-black hover:bg-primary-yellow/90 font-bold min-w-[150px]"
+              className="bg-white text-black hover:bg-zinc-200 shadow-xl font-bold min-w-[150px] transition-all rounded-xl"
             >
               {isCreating ? (
                 <div className="flex items-center gap-2">
                   <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                  <span>Criando...</span>
+                  <span>CRIANDO...</span>
                 </div>
               ) : (
-                'Criar Usuário'
+                'CRIAR COLABORADOR'
               )}
             </Button>
           </div>

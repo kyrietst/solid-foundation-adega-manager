@@ -37,6 +37,7 @@ import { ExpenseTemplatesModal } from './ExpenseTemplatesModal';
 import { getGlassCardClasses, getGlassButtonClasses, getHoverTransformClasses } from '@/core/config/theme-utils';
 import { cn } from '@/core/config/utils';
 import { PremiumBackground } from '@/shared/ui/composite/PremiumBackground';
+// import { StandardPageHeader } from '@/shared/ui/composite/StandardPageHeader';
 
 export const ExpensesTab: React.FC = () => {
   // State: View Mode
@@ -141,14 +142,16 @@ export const ExpensesTab: React.FC = () => {
     <div className="w-full h-[100dvh] flex flex-col relative z-10 overflow-hidden">
       <PremiumBackground />
 
-      {/* Header Section */}
-      <header className="flex-none px-8 py-6 pt-8 pb-6 z-10">
-          <div className="flex flex-wrap justify-between items-end gap-4 mb-8">
+      <div className="flex-none z-10">
+
+        {/* Header Standardized */}
+        <header className="px-8 py-6 pt-8 pb-6">
+          <div className="flex flex-wrap justify-between items-end gap-4 mb-4">
              <div className="flex flex-col gap-1">
-               <p className="text-zinc-500 text-sm font-medium tracking-widest uppercase">Financeiro</p>
-               <h2 className="text-white text-3xl md:text-4xl font-bold leading-tight tracking-tight">DESPESAS OPERACIONAIS</h2>
+               <p className="text-zinc-500 text-sm font-medium tracking-widest uppercase">Módulo Financeiro</p>
+               <h2 className="text-white text-3xl md:text-4xl font-bold leading-tight tracking-tight">GESTÃO DE DESPESAS</h2>
              </div>
-             <div className="flex gap-3">
+             <div className="flex items-center gap-3">
                {/* View Mode Toggle */}
                <div className="flex bg-zinc-900/50 p-1 rounded-xl border border-zinc-700/50 mr-2">
                   <Button
@@ -185,18 +188,19 @@ export const ExpensesTab: React.FC = () => {
                  <Settings2 className="w-[18px] h-[18px]" />
                  <span className="hidden sm:inline">Modelos</span>
                </Button>
-               
-               <Button
+                <Button 
                   onClick={() => setIsNewModalOpen(true)}
                   className="flex items-center justify-center gap-2 h-10 px-6 rounded-xl bg-white text-black text-sm font-bold shadow-lg hover:bg-zinc-200 transition-colors"
-                >
+                 >
                   <Plus className="w-[18px] h-[18px]" />
-                  <span>Lançar Despesa</span>
+                  <span>Novo Lançamento</span>
                 </Button>
              </div>
           </div>
+        </header>
 
-          {/* Filters & Actions Bar */}
+        {/* Filters & Actions Bar */}
+        <div className="px-8 pb-6">
           <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-black/40 p-1 rounded-xl border border-white/5 backdrop-blur-sm">
              <div className="flex items-center gap-4 px-2">
                 {/* Date Picker */}
@@ -234,7 +238,8 @@ export const ExpensesTab: React.FC = () => {
                 </Button>
              </div>
           </div>
-      </header>
+        </div>
+      </div>
 
       {/* Main Content (Scrollable) */}
       {/* Main Content (Scrollable) */}

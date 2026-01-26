@@ -5,12 +5,12 @@ import { LoadingScreen } from '@/shared/ui/composite/loading-spinner';
 import { useCustomers } from '@/features/customers/hooks/use-crm';
 import { useDebounce } from '@/shared/hooks/useDebounce';
 import { PremiumBackground } from '@/shared/ui/composite/PremiumBackground';
-import { Download, Plus } from 'lucide-react';
+import { Download, Plus, Users } from 'lucide-react';
 import CustomerDataTable from './CustomerDataTable';
 import { NewCustomerModal } from './NewCustomerModal';
-import { CustomerStats } from './CustomerStats';
+import { CustomerDashboardStats } from './CustomerDashboardStats';
 import { CustomerFilters } from './CustomerFilters';
-import { StandardPageHeader } from '@/shared/ui/composite/StandardPageHeader';
+// import { StandardPageHeader } from '@/shared/ui/composite/StandardPageHeader';
 
 const CustomersLite = () => {
   const navigate = useNavigate();
@@ -96,38 +96,44 @@ const CustomersLite = () => {
         
         {/* Header Section */}
         {/* Header Section */}
-        <header className="flex-none px-8 py-6 pt-8 pb-6 z-10 w-full">
-          <div className="flex flex-wrap justify-between items-end gap-4 mb-6">
-             <div className="flex flex-col gap-1">
-               <p className="text-zinc-500 text-sm font-medium tracking-widest uppercase">Módulo de Gestão</p>
-               <h2 className="text-white text-3xl md:text-4xl font-bold leading-tight tracking-tight">GESTÃO DE CLIENTES</h2>
+        {/* Header Section */}
+        {/* Header Section */}
+        {/* Standard Page Header */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 px-8 pt-8 pb-6">
+             <div className="space-y-1">
+                <h2 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+                    <Users className="w-6 h-6 text-[#f9cb15]" />
+                    Gestão de Clientes
+                </h2>
+                <p className="text-sm text-zinc-400">
+                    Gerencie sua base, fidelidade e histórico de compras.
+                </p>
              </div>
-             <div className="flex gap-3">
+             
+             <div className="flex items-center gap-3">
                <Button 
                 variant="outline"
-                className="flex items-center justify-center gap-2 h-10 px-4 rounded-xl bg-zinc-900 border border-zinc-700 text-white text-sm font-semibold hover:border-[#f9cb15] hover:text-[#f9cb15] transition-colors"
+                className="flex items-center justify-center gap-2 h-10 px-4 bg-zinc-900/50 border-zinc-700 text-zinc-300 hover:text-white hover:border-[#f9cb15] transition-colors"
                 onClick={() => { /* TODO: Implement export */ }}
                >
-                <Download className="w-[18px] h-[18px]" />
-                <span className="hidden sm:inline">Exportar</span>
+                <Download className="w-4 h-4" />
+                <span className="hidden sm:inline">Exportar Base</span>
                </Button>
-               
-               <Button 
-                onClick={() => setIsNewCustomerModalOpen(true)}
-                className="flex items-center justify-center gap-2 h-10 px-6 rounded-xl bg-white text-black text-sm font-bold shadow-lg hover:bg-zinc-200 transition-colors"
+               <Button
+                 onClick={() => setIsNewCustomerModalOpen(true)}
+                 className="flex items-center justify-center gap-2 h-10 px-6 bg-[#f9cb15] text-black font-bold hover:bg-[#ffe04f] transition-colors shadow-lg shadow-amber-900/20"
                >
-                <Plus className="w-[18px] h-[18px]" />
-                <span className="hidden sm:inline">Novo Cliente</span>
+                 <Plus className="w-4 h-4" />
+                 <span>Novo Cliente</span>
                </Button>
              </div>
-          </div>
-        </header>
+        </div>
 
         {/* Scrollable Content */}
         <main className="flex-1 overflow-y-auto px-8 pb-8 custom-scrollbar flex flex-col gap-8">
             {/* KPI/Stats Grid */}
             <div className="shrink-0">
-                <CustomerStats 
+                <CustomerDashboardStats 
                     totalCustomers={customers?.length || 0}
                     vipCustomers={vipCount}
                     totalRevenue={totalRevenue}

@@ -200,12 +200,16 @@ export function AppSidebar() {
               {/* Grupos de Navegação */}
               <div className="flex flex-col gap-2">
                 {navigationGroups.map((group, groupIdx) => {
-                  // Lógica: Se a sidebar estiver fechada (!open), renderizamos apenas os ícones (flat list)
-                  // Se estiver aberta, renderizamos o Accordion (Collapsible)
+                  // Check if this group contains the active route
+                  const isGroupActive = group.items.some(item => 
+                    location.pathname.startsWith(`/${item.href}`) || 
+                    (location.pathname === '/' && item.href === 'dashboard')
+                  );
+
+                  // Sidebar CLOSED: Render flat icons
                   if (!open) {
                      return (
                       <div key={groupIdx} className="flex flex-col gap-1">
-                        {/* Separator visual opcional quando fechado */}
                         <div className="h-px bg-white/5 mx-2 my-1" />
                         {group.items.map((link) => {
                           const isDisabled = !link.isEnabled;
@@ -222,9 +226,10 @@ export function AppSidebar() {
                               disabled={isDisabled}
                               onClick={(e: any) => handleLinkClick(link.href, e)}
                               className={cn(
+                                "rounded-xl transition-all duration-300", 
                                 location.pathname === `/${link.href}` && !isDisabled
-                                  ? "bg-[#f9cb15]/10 text-[#f9cb15] border border-[#f9cb15]/20 shadow-[0_0_10px_rgba(249,203,21,0.1)]"
-                                  : !isDisabled && "hover:bg-[#f9cb15]/5 text-zinc-400 hover:text-[#f9cb15] transition-colors"
+                                  ? "bg-[#f9cb15]/10 text-[#f9cb15] border border-[#f9cb15] shadow-[0_0_20px_rgba(249,203,21,0.3)] scale-105"
+                                  : !isDisabled && "text-zinc-500 hover:text-white hover:bg-white/5 border border-transparent"
                               )}
                             />
                           );
@@ -233,15 +238,17 @@ export function AppSidebar() {
                      );
                   }
 
-                  // Sidebar ABERTA: Usar Collapsible
+                  // Sidebar OPEN: Render Collapsible with Auto-Expand
                   return (
                     <CollapsibleGroup 
                       key={groupIdx} 
                       title={group.title} 
-                      defaultOpen={groupIdx === 0} // Primeiro grupo aberto por default
+                      defaultOpen={isGroupActive} // Auto-expand if group is active
                     >
                       {group.items.map((link) => {
                         const isDisabled = !link.isEnabled;
+                        const isActive = location.pathname === `/${link.href}`;
+                        
                         return (
                           <SidebarLink
                             key={link.id}
@@ -255,10 +262,10 @@ export function AppSidebar() {
                             disabled={isDisabled}
                             onClick={(e: any) => handleLinkClick(link.href, e)}
                             className={cn(
-                              "pl-2 border-l border-white/5 ml-1", // Indentação visual hierárquica
-                              location.pathname === `/${link.href}` && !isDisabled
-                                ? "text-[#f9cb15] font-medium drop-shadow-[0_0_8px_rgba(249,203,21,0.5)]"
-                                : !isDisabled && "hover:bg-[#f9cb15]/5 hover:text-[#f9cb15] text-gray-400 transition-colors"
+                              "transition-all duration-200 py-2",
+                              isActive && !isDisabled
+                                ? "bg-[#f9cb15]/10 border-l-2 border-[#f9cb15] text-[#f9cb15] font-bold shadow-[inset_15px_0_20px_-10px_rgba(249,203,21,0.15)] pl-3 rounded-r-lg ml-0"
+                                : !isDisabled && "border-l-2 border-transparent text-gray-400 hover:text-white hover:bg-white/5 pl-3 ml-0 rounded-r-lg"
                             )}
                           />
                         );

@@ -41,7 +41,7 @@ export const FirstAdminSetup: React.FC<FirstAdminSetupProps> = ({
           
           <Button 
             onClick={onSetupComplete} 
-            className="w-full bg-adega-gold hover:bg-adega-gold/80 text-black" 
+            className="w-full bg-white hover:bg-zinc-200 text-black font-bold shadow-lg rounded-xl" 
             disabled={isLoading}
             size="lg"
           >
